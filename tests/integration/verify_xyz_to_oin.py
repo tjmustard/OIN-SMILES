@@ -1,6 +1,8 @@
 import sys
 import os
 import glob
+import numpy as np
+from scipy.spatial.transform import Rotation 
 
 # Add src to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
@@ -31,6 +33,50 @@ class Example:
     expected_ligands: Optional[List[str]] = None
     # Test control
     is_critical: bool = True
+
+def transform_xyz_content(xyz_content: str) -> str:
+    """
+    Applies a random rotation and random translation (max +/- 10) to the XYZ content.
+    """
+    lines = xyz_content.strip().splitlines()
+    if not lines:
+        return xyz_content
+        
+    try:
+        atom_count = int(lines[0].strip())
+        comment = lines[1]
+        atom_lines = lines[2:]
+        
+        # Parse atoms
+        elements = []
+        coords = []
+        for line in atom_lines:
+            parts = line.split()
+            if not parts: continue
+            elements.append(parts[0])
+            coords.append([float(x) for x in parts[1:4]])
+            
+        coords_arr = np.array(coords)
+        
+        # 1. Random Rotation
+        rot = Rotation.random()
+        rotated_coords = rot.apply(coords_arr)
+        
+        # 2. Random Translation (+/- 10)
+        translation = np.random.uniform(-10, 10, size=3)
+        translated_coords = rotated_coords + translation
+        
+        # Reconstruct XYZ
+        new_lines = [f"{atom_count}", f"{comment} [Transformed: Rotated + Translated {translation}]"]
+        for elem, coord in zip(elements, translated_coords):
+            new_lines.append(f"{elem} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}")
+            
+        return "\n".join(new_lines)
+        
+    except Exception as e:
+        print(f"WARNING: Failed to transform XYZ content: {e}")
+        return xyz_content
+
 
 class ExampleRunner:
     def __init__(self):
@@ -103,9 +149,13 @@ class ExampleRunner:
 
     def _run_xyz_to_smiles(self, example: Example, index: int) -> bool:
         print(f"Type: XYZ -> SMILES")
+        
+        # Apply transformation
+        transformed_content = transform_xyz_content(example.xyz_content)
+        
         # Create temp file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xyz', delete=False) as tmp:
-            tmp.write(example.xyz_content)
+            tmp.write(transformed_content)
             tmp_path = tmp.name
         
         print(f"Created temp XYZ file: {tmp_path}")
@@ -134,8 +184,8 @@ class ExampleRunner:
                     print("OIN String Match: YES")
                 else:
                     print(f"OIN String Match: NO")
-                    print(f"Expected: {example.expected_oin_string[:100]}...")
-                    print(f"Got:      {output_oin[:100]}...")
+                    print(f"Expected: {example.expected_oin_string}")
+                    print(f"Got:      {output_oin}")
                     failed = True
             
             if example.expected_ligands:
@@ -178,7 +228,7 @@ def get_examples() -> List[Example]:
             xyz_content=cisplatin_xyz,
             description="Cisplatin with NH3 ligands (neutral OIN representation).",
             expected_smiles="[Pt].[Cl].[Cl].[NH3].[NH3]",
-            expected_oin_string="[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:-0.733,0.680,0.000;0.2:0.733,0.680,-0.001;0.3:0.758,-0.652,0.001;0.4:-0.758,-0.653,-0.002|",
+            expected_oin_string="[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:-0.997,-0.002,-0.075;0.2:0.000,0.000,1.000;0.3:0.994,0.000,0.112;0.4:-0.037,0.002,-0.999|",
             expected_ligands=["[Cl]", "[NH3]"]
         )
         examples.append(cisplatin_xyz_ex)
@@ -194,7 +244,7 @@ def get_examples() -> List[Example]:
             xyz_content=transplatin_xyz,
             description="Transplatin with NH3 ligands (neutral OIN representation).",
             expected_smiles="[Pt].[Cl].[Cl].[NH3].[NH3]",
-            expected_oin_string="[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:1.000,0.007,0.004;0.2:-1.000,-0.006,0.004;0.3:-0.023,1.000,0.000;0.4:0.020,-1.000,0.000|",
+            expected_oin_string="[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:-0.001,0.008,-1.000;0.2:0.000,0.000,1.000;0.3:-1.000,0.001,0.017;0.4:1.000,0.000,-0.014|",
             expected_ligands=["[Cl]", "[NH3]"]
         )
         examples.append(transplatin_xyz_ex)
@@ -210,7 +260,7 @@ def get_examples() -> List[Example]:
             xyz_content=cisptcl2en_xyz,
             description="Converting XYZ coordinates of Cisplatin to OIN-SMILES (neutral components).",
             expected_smiles="[Pt].C(C[NH2])[NH2].[Cl].[Cl]",
-            expected_oin_string="[Pt].C(C[NH2])[NH2].[Cl].[Cl] |v:0.3:-0.638,-0.770,0.000;0.4:0.638,-0.770,0.000;0.5:-0.732,0.681,0.000;0.6:0.732,0.681,0.000|",
+            expected_oin_string="[Pt].C(C[NH2])[NH2].[Cl].[Cl] |v:0.3:0.000,0.000,1.000;0.4:-0.983,0.000,0.185;0.5:0.998,0.000,-0.057;0.6:-0.129,0.000,-0.992|",
             expected_ligands=["[Cl]", "C(C[NH2])[NH2]"]
         )
         examples.append(cisptcl2en_xyz_ex)
@@ -226,7 +276,7 @@ def get_examples() -> List[Example]:
             xyz_content=ferrocene_xyz,
             description="Ferrocene with eclipsed Cp rings (neutral OIN representation).",
             expected_smiles="[Fe].[cH]1[cH][cH][cH][cH]1.[cH]1[cH][cH][cH][cH]1",
-            expected_oin_string="[Fe].[cH]1[cH][cH][cH][cH]1.[cH]1[cH][cH][cH][cH]1 |v:0.1:-0.830,-0.000,0.557;0.2:-0.830,0.530,0.172;0.3:-0.830,0.328,-0.451;0.4:-0.830,-0.328,-0.451;0.5:-0.830,-0.530,0.172;0.6:0.830,0.000,0.557;0.7:0.830,0.530,0.172;0.8:0.830,0.328,-0.451;0.9:0.830,-0.328,-0.451;0.10:0.830,-0.530,0.172|m:0:1.2.3.4.5|m:0:6.7.8.9.10|",
+            expected_oin_string="[Fe].[cH]1[cH][cH][cH][cH]1.[cH]1[cH][cH][cH][cH]1 |v:0.1:0.696,-0.610,-0.379;0.2:0.107,-0.798,-0.593;0.3:-0.149,-0.305,-0.941;0.4:0.282,0.188,-0.941;0.5:0.805,0.000,-0.593;0.6:0.000,0.000,1.000;0.7:-0.590,-0.188,0.785;0.8:-0.846,0.305,0.438;0.9:-0.414,0.798,0.438;0.10:0.109,0.609,0.785|m:0:1.2.3.4.5|m:0:6.7.8.9.10|",
             expected_ligands=["[cH]1[cH][cH][cH][cH]1"]
         )
         examples.append(ferrocene_ex)
@@ -242,7 +292,7 @@ def get_examples() -> List[Example]:
             xyz_content=pd_butene_xyz,
             description="Palladium complex with Cl and Butene ligands (neutral OIN representation).",
             expected_smiles="[Pd].C(C=[CH2])=[CH2].[Cl].[Cl]",
-            expected_oin_string="[Pd].C(C=[CH2])=[CH2].[Cl].[Cl] |v:0.3:-0.725,-0.689,-0.006;0.4:-0.735,0.678,0.007;0.5:0.699,0.715,-0.002;0.6:0.711,-0.703,0.002|",
+            expected_oin_string="[Pd].C(C=[CH2])=[CH2].[Cl].[Cl] |v:0.3:-0.998,0.008,0.065;0.4:0.000,0.000,1.000;0.5:1.000,0.000,-0.028;0.6:-0.034,-0.009,-0.999|",
             expected_ligands=["[Cl]", "C(C=[CH2])=[CH2]"]
         )
         examples.append(pd_butene_ex)
@@ -258,7 +308,7 @@ def get_examples() -> List[Example]:
             xyz_content=pd_phenphos_xyz,
             description="Palladium complex with Cl and PhenPhosMe ligands.",
             expected_smiles="[Pd].C[P](C)c1ccccc1[P](C)C.[Cl].[Cl]",
-            expected_oin_string="[Pd].C[P](C)c1ccccc1[P](C)C.[Cl].[Cl] |w:2:-0.746,-0.665,-0.019;10:-0.732,0.680,0.047;13:0.710,0.704,-0.016;14:0.698,-0.715,0.044|d:2.0;10.0;13.0;14.0|",
+            expected_oin_string="[Pd].C[P](C)c1ccccc1[P](C)C.[Cl].[Cl] |v:0.2:0.000,0.000,1.000;0.10:-0.992,0.091,0.093;0.13:-0.055,-0.032,-0.998;0.14:0.999,0.000,-0.046|",
             expected_ligands=["[Cl]", "C[P](C)c1ccccc1[P](C)C"]
         )
         examples.append(pd_phenphos_ex)
@@ -274,7 +324,7 @@ def get_examples() -> List[Example]:
             xyz_content=fac_ir_xyz,
             description="Facial Iridium tris(phenylpyridine) complex (neutral OIN representation).",
             expected_smiles="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1",
-            expected_oin_string="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1 |w:4:-0.800,-0.312,-0.513;11:-0.725,0.464,0.509;16:0.131,0.849,-0.511;23:0.764,0.394,0.510;28:0.672,-0.536,-0.511;35:-0.041,-0.860,0.509|d:4.0;11.0;16.0;23.0;28.0;35.0|",
+            expected_oin_string="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1 |v:0.4:0.000,0.000,1.000;0.11:-0.118,0.978,0.174;0.16:-0.992,-0.061,-0.107;0.23:-0.071,0.055,-0.996;0.28:0.178,-0.978,-0.108;0.35:0.999,0.000,0.040|",
             expected_ligands=["[Ir]", "c1cc[n]c(-c2cccc[c]2)c1"]
         )
         examples.append(fac_ir_ex)
@@ -290,7 +340,7 @@ def get_examples() -> List[Example]:
             xyz_content=mer_ir_xyz,
             description="Meridional Iridium tris(phenylpyridine) complex (neutral OIN representation).",
             expected_smiles="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1",
-            expected_oin_string="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1 |w:4:0.639,-0.627,-0.445;11:-0.040,-0.766,0.642;16:0.805,0.416,0.423;23:0.182,0.761,-0.623;28:-0.685,0.568,0.456;35:-0.821,-0.341,-0.457|d:4.0;11.0;16.0;23.0;28.0;35.0|",
+            expected_oin_string="[Ir].c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1.c1cc[n]c(-c2cccc[c]2)c1 |v:0.4:0.000,0.000,1.000;0.11:-0.091,0.981,0.170;0.16:0.998,0.000,0.065;0.23:0.206,-0.975,-0.084;0.28:-0.057,0.050,-0.997;0.35:-0.992,-0.073,-0.107|",
             expected_ligands=["[Ir]", "c1cc[n]c(-c2cccc[c]2)c1"]
         )
         examples.append(mer_ir_ex)

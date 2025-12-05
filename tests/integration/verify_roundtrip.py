@@ -201,14 +201,96 @@ def main():
                         f.write(new_oin)
                 
                 # 3. Compare
-                if test_oin.split('|')[0] == new_oin.split('|')[0]:
+                print(f"Expected OIN: {test_oin}")
+                print(f"Got OIN:      {new_oin}")
+                
+                failed_comparison = False
+                
+                # A. SMILES Part
+                exp_smiles = test_oin.split('|')[0].strip()
+                got_smiles = new_oin.split('|')[0].strip()
+                
+                if exp_smiles == got_smiles:
                      print("SMILES part matches.")
                 else:
                      print("SMILES part MISMATCH.")
-                     print(f"Expected: {test_oin.split('|')[0]}")
-                     print(f"Got:      {new_oin.split('|')[0]}")
-                     
-                print("Stability Round-Trip execution successful.")
+                     print(f"Expected: {exp_smiles}")
+                     print(f"Got:      {got_smiles}")
+                     failed_comparison = True
+
+                # B. Tags Part
+                def parse_oin_tags(oin_str):
+                    tags = {}
+                    parts = oin_str.split('|')
+                    if len(parts) > 1:
+                        for part in parts[1:]:
+                            if ':' in part:
+                                key, val = part.split(':', 1)
+                                tags[key] = val
+                    return tags
+
+                exp_tags = parse_oin_tags(test_oin)
+                got_tags = parse_oin_tags(new_oin)
+                
+                # Check 'v' tag (Vectors)
+                if 'v' in exp_tags:
+                    if 'v' not in got_tags:
+                        print("Tag MISMATCH: 'v' tag missing in output.")
+                        failed_comparison = True
+                    else:
+                        # Parse vectors: Metal.Ligand:x,y,z
+                        def parse_vectors(v_str):
+                            vecs = {}
+                            entries = v_str.split(';')
+                            for entry in entries:
+                                if ':' in entry:
+                                    indices, coords = entry.split(':')
+                                    vecs[indices] = [float(x) for x in coords.split(',')]
+                            return vecs
+
+                        exp_vecs = parse_vectors(exp_tags['v'])
+                        got_vecs = parse_vectors(got_tags['v'])
+                        
+                        # Calculate RMSD of vectors
+                        # Collect all expected and got vectors into matching arrays
+                        # Keys are Metal.Ligand indices
+                        
+                        common_indices = [k for k in exp_vecs.keys() if k in got_vecs]
+                        missing_indices = [k for k in exp_vecs.keys() if k not in got_vecs]
+                        
+                        if missing_indices:
+                            print(f"Vector MISMATCH: Missing vectors for {missing_indices}")
+                            failed_comparison = True
+                        else:
+                            squared_diff_sum = 0.0
+                            count = 0
+                            
+                            print("Comparing Vectors (RMSD Check):")
+                            for idx in common_indices:
+                                v_exp = np.array(exp_vecs[idx])
+                                v_got = np.array(got_vecs[idx])
+                                dist_sq = np.sum((v_exp - v_got)**2)
+                                squared_diff_sum += dist_sq
+                                count += 1
+                                # print(f"  {idx}: DistSq={dist_sq:.4f}")
+                            
+                            if count > 0:
+                                rmsd = np.sqrt(squared_diff_sum / count)
+                                print(f"  Vector RMSD: {rmsd:.4f} (Tolerance: 1.0)")
+                                
+                                if rmsd > 1.0:
+                                    print("  [FAIL] RMSD too high.")
+                                    failed_comparison = True
+                                else:
+                                    print("  [PASS] RMSD within tolerance.")
+                            else:
+                                print("  No vectors to compare.")
+
+                # Check 'm' tag (Multicenter)
+                if failed_comparison:
+                    print("Stability Round-Trip FAILED verification.")
+                else:
+                    print("Stability Round-Trip execution successful.")
                 
                 if not output_dir:
                     if os.path.exists(gen_xyz_path_b): os.remove(gen_xyz_path_b)
