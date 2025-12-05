@@ -19,6 +19,7 @@ from .xyz2mol_local import (
     read_xyz_file,
     xyz2AC_obabel,
 )
+from .oin_aligner import OINCanonicalAligner
 
 # fmt: off
 TRANSITION_METALS = ["Sc","Ti","V","Cr","Mn","Fe","Co","La","Ni","Cu","Zn",
@@ -972,80 +973,67 @@ def get_oin_string(tmc_mol, xyz_coords):
 
     final_smiles = ".".join(final_smiles_parts)
     
-    # 7. PAI Alignment
+    # 7. Canonical Alignment (PBCA - OIN V1.4)
     # Center on Metal
     metal_coords = np.array(xyz_coords[metal_orig_idx])
     centered_coords = np.array(xyz_coords) - metal_coords
     
-    # Calculate Inertia Tensor
-    # I_jk = sum(m_i * (r^2 delta_jk - r_j r_k))
-    # We use atomic masses. Note: tmc_mol atoms might be reordered, so we map by __origIdx
-    orig_idx_to_mass = {}
-    for atom in tmc_mol.GetAtoms():
-        if atom.HasProp("__origIdx"):
-            orig_idx_to_mass[atom.GetIntProp("__origIdx")] = atom.GetMass()
-        else:
-            # Fallback if property missing (shouldn't happen for valid TMCs)
-            logger.warning(f"Atom {atom.GetIdx()} missing __origIdx")
-            orig_idx_to_mass[atom.GetIdx()] = atom.GetMass()
-            
-    masses = [orig_idx_to_mass.get(i, 0.0) for i in range(len(xyz_coords))]
+    # Prepare data for Aligner
+    ligands_for_aligner = []
     
-    # Identify atoms to include in PAI calculation (Metal + Zone A)
-    pai_atoms_orig_indices = {metal_orig_idx}
-    for idx in coordinating_atoms:
-        atom = mol.GetAtomWithIdx(idx)
-        if atom.HasProp("__origIdx"):
-            pai_atoms_orig_indices.add(atom.GetIntProp("__origIdx"))
-
-    I = np.zeros((3, 3))
-    for i in range(len(centered_coords)):
-        if i not in pai_atoms_orig_indices:
+    # frag_info is sorted, final_smiles_parts corresponds to it.
+    for i, item in enumerate(frag_info):
+        if item['is_metal']:
             continue
-        m = masses[i]
-        r = centered_coords[i]
-        r_sq = np.dot(r, r)
+            
+        binding_atoms_data = []
+        frag_indices = set(item['indices'])
         
-        I[0, 0] += m * (r_sq - r[0]*r[0])
-        I[1, 1] += m * (r_sq - r[1]*r[1])
-        I[2, 2] += m * (r_sq - r[2]*r[2])
-        I[0, 1] -= m * r[0]*r[1]
-        I[0, 2] -= m * r[0]*r[2]
-        I[1, 2] -= m * r[1]*r[2]
-    
-    I[1, 0] = I[0, 1]
-    I[2, 0] = I[0, 2]
-    I[2, 1] = I[1, 2]
-    
-    # Diagonalize
-    evals, evecs = np.linalg.eigh(I)
-    
-    # Sort eigenvalues (moments of inertia)
-    # PRD: Highest moment -> Z, Lowest -> X
-    # eigh returns eigenvalues in ascending order.
-    # So evals[0] is lowest (X), evals[2] is highest (Z).
-    # evecs columns are eigenvectors.
-    # X_axis = evecs[:, 0]
-    # Y_axis = evecs[:, 1]
-    # Z_axis = evecs[:, 2]
-    
-    # Check chirality (Right-handed system)
-    x_axis = evecs[:, 0]
-    y_axis = evecs[:, 1]
-    z_axis = evecs[:, 2]
-    
-    if np.dot(np.cross(x_axis, y_axis), z_axis) < 0:
-        # Flip Z axis to make it right-handed
-        z_axis = -z_axis
+        # We need to find binding atoms for this specific ligand
+        # Coordinating atoms are global indices.
+        # We also need to respect the order of sorting binding atoms if multiple?
+        # The Aligner expects: 'binding_atoms': list of (original_index, atomic_mass, coords_xyz)
+        # xyz2mol uses all binding atoms for PAI previously.
+        # Here we just gather them. The Aligner will pick the best one (highest mass).
         
-    rotation_matrix = np.column_stack((x_axis, y_axis, z_axis))
-    
-    # Rotate coordinates
-    # v_new = v_old . R (if row vectors) or R.T . v_old (if col)
-    # Here coords are row vectors.
-    # We want to project onto new axes.
-    # v_new_x = v . x_axis
-    aligned_coords = np.dot(centered_coords, rotation_matrix)
+        # Filter coordinating atoms that belong to this fragment
+        lig_binding_indices = [idx for idx in coordinating_atoms if idx in frag_indices]
+        
+        # Sort them by mass descending (as per PRD implication for "first binding atom")
+        # PRD Step 1: "Sort Ligands ... Binding Atom Mass".
+        # PRD Step 3 Phase A: "Select Zone A atom... highest atomic mass".
+        # So we should provide them sorted or let Aligner sort.
+        # The Aligner code I wrote: `p1_atom_coords = p1_ligand['binding_atoms'][0][2]`
+        # So it takes the FIRST one. Thus I MUST sort them here by mass descending.
+        
+        lig_binding_indices.sort(key=lambda idx: mol.GetAtomWithIdx(idx).GetMass(), reverse=True)
+        
+        for atom_idx in lig_binding_indices:
+            atom = mol.GetAtomWithIdx(atom_idx)
+            mass = atom.GetMass()
+            if atom.HasProp("__origIdx"):
+                orig_idx = atom.GetIntProp("__origIdx")
+            else:
+                orig_idx = atom_idx # Fallback
+            
+            coords = centered_coords[orig_idx]
+            binding_atoms_data.append((orig_idx, mass, coords))
+            
+        ligands_for_aligner.append({
+            'smiles': final_smiles_parts[i],
+            'mass': item['mass'],
+            'binding_atoms': binding_atoms_data
+        })
+        
+    if ligands_for_aligner:
+        aligner = OINCanonicalAligner(ligands_for_aligner)
+        rotation_matrix = aligner.get_best_alignment()
+        
+        # Apply rotation: v_new = v_old . R^T
+        aligned_coords = np.dot(centered_coords, rotation_matrix.T)
+    else:
+        # No ligands (e.g. naked metal ion?), identity
+        aligned_coords = centered_coords
     
     # 8. Generate Tags (V1.4)
     
@@ -1068,6 +1056,9 @@ def get_oin_string(tmc_mol, xyz_coords):
             u_vec = vec / norm
         else:
             u_vec = vec # Should not happen for bonded atoms
+            
+        u_vec = np.round(u_vec, 3)
+        u_vec[u_vec == -0.0] = 0.0
             
         v_entries.append(f"{new_metal_idx}.{new_ligand_idx}:{u_vec[0]:.3f},{u_vec[1]:.3f},{u_vec[2]:.3f}")
         
