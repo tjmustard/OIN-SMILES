@@ -19,7 +19,7 @@ from .xyz2mol_local import (
     read_xyz_file,
     xyz2AC_obabel,
 )
-from .oin_aligner import OINCanonicalAligner
+from .oin_aligner import OINDiscreteAligner
 
 # fmt: off
 TRANSITION_METALS = ["Sc","Ti","V","Cr","Mn","Fe","Co","La","Ni","Cu","Zn",
@@ -626,35 +626,36 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     return tmc_mol, xyz_coords
 
 
+from .oin_aligner import OINSanitizer, OINDiscreteAligner
+
 def get_oin_string(tmc_mol, xyz_coords):
-    """Generates the Open Isomer Notation (OIN) string for the molecule.
+    """Generates the Open Isomer Notation (OIN) string for the molecule (V2.4).
     
-    This function implements OIN v1.3 specification:
-    1. Identifies the metal center.
-    2. Identifies coordinating atoms (Zone A - bonding atoms).
-    3. Groups coordinating atoms into ligands to detect haptic bonds.
-    4. Disconnects metal-ligand bonds.
-    5. Sorts fragments by Mass (Mass-First Canonicalization).
-    6. Generates SMILES string with Selective Explicit Hydrogens:
-       - Zone A (bonding atoms): Explicit H required (e.g., [NH3], [Cl])
-       - Zone B (backbone atoms): Implicit H for readability (e.g., CC)
-    7. Performs Principal Axis Alignment (PAI) on 3D coordinates.
-    8. Generates 'w' tag (Zone A unit vectors), 'd' tag, and 'm' tag.
+    Pipeline:
+    1. Identify Metal and Connections.
+    2. Fragment Molecule into Ligands.
+    3. Sort Ligands (Mass-First: Component Molecular Weight -> Binding Atom Mass).
+    4. Sanitization-First: Force Explicit Hydrogens on Zone A atoms to prevent SMILES drift.
+    5. Generate Canonical SMILES for each fragment.
+    6. Align Geometry (OINDiscreteAligner V2.4).
+    7. Serialize output.
     """
     
-    # Work on a copy to avoid modifying the input
-    mol = Chem.RWMol(tmc_mol)
-    
-    # 1. Identify Metal
-    metal_idx = None
-    for atom in mol.GetAtoms():
+    # 1. Identify Metal and Connections
+    metal_idx = -1
+    for atom in tmc_mol.GetAtoms():
         if atom.GetAtomicNum() in TRANSITION_METALS_NUM:
             metal_idx = atom.GetIdx()
-            metal_orig_idx = atom.GetIntProp("__origIdx")
             break
             
-    if metal_idx is None:
-        return Chem.MolToSmiles(tmc_mol) + " |w:|"
+    if metal_idx == -1:
+        raise ValueError("No transition metal found in molecule!")
+        
+    metal_atom = tmc_mol.GetAtomWithIdx(metal_idx)
+    zone_a_indices = [nbr.GetIdx() for nbr in metal_atom.GetNeighbors()]
+
+    # 2. Fragment Molecule
+    mol = Chem.RWMol(tmc_mol)
 
     # 2. Identify Coordinating Atoms & Bonds
     metal_bonds = mol.GetAtomWithIdx(metal_idx).GetBonds()
@@ -666,432 +667,334 @@ def get_oin_string(tmc_mol, xyz_coords):
         coordinating_atoms.append(other_atom)
         bonds_to_remove.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
 
-    # 3. Detect Haptic vs Dative
-    haptic_groups = []
-    dative_atoms = []
-    
-    visited = set()
-    for idx in coordinating_atoms:
-        if idx in visited:
-            continue
-            
-        cluster = {idx}
-        queue = [idx]
-        visited.add(idx)
-        
-        while queue:
-            curr = queue.pop(0)
-            curr_atom = mol.GetAtomWithIdx(curr)
-            for nbr in curr_atom.GetNeighbors():
-                nbr_idx = nbr.GetIdx()
-                if nbr_idx in coordinating_atoms and nbr_idx not in visited:
-                    visited.add(nbr_idx)
-                    cluster.add(nbr_idx)
-                    queue.append(nbr_idx)
-        
-        if len(cluster) >= 3:
-            haptic_groups.append(sorted(list(cluster)))
-        else:
-            for atom_idx in cluster:
-                dative_atoms.append(atom_idx)
-
-    # 4. Disconnect Metal-Ligand Bonds
+    # 3. Disconnect Metal-Ligand Bonds to define fragments
     for u, v in bonds_to_remove:
         mol.RemoveBond(u, v)
         
-    # 4b. Neutralize Charges (OIN Style)
-    # OIN typically represents components as neutral fragments (e.g. [Cl] not [Cl-]).
-    # We set formal charge to 0 for all atoms.
-    # We also disable implicit hydrogens to prevent RDKit from adding them to satisfy valence (e.g. Cl -> ClH).
+    # 3b. Neutralize Charges for OIN representation
     for atom in mol.GetAtoms():
         atom.SetFormalCharge(0)
-        atom.SetNoImplicit(True)
+        atom.SetNoImplicit(True) # Start neutral, Sanitize will adjust Zone A
     
-    # NOTE: In v1.2, we do NOT neutralize charges to preserve explicit H info.
-    # CORRECTION: We DO neutralize to match PRD examples (e.g. [Cl], [CH3]).
-    # Explicit H count is preserved by the graph structure.
-    
-    # 5. Mass-First Sorting & Canonicalization
-    # We need to sort the disconnected fragments.
-    # GetMolFrags returns tuple of atom indices for each fragment
+    # 4. Fragment Identification
     frags_indices = Chem.GetMolFrags(mol, asMols=False)
     
-    # We need to identify which fragment is the metal
-    metal_frag_idx = -1
-    frag_info = []
+    fragments_data = [] # Will hold dicts with info
     
+    # Extract Coordinates for Alignment from original xyz_coords
+    # Map from Mol Idx -> Original XYZ Index
+    # We assume 'mol' atoms are in same order as 'tmc_mol' which matches 'xyz_coords' 
+    # (except maybe if hydrogens were added/removed, but usually 1-to-1).
+    # tmc_mol comes from get_tmc_mol which builds from AC2mol but maintains ordering usually?
+    # Let's verify: get_tmc_mol returns tmc_mol, xyz_coords.
+    # The atom index in tmc_mol should map to xyz_coords index if no hydrogens added implicitly?
+    # AC2mol might add H? "use_atom_maps=False". 
+    # Usually xyz2mol structures match input XYZ atoms unless H added.
+    # We can rely on __origIdx if available.
+    
+    atom_map_to_xyz = {}
+    for atom in mol.GetAtoms():
+        if atom.HasProp("__origIdx"):
+            atom_map_to_xyz[atom.GetIdx()] = atom.GetIntProp("__origIdx")
+        else:
+            # Fallback if property missing (shouldn't happen with get_tmc_mol)
+            atom_map_to_xyz[atom.GetIdx()] = atom.GetIdx()
+            
     for i, indices in enumerate(frags_indices):
-        if metal_idx in indices:
-            metal_frag_idx = i
-            # Metal is always first (Rank 0)
-            frag_info.append({'indices': indices, 'mass': float('inf'), 'smi': '', 'is_metal': True})
-        else:
-            # Calculate mass
-            mass = 0.0
-            binding_atom_mass = 0.0
-            for idx in indices:
-                atom = mol.GetAtomWithIdx(idx)
-                mass += atom.GetMass()
-                if idx in coordinating_atoms:
-                    binding_atom_mass = max(binding_atom_mass, atom.GetMass())
-            
-            # Generate temporary SMILES for tie-breaking
-            # We need a mol for this fragment to generate SMILES
-            # But we can just use the indices to extract it? 
-            # Actually, let's just use the mass and binding atom mass for now.
-            # For strict tie-breaking we'd need canonical SMILES of the fragment.
-            # Let's extract the fragment as a Mol
-            # Note: This is a bit expensive but necessary for strict sorting
-            # However, we can't easily extract just by indices without renumbering issues
-            # Let's rely on mass and binding atom mass first.
-            
-            frag_info.append({
-                'indices': indices, 
-                'mass': mass, 
-                'binding_mass': binding_atom_mass,
-                'is_metal': False
-            })
-    
-    # Sort fragments: 
-    # 1. Metal (already handled by putting it first or giving inf mass)
-    # 2. Mass (Descending)
-    # 3. Binding Atom Mass (Descending)
-    # 4. Indices (as stable tie breaker if needed)
-    
-    def sort_key(item):
-        if item['is_metal']:
-            return (float('inf'), float('inf'))
-        return (item['mass'], item['binding_mass'])
+        is_metal = (metal_idx in indices)
+        
+        # Calculate Masses for Sorting
+        mass = 0.0
+        binding_mass = 0.0
+        
+        frag_binding_atoms = [] # List of (global_idx, mass, coords, local_idx_placeholder)
+        
+        for idx in indices:
+            atom = mol.GetAtomWithIdx(idx)
+            m = atom.GetMass()
+            mass += m
+            if idx in coordinating_atoms:
+                binding_mass = max(binding_mass, m)
+                # Store info for alignment
+                # We need coords
+                orig_i = atom_map_to_xyz[idx]
+                coords = np.array(xyz_coords[orig_i])
+                frag_binding_atoms.append((idx, m, coords))
+        
+        if frag_binding_atoms:
+             pass
+        
+        # Capture metal coordinates if this is the metal fragment
+        metal_coords = None
+        if is_metal and indices:
+             # Use the first atom of the metal fragment as the center
+             m_idx = indices[0]
+             orig_m_idx = atom_map_to_xyz.get(m_idx, m_idx)
+             metal_coords = np.array(xyz_coords[orig_m_idx])
 
-    frag_info.sort(key=sort_key, reverse=True)
-    
-    # Construct the new atom order
-    new_order = []
-    old_to_new = {}
-    current_new_idx = 0
-    
-    for item in frag_info:
-        # Within each fragment, we should also canonicalize?
-        # Standard SMILES canonicalization within fragment is fine.
-        # But we need to map old indices to new indices.
-        # Let's just append them in their current internal order for now, 
-        # relying on RDKit's MolToSmiles to handle intra-fragment canonicalization later?
-        # NO, if we reorder atoms in the Mol, we must ensure MolToSmiles respects that order 
-        # OR we let MolToSmiles do its thing and we map back.
-        # But MolToSmiles on a disconnected mol might reorder fragments?
-        # Yes, standard MolToSmiles canonicalizes the whole string.
-        # We want to ENFORCE our fragment order.
-        # So we should generate SMILES for each fragment individually and join them.
-        
-        # For the OIN string, we need the SMILES.
-        # For the tags, we need the indices in that SMILES string.
-        # So we must know exactly how the final SMILES is ordered.
-        
-        # Strategy:
-        # 1. Extract each fragment as a separate Mol.
-        # 2. Generate SMILES for each fragment (Explicit H).
-        # 3. Join SMILES with '.'.
-        # 4. Track atom mapping from Original -> Fragment -> Final Combined Index.
-        pass
-
-    # Let's implement the Strategy
-    final_smiles_parts = []
-    final_atom_mapping = {} # Old Idx -> New Idx in the virtual combined molecule
-    
-    # We need to process the Metal fragment first, then the sorted ligands
-    
-    current_offset = 0
-    
-    # Helper to extract fragment mol
-    def get_frag_mol(mol, indices):
-        # Create a mapping from old idx to new frag idx
-        mapping = {old: new for new, old in enumerate(indices)}
-        
-        # Create new empty mol
-        frag = Chem.RWMol()
-        for old_idx in indices:
-            atom = mol.GetAtomWithIdx(old_idx)
-            new_idx = frag.AddAtom(atom)
-            # Copy properties if needed
-        
-        # Add bonds
-        for old_idx in indices:
-            atom = mol.GetAtomWithIdx(old_idx)
-            for bond in atom.GetBonds():
-                nbr_idx = bond.GetOtherAtomIdx(old_idx)
-                if nbr_idx in indices and nbr_idx > old_idx: # Add each bond once
-                    bond_type = bond.GetBondType()
-                    frag.AddBond(mapping[old_idx], mapping[nbr_idx], bond_type)
-        
-        return frag, mapping
-
-    for item in frag_info:
-        indices = item['indices'] # Old indices
-        # We want to generate canonical SMILES for this fragment
-        # AND know the mapping from Old Index -> Index in that SMILES string
-        
-        # Extract fragment
-        frag_mol, frag_local_map = get_frag_mol(mol, indices)
-        
-        # OIN V1.3: Selective Explicit Hydrogen Handling
-        # Zone A (bonding atoms): Use bracket notation with H subscript (e.g., [NH3], [Cl])
-        # Zone B (backbone atoms): Use standard implicit H (e.g., CC, c)
-        
-        # Key insight: ALL H atoms from XYZ are explicit in the graph
-        # Solution: Remove ALL H atoms, then set explicit H count ONLY for Zone A
-        # This gives [NH2] for Zone A N, but CC for Zone B carbons
-        
-        # Identify all H atoms in this fragment
-        all_h_atoms = []
-        h_parent_map = {}  # H local idx -> parent local idx
-        zone_a_heavy_atoms = []
-        
-        for old_idx in indices:
-            frag_local_idx = frag_local_map[old_idx]
-            atom = mol.GetAtomWithIdx(old_idx)
-            
-            if atom.GetAtomicNum() == 1:  # Hydrogen
-                # Find what it's bonded to
-                for bond in atom.GetBonds():
-                    parent_idx = bond.GetOtherAtomIdx(old_idx)
-                    if parent_idx in indices:  # Parent is in this fragment
-                        all_h_atoms.append(old_idx)
-                        h_parent_map[frag_local_idx] = frag_local_map[parent_idx]
-                        break
-            elif old_idx in coordinating_atoms:  # Zone A heavy atom
-                zone_a_heavy_atoms.append(old_idx)
-        
-        # Remove ALL H atoms from fragment
-        atoms_to_remove = [frag_local_map[h_idx] for h_idx in all_h_atoms]
-        
-        new_frag_mol = Chem.RWMol(frag_mol)
-        for h_local_idx in sorted(atoms_to_remove, reverse=True):
-            new_frag_mol.RemoveAtom(h_local_idx)
-        
-        frag_mol = new_frag_mol.GetMol()
-        
-        # Build mapping after H removal
-        old_to_new_local = {}
-        new_idx = 0
-        for old_local_idx in range(len(indices)):
-            if old_local_idx not in atoms_to_remove:
-                old_to_new_local[old_local_idx] = new_idx
-                new_idx += 1
-        
-        # Set explicit H count ONLY for Zone A atoms
-        for old_idx in zone_a_heavy_atoms:
-            old_local_idx = frag_local_map[old_idx]
-            if old_local_idx not in old_to_new_local:
-                continue
-            new_local_idx = old_to_new_local[old_local_idx]
-            atom = frag_mol.GetAtomWithIdx(new_local_idx)
-            
-            # Count H atoms that were bonded to this atom
-            h_count = sum(1 for h_local in atoms_to_remove if h_parent_map.get(h_local) == old_local_idx)
-            atom.SetNumExplicitHs(h_count)
-            # Force bracket notation
-            atom.SetAtomMapNum(new_local_idx + 1)
-            # Set NoImplicit only for Zone A
-            atom.SetNoImplicit(True)
-        
-        # Reset NoImplicit for Zone B atoms (Backbone)
-        for old_idx in indices:
-            if old_idx in zone_a_heavy_atoms:
-                continue
-            if old_idx in all_h_atoms:
-                continue
-                
-            old_local_idx = frag_local_map[old_idx]
-            if old_local_idx in old_to_new_local:
-                new_local_idx = old_to_new_local[old_local_idx]
-                atom = frag_mol.GetAtomWithIdx(new_local_idx)
-                atom.SetNoImplicit(False)
-        
-        # Zone B atoms now have no H atoms and no explicit H set
-        # RDKit will add implicit H automatically when generating SMILES
-        
-        try:
-            Chem.SanitizeMol(frag_mol)
-        except Exception as e:
-            logger.warning(f"Sanitization failed for fragment: {e}")
-        
-        # Generate SMILES with map numbers to ensure unique mapping
-        frag_smiles_with_maps = Chem.MolToSmiles(frag_mol, canonical=True, allHsExplicit=False)
-        
-        # Remove atom map numbers for the final string
-        import re
-        frag_smiles = re.sub(r':(\d+)', '', frag_smiles_with_maps)
-        
-        final_smiles_parts.append(frag_smiles)
-        
-        # Update global mapping (accounting for removed H atoms)
-        remaining_local_to_old = {}
-        for old_idx in indices:
-            old_local_idx = frag_local_map[old_idx]
-            if old_local_idx in old_to_new_local:
-                new_local_idx = old_to_new_local[old_local_idx]
-                remaining_local_to_old[new_local_idx] = old_idx
-        
-        # Create a temporary mol from the SMILES to get the SMILES order
-        # Note: We use the version WITH maps to ensure robust matching
-        temp_mol = Chem.MolFromSmiles(frag_smiles_with_maps)
-        
-        if temp_mol is None:
-             # Fallback if something goes wrong (shouldn't happen)
-             logger.warning(f"Failed to parse generated SMILES: {frag_smiles_with_maps}")
-             # Use rank based mapping as fallback
-             ranks = list(Chem.CanonicalRankAtoms(frag_mol, breakTies=True))
-             rank_to_local = {r: i for i, r in enumerate(ranks)}
-             for r in range(len(frag_mol.GetAtoms())):
-                local_idx = rank_to_local[r]
-                old_idx = remaining_local_to_old[local_idx]
-                new_global_idx = current_offset + r
-                old_to_new[old_idx] = new_global_idx
-        else:
-            # Map frag_mol atoms to temp_mol atoms (SMILES order)
-            # match[i] is the index in frag_mol that corresponds to atom i in temp_mol
-            match = frag_mol.GetSubstructMatch(temp_mol)
-            
-            if not match:
-                logger.warning(f"Failed to match frag_mol to SMILES mol: {frag_smiles_with_maps}")
-                 # Fallback
-                ranks = list(Chem.CanonicalRankAtoms(frag_mol, breakTies=True))
-                rank_to_local = {r: i for i, r in enumerate(ranks)}
-                for r in range(len(frag_mol.GetAtoms())):
-                    local_idx = rank_to_local[r]
-                    old_idx = remaining_local_to_old[local_idx]
-                    new_global_idx = current_offset + r
-                    old_to_new[old_idx] = new_global_idx
-            else:
-                # match[smiles_idx] = frag_local_idx
-                for smiles_idx, frag_local_idx in enumerate(match):
-                    old_idx = remaining_local_to_old[frag_local_idx]
-                    new_global_idx = current_offset + smiles_idx
-                    old_to_new[old_idx] = new_global_idx
-            
-        current_offset += len(frag_mol.GetAtoms())
-
-    final_smiles = ".".join(final_smiles_parts)
-    
-    # 7. Canonical Alignment (PBCA - OIN V1.4)
-    # Center on Metal
-    metal_coords = np.array(xyz_coords[metal_orig_idx])
-    centered_coords = np.array(xyz_coords) - metal_coords
-    
-    # Prepare data for Aligner
-    ligands_for_aligner = []
-    
-    # frag_info is sorted, final_smiles_parts corresponds to it.
-    for i, item in enumerate(frag_info):
-        if item['is_metal']:
-            continue
-            
-        binding_atoms_data = []
-        frag_indices = set(item['indices'])
-        
-        # We need to find binding atoms for this specific ligand
-        # Coordinating atoms are global indices.
-        # We also need to respect the order of sorting binding atoms if multiple?
-        # The Aligner expects: 'binding_atoms': list of (original_index, atomic_mass, coords_xyz)
-        # xyz2mol uses all binding atoms for PAI previously.
-        # Here we just gather them. The Aligner will pick the best one (highest mass).
-        
-        # Filter coordinating atoms that belong to this fragment
-        lig_binding_indices = [idx for idx in coordinating_atoms if idx in frag_indices]
-        
-        # Sort them by mass descending (as per PRD implication for "first binding atom")
-        # PRD Step 1: "Sort Ligands ... Binding Atom Mass".
-        # PRD Step 3 Phase A: "Select Zone A atom... highest atomic mass".
-        # So we should provide them sorted or let Aligner sort.
-        # The Aligner code I wrote: `p1_atom_coords = p1_ligand['binding_atoms'][0][2]`
-        # So it takes the FIRST one. Thus I MUST sort them here by mass descending.
-        
-        lig_binding_indices.sort(key=lambda idx: mol.GetAtomWithIdx(idx).GetMass(), reverse=True)
-        
-        for atom_idx in lig_binding_indices:
-            atom = mol.GetAtomWithIdx(atom_idx)
-            mass = atom.GetMass()
-            if atom.HasProp("__origIdx"):
-                orig_idx = atom.GetIntProp("__origIdx")
-            else:
-                orig_idx = atom_idx # Fallback
-            
-            coords = centered_coords[orig_idx]
-            binding_atoms_data.append((orig_idx, mass, coords))
-            
-        ligands_for_aligner.append({
-            'smiles': final_smiles_parts[i],
-            'mass': item['mass'],
-            'binding_atoms': binding_atoms_data
+        fragments_data.append({
+            'indices': indices,
+            'is_metal': is_metal,
+            'mass': mass,
+            'binding_mass': binding_mass,
+            'metal_coords': metal_coords,
+            'smiles': "", # Will be filled later
+            'binding_atoms': frag_binding_atoms # Will be updated later
         })
-        
-    if ligands_for_aligner:
-        aligner = OINCanonicalAligner(ligands_for_aligner)
-        rotation_matrix = aligner.get_best_alignment()
-        
-        # Apply rotation: v_new = v_old . R^T
-        aligned_coords = np.dot(centered_coords, rotation_matrix.T)
-    else:
-        # No ligands (e.g. naked metal ion?), identity
-        aligned_coords = centered_coords
-    
-    # 8. Generate Tags (V1.4)
-    
-    # v tag: Unified Vector Tags (Connectivity + Geometry)
-    # Format: v:MetalIdx.LigandIdx:x,y,z;...
-    v_entries = []
-    
-    new_metal_idx = old_to_new[metal_idx]
-    
-    # Sort by new index for canonical output
-    sorted_coordinating = sorted(coordinating_atoms, key=lambda x: old_to_new[x])
-    
-    for old_idx in sorted_coordinating:
-        new_ligand_idx = old_to_new[old_idx]
-        # Use __origIdx to access aligned_coords (which matches xyz_coords order)
-        atom_orig_idx = mol.GetAtomWithIdx(old_idx).GetIntProp("__origIdx")
-        vec = aligned_coords[atom_orig_idx]
-        norm = np.linalg.norm(vec)
-        if norm > 1e-6:
-            u_vec = vec / norm
-        else:
-            u_vec = vec # Should not happen for bonded atoms
-            
-        u_vec = np.round(u_vec, 3)
-        u_vec[u_vec == -0.0] = 0.0
-            
-        v_entries.append(f"{new_metal_idx}.{new_ligand_idx}:{u_vec[0]:.3f},{u_vec[1]:.3f},{u_vec[2]:.3f}")
-        
-    v_tag = "v:" + ";".join(v_entries)
-    
-    # d tag is REMOVED in V1.4
-        
-    # m tag: Haptic Groups
-    m_tags = []
-    # Sort groups by smallest new index in group
-    sorted_haptic = []
-    for group in haptic_groups:
-        new_indices = sorted([old_to_new[idx] for idx in group])
-        sorted_haptic.append(new_indices)
-        
-    sorted_haptic.sort(key=lambda x: x[0])
-    
-    for group in sorted_haptic:
-        atom_list = ".".join(map(str, group))
-        m_tags.append(f"m:{new_metal_idx}:{atom_list}")
-        
-    # Assemble OIN
-    tags = [v_tag]
-    # d tag removed
-    if m_tags:
-        tags.extend(m_tags)
-        
-    # Add g tag placeholder if needed, but PRD says it's descriptive.
-    # We'll omit it for now as we don't have geometry classification logic here.
-        
-    oin = f"{final_smiles} |{'|'.join(tags)}|"
-    return oin
 
+    # Now process each fragment to generate SMILES and refine binding_atoms
+    for i, item in enumerate(fragments_data):
+        indices = item['indices'] # Old indices
+        frag_binding_atoms = item['binding_atoms'] # Retrieve correct binding atoms
+        
+        # 1. Identify Heavy Atoms and Hydrogen Counts
+        heavy_indices = []
+        h_indices = set()
+        atom_h_count = {} # Old Idx -> Num H neighbors
+        
+        for old_idx in indices:
+            atom = mol.GetAtomWithIdx(old_idx)
+            if atom.GetAtomicNum() == 1:
+                h_indices.add(old_idx)
+            else:
+                heavy_indices.append(old_idx)
+                # Count H neighbors within this fragment
+                h_count = 0
+                for nbr in atom.GetNeighbors():
+                    if nbr.GetAtomicNum() == 1 and nbr.GetIdx() in indices:
+                        h_count += 1
+                atom_h_count[old_idx] = h_count
+        
+        # 2. Extract Fragment (Heavy Atoms Only)
+        mw = Chem.RWMol()
+        old_to_new = {}
+        
+        for old_idx in heavy_indices:
+            atom = mol.GetAtomWithIdx(old_idx)
+            new_idx = mw.AddAtom(atom)
+            
+            # Apply calculated H count from stripped hydrogens
+            # This is critical for OINSanitizer to know the original H count
+            # since we set NoImplicit=True globally earlier.
+            if old_idx in atom_h_count:
+                mw.GetAtomWithIdx(new_idx).SetNumExplicitHs(atom_h_count[old_idx])
+                
+            old_to_new[old_idx] = new_idx
+        # Loop over atoms in fragment, check neighbors
+        # Add Bonds between heavy atoms
+        for old_idx in heavy_indices:
+            atom = mol.GetAtomWithIdx(old_idx)
+            for nbr in atom.GetNeighbors():
+                nbr_idx = nbr.GetIdx()
+                # Check if neighbor is in heavy_indices and we haven't added bond yet
+                if nbr_idx in heavy_indices and nbr_idx > old_idx:
+                     bond = mol.GetBondBetweenAtoms(old_idx, nbr_idx)
+                     if bond:
+                         mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
+        
+        frag_mol = mw.GetMol()
+        
+        # Identify binding atoms in new local indices
+        frag_binding_indices_local = []
+        
+        # We also need to construct the full 'binding_atoms' list expected by Aligner
+        # which needs 'local_idx' (atom index in the generated SMILES fragment)
+        # But we don't know the SMILES order yet!
+        # OINSanitizer generates SMILES.
+        # OINSanitizer takes ligand_mol and binding_indices_in_ligand.
+        
+        for binding_item in frag_binding_atoms:
+            g_idx = binding_item[0]
+            if g_idx in old_to_new:
+                frag_binding_indices_local.append(old_to_new[g_idx])
+        
+        sanitized_smiles = ""
+        if not is_metal:
+            sanitized_smiles = OINSanitizer.generate_robust_smiles(frag_mol, frag_binding_indices_local)
+        else:
+            sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
+
+        # Now we need the mapping from SMILES order to Fragment Atom order to get 'local_idx' correctly.
+        # RDKit's MolToSmiles canonicalization reorders atoms.
+        # We need the mismatch? 
+        # Actually, OINSanitizer returns the string. We need to know "Atom X in frag_mol corresponds to Index Y in SMILES".
+        # We can get the canonical order via:
+        # Chem.CanonicalRankAtoms(frag_mol) -> ranks.
+        # Or re-parse the SMILES?
+        # Re-parsing the SMILES is safer to guarantee we match the output string.
+        #
+        # Re-parsing:
+        # 1. Parse sanitized_smiles -> new_mol
+        # 2. GetSubstructMatch(frag_mol, new_mol) -> mapping?
+        # Unreliable if symmetric atoms.
+        #
+        # Better approach: Use the 'atomMatches' property or 'canonical' atom order if possible.
+        # RDKit doesn't easily expose the map "Atom i in input -> Atom j in SMILES string".
+        # But we can assume the SMILES string order corresponds to the canonical rank?
+        #
+        # Let's rely on parsing the SMILES back and finding the unique match if possible, 
+        # OR use RDKit's canonical rank to predict the order.
+        #
+        # However, for OIN V2.4, we primarily need the SMILES for the text output.
+        # The Aligner needs 'local_idx' to output 'Rank.Idx:Slot'.
+        # This 'Idx' MUST match the atom index in the 'sanitized_smiles' string.
+        #
+        # Solution:
+        # The Aligner needs to output `Rank.Idx`.
+        # `Idx` is the 0-based index in the SMILES string.
+        # We need to find which global atom corresponds to which SMILES index.
+        #
+        # Workaround: 
+        # Create a Mol from the Sanitized SMILES.
+        # Find isomorphism between Original Fragment and SMILES Mol.
+        # This gives the mapping.
+        
+        smiles_mol = Chem.MolFromSmiles(sanitized_smiles)
+        
+        if smiles_mol is None:
+            # Fallback/Debug: Sanitization produced invalid SMILES?
+            # Or RDKit failed to parse its own output.
+            logger.error(f"Failed to parse generated SMILES: {sanitized_smiles}")
+            # Try to recover by skipping local idx map or raising clearer error
+            # For correctness, we probably need to fail or fallback to naive mapping
+            frag_to_smiles_idx = {}
+            pass
+        else:
+            # We need to map `frag_mol` atoms to `smiles_mol` atoms.
+            # Since we enforced Explicit H and Charge, graph should be unique (mostly).
+            # SubstructMatch
+            match = frag_mol.GetSubstructMatch(smiles_mol)
+        # match[i] = index of atom in frag_mol that corresponds to atom i in smiles_mol?
+        # No, match is "indices of atoms in frag_mol that match atoms 0,1,2... in query(smiles_mol)".
+        # So match[0] is the atom index in frag_mol that corresponds to Atom 0 in SMILES.
+        # match[1] is Atom 1 in SMILES, etc.
+        
+        # We want: Given atom in frag_mol (which maps to global), what is its SMILES index?
+        frag_to_smiles_idx = {}
+        if match:
+            for s_idx, f_idx in enumerate(match):
+                frag_to_smiles_idx[f_idx] = s_idx
+        else:
+            # Fallback (should not happen if SMILES generated from mol)
+            # Maybe due to stereochem differences or sanitization?
+            # Safe fallback: linear mapping? No.
+            # If match fails, we might have issues.
+            pass
+
+        # Update frag_binding_atoms with local_idx
+        # stored as: (global_idx, mass, coords)
+        # We want a list for Aligner: [(global_idx, mass, coords, local_idx)]
+        
+        final_binding_atoms = []
+        for g_idx, m, coords in frag_binding_atoms:
+            if g_idx in old_to_new:
+                l_idx_in_frag = old_to_new[g_idx]
+                s_idx = frag_to_smiles_idx.get(l_idx_in_frag, 0) # Default 0 if fail
+                final_binding_atoms.append((g_idx, m, coords, s_idx))
+        
+        # Update the item in-place
+        item['smiles'] = sanitized_smiles
+        item['binding_atoms'] = final_binding_atoms
+        
+        # We don't need to append, we are modifying the dict referenced by 'item'
+        # fragments_data.append({...}) -> OMITTED to avoid infinite loop
+
+    # 5. Sort Fragments (Mass-First)
+    # Sort Key: (IsMetal, FragmentMass, BindingMass, SMILES)
+    # Metal is Rank 0 (First).
+    
+    def get_sort_key(item):
+        if item['is_metal']:
+            return (float('inf'), float('inf'), "")
+        return (item['mass'], item['binding_mass'], item['smiles'])
+        
+    fragments_data.sort(key=get_sort_key, reverse=True)
+    
+    # 6. Extract Ligands for Aligner
+    # The Aligner expects a list of ligand dicts, excluding the metal?
+    # Or metal is index 0?
+    # PRD: "Ligands are ranked... Ligand_Rank (0 to N)".
+    # Usually Metal is not aligned? "Ligand fragments".
+    # V2.3 implementation handled Metal as fragment 0.
+    # But `OINDiscreteAligner` takes `metal_idx` and `ligands`.
+    # Usually `ligands` list should NOT include the metal fragment itself if we aligned ligands around it.
+    # BUT, the Rank in `w` tag corresponds to the fragment index in the full SMILES string.
+    # The full SMILES string usually starts with Metal.
+    # So Ligand 1 is Rank 1.
+    # The Aligner `ligands` list should probably correspond to the sorted fragments data?
+    # If we pass all fragments (including metal), the aligner must reduce hapticity for metal? No.
+    # The Aligner should take the list of LIGANDS (excluding metal).
+    # AND we need to know their Rank in the final string which includes Metal.
+    # So if Metal is index 0, first ligand is Rank 1.
+    
+    # Let's filter out metal for the Aligner list, but keep track of Ranks.
+    
+    ligands_for_aligner = []
+    final_smiles_parts = []
+    
+    # Assuming fragments_data[0] is Metal due to 'inf' sort key.
+    # Verify
+    if not fragments_data[0]['is_metal']:
+        # Metal not found or sorting failed?
+        # Should rely on is_metal check
+        pass
+        
+    for rank, frag in enumerate(fragments_data):
+        final_smiles_parts.append(frag['smiles'])
+        if not frag['is_metal']:
+            # For the Aligner, we need to know this is Rank 'rank'
+            # The Aligner code I wrote earlier used `enumerate(self.ligands)` to determine rank.
+            # If I pass only ligands, the Aligner will assign Rank 0 to first ligand.
+            # But in the full string, first ligand is Rank 1 (Metal is 0).
+            # I should update Aligner or handle it here?
+            # V2.3: `w:1.0...` (Ligand 1).
+            # V2.4 PRD: `w:0.0...` (LigRank 0?). 
+            # "Ligand_Rank (0 to N)" in PRD.
+            # "Example: w:0.0:2"
+            # This implies 0-based index of LIGANDS, not Fragments including metal?
+            # BUT standard OIN usually indexes ALL fragments in the SMILES string.
+            # If the PRD example starts at 0, it means it's indexing the LIGANDS list.
+            # However, for consistency with SMILES fragment indexing (which includes Metal), 
+            # we should check if Architector adapter expects fragment index or ligand index.
+            # `oin_parser.py` V2.3 parts `w` tag: `frag_idx = int(frag_idx_str)`.
+            # `ParsedOIN`: `metal_fragment_idx = 0`.
+            # `ArchitectorAdapter` uses `frag_idx` to look up the fragment SMILES.
+            # IF `w:0.0` aligns to Fragment 0, that's the Metal?
+            # That would be wrong.
+            # So `w` Rank MUST be the index in the FULL SMILES string (where Metal is 0).
+            # So the PRD example `w:0.0` implies LigandRank 0, which implies the Adapter needs to map LigandRank -> FragmentIndex?
+            # OR the PRD implies "Metal is included in Ranking"?
+            #
+            # Let's look at `oin_aligner.py` `_permute_and_serialize` again.
+            # `rank = atom['rank']`. `rank` comes from `i` in `enumerate(self.ligands)`.
+            # If `self.ligands` excludes metal, then Rank starts at 0.
+            # If I want Rank to match Fragment Index (e.g. 1), I should pad the list or adjust rank inside aligner?
+            #
+            # Decision: I will stick to V2.3 convention where `w` Rank matches Fragment Index (e.g. 1, 2, 3...) because `oin_parser.py` maps `w` directly to SMILES fragments list.
+            # To achieve this with the current Aligner code (which uses `i` from enumerate), I should pass `fragments_data` (INCLUDING METAL) to the Aligner?
+            # If I pass Metal to Aligner, it will try to align it?
+            # Metal has no "binding atoms" connecting to itself (usually).
+            # `binding_atoms` for Metal would be empty. `_reduce_hapticity` would produce no virtual atoms if binding_atoms empty.
+            # Perfect.
+            
+            # Add binding atoms info to frag dict for Aligner
+            # It already has it.
+            pass
+            
+    # For Aligner, we pass ALL fragments so Ranks match SMILES indices.
+    # Metal fragment has `binding_atoms=[]` (empty) because we only tracked LIGAND binding atoms in step 4 loop.
+    # (The loop `if idx in coordinating_atoms` ensures metal atoms aren't added as binding atoms).
+    # So Metal will be ignored by Aligner or produce no virtual atoms => no slots.
+    
+    aligner = OINDiscreteAligner(0, fragments_data)
+    geometry_string = aligner.generate_canonical_vectors()
+    
+    # Assemble Final String
+    full_smiles = ".".join(final_smiles_parts)
+    return f"{full_smiles} |{geometry_string}|"
+
+# Re-export necessary components
+from .oin_aligner import OINSanitizer, OINDiscreteAligner
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

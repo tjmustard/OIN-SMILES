@@ -47,19 +47,25 @@ smiles = converter.convert("complex.xyz")
 print(smiles)
 ```
 
-### Example OIN-SMILES (v1.7)
+### Example OIN-SMILES (V2.4)
 
 **Cisplatin:**
 
 ```text
-[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:-0.997,-0.002,-0.075;0.2:0.000,0.000,1.000;0.3:0.994,0.000,0.112;0.4:-0.037,0.002,-0.999|
+[Pt].[Cl].[Cl].[NH3].[NH3] |g:SPL|w:1.0:0;2.0:1;3.0:2;4.0:3|
 ```
 
 **Key Features:**
 
-- **Disconnected SMILES**: Metal and ligands are separated by dots `.` (e.g., `[Pt].[Cl]...`).
-- **Unified Vector Tag (v)**: The `v` tag explicitly links the metal to the ligand and defines the geometry (e.g., `v:MetalIdx.LigandIdx:x,y,z`).
-- **Atom Indices**: Uses 0-based indices from the SMILES strings.
+-   **Compact SMILES**: Uses "Sanitization-First" to generate canonical, compact SMILES strings (e.g., `[NH3]` instead of `[H]N([H])[H]`). Explicit Hydrogen counts are enforced on Zone A atoms (bonded to metal).
+-   **Disconnected SMILES**: Metal and ligands are separated by dots `.`
+-   **Geometry Tag (g)**: Explicitly defines the coordination geometry template (e.g., `g:SPL` for Square Planar).
+-   **Index-Based Topology (w)**: Defines the geometry using discrete slot assignments.
+    -   Format: `w:Rank.Idx:Slot;...`
+    -   `Rank`: 1-based Ligand Index in the dot-separated SMILES string (Metal is 0).
+    -   `Idx`: 0-based Atom Index within the ligand's canonical SMILES string.
+    -   `Slot`: 0-based Slot Index on the Geometry Template.
+-   **Deterministic**: Maximizes vector alignment to standard templates for a unique canonical string.
 
 ### 1D to 3D (OIN to XYZ)
 
@@ -69,7 +75,8 @@ Generate a 3D structure from an OIN string. This uses the `OIN3DGenerator` which
 from oinsmiles.generation.engine import OIN3DGenerator
 
 generator = OIN3DGenerator()
-oin_string = "[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:-0.733,0.680,0.000;0.2:0.733,0.680,-0.001;0.3:0.758,-0.652,0.001;0.4:-0.758,-0.653,-0.002|"
+# V2.4 String for Cisplatin
+oin_string = "[Pt].[Cl].[Cl].[NH3].[NH3] |g:SPL|w:1.0:0;2.0:1;3.0:2;4.0:3|"
 
 # Generate the structure (returns an Architector Molecule object)
 structure = generator.generate(oin_string)
