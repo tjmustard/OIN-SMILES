@@ -6,8 +6,8 @@ from oinsmiles.generation.engine import OIN3DGenerator
 
 def main():
     print("Verifying Phase 1: Rigid MVP")
-    # Example 1: Cisplatin
-    oin = "[Pt].[Cl].[Cl].[NH3].[NH3] |v:0.1:0.774,0.633,-0.000;0.2:-0.689,0.724,-0.000;0.3:-0.797,-0.604,-0.001;0.4:0.937,-0.350,-0.002|"
+    # OIN for Cisplatin (Square Planar like) - V2.3/V2.4 format
+    oin = "[Pt].[Cl].[Cl].N.N |g:SPL|w:1.0:0;2.0:2;3.0:3;4.0:1|"
     
     generator = OIN3DGenerator()
     try:

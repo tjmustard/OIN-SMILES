@@ -1,6 +1,32 @@
+import dataclasses
 from dataclasses import dataclass
 from typing import List, Tuple
-from rdkit import Chem
+import numpy as np
+
+# --- V2.3 Templates for Parser Resolution ---
+def normalize_template(arr):
+    return arr / np.linalg.norm(arr, axis=1)[:, None]
+
+TEMPLATES = {
+    'LIN': np.array([[0,0,1], [0,0,-1]]),
+    'TPL': np.array([[0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]]),
+    'SPL': np.array([[1,0,0], [-1,0,0], [0,1,0], [0,-1,0]]),
+    'TET': np.array([
+        [ 1,  1,  1], [ 1, -1, -1], [-1,  1, -1], [-1, -1,  1]
+    ]),
+    'TPY': np.array([
+        [0,0,1], 
+        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0] 
+    ]),
+    'TBP': np.array([
+        [0,0,1], [0,0,-1],
+        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]
+    ]),
+    'OCT': np.array([
+        [0,0,1], [0,0,-1],
+        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
+    ])
+}
 
 @dataclass
 class OINVector:
@@ -25,46 +51,56 @@ class OINParser:
         
         fragments = smiles.split(".")
         
-        # Identify metal fragment (Fragment 0 usually)
+        # Identify metal fragment (usually 0, but could check symbol if needed)
         metal_fragment_idx = 0
         
+        # 1. Identify Geometry Template First
+        tmpl_vectors = None
+        for meta in metadata:
+            if meta.startswith("g:"):
+                # g:SPL
+                geo_code = meta[2:]
+                tmpl_vectors = TEMPLATES.get(geo_code)
+                # Don't break, continue processing
+                
         vectors = []
         
         for meta in metadata:
-            if meta.startswith("v:"):
-                # Format: v:MetalIdx.LigandIdx:x,y,z;...
+            if meta.startswith("w:"):
+                if tmpl_vectors is None:
+                    # Cannot resolve vectors without geometry
+                    continue
+                    
+                # Format: w:Rank.Idx:Slot;...
                 content = meta[2:]
                 items = content.split(";")
                 for item in items:
                     if not item: continue
                     try:
-                        # item might be "0.1:0.774,0.633,-0.000"
+                        # item format "Rank.Idx:Slot"
                         if ":" not in item: continue
                         
-                        indices_str, vec_str = item.split(":", 1)
-                        # indices_str is "Metal.Ligand"
-                        if "." in indices_str:
-                            metal_idx_str, ligand_idx_str = indices_str.split(".")
-                            ligand_idx = int(ligand_idx_str)
-                            # We use ligand_idx as the primary target for the vector
-                            atom_idx = ligand_idx
-                        else:
-                            # Fallback or invalid format
-                            continue
-                            
-                        x, y, z = map(float, vec_str.split(","))
+                        indices_str, slot_str = item.split(":", 1)
+                        slot_idx = int(slot_str)
                         
-                        # Map global atom_idx to fragment
-                        frag_idx, atom_in_frag_idx = self._map_index(atom_idx, fragments)
+                        if "." not in indices_str: continue
+                             
+                        frag_idx_str, atom_idx_str = indices_str.split(".")
+                        frag_idx = int(frag_idx_str)
+                        atom_in_frag_idx = int(atom_idx_str)
+                        
+                        # Resolve Vector
+                        if slot_idx >= len(tmpl_vectors): continue # Safety
+                        resolved_vec = tmpl_vectors[slot_idx]
                         
                         vectors.append(OINVector(
-                            atom_idx=atom_idx,
-                            vector=(x, y, z),
+                            atom_idx= -1, 
+                            vector=tuple(resolved_vec.tolist()),
                             fragment_idx=frag_idx,
                             atom_in_fragment_idx=atom_in_frag_idx
                         ))
                     except ValueError:
-                        continue # Handle malformed items
+                        continue 
                         
         return ParsedOIN(
             smiles=smiles,
@@ -73,20 +109,3 @@ class OINParser:
             vectors=vectors,
             original_oin=oin_string
         )
-
-    def _map_index(self, global_idx: int, fragments: List[str]) -> Tuple[int, int]:
-        current_idx = 0
-        for i, frag in enumerate(fragments):
-            mol = Chem.MolFromSmiles(frag)
-            if not mol:
-                # Try to sanitize? Or just assume it works?
-                # If it fails, we can't count atoms.
-                # For now, raise error.
-                raise ValueError(f"Invalid SMILES fragment: {frag}")
-            
-            num_atoms = mol.GetNumAtoms()
-            if global_idx < current_idx + num_atoms:
-                return i, global_idx - current_idx
-            current_idx += num_atoms
-            
-        raise ValueError(f"Atom index {global_idx} out of bounds (total atoms: {current_idx})")
