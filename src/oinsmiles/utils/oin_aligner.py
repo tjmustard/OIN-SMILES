@@ -63,8 +63,9 @@ class OINSanitizer:
             
         # 2. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
-        smiles = Chem.MolToSmiles(rw_mol, isomericSmiles=True, canonical=True)
-        return smiles
+        kmol = rw_mol.GetMol()
+        smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
+        return smiles, kmol
 
 # ==========================================
 # PART 2: DISCRETE ALIGNER (V2.4 Logic)
