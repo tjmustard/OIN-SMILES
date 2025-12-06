@@ -809,61 +809,38 @@ def get_oin_string(tmc_mol, xyz_coords):
                 frag_binding_indices_local.append(old_to_new[g_idx])
         
         sanitized_smiles = ""
+        sanitized_mol = frag_mol # Default fallback
         if not is_metal:
-            sanitized_smiles = OINSanitizer.generate_robust_smiles(frag_mol, frag_binding_indices_local)
+            sanitized_smiles, sanitized_mol = OINSanitizer.generate_robust_smiles(frag_mol, frag_binding_indices_local)
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 
         # Now we need the mapping from SMILES order to Fragment Atom order to get 'local_idx' correctly.
         # RDKit's MolToSmiles canonicalization reorders atoms.
-        # We need the mismatch? 
-        # Actually, OINSanitizer returns the string. We need to know "Atom X in frag_mol corresponds to Index Y in SMILES".
-        # We can get the canonical order via:
-        # Chem.CanonicalRankAtoms(frag_mol) -> ranks.
-        # Or re-parse the SMILES?
-        # Re-parsing the SMILES is safer to guarantee we match the output string.
-        #
-        # Re-parsing:
-        # 1. Parse sanitized_smiles -> new_mol
-        # 2. GetSubstructMatch(frag_mol, new_mol) -> mapping?
-        # Unreliable if symmetric atoms.
-        #
-        # Better approach: Use the 'atomMatches' property or 'canonical' atom order if possible.
-        # RDKit doesn't easily expose the map "Atom i in input -> Atom j in SMILES string".
-        # But we can assume the SMILES string order corresponds to the canonical rank?
-        #
-        # Let's rely on parsing the SMILES back and finding the unique match if possible, 
-        # OR use RDKit's canonical rank to predict the order.
-        #
-        # However, for OIN V2.4, we primarily need the SMILES for the text output.
-        # The Aligner needs 'local_idx' to output 'Rank.Idx:Slot'.
-        # This 'Idx' MUST match the atom index in the 'sanitized_smiles' string.
-        #
-        # Solution:
-        # The Aligner needs to output `Rank.Idx`.
-        # `Idx` is the 0-based index in the SMILES string.
-        # We need to find which global atom corresponds to which SMILES index.
-        #
-        # Workaround: 
-        # Create a Mol from the Sanitized SMILES.
-        # Find isomorphism between Original Fragment and SMILES Mol.
-        # This gives the mapping.
         
         smiles_mol = Chem.MolFromSmiles(sanitized_smiles)
         
         if smiles_mol is None:
             # Fallback/Debug: Sanitization produced invalid SMILES?
-            # Or RDKit failed to parse its own output.
             logger.error(f"Failed to parse generated SMILES: {sanitized_smiles}")
-            # Try to recover by skipping local idx map or raising clearer error
-            # For correctness, we probably need to fail or fallback to naive mapping
             frag_to_smiles_idx = {}
-            pass
         else:
-            # We need to map `frag_mol` atoms to `smiles_mol` atoms.
-            # Since we enforced Explicit H and Charge, graph should be unique (mostly).
-            # SubstructMatch
-            match = frag_mol.GetSubstructMatch(smiles_mol)
+            # We need to map `frag_mol` (original indices) to `smiles_mol`.
+            # We use `sanitized_mol` (which has same indices as frag_mol but compatible properties)
+            # to match against `smiles_mol`.
+            try:
+                # Use sanitized_mol as Query? Or Target? 
+                # SubstructMatch(query). sanitized_mol is the "Source", smiles_mol is "Target/Query structure".
+                # match[i] maps query_atom_i to target_atom_j?
+                # Mol.GetSubstructMatch(query) -> tuple of atom indices in Mol that match query atoms.
+                # So if we use `sanitized_mol.GetSubstructMatch(smiles_mol)`:
+                # match[0] is the index in `sanitized_mol` that corresponds to Atom 0 in `smiles_mol`.
+                # match[1] is ... Atom 1 in `smiles_mol`.
+                # This is exactly what we need.
+                match = sanitized_mol.GetSubstructMatch(smiles_mol)
+            except Exception as e:
+                logger.warning(f"SubstructMatch failed for {sanitized_smiles}: {e}")
+                match = None
         # match[i] = index of atom in frag_mol that corresponds to atom i in smiles_mol?
         # No, match is "indices of atoms in frag_mol that match atoms 0,1,2... in query(smiles_mol)".
         # So match[0] is the atom index in frag_mol that corresponds to Atom 0 in SMILES.

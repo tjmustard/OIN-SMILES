@@ -308,7 +308,7 @@ def get_examples() -> List[Example]:
             xyz_content=fac_ir_xyz,
             description="Facial Iridium tris(phenylpyridine) complex (neutral OIN representation).",
             expected_smiles="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1",
-            expected_oin_string="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1 |g:OCT|w:1.0:2;1.0:4;2.0:0;2.0:1;3.0:5;3.0:3|",
+            expected_oin_string="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1 |g:OCT|w:1.0:2;1.11:4;2.0:0;2.11:1;3.0:5;3.11:3|",
             expected_ligands=["[Ir]", "[c]1ccccc1-c1ccccn1"]
         )
         examples.append(fac_ir_ex)
@@ -324,7 +324,7 @@ def get_examples() -> List[Example]:
             xyz_content=mer_ir_xyz,
             description="Meridional Iridium tris(phenylpyridine) complex (neutral OIN representation).",
             expected_smiles="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1",
-            expected_oin_string="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1 |g:OCT|w:1.0:2;1.0:4;2.0:0;2.0:1;3.0:5;3.0:3|",
+            expected_oin_string="[Ir].[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1.[c]1ccccc1-c1ccccn1 |g:OCT|w:1.0:2;1.11:4;2.0:0;2.11:1;3.0:5;3.11:3|",
             expected_ligands=["[Ir]", "[c]1ccccc1-c1ccccn1"]
         )
         examples.append(mer_ir_ex)
@@ -456,7 +456,7 @@ def get_examples() -> List[Example]:
             xyz_content=voacac2_xyz,
             description="Vanadyl acetylacetonate.",
             expected_smiles="[V].CC(=O)C=C(C)[O].CC(=O)C=C(C)[O].[O]",
-            expected_oin_string="[V].CC(=O)C=C(C)[O].CC(=O)C=C(C)[O].[O] |g:SPY|w:1.0:1;1.0:3;2.0:4;2.0:2;3.0:0|",
+            expected_oin_string="[V].CC(=O)C=C(C)[O].CC(=O)C=C(C)[O].[O] |g:SPY|w:1.2:1;1.6:3;2.2:4;2.6:2;3.0:0|",
             expected_ligands=["[V]", "[O]", "CC(=O)C=C(C)[O]"]
         )
         examples.append(voacac2_ex)
