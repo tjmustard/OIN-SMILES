@@ -28,7 +28,10 @@ class ArchitectorWrapper:
             },
             "ligands": ligands, # List of dicts with 'smiles' and 'coordList'
             "parameters": {
-                "force_field": "UFF",
+                #"assemble_method":"GFN-FF",
+                "assemble_method":"GFN2-xTB",
+                "full_method": "GFN2-xTB",
+                #"force_field": "UFF",
                 "debug": True # Helpful for debugging
             }
         }

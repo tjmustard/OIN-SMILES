@@ -11,7 +11,34 @@ class OINParser:
         Format: [Canonical SMILES] | [OIN Block]
         Example: [Pt]... |w:0:0,0,0|d:1.0|
         """
+        # Check for V3.0 Inline Topology First
+        # Heuristic: No "|" separator AND contains Metal tag like [Pt_SPL]
+        from .inline import OINInlineHandler
+        
+        is_inline = False
         parts = oin_string.split("|")
+        
+        if len(parts) == 1 and OINInlineHandler.METAL_REGEX.search(oin_string):
+             is_inline = True
+             
+        if is_inline:
+             smiles, geo_str, vector_data = OINInlineHandler.parse_inline_string(oin_string)
+             tags = {}
+             if geo_str:
+                 tags['g'] = geo_str
+                 
+             # Reconstruct 'w' tag from vector_data list of (rank, slot)
+             # Format: Rank.Idx:Slot;...
+             # We assume atom index 0 for reconstruction as InlineHandler is lossy currently
+             w_entries = []
+             for rank, slot in vector_data:
+                 w_entries.append(f"{rank}.0:{slot}")
+                 
+             if w_entries:
+                 tags['w'] = ";".join(w_entries)
+                 
+             return smiles, tags
+
         if len(parts) < 2:
             # No OIN block found, return just the SMILES
             return parts[0].strip(), {}

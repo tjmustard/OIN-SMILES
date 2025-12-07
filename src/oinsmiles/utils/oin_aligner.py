@@ -78,7 +78,7 @@ def normalize_template(arr):
 TEMPLATES = {
     'LIN': np.array([[0,0,1], [0,0,-1]]),
     'TPL': np.array([[0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]]),
-    'SPL': np.array([[1,0,0], [-1,0,0], [0,1,0], [0,-1,0]]),
+    'SPL': np.array([[1,0,0], [0,1,0], [-1,0,0], [0,-1,0]]), # Cyclic: 0-1 Cis, 0-2 Trans
     'TET': normalize_template(np.array([
         [ 1,  1,  1], [ 1, -1, -1], [-1,  1, -1], [-1, -1,  1]
     ])),
@@ -209,15 +209,17 @@ class OINDiscreteAligner:
                 centroid = np.mean(grp_coords, axis=0)
                 
                 # Representative Atom: The one with the lowest local index in the group
-                # This is used for "Rank.Idx" output. 
-                # If haptic (multiple atoms), we usually cite the first/lowest index.
+                # This is used for sorting and canonicalization logic.
                 rep_atom_info = min([zone_a_info[k] for k in grp], key=lambda x: x[3]) # x[3] is local_idx
                 rep_idx = rep_atom_info[3] # Local Index
                 
+                # Get ALL local indices for this group (for w-tag expansion)
+                constituent_indices = sorted([zone_a_info[k][3] for k in grp])
+                
                 virtual_atoms.append({
-                    'rank': i, # Ligand Rank (Index in self.ligands)
+                    'rank': i, # Ligand Rank
                     'local_idx': rep_idx,
-                    'key': base_sort_key,
+                    'constituent_indices': constituent_indices, # List of all atoms in this haptic group
                     'key': base_sort_key,
                     'coords': centroid - metal_origin,
                     # Identity key for Homogeneous Sorting: (Mass, SMILES)
@@ -228,12 +230,11 @@ class OINDiscreteAligner:
 
     def _find_best_geometry_match(self, n, virtual_atoms):
         candidates = []
-        candidates = []
         # Exhaustive Candidate List based on Coordination Number (N)
         if n == 2: 
             candidates = ['LIN']
         elif n == 3: 
-            candidates = ['TPL'] # Could add TPY-3 if needed, but TPL is standard
+            candidates = ['TPL']
         elif n == 4: 
             # Check ALL 4-coordinate geometries
             candidates = ['SPL', 'TET', 'TPY']
@@ -325,6 +326,16 @@ class OINDiscreteAligner:
                      current_mapping[slot_idx] = virtual_atoms[atom_idx]
                      
                  best_mapping = current_mapping
+        
+        # DEBUG PRINT
+        if best_mapping:
+             # print(f"ALIGNER SELECTED MAPPING (RMSD {best_rmsd}):")
+             # for s_idx, m in enumerate(best_mapping):
+             #     if m:
+             #         print(f"  Slot {s_idx} <- Rank {m['rank']} Local {m['local_idx']}")
+             #     else:
+             #         print(f"  Slot {s_idx} <- Empty")
+             pass
 
         return best_mapping, best_rmsd
 
@@ -348,12 +359,6 @@ class OINDiscreteAligner:
                 if atom is None: continue
                 
                 # Permutation maps OLD slot to NEW slot
-                # perm[i] = j means slot i moves to position j
-                # so the atom at slot i is now at slot j
-                # Wait, standard permutation definition:
-                # If we apply symmetry R, vector v at slot i moves to R*v which corresponds to slot k.
-                # So if perm[i] = k, the atom at i is now at k.
-                
                 new_slot_idx = perm[old_slot_idx]
                 ideal_vec = tmpl_vectors[new_slot_idx]
                 
@@ -366,7 +371,8 @@ class OINDiscreteAligner:
                 
                 current_view_map.append({
                     'rank': atom['rank'],
-                    'local_idx': atom['local_idx'],
+                    'local_idx': atom['local_idx'], # Still using Rep Idx for sorting
+                    'constituent_indices': atom.get('constituent_indices', [atom['local_idx']]), 
                     'chem_id': atom['chem_id'],
                     'vec': ideal_vec,
                     'slot': new_slot_idx
@@ -381,21 +387,52 @@ class OINDiscreteAligner:
             
             final_sorted_view = []
             for chem_id, items in grouped.items():
-                items.sort(key=lambda x: (x['rank'], x['local_idx'])) # Stable sort by Rank AND LocalIdx for canonical assignment
-                original_indices = [(x['rank'], x['local_idx']) for x in items]
+                # Group items by Rank (Fragment) to preserve connectivity
+                frag_groups = defaultdict(list)
+                for it in items:
+                    frag_groups[it['rank']].append(it)
                 
-                # Sort available vectors descending (Maximization Rule)
-                # Vectors derived from slots
-                vectors_and_slots = [(x['vec'], x['slot']) for x in items]
-                vectors_and_slots.sort(key=lambda x: x[0], reverse=True)
+                # We need to map Input Ranks -> Output Slot Sets
+                target_ranks = sorted(list(frag_groups.keys()))
                 
-                # Assign best vector/slot to lowest rank in group
-                for i, (rank, loc) in enumerate(original_indices):
-                    vec, slot = vectors_and_slots[i]
-                    final_sorted_view.append({'rank': rank, 'local_idx': loc, 'vec': vec, 'slot': slot})
-            
+                available_sets = []
+                for rank in target_ranks:
+                    # Get the atoms currently assigned to this rank (from permutation)
+                    f_items = frag_groups[rank]
+                    # Sort atoms within fragment by local_idx
+                    f_items.sort(key=lambda x: x['local_idx'])
+                    
+                    # Create a composite key for the fragment's vector set
+                    vec_set = tuple([x['vec'] for x in f_items])
+                    available_sets.append({
+                        'vec_set': vec_set,
+                        'items': f_items
+                    })
+                
+                # Sort the available sets descending (Maximization)
+                available_sets.sort(key=lambda x: x['vec_set'], reverse=True)
+                
+                # Assign Best Sets to Lowest Ranks
+                for i, target_rank in enumerate(target_ranks):
+                    assigned_set = available_sets[i]
+                    
+                    for atom_data in assigned_set['items']:
+                        # atom_data has the vector and slot.
+                        # We map it to target_rank.
+                        final_sorted_view.append({
+                            'rank': target_rank,
+                            'local_idx': atom_data['local_idx'],
+                            'constituent_indices': atom_data['constituent_indices'],
+                            'vec': atom_data['vec'],
+                            'slot': atom_data['slot'],
+                            'chem_id': chem_id
+                        })
+
             # Sort by Rank to compare sequences
             final_sorted_view.sort(key=lambda x: x['rank'])
+            
+            # Construct Sequence for Comparison
+            final_sorted_view.sort(key=lambda x: (x['rank'], x['local_idx']))
             current_sequence = [x['vec'] for x in final_sorted_view]
             
             # Maximization Check
@@ -406,8 +443,17 @@ class OINDiscreteAligner:
         if not best_final_map: return "error"
                   
         # 4. Serialize Index-Based Format: w:Rank.Idx:Slot
-        # PRD example uses "Rank:Slot" in text but I'm sticking to Rank.Idx:Slot for Adapter compatibility
-        parts = [f"{x['rank']}.{x['local_idx']}:{x['slot']}" for x in best_final_map]
+        # New Logic: Expand constituent indices!
+        parts = []
+        for x in best_final_map:
+            slot = x['slot']
+            rank = x['rank']
+            # If constituent_indices exists, use it. Otherwise fallback to local_idx
+            indices = x.get('constituent_indices', [x['local_idx']])
+            
+            for idx in indices:
+                parts.append(f"{rank}.{idx}:{slot}")
+        
         return ";".join(parts)
 
     def _brute_force_symmetries(self, vectors):
