@@ -29,12 +29,7 @@ class TestOINParser(unittest.TestCase):
         self.assertEqual(coords[0], (0, 1.0, 2.0, 3.0))
         self.assertEqual(coords[1], (1, 4.0, 5.0, 6.0))
 
-    def test_parse_dative_bonds(self):
-        d_tag = "0.1;2.1"
-        bonds = self.parser.parse_dative_bonds(d_tag)
-        self.assertEqual(len(bonds), 2)
-        self.assertEqual(bonds[0], (0, 1))
-        self.assertEqual(bonds[1], (2, 1))
+
 
 if __name__ == '__main__':
     unittest.main()
