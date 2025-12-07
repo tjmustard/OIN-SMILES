@@ -629,17 +629,153 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
 
 from .oin_aligner import OINSanitizer, OINDiscreteAligner
 
+
+def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
+    """
+    Canonicalizes the orientation of the molecule:
+    1. Translates so the metal is at (0,0,0).
+    2. Rotates so the Principal Axes of Inertia (PAI) align with the Cartesian axes.
+       - Highest Moment of Inertia -> Z
+       - Lowest Moment of Inertia -> X
+       - Enforce Right-Handed System
+    """
+    import numpy as np
+    
+    coords = np.array(xyz_coords)
+    masses = np.array([a.GetMass() for a in tmc_mol.GetAtoms()])
+    
+    # 1. Translate Metal to Origin
+    metal_pos = coords[metal_idx]
+    coords -= metal_pos
+    
+    # 2. Calculate Inertia Tensor relative to Origin (Metal)
+    # I_jk = sum( m_i * (r_i^2 * delta_jk - r_i_j * r_i_k) )
+    # Simplified: We can compute the covariance matrix weighted by mass? 
+    # Actually PAI axes are eigenvectors of the Inertia Tensor.
+    # I = sum_i m_i * ( (r_i.r_i)I - r_i outer r_i )
+    
+    I = np.zeros((3, 3))
+    for i in range(len(coords)):
+        m = masses[i]
+        pos = coords[i]
+        sq_norm = np.dot(pos, pos)
+        
+        # Diagonal elements
+        I[0, 0] += m * (sq_norm - pos[0]*pos[0])
+        I[1, 1] += m * (sq_norm - pos[1]*pos[1])
+        I[2, 2] += m * (sq_norm - pos[2]*pos[2])
+        
+        # Off-diagonal elements (symmetric, negative product)
+        I[0, 1] -= m * (pos[0]*pos[1])
+        I[0, 2] -= m * (pos[0]*pos[2])
+        I[1, 2] -= m * (pos[1]*pos[2])
+        
+    I[1, 0] = I[0, 1]
+    I[2, 0] = I[0, 2]
+    I[2, 1] = I[1, 2]
+    
+    # 3. Diagonalize
+    evals, evecs = np.linalg.eigh(I)
+    # evals are sorted ascending: w1 <= w2 <= w3
+    # v1 corresponds to w1 (Lowest Inertia)
+    # v3 corresponds to w3 (Highest Inertia)
+    
+    # User Spec:
+    # Lowest (w1) -> X
+    # Highest (w3) -> Z
+    
+    x_axis = evecs[:, 0] # v1
+    # y_axis = evecs[:, 1] # v2
+    z_axis = evecs[:, 2] # v3
+    
+    # Enforce Right-Handed System: Y = Z x X
+    # (Note: X x Z would be -Y)
+    y_axis = np.cross(z_axis, x_axis)
+    
+    # Construct Rotation Matrix (Rows are new basis vectors)
+    # We want to project existing coordinates onto these new axes.
+    # New_X = Old_Vec . X_Axis
+    R = np.vstack([x_axis, y_axis, z_axis])
+    
+    # Apply Rotation
+    new_coords = coords @ R.T
+    
+    # 4. Handle Degeneracy (Axial Rotation)
+    # PAI leaves X/Y rotation arbitrary if Ix ~ Iy (e.g. Ferrocene).
+    # We fix this by aligning a "Pivot Atom" to the +X axis.
+    # Pivot = Atom with max distance from Z-axis.
+    # Tie-breaker: Lowest Index (stable across random rotations if input order is preserved).
+    
+    # Calculate Distances from Origin (Metal)
+    dists_sq = np.sum(new_coords**2, axis=1)
+    
+    # Identify Candidates (within tolerance of max distance)
+    # This prevents numerical noise from flipping the pivot among symmetric atoms.
+    max_dist_sq = np.max(dists_sq)
+    tolerance = 1e-5
+    candidates = np.where(dists_sq >= max_dist_sq - tolerance)[0]
+    
+    # Tie-breaker: Choose lowest index among candidates
+    # Relies on input atom order being preserved (which it is)
+    pivot_idx = np.min(candidates)
+    
+    # Verify pivot is not on Z-axis (unlikely for max-dist atoms in 3D, unless linear)
+    # If it is, we need to pick the next shell? 
+    # For now, assume molecule isn't linear along Z if we are doing XY alignment.
+    # If linear, rotation doesn't matter anyway.
+    
+    pivot_pos = new_coords[pivot_idx]
+    # Angle in XY plane
+    angle = np.arctan2(pivot_pos[1], pivot_pos[0])
+    
+    # We want to rotate by -angle around Z to bring pivot to (r, 0, z)
+    # R_z = [[c, -s, 0], [s, c, 0], [0, 0, 1]]
+    # We want new_pos = R_z(-angle) @ pos
+    # cos(-a) = cos(a), sin(-a) = -sin(a)
+    c = np.cos(-angle)
+    s = np.sin(-angle)
+    
+    R_pivot = np.array([
+        [c, -s, 0],
+        [s, c, 0],
+        [0, 0, 1]
+    ])
+    
+    canonical_coords = new_coords @ R_pivot.T
+    
+    # 5. Handle Z-Axis Sign Ambiguity
+    # PAI Eigenvectors have arbitrary sign. Z vs -Z is random.
+    # This affects which ligand is "Top" vs "Bottom".
+    # Metric: sum(z_i * (i+1)**3) - Super-linear weighting to break symmetry
+    # If negative, flip Z (and Y to maintain right-hand).
+    
+    z_moment_idx = 0.0
+    for i in range(len(canonical_coords)):
+        z_moment_idx += canonical_coords[i][2] * (i + 1)**3
+        
+    if z_moment_idx < 0:
+        # Flip Z -> -Z
+        # To maintain RHS (X x Y = Z), if Z flips, we must flip either X or Y.
+        # But we determined X is fixed by Pivot.
+        # So we must flip Y.
+        # Transformation: x->x, y->-y, z->-z
+        canonical_coords[:, 1] *= -1
+        canonical_coords[:, 2] *= -1
+    
+    return canonical_coords.tolist()
+
 def get_oin_string(tmc_mol, xyz_coords):
     """Generates the Open Isomer Notation (OIN) string for the molecule (V2.4).
     
     Pipeline:
     1. Identify Metal and Connections.
-    2. Fragment Molecule into Ligands.
-    3. Sort Ligands (Mass-First: Component Molecular Weight -> Binding Atom Mass).
-    4. Sanitization-First: Force Explicit Hydrogens on Zone A atoms to prevent SMILES drift.
-    5. Generate Canonical SMILES for each fragment.
-    6. Align Geometry (OINDiscreteAligner V2.4).
-    7. Serialize output.
+    2. CANONICALIZE ORIENTATION (Translation + PAI Alignment).
+    3. Fragment Molecule into Ligands.
+    4. Sort Ligands (Mass-First: Component Molecular Weight -> Binding Atom Mass).
+    5. Sanitization-First: Force Explicit Hydrogens on Zone A atoms to prevent SMILES drift.
+    6. Generate Canonical SMILES for each fragment.
+    7. Align Geometry (OINDiscreteAligner V2.4).
+    8. Serialize output.
     """
     
     # 1. Identify Metal and Connections
@@ -648,6 +784,10 @@ def get_oin_string(tmc_mol, xyz_coords):
         if atom.GetAtomicNum() in TRANSITION_METALS_NUM:
             metal_idx = atom.GetIdx()
             break
+            
+    # 2. CANONICALIZE ORIENTATION (Translation + PAI Alignment)
+    if metal_idx != -1:
+        xyz_coords = _align_to_pai(tmc_mol, xyz_coords, metal_idx)
             
     if metal_idx == -1:
         raise ValueError("No transition metal found in molecule!")
@@ -951,6 +1091,10 @@ def get_oin_string(tmc_mol, xyz_coords):
                     logger.warning(f"Malformed w-tag entry: {entry}")
                     continue
                 left, slot_str = parts
+                
+                is_heading = '^' in slot_str
+                slot_str = slot_str.replace('^', '')
+
                 slot = int(slot_str)
                 
                 if "." in left:
@@ -964,7 +1108,7 @@ def get_oin_string(tmc_mol, xyz_coords):
                 if rank not in rank_to_slots:
                     rank_to_slots[rank] = []
                 rank_to_slots[rank].append(slot)
-                pair_data.append((rank, l_idx, slot))
+                pair_data.append((rank, l_idx, slot, is_heading))
         
         # Assign primary slot to each fragment for sorting
         for r, frag in enumerate(fragments_data):
@@ -995,15 +1139,19 @@ def get_oin_string(tmc_mol, xyz_coords):
         # We need (NewRank, LocalIdx, Slot)
         
         new_pair_data = []
-        for old_r, l_idx, slot in pair_data:
+        for old_r, l_idx, slot, is_heading in pair_data:
             if old_r in old_to_new_rank:
                 new_r = old_to_new_rank[old_r]
-                new_pair_data.append((new_r, l_idx, slot))
+                new_pair_data.append((new_r, l_idx, slot, is_heading))
                 
         # Sort W-Tag entries by NewRank (then LocalIdx)
         new_pair_data.sort(key=lambda x: (x[0], x[1]))
         
-        new_w_parts = [f"{nr}.{li}:{sl}" for nr, li, sl in new_pair_data]
+        new_w_parts = []
+        for nr, li, sl, hd in new_pair_data:
+            tag = f"{nr}.{li}:{sl}"
+            if hd: tag += "^"
+            new_w_parts.append(tag)
         new_w_tag = "w:" + ";".join(new_w_parts)
         
         final_geometry_string = f"{geo_tag}|{new_w_tag}"

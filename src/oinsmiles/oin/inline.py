@@ -56,7 +56,7 @@ class OINInlineHandler:
             rank_str, slot_str = item.split(":")  
             # Rank might be "1.0" or "1". Convert to int.  
             rank = int(float(rank_str))  
-            slot = int(slot_str)  
+            slot = int(slot_str.replace('^', '')) # Sanitize heading marker
             slot_map[rank] = slot  
               
         # 2. Tokenize SMILES to inject tags  
@@ -129,6 +129,9 @@ class OINInlineHandler:
             # Format: Rank.AtomIdx:Slot
             if ":" not in item: continue
             left, slot_str = item.split(":")
+            
+            is_heading = '^' in slot_str
+            slot_str = slot_str.replace('^', '')
             slot = int(slot_str)
             
             if "." in left:
@@ -142,7 +145,7 @@ class OINInlineHandler:
             
             if rank not in detailed_map:
                 detailed_map[rank] = []
-            detailed_map[rank].append((atom_idx, slot))
+            detailed_map[rank].append((atom_idx, slot, is_heading))
             
         # Re-build fragments
         # Skip metal 0
@@ -168,11 +171,12 @@ class OINInlineHandler:
                         # Fallback to simple replace
                         raise ValueError("Invalid SMILES")
                         
-                    # Apply Map Numbers = Slot + 1 (to avoid 0)
-                    for atom_idx, slot in binders:
+                    # Apply Map Numbers = Slot + 1000 (normal) or + 2000 (heading)
+                    for atom_idx, slot, is_heading in binders:
                         if atom_idx < mol.GetNumAtoms():
-                            # We use offset 1000 to avoid conflict with real maps (unlikely in OIN)
-                            mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + 1000)
+                            # Validate Slot
+                            offset = 2000 if is_heading else 1000
+                            mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + offset)
                             
                     # Generate SMILES with maps
                     mapped_smiles = Chem.MolToSmiles(mol, canonical=False) 
@@ -188,7 +192,15 @@ class OINInlineHandler:
                     def replace_map(match):
                         content = match.group(1)
                         map_num = int(match.group(2))
-                        slot = map_num - 1000
+                        
+                        is_heading = False
+                        if map_num >= 2000:
+                            slot = map_num - 2000
+                            is_heading = True
+                        else:
+                            slot = map_num - 1000
+                        
+                        suffix = "^" if is_heading else ""
                         
                         # Heuristic to decide on brackets:
                         # If content is simple organic subset (c, n, C, N, O, Cl, F, Br, I, etc)
@@ -211,17 +223,18 @@ class OINInlineHandler:
                         
 
                         if content == 'NH3':
-                            return f"N{{{slot}}}"
+                            return f"N{{{slot}{suffix}}}"
 
                         # Use explicit list for pure organic atoms that can be unbracketed
                         # B, C, N, O, P, S and aromatic versions.
                         # Exclude Halogens (Cl, Br, I, F) so they remain bracketed [Cl].
+                        # Also handle NH3 special case
                         is_pure_organic = re.fullmatch(r"^(B|C|N|O|P|S|c|n|o|p|s)$", content)
                         
                         if is_pure_organic:
-                            return f"{content}{{{slot}}}"
+                            return f"{content}{{{slot}{suffix}}}"
                         else:
-                            return f"[{content}]{{{slot}}}"
+                            return f"[{content}]{{{slot}{suffix}}}"
 
                     tagged_frag = re.sub(r"\[([^:\]]+):(\d+)\]", replace_map, mapped_smiles)
                     new_fragments.append(tagged_frag)
