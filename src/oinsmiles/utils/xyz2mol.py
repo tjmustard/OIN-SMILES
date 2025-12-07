@@ -18,6 +18,7 @@ from .xyz2mol_local import (
     chiral_stereo_check,
     read_xyz_file,
     xyz2AC_obabel,
+    xyz2AC_huckel,
 )
 from .oin_aligner import OINDiscreteAligner
 
@@ -279,7 +280,7 @@ def get_basic_mol(xyz_file, overall_charge):
     atoms, _, xyz_coords = read_xyz_file(xyz_file)
 
     # AC, mol = xyz2AC_huckel(atoms, xyz_coords, overall_charge)
-    AC, mol = xyz2AC_obabel(atoms, xyz_coords)
+    AC, mol = xyz2AC_obabel(atoms, xyz_coords, tolerance=0.5) # Modified tolerance to capture haptic bonds
     tm_indxs = [atoms.index(tm) for tm in TRANSITION_METALS_NUM if tm in atoms]
 
     rwMol = Chem.RWMol(mol)
@@ -818,7 +819,7 @@ def get_oin_string(tmc_mol, xyz_coords):
         # Now we need the mapping from SMILES order to Fragment Atom order to get 'local_idx' correctly.
         # RDKit's MolToSmiles canonicalization reorders atoms.
         
-        smiles_mol = Chem.MolFromSmiles(sanitized_smiles)
+        smiles_mol = Chem.MolFromSmiles(sanitized_smiles, sanitize=False)
         
         if smiles_mol is None:
             # Fallback/Debug: Sanitization produced invalid SMILES?
@@ -876,99 +877,147 @@ def get_oin_string(tmc_mol, xyz_coords):
         # We don't need to append, we are modifying the dict referenced by 'item'
         # fragments_data.append({...}) -> OMITTED to avoid infinite loop
 
-    # 5. Sort Fragments (Mass-First)
-    # Sort Key: (IsMetal, FragmentMass, BindingMass, SMILES)
+    # 5. Sort Fragments (Deterministic Baseline: Input Order)
+    # We sort by the minimum original atom index in the fragment.
+    # This ensures that 'fragments_data' order is deterministic based on input file.
     # Metal is Rank 0 (First).
     
-    def get_sort_key(item):
+    def get_input_order_key(item):
         if item['is_metal']:
-            return (float('inf'), float('inf'), "")
-        return (item['mass'], item['binding_mass'], item['smiles'])
+            return -1 # Metal first
+        # Find min original index to ensure deterministic input order
+        valid_indices = [atom_map_to_xyz.get(idx, idx) for idx in item['indices']]
+        return min(valid_indices) if valid_indices else float('inf')
+    
+    def get_canonical_sort_key(item):
+        if item['is_metal']:
+            return (-float('inf'),) # Metal always first
         
-    fragments_data.sort(key=get_sort_key, reverse=True)
-    
-    # 6. Extract Ligands for Aligner
-    # The Aligner expects a list of ligand dicts, excluding the metal?
-    # Or metal is index 0?
-    # PRD: "Ligands are ranked... Ligand_Rank (0 to N)".
-    # Usually Metal is not aligned? "Ligand fragments".
-    # V2.3 implementation handled Metal as fragment 0.
-    # But `OINDiscreteAligner` takes `metal_idx` and `ligands`.
-    # Usually `ligands` list should NOT include the metal fragment itself if we aligned ligands around it.
-    # BUT, the Rank in `w` tag corresponds to the fragment index in the full SMILES string.
-    # The full SMILES string usually starts with Metal.
-    # So Ligand 1 is Rank 1.
-    # The Aligner `ligands` list should probably correspond to the sorted fragments data?
-    # If we pass all fragments (including metal), the aligner must reduce hapticity for metal? No.
-    # The Aligner should take the list of LIGANDS (excluding metal).
-    # AND we need to know their Rank in the final string which includes Metal.
-    # So if Metal is index 0, first ligand is Rank 1.
-    
-    # Let's filter out metal for the Aligner list, but keep track of Ranks.
-    
-    ligands_for_aligner = []
-    final_smiles_parts = []
-    
-    # Assuming fragments_data[0] is Metal due to 'inf' sort key.
-    # Verify
-    if not fragments_data[0]['is_metal']:
-        # Metal not found or sorting failed?
-        # Should rely on is_metal check
-        pass
+        # 1. Fragment Molecular Weight (Descending) -> Negate
+        mw = item['mass']
         
-    for rank, frag in enumerate(fragments_data):
-        final_smiles_parts.append(frag['smiles'])
-        if not frag['is_metal']:
-            # For the Aligner, we need to know this is Rank 'rank'
-            # The Aligner code I wrote earlier used `enumerate(self.ligands)` to determine rank.
-            # If I pass only ligands, the Aligner will assign Rank 0 to first ligand.
-            # But in the full string, first ligand is Rank 1 (Metal is 0).
-            # I should update Aligner or handle it here?
-            # V2.3: `w:1.0...` (Ligand 1).
-            # V2.4 PRD: `w:0.0...` (LigRank 0?). 
-            # "Ligand_Rank (0 to N)" in PRD.
-            # "Example: w:0.0:2"
-            # This implies 0-based index of LIGANDS, not Fragments including metal?
-            # BUT standard OIN usually indexes ALL fragments in the SMILES string.
-            # If the PRD example starts at 0, it means it's indexing the LIGANDS list.
-            # However, for consistency with SMILES fragment indexing (which includes Metal), 
-            # we should check if Architector adapter expects fragment index or ligand index.
-            # `oin_parser.py` V2.3 parts `w` tag: `frag_idx = int(frag_idx_str)`.
-            # `ParsedOIN`: `metal_fragment_idx = 0`.
-            # `ArchitectorAdapter` uses `frag_idx` to look up the fragment SMILES.
-            # IF `w:0.0` aligns to Fragment 0, that's the Metal?
-            # That would be wrong.
-            # So `w` Rank MUST be the index in the FULL SMILES string (where Metal is 0).
-            # So the PRD example `w:0.0` implies LigandRank 0, which implies the Adapter needs to map LigandRank -> FragmentIndex?
-            # OR the PRD implies "Metal is included in Ranking"?
-            #
-            # Let's look at `oin_aligner.py` `_permute_and_serialize` again.
-            # `rank = atom['rank']`. `rank` comes from `i` in `enumerate(self.ligands)`.
-            # If `self.ligands` excludes metal, then Rank starts at 0.
-            # If I want Rank to match Fragment Index (e.g. 1), I should pad the list or adjust rank inside aligner?
-            #
-            # Decision: I will stick to V2.3 convention where `w` Rank matches Fragment Index (e.g. 1, 2, 3...) because `oin_parser.py` maps `w` directly to SMILES fragments list.
-            # To achieve this with the current Aligner code (which uses `i` from enumerate), I should pass `fragments_data` (INCLUDING METAL) to the Aligner?
-            # If I pass Metal to Aligner, it will try to align it?
-            # Metal has no "binding atoms" connecting to itself (usually).
-            # `binding_atoms` for Metal would be empty. `_reduce_hapticity` would produce no virtual atoms if binding_atoms empty.
-            # Perfect.
-            
-            # Add binding atoms info to frag dict for Aligner
-            # It already has it.
-            pass
-            
-    # For Aligner, we pass ALL fragments so Ranks match SMILES indices.
-    # Metal fragment has `binding_atoms=[]` (empty) because we only tracked LIGAND binding atoms in step 4 loop.
-    # (The loop `if idx in coordinating_atoms` ensures metal atoms aren't added as binding atoms).
-    # So Metal will be ignored by Aligner or produce no virtual atoms => no slots.
+        # 2. Binding Atom Mass (Descending) -> Negate
+        # Use binding_mass (max of binding atoms)
+        b_mass = item['binding_mass']
+        
+        # 3. SMILES (Ascending)
+        smiles = item['smiles']
+        
+        # 4. Tie-Breaker: Input Order (Ascending) for perfect duplicates
+        # Matches PRD Step 2 requirement generally, with explicit tie-break
+        input_order = get_input_order_key(item)
+        
+        return (-mw, -b_mass, smiles, input_order)
+        
+    fragments_data.sort(key=get_canonical_sort_key)
     
+    # 6. Run Aligner (On Input-Ordered Fragments)
+    # We pass ALL fragments. Metal is Rank 0.
     aligner = OINDiscreteAligner(0, fragments_data)
-    geometry_string = aligner.generate_canonical_vectors()
+    geometry_string_raw = aligner.generate_canonical_vectors()
     
-    # Assemble Final String
-    full_smiles = ".".join(final_smiles_parts)
-    return f"{full_smiles} |{geometry_string}|"
+    # geometry_string_raw looks like: "g:SPL|w:1.0:0;2.0:1"
+    # We need to parse this to get Slot Assignments for re-sorting.
+    
+    # Default if something failed
+    if "w:NON" in geometry_string_raw or "error" in geometry_string_raw:
+        # Fallback: Just use the current input order.
+        full_smiles_parts = [f['smiles'] for f in fragments_data]
+        full_smiles = ".".join(full_smiles_parts)
+        sidecar_oin = f"{full_smiles} |{geometry_string_raw}|"
+        
+    else:
+        # Parse Geometry and W-Tag
+        # Format: g:GEO|w:Rank.Idx:Slot;...
+        parts = geometry_string_raw.split("|")
+        geo_tag = parts[0] # g:GEO
+        w_tag = parts[1] # w:Rank.Idx:Slot
+        
+        w_content = w_tag[2:] # Remove w: prefix
+        
+        # Parse assignments: Rank -> List of Slots
+        rank_to_slots = {}
+        # Also need to track detailed assignments to reconstruct the tag
+        pair_data = [] # (Rank, LocalIdx, Slot)
+        
+        if w_content and w_content != "NON":
+            for entry in w_content.split(";"):
+                if not entry: continue
+                if ":" not in entry: continue # Fix: Skip malformed entries
+                # entry: "1.0:0"
+                # Rank refers to the index in 'fragments_data' (which is currently Input-Ordered)
+                parts = entry.split(":")
+                if len(parts) != 2:
+                    logger.warning(f"Malformed w-tag entry: {entry}")
+                    continue
+                left, slot_str = parts
+                slot = int(slot_str)
+                
+                if "." in left:
+                    r_str, l_str = left.split(".")
+                    rank = int(float(r_str))
+                    l_idx = int(l_str)
+                else:
+                    rank = int(float(left))
+                    l_idx = 0
+                    
+                if rank not in rank_to_slots:
+                    rank_to_slots[rank] = []
+                rank_to_slots[rank].append(slot)
+                pair_data.append((rank, l_idx, slot))
+        
+        # Assign primary slot to each fragment for sorting
+        for r, frag in enumerate(fragments_data):
+            if frag['is_metal']:
+                frag['_sort_slot'] = -1
+            elif r in rank_to_slots:
+                # Use minimum slot index as sort key
+                frag['_sort_slot'] = min(rank_to_slots[r])
+            else:
+                frag['_sort_slot'] = float('inf')
+                
+        # 7. Re-Sort Fragments by Slot
+        # Store original rank to map back for w-tag
+        for r, frag in enumerate(fragments_data):
+            frag['_orig_rank'] = r
+            
+        # Stable sort: Primary=Slot, Secondary=InputOrder
+        fragments_data.sort(key=lambda x: (x['_sort_slot'], get_input_order_key(x)))
+        
+        # Build Map: OldRank -> NewRank
+        old_to_new_rank = {}
+        for new_r, frag in enumerate(fragments_data):
+            old_r = frag['_orig_rank']
+            old_to_new_rank[old_r] = new_r
+            
+        # 8. Re-Construct W-Tag with New Ranks
+        # pair_data has (OldRank, LocalIdx, Slot)
+        # We need (NewRank, LocalIdx, Slot)
+        
+        new_pair_data = []
+        for old_r, l_idx, slot in pair_data:
+            if old_r in old_to_new_rank:
+                new_r = old_to_new_rank[old_r]
+                new_pair_data.append((new_r, l_idx, slot))
+                
+        # Sort W-Tag entries by NewRank (then LocalIdx)
+        new_pair_data.sort(key=lambda x: (x[0], x[1]))
+        
+        new_w_parts = [f"{nr}.{li}:{sl}" for nr, li, sl in new_pair_data]
+        new_w_tag = "w:" + ";".join(new_w_parts)
+        
+        final_geometry_string = f"{geo_tag}|{new_w_tag}"
+        
+        # Assemble Final String
+        full_smiles_parts = [f['smiles'] for f in fragments_data]
+        full_smiles = ".".join(full_smiles_parts)
+        sidecar_oin = f"{full_smiles} |{final_geometry_string}|"
+
+    # V3.0 Experimental: Convert to Inline Topology
+    from ..oin.inline import OINInlineHandler
+    inline_oin = OINInlineHandler.generate_inline_string(sidecar_oin)
+    
+    return inline_oin
 
 # Re-export necessary components
 from .oin_aligner import OINSanitizer, OINDiscreteAligner
