@@ -1092,10 +1092,16 @@ def get_oin_string(tmc_mol, xyz_coords):
                     continue
                 left, slot_str = parts
                 
-                is_heading = '^' in slot_str
-                slot_str = slot_str.replace('^', '')
+                # Need to strip heading chars ^, >, <
+                heading_char = ""
+                for char in ['^', '>', '<']:
+                     if char in slot_str:
+                         heading_char = char
+                         break
+                
+                slot_str_clean = slot_str.replace('^', '').replace('>', '').replace('<', '')
 
-                slot = int(slot_str)
+                slot = int(slot_str_clean)
                 
                 if "." in left:
                     r_str, l_str = left.split(".")
@@ -1108,7 +1114,8 @@ def get_oin_string(tmc_mol, xyz_coords):
                 if rank not in rank_to_slots:
                     rank_to_slots[rank] = []
                 rank_to_slots[rank].append(slot)
-                pair_data.append((rank, l_idx, slot, is_heading))
+                rank_to_slots[rank].append(slot)
+                pair_data.append((rank, l_idx, slot, heading_char))
         
         # Assign primary slot to each fragment for sorting
         for r, frag in enumerate(fragments_data):
@@ -1139,10 +1146,10 @@ def get_oin_string(tmc_mol, xyz_coords):
         # We need (NewRank, LocalIdx, Slot)
         
         new_pair_data = []
-        for old_r, l_idx, slot, is_heading in pair_data:
+        for old_r, l_idx, slot, heading_char in pair_data:
             if old_r in old_to_new_rank:
                 new_r = old_to_new_rank[old_r]
-                new_pair_data.append((new_r, l_idx, slot, is_heading))
+                new_pair_data.append((new_r, l_idx, slot, heading_char))
                 
         # Sort W-Tag entries by NewRank (then LocalIdx)
         new_pair_data.sort(key=lambda x: (x[0], x[1]))
@@ -1150,7 +1157,12 @@ def get_oin_string(tmc_mol, xyz_coords):
         new_w_parts = []
         for nr, li, sl, hd in new_pair_data:
             tag = f"{nr}.{li}:{sl}"
-            if hd: tag += "^"
+            new_pair_data.sort(key=lambda x: (x[0], x[1]))
+        
+        new_w_parts = []
+        for nr, li, sl, hd_char in new_pair_data:
+            tag = f"{nr}.{li}:{sl}"
+            tag += hd_char
             new_w_parts.append(tag)
         new_w_tag = "w:" + ";".join(new_w_parts)
         

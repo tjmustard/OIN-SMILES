@@ -140,6 +140,20 @@ TEMPLATE_SPECS = {
     }
 }
 
+# List of Symmetric Ligands that should have a fixed Heading Atom (The first binding atom in SMILES)
+# This overrides the geometric alignment which can be unstable for symmetric ligands.
+SYMMETRIC_LIGANDS = {
+    "C=C",
+    "[CH2]=[CH2]",
+    "c1cccc1",
+    "C1=C-C=C-[CH-]1",
+    "[cH]1[cH][cH][cH][cH]1",
+    "c1ccccc1",
+    "[cH]1[cH][cH][cH][cH][cH]1",
+    "c1cccccc1",
+    "[cH]1[cH][cH][cH][cH][cH][cH]1",
+}
+
 # Generate Legacy TEMPLATES (Pos only) for Aligner compatibility
 TEMPLATES = {}
 for geo, specs in TEMPLATE_SPECS.items():
@@ -506,6 +520,34 @@ class OINDiscreteAligner:
                 
                 if best_idx != -1:
                     heading_local_indices.add((rank, best_idx))
+            
+            # 4b. Symmetric Ligand Override
+            # For known symmetric ligands, we force the heading atom to be the first one (Index 0 in local SMILES)
+            # This ensures deterministic output (e.g. [CH2]{^}=[CH2] instead of arbitrary).
+            for rank, items in by_rank.items():
+                first_item = items[0]
+                smiles = first_item['chem_id'][1]
+                
+                if smiles in SYMMETRIC_LIGANDS:
+                    # Remove any existing heading assignment for this ligand (from geometric step above)
+                    # We want to replace it, not add to it (though usually only one heading per ligand group)
+                    # But 'heading_local_indices' is a set of (rank, idx).
+                    # We should clear entries for this rank first to be safe?. 
+                    # Actually, the geometric block above loop over ranks. 
+                    # It's cleaner to check SYMMETRIC_LIGANDS *inside* the loop above, but separating logic is also fine.
+                    # Let's just Enforce it here.
+                    
+                    # Find min index among constituent_indices
+                    ordered_indices = sorted(first_item['constituent_indices'])
+                    forced_idx = ordered_indices[0]
+                    
+                    # Remove any other heading for this rank just in case (e.g. if geometric picked another)
+                    to_remove = [idx for r, idx in heading_local_indices if r == rank]
+                    for idx in to_remove:
+                        heading_local_indices.remove((rank, idx))
+                        
+                    heading_local_indices.add((rank, forced_idx))
+                    logger.debug(f"Forced Heading Atom for Symmetric Ligand {smiles}: Index {forced_idx}")
 
         # 5. Serialize Index-Based Format: w:Rank.Idx:Slot
         parts = []
@@ -520,11 +562,84 @@ class OINDiscreteAligner:
                 
                 # Append Heading Marker if this is the chosen atom
                 if (rank, idx) in heading_local_indices:
-                     tag += "^"
+                     # Calculate Winding Direction using V3.6 Algorithm
+                     direction_char = ">" # Default
+                     
+                     if geometry_name in TEMPLATE_SPECS and slot in TEMPLATE_SPECS[geometry_name]:
+                         slot_def = TEMPLATE_SPECS[geometry_name][slot]
+                         
+                         # Need constituent_indices (ordered) to find next atom
+                         c_indices = sorted(x.get('constituent_indices', [idx]))
+                         
+                         direction_char = self._determine_winding(
+                             grp_coords=x.get('group_coords'),
+                             star_idx=idx, # This is the local_idx of the star
+                             constituent_indices=c_indices,
+                             slot_z=np.array(slot_def['pos']),
+                             slot_x_ref=np.array(slot_def['ref']),
+                             alignment_rotation=alignment_rotation
+                         )
+                         
+                     tag += direction_char
 
                 parts.append(tag)
         
         return ";".join(parts)
+
+    def _determine_winding(self, grp_coords, star_idx, constituent_indices, slot_z, slot_x_ref, alignment_rotation=None):
+        """
+        OIN V3.6 Winding Algorithm
+        Determines if the SMILES winding (Star -> Next) is Clockwise (>) or Counter-Clockwise (<)
+        relative to the template Slot Z vector.
+        """
+        n = len(constituent_indices)
+        if n < 3: return ">" # Linear/Monodentate defaults to Forward
+        
+        # Transform Logic: We need the vectors in the TEMPLATE FRAME to compare with Slot Z (which is in Template Frame).
+        # We assume 'grp_coords' are in Molecular Frame (centered on metal?) if coming from virtual_atom 'group_coords'
+        # Check _reduce_hapticity: 'group_coords': grp_coords - metal_origin. Yes, Centered at Metal.
+        
+        # 1. Identify Star Index in the List
+        try:
+            list_idx = constituent_indices.index(star_idx)
+        except ValueError:
+            return ">"
+            
+        # 2. Get Coords for Star and Next
+        # grp_coords are ordered matching constituent_indices? 
+        # _reduce_hapticity: grp.sort(key=lambda k: zone_a_info[k][3]) then grp_coords = binding_coords[grp]
+        # So yes, grp_coords[k] corresponds to constituent_indices[k].
+        
+        # Star Coord (Molecular Frame)
+        coord_star = grp_coords[list_idx]
+        
+        # Next Atom (Cyclic +1 in SMILES order)
+        next_list_idx = (list_idx + 1) % n
+        coord_next = grp_coords[next_list_idx]
+        
+        # Centroid of the group (Molecular Frame)
+        centroid = np.mean(grp_coords, axis=0)
+        
+        # Vectors relative to Centroid (Molecular Frame)
+        v_star_mol = coord_star - centroid
+        v_next_mol = coord_next - centroid
+        
+        # Transform to Template Frame if rotation exists
+        if alignment_rotation:
+            v_star = alignment_rotation.apply(v_star_mol)
+            v_next = alignment_rotation.apply(v_next_mol)
+        else:
+            v_star = v_star_mol
+            v_next = v_next_mol
+            
+        # 3. Cross Product (Star x Next) -> Winding Normal (Template Frame)
+        winding_normal = np.cross(v_star, v_next)
+        
+        # 4. Dot with Slot Z (Template Frame)
+        # Note: 'slot_z' passed here is usually normalized or Pos vector.
+        dot = np.dot(winding_normal, slot_z)
+        
+        return ">" if dot >= 0 else "<"
 
     def _brute_force_symmetries(self, vectors):
         n = len(vectors)

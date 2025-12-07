@@ -56,7 +56,7 @@ class OINInlineHandler:
             rank_str, slot_str = item.split(":")  
             # Rank might be "1.0" or "1". Convert to int.  
             rank = int(float(rank_str))  
-            slot = int(slot_str.replace('^', '')) # Sanitize heading marker
+            slot = int(slot_str.replace('^', '').replace('>', '').replace('<', '')) # Sanitize heading marker
             slot_map[rank] = slot  
               
         # 2. Tokenize SMILES to inject tags  
@@ -130,8 +130,14 @@ class OINInlineHandler:
             if ":" not in item: continue
             left, slot_str = item.split(":")
             
-            is_heading = '^' in slot_str
-            slot_str = slot_str.replace('^', '')
+            # Need to strip heading chars ^, >, <
+            heading_char = ""
+            for c in ['^', '>', '<']:
+                if c in slot_str:
+                    heading_char = c
+                    break
+            
+            slot_str = slot_str.replace('^', '').replace('>', '').replace('<', '')
             slot = int(slot_str)
             
             if "." in left:
@@ -145,7 +151,7 @@ class OINInlineHandler:
             
             if rank not in detailed_map:
                 detailed_map[rank] = []
-            detailed_map[rank].append((atom_idx, slot, is_heading))
+            detailed_map[rank].append((atom_idx, slot, heading_char))
             
         # Re-build fragments
         # Skip metal 0
@@ -171,11 +177,14 @@ class OINInlineHandler:
                         # Fallback to simple replace
                         raise ValueError("Invalid SMILES")
                         
-                    # Apply Map Numbers = Slot + 1000 (normal) or + 2000 (heading)
-                    for atom_idx, slot, is_heading in binders:
+                    # Apply Map Numbers = Slot + 1000 (normal) or + 2000 (heading >) or + 3000 (heading <)
+                    for atom_idx, slot, heading_char in binders:
                         if atom_idx < mol.GetNumAtoms():
                             # Validate Slot
-                            offset = 2000 if is_heading else 1000
+                            offset = 1000
+                            if heading_char == '<': offset = 3000
+                            elif heading_char in ['>', '^']: offset = 2000
+                            
                             mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + offset)
                             
                     # Generate SMILES with maps
@@ -194,13 +203,20 @@ class OINInlineHandler:
                         map_num = int(match.group(2))
                         
                         is_heading = False
-                        if map_num >= 2000:
+                        heading_char = ""
+                        
+                        if map_num >= 3000:
+                            slot = map_num - 3000
+                            is_heading = True
+                            heading_char = "<"
+                        elif map_num >= 2000:
                             slot = map_num - 2000
                             is_heading = True
+                            heading_char = ">" # Normalize ^ to >
                         else:
                             slot = map_num - 1000
                         
-                        suffix = "^" if is_heading else ""
+                        suffix = heading_char if is_heading else ""
                         
                         # Heuristic to decide on brackets:
                         # If content is simple organic subset (c, n, C, N, O, Cl, F, Br, I, etc)
