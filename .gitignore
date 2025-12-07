@@ -78,3 +78,5 @@ dmypy.json
 /examples
 /devtools
 .agent
+.python*
+uv*

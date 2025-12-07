@@ -13,12 +13,12 @@ mkdir -p "$ARTIFACTS_DIR"
 echo "Artifacts will be saved to: $ARTIFACTS_DIR"
 
 echo "Running Integration Tests (Real Life Examples & tmQM)..."
-uv run python tests/integration/verify_xyz_to_oin.py --limit 18 | tee "${ARTIFACTS_DIR}/integration_log.txt"
+uv run python tests/integration/verify_xyz_to_oin.py --limit 22 | tee "${ARTIFACTS_DIR}/integration_log.txt"
 
 echo "Running Phase 1 Verification..."
 uv run python tests/integration/verify_phase1.py | tee "${ARTIFACTS_DIR}/phase1_log.txt"
 
 echo "Running Round-Trip Verification..."
-uv run python tests/integration/verify_roundtrip.py --limit 18 --output-dir "$ARTIFACTS_DIR" | tee "${ARTIFACTS_DIR}/roundtrip_log.txt"
+uv run python tests/integration/verify_roundtrip.py --limit 22 --output-dir "$ARTIFACTS_DIR" | tee "${ARTIFACTS_DIR}/roundtrip_log.txt"
 
 echo "Verification complete. Artifacts in $ARTIFACTS_DIR"
