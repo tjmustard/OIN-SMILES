@@ -36,6 +36,7 @@ class Example:
     expected_ligands: Optional[List[str]] = None
     # Test control
     is_critical: bool = True
+    fixed_orientation: bool = False
 
 def transform_xyz_content(xyz_content: str) -> str:
     """
@@ -154,7 +155,11 @@ class ExampleRunner:
         test_name = f"{example.name} (XYZ->SMILES)"
         
         # Apply transformation
-        transformed_content = transform_xyz_content(example.xyz_content)
+        if example.fixed_orientation:
+            print("Skipping random rotation (Fixed Orientation requested)")
+            transformed_content = example.xyz_content
+        else:
+            transformed_content = transform_xyz_content(example.xyz_content)
         
         # Create temp file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xyz', delete=False) as tmp:
@@ -293,8 +298,9 @@ def get_examples() -> List[Example]:
             name="Ferrocene (XYZ -> OIN-SMILES)",
             xyz_content=ferrocene_xyz,
             description="Ferrocene with eclipsed Cp rings (neutral OIN representation).",
-            expected_smiles="[Fe_LIN].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1",
-            expected_oin_string="[Fe_LIN].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+            expected_smiles="[Fe_LIN].[cH]{0}1[cH]{0}[cH]{0^}[cH]{0}[cH]{0}1.[cH]{1^}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1",
+            expected_oin_string="[Fe_LIN].[cH]{0}1[cH]{0}[cH]{0^}[cH]{0}[cH]{0}1.[cH]{1^}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1",
+            fixed_orientation=True
         )
         examples.append(ferrocene_ex)
     except FileNotFoundError:
@@ -474,8 +480,9 @@ def get_examples() -> List[Example]:
             name="TiCp2Me2 (XYZ -> OIN-SMILES)",
             xyz_content=ticp2me2_xyz,
             description="Titanocene dimethyl.",
-            expected_smiles="[Ti_TET].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
+            expected_smiles="[Ti_TET].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0^}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1^}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].[cH]{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0^}1.[cH]{1}1[cH]{1}[cH]{1}[cH]{1^}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            fixed_orientation=True
         )
         examples.append(ticp2me2_ex)
     except FileNotFoundError:
@@ -505,12 +512,43 @@ def get_examples() -> List[Example]:
             name="Zeises_salt (XYZ -> OIN-SMILES)",
             xyz_content=zeises_xyz,
             description="Zeise's Salt (PtCl3(C2H4)).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2}=[CH2]{2}.[Cl]{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2}=[CH2]{2}.[Cl]{3}"
+            expected_smiles="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2}=[CH2]{2^}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2}=[CH2]{2^}.[Cl]{3}"
         )
         examples.append(zeises_ex)
     except FileNotFoundError:
         print("Skipping Zeises_salt example: File not found.")
+
+    # TiCat1
+    try:
+        with open("tests/integration/TiCat1.xyz", "r") as f:
+            ticat1_xyz = f.read()
+        ticat1_ex = Example( # Changed from XYZToOINExample to Example
+            name="TiCat1 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat1_xyz,
+            description="Titanium Catalyst 1",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0^}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0^}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            fixed_orientation=True
+        )
+        examples.append(ticat1_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat1 example: File not found.")
+
+    # TiCat2
+    try:
+        with open("tests/integration/TiCat2.xyz", "r") as f:
+            ticat2_xyz = f.read()
+        ticat2_ex = Example( # Changed from XYZToOINExample to Example
+            name="TiCat2 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat2_xyz,
+            description="Titanium Catalyst 2",
+            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
+        )
+        examples.append(ticat2_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat2 example: File not found.")
 
     # Add tmQM examples (Added last so they don't displace manual examples when limiting)
     tmqm_dir = os.path.join(os.path.dirname(__file__), 'tmQM')
