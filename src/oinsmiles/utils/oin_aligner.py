@@ -75,38 +75,95 @@ def normalize_template(arr):
     return arr / np.linalg.norm(arr, axis=1)[:, None]
 
 # Define Templates with Explicit Indices (Order matters!)
-TEMPLATES = {
-    'LIN': np.array([[0,0,1], [0,0,-1]]),
-    'TPL': np.array([[0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]]),
-    'SPL': np.array([[1,0,0], [-1,0,0], [0,1,0], [0,-1,0]]),
-    'TET': normalize_template(np.array([
-        [ 1,  1,  1], [ 1, -1, -1], [-1,  1, -1], [-1, -1,  1]
-    ])),
-    'TPY': np.array([
-        [0,0,1], 
-        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0] 
-    ]),
-    'TBP': np.array([
-        [0,0,1], [0,0,-1],
-        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]
-    ]),
-    'SPY': np.array([
-        [0,0,1],
-        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
-    ]),
-    'OCT': np.array([
-        [0,0,1], [0,0,-1],
-        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
-    ]),
-    'PBP': np.array([
-        [0,0,1], [0,0,-1], # Axial
-        [1,0,0], # Eq 1 (0 deg)
-        [0.30901699, 0.95105652, 0], # Eq 2 (72 deg)
-        [-0.80901699, 0.58778525, 0], # Eq 3 (144 deg)
-        [-0.80901699, -0.58778525, 0], # Eq 4 (216 deg)
-        [0.30901699, -0.95105652, 0] # Eq 5 (288 deg)
-    ])
+
+def normalize_cols(arr):
+    return arr / np.linalg.norm(arr, axis=1)[:, None]
+
+TEMPLATE_SPECS = {
+    'LIN': {
+        0: {'pos': [0, 0, 1],  'ref': [1, 0, 0]},
+        1: {'pos': [0, 0, -1], 'ref': [1, 0, 0]}
+    },
+    'TPL': {
+        0: {'pos': [0, 1, 0],            'ref': [0, 0, 1]},
+        1: {'pos': [0.8660254, -0.5, 0], 'ref': [0, 0, 1]},
+        2: {'pos': [-0.8660254, -0.5, 0],'ref': [0, 0, 1]}
+    },
+    'SPL': {
+        0: {'pos': [1, 0, 0],  'ref': [0, 0, 1]},
+        1: {'pos': [0, 1, 0],  'ref': [0, 0, 1]},
+        2: {'pos': [-1, 0, 0], 'ref': [0, 0, 1]},
+        3: {'pos': [0, -1, 0], 'ref': [0, 0, 1]}
+    },
+    'TET': {
+        0: {'pos': [1, 1, 1],    'ref': [-1, 1, 0]},
+        1: {'pos': [1, -1, -1],  'ref': [0, 1, -1]},
+        2: {'pos': [-1, 1, -1],  'ref': [1, 1, 0]},
+        3: {'pos': [-1, -1, 1],  'ref': [1, 0, 1]}
+    },
+    'TPY': {
+        0: {'pos': [0, 0, 1],             'ref': [1, 0, 0]},
+        1: {'pos': [0, 1, 0],             'ref': [0, 0, 1]},
+        2: {'pos': [0.8660254, -0.5, 0],  'ref': [0, 0, 1]},
+        3: {'pos': [-0.8660254, -0.5, 0], 'ref': [0, 0, 1]}
+    },
+    'TBP': {
+        0: {'pos': [0, 0, 1],             'ref': [1, 0, 0]},
+        1: {'pos': [0, 0, -1],            'ref': [1, 0, 0]},
+        2: {'pos': [0, 1, 0],             'ref': [0, 0, 1]},
+        3: {'pos': [0.8660254, -0.5, 0],  'ref': [0, 0, 1]},
+        4: {'pos': [-0.8660254, -0.5, 0], 'ref': [0, 0, 1]}
+    },
+    'SPY': {
+        0: {'pos': [0, 0, 1],  'ref': [1, 0, 0]},
+        1: {'pos': [1, 0, 0],  'ref': [0, 0, 1]},
+        2: {'pos': [-1, 0, 0], 'ref': [0, 0, 1]},
+        3: {'pos': [0, 1, 0],  'ref': [0, 0, 1]},
+        4: {'pos': [0, -1, 0], 'ref': [0, 0, 1]}
+    },
+    'OCT': {
+        0: {'pos': [0, 0, 1],  'ref': [1, 0, 0]},
+        1: {'pos': [0, 0, -1], 'ref': [1, 0, 0]},
+        2: {'pos': [1, 0, 0],  'ref': [0, 0, 1]},
+        3: {'pos': [-1, 0, 0], 'ref': [0, 0, 1]},
+        4: {'pos': [0, 1, 0],  'ref': [0, 0, 1]},
+        5: {'pos': [0, -1, 0], 'ref': [0, 0, 1]}
+    },
+    'PBP': {
+        0: {'pos': [0, 0, 1],             'ref': [1, 0, 0]},
+        1: {'pos': [0, 0, -1],            'ref': [1, 0, 0]},
+        2: {'pos': [1, 0, 0],             'ref': [0, 0, 1]},
+        3: {'pos': [0.309017, 0.951057, 0], 'ref': [0, 0, 1]},
+        4: {'pos': [-0.809017, 0.587785, 0], 'ref': [0, 0, 1]},
+        5: {'pos': [-0.809017, -0.587785, 0], 'ref': [0, 0, 1]},
+        6: {'pos': [0.309017, -0.951057, 0], 'ref': [0, 0, 1]}
+    }
 }
+
+# List of Symmetric Ligands that should have a fixed Heading Atom (The first binding atom in SMILES)
+# This overrides the geometric alignment which can be unstable for symmetric ligands.
+SYMMETRIC_LIGANDS = {
+    "C=C",
+    "[CH2]=[CH2]",
+    "c1cccc1",
+    "C1=C-C=C-[CH-]1",
+    "[cH]1[cH][cH][cH][cH]1",
+    "c1ccccc1",
+    "[cH]1[cH][cH][cH][cH][cH]1",
+    "c1cccccc1",
+    "[cH]1[cH][cH][cH][cH][cH][cH]1",
+}
+
+# Generate Legacy TEMPLATES (Pos only) for Aligner compatibility
+TEMPLATES = {}
+for geo, specs in TEMPLATE_SPECS.items():
+    sorted_slots = sorted(specs.keys())
+    pos_vecs = np.array([specs[idx]['pos'] for idx in sorted_slots], dtype=float)
+    if geo == 'TET':
+        pos_vecs = normalize_cols(pos_vecs)
+        for i, vec in enumerate(pos_vecs):
+            TEMPLATE_SPECS[geo][sorted_slots[i]]['pos'] = vec.tolist()
+    TEMPLATES[geo] = pos_vecs
 
 class OINDiscreteAligner:
     def __init__(self, metal_idx, ligands):
@@ -135,17 +192,17 @@ class OINDiscreteAligner:
              tmpl_name = 'LIN' 
              tmpl_vectors = TEMPLATES['LIN']
              mapping = [None, None] 
-             # Just map to slot 0 arbitrarily if we allow N=1 logic, but standard is usually N>=2
+             R_mat = None
         else:
             best_res = self._find_best_geometry_match(n_eff, virtual_atoms)
             if best_res:
-                tmpl_name, tmpl_vectors, mapping = best_res
+                tmpl_name, tmpl_vectors, mapping, R_mat = best_res
             else:
                  # Fallback if no match found (e.g. geometry too distorted)
                  return "g:NON|w:NON"
 
-        # 3. Canonicalize (Maximization + Homogeneous Sort)
-        canonical_str = self._permute_and_serialize(mapping, tmpl_vectors)
+        # 3. Canonicalize (Maximization + Homogeneous Sort + Heading Syntax)
+        canonical_str = self._permute_and_serialize(mapping, tmpl_vectors, geometry_name=tmpl_name, alignment_rotation=R_mat)
         
         return f"g:{tmpl_name}|w:{canonical_str}"
 
@@ -203,37 +260,42 @@ class OINDiscreteAligner:
                 groups.append(component)
             
             for grp in groups:
+                # Sort group by local_idx to ensure alignment between coords and indices
+                grp.sort(key=lambda k: zone_a_info[k][3])
+
                 grp_coords = binding_coords[grp]
                 if len(grp_coords) == 0:
                     continue
                 centroid = np.mean(grp_coords, axis=0)
                 
-                # Representative Atom: The one with the lowest local index in the group
-                # This is used for "Rank.Idx" output. 
-                # If haptic (multiple atoms), we usually cite the first/lowest index.
-                rep_atom_info = min([zone_a_info[k] for k in grp], key=lambda x: x[3]) # x[3] is local_idx
-                rep_idx = rep_atom_info[3] # Local Index
+                # Representative Atom: The one with the lowest local index (now first)
+                rep_idx = zone_a_info[grp[0]][3]
+                
+                # Get ALL local indices for this group (for w-tag expansion)
+                constituent_indices = sorted([zone_a_info[k][3] for k in grp])
                 
                 virtual_atoms.append({
-                    'rank': i, # Ligand Rank (Index in self.ligands)
+                    'rank': i, # Ligand Rank
                     'local_idx': rep_idx,
-                    'key': base_sort_key,
+                    'constituent_indices': constituent_indices, # List of all atoms in this haptic group
                     'key': base_sort_key,
                     'coords': centroid - metal_origin,
+                    'group_coords': grp_coords - metal_origin, # Store centered group coords for heading calc
                     # Identity key for Homogeneous Sorting: (Mass, SMILES)
                     'chem_id': (first_binding_atom_mass, lig['smiles'])
                 })
         
         return virtual_atoms
 
+
+
     def _find_best_geometry_match(self, n, virtual_atoms):
-        candidates = []
         candidates = []
         # Exhaustive Candidate List based on Coordination Number (N)
         if n == 2: 
             candidates = ['LIN']
         elif n == 3: 
-            candidates = ['TPL'] # Could add TPY-3 if needed, but TPL is standard
+            candidates = ['TPL']
         elif n == 4: 
             # Check ALL 4-coordinate geometries
             candidates = ['SPL', 'TET', 'TPY']
@@ -264,71 +326,56 @@ class OINDiscreteAligner:
             # OIN assumes N <= Slots usually. If N < Slots, we have empty slots. 
             if n > len(vectors): continue
 
-            mapping, rmsd = self._map_to_template(virtual_atoms, vectors)
+            mapping, rmsd, R_mat = self._map_to_template(virtual_atoms, vectors)
             logger.debug(f"  Candidate: {name}, RMSD: {rmsd:.4f}")
             
             if mapping is not None and rmsd < min_rmsd:
                 min_rmsd = rmsd
-                best_result = (name, vectors, mapping)
+                best_result = (name, vectors, mapping, R_mat)
         
         if best_result:
             logger.debug(f"  Selected: {best_result[0]} (RMSD {min_rmsd:.4f})")
             
         return best_result
-
+        
     def _map_to_template(self, virtual_atoms, template_vectors):
         n_atoms = len(virtual_atoms)
         n_slots = len(template_vectors)
         
-        if n_atoms == 0: return [None]*n_slots, 0.0
+        if n_atoms == 0: 
+            return [None]*n_slots, 0.0, Rotation.from_matrix(np.eye(3))
 
         input_vecs = np.array([a['coords'] for a in virtual_atoms])
         input_norms = input_vecs / (np.linalg.norm(input_vecs, axis=1)[:,None] + 1e-9)
         
         best_rmsd = float('inf')
         best_mapping = None
+        best_R = Rotation.from_matrix(np.eye(3))
 
-        # Exhaustive Search:
-        # We need to map N atoms to N slots chosen from M total slots.
-        # itertools.permutations(range(n_slots), n_atoms) gives all ordered subsets of slots
-        # s = (s0, s1, ... sN-1) means Atom i maps to Slot s[i].
-        # We then find the optimal rotation for this paired set.
-        
         import itertools
-        
-        # Max N to exhaustive? N=7 is 5040 iter * align cost. OK. N=8 is 40k. 
-        # If N > 7, maybe revert to heuristic? But for now exhaustive is requested.
-        
         perm_iterator = itertools.permutations(range(n_slots), n_atoms)
         
         for slot_indices in perm_iterator:
-             # Extract the template vectors in the order corresponding to atoms [0..N-1]
              target_vecs = template_vectors[list(slot_indices)]
              
              try:
-                 # Align Input -> Template (Finds best rotation)
-                 # align_vectors returns RMSD between vector sets
                  R, rmsd = Rotation.align_vectors(target_vecs, input_norms)
              except:
                  continue
                  
              if rmsd < best_rmsd:
                  best_rmsd = rmsd
-                 # Construct mapping array
-                 # mapping[slot_index] = atom_object
-                 # Initialize empty mapping
                  current_mapping = [None] * n_slots
-                 
-                 # Fill in assignments
-                 # slot_indices[atom_idx] = slot_idx
                  for atom_idx, slot_idx in enumerate(slot_indices):
                      current_mapping[slot_idx] = virtual_atoms[atom_idx]
                      
                  best_mapping = current_mapping
+                 best_R = R
+        
+        return best_mapping, best_rmsd, best_R
 
-        return best_mapping, best_rmsd
 
-    def _permute_and_serialize(self, slot_assignment, tmpl_vectors):
+    def _permute_and_serialize(self, slot_assignment, tmpl_vectors, geometry_name=None, alignment_rotation=None):
         # 1. Symmetry Permutations
         symmetries = self._brute_force_symmetries(tmpl_vectors)
         best_sequence = None
@@ -341,19 +388,10 @@ class OINDiscreteAligner:
         for perm in symmetries:
             current_view_map = []
             
-            # slot_assignment is a list of length n_slots where index is slot_idx
-            # value is the atom object assigned to that slot
-            
             for old_slot_idx, atom in enumerate(slot_assignment):
                 if atom is None: continue
                 
                 # Permutation maps OLD slot to NEW slot
-                # perm[i] = j means slot i moves to position j
-                # so the atom at slot i is now at slot j
-                # Wait, standard permutation definition:
-                # If we apply symmetry R, vector v at slot i moves to R*v which corresponds to slot k.
-                # So if perm[i] = k, the atom at i is now at k.
-                
                 new_slot_idx = perm[old_slot_idx]
                 ideal_vec = tmpl_vectors[new_slot_idx]
                 
@@ -366,7 +404,9 @@ class OINDiscreteAligner:
                 
                 current_view_map.append({
                     'rank': atom['rank'],
-                    'local_idx': atom['local_idx'],
+                    'local_idx': atom['local_idx'], 
+                    'constituent_indices': atom.get('constituent_indices', [atom['local_idx']]), 
+                    'group_coords': atom.get('group_coords'), # Propagate!
                     'chem_id': atom['chem_id'],
                     'vec': ideal_vec,
                     'slot': new_slot_idx
@@ -381,21 +421,42 @@ class OINDiscreteAligner:
             
             final_sorted_view = []
             for chem_id, items in grouped.items():
-                items.sort(key=lambda x: (x['rank'], x['local_idx'])) # Stable sort by Rank AND LocalIdx for canonical assignment
-                original_indices = [(x['rank'], x['local_idx']) for x in items]
+                # Group items by Rank (Fragment) to preserve connectivity
+                frag_groups = defaultdict(list)
+                for it in items:
+                    frag_groups[it['rank']].append(it)
                 
-                # Sort available vectors descending (Maximization Rule)
-                # Vectors derived from slots
-                vectors_and_slots = [(x['vec'], x['slot']) for x in items]
-                vectors_and_slots.sort(key=lambda x: x[0], reverse=True)
+                target_ranks = sorted(list(frag_groups.keys()))
                 
-                # Assign best vector/slot to lowest rank in group
-                for i, (rank, loc) in enumerate(original_indices):
-                    vec, slot = vectors_and_slots[i]
-                    final_sorted_view.append({'rank': rank, 'local_idx': loc, 'vec': vec, 'slot': slot})
-            
-            # Sort by Rank to compare sequences
-            final_sorted_view.sort(key=lambda x: x['rank'])
+                available_sets = []
+                for rank in target_ranks:
+                    f_items = frag_groups[rank]
+                    f_items.sort(key=lambda x: x['local_idx'])
+                    vec_set = tuple([x['vec'] for x in f_items])
+                    available_sets.append({
+                        'vec_set': vec_set,
+                        'items': f_items
+                    })
+                
+                # Sort the available sets descending (Maximization)
+                available_sets.sort(key=lambda x: x['vec_set'], reverse=True)
+                
+                # Assign Best Sets to Lowest Ranks
+                for i, target_rank in enumerate(target_ranks):
+                    assigned_set = available_sets[i]
+                    for atom_data in assigned_set['items']:
+                        final_sorted_view.append({
+                            'rank': target_rank,
+                            'local_idx': atom_data['local_idx'],
+                            'constituent_indices': atom_data['constituent_indices'],
+                            'group_coords': atom_data['group_coords'],
+                            'vec': atom_data['vec'],
+                            'slot': atom_data['slot'],
+                            'chem_id': chem_id
+                        })
+
+            # Sort by Rank/LocalIdx for comparison
+            final_sorted_view.sort(key=lambda x: (x['rank'], x['local_idx']))
             current_sequence = [x['vec'] for x in final_sorted_view]
             
             # Maximization Check
@@ -404,11 +465,181 @@ class OINDiscreteAligner:
                 best_final_map = final_sorted_view
         
         if not best_final_map: return "error"
-                  
-        # 4. Serialize Index-Based Format: w:Rank.Idx:Slot
-        # PRD example uses "Rank:Slot" in text but I'm sticking to Rank.Idx:Slot for Adapter compatibility
-        parts = [f"{x['rank']}.{x['local_idx']}:{x['slot']}" for x in best_final_map]
+
+        # 4. Heading Atom Selection (V3.4)
+        heading_local_indices = set()
+        
+        if geometry_name and alignment_rotation is not None and geometry_name in TEMPLATE_SPECS:
+            # Group by rank to handle full haptic fragments
+            by_rank = defaultdict(list)
+            for x in best_final_map:
+                by_rank[x['rank']].append(x)
+            
+            template_spec = TEMPLATE_SPECS[geometry_name]
+            
+            for rank, items in by_rank.items():
+                first_item = items[0]
+                slot_idx = first_item['slot']
+                
+                # Skip if slot not in specs or no ref vector
+                if slot_idx not in template_spec or 'ref' not in template_spec[slot_idx]:
+                    continue
+                
+                ref_vec = np.array(template_spec[slot_idx]['ref'])
+                
+                # Get Group Coords
+                grp_coords = first_item.get('group_coords') 
+                if grp_coords is None: continue
+                
+                # Calculate Centroid
+                centroid = np.mean(grp_coords, axis=0)
+                
+                if len(grp_coords) < 2: continue
+                
+                best_dot = -float('inf')
+                best_idx = -1
+                
+                ordered_indices = first_item['constituent_indices']
+                
+                for k, coord in enumerate(grp_coords):
+                    # Vector from Centroid -> Atom (Molecular Frame)
+                    v_mol = coord - centroid
+                    
+                    # Transform to Template Frame using Alignment Rotation R
+                    v_tmpl = alignment_rotation.apply(v_mol)
+                    
+                    # Normalize
+                    norm = np.linalg.norm(v_tmpl)
+                    if norm > 1e-6:
+                        v_tmpl_n = v_tmpl / norm
+                        dot = np.dot(v_tmpl_n, ref_vec)
+                        
+                        if dot > best_dot:
+                            best_dot = dot
+                            best_idx = ordered_indices[k]
+                
+                if best_idx != -1:
+                    heading_local_indices.add((rank, best_idx))
+            
+            # 4b. Symmetric Ligand Override
+            # For known symmetric ligands, we force the heading atom to be the first one (Index 0 in local SMILES)
+            # This ensures deterministic output (e.g. [CH2]{^}=[CH2] instead of arbitrary).
+            for rank, items in by_rank.items():
+                first_item = items[0]
+                smiles = first_item['chem_id'][1]
+                
+                if smiles in SYMMETRIC_LIGANDS:
+                    # Remove any existing heading assignment for this ligand (from geometric step above)
+                    # We want to replace it, not add to it (though usually only one heading per ligand group)
+                    # But 'heading_local_indices' is a set of (rank, idx).
+                    # We should clear entries for this rank first to be safe?. 
+                    # Actually, the geometric block above loop over ranks. 
+                    # It's cleaner to check SYMMETRIC_LIGANDS *inside* the loop above, but separating logic is also fine.
+                    # Let's just Enforce it here.
+                    
+                    # Find min index among constituent_indices
+                    ordered_indices = sorted(first_item['constituent_indices'])
+                    forced_idx = ordered_indices[0]
+                    
+                    # Remove any other heading for this rank just in case (e.g. if geometric picked another)
+                    to_remove = [idx for r, idx in heading_local_indices if r == rank]
+                    for idx in to_remove:
+                        heading_local_indices.remove((rank, idx))
+                        
+                    heading_local_indices.add((rank, forced_idx))
+                    logger.debug(f"Forced Heading Atom for Symmetric Ligand {smiles}: Index {forced_idx}")
+
+        # 5. Serialize Index-Based Format: w:Rank.Idx:Slot
+        parts = []
+        for x in best_final_map:
+            slot = x['slot']
+            rank = x['rank']
+            
+            indices = x.get('constituent_indices', [x['local_idx']])
+            
+            for idx in indices:
+                tag = f"{rank}.{idx}:{slot}"
+                
+                # Append Heading Marker if this is the chosen atom
+                if (rank, idx) in heading_local_indices:
+                     # Calculate Winding Direction using V3.6 Algorithm
+                     direction_char = ">" # Default
+                     
+                     if geometry_name in TEMPLATE_SPECS and slot in TEMPLATE_SPECS[geometry_name]:
+                         slot_def = TEMPLATE_SPECS[geometry_name][slot]
+                         
+                         # Need constituent_indices (ordered) to find next atom
+                         c_indices = sorted(x.get('constituent_indices', [idx]))
+                         
+                         direction_char = self._determine_winding(
+                             grp_coords=x.get('group_coords'),
+                             star_idx=idx, # This is the local_idx of the star
+                             constituent_indices=c_indices,
+                             slot_z=np.array(slot_def['pos']),
+                             slot_x_ref=np.array(slot_def['ref']),
+                             alignment_rotation=alignment_rotation
+                         )
+                         
+                     tag += direction_char
+
+                parts.append(tag)
+        
         return ";".join(parts)
+
+    def _determine_winding(self, grp_coords, star_idx, constituent_indices, slot_z, slot_x_ref, alignment_rotation=None):
+        """
+        OIN V3.6 Winding Algorithm
+        Determines if the SMILES winding (Star -> Next) is Clockwise (>) or Counter-Clockwise (<)
+        relative to the template Slot Z vector.
+        """
+        n = len(constituent_indices)
+        if n < 3: return ">" # Linear/Monodentate defaults to Forward
+        
+        # Transform Logic: We need the vectors in the TEMPLATE FRAME to compare with Slot Z (which is in Template Frame).
+        # We assume 'grp_coords' are in Molecular Frame (centered on metal?) if coming from virtual_atom 'group_coords'
+        # Check _reduce_hapticity: 'group_coords': grp_coords - metal_origin. Yes, Centered at Metal.
+        
+        # 1. Identify Star Index in the List
+        try:
+            list_idx = constituent_indices.index(star_idx)
+        except ValueError:
+            return ">"
+            
+        # 2. Get Coords for Star and Next
+        # grp_coords are ordered matching constituent_indices? 
+        # _reduce_hapticity: grp.sort(key=lambda k: zone_a_info[k][3]) then grp_coords = binding_coords[grp]
+        # So yes, grp_coords[k] corresponds to constituent_indices[k].
+        
+        # Star Coord (Molecular Frame)
+        coord_star = grp_coords[list_idx]
+        
+        # Next Atom (Cyclic +1 in SMILES order)
+        next_list_idx = (list_idx + 1) % n
+        coord_next = grp_coords[next_list_idx]
+        
+        # Centroid of the group (Molecular Frame)
+        centroid = np.mean(grp_coords, axis=0)
+        
+        # Vectors relative to Centroid (Molecular Frame)
+        v_star_mol = coord_star - centroid
+        v_next_mol = coord_next - centroid
+        
+        # Transform to Template Frame if rotation exists
+        if alignment_rotation:
+            v_star = alignment_rotation.apply(v_star_mol)
+            v_next = alignment_rotation.apply(v_next_mol)
+        else:
+            v_star = v_star_mol
+            v_next = v_next_mol
+            
+        # 3. Cross Product (Star x Next) -> Winding Normal (Template Frame)
+        winding_normal = np.cross(v_star, v_next)
+        
+        # 4. Dot with Slot Z (Template Frame)
+        # Note: 'slot_z' passed here is usually normalized or Pos vector.
+        dot = np.dot(winding_normal, slot_z)
+        
+        return ">" if dot >= 0 else "<"
 
     def _brute_force_symmetries(self, vectors):
         n = len(vectors)

@@ -7,7 +7,9 @@ class TestTranslator(unittest.TestCase):
         self.converter = SMILESToXYZ()
 
     def test_convert_to_graph(self):
-        oin_string = "[Cl].[Pt] |w:0:2.0,0.0,0.0;1:0.0,0.0,0.0|d:0.1|"
+        # [Cl] (0), [Pt] (1). Metal is 1. Ligand is 0.
+        # v tag: 1.0 -> Metal 1, Ligand 0.
+        oin_string = "[Cl].[Pt] |v:1.0:2.0,0.0,0.0;1:0.0,0.0,0.0|"
         graph = self.converter.convert(oin_string)
         
         self.assertEqual(len(graph.atoms), 2)

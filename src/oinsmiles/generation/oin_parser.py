@@ -10,7 +10,11 @@ def normalize_template(arr):
 TEMPLATES = {
     'LIN': np.array([[0,0,1], [0,0,-1]]),
     'TPL': np.array([[0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]]),
-    'SPL': np.array([[1,0,0], [-1,0,0], [0,1,0], [0,-1,0]]),
+    'SPL': np.array([[1,0,0], [0,1,0], [-1,0,0], [0,-1,0]]),
+    'SPY': np.array([
+        [0,0,1],
+        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
+    ]),
     'TET': np.array([
         [ 1,  1,  1], [ 1, -1, -1], [-1,  1, -1], [-1, -1,  1]
     ]),
@@ -25,6 +29,14 @@ TEMPLATES = {
     'OCT': np.array([
         [0,0,1], [0,0,-1],
         [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
+    ]),
+    'PBP': np.array([
+        [0,0,1], [0,0,-1], # Axial
+        [1,0,0], # Eq 1 (0 deg)
+        [0.30901699, 0.95105652, 0], # Eq 2 (72 deg)
+        [-0.80901699, 0.58778525, 0], # Eq 3 (144 deg)
+        [-0.80901699, -0.58778525, 0], # Eq 4 (216 deg)
+        [0.30901699, -0.95105652, 0] # Eq 5 (288 deg)
     ])
 }
 
@@ -45,9 +57,51 @@ class ParsedOIN:
 
 class OINParser:
     def parse(self, oin_string: str) -> ParsedOIN:
+        # Check for V3.0 Inline Topology
+        # Heuristic: No "|" separator AND contains Metal tag like [Pt_SPL]
+        from ..oin.inline import OINInlineHandler
+        
+        is_inline = False
         parts = oin_string.split("|")
         smiles = parts[0].strip()
         metadata = parts[1:] if len(parts) > 1 else []
+        
+        if len(parts) == 1 and OINInlineHandler.METAL_REGEX.search(oin_string):
+             is_inline = True
+             
+        if is_inline:
+             # Convert Inline -> Standard (Sidecar) components
+             # Note: OINInlineHandler.parse_inline_string returns (smiles, geo, vector_list)
+             # but vector_list is just (Rank, Slot). We need to map to vectors.
+             
+             smiles, geo_code, vector_data = OINInlineHandler.parse_inline_string(oin_string)
+             fragments = smiles.split(".")
+             metal_fragment_idx = 0 # Assumption
+             
+             tmpl_vectors = TEMPLATES.get(geo_code)
+             vectors = []
+             
+             if tmpl_vectors is not None:
+                for lig_rank, atom_in_fragment_idx, slot_idx in vector_data:
+                    if slot_idx < len(tmpl_vectors):
+                        resolved_vec = tmpl_vectors[slot_idx] 
+                        
+                        vectors.append(OINVector(
+                            atom_idx=-1,
+                            vector=tuple(resolved_vec.tolist()),
+                            fragment_idx=lig_rank,
+                            atom_in_fragment_idx=atom_in_fragment_idx
+                        ))
+             
+             return ParsedOIN(
+                smiles=smiles,
+                fragments=fragments,
+                metal_fragment_idx=metal_fragment_idx,
+                vectors=vectors,
+                original_oin=oin_string
+             )
+
+        # Standard / Legacy Parsing
         
         fragments = smiles.split(".")
         
