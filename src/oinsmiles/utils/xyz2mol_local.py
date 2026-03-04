@@ -943,12 +943,15 @@ def get_AC(mol, covalent_factor=1.3):
     return AC
 
 
-def xyz2AC_huckel(atomicNumList, xyz, charge):
+def xyz2AC_huckel(atomicNumList, xyz, charge, tolerance=0.2):
     """Args.
 
         atomicNumList - atom type list
         xyz - coordinates
         charge - molecule charge
+
+    optional
+        tolerance - Huckel bond cutoff
 
     returns
         ac - atom connectivity
@@ -979,7 +982,7 @@ def xyz2AC_huckel(atomicNumList, xyz, charge):
     for i in range(num_atoms):
         for j in range(i + 1, num_atoms):
             pair_pop = abs(tri[j, i])
-            if pair_pop >= 0.2:  # arbitry cutoff for bond. May need adjustment
+            if pair_pop >= tolerance:  # arbitry cutoff for bond. May need adjustment
                 AC[i, j] = 1
                 AC[j, i] = 1
 
