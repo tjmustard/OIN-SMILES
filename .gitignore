@@ -94,6 +94,6 @@ package-lock.json
 # AI agent config and brain dirs
 .agent/
 #.agents/
-.claude/
-.gemini/
+#.claude/
+#.gemini/
 
