@@ -1,0 +1,32 @@
+name: oin-smiles
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - git  # <--- Required to clone the repository via pip
+  # The Heavy Hitters (Binaries)
+  - xtb
+  - xtb-python
+  - pynauty
+  - rdkit>=2024.03.5
+  - openbabel
+  - ase>=3.26.0
+  - architector
+  # Scientific Stack (Best installed via Conda for math library linking)
+  - scipy>=1.13.0
+  - pandas
+  - networkx>=3.4.2
+  - numba
+  - crest
+  - numpy
+  - py3Dmol
+  - tqdm
+  - mendeleev
+  - tblite-python
+  # Pip-only dependencies
+  - pip
+#  - pip:
+#    # Installs the specific 'Secondary_Solvation_Shell' branch
+#    - git+https://github.com/lanl/Architector.git@Secondary_Solvation_Shell
+#    - mendeleev>=1.0.0
+#    - .  # Installs your project in editable mode

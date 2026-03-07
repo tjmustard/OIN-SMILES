@@ -11,7 +11,8 @@ def main():
     
     generator = OIN3DGenerator()
     try:
-        structure = generator.generate(oin)
+        # Using UFF for verification to avoid dependency on XTB binary presence
+        structure = generator.generate(oin, extra_params={"assemble_method": "UFF", "full_method": "UFF"})
         print("Structure generated successfully.")
         if structure:
             # Assuming structure has a write method or similar

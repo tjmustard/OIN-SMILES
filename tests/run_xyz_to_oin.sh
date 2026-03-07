@@ -9,6 +9,6 @@ mkdir -p "$ARTIFACTS_DIR"
 echo "Artifacts will be saved to: $ARTIFACTS_DIR"
 
 echo "XYZ to OIN Verification (Limit 22)..."
-uv run python tests/integration/verify_xyz_to_oin.py  | tee "${ARTIFACTS_DIR}/integration_log.txt"
+uv run python tests/integration/verify_xyz_to_oin.py --limit 22 | tee "${ARTIFACTS_DIR}/integration_log.txt"
 
 echo "Verification complete. Artifacts in $ARTIFACTS_DIR"

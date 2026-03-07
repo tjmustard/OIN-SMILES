@@ -17,5 +17,5 @@ class OIN3DGenerator:
                 arch_args["parameters"] = {}
             arch_args["parameters"].update(extra_params)
             
-        structure = self.wrapper.run(**arch_args)
+        structure = self.wrapper.run(arch_args)
         return structure

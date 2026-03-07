@@ -3,78 +3,101 @@ from scipy.spatial.transform import Rotation
 from collections import defaultdict
 import itertools
 import logging
+import sys
+import warnings
+
+# Re-export sanitizer for compatibility
+from ..oin.sanitizer import OINSanitizer
 
 logger = logging.getLogger(__name__)
 
-try:
-    from rdkit import Chem
-except ImportError:
-    pass # RDKit required for Sanitizer, but Aligner is pure numpy
-
-# ==========================================
-# PART 1: SMILES SANITIZER (The V2.4 Fix)
-# ==========================================
-class OINSanitizer:
-    @staticmethod
-    def generate_robust_smiles(ligand_mol, binding_indices_in_ligand):
-        """
-        Generates a canonical SMILES string where ALL binding atoms
-        are forced to have explicit brackets. This prevents 'Drift'
-        where c1 becomes [cH]1 or vice versa between runs.
+def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
+    """
+    Canonicalizes the orientation of the molecule:
+    1. Translates so the metal is at (0,0,0).
+    2. Rotates so the Principal Axes of Inertia (PAI) align with the Cartesian axes.
+       - Highest Moment of Inertia -> Z
+       - Lowest Moment of Inertia -> X
+       - Enforce Right-Handed System
+    """
+    coords = np.array(xyz_coords)
+    masses = np.array([a.GetMass() for a in tmc_mol.GetAtoms()])
+    
+    # 1. Translate Metal to Origin
+    metal_pos = coords[metal_idx]
+    coords -= metal_pos
+    
+    # 2. Calculate Inertia Tensor relative to Origin (Metal)
+    I = np.zeros((3, 3))
+    for i in range(len(coords)):
+        m = masses[i]
+        pos = coords[i]
+        sq_norm = np.dot(pos, pos)
         
-        ligand_mol: RDKit Molecule Object of the ligand fragment
-        binding_indices_in_ligand: List of atom indices (int) in the ligand 
-                                   that bond to the metal.
-        """
-        # Create a modifiable copy
-        rw_mol = Chem.RWMol(ligand_mol)
+        # Diagonal elements
+        I[0, 0] += m * (sq_norm - pos[0]*pos[0])
+        I[1, 1] += m * (sq_norm - pos[1]*pos[1])
+        I[2, 2] += m * (sq_norm - pos[2]*pos[2])
         
-        # 1. Force Explicit H attributes on Zone A atoms
-        for idx in binding_indices_in_ligand:
-            atom = rw_mol.GetAtomWithIdx(idx)
-            
-            # Get current H count (explicit + implicit)
-            # We want to lock the current state so it doesn't drift.
-            total_h = atom.GetTotalNumHs()
-            
-            # Force this to be Explicit. 
-            # This forces RDKit to write brackets like [cH] or [CH3] 
-            # instead of c or C.
-            atom.SetNumExplicitHs(total_h)
-            atom.SetNoImplicit(True)
-            
-            # Update property cache to check valence state
-            try:
-                atom.GetOwningMol().UpdatePropertyCache(strict=False)
-            except:
-                pass
-                
-            # Check for valence deficit (to handle radicals like [Cl] vs Cl->HCl)
-            # Only do this if not already set (though usually 0)
-            if atom.GetNumRadicalElectrons() == 0:
-                pt = Chem.GetPeriodicTable()
-                default_val = pt.GetValenceList(atom.GetAtomicNum())[0]
-                # Use GetTotalValence() which includes our set ExplicitHs after UpdatePropertyCache
-                current_val = atom.GetTotalValence()
-                
-                if current_val < default_val:
-                    deficit = default_val - current_val
-                    atom.SetNumRadicalElectrons(deficit)
-            
-        # 2. Generate Canonical SMILES
-        # isomericSmiles=True ensures we keep stereochem info if present
-        kmol = rw_mol.GetMol()
-        smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
-        return smiles, kmol
-
-# ==========================================
-# PART 2: DISCRETE ALIGNER (V2.4 Logic)
-# ==========================================
+        # Off-diagonal elements (symmetric, negative product)
+        I[0, 1] -= m * (pos[0]*pos[1])
+        I[0, 2] -= m * (pos[0]*pos[2])
+        I[1, 2] -= m * (pos[1]*pos[2])
+        
+    I[1, 0] = I[0, 1]
+    I[2, 0] = I[0, 2]
+    I[2, 1] = I[1, 2]
+    
+    # 3. Diagonalize
+    evals, evecs = np.linalg.eigh(I)
+    
+    x_axis = evecs[:, 0] # v1 (Lowest)
+    z_axis = evecs[:, 2] # v3 (Highest)
+    
+    # Enforce Right-Handed System: Y = Z x X
+    y_axis = np.cross(z_axis, x_axis)
+    
+    # Construct Rotation Matrix (Rows are new basis vectors)
+    R = np.vstack([x_axis, y_axis, z_axis])
+    
+    # Apply Rotation
+    new_coords = coords @ R.T
+    
+    # 4. Handle Degeneracy (Axial Rotation) & Sign Ambiguity
+    # Determine Pivot Atom to fix X-axis rotation
+    dists_sq = np.sum(new_coords**2, axis=1)
+    max_dist_sq = np.max(dists_sq)
+    tolerance = 1e-5
+    candidates = np.where(dists_sq >= max_dist_sq - tolerance)[0]
+    pivot_idx = np.min(candidates)
+    
+    pivot_pos = new_coords[pivot_idx]
+    angle = np.arctan2(pivot_pos[1], pivot_pos[0])
+    
+    c = np.cos(-angle)
+    s = np.sin(-angle)
+    
+    R_pivot = np.array([
+        [c, -s, 0],
+        [s, c, 0],
+        [0, 0, 1]
+    ])
+    
+    canonical_coords = new_coords @ R_pivot.T
+    
+    # 5. Handle Z-Axis Sign Ambiguity
+    z_moment_idx = 0.0
+    for i in range(len(canonical_coords)):
+        z_moment_idx += canonical_coords[i][2] * (i + 1)**3
+        
+    if z_moment_idx < 0:
+        canonical_coords[:, 1] *= -1
+        canonical_coords[:, 2] *= -1
+    
+    return canonical_coords.tolist()
 
 def normalize_template(arr):
     return arr / np.linalg.norm(arr, axis=1)[:, None]
-
-# Define Templates with Explicit Indices (Order matters!)
 
 def normalize_cols(arr):
     return arr / np.linalg.norm(arr, axis=1)[:, None]
@@ -140,8 +163,6 @@ TEMPLATE_SPECS = {
     }
 }
 
-# List of Symmetric Ligands that should have a fixed Heading Atom (The first binding atom in SMILES)
-# This overrides the geometric alignment which can be unstable for symmetric ligands.
 SYMMETRIC_LIGANDS = {
     "C=C",
     "[CH2]=[CH2]",
@@ -154,7 +175,7 @@ SYMMETRIC_LIGANDS = {
     "[cH]1[cH][cH][cH][cH][cH][cH]1",
 }
 
-# Generate Legacy TEMPLATES (Pos only) for Aligner compatibility
+# Generate Legacy TEMPLATES
 TEMPLATES = {}
 for geo, specs in TEMPLATE_SPECS.items():
     sorted_slots = sorted(specs.keys())
@@ -181,14 +202,7 @@ class OINDiscreteAligner:
 
         # 2. Competitive Geometry Detection
         n_eff = len(virtual_atoms)
-        # Handle cases where N_eff is small or unexpected, defaulting to LIN if needed or raising error
-        # Assuming n_eff corresponds to one of the templates for now
-        
-        # Determine candidates based on N_eff
-        # This mapping logic might need to be more robust for N=1 etc, but following PRD guidance
         if n_eff < 2: 
-             # Fallback or specific handling for N=1? usually LIN with one empty slot or just LIN
-             # For now let's assume valid N >= 2
              tmpl_name = 'LIN' 
              tmpl_vectors = TEMPLATES['LIN']
              mapping = [None, None] 
@@ -198,10 +212,9 @@ class OINDiscreteAligner:
             if best_res:
                 tmpl_name, tmpl_vectors, mapping, R_mat = best_res
             else:
-                 # Fallback if no match found (e.g. geometry too distorted)
                  return "g:NON|w:NON"
 
-        # 3. Canonicalize (Maximization + Homogeneous Sort + Heading Syntax)
+        # 3. Canonicalize
         canonical_str = self._permute_and_serialize(mapping, tmpl_vectors, geometry_name=tmpl_name, alignment_rotation=R_mat)
         
         return f"g:{tmpl_name}|w:{canonical_str}"
@@ -209,37 +222,22 @@ class OINDiscreteAligner:
     def _reduce_hapticity(self):
         virtual_atoms = []
         for i, lig in enumerate(self.ligands):
-            # Skip Metal Center (It has no binding atoms to itself)
             if i == self.metal_idx:
                 continue
-                
-            # Skip fragments with no binding atoms (non-coordinating solvents?)
             if not lig.get('binding_atoms'):
                 continue
-
-            # Sort Key uses the SANITIZED smiles
-            # ligand 'binding_atoms' structure: [(global_idx, mass, coords_array, local_idx)]
-            # We need the mass of the first binding atom? Or heaviest? 
-            # The PRD says "Atomic Mass of the Binding Atom". 
-            # Let's assume 'binding_atoms' is already sorted or we pick the first one which is usually primary.
-            # Using the first one from the supplied list.
             
             first_binding_atom_mass = lig['binding_atoms'][0][1]
             base_sort_key = (i, first_binding_atom_mass, lig['smiles']) 
             
             binding_coords = np.array([ba[2] for ba in lig['binding_atoms']])
-            # We need to track which atom is which. The 'binding_atoms' list has entries.
-            # We need LOCAL indices for the output string (Rank.LocalIdx:Slot).
-            # Let's store the full atom info.
             
-            # Retrieve Metal Center coordinates
             metal_frag = self.ligands[self.metal_idx]
             metal_origin = metal_frag.get('metal_coords')
             if metal_origin is None:
-                # Fallback to origin if not found (should not happen with updated xyz2mol)
                 metal_origin = np.array([0.0, 0.0, 0.0])
                 
-            zone_a_info = lig['binding_atoms'] # list of (idx, mass, coords, local_idx)
+            zone_a_info = lig['binding_atoms'] 
             n_b = len(binding_coords)
             
             groups = []
@@ -260,82 +258,52 @@ class OINDiscreteAligner:
                 groups.append(component)
             
             for grp in groups:
-                # Sort group by local_idx to ensure alignment between coords and indices
                 grp.sort(key=lambda k: zone_a_info[k][3])
-
                 grp_coords = binding_coords[grp]
                 if len(grp_coords) == 0:
                     continue
                 centroid = np.mean(grp_coords, axis=0)
-                
-                # Representative Atom: The one with the lowest local index (now first)
                 rep_idx = zone_a_info[grp[0]][3]
-                
-                # Get ALL local indices for this group (for w-tag expansion)
                 constituent_indices = sorted([zone_a_info[k][3] for k in grp])
                 
                 virtual_atoms.append({
-                    'rank': i, # Ligand Rank
+                    'rank': i, 
                     'local_idx': rep_idx,
-                    'constituent_indices': constituent_indices, # List of all atoms in this haptic group
+                    'constituent_indices': constituent_indices,
                     'key': base_sort_key,
                     'coords': centroid - metal_origin,
-                    'group_coords': grp_coords - metal_origin, # Store centered group coords for heading calc
-                    # Identity key for Homogeneous Sorting: (Mass, SMILES)
+                    'group_coords': grp_coords - metal_origin,
                     'chem_id': (first_binding_atom_mass, lig['smiles'])
                 })
         
         return virtual_atoms
 
-
-
     def _find_best_geometry_match(self, n, virtual_atoms):
         candidates = []
-        # Exhaustive Candidate List based on Coordination Number (N)
-        if n == 2: 
-            candidates = ['LIN']
-        elif n == 3: 
-            candidates = ['TPL']
-        elif n == 4: 
-            # Check ALL 4-coordinate geometries
-            candidates = ['SPL', 'TET', 'TPY']
-            logger.debug(f"  N=4: Checking all candidates: {candidates}")
-        elif n == 5:
-            # Check ALL 5-coordinate geometries
-            candidates = ['TBP', 'SPY']
-            logger.debug(f"  N=5: Checking all candidates: {candidates}")
-        elif n == 6: 
-            candidates = ['OCT']
-        elif n == 7: 
-            candidates = ['PBP']
+        if n == 2: candidates = ['LIN']
+        elif n == 3: candidates = ['TPL']
+        elif n == 4: candidates = ['SPL', 'TET', 'TPY']
+        elif n == 5: candidates = ['TBP', 'SPY']
+        elif n == 6: candidates = ['OCT']
+        elif n == 7: candidates = ['PBP']
         else: 
-            # Fallback or robust handling
-            if n > 7: candidates = ['OCT'] # Best effort
+            if n > 7: candidates = ['OCT'] 
             else: candidates = ['LIN']
         
         min_rmsd = float('inf')
         best_result = None
         
-        logger.debug(f"Geometry Selection (N={n})")
-        
         for name in candidates:
             vectors = TEMPLATES.get(name)
             if vectors is None: continue
-            
-            # If N > Slots, we can't map one-to-one without leaving some out or overlapping.
-            # OIN assumes N <= Slots usually. If N < Slots, we have empty slots. 
             if n > len(vectors): continue
 
             mapping, rmsd, R_mat = self._map_to_template(virtual_atoms, vectors)
-            logger.debug(f"  Candidate: {name}, RMSD: {rmsd:.4f}")
             
             if mapping is not None and rmsd < min_rmsd:
                 min_rmsd = rmsd
                 best_result = (name, vectors, mapping, R_mat)
         
-        if best_result:
-            logger.debug(f"  Selected: {best_result[0]} (RMSD {min_rmsd:.4f})")
-            
         return best_result
         
     def _map_to_template(self, virtual_atoms, template_vectors):
@@ -352,14 +320,15 @@ class OINDiscreteAligner:
         best_mapping = None
         best_R = Rotation.from_matrix(np.eye(3))
 
-        import itertools
         perm_iterator = itertools.permutations(range(n_slots), n_atoms)
         
         for slot_indices in perm_iterator:
              target_vecs = template_vectors[list(slot_indices)]
              
              try:
-                 R, rmsd = Rotation.align_vectors(target_vecs, input_norms)
+                 with warnings.catch_warnings():
+                     warnings.filterwarnings("ignore", message="Optimal rotation is not uniquely or poorly defined")
+                     R, rmsd = Rotation.align_vectors(target_vecs, input_norms)
              except:
                  continue
                  
@@ -376,26 +345,19 @@ class OINDiscreteAligner:
 
 
     def _permute_and_serialize(self, slot_assignment, tmpl_vectors, geometry_name=None, alignment_rotation=None):
-        # 1. Symmetry Permutations
         symmetries = self._brute_force_symmetries(tmpl_vectors)
         best_sequence = None
-        best_final_map = None # Stores {Rank: SlotIndex}
+        best_final_map = None 
         
-        # If slot_assignment is None or empty, return empty
         if not slot_assignment: return ""
 
-        # 2. Find Canonical View (Maximization)
         for perm in symmetries:
             current_view_map = []
             
             for old_slot_idx, atom in enumerate(slot_assignment):
                 if atom is None: continue
-                
-                # Permutation maps OLD slot to NEW slot
                 new_slot_idx = perm[old_slot_idx]
                 ideal_vec = tmpl_vectors[new_slot_idx]
-                
-                # Sanitize Vector
                 v_clean = []
                 for val in ideal_vec:
                     if abs(val) < 1e-9: val = 0.0
@@ -406,7 +368,7 @@ class OINDiscreteAligner:
                     'rank': atom['rank'],
                     'local_idx': atom['local_idx'], 
                     'constituent_indices': atom.get('constituent_indices', [atom['local_idx']]), 
-                    'group_coords': atom.get('group_coords'), # Propagate!
+                    'group_coords': atom.get('group_coords'), 
                     'chem_id': atom['chem_id'],
                     'vec': ideal_vec,
                     'slot': new_slot_idx
@@ -414,14 +376,12 @@ class OINDiscreteAligner:
             
             if not current_view_map: continue
 
-            # 3. Homogeneous Sorting
             grouped = defaultdict(list)
             for item in current_view_map:
                 grouped[item['chem_id']].append(item)
             
             final_sorted_view = []
             for chem_id, items in grouped.items():
-                # Group items by Rank (Fragment) to preserve connectivity
                 frag_groups = defaultdict(list)
                 for it in items:
                     frag_groups[it['rank']].append(it)
@@ -438,10 +398,8 @@ class OINDiscreteAligner:
                         'items': f_items
                     })
                 
-                # Sort the available sets descending (Maximization)
                 available_sets.sort(key=lambda x: x['vec_set'], reverse=True)
                 
-                # Assign Best Sets to Lowest Ranks
                 for i, target_rank in enumerate(target_ranks):
                     assigned_set = available_sets[i]
                     for atom_data in assigned_set['items']:
@@ -455,22 +413,18 @@ class OINDiscreteAligner:
                             'chem_id': chem_id
                         })
 
-            # Sort by Rank/LocalIdx for comparison
             final_sorted_view.sort(key=lambda x: (x['rank'], x['local_idx']))
             current_sequence = [x['vec'] for x in final_sorted_view]
             
-            # Maximization Check
             if best_sequence is None or current_sequence > best_sequence:
                 best_sequence = current_sequence
                 best_final_map = final_sorted_view
         
         if not best_final_map: return "error"
 
-        # 4. Heading Atom Selection (V3.4)
         heading_local_indices = set()
         
         if geometry_name and alignment_rotation is not None and geometry_name in TEMPLATE_SPECS:
-            # Group by rank to handle full haptic fragments
             by_rank = defaultdict(list)
             for x in best_final_map:
                 by_rank[x['rank']].append(x)
@@ -481,39 +435,27 @@ class OINDiscreteAligner:
                 first_item = items[0]
                 slot_idx = first_item['slot']
                 
-                # Skip if slot not in specs or no ref vector
                 if slot_idx not in template_spec or 'ref' not in template_spec[slot_idx]:
                     continue
                 
                 ref_vec = np.array(template_spec[slot_idx]['ref'])
-                
-                # Get Group Coords
                 grp_coords = first_item.get('group_coords') 
                 if grp_coords is None: continue
-                
-                # Calculate Centroid
                 centroid = np.mean(grp_coords, axis=0)
                 
                 if len(grp_coords) < 2: continue
                 
                 best_dot = -float('inf')
                 best_idx = -1
-                
                 ordered_indices = first_item['constituent_indices']
                 
                 for k, coord in enumerate(grp_coords):
-                    # Vector from Centroid -> Atom (Molecular Frame)
                     v_mol = coord - centroid
-                    
-                    # Transform to Template Frame using Alignment Rotation R
                     v_tmpl = alignment_rotation.apply(v_mol)
-                    
-                    # Normalize
                     norm = np.linalg.norm(v_tmpl)
                     if norm > 1e-6:
                         v_tmpl_n = v_tmpl / norm
                         dot = np.dot(v_tmpl_n, ref_vec)
-                        
                         if dot > best_dot:
                             best_dot = dot
                             best_idx = ordered_indices[k]
@@ -521,110 +463,60 @@ class OINDiscreteAligner:
                 if best_idx != -1:
                     heading_local_indices.add((rank, best_idx))
             
-            # 4b. Symmetric Ligand Override
-            # For known symmetric ligands, we force the heading atom to be the first one (Index 0 in local SMILES)
-            # This ensures deterministic output (e.g. [CH2]{^}=[CH2] instead of arbitrary).
             for rank, items in by_rank.items():
                 first_item = items[0]
                 smiles = first_item['chem_id'][1]
-                
                 if smiles in SYMMETRIC_LIGANDS:
-                    # Remove any existing heading assignment for this ligand (from geometric step above)
-                    # We want to replace it, not add to it (though usually only one heading per ligand group)
-                    # But 'heading_local_indices' is a set of (rank, idx).
-                    # We should clear entries for this rank first to be safe?. 
-                    # Actually, the geometric block above loop over ranks. 
-                    # It's cleaner to check SYMMETRIC_LIGANDS *inside* the loop above, but separating logic is also fine.
-                    # Let's just Enforce it here.
-                    
-                    # Find min index among constituent_indices
                     ordered_indices = sorted(first_item['constituent_indices'])
                     forced_idx = ordered_indices[0]
-                    
-                    # Remove any other heading for this rank just in case (e.g. if geometric picked another)
                     to_remove = [idx for r, idx in heading_local_indices if r == rank]
                     for idx in to_remove:
                         heading_local_indices.remove((rank, idx))
-                        
                     heading_local_indices.add((rank, forced_idx))
-                    logger.debug(f"Forced Heading Atom for Symmetric Ligand {smiles}: Index {forced_idx}")
 
-        # 5. Serialize Index-Based Format: w:Rank.Idx:Slot
         parts = []
         for x in best_final_map:
             slot = x['slot']
             rank = x['rank']
-            
             indices = x.get('constituent_indices', [x['local_idx']])
             
             for idx in indices:
                 tag = f"{rank}.{idx}:{slot}"
-                
-                # Append Heading Marker if this is the chosen atom
                 if (rank, idx) in heading_local_indices:
-                     # Calculate Winding Direction using V3.6 Algorithm
-                     direction_char = ">" # Default
-                     
+                     direction_char = ">"
                      if geometry_name in TEMPLATE_SPECS and slot in TEMPLATE_SPECS[geometry_name]:
                          slot_def = TEMPLATE_SPECS[geometry_name][slot]
-                         
-                         # Need constituent_indices (ordered) to find next atom
                          c_indices = sorted(x.get('constituent_indices', [idx]))
-                         
                          direction_char = self._determine_winding(
                              grp_coords=x.get('group_coords'),
-                             star_idx=idx, # This is the local_idx of the star
+                             star_idx=idx,
                              constituent_indices=c_indices,
                              slot_z=np.array(slot_def['pos']),
                              slot_x_ref=np.array(slot_def['ref']),
                              alignment_rotation=alignment_rotation
                          )
-                         
                      tag += direction_char
-
                 parts.append(tag)
         
         return ";".join(parts)
 
     def _determine_winding(self, grp_coords, star_idx, constituent_indices, slot_z, slot_x_ref, alignment_rotation=None):
-        """
-        OIN V3.6 Winding Algorithm
-        Determines if the SMILES winding (Star -> Next) is Clockwise (>) or Counter-Clockwise (<)
-        relative to the template Slot Z vector.
-        """
         n = len(constituent_indices)
-        if n < 3: return ">" # Linear/Monodentate defaults to Forward
+        if n < 3: return ">"
         
-        # Transform Logic: We need the vectors in the TEMPLATE FRAME to compare with Slot Z (which is in Template Frame).
-        # We assume 'grp_coords' are in Molecular Frame (centered on metal?) if coming from virtual_atom 'group_coords'
-        # Check _reduce_hapticity: 'group_coords': grp_coords - metal_origin. Yes, Centered at Metal.
-        
-        # 1. Identify Star Index in the List
         try:
             list_idx = constituent_indices.index(star_idx)
         except ValueError:
             return ">"
             
-        # 2. Get Coords for Star and Next
-        # grp_coords are ordered matching constituent_indices? 
-        # _reduce_hapticity: grp.sort(key=lambda k: zone_a_info[k][3]) then grp_coords = binding_coords[grp]
-        # So yes, grp_coords[k] corresponds to constituent_indices[k].
-        
-        # Star Coord (Molecular Frame)
         coord_star = grp_coords[list_idx]
-        
-        # Next Atom (Cyclic +1 in SMILES order)
         next_list_idx = (list_idx + 1) % n
         coord_next = grp_coords[next_list_idx]
-        
-        # Centroid of the group (Molecular Frame)
         centroid = np.mean(grp_coords, axis=0)
         
-        # Vectors relative to Centroid (Molecular Frame)
         v_star_mol = coord_star - centroid
         v_next_mol = coord_next - centroid
         
-        # Transform to Template Frame if rotation exists
         if alignment_rotation:
             v_star = alignment_rotation.apply(v_star_mol)
             v_next = alignment_rotation.apply(v_next_mol)
@@ -632,11 +524,7 @@ class OINDiscreteAligner:
             v_star = v_star_mol
             v_next = v_next_mol
             
-        # 3. Cross Product (Star x Next) -> Winding Normal (Template Frame)
         winding_normal = np.cross(v_star, v_next)
-        
-        # 4. Dot with Slot Z (Template Frame)
-        # Note: 'slot_z' passed here is usually normalized or Pos vector.
         dot = np.dot(winding_normal, slot_z)
         
         return ">" if dot >= 0 else "<"
@@ -650,10 +538,6 @@ class OINDiscreteAligner:
             rot = R.apply(vectors)
             perm = [-1]*n
             matches = 0
-            
-            # Check if this rotation maps the template to itself
-            # Each vector in 'rot' must match a vector in 'vectors'
-            
             for i in range(n):
                 dists = np.linalg.norm(vectors - rot[i], axis=1)
                 best = np.argmin(dists)

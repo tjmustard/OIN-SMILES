@@ -20,8 +20,38 @@ def calculate_rmsd_mols(mol1, mol2):
 
 from verify_xyz_to_oin import get_examples, Example
 from reporting import VerificationReporter
+try:
+    from tests.unit import check_environment
+except ImportError:
+    check_environment = None
+
+# Monkeypatch removed per user request to use standard Architector XTB
+pass
+
+# DEBUG: Check XTB import status inside this script context
+try:
+    import architector.io_calc
+    print(f"DEBUG: architector.io_calc.XTB is: {architector.io_calc.XTB}")
+    
+    # Force assignment if it failed internally but we can find it
+    if architector.io_calc.XTB is None:
+        print("DEBUG: XTB is None. Attempting manual import and assignment...")
+        try:
+            from xtb.ase.calculator import XTB
+            architector.io_calc.XTB = XTB
+            print(f"DEBUG: Forcibly assigned architector.io_calc.XTB = {XTB}")
+        except Exception as e:
+            print(f"DEBUG: Manual import FAILED: {e}")
+            import traceback
+            traceback.print_exc()
+except ImportError:
+    print("DEBUG: Could not import architector.io_calc")
 
 def main():
+    if check_environment:
+        print("\n--- Pre-flight Environment Check ---")
+        check_environment.main()
+        print("------------------------------------\n")
     parser = argparse.ArgumentParser(description="Verify OIN Round-Trip")
     parser.add_argument("--output-dir", type=str, help="Directory to save verification artifacts")
     parser.add_argument("--limit", type=int, help="Limit number of examples to run (for fast testing)")
@@ -115,7 +145,10 @@ def main():
             # Step 2: OIN(1) -> XYZ(Gen) (Architector)
             # -------------------------------------------------------------
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
+            
+            # Use defaults (ArchitectorAdapter defaults to GFN2-xTB)
             extra_params = {}
+
             if debug_dump_path:
                 extra_params["_debug_dump_path"] = debug_dump_path
             

@@ -17,13 +17,15 @@ class TestArchitectorAdapter(unittest.TestCase):
     @patch('oinsmiles.generation.architector_adapter.element') # Mock mendeleev
     def test_convert(self, mock_element, mock_chem):
         # Setup inputs
-        vec = OINVector(atom_idx=-1, vector=(1.0, 0.0, 0.0), fragment_idx=1, atom_in_fragment_idx=0)
+        # Use valid slot_idx for SPL (0..3)
+        vec = OINVector(atom_idx=-1, vector=(1.0, 0.0, 0.0), fragment_idx=1, atom_in_fragment_idx=0, slot_idx=0)
         parsed = ParsedOIN(
             smiles="[Pt].[Cl]",
             fragments=["[Pt]", "[Cl]"],
             metal_fragment_idx=0,
             vectors=[vec],
-            original_oin="raw"
+            original_oin="raw",
+            geometry="SPL"
         )
 
         # Setup RDKit mocks
@@ -33,14 +35,22 @@ class TestArchitectorAdapter(unittest.TestCase):
         
         mock_mol_ligand = MagicMock()
         mock_mol_ligand.GetNumAtoms.return_value = 1
-        mock_mol_ligand.GetAtomWithIdx.return_value.GetSymbol.return_value = "Cl"
+        mock_atom = mock_mol_ligand.GetAtomWithIdx.return_value
+        mock_atom.GetSymbol.return_value = "Cl"
+        mock_atom.GetNumExplicitHs.return_value = 0
+        mock_atom.GetNumImplicitHs.return_value = 0
+        mock_atom.GetNoImplicit.return_value = False
+        mock_atom.GetDegree.return_value = 0
 
         # Side effect for MolFromSmiles
-        def mol_from_smiles(s):
+        def mol_from_smiles(s, **kwargs):
             if "Pt" in s: return mock_mol_metal
             if "Cl" in s: return mock_mol_ligand
             return None
         mock_chem.MolFromSmiles.side_effect = mol_from_smiles
+        
+        # Mock MolToSmiles to return expected string
+        mock_chem.MolToSmiles.return_value = "[Cl]"
 
         # Setup Mendeleev mocks
         mock_elem_obj = MagicMock()
@@ -51,7 +61,8 @@ class TestArchitectorAdapter(unittest.TestCase):
         args = self.adapter.convert(parsed)
 
         # Verify
-        self.assertEqual(args['metal'], "Pt")
+        # Verify
+        self.assertEqual(args['core']['metal'], "Pt")
         self.assertEqual(len(args['ligands']), 1)
         
         lig = args['ligands'][0]
@@ -59,7 +70,7 @@ class TestArchitectorAdapter(unittest.TestCase):
         self.assertEqual(lig['coordinating_atoms'], [0])
         
         # Check site coords
-        site_coords = args['parameters']['site_coords']
+        site_coords = args['core']['coordList']
         self.assertEqual(len(site_coords), 1)
         # Distance = (100+100)/100 = 2.0 Angstrom
         # Vector (1,0,0) -> Pos (2.0, 0.0, 0.0)
