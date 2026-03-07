@@ -15,13 +15,6 @@ class OINInlineHandler:
 
     @staticmethod  
     def generate_inline_string(oin_v2_string: str) -> str:
-        # ... (rest of method unchanged until loop)
-        # ... (rest of method unchanged until loop)
-        # We need to preserve the surrounding code, so I will provide the chunks.
-        pass # Placeholder for replace logic
-
-    # ... (skipping to parse_inline_string modification)
-  
         """  
         Converts a V2.4 string (|w:..|) to V3.0 Inline format.  
         Input: "[Pt].[Cl]... |g:SPL|w:1.0:0;2.0:1..."  
@@ -32,9 +25,14 @@ class OINInlineHandler:
         # 1. Parse V2.4 components  
         smiles_part, metadata = oin_v2_string.split(" |", 1)  
           
-        # Parse Geometry  
-        geo_match = re.search(r"g:([A-Z]{3})", metadata)  
-        if not geo_match: 
+        # Parse Geometry
+        geo_match = re.search(r"g:([A-Z]{3})", metadata)
+        
+        # Parse Bond Stereo
+        b_match = re.search(r"b:([^|]+)", metadata)
+        b_tag = f"|b:{b_match.group(1)}" if b_match else ""
+
+        if not geo_match:
             # It might be a partial OIN string or missing geometry, just return as is
             return oin_v2_string
             
@@ -80,47 +78,6 @@ class OINInlineHandler:
         new_fragments.append(new_metal)  
           
         # Handle Ligands (Indices 1..N)  
-        # Note: The 'w' tag ranks correspond to Ligand Indices (0..N-1)  
-        # BUT the 'w' tag usually ignores the metal.  
-        # Let's assume w-tag rank 0 is the first LIGAND (fragment 1).  
-        # Actually in V2.4, OIN aligner (oin_aligner.py line 720+) usually uses rank based on sorted fragments.
-        # But fragments in SMILES are also sorted.
-        # So fragments[1] corresponds to rank 1 (if we count metal as 0)?
-        # Let's check xyz2mol/oin_aligner.
-        # In oin_aligner.py, fragments are processed.
-        # The w tag is `rank.atom_idx:slot`.
-        
-        #Wait, w-tag format in V2.4 (OINDiscreteAligner):
-        # `{rank_in_smiles}.{atom_idx}: {slot_idx}`
-        # rank_in_smiles is the index of the fragment in the final sorted SMILES string.
-        # So fragment 0 is metal. fragments[1] is rank 1.
-        
-        for i in range(1, len(fragments)):  
-            lig_rank = i # 0-based index in SMILES string
-            frag_smiles = fragments[i]  
-              
-            if lig_rank in slot_map:  
-                slot = slot_map[lig_rank]  
-                  
-                # INJECTION LOGIC:  
-                # We need to append [slot] to the Binding Atom(s).  
-                # OIN-Inline syntax: Atom[Slot].  
-                # [cH] -> [cH][0]  
-                # [NH3] -> [NH3][2]  
-                
-                # We need to append [Slot] to the atoms that are actuall binding.
-                # But the w-tag from aligner doesn't tell us WHICH atom is binding in this simple map logic, 
-                # wait, w-tag DOES tell us: `rank.atom_idx:slot` 
-                # But here we simplified `slot_map[rank] = slot` in the code above.
-                # This assumes monodentate per fragment? Or 1 slot per fragment?
-                # The PRD code example assumed: `w:1.0:0;2.0:1` -> Rank 1 (atom 0) binds to slot 0.
-                
-                # If we have `w:1.0:0`, it means Fragment 1, Atom 0 binds to Slot 0.
-                # If we have chelators, we might have `w:1.0:0;1.5:1`.
-                
-                # So we should parse w-tag fully.
-                pass
-        
         # Re-parse w-tag properly to handle atom indices
         # Map: Rank -> List of (AtomIdx, Slot)
         detailed_map = {}
@@ -156,9 +113,6 @@ class OINInlineHandler:
             
         # Re-build fragments
         # Skip metal 0
-        
-        
-        # Mapping helpers
         import rdkit.Chem as Chem
 
         for i in range(1, len(fragments)):
@@ -168,9 +122,6 @@ class OINInlineHandler:
             if lig_rank in detailed_map:
                 binders = detailed_map[lig_rank]
                 # binders is list of (atom_idx, slot)
-                
-                # Check consistency: if all atoms map to same slot, use simple replacement if brackets exist?
-                # No, mixed strategy is bad. Let's use RDKit mapping for robustness if possible.
                 
                 try:
                     mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
@@ -188,17 +139,12 @@ class OINInlineHandler:
                             
                             mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + offset)
                             
+                    # Restore ring info for aromaticity in SMILES
+                    Chem.FastFindRings(mol)
                     # Generate SMILES with maps
                     mapped_smiles = Chem.MolToSmiles(mol, canonical=False) 
-                    # canonical=False to hopefully preserve atom order if input was canonical?
-                    # Ideally we want output to match input structure but with tags.
-                    # RDKit might reorder.
-                    # BUT xyz2mol generated the input Frag SMILES using RDKit canonical.
-                    # So Chem.MolToSmiles(mol) should likely produce the same string + maps.
-                    # Let's trust RDKit.
                     
                     # Regex replacement: [Symbol:Map] -> Symbol[Slot]
-                    # Pattern: \[([^:\]]+):(\d+)\]
                     def replace_map(match):
                         content = match.group(1)
                         map_num = int(match.group(2))
@@ -219,36 +165,10 @@ class OINInlineHandler:
                         
                         suffix = heading_char if is_heading else ""
                         
-                        # Heuristic to decide on brackets:
-                        # If content is simple organic subset (c, n, C, N, O, Cl, F, Br, I, etc)
-                        # AND contains no other characters (like H, +, -)... 
-                        # We might strip brackets.
-                        # BUT we need to be careful about implicit Hs.
-                        # [c] (Zone A) -> [c][0] (Keep brackets to imply no implicit H if that was intention?)
-                        # But [c:1000] -> [c][0]. Content is 'c'.
-                        # If we output c[0], we lose the "bracket-ness".
-                        # However, for [n:1000] -> content 'n'.
-                        # User wants n[0] for Pyridine N.
-                        # Pyridine N is 'n'. [n] is also valid but implies 0 H.
-                        # 
-                        # Safe Strategy: ALWAYS output [Content][Slot]?
-                        # User output shows: N[3]. (Unbracketed N).
-                        # So we prefer unbracketed if possible.
-                        #
-                        # Check if 'content' is valid unbracketed SMILES atom?
-                        # B, C, N, O, P, S, F, Cl, Br, I + aromatic b, c, n, o, p, s.
-                        
-
                         if content == 'NH3':
                             return f"N{{{slot}{suffix}}}"
 
-                        # Use explicit list for pure organic atoms that can be unbracketed
-                        # Allow aromatic atoms (n, o, p, s).
-                        # Force brackets for c (aromatic C without H) to distinguish from standard c (aromatic CH).
-                        # Allow standard aliphatic N, P, S (Amine, Phosphine, Thiol/Thioether).
-                        # Force brackets for C and O (Carbene/Carbyne/Carbonyl/Alkoxide) as they often indicate 
-                        # non-standard valence/radical state in OIN.
-                        is_pure_organic = re.fullmatch(r"^(N|P|S|n|o|p|s)$", content)
+                        is_pure_organic = re.fullmatch(r"^(N|P|S|c|n|o|p|s)$", content)
                         
                         if is_pure_organic:
                             return f"{content}{{{slot}{suffix}}}"
@@ -277,11 +197,10 @@ class OINInlineHandler:
                         else:
                             tagged_frag = f"{frag_smiles}{{{slot}}}"
                         new_fragments.append(tagged_frag)
-
             else:
                 new_fragments.append(frag_smiles)
                   
-        return ".".join(new_fragments)
+        return ".".join(new_fragments) + b_tag
 
     @staticmethod  
     def parse_inline_string(inline_string: str) -> Tuple[str, str, List[Tuple[int, int, int, bool, int]]]:  
@@ -430,14 +349,13 @@ class OINInlineHandler:
                 
                 # Generate clean SMILES
                 # Use regex stripping on raw_frag to strictly preserve atom order/indices 
-                # corresponding to the mol we just iterated. 
-                # MolToSmiles(canonical=True) risks reordering atoms, breaking index alignment.
+                # AND chiral markers (@/@@) which RDKit might otherwise normalize away 
+                # during round-trips if not careful.
                 clean_frag = re.sub(r"\{\d+([\>\<]|\^)?\}", "", raw_frag)
                 
                 # Manual fix for [N] -> N if it came from N{0} and looks bracketed?
                 # If input was N{0}, raw_frag is N{0}, clean is N.
                 # If input was [N]{0}, raw_frag is [N]{0}, clean is [N].
-                # OIN Parser usually handles normalization later if needed.
                 clean_fragments.append(clean_frag)
             else:
                 # Fallback: Tag extraction via regex failed or RDKit didn't find maps.

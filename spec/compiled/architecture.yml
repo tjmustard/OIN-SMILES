@@ -1,0 +1,194 @@
+dimensions:
+  Module:
+    description: High-level functional components of the OIN-SMILES toolkit.
+  Atomic:
+    description: Specific classes or functions implementing core logic.
+nodes:
+- id: core
+  dimension: Module
+  description: Core translation logic and data structures for TMCs.
+  status: clean
+- id: generation
+  dimension: Module
+  description: 3D structure generation and Architector integration.
+  status: clean
+- id: oin
+  dimension: Module
+  description: OIN-SMILES string parsing and writing utilities.
+  status: clean
+- id: utils
+  dimension: Module
+  description: Utility functions including xyz2mol and alignment logic.
+  status: clean
+- id: core.translator.XYZToSMILES
+  dimension: Atomic
+  description: Converts XYZ files to OIN-SMILES strings.
+  implements: core
+  depends_on:
+  - utils.xyz2mol.get_tmc_mol
+  - generation.canonicalizer
+  - core.chirality.CIPAssigner
+  status: clean
+- id: core.translator.SMILESToXYZ
+  dimension: Atomic
+  description: Converts OIN-SMILES strings to TMCGraph objects.
+  implements: core
+  depends_on:
+  - oin.parser
+  status: clean
+- id: generation.molassembler_adapter.MolassemblerAdapter
+  dimension: Atomic
+  description: Converts ParsedOIN to Molassembler molecule and generates 3D structure
+    using distance geometry in a separate process. Handles Bohr-to-Angstrom scaling
+    and robust OIN fragment SMILES parsing.
+  implements: generation
+  inputs:
+  - ParsedOIN
+  outputs:
+  - XYZ block string
+  status: clean
+- id: generation.engine.OIN3DGenerator
+  dimension: Atomic
+  description: Orchestrates the conversion from OIN string to 3D structure using Molassembler
+    backend. Replaces legacy Architector engine.
+  implements: generation
+  depends_on:
+  - oin.parser
+  - generation.molassembler_adapter
+  inputs:
+  - OIN-SMILES string
+  outputs:
+  - XYZ block string
+  status: clean
+- id: oin.inline.OINInlineHandler
+  dimension: Atomic
+  description: Handles experimental V3.0 OIN-Inline string formats, including @b bond
+    stereo tags.
+  implements: oin
+  status: clean
+- id: utils.xyz2mol.get_tmc_mol
+  dimension: Atomic
+  description: Primary utility for generating TMC mol objects from XYZ files.
+  implements: utils
+  depends_on:
+  - utils.xyz2mol_local
+  - oin.oin_aligner
+  status: clean
+- id: generation.canonicalizer
+  dimension: Atomic
+  description: Orchestrates PAI Alignment, Fragmentation, and OIN sidecar generation
+    (including @b tags).
+  implements: generation
+  depends_on:
+  - core.chirality.ChiralityRecoveryUtility
+  - core.chirality.PseudoAtomStrategy
+  status: clean
+- id: core.chirality.CIPAssigner
+  dimension: Atomic
+  description: Handles robust CIP assignment, lone-pair pseudo-atom strategy for P/N,
+    and manual biaryl axial chirality perception using 3D coordinates.
+  implements: core
+  inputs:
+  - tmc_mol
+  - xyz_coords
+  outputs:
+  - tmc_mol (with OIN_CIP and OIN_BondStereo props)
+  status: clean
+- id: core.chirality.ChiralityRecoveryUtility
+  dimension: Atomic
+  description: Reconstructs ChiralTags and BondStereo from stored OIN properties.
+  implements: core
+  inputs:
+  - frag_mol
+  outputs:
+  - frag_mol (with ChiralTag and BondStereo)
+  status: clean
+- id: core.chirality.PseudoAtomStrategy
+  dimension: Atomic
+  description: Handles lone-pair pseudo-atom insertion for P/N/C and wildcard substitution.
+  implements: core
+  status: clean
+- id: core.geometry_templates.TEMPLATES
+  dimension: Atomic
+  description: Standard geometry definitions and template vectors.
+  implements: core
+  status: clean
+- id: core.graph.TMCGraph
+  dimension: Atomic
+  description: Lightweight intermediate graph representation of TMCs.
+  implements: core
+  depends_on:
+  - utils.xyz2mol
+  status: clean
+- id: core.graph.mol_from_xyz_file
+  dimension: Atomic
+  description: Wraps xyz2mol to read XYZ file and return RDKit Mol.
+  implements: core
+  depends_on:
+  - utils.xyz2mol
+  status: clean
+- id: core.haptic_math.expand_slot
+  dimension: Atomic
+  description: Expands a single haptic slot into N vectors arranged in a polygon/cone.
+  implements: core
+  status: clean
+- id: generation.haptic.HapticTransformer
+  dimension: Atomic
+  description: Generates haptic binding vectors.
+  implements: generation
+  status: clean
+- id: generation.haptic.HapticResolver
+  dimension: Atomic
+  description: Resolves vectors for a fragment based on Heading/Direction.
+  implements: generation
+  depends_on:
+  - generation.haptic.HapticTransformer
+  - core.geometry_templates.TEMPLATES
+  status: clean
+- id: generation.oin_parser.OINParser
+  dimension: Atomic
+  description: Parses OIN string into ParsedOIN dataclass.
+  implements: generation
+  depends_on:
+  - oin.inline.OINInlineHandler
+  - core.geometry_templates.TEMPLATES
+  status: clean
+- id: oin.parser.OINParser
+  dimension: Atomic
+  description: Parses OIN string into canonical SMILES and tags dict, including @b
+    bond stereo.
+  implements: oin
+  depends_on:
+  - oin.inline.OINInlineHandler
+  status: clean
+- id: oin.sanitizer.OINSanitizer
+  dimension: Atomic
+  description: Generates robust SMILES enforcing explicit brackets and restoring BondStereo.
+  implements: oin
+  status: clean
+- id: oin.writer.OINWriter
+  dimension: Atomic
+  description: Constructs the OIN string from SMILES and tags.
+  implements: oin
+  status: clean
+- id: utils.oin_aligner.OINDiscreteAligner
+  dimension: Atomic
+  description: Aligns and maps discrete ligands to geometry templates.
+  implements: utils
+  depends_on:
+  - oin.sanitizer.OINSanitizer
+  status: clean
+- id: atom_CLI
+  dimension: Atomic
+  description: Implements a command line interface using argparse with xyz2oin and oin2xyz subcommands. Bridges terminal string arguments to the internal Translator and Generator pipelines.
+  implements: mod_api
+  depends_on:
+  - core.translator.XYZToSMILES
+  - generation.engine.OIN3DGenerator
+  inputs:
+  - args.path (XYZ file path string)
+  - args.oin (OIN-SMILES string)
+  outputs:
+  - stdout (OIN-SMILES string or XYZ block string)
+  - stderr (Error messages)
+  status: clean

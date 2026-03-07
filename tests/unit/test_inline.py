@@ -27,7 +27,7 @@ class TestOINInlineHandler(unittest.TestCase):
         
         self.assertEqual(geo, "SPL")
         self.assertEqual(smiles, "[Pt].N")
-        self.assertEqual(vectors[0], (1, 0, 0))
+        self.assertEqual(vectors[0], (1, 0, 0, False, 1))
 
     def test_generate_inline_simple(self):
         # Mocking input V2.4 OIN string

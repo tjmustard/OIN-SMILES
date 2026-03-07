@@ -131,7 +131,18 @@ class OINSanitizer:
                         except:
                             pass
             
-        # 2. Generate Canonical SMILES
+        # 2. Restore Bond Stereo for Axial Chirality
+        # These was captured in CIPAssigner.assign_all and stored on the bond.
+        for bond in rw_mol.GetBonds():
+            if bond.HasProp("OIN_BondStereo"):
+                stereo_val = bond.GetProp("OIN_BondStereo")
+                # Map back to Enum
+                for member in Chem.BondStereo.values.values():
+                    if str(member) == stereo_val:
+                        bond.SetStereo(member)
+                        break
+
+        # 3. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
         kmol = rw_mol.GetMol()
         try:

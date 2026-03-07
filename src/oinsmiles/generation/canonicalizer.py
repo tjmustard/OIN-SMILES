@@ -11,6 +11,7 @@ from typing import List, Tuple, Dict, Any
 
 from ..utils.oin_aligner import _align_to_pai, OINDiscreteAligner
 from ..oin.sanitizer import OINSanitizer
+from ..core.chirality import ChiralityRecoveryUtility, PseudoAtomStrategy
 # We need OINInlineHandler for the final formatting (V3.0/V4.0 requirement)
 try:
     from ..oin.inline import OINInlineHandler
@@ -164,8 +165,24 @@ class Canonicalizer:
                 new_atom.SetNoImplicit(True) # We control H count explicitly
                 new_atom.SetNumExplicitHs(0) # Start with 0, increment later
                 
+                # Copy Chirality Property for recovery later
+                if atom.HasProp("OIN_CIP"):
+                    new_atom.SetProp("OIN_CIP", atom.GetProp("OIN_CIP"))
+                
                 new_idx = mw.AddAtom(new_atom)
                 old_to_new[old_idx] = new_idx
+
+            # 1.5 Capture BondStereo onto New Bonds
+            # This is critical for Axial Chirality (US-004)
+            for old_idx in atoms_to_keep:
+                atom = mol.GetAtomWithIdx(old_idx)
+                for bond in atom.GetBonds():
+                    nbr_idx = bond.GetOtherAtomIdx(old_idx)
+                    if nbr_idx in old_to_new and nbr_idx > old_idx:
+                        if bond.HasProp("OIN_BondStereo"):
+                            # This will be picked up by OINSanitizer.generate_robust_smiles
+                            # because it's set on the NEW bond in mw.
+                            pass
 
             # 2. Merge H Atoms
             for h_idx in hs_to_merge:
@@ -188,9 +205,14 @@ class Canonicalizer:
                     nbr_idx = nbr.GetIdx()
                     # Only add if neighbor is also kept and index > old_idx (avoid duplicates)
                     if nbr_idx in old_to_new and nbr_idx > old_idx:
-                        bond = mol.GetBondBetweenAtoms(old_idx, nbr_idx)
-                        if bond:
-                             mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
+                        bond_type = bond.GetBondType()
+                        new_bond_idx = mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond_type)
+                        if bond.HasProp("OIN_BondStereo"):
+                            new_bond = mw.GetBondWithIdx(new_bond_idx - 1) # AddBond returns number of bonds
+                            # Actually AddBond in RWMol returns the number of bonds. 
+                            # We need to get the bond we just added.
+                            new_bond = mw.GetBondBetweenAtoms(old_to_new[old_idx], old_to_new[nbr_idx])
+                            new_bond.SetProp("OIN_BondStereo", bond.GetProp("OIN_BondStereo"))
             
             frag_mol = mw.GetMol()
             
@@ -203,6 +225,10 @@ class Canonicalizer:
             
             sanitized_smiles = ""
             if not item['is_metal']:
+                # Recover Chirality into Tag before SMILES generation
+                ChiralityRecoveryUtility.recover(frag_mol)
+                # Strip pseudo-atoms if US-003 fallback was triggered
+                frag_mol = PseudoAtomStrategy.strip_pseudo_atoms(frag_mol)
                 sanitized_smiles, _ = OINSanitizer.generate_robust_smiles(frag_mol, local_binding_indices)
             else:
                  sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
@@ -314,9 +340,22 @@ class Canonicalizer:
              new_pair_data.sort(key=lambda x: (x[0], x[1]))
              new_w_parts = [f"{nr}.{li}:{sl}{hd}" for nr, li, sl, hd in new_pair_data]
              new_geometry_string = f"{geo_tag}|w:{';'.join(new_w_parts)}"
-             
              full_smiles = ".".join([f['smiles'] for f in fragments_data])
-             sidecar_oin = f"{full_smiles} |{new_geometry_string}|"
+              
+             # 7. Collect Bond Stereo (@b)
+             bond_stereo_parts = []
+             for b in tmc_mol.GetBonds():
+                 if b.HasProp("OIN_BondStereo"):
+                     u = b.GetBeginAtomIdx()
+                     v = b.GetEndAtomIdx()
+                     s = b.GetProp("OIN_BondStereo")
+                     bond_stereo_parts.append(f"{u}-{v}:{s}")
+              
+             b_tag = ""
+             if bond_stereo_parts:
+                 b_tag = f"|b:{';'.join(bond_stereo_parts)}"
+                  
+             sidecar_oin = f"{full_smiles} |{new_geometry_string}{b_tag}|"
 
         # Final Inline Conversion
         if OINInlineHandler:

@@ -623,7 +623,11 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     tmc_mol = emol.GetMol()
     Chem.SanitizeMol(tmc_mol)
     if with_stereo:
-        chiral_stereo_check(tmc_mol)
+        # with_stereo path might need RWMol for lone pair pseudos if we want to fix it here too
+        rw_tmc = Chem.RWMol(tmc_mol)
+        CIPAssigner.assign_all(rw_tmc, xyz_coords)
+        tmc_mol = rw_tmc.GetMol()
+        
     return tmc_mol, xyz_coords
 
 

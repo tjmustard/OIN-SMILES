@@ -6,6 +6,7 @@ from pathlib import Path
 from rdkit import Chem
 
 from .graph import TMCGraph, BondType, mol_from_xyz_file
+from .chirality import CIPAssigner
 from ..oin.parser import OINParser
 from ..oin.writer import OINWriter
 # We import Canonicalizer from generation module as per PRD.
@@ -32,6 +33,12 @@ class XYZToSMILES:
         # We use the utility which also handles geometry detection basics
         # Wraps xyz2mol
         tmc_mol, xyz_coords = get_tmc_mol(path, charge, with_stereo=False)
+        
+        # 1.1 Assign Stereochemistry BEFORE fragmentation
+        # Cast to RWMol to allow lone-pair pseudo-atom strategy
+        rw_tmc = Chem.RWMol(tmc_mol)
+        CIPAssigner.assign_all(rw_tmc, xyz_coords)
+        tmc_mol = rw_tmc.GetMol()
         
         # 2. Generate OIN
         oin_string = Canonicalizer.canonicalize(tmc_mol, xyz_coords)

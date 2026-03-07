@@ -27,12 +27,13 @@ class OINParser:
              if geo_str:
                  tags['g'] = geo_str
                  
-             # Reconstruct 'w' tag from vector_data list of (rank, slot)
-             # Format: Rank.Idx:Slot;...
-             # We assume atom index 0 for reconstruction as InlineHandler is lossy currently
+             # Reconstruct 'w' tag from vector_data list of (rank, atom_idx, slot, is_heading, direction)
              w_entries = []
-             for rank, slot in vector_data:
-                 w_entries.append(f"{rank}.0:{slot}")
+             for rank, a_idx, slot, is_h, direction in vector_data:
+                 dir_char = ""
+                 if is_h:
+                     dir_char = ">" if direction > 0 else "<"
+                 w_entries.append(f"{rank}.{a_idx}:{slot}{dir_char}")
                  
              if w_entries:
                  tags['w'] = ";".join(w_entries)
@@ -113,3 +114,21 @@ class OINParser:
             except ValueError:
                 continue
         return bonds
+    def parse_bond_stereo(self, b_tag: str) -> List[Tuple[int, int, str]]:
+        """
+        Parses OIN '@b' tag: 'u1-v1:S1;u2-v2:S2'
+        Returns: List of (u, v, stereo_str)
+        """
+        results = []
+        if not b_tag:
+            return results
+        for entry in b_tag.split(";"):
+            if not entry: continue
+            try:
+                # Format: u-v:stereo
+                indices_part, stereo = entry.split(":")
+                u_str, v_str = indices_part.split("-")
+                results.append((int(u_str), int(v_str), stereo))
+            except ValueError:
+                continue
+        return results

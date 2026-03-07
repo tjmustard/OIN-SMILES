@@ -72,13 +72,28 @@ dmypy.json
 # Ruff
 .ruff_cache/
 
-# PRD files (as requested)
-/PRDs
-/verification*
-/examples
-/devtools
-.python*
-uv*
+# PRD files
+/PRDs/
+/verification*/
+/examples/
+/devtools/
 
-# Debug outputs
+# Debug / scratch files at root
 debug_output*.txt
+debug_*.py
+test_hang.py
+
+# uv - keep uv.lock committed (per package management rules)
+.python-version
+.uvx/
+
+# Node / mermaid tooling
+node_modules/
+package-lock.json
+
+# AI agent config and brain dirs
+.agent/
+.agents/
+.claude/
+.gemini/
+
