@@ -256,8 +256,8 @@ def get_examples() -> List[Example]:
             name="CisPlatin (XYZ -> OIN-SMILES)",
             xyz_content=cisplatin_xyz,
             description="Cisplatin with NH3 ligands (neutral OIN representation).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
+            expected_smiles="[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
+            expected_oin_string="[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
             expected_ligands=["[Cl]", "N"]
         )
         examples.append(cisplatin_xyz_ex)
@@ -272,8 +272,8 @@ def get_examples() -> List[Example]:
             name="TransPlatin (XYZ -> OIN-SMILES)",
             xyz_content=transplatin_xyz,
             description="Transplatin with NH3 ligands (neutral OIN representation).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
+            expected_smiles="[Pt@SP2_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
+            expected_oin_string="[Pt@SP2_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
             expected_ligands=["[Cl]", "N"]
         )
         examples.append(transplatin_xyz_ex)
@@ -288,8 +288,8 @@ def get_examples() -> List[Example]:
             name="Cis-PtCl2(en) (XYZ -> OIN-SMILES)",
             xyz_content=cisptcl2en_xyz,
             description="Converting XYZ coordinates of Cisplatin to OIN-SMILES (neutral components).",
-            expected_smiles="[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
-            expected_oin_string="[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
+            expected_smiles="[Pt@SP1_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pt@SP1_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
             expected_ligands=["Cl", "NH2"]
         )
         examples.append(cisptcl2en_xyz_ex)
@@ -320,8 +320,8 @@ def get_examples() -> List[Example]:
             name="PdCl2PhenPhosMe (XYZ -> OIN-SMILES)",
             xyz_content=pd_phenphos_xyz,
             description="Palladium complex with Cl and PhenPhosMe ligands.",
-            expected_smiles="[Pd_SPL].CP{0}(C)c1ccccc1P{1}(C)C.[Cl]{2}.[Cl]{3}",
-            expected_oin_string="[Pd_SPL].CP{0}(C)c1ccccc1P{1}(C)C.[Cl]{2}.[Cl]{3}"
+            expected_smiles="[Pd@SP3_SPL].CP{0}(C)c1ccccc1P{1}(C)C.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd@SP3_SPL].CP{0}(C)c1ccccc1P{1}(C)C.[Cl]{2}.[Cl]{3}"
         )
         examples.append(pd_phenphos_ex)
     except FileNotFoundError:
@@ -335,8 +335,8 @@ def get_examples() -> List[Example]:
             name="fac-Ir(ppy)3 (XYZ -> OIN-SMILES)",
             xyz_content=fac_ir_xyz,
             description="fac-Ir(ppy)3 with corrected OIN.",
-            expected_smiles="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
-            expected_oin_string="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1"
+            expected_smiles="[Ir@OH10_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
+            expected_oin_string="[Ir@OH10_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1"
         )
         examples.append(fac_ir_ex)
     except FileNotFoundError:
@@ -350,8 +350,8 @@ def get_examples() -> List[Example]:
             name="mer-Ir(ppy)3 (XYZ -> OIN-SMILES)",
             xyz_content=mer_ir_xyz,
             description="Meridional Iridium tris(phenylpyridine) complex (neutral OIN representation).",
-            expected_smiles="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
-            expected_oin_string="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1"
+            expected_smiles="[Ir@OH2_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
+            expected_oin_string="[Ir@OH2_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1"
         )
         examples.append(mer_ir_ex)
     except FileNotFoundError:
@@ -365,8 +365,8 @@ def get_examples() -> List[Example]:
             name="PtMeNH3ClBr-Cis (XYZ -> OIN-SMILES)",
             xyz_content=pt_cis_xyz,
             description="Square Planar Pt complex with 4 different ligands (Cis-arrangement).",
-            expected_smiles="[Pt_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}",
-            expected_oin_string="[Pt_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}"
+            expected_smiles="[Pt@SP1_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}",
+            expected_oin_string="[Pt@SP1_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}"
         )
         examples.append(pt_cis_ex)
     except FileNotFoundError:
@@ -380,8 +380,8 @@ def get_examples() -> List[Example]:
             name="PtMeNH3ClBr-Trans (XYZ -> OIN-SMILES)",
             xyz_content=pt_trans_xyz,
             description="Mixed ligand Platinum complex.",
-            expected_smiles="[Pt_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}",
-            expected_oin_string="[Pt_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}"
+            expected_smiles="[Pt@SP2_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}",
+            expected_oin_string="[Pt@SP2_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}"
         )
         examples.append(pt_trans_ex)
     except FileNotFoundError:
@@ -411,8 +411,8 @@ def get_examples() -> List[Example]:
             name="FeCO5 (XYZ -> OIN-SMILES)",
             xyz_content=feco5_xyz,
             description="Iron pentacarbonyl.",
-            expected_smiles="[Fe_TBP].C{0}#O.C{1}#O.C{2}#O.C{3}#O.C{4}#O",
-            expected_oin_string="[Fe_TBP].C{0}#O.C{1}#O.C{2}#O.C{3}#O.C{4}#O"
+            expected_smiles="[Fe@TB8_TBP].C{0}#O.C{1}#O.C{2}#O.C{3}#O.C{4}#O",
+            expected_oin_string="[Fe@TB8_TBP].C{0}#O.C{1}#O.C{2}#O.C{3}#O.C{4}#O"
         )
         examples.append(feco5_ex)
     except FileNotFoundError:
@@ -426,8 +426,8 @@ def get_examples() -> List[Example]:
             name="FeH2(CO)4 (XYZ -> OIN-SMILES)",
             xyz_content=feh2co4_xyz,
             description="Iron dihydride tetracarbonyl.",
-            expected_smiles="[Fe_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O..",
-            expected_oin_string="[Fe_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O.."
+            expected_smiles="[Fe@OH25_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O..",
+            expected_oin_string="[Fe@OH25_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O.."
         )
         examples.append(feh2co4_ex)
     except FileNotFoundError:
@@ -503,8 +503,8 @@ def get_examples() -> List[Example]:
             name="VOacac2 (XYZ -> OIN-SMILES)",
             xyz_content=voacac2_xyz,
             description="Vanadyl acetylacetonate.",
-            expected_smiles="[V_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}",
-            expected_oin_string="[V_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}"
+            expected_smiles="[V@OH21_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}",
+            expected_oin_string="[V@OH21_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}"
         )
         examples.append(voacac2_ex)
     except FileNotFoundError:

@@ -5,7 +5,6 @@ description = "OIN-SMILES: A Python library for generating OIN-SMILES from molec
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "architector>=0.0.10",
     "ase>=3.26.0",
     "mendeleev>=1.1.0",
     "networkx>=3.4.2",
@@ -13,6 +12,17 @@ dependencies = [
     "numpy>=2.2.6",
     "openbabel-wheel>=3.1.1.22",
     "rdkit>=2025.9.3",
+    "scine-molassembler>=2.0.0",
     "scipy>=1.15.3",
     "xtb>=22.1",
 ]
+
+[project.scripts]
+oin-smiles = "oinsmiles.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/oinsmiles"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

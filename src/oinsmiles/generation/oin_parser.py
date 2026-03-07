@@ -54,6 +54,7 @@ class ParsedOIN:
     metal_fragment_idx: int
     vectors: List[OINVector]
     original_oin: str
+    geo_code: str = ""
 
 class OINParser:
     def parse(self, oin_string: str) -> ParsedOIN:
@@ -98,7 +99,8 @@ class OINParser:
                 fragments=fragments,
                 metal_fragment_idx=metal_fragment_idx,
                 vectors=vectors,
-                original_oin=oin_string
+                original_oin=oin_string,
+                geo_code=geo_code,
              )
 
         # Standard / Legacy Parsing
@@ -109,6 +111,7 @@ class OINParser:
         metal_fragment_idx = 0
         
         # 1. Identify Geometry Template First
+        geo_code = ""
         tmpl_vectors = None
         for meta in metadata:
             if meta.startswith("g:"):
@@ -161,5 +164,6 @@ class OINParser:
             fragments=fragments,
             metal_fragment_idx=metal_fragment_idx,
             vectors=vectors,
-            original_oin=oin_string
+            original_oin=oin_string,
+            geo_code=geo_code,
         )

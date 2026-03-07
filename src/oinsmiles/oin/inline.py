@@ -1,17 +1,47 @@
 import re
 from typing import Tuple, List, Optional
 
+
+def _count_smiles_atoms_before(smiles: str, pos: int) -> int:
+    """Return the 0-based index of the last SMILES atom seen before *pos*.
+
+    Scans *smiles* character by character, counting atoms (bracket atoms and
+    organic-subset atoms).  Stops just before *pos*, which is the start of a
+    ``{slot}`` marker.  The returned value is the atom index of the atom
+    immediately preceding that marker.
+
+    Used by ``parse_inline_string`` to convert slot-marker positions into
+    RDKit atom indices without a full SMILES round-trip.
+    """
+    atom_count = -1
+    i = 0
+    while i < pos:
+        ch = smiles[i]
+        if ch == "[":
+            end = smiles.index("]", i)
+            atom_count += 1
+            i = end + 1
+        elif smiles[i : i + 2] in ("Cl", "Br"):
+            atom_count += 1
+            i += 2
+        elif ch in "BCNOPSFIcnops":
+            atom_count += 1
+            i += 1
+        else:
+            i += 1
+    return max(atom_count, 0)
+
 class OINInlineHandler:  
     """  
     Experimental Handler for V3.0 OIN-Inline strings.  
     """  
       
-    # Regex to find [Element_Geo] e.g. [Pt_SPL]  
-    METAL_REGEX = re.compile(r"\[([A-Z][a-z]?)\_([A-Z]{3})\]")  
+    # Regex to find [Element_Geo] e.g. [Pt_SPL] or [Pt@SP1_SPL] / [Ir@OH10_OCT].
+    # The optional (?:@[A-Z0-9]+)? group captures V3.4+ absolute-config markers.
+    METAL_REGEX = re.compile(r"\[([A-Z][a-z]?)(?:@[A-Z0-9]+)?\_([A-Z]{3})\]")
       
-    # Regex to find [SlotIndex] e.g. {0}, {12}  
-    # We look for braces containing ONLY digits  
-    SLOT_REGEX = re.compile(r"\{(\d+)\}")
+    # Regex to find slot markers e.g. {0}, {12}, {0>}, {1<} (winding direction markers)
+    SLOT_REGEX = re.compile(r"\{(\d+)[><]?\}")
 
     @staticmethod  
     def generate_inline_string(oin_v2_string: str) -> str:
@@ -280,163 +310,51 @@ class OINInlineHandler:
                   
         return ".".join(new_fragments)
 
-    @staticmethod  
-    def parse_inline_string(inline_string: str) -> Tuple[str, str, List[Tuple[int, int, int]]]:  
-        """  
-        Parses OIN-Inline back to (SMILES, Geometry, VectorData).  
-        Returns:  
-            clean_smiles: Standard SMILES  
-            geometry: String code  
-            vector_data: List of (LigandRank, AtomInFragIdx, SlotIndex)
-        """  
-        import rdkit.Chem as Chem
+    @staticmethod
+    def parse_inline_string(inline_string: str) -> Tuple[str, str, List[Tuple[int, int, int]]]:
+        """Parse OIN-Inline back to (SMILES, Geometry, VectorData).
 
-        # 1. Extract Geometry from Metal  
-        # Look for [Pt_SPL]  
-        metal_match = OINInlineHandler.METAL_REGEX.search(inline_string)  
-        if not metal_match:  
+        Returns non-canonical SMILES with @/@@ markers preserved.
+        Uses regex-only slot stripping — no MolFromSmiles/MolToSmiles round-trip.
+
+        Returns
+        -------
+        clean_smiles : str
+            SMILES with slot markers stripped.  @/@@ descriptors are preserved.
+        geometry : str
+            Three-letter geometry code (e.g. 'SPL', 'OC6').
+        vector_data : list of (lig_rank, atom_idx, slot)
+            Slot assignments.  atom_idx is 0 (binding-atom approximation).
+        """
+        # 1. Extract geometry from [Metal_GEO] token
+        metal_match = OINInlineHandler.METAL_REGEX.search(inline_string)
+        if not metal_match:
             return inline_string, "", []
-              
-        element_sym = metal_match.group(1)  
-        geometry = metal_match.group(2)  
-          
-        # Revert metal to standard [Pt]  
-        clean_string = OINInlineHandler.METAL_REGEX.sub(f"[{element_sym}]", inline_string)  
-          
-        # 2. Extract Slots via RDKit Map Numbers
-        fragments = clean_string.split(".")  
-        clean_fragments = []  
-        vector_data = [] # List of (LigandRank, AtomIdx, SlotIndex)
-          
-        # Metal is frag 0  
-        clean_fragments.append(fragments[0])  
-          
-        for i in range(1, len(fragments)):  
-            raw_frag = fragments[i]  
-            lig_rank = i 
-            
-            # Identify slots and inject map numbers for RDKit parsing
-            # Pattern 1: [Element][Slot] -> [Element:1xxx]
-            # Pattern 2: Element[Slot] -> [Element:1xxx] (Unbracketed)
-            
-            # We need to act on the string.
-            # Convert [0] -> :1000] inside brackets?
-            # Or append map number?
-            
-            # Strategy: Replace `{Slot}` with `:<1000+slot>`.
-            # But where?
-            # If `[NH]{0}`, we want `[NH:1000]`.
-            # If `N{0}`, we want `[N:1000]`.
-            
-            processed_frag = raw_frag
-            
-            # Helper to replace {Slot} with appropriate RDKit map syntax
-            def inject_map(match):
-                # match.g(0) is the whole thing e.g. "N{0}" or "[NH]{0}"
-                pass
-            
-            # Regex for Bracketed Atom + Tag: `(\[[^\]]+\])\{(\d+)\}` -> `[NH]{0}`
-            # We convert to `[NH:1000]`. Note: `[NH]` becomes `[NH:1000]`.
-            
-            def sub_bracketed(m):
-                # m.group(1) is `[NH]` or `[c]`
-                # m.group(2) is `0`
-                atom_block = m.group(1)
-                slot = int(m.group(2))
-                map_num = 1000 + slot
-                # Insert :map_num before last ]
-                if ":" in atom_block:
-                    # Already mapped? Replace it?
-                    # `[NH:1]` -> `[NH:1000]`
-                    return re.sub(r":\d+\]", f":{map_num}]", atom_block)
-                else:
-                    return atom_block[:-1] + f":{map_num}]"
 
-            processed_frag = re.sub(r"(\[[^\]]+\])\{(\d+)\}", sub_bracketed, processed_frag)
-            
-            # Regex for Unbracketed Atom + Tag: `(?<!\])([A-Za-z][a-z]?)\{(\d+)\}` -> `N{0}`, `c{0}`
-            # (?<!\]) ensures we don't match the closing bracket of previous match (redundant if ordered?)
-            # Match `N{0}`, `Cl{1}`, `c{0}`
-            
-            def sub_unbracketed(match): 
-                sym = match.group(1)
-                slot = int(match.group(2))
-                map_num = 1000 + slot
-                # print(f"DEBUG: Match {sym}{{{slot}}} -> [{sym}:{map_num}]")
-                return f"[{sym}:{map_num}]"
-                
-            processed_frag = re.sub(r"(?<!\])(se|as|[A-Z][a-z]?|[bcnops])\{(\d+)\}", sub_unbracketed, processed_frag)
-            # print(f"DEBUG: Processed frag: {processed_frag}")
-            
-            # Now parse with RDKit to get canonical index
-            mol = Chem.MolFromSmiles(processed_frag)
-            if mol:
-                # Iterate atoms to find maps
-                final_atoms_found = []
-                for atom in mol.GetAtoms():
-                    map_num = atom.GetAtomMapNum()
-                    if map_num >= 1000:
-                        slot = map_num - 1000
-                        atom_idx = atom.GetIdx()
-                        vector_data.append( (lig_rank, atom_idx, slot) )
-                        # Clear map for clean SMILES
-                        atom.SetAtomMapNum(0)
-                        
-                        # Fix for [N] vs N (and similar):
-                        # If the atom was N, and we forced [N:1000], RDKit MolToSmiles might output [N].
-                        # But standard N (NH3) is 'N'. [N] is distinct.
-                        # If we have [N] with 0 explicit Hs, it's a radical or N-? 
-                        # Wait, [N] is nitrogen with no Hydrogens? 
-                        # RDKit interpretation of [N] vs N:
-                        # [N] has H count 0.
-                        # N has valence derived H count (NH3).
-                        # If we force [N:1000], we force current H count.
-                        # If mol was built from 'N', it has implicit Hs. 
-                        # When we build from '[N:1000]', RDKit assumes H count is 0?
-                        # No, MolFromSmiles('[N:1000]') -> Atom N, Map 1000. H count?
-                        # If we assume input OIN used 'N[0]', we want 'N'.
-                        # If input OIN used '[NH2][0]', we want '[NH2]'.
-                        
-                        # So, simply clearing the map and regenerating SMILES should work IF RDKit respects the valence.
-                        # However, MolFromSmiles('[N:1000]') creates an N with explicit degree 0?
-                        # Let's check if we can remove explicit H setting or check radical.
-                        pass
-                
-                # Generate clean SMILES from Mol to ensure canonical consistency
-                # isomericSmiles=True, canonical=True
-                # Ideally this matches output SMILES structure.
-                clean_frag = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
-                
-                # Manual fix for [N] -> N if it came from N[0]
-                # If clean_frag is '[N]' but we expect 'N'?
-                # The issue is RDKit might default to brackets if it feels like it.
-                # Specifically for Ammonia (N) in OIN, we want 'N'. 
-                if clean_frag == '[N]':
-                     clean_frag = 'N'
-                elif clean_frag == '[n]': # Pyridine N?
-                     clean_frag = 'n'
-                
-                clean_fragments.append(clean_frag)
-            else:
-                # Fallback: Tag extraction via regex failed or RDKit didn't find maps.
-                # This happens for strings like `c1cccc1[0]` where tag is appended to ring number.
-                # In this case, we assume the tag applies to the Representative Atom (Idx 0).
-                
-                # Check if we have slots we found earlier
-                slots_found = OINInlineHandler.SLOT_REGEX.findall(raw_frag)
-                if slots_found:
-                    # We need to clean the string manually
-                    clean_frag = re.sub(r"\{\d+\}", "", raw_frag)
-                    clean_fragments.append(clean_frag)
-                    
-                    # Extract unique slots
-                    unique_slots = sorted(list(set([int(s) for s in slots_found])))
-                    for slot in unique_slots:
-                        # Assume Atom 0 is the anchor/representative
-                        vector_data.append( (lig_rank, 0, slot) )
-                else:
-                    clean_frag = re.sub(r"\{\d+\}", "", raw_frag)
-                    clean_fragments.append(clean_frag)
+        element_sym = metal_match.group(1)
+        geometry = metal_match.group(2)
 
-        final_smiles = ".".join(clean_fragments)  
+        # Revert metal token to plain [Metal]
+        clean_string = OINInlineHandler.METAL_REGEX.sub(f"[{element_sym}]", inline_string)
+
+        # 2. Split on fragment separator and process each ligand fragment
+        fragments = clean_string.split(".")
+        clean_fragments: List[str] = [fragments[0]]  # metal fragment unchanged
+        vector_data: List[Tuple[int, int, int]] = []
+
+        for lig_rank in range(1, len(fragments)):
+            raw_frag = fragments[lig_rank]
+
+            # Extract slot assignments with actual atom indices derived from
+            # the SMILES string position immediately before each {slot} marker.
+            for slot_match in OINInlineHandler.SLOT_REGEX.finditer(raw_frag):
+                slot = int(slot_match.group(1))
+                atom_idx = _count_smiles_atoms_before(raw_frag, slot_match.start())
+                vector_data.append((lig_rank, atom_idx, slot))
+
+            # Strip {slot} markers while preserving all other content (@/@@, brackets, etc.)
+            clean_frag = OINInlineHandler.SLOT_REGEX.sub("", raw_frag)
+            clean_fragments.append(clean_frag)
+
+        final_smiles = ".".join(clean_fragments)
         return final_smiles, geometry, vector_data

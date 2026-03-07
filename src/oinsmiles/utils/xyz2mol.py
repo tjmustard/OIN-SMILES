@@ -21,6 +21,7 @@ from .xyz2mol_local import (
     xyz2AC_huckel,
 )
 from .oin_aligner import OINDiscreteAligner
+from ..core.chirality import ChiralityRecoveryUtility
 
 # fmt: off
 TRANSITION_METALS = ["Sc","Ti","V","Cr","Mn","Fe","Co","La","Ni","Cu","Zn",
@@ -953,6 +954,9 @@ def get_oin_string(tmc_mol, xyz_coords):
         sanitized_mol = frag_mol # Default fallback
         if not is_metal:
             sanitized_smiles, sanitized_mol = OINSanitizer.generate_robust_smiles(frag_mol, frag_binding_indices_local)
+            # Re-apply correct @/@@ on P/N atoms using pre-fragmentation _OIN_CIPCode.
+            sanitized_mol = ChiralityRecoveryUtility().recover(sanitized_mol)
+            sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 

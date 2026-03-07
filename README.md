@@ -1,13 +1,15 @@
 # OIN-SMILES
 
-**OIN-SMILES** is a standalone, open-source Python library capable of lossless conversion between 3D XYZ structures and 1D SMILES strings for Transition Metal Complexes (TMCs). It implements the **Open Isomer Notation (OIN)** to preserve stereochemical fidelity.
+**OIN-SMILES** is a standalone, open-source Python library for lossless conversion between 3D XYZ structures and 1D SMILES strings for Transition Metal Complexes (TMCs). It implements the **Open Isomer Notation (OIN)** to preserve stereochemical fidelity.
 
 ## Features
 
-- **Lossless Round-Tripping**: XYZ -> SMILES -> XYZ with exact isomer preservation using OIN.
-- **Open Isomer Notation (OIN)**: Human-readable metadata tags for explicit relative coordinates, dative bonds, and hapticity.
-- **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for Transition Metal Complexes.
-- **Deterministic 3D Generation**: Uses **Architector** as a backend to reconstruct 3D structures from OIN strings, enforcing specific coordination geometries defined by the OIN vectors.
+- **Lossless Round-Tripping**: XYZ → OIN → XYZ with exact isomer preservation.
+- **Open Isomer Notation (OIN) v3.6**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry.
+- **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
+- **Deterministic 3D Generation**: Uses **SCINE Molassembler** as backend — template-based placement for all ligand types, distance geometry (DG) for fallback conformer generation.
+- **P/N Stereocenter Encoding**: 3D-derived CIP codes for chiral phosphorus and nitrogen centers are encoded directly in the OIN string.
+- **CLI**: `oin-smiles` command for one-line conversions.
 
 ## Installation
 
@@ -34,62 +36,75 @@ This project uses `uv` for dependency management.
 
 ## Usage
 
-### 3D to 1D (XYZ to SMILES)
+### CLI
 
-Convert an XYZ file into an OIN-SMILES string that captures the exact stereochemistry.
+```bash
+# XYZ → OIN
+oin-smiles xyz2oin complex.xyz
+
+# OIN → XYZ (prints XYZ block to stdout)
+oin-smiles oin2xyz "[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
+```
+
+### 3D to 1D (XYZ to OIN)
 
 ```python
 from oinsmiles import XYZToSMILES
 
-converter = XYZToSMILES()
-smiles = converter.convert("complex.xyz")
-# Returns an OIN-SMILES string containing connectivity and 3D metadata
-print(smiles)
+oin = XYZToSMILES().convert("complex.xyz")
+print(oin)
 ```
-
-### Example OIN-SMILES (V2.4)
-
-**Cisplatin:**
-
-```text
-[Pt].[Cl].[Cl].[NH3].[NH3] |g:SPL|w:1.0:0;2.0:1;3.0:2;4.0:3|
-```
-
-**Key Features:**
-
--   **Compact SMILES**: Uses "Sanitization-First" to generate canonical, compact SMILES strings (e.g., `[NH3]` instead of `[H]N([H])[H]`). Explicit Hydrogen counts are enforced on Zone A atoms (bonded to metal).
--   **Disconnected SMILES**: Metal and ligands are separated by dots `.`
--   **Geometry Tag (g)**: Explicitly defines the coordination geometry template (e.g., `g:SPL` for Square Planar).
--   **Index-Based Topology (w)**: Defines the geometry using discrete slot assignments.
-    -   Format: `w:Rank.Idx:Slot;...`
-    -   `Rank`: 1-based Ligand Index in the dot-separated SMILES string (Metal is 0).
-    -   `Idx`: 0-based Atom Index within the ligand's canonical SMILES string.
-    -   `Slot`: 0-based Slot Index on the Geometry Template.
--   **Deterministic**: Maximizes vector alignment to standard templates for a unique canonical string.
 
 ### 1D to 3D (OIN to XYZ)
-
-Generate a 3D structure from an OIN string. This uses the `OIN3DGenerator` which leverages `Architector` to build the complex.
 
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 
 generator = OIN3DGenerator()
-# V2.4 String for Cisplatin
-oin_string = "[Pt].[Cl].[Cl].[NH3].[NH3] |g:SPL|w:1.0:0;2.0:1;3.0:2;4.0:3|"
+xyz_block = generator.generate("[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
-# Generate the structure (returns an Architector Molecule object)
-structure = generator.generate(oin_string)
-
-# Write to XYZ file
-structure.write_file("generated_cisplatin.xyz")
+with open("generated.xyz", "w") as f:
+    f.write(xyz_block)
 ```
+
+`generate()` accepts an optional `timeout` (seconds, default 60) passed to the `OIN3DGenerator` constructor.
+
+### OIN v3.6 Inline Format
+
+**Cisplatin** (square planar, *cis* isomer):
+
+```text
+[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}
+```
+
+**Transplatin** (square planar, *trans* isomer):
+
+```text
+[Pt@SP2_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}
+```
+
+**Key fields:**
+
+| Element | Meaning |
+|---|---|
+| `[Pt@SP1_SPL]` | Metal atom; `SP1` = stereo descriptor (atom-order dependent); `SPL` = Square Planar geometry template |
+| `{n}` | Slot tag — assigns the preceding binding atom to slot *n* of the geometry template |
+| `{n>}` / `{n<}` | Slot tag with winding direction (CW / CCW) for η-ligands |
+| `.` | Fragment separator (metal + each ligand) |
+
+**Geometry templates:** `LIN`, `TPL`, `TET`, `SPL`, `SPY`, `TBP`, `OCT`, `PBP`, `TPY`
+
+### Timeout Configuration
+
+```python
+generator = OIN3DGenerator(timeout=120)  # 120-second DG timeout
+```
+
+A `MolassemblerTimeoutError` is raised if generation exceeds the timeout.
 
 ## Development
 
 ### Running Tests
-
-To run the unit tests:
 
 ```bash
 uv run python -m unittest discover tests
@@ -97,45 +112,28 @@ uv run python -m unittest discover tests
 
 ### Verification Scripts
 
-We provide scripts to verify the end-to-end functionality, including round-trip tests (XYZ -> OIN -> XYZ).
-
 ```bash
-# Run the full verification suite
-bash tests/run_verification.sh
-```
-
-This script runs:
-
-1. **Phase 1 Verification**: Checks basic generation capabilities.
-2. **Round-Trip Verification**:
-    - **Test A**: Starts with an XYZ file, converts to OIN, regenerates XYZ, and compares structures (RMSD).
-    - **Test B**: Starts with an OIN string, generates XYZ, converts back to OIN, and compares the strings.
-
-### Real-Life Examples
-
-To run a set of real-life examples:
-
-```bash
+# XYZ → OIN correctness
 uv run python tests/integration/verify_xyz_to_oin.py
+
+# Full round-trip: XYZ → OIN → XYZ → OIN (RMSD + string identity)
+uv run python tests/integration/verify_roundtrip.py
 ```
 
-#### Verified Examples
+### Verified Examples
 
-The following complex examples have been verified to work correctly with OIN-SMILES, including accurate 3D reconstruction from the OIN string:
+The following complexes pass the full round-trip test (OIN string identity + RMSD < 1.0 Å):
 
-- **Cisplatin**: Square planar platinum complex.
-- **Transplatin**: Trans isomer of Cisplatin.
-- **Ferrocene**: Metallocene with eclipsed Cp rings.
-- **fac-Ir(ppy)3**: Facial isomer of Iridium tris(phenylpyridine).
-- **mer-Ir(ppy)3**: Meridional isomer of Iridium tris(phenylpyridine).
-- **PdCl2(Butene)**: Palladium complex with an alkene ligand.
-- **PdCl2(PhenPhosMe)**: Palladium complex with a phosphine ligand.
+- **Cisplatin** — square planar Pt
+- **Transplatin** — square planar Pt, trans isomer
+- **Ferrocene** — metallocene with eclipsed Cp rings
+- **VOacac2** — square pyramidal vanadium with bidentate acetylacetonate ligands
 
 ## Acknowledgements
 
-- **Architector**: Used for 3D structure generation and assembly.
-- **xyz2mol**: The Jensen Group's algorithm is used for robust graph generation from 3D coordinates.
-- **OpenBabel & XTB**: Used for chemical file handling and geometry optimization.
+- **SCINE Molassembler** — 3D structure generation and distance geometry.
+- **xyz2mol** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
+- **OpenBabel & XTB** — Chemical file handling and geometry optimization.
 
 ## License
 
