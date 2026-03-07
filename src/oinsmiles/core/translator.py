@@ -20,33 +20,26 @@ class XYZToSMILES:
         Converts an XYZ file to an OIN-SMILES string.
         """
         from ..utils.xyz2mol import get_tmc_mol, get_oin_string
-        
-        # 1. Get TMC Mol and Coords (using updated xyz2mol)
-        # We need to know the charge. 
-        # The current signature of convert(xyz_file_path) doesn't accept charge.
-        # We might need to guess it or default to 0, or update the signature.
-        # For now, let's assume 0 or try to infer? 
-        # xyz2mol requires charge.
-        # Let's default to 0 and maybe allow passing it?
-        # But convert signature is fixed?
-        # Let's check if we can parse charge from file or just use 0.
-        
-        charge = 0 # Default
-        
-        # Check if xyz_file_path is a path object or string
+        from ..core.chirality import CIPAssigner
+        from rdkit import Chem
         from pathlib import Path
+
+        charge = 0  # Default
         path = Path(xyz_file_path)
-        
+
         try:
             tmc_mol, xyz_coords = get_tmc_mol(path, charge, with_stereo=False)
         except Exception as e:
-            # Maybe try different charges? 
-            # For now, just raise.
             raise ValueError(f"xyz2mol failed: {e}")
 
-        # 2. Generate OIN
+        # Assign 3D-derived CIP codes to P/N stereocenters before fragmentation.
+        # tmc_mol from get_tmc_mol() is already sanitized and has a valid 3D conformer.
+        Chem.SanitizeMol(tmc_mol)
+        CIPAssigner().assign_all(tmc_mol)
+
+        # 2. Generate OIN (ChiralityRecoveryUtility is applied inside get_oin_string)
         oin_string = get_oin_string(tmc_mol, xyz_coords)
-        
+
         return oin_string
 
 class SMILESToXYZ:

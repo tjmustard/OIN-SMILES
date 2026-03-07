@@ -1,0 +1,15 @@
+# .agentignore
+# This file prevents the agentic IDE (Antigravity/Cursor/Claude) from reading 
+# historical or sandbox directories, preventing context collapse and hallucination.
+
+# Block the archive to prevent reading outdated drafts and Red Team reports
+spec/archive/
+
+# Block the sandbox to prevent reading unverified AI outputs
+tests/candidate_outputs/
+
+# Standard dev ignores
+node_modules/
+.env
+__pycache__/
+.git/

@@ -57,7 +57,6 @@ def main():
             gen_xyz_path = f"{base_path}_generated.xyz"
             oin1_path = f"{base_path}_step1.oin"
             oin2_path = f"{base_path}_step2.oin"
-            debug_path = f"{base_path}_inputDict.txt"
             
             # Step 1: XYZ -> OIN(1)
             with open(input_xyz_path, 'w') as f: f.write(example.xyz_content)
@@ -68,18 +67,9 @@ def main():
             
             # Step 2: OIN(1) -> XYZ(Gen)
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
-            extra_params = {"_debug_dump_path": debug_path}
-            structure = generator.generate(oin1_string, extra_params=extra_params)
-            
-            if isinstance(structure, dict) and 'ase_atoms' in structure:
-                from ase.io import write
-                write(gen_xyz_path, structure['ase_atoms'], format='xyz')
-            elif hasattr(structure, 'write_xyz'):
-                structure.write_xyz(gen_xyz_path)
-            elif hasattr(structure, 'write_file'):
-                structure.write_file(gen_xyz_path)
-            else:
-                with open(gen_xyz_path, 'w') as f: f.write(str(structure))
+            structure = generator.generate(oin1_string)
+            with open(gen_xyz_path, 'w') as f:
+                f.write(structure)
                 
             # Step 3: XYZ(Gen) -> OIN(2)
             print("Step 3: Convert XYZ(Gen) -> OIN(2)")
