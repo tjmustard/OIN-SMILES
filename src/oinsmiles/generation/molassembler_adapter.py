@@ -122,17 +122,13 @@ def _stitch_multi_eta_fragment(
     -------
     (positions, symbols, mol) or None on failure.
     mol is the RDKit Mol with bond connectivity.
+
+    NOTE: Currently returns None (disabled) — the simultaneous alignment logic
+    does not account for bridging-atom constraints and produces incorrect
+    geometries. Ansa-metallocenes are better handled by the DG path.
     """
-    from rdkit.Chem import AllChem
-    from scipy.spatial.transform import Rotation
-
-    slot_groups: dict[tuple, list[int]] = {}
-    for v in vectors:
-        key = tuple(round(x, 4) for x in v.vector)
-        slot_groups.setdefault(key, []).append(v.atom_in_fragment_idx)
-
-    if len(slot_groups) < 2:
-        return None
+    # Disabled pending geometry fix
+    return None
 
     mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
     if mol is None:
