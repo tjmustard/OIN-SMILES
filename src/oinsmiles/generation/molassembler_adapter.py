@@ -838,10 +838,8 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
 
         # Final collision check after ring-rotation optimisation
         final_min = _inter_frag_min(all_pos, all_frag_idxs)
-        # For ansa-metallocenes (multi-eta fragments with different slots), the
-        # simultaneous alignment doesn't guarantee geometric accuracy; rely on DG.
-        if has_multi_eta or final_min < 1.60:
-            return None  # Multi-eta or collision → DG fallback
+        if final_min < 1.60:
+            return None
 
     lines = [str(n), f"Template-generated from OIN ({geo_code})"]
     for sym, pos in zip(all_syms, all_pos):
@@ -981,16 +979,29 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
     if mol is None:
         return {"error": "RDKit could not parse SMILES for ETKDG fallback", "ok": False}
     # Try full sanitization first; if that fails (e.g. kekulization issues with
-    # aromatic eta ligands), fall back to partial sanitization without properties.
+    # aromatic eta ligands), fall back to softer flags that skip problematic steps.
     try:
         Chem.SanitizeMol(mol)
     except Exception:
         try:
-            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE)
+            # Skip both KEKULIZE (can't kekulize unkekulizable aromatic systems)
+            # and SETAROMATICITY (aromatic atoms from SMILES are already set).
+            Chem.SanitizeMol(
+                mol,
+                Chem.SanitizeFlags.SANITIZE_ALL
+                ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
+                ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+            )
         except Exception:
             pass  # best effort; keep whatever state we have
 
-    mol = Chem.AddHs(mol)
+    # Try to add Hs; if it fails (e.g. aromatic C atoms that can't be kekulized),
+    # proceed with ETKDG on the structure without explicit Hs.
+    try:
+        mol = Chem.AddHs(mol)
+    except Exception:
+        pass  # keep mol as-is; ETKDG can still embed unkekulized aromatic systems
+
     _fb_params = AllChem.ETKDGv3()
     _fb_params.randomSeed = 42
     try:
@@ -1459,19 +1470,10 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
         # Kekulize for Molassembler compatibility (aromatic lowercase atoms are
         # not understood by Molassembler).  Done in-place after AddHs — no
         # SMILES round-trip — so atom_in_fragment_idx indices remain valid.
-        # However, skip kekulization if aromatic C atoms are binding atoms
-        # (eta ligands), as kekulization + dative bonds cause valence errors.
-        has_aromatic_c_binding = any(
-            lig_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetIsAromatic()
-            and lig_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetSymbol() == 'C'
-            for vec in vectors
-            if vec.atom_in_fragment_idx < lig_mol.GetNumAtoms()
-        )
-        if not has_aromatic_c_binding:
-            try:
-                Chem.Kekulize(lig_mol, clearAromaticFlags=True)
-            except Exception:
-                pass  # keep aromatic form; final combined MolToSmiles may still work
+        try:
+            Chem.Kekulize(lig_mol, clearAromaticFlags=True)
+        except Exception:
+            pass  # keep aromatic form if kekulization fails
 
         lig_atom_offset = rw.GetNumAtoms()
         # Merge ligand atoms into combined mol
@@ -1488,32 +1490,10 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
     # Minimal sanitization: skip SETAROMATICITY so atoms already kekulized
     # at the fragment level are not re-aromaticized in the combined mol
     # (which would prevent kekulization of the metal-chelate ring system).
-    # Also skip KEKULIZE if aromatic C atoms are bonded to the metal, since
-    # such bonds create unkekulizable aromatic rings.
     _SKIP_AROM = (
         Chem.SanitizeFlags.SANITIZE_ALL
         ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
     )
-    # Check if any metal-ligand bonds are to aromatic carbons
-    has_aromatic_c_metal_bonds = False
-    for vec_group in frag_vectors.values():
-        for vec in vec_group:
-            if vec.fragment_idx == parsed_oin.metal_fragment_idx:
-                continue
-            # Check if any binding atom in this fragment is aromatic C
-            frag_smiles = parsed_oin.fragments[vec.fragment_idx]
-            try:
-                test_mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
-                if (test_mol and vec.atom_in_fragment_idx < test_mol.GetNumAtoms() and
-                    test_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetIsAromatic() and
-                    test_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetSymbol() == 'C'):
-                    has_aromatic_c_metal_bonds = True
-                    break
-            except:
-                pass
-    if has_aromatic_c_metal_bonds:
-        _SKIP_AROM ^= Chem.SanitizeFlags.SANITIZE_KEKULIZE
-
     Chem.SanitizeMol(rw, _SKIP_AROM, catchErrors=True)
     try:
         smiles = Chem.MolToSmiles(rw.GetMol())
