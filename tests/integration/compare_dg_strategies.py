@@ -20,7 +20,8 @@ import time
 import json
 
 from verify_xyz_to_oin import get_examples
-from verify_roundtrip import normalize_oin_for_comparison, calculate_rmsd_mols, read_atom_count
+from verify_roundtrip import normalize_oin_for_comparison, read_atom_count
+from rmsd_utils import calculate_tmc_rmsd
 
 
 def _xyz_positions(xyz_path: str) -> np.ndarray:
@@ -156,7 +157,7 @@ def run_strategy_test(
                         except Exception:
                             pass
 
-                result["rmsd"] = calculate_rmsd_mols(mol_orig, mol_gen_xyz) if (mol_orig and mol_gen_xyz) else None
+                result["rmsd"] = calculate_tmc_rmsd(mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded) if (mol_orig and mol_gen_xyz) else None
 
                 s1 = normalize_oin_for_comparison(oin1_string.strip())
                 s2 = normalize_oin_for_comparison(oin2_string.strip())

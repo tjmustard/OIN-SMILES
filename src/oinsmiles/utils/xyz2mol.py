@@ -522,6 +522,28 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
         0
     ]
 
+    # Exclude aromatic ring carbons that are backbone atoms in bidentate chelates
+    # (e.g., the phenylene bridge in bidentate phosphine ligands).
+    # If a carbon is in an aromatic ring AND has a neighbor that is a heteroatom donor
+    # (P, N, S, O) ALSO in coordinating_atoms, exclude the carbon — the heteroatom is the
+    # real donor. This is safe for eta-ligands (Cp, arene) where no ring carbons neighbor
+    # heteroatom donors that are coordinating.
+    HETEROATOM_DONORS = {7, 8, 15, 16}  # N, O, P, S
+    coordinating_set = set(int(idx) for idx in coordinating_atoms)
+    filtered_atoms = []
+    for atom_idx in coordinating_atoms:
+        atom = mol.GetAtomWithIdx(int(atom_idx))
+        if atom.GetAtomicNum() == 6 and atom.IsInRing():  # Carbon in a ring
+            neighbors = atom.GetNeighbors()
+            has_heteroatom_donor_neighbor = any(
+                n.GetAtomicNum() in HETEROATOM_DONORS and n.GetIdx() in coordinating_set
+                for n in neighbors
+            )
+            if has_heteroatom_donor_neighbor:
+                continue  # Skip this ring carbon; the neighboring heteroatom is the donor
+        filtered_atoms.append(atom_idx)
+    coordinating_atoms = np.array(filtered_atoms, dtype=int)
+
     # frags = rdMolStandardize.DisconnectOrganometallics(mol, params)
     mdis = rdMolStandardize.MetalDisconnector(params)
     mdis.SetMetalNon(Chem.MolFromSmarts(MetalNon_Hg))
