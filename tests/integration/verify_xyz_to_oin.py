@@ -96,14 +96,14 @@ class ExampleRunner:
     def add_example(self, example: Example):
         self.examples.append(example)
 
-    def run(self):
+    def run(self, output_dir: Optional[str] = None) -> None:
         print(f"Running {len(self.examples)} Real Life Examples...")
         reporter = VerificationReporter("XYZ <-> OIN Verification Report")
-        
+
         for i, example in enumerate(self.examples, 1):
             print(f"\n--- Example {i}: {example.name} ---")
             print(f"Description: {example.description}")
-            
+
             if example.oin_string:
                 self._run_oin_to_xyz(example, i, reporter)
             elif example.xyz_content:
@@ -113,6 +113,10 @@ class ExampleRunner:
                 reporter.log_failure(example.name, "No input data provided")
 
         reporter.print_summary()
+        if output_dir:
+            json_path = os.path.join(output_dir, "summary_integration.json")
+            reporter.write_summary_json(json_path)
+            print(f"JSON summary written to: {json_path}")
 
     def _run_oin_to_xyz(self, example: Example, index: int, reporter: VerificationReporter) -> bool:
         print(f"Type: OIN -> XYZ")
@@ -244,9 +248,9 @@ def read_file_content(filepath):
     with open(filepath, 'r') as f:
         return f.read()
 
-def get_examples() -> List[Example]:
+def get_examples(include_tmqm: bool = False) -> List[Example]:
     examples = []
-    
+
 
     # Example 1: CisPlatin (XYZ -> OIN-SMILES)
     try:
@@ -421,13 +425,13 @@ def get_examples() -> List[Example]:
     # Example 11: FeH2(CO)4 (XYZ -> OIN-SMILES)
     try:
         feh2co4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), 'FeH2(CO)4.xyz'))
-        
+
         feh2co4_ex = Example(
             name="FeH2(CO)4 (XYZ -> OIN-SMILES)",
             xyz_content=feh2co4_xyz,
             description="Iron dihydride tetracarbonyl.",
-            expected_smiles="[Fe@OH25_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O..",
-            expected_oin_string="[Fe@OH25_SPL].C{0}#O.C{1}#O.C{2}#O.C{3}#O.."
+            expected_smiles="[Fe@OH19_OCT].[H]{0}.[H]{1}.C{2}#O.C{3}#O.C{4}#O.C{5}#O",
+            expected_oin_string="[Fe@OH19_OCT].[H]{0}.[H]{1}.C{2}#O.C{3}#O.C{4}#O.C{5}#O"
         )
         examples.append(feh2co4_ex)
     except FileNotFoundError:
@@ -527,7 +531,7 @@ def get_examples() -> List[Example]:
 
     # TiCat1
     try:
-        with open("tests/integration/TiCat1.xyz", "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), 'TiCat1.xyz'), "r") as f:
             ticat1_xyz = f.read()
         ticat1_ex = Example( # Changed from XYZToOINExample to Example
             name="TiCat1 (XYZ -> OIN-SMILES)",
@@ -543,7 +547,7 @@ def get_examples() -> List[Example]:
 
     # TiCat2
     try:
-        with open("tests/integration/TiCat2.xyz", "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), 'TiCat2.xyz'), "r") as f:
             ticat2_xyz = f.read()
         ticat2_ex = Example( # Changed from XYZToOINExample to Example
             name="TiCat2 (XYZ -> OIN-SMILES)",
@@ -558,7 +562,7 @@ def get_examples() -> List[Example]:
 
     # TiCat3
     try:
-        with open("tests/integration/TiCat3.xyz", "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), 'TiCat3.xyz'), "r") as f:
             ticat3_xyz = f.read()
         ticat3_ex = Example(
             name="TiCat3 (XYZ -> OIN-SMILES)",
@@ -573,7 +577,7 @@ def get_examples() -> List[Example]:
 
     # TiCat4
     try:
-        with open("tests/integration/TiCat4.xyz", "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), 'TiCat4.xyz'), "r") as f:
             ticat4_xyz = f.read()
         ticat4_ex = Example(
             name="TiCat4 (XYZ -> OIN-SMILES)",
@@ -587,48 +591,51 @@ def get_examples() -> List[Example]:
         print("Skipping TiCat4 example: File not found.")
 
     # Add tmQM examples (Added last so they don't displace manual examples when limiting)
-    tmqm_dir = os.path.join(os.path.dirname(__file__), 'tmQM')
-    if os.path.exists(tmqm_dir):
-        tmqm_files = glob.glob(os.path.join(tmqm_dir, "*.xyz"))
-        print(f"Found {len(tmqm_files)} tmQM examples.")
-        for xyz_file in tmqm_files:
-            try:
-                content = read_file_content(xyz_file)
-                filename = os.path.basename(xyz_file)
-                expected_data = EXPECTED_TMQM_RESULTS.get(filename)
-                
-                tmqm_ex = Example(
-                    name=f"tmQM - {filename}",
-                    xyz_content=content,
-                    description=f"tmQM example from {filename}",
-                    is_critical=True if expected_data else False,
-                    expected_oin_string=expected_data['oin'] if expected_data else None,
-                    expected_smiles=expected_data['smiles'] if expected_data else None
-                )
-                examples.append(tmqm_ex)
-            except Exception as e:
-                print(f"Error reading {xyz_file}: {e}")
-    else:
-        print(f"tmQM directory not found at {tmqm_dir}")
+    if include_tmqm:
+        tmqm_dir = os.path.join(os.path.dirname(__file__), 'tmQM')
+        if os.path.exists(tmqm_dir):
+            tmqm_files = glob.glob(os.path.join(tmqm_dir, "*.xyz"))
+            print(f"Found {len(tmqm_files)} tmQM examples.")
+            for xyz_file in tmqm_files:
+                try:
+                    content = read_file_content(xyz_file)
+                    filename = os.path.basename(xyz_file)
+                    expected_data = EXPECTED_TMQM_RESULTS.get(filename)
+
+                    tmqm_ex = Example(
+                        name=f"tmQM - {filename}",
+                        xyz_content=content,
+                        description=f"tmQM example from {filename}",
+                        is_critical=True if expected_data else False,
+                        expected_oin_string=expected_data['oin'] if expected_data else None,
+                        expected_smiles=expected_data['smiles'] if expected_data else None
+                    )
+                    examples.append(tmqm_ex)
+                except Exception as e:
+                    print(f"Error reading {xyz_file}: {e}")
+        else:
+            print(f"tmQM directory not found at {tmqm_dir}")
 
     return examples
 
-def run_examples(limit: Optional[int] = None):
+def run_examples(limit: Optional[int] = None, output_dir: Optional[str] = None, include_tmqm: bool = False) -> None:
     runner = ExampleRunner()
-    examples = get_examples()
-    
+    examples = get_examples(include_tmqm=include_tmqm)
+
     if limit:
         print(f"Limiting to first {limit} examples.")
         examples = examples[:limit]
-        
+
     for ex in examples:
         runner.add_example(ex)
-    runner.run()
+    runner.run(output_dir=output_dir)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run Real Life Examples Verification")
     parser.add_argument("--limit", type=int, help="Limit number of examples to run (for fast testing)")
+    parser.add_argument("--output-dir", type=str, help="Directory to save JSON summary artifact")
+    parser.add_argument("--include-tmqm", action="store_true", help="Include tmQM examples (slow)")
     args = parser.parse_args()
-    
-    run_examples(limit=args.limit)
+
+    run_examples(limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm)

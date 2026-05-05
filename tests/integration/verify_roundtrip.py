@@ -3,6 +3,13 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 from oinsmiles.generation.engine import OIN3DGenerator
+from oinsmiles.generation.oin_parser import OINParser as _OINParser
+from oinsmiles.generation.molassembler_adapter import (
+    _build_connected_smiles,
+    _pick_masm_permutation,
+    _compute_expected_trans_sym_pairs,
+    _get_binding_sym,
+)
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import rdMolAlign
@@ -23,6 +30,23 @@ import re as _re
 _METAL_STEREO_RE = _re.compile(r'\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]')
 
 _WINDING_RE = _re.compile(r'\{(\d+)[><]\}')
+
+def read_atom_count(xyz_path: str) -> int:
+    """Read the atom count from the first line of an XYZ file.
+
+    Args:
+        xyz_path: Path to the XYZ file.
+
+    Returns:
+        Integer atom count from line 1.
+
+    Raises:
+        ValueError: If the first line cannot be parsed as an integer.
+    """
+    with open(xyz_path, "r") as f:
+        first_line = f.readline().strip()
+    return int(first_line)
+
 
 def normalize_oin_for_comparison(oin_string: str) -> str:
     """Normalize an OIN string for round-trip comparison.
@@ -50,6 +74,65 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
         s = s.replace('..', '.')
     s = s.rstrip('.')
     return s
+
+
+def _log_step2_inputs(oin_string: str) -> None:
+    """Log diagnostic information about what will be sent to Molassembler.
+
+    Parses the OIN string and displays the geometry, fragments, vectors,
+    and computed Molassembler inputs (connected SMILES, permutation, etc).
+    """
+    try:
+        parser = _OINParser()
+        parsed = parser.parse(oin_string)
+
+        print("  [Parsed OIN]")
+        print(f"  geo_code:  {parsed.geo_code or 'NON'}")
+        print(f"  fragments: {parsed.fragments}")
+        print(f"             metal → fragment[{parsed.metal_fragment_idx}]")
+
+        # Print vectors (slot assignments)
+        if parsed.vectors:
+            print("  vectors:")
+            for vec in parsed.vectors:
+                sym = _get_binding_sym(
+                    parsed.fragments[vec.fragment_idx],
+                    vec.atom_in_fragment_idx
+                ) or "?"
+                print(f"    frag[{vec.fragment_idx}] {sym:<2}  "
+                      f"slot({vec.vector[0]:7.3f}, {vec.vector[1]:7.3f}, {vec.vector[2]:7.3f})")
+
+        print("\n  [Molassembler Inputs]")
+        connected_smiles = _build_connected_smiles(parsed)
+        print(f"  connected SMILES: {connected_smiles}")
+
+        perm_idx = _pick_masm_permutation(parsed)
+        perm_label = "TRANS" if perm_idx == 1 else "CIS/default"
+        print(f"  perm_idx:         {perm_idx}  ({perm_label})")
+
+        trans_pairs = _compute_expected_trans_sym_pairs(parsed)
+        print(f"  trans sym pairs:  {trans_pairs or 'None'}")
+
+        # Expected bindings
+        expected_bindings = []
+        for vec in parsed.vectors:
+            if vec.fragment_idx == parsed.metal_fragment_idx:
+                continue
+            sym = _get_binding_sym(
+                parsed.fragments[vec.fragment_idx],
+                vec.atom_in_fragment_idx
+            )
+            if sym:
+                expected_bindings.append((sym, tuple(vec.vector)))
+
+        if expected_bindings:
+            print(f"  expected bindings: {len(expected_bindings)} atom(s)")
+            for sym, vec in expected_bindings:
+                print(f"    {sym:<2}  slot({vec[0]:7.3f}, {vec[1]:7.3f}, {vec[2]:7.3f})")
+
+    except Exception as e:
+        print(f"  [Parse diagnostic error (non-fatal): {e}]")
+
 
 from verify_xyz_to_oin import get_examples, Example
 from reporting import VerificationReporter
@@ -146,9 +229,10 @@ def main():
             # Step 2: OIN(1) -> XYZ(Gen) (Molassembler)
             # -------------------------------------------------------------
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
-            structure = generator.generate(oin1_string)
+            _log_step2_inputs(oin1_string)
+            gen_result = generator.generate(oin1_string)
             with open(gen_xyz_path, 'w') as f:
-                f.write(structure)
+                f.write(gen_result.xyz)
                 
             # -------------------------------------------------------------
             # Step 3: XYZ(Gen) -> OIN(2)
@@ -171,6 +255,7 @@ def main():
             # Normalize: strip atom-ordering-dependent @SP/@OH/@TB descriptors
             # from the metal fragment before comparing — the slot assignments
             # already encode the isomer; the @XY## label is xyz-order-dependent.
+            metrics: dict = {}
             s1 = normalize_oin_for_comparison(oin1_string.strip())
             s2 = normalize_oin_for_comparison(oin2_string.strip())
 
@@ -189,12 +274,37 @@ def main():
             # Check 2: Geometric Fidelity (RMSD) - Only if we started from XYZ
             if input_xyz_path and os.path.exists(input_xyz_path):
                 mol_orig = Chem.MolFromXYZFile(input_xyz_path)
-                mol_gen = Chem.MolFromXYZFile(gen_xyz_path)
-                
-                if mol_orig and mol_gen:
-                    rmsd = calculate_rmsd_mols(mol_orig, mol_gen)
+                mol_gen_xyz = Chem.MolFromXYZFile(gen_xyz_path)  # topology-free, for RMSD
+                # Bonded mol for MOL/SDF output (from generator when available)
+                mol_gen_bonded = gen_result.mol if gen_result.mol is not None else mol_gen_xyz
+
+                if mol_orig and mol_gen_xyz:
+                    # Write MOL and SDF files — mol_gen_bonded has bonds if generator produced them
+                    if output_dir:
+                        try:
+                            orig_mol_path = os.path.splitext(input_xyz_path)[0] + ".mol"
+                            Chem.MolToMolFile(mol_orig, orig_mol_path)
+                            orig_sdf_path = os.path.splitext(input_xyz_path)[0] + ".sdf"
+                            writer = Chem.SDWriter(orig_sdf_path)
+                            writer.write(mol_orig)
+                            writer.close()
+                        except Exception:
+                            pass
+                        if mol_gen_bonded:
+                            try:
+                                gen_mol_path = os.path.splitext(gen_xyz_path)[0] + ".mol"
+                                Chem.MolToMolFile(mol_gen_bonded, gen_mol_path)
+                                gen_sdf_path = os.path.splitext(gen_xyz_path)[0] + ".sdf"
+                                writer = Chem.SDWriter(gen_sdf_path)
+                                writer.write(mol_gen_bonded)
+                                writer.close()
+                            except Exception:
+                                pass
+
+                    rmsd = calculate_rmsd_mols(mol_orig, mol_gen_xyz)
                     print(f"  RMSD Input vs Generated: {rmsd:.4f}")
-                    
+                    metrics["rmsd"] = round(rmsd, 4)
+
                     if rmsd < 1.0:
                         msg = f"[PASS] Geometry: RMSD {rmsd:.4f} < 1.0"
                         print(msg)
@@ -208,13 +318,38 @@ def main():
                     msg = "[WARN] RDKit failed to support RMSD calc (atom mismatch or parsing error)"
                     print(msg)
                     details.append(msg)
+                    metrics["rmsd"] = None
             else:
                 details.append("(Skipped RMSD - No Input XYZ)")
+                metrics["rmsd"] = None
+
+            # Check 3: Atom Count Fidelity (detect missing H atoms)
+            # Only applicable when we started from an input XYZ (Flow A).
+            if input_xyz_path and os.path.exists(input_xyz_path):
+                atom_count_input = read_atom_count(input_xyz_path)
+                atom_count_generated = read_atom_count(gen_xyz_path)
+                metrics["atom_count_input"] = atom_count_input
+                metrics["atom_count_generated"] = atom_count_generated
+                print(f"  Atom count — Input: {atom_count_input}, Generated: {atom_count_generated}")
+                if atom_count_input != atom_count_generated:
+                    passed = False
+                    msg = (
+                        f"[FAIL] Atom Count: Input {atom_count_input} "
+                        f"!= Generated {atom_count_generated} (missing atoms)"
+                    )
+                    print(msg)
+                    details.append(msg)
+                else:
+                    msg = f"[PASS] Atom Count: {atom_count_input}"
+                    print(msg)
+                    details.append(msg)
+            else:
+                details.append("(Skipped Atom Count - No Input XYZ)")
 
             if passed:
-                reporter.log_success(test_name, " | ".join(details))
+                reporter.log_success(test_name, " | ".join(details), metrics=metrics)
             else:
-                reporter.log_failure(test_name, "Validations Failed", got="<br>".join(details))
+                reporter.log_failure(test_name, "Validations Failed", got="<br>".join(details), metrics=metrics)
 
             # Cleanup
             if not output_dir:
@@ -229,6 +364,10 @@ def main():
 
     # Final Summary
     reporter.print_summary()
+    if output_dir:
+        json_path = os.path.join(output_dir, "summary_roundtrip.json")
+        reporter.write_summary_json(json_path)
+        print(f"JSON summary written to: {json_path}")
 
 if __name__ == "__main__":
     main()

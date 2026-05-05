@@ -69,7 +69,7 @@ def main():
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
             structure = generator.generate(oin1_string)
             with open(gen_xyz_path, 'w') as f:
-                f.write(structure)
+                f.write(structure.xyz)
                 
             # Step 3: XYZ(Gen) -> OIN(2)
             print("Step 3: Convert XYZ(Gen) -> OIN(2)")

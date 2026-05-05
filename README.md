@@ -61,10 +61,20 @@ print(oin)
 from oinsmiles.generation.engine import OIN3DGenerator
 
 generator = OIN3DGenerator()
-xyz_block = generator.generate("[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
+result = generator.generate("[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
+# XYZ block (always available)
 with open("generated.xyz", "w") as f:
-    f.write(xyz_block)
+    f.write(result.xyz)
+
+# Bonded RDKit mol — includes M–L dative bonds and full ligand connectivity
+# (None if bond connectivity could not be determined, e.g. for eta fallbacks)
+if result.mol is not None:
+    from rdkit import Chem
+    Chem.MolToMolFile(result.mol, "generated.mol")
+    writer = Chem.SDWriter("generated.sdf")
+    writer.write(result.mol)
+    writer.close()
 ```
 
 `generate()` accepts an optional `timeout` (seconds, default 60) passed to the `OIN3DGenerator` constructor.
@@ -112,13 +122,39 @@ uv run python -m unittest discover tests
 
 ### Verification Scripts
 
+Three scripts are available for QA:
+
+```bash
+# Fast smoke test (~4 examples, no tmQM dataset)
+bash tests/run_verification_fast.sh
+
+# Full suite — all manual examples
+bash tests/run_verification.sh
+
+# Comprehensive — all examples including tmQM dataset (~103 complexes)
+bash tests/run_verification_ALL.sh
+```
+
+Or run individual scripts:
+
 ```bash
 # XYZ → OIN correctness
-uv run python tests/integration/verify_xyz_to_oin.py
+uv run python tests/integration/verify_xyz_to_oin.py [--include-tmqm]
 
 # Full round-trip: XYZ → OIN → XYZ → OIN (RMSD + string identity)
-uv run python tests/integration/verify_roundtrip.py
+# Writes XYZ, MOL, SDF and OIN files to --output-dir when provided
+uv run python tests/integration/verify_roundtrip.py [--output-dir /tmp/results]
+
+# Compare DG strategies (single / ensemble / directed) side-by-side
+uv run python tests/integration/compare_dg_strategies.py [--output-dir /tmp/results]
 ```
+
+All scripts write named output artifacts when `--output-dir` is specified:
+- `Ex1_CisPlatinXYZ-OIN-SMILES_original.xyz` / `.mol` / `.sdf` — input structure
+- `Ex1_CisPlatinXYZ-OIN-SMILES_generated.xyz` / `.mol` / `.sdf` — generated structure
+- `.mol` and `.sdf` files include full bond connectivity for generated structures
+
+Generated MOL/SDF files use **V3000 format** when dative bonds are present (M–L bonds), which is standard for organometallic structures.
 
 ### Verified Examples
 
