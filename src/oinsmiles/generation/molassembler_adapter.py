@@ -26,11 +26,20 @@ import os
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
+from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 from rdkit import Chem
 
 from .oin_parser import ParsedOIN, TEMPLATES
+
+
+@dataclass
+class GeneratedStructure:
+    """Result of 3D structure generation: XYZ block + optional bonded RDKit mol."""
+    xyz: str
+    mol: Optional[Chem.Mol] = None
 
 
 # ===========================================================================
@@ -102,7 +111,7 @@ def _stitch_eta_fragment(
     binding_idxs: list[int],
     slot_unit: np.ndarray,
     metal_sym: str,
-) -> tuple[np.ndarray, list[str]] | None:
+) -> tuple[np.ndarray, list[str], "Chem.Mol | None"] | None:
     """Place an eta-type ligand (Cp, arene) by centroid-plane alignment.
 
     For eta-n ligands where *binding_idxs* all share the same slot direction:
@@ -117,7 +126,8 @@ def _stitch_eta_fragment(
 
     Returns
     -------
-    (positions, symbols) or None on failure.
+    (positions, symbols, mol) or None on failure.
+    mol is the RDKit Mol with bond connectivity, or None for analytic-geometry fallback.
     """
     from rdkit.Chem import AllChem  # noqa: PLC0415
     from scipy.spatial.transform import Rotation  # noqa: PLC0415
@@ -129,14 +139,28 @@ def _stitch_eta_fragment(
     positions: np.ndarray | None = None
     symbols: list[str] = []
     valid_idxs: list[int] = []
+    etkdg_mol: Chem.Mol | None = None
+    smiles_mol: Chem.Mol | None = None
 
     # ── Attempt 1: ETKDGv3 ───────────────────────────────────────────────────
-    mol = Chem.MolFromSmiles(frag_smiles)
+    mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
     if mol is not None:
+        try:
+            Chem.SanitizeMol(mol)
+        except Exception:
+            try:
+                Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            except Exception:
+                for atom in mol.GetAtoms():
+                    pass  # valence already calculated during partial sanitization
         mol = Chem.AddHs(mol)
+        smiles_mol = mol
         _params = AllChem.ETKDGv3()
         _params.randomSeed = 42
-        r = AllChem.EmbedMolecule(mol, _params)
+        try:
+            r = AllChem.EmbedMolecule(mol, _params)
+        except Exception:
+            r = -1
         if r == 0:
             n_atoms = mol.GetNumAtoms()
             positions = np.array(
@@ -145,6 +169,7 @@ def _stitch_eta_fragment(
             )
             symbols = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
             valid_idxs = [i for i in binding_idxs if i < n_atoms]
+            etkdg_mol = mol
 
     # ── Attempt 2: analytic regular-ring geometry ────────────────────────────
     if positions is None or len(valid_idxs) < 2:
@@ -210,7 +235,22 @@ def _stitch_eta_fragment(
     # Translate centroid to target.
     positions = positions + (target_centroid - centroid)
 
-    return positions, symbols
+    # ── Recover bond topology from SMILES mol when ETKDG path failed ─────────
+    # When analytic geometry was used, positions are in interleaved [C,H,C,H,…]
+    # order (even indices = heavy atoms, odd indices = H).  The smiles_mol from
+    # Chem.AddHs() has heavy atoms at indices 0…n_binding-1, then H at
+    # n_binding…2*n_binding-1.  Reorder positions to match, then use smiles_mol
+    # as the returned mol so that _template_generate can assemble bonds.
+    if etkdg_mol is None and smiles_mol is not None and smiles_mol.GetNumAtoms() == len(positions):
+        heavy_indices = list(range(0, 2 * n_binding, 2))
+        h_indices = list(range(1, 2 * n_binding, 2))
+        heavy_pos = positions[heavy_indices]
+        h_pos = positions[h_indices]
+        positions = np.vstack([heavy_pos, h_pos])
+        symbols = [smiles_mol.GetAtomWithIdx(i).GetSymbol() for i in range(smiles_mol.GetNumAtoms())]
+        etkdg_mol = smiles_mol
+
+    return positions, symbols, etkdg_mol
 
 
 def _stitch_fragment(
@@ -219,7 +259,7 @@ def _stitch_fragment(
     target_positions: list[np.ndarray],
     slot_units: list[np.ndarray] | None = None,
     forbidden_positions: list[np.ndarray] | None = None,
-) -> tuple[np.ndarray, list[str]] | None:
+) -> tuple[np.ndarray, list[str], "Chem.Mol"] | None:
     """Generate organic fragment and Kabsch-align binding atoms to targets.
 
     Parameters
@@ -255,9 +295,19 @@ def _stitch_fragment(
     from rdkit.Chem import AllChem  # noqa: PLC0415
     from scipy.spatial.transform import Rotation  # noqa: PLC0415
 
-    mol = Chem.MolFromSmiles(frag_smiles)
+    mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
     if mol is None:
         return None
+
+    # Sanitize ligand, but allow unusual valences (e.g. C#O for carbonyl).
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
+        try:
+            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+        except Exception:
+            for atom in mol.GetAtoms():
+                pass  # valence already calculated during partial sanitization
 
     # Set NoImplicit on binding atoms to avoid spurious H addition.
     # When the binding atom forms an M-L bond in the complex its valence is
@@ -282,9 +332,20 @@ def _stitch_fragment(
 
     _etkdg_params = AllChem.ETKDGv3()
     _etkdg_params.randomSeed = 42
-    result = AllChem.EmbedMolecule(mol, _etkdg_params)
+    try:
+        result = AllChem.EmbedMolecule(mol, _etkdg_params)
+    except Exception:
+        result = -1
     if result == -1:
-        return None
+        if mol.GetNumAtoms() == 1:
+            # Single-atom fragment (e.g. hydride [H]) — ETKDG needs ≥ 2 atoms.
+            # Create a trivial conformer at origin; the monodentate translation
+            # below will move it to the correct target position.
+            conf = Chem.Conformer(1)
+            conf.SetAtomPosition(0, (0.0, 0.0, 0.0))
+            mol.AddConformer(conf, assignId=True)
+        else:
+            return None
 
     conf = mol.GetConformer()
     n_atoms = mol.GetNumAtoms()
@@ -330,7 +391,7 @@ def _stitch_fragment(
                         except Exception:
                             pass  # Keep current orientation on failure
 
-        return positions, symbols
+        return positions, symbols, mol
 
     # ── Bidentate or higher ──────────────────────────────────────────────────
     # Compatibility check: if organic binding-atom distances differ from target
@@ -351,7 +412,7 @@ def _stitch_fragment(
     t_centered = target_ba - t_center
 
     if np.linalg.norm(c_centered[0]) < 1e-6 or np.linalg.norm(t_centered[0]) < 1e-6:
-        return positions + (t_center - c_center), symbols
+        return positions + (t_center - c_center), symbols, mol
 
     rot, _ = Rotation.align_vectors(t_centered, c_centered)
     positions_aligned = rot.apply(positions - c_center) + t_center
@@ -421,10 +482,28 @@ def _stitch_fragment(
             rot_best = Rotation.from_rotvec(bite_axis_unit * best_angle)
             positions_aligned = rot_best.apply(centered) + t_center
 
-    return positions_aligned, symbols
+    # Reject bidentate placement if any non-binding heavy atom ends up within
+    # 1.7 Å of the metal centre (origin).  This catches cases where Kabsch
+    # alignment with a large bite-distance mismatch (e.g. ppy: free C–N ~4.5 Å
+    # vs chelated ~2.83 Å) folds inner ring atoms into the metal sphere, causing
+    # XYZToSMILES to misidentify the topology on the round-trip.
+    if len(binding_idxs) >= 2:
+        _binding_set = set(binding_idxs)
+        _nb_heavy_idxs = [
+            i for i in range(n_atoms)
+            if i not in _binding_set and symbols[i] != "H"
+        ]
+        if _nb_heavy_idxs:
+            _min_d_metal = float(
+                np.linalg.norm(positions_aligned[_nb_heavy_idxs], axis=1).min()
+            )
+            if _min_d_metal < 1.7:
+                return None  # Bidentate distortion too severe → fall back to DG
+
+    return positions_aligned, symbols, mol
 
 
-def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
+def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] | None":
     """Generate a 3D XYZ block using OIN template slot vectors.
 
     Returns the XYZ string on success, or ``None`` if template generation
@@ -475,6 +554,10 @@ def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
     # Track eta fragments for post-placement ring-rotation optimisation:
     #   [(atom_start_idx, atom_end_idx_exclusive, slot_unit_vector), …]
     eta_frag_ranges: list[tuple[int, int, np.ndarray]] = []
+    # Track fragment mol objects and their binding indices for combined mol assembly.
+    # Each entry: (frag_mol, binding_idxs_in_frag)
+    fragment_mol_parts: list[tuple[Chem.Mol, list[int]]] = []
+    has_all_mols: bool = True
 
     for frag_idx, frag_smiles in enumerate(parsed_oin.fragments):
         if frag_idx == parsed_oin.metal_fragment_idx:
@@ -512,12 +595,16 @@ def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
             )
             if result is None:
                 return None  # Eta fragment failed → use DG
-            frag_positions, frag_symbols = result
+            frag_positions, frag_symbols, frag_mol = result
             eta_start = len(all_pos)
             all_pos.extend(frag_positions)
             all_syms.extend(frag_symbols)
             all_frag_idxs.extend([frag_idx] * len(frag_positions))
             eta_frag_ranges.append((eta_start, len(all_pos), eta_slot_unit))
+            if frag_mol is not None:
+                fragment_mol_parts.append((frag_mol, eta_binding_idxs))
+            else:
+                has_all_mols = False
             continue  # Next fragment
 
         # ── Normal (monodentate / bidentate) path ────────────────────────────
@@ -555,10 +642,11 @@ def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
             # organic vs chelated binding-atom distance).  Fall back to DG.
             return None
 
-        frag_positions, frag_symbols = result
+        frag_positions, frag_symbols, frag_mol = result
         all_pos.extend(frag_positions)
         all_syms.extend(frag_symbols)
         all_frag_idxs.extend([frag_idx] * len(frag_positions))
+        fragment_mol_parts.append((frag_mol, list(binding_idxs)))
 
     n = len(all_syms)
     if n < 2:
@@ -585,8 +673,14 @@ def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
         same = hf[:, None] == hf[None, :]
         return float(np.where(same, 999.0, dists).min())
 
-    if _inter_frag_min(all_pos, all_frag_idxs) < 1.60 and eta_frag_ranges:
+    if eta_frag_ranges:
         # Attempt ring-rotation optimisation for each eta fragment in turn.
+        # Always run — not just when clashes exist — because the analytic ring
+        # geometry uses an arbitrary rotational phase around the metal→centroid
+        # axis.  Optimising to maximise inter-fragment separation gives the most
+        # physically reasonable placement even when no hard clash is present
+        # (e.g. TiCp2Me2 TET geometry where Cp rings and methyl groups start far
+        # apart but the ring phase still strongly affects RMSD).
         from scipy.spatial.transform import Rotation as _Rot  # noqa: PLC0415
 
         for eta_start, eta_end, slot_u in eta_frag_ranges:
@@ -624,7 +718,37 @@ def _template_generate(parsed_oin: "ParsedOIN") -> str | None:
     lines = [str(n), f"Template-generated from OIN ({geo_code})"]
     for sym, pos in zip(all_syms, all_pos):
         lines.append(f"{sym:<2}  {pos[0]:12.6f}  {pos[1]:12.6f}  {pos[2]:12.6f}")
-    return "\n".join(lines) + "\n"
+    xyz_str = "\n".join(lines) + "\n"
+
+    # Build combined RDKit mol with bond connectivity + 3D conformer from all_pos.
+    # CombineMols preserves existing ETKDG conformers from fragments; we strip
+    # all of them and set a single conformer from the final all_pos array so
+    # the written MOL/SDF has the correct template-placed positions.
+    combined_mol: Chem.Mol | None = None
+    if has_all_mols and fragment_mol_parts:
+        try:
+            combined_rw = Chem.RWMol(metal_mol)
+            for frag_mol, frag_binding_idxs in fragment_mol_parts:
+                frag_start = combined_rw.GetNumAtoms()
+                # Strip conformers from fragment so CombineMols doesn't carry
+                # old ETKDG geometry into the combined mol's conformer list.
+                frag_no_conf = Chem.RWMol(frag_mol)
+                frag_no_conf.RemoveAllConformers()
+                combined_rw = Chem.RWMol(Chem.CombineMols(combined_rw.GetMol(), frag_no_conf.GetMol()))
+                for bidx in frag_binding_idxs:
+                    global_bidx = frag_start + bidx
+                    if global_bidx < combined_rw.GetNumAtoms():
+                        combined_rw.AddBond(0, global_bidx, Chem.BondType.DATIVE)
+            # Set the single conformer from the final (collision-checked) all_pos.
+            conf = Chem.Conformer(combined_rw.GetNumAtoms())
+            for i, pos in enumerate(all_pos):
+                conf.SetAtomPosition(i, pos.tolist())
+            combined_rw.AddConformer(conf, assignId=True)
+            combined_mol = combined_rw.GetMol()
+        except Exception:
+            combined_mol = None
+
+    return xyz_str, combined_mol
 
 
 # ===========================================================================
@@ -659,6 +783,59 @@ class MolassemblerTimeoutError(RuntimeError):
 
 
 # ===========================================================================
+# Helper: reconstruct bonded RDKit mol from connected SMILES + XYZ block
+# (used for the DG path where the subprocess only returns an XYZ string)
+# ===========================================================================
+
+
+def _reconstruct_mol_from_smiles_and_xyz(smiles: str, xyz_block: str) -> "Chem.Mol | None":
+    """Build an RDKit mol with bonds (from SMILES) and 3D coords (from XYZ).
+
+    Returns None if the atom counts or element order do not match, or on any
+    parsing error.  The caller should treat None as "no bonded mol available"
+    and fall back to coordinate-only output.
+    """
+    try:
+        mol = Chem.MolFromSmiles(smiles, sanitize=False)
+        if mol is None:
+            return None
+        try:
+            Chem.SanitizeMol(mol)
+        except Exception:
+            try:
+                Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            except Exception:
+                for atom in mol.GetAtoms():
+                    pass  # valence already calculated during partial sanitization
+        mol = Chem.AddHs(mol)
+
+        lines = xyz_block.strip().split("\n")
+        atom_count = int(lines[0].strip())
+        positions = []
+        xyz_syms = []
+        for line in lines[2 : 2 + atom_count]:
+            parts = line.split()
+            if len(parts) >= 4:
+                xyz_syms.append(parts[0])
+                positions.append((float(parts[1]), float(parts[2]), float(parts[3])))
+
+        if len(positions) != mol.GetNumAtoms():
+            return None
+
+        rdkit_syms = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(mol.GetNumAtoms())]
+        if xyz_syms != rdkit_syms:
+            return None  # Atom ordering mismatch between masm and RDKit
+
+        conf = Chem.Conformer(mol.GetNumAtoms())
+        for i, pos in enumerate(positions):
+            conf.SetAtomPosition(i, pos)
+        mol.AddConformer(conf, assignId=True)
+        return mol
+    except Exception:
+        return None
+
+
+# ===========================================================================
 # RDKit ETKDG fallback — used when Molassembler DG returns GraphImpossible
 # ===========================================================================
 
@@ -674,7 +851,13 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
 
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        return {"error": "RDKit could not parse SMILES for ETKDG fallback", "ok": False}
+        mol = Chem.MolFromSmiles(smiles, sanitize=False)
+        if mol is None:
+            return {"error": "RDKit could not parse SMILES for ETKDG fallback", "ok": False}
+        try:
+            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+        except Exception:
+            pass
 
     mol = Chem.AddHs(mol)
     _fb_params = AllChem.ETKDGv3()
@@ -693,6 +876,93 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
         lines.append(f"{sym:<2}  {pos.x:12.6f}  {pos.y:12.6f}  {pos.z:12.6f}")
     xyz_block = "\n".join(lines) + "\n"
     return {"xyz_block": xyz_block, "ok": True}
+
+
+# ===========================================================================
+# DG strategy helpers — MUST be at module level for ProcessPoolExecutor pickle
+# ===========================================================================
+
+
+def _min_inter_atomic_dist(positions: np.ndarray) -> float:
+    """Return minimum pairwise inter-atomic distance (Å). Higher = fewer clashes."""
+    if len(positions) < 2:
+        return 999.0
+    from scipy.spatial.distance import pdist  # noqa: PLC0415
+    return float(pdist(positions).min())
+
+
+def _best_from_ensemble(mol, seed: int, n: int = 10) -> np.ndarray | None:
+    """Generate multiple conformers and return the one with best inter-atomic distances.
+
+    Parameters
+    ----------
+    mol:
+        SCINE Molassembler Molecule object with stereopermutators already assigned.
+    seed:
+        Seed for deterministic ensemble generation.
+    n:
+        Number of conformers to generate (default 10).
+
+    Returns
+    -------
+    np.ndarray of shape (N_atoms, 3) or None if all conformers failed.
+    """
+    import scine_molassembler as masm  # noqa: PLC0415
+
+    results = masm.dg.generate_ensemble(mol, n, seed)
+    scored = [
+        (pos, _min_inter_atomic_dist(pos))
+        for pos in results
+        if not isinstance(pos, masm.dg.Error)
+    ]
+    if not scored:
+        return None
+    return max(scored, key=lambda x: x[1])[0]
+
+
+def _best_from_directed(mol, seed: int, max_size: int = 50) -> np.ndarray | None:
+    """Generate conformers via exhaustive dihedral enumeration, pick best by distance.
+
+    If ideal_ensemble_size exceeds max_size, falls back to ensemble generation to
+    avoid combinatorial explosion.
+
+    Parameters
+    ----------
+    mol:
+        SCINE Molassembler Molecule object with stereopermutators already assigned.
+    seed:
+        Seed for deterministic enumeration.
+    max_size:
+        Ensemble cap — if ideal_ensemble_size > max_size, falls back to ensemble.
+
+    Returns
+    -------
+    np.ndarray of shape (N_atoms, 3) or None if enumeration failed/skipped.
+    """
+    import scine_molassembler as masm  # noqa: PLC0415
+
+    try:
+        gen = masm.DirectedConformerGenerator(mol)
+    except Exception:
+        return None
+
+    if gen.ideal_ensemble_size > max_size:
+        return _best_from_ensemble(mol, seed, n=max_size)
+
+    best: list = []
+    best_score: list = [-1.0]
+
+    def _cb(dl, positions):  # noqa: ARG001
+        score = _min_inter_atomic_dist(positions)
+        if score > best_score[0]:
+            best_score[0] = score
+            best[:] = [positions]
+
+    try:
+        gen.enumerate(_cb, seed)
+    except Exception:
+        return None
+    return best[0] if best else None
 
 
 # ===========================================================================
@@ -724,6 +994,9 @@ def _molassembler_worker(args: dict) -> dict:
     perm_idx: int = args.get("perm_idx", 0)
     expected_trans_sym_pairs: list | None = args.get("expected_trans_sym_pairs")
     expected_bindings: list = args.get("expected_bindings", [])
+    dg_strategy: str = args.get("dg_strategy", "single")
+    ensemble_size: int = args.get("ensemble_size", 10)
+    max_directed_size: int = args.get("max_directed_size", 50)
 
     try:
         mol = masm.io.experimental.from_smiles(smiles)
@@ -910,6 +1183,18 @@ def _molassembler_worker(args: dict) -> dict:
         # Already an ETKDG fallback result dict — return it directly.
         return result
 
+    # Apply the chosen DG strategy. For ensemble/directed, replace the perm-finding
+    # result with the best conformer from a wider search. For single, fall through to
+    # the seed-retry loop below (which handles result is None).
+    if dg_strategy == "ensemble":
+        better = _best_from_ensemble(mol, seed, ensemble_size)
+        if better is not None:
+            result = better
+    elif dg_strategy == "directed":
+        better = _best_from_directed(mol, seed, max_directed_size)
+        if better is not None:
+            result = better
+
     if result is None:
         # Try a few seeds to handle seed-dependent DG failures
         # (RefinedStructureInacceptable is not always deterministic).
@@ -1005,7 +1290,11 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
         try:
             Chem.SanitizeMol(lig_mol)
         except Exception:
-            pass
+            try:
+                Chem.SanitizeMol(lig_mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            except Exception:
+                for atom in lig_mol.GetAtoms():
+                    pass  # valence already calculated during partial sanitization
 
         # Explicitly add all implicit H before combining so that ligand
         # H counts are not altered when the metal-ligand bond is added.
@@ -1113,12 +1402,12 @@ def _check_trans_sym_pairs(
         return False
 
     metal_pos = positions[metal_idx]
-    # Build a flat list of (symbol, unit_vector) for every heavy neighbour.
+    # Build a flat list of (symbol, unit_vector) for every neighbour.
+    # Includes H atoms bonded directly to the metal (hydride ligands),
+    # which must be detected to distinguish trans-H pairs (e.g. in FeH2).
     nbr_list: list[tuple[str, "_np.ndarray"]] = []
     for nbr in rdmol.GetAtomWithIdx(metal_idx).GetNeighbors():
         sym = nbr.GetSymbol()
-        if sym == "H":
-            continue
         v = positions[nbr.GetIdx()] - metal_pos
         norm = float(_np.linalg.norm(v))
         if norm > 1e-6:
@@ -1201,12 +1490,11 @@ def _check_exact_slot_match(
     metal_pos = positions[metal_idx]
 
     # Build flat list of (list_index, element, actual_unit_vector) for every
-    # heavy neighbour of the metal.
+    # neighbour of the metal. Includes H atoms bonded directly to the metal
+    # (hydride ligands), which must be detected in slot matching.
     nbr_list: list[tuple[int, str, "_np.ndarray"]] = []
     for nbr in rdmol.GetAtomWithIdx(metal_idx).GetNeighbors():
         sym = nbr.GetSymbol()
-        if sym == "H":
-            continue
         idx = nbr.GetIdx()
         if idx >= len(positions):
             continue
@@ -1413,8 +1701,17 @@ class MolassemblerAdapter:
     C++ GIL-holding code cannot block the main Python process.
     """
 
-    def __init__(self, timeout: int = 60) -> None:
+    def __init__(
+        self,
+        timeout: int = 60,
+        dg_strategy: str = "single",
+        ensemble_size: int = 10,
+        max_directed_size: int = 50,
+    ) -> None:
         self.timeout = timeout
+        self.dg_strategy = dg_strategy
+        self.ensemble_size = ensemble_size
+        self.max_directed_size = max_directed_size
 
     def generate(self, parsed_oin: ParsedOIN, seed: int = 42) -> str:
         """Generate a 3D XYZ block for the TMC described by *parsed_oin*.
@@ -1453,9 +1750,10 @@ class MolassemblerAdapter:
         # geometric fidelity for rigid ligands and eliminating DG roughness
         # for chelate ring systems (e.g. Ir(ppy)3).
         if parsed_oin.geo_code and parsed_oin.geo_code != "NON":
-            template_xyz = _template_generate(parsed_oin)
-            if template_xyz is not None:
-                return template_xyz
+            template_result = _template_generate(parsed_oin)
+            if template_result is not None:
+                xyz_str, template_mol = template_result
+                return GeneratedStructure(xyz=xyz_str, mol=template_mol)
 
         # ── Fallback: Molassembler DG ───────────────────────────────────────
         connected_smiles = _build_connected_smiles(parsed_oin)
@@ -1481,6 +1779,9 @@ class MolassemblerAdapter:
             "perm_idx": perm_idx,
             "expected_trans_sym_pairs": expected_trans_sym_pairs,
             "expected_bindings": expected_bindings,
+            "dg_strategy": self.dg_strategy,
+            "ensemble_size": self.ensemble_size,
+            "max_directed_size": self.max_directed_size,
         }
 
         with ProcessPoolExecutor(max_workers=1) as ex:
@@ -1497,4 +1798,6 @@ class MolassemblerAdapter:
                 f"Molassembler error: {result.get('error', 'unknown')}"
             )
 
-        return result["xyz_block"]
+        xyz_block = result["xyz_block"]
+        bonded_mol = _reconstruct_mol_from_smiles_and_xyz(connected_smiles, xyz_block)
+        return GeneratedStructure(xyz=xyz_block, mol=bonded_mol)

@@ -75,7 +75,7 @@ params.splitAromaticC = True
 params.splitGrignards = True
 params.adjustCharges = False
 
-MetalNon_Hg = "[#3,#11,#12,#19,#13,#21,#22,#23,#24,#25,#26,#27,#28,#29,#30,#39,#40,#41,#42,#43,#44,#45,#46,#47,#48,#57,#72,#73,#74,#75,#76,#77,#78,#79,#80]~[B,#6,#14,#15,#33,#51,#16,#34,#52,Cl,Br,I,#85]"
+MetalNon_Hg = "[#3,#11,#12,#19,#13,#21,#22,#23,#24,#25,#26,#27,#28,#29,#30,#39,#40,#41,#42,#43,#44,#45,#46,#47,#48,#57,#72,#73,#74,#75,#76,#77,#78,#79,#80]~[B,#6,#14,#15,#33,#51,#16,#34,#52,Cl,Br,I,#85,#1;!$([#1]~[#6])]"
 
 pt = GetPeriodicTable
 
@@ -907,20 +907,25 @@ def get_oin_string(tmc_mol, xyz_coords):
                         h_count += 1
                 atom_h_count[old_idx] = h_count
         
-        # 2. Extract Fragment (Heavy Atoms Only)
+        # 2. Extract Fragment (Heavy Atoms Only, or H atoms for pure-H fragments)
         mw = Chem.RWMol()
         old_to_new = {}
-        
-        for old_idx in heavy_indices:
+
+        # For pure-H fragments (hydride ligands like Fe-H after bond cutting),
+        # heavy_indices is empty. Fall back to using H atoms directly so that
+        # isolated hydrides are serialized as [H] in the OIN rather than "".
+        atoms_to_include = heavy_indices if heavy_indices else sorted(h_indices)
+
+        for old_idx in atoms_to_include:
             atom = mol.GetAtomWithIdx(old_idx)
             new_idx = mw.AddAtom(atom)
-            
+
             # Apply calculated H count from stripped hydrogens
             # This is critical for OINSanitizer to know the original H count
             # since we set NoImplicit=True globally earlier.
             if old_idx in atom_h_count:
                 mw.GetAtomWithIdx(new_idx).SetNumExplicitHs(atom_h_count[old_idx])
-                
+
             old_to_new[old_idx] = new_idx
         # Loop over atoms in fragment, check neighbors
         # Add Bonds between heavy atoms
