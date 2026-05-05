@@ -11,18 +11,11 @@ from oinsmiles.generation.engine import OIN3DGenerator
 from oinsmiles import XYZToSMILES
 from verify_xyz_to_oin import get_examples
 from reporting import VerificationReporter
+from rmsd_utils import calculate_tmc_rmsd
 
 # Expected OIN strings (updated for V3.0 curly brace syntax)
 FAC_EXPECTED = r"[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1"
 MER_EXPECTED = r"[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1"
-
-def calculate_rmsd_mols(mol1, mol2):
-    try:
-        rmsd = Chem.rdMolAlign.GetBestRMS(mol2, mol1)
-        return rmsd
-    except Exception as e:
-        print(f"RMSD calculation failed: {e}")
-        return 999.0
 
 def main():
     print("Verifying Ir(ppy)3 Complex Fixes (Unified Round-Trip)")
@@ -90,12 +83,13 @@ def main():
                 print("[FAIL] String Mismatch")
                 details.append(f"Mismatch: <br>Exp: {oin1_string}<br>Got: {oin2_string}")
                 
-            # RMSD
+            # RMSD (coordination sphere only)
             mol_orig = Chem.MolFromXYZFile(input_xyz_path)
             mol_gen = Chem.MolFromXYZFile(gen_xyz_path)
+            mol_gen_bonded = structure.mol if structure.mol is not None else mol_gen
             if mol_orig and mol_gen:
-                rmsd = calculate_rmsd_mols(mol_orig, mol_gen)
-                print(f"  RMSD: {rmsd:.4f}")
+                rmsd = calculate_tmc_rmsd(mol_orig, mol_gen, mol2_bonded=mol_gen_bonded)
+                print(f"  RMSD (coord sphere): {rmsd:.4f}")
                 if rmsd < 1.0:
                     details.append(f"RMSD: {rmsd:.4f}")
                 else:

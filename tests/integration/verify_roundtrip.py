@@ -14,17 +14,10 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import rdMolAlign
 from oinsmiles import XYZToSMILES
+from rmsd_utils import calculate_tmc_rmsd
 import tempfile
 import argparse
 import shutil
-
-def calculate_rmsd_mols(mol1, mol2):
-    try:
-        rmsd = rdMolAlign.GetBestRMS(mol2, mol1)
-        return rmsd
-    except Exception as e:
-        print(f"RMSD calculation failed: {e}")
-        return 999.0
 
 import re as _re
 _METAL_STEREO_RE = _re.compile(r'\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]')
@@ -63,6 +56,11 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
        are normalized to {n}.  The ring rotation phase of eta-ligands (Cp, arene)
        cannot be deterministically reproduced from the OIN alone; the RMSD check
        verifies geometric correctness instead.
+    5. Canonicalize slot numbering: for OCT and other symmetric geometries where
+       different rotations yield equivalent but numerically different slot assignments,
+       renumber slots in order of first appearance. This makes equivalently-rotated
+       structures map to the same OIN after normalization (e.g., OCT with N atoms
+       at slots {3,5} vs {5,3} both normalize to {0,1} for the N atoms).
     """
     s = _METAL_STEREO_RE.sub(r'[\1_\2]', oin_string)
     # Normalize [OH2] → O (bound water notation equivalence)
@@ -73,6 +71,21 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     while '..' in s:
         s = s.replace('..', '.')
     s = s.rstrip('.')
+
+    # Canonicalize slot numbering: renumber slots in order of first appearance
+    import re as _re_canon
+    slot_map = {}
+    next_slot = 0
+
+    def replace_slot(match):
+        nonlocal next_slot
+        old_slot = int(match.group(1))
+        if old_slot not in slot_map:
+            slot_map[old_slot] = next_slot
+            next_slot += 1
+        return '{' + str(slot_map[old_slot]) + '}'
+
+    s = _re_canon.sub(r'\{(\d+)\}', replace_slot, s)
     return s
 
 
@@ -301,8 +314,8 @@ def main():
                             except Exception:
                                 pass
 
-                    rmsd = calculate_rmsd_mols(mol_orig, mol_gen_xyz)
-                    print(f"  RMSD Input vs Generated: {rmsd:.4f}")
+                    rmsd = calculate_tmc_rmsd(mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded)
+                    print(f"  RMSD Input vs Generated (coord sphere): {rmsd:.4f}")
                     metrics["rmsd"] = round(rmsd, 4)
 
                     if rmsd < 1.0:

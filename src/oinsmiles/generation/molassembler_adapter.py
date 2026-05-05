@@ -106,6 +106,110 @@ def _analytic_ring_geometry(
     return np.array(positions, dtype=float), out_symbols
 
 
+def _stitch_multi_eta_fragment(
+    frag_smiles: str,
+    vectors: list,
+    metal_sym: str,
+) -> tuple[np.ndarray, list[str], "Chem.Mol | None"] | None:
+    """Place an ansa-metallocene fragment with eta groups at multiple slot directions.
+
+    For fragments where multiple distinct slot directions bind eta atoms (e.g.
+    SiMe2-bridged Cp2), groups binding atoms by slot, ETKDG-embeds the full
+    organic fragment, then uses Rotation.align_vectors to simultaneously align
+    all eta-group centroids to their respective slot units.
+
+    Returns
+    -------
+    (positions, symbols, mol) or None on failure.
+    mol is the RDKit Mol with bond connectivity.
+    """
+    from rdkit.Chem import AllChem
+    from scipy.spatial.transform import Rotation
+
+    slot_groups: dict[tuple, list[int]] = {}
+    for v in vectors:
+        key = tuple(round(x, 4) for x in v.vector)
+        slot_groups.setdefault(key, []).append(v.atom_in_fragment_idx)
+
+    if len(slot_groups) < 2:
+        return None
+
+    mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+    if mol is None:
+        return None
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
+        try:
+            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+        except Exception:
+            pass
+
+    mol = Chem.AddHs(mol)
+    params = AllChem.ETKDGv3()
+    params.randomSeed = 42
+    try:
+        r = AllChem.EmbedMolecule(mol, params)
+    except Exception:
+        r = -1
+    if r != 0:
+        return None
+
+    n_atoms = mol.GetNumAtoms()
+    positions = np.array(
+        [list(mol.GetConformer().GetAtomPosition(i)) for i in range(n_atoms)],
+        dtype=float,
+    )
+    symbols = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
+
+    source_vecs = []
+    target_vecs = []
+    for slot_key, bidxs in slot_groups.items():
+        valid = [i for i in bidxs if i < n_atoms]
+        if not valid:
+            return None
+        centroid = np.mean([positions[i] for i in valid], axis=0)
+        c_norm = np.linalg.norm(centroid)
+        if c_norm < 1e-6:
+            return None
+        source_vecs.append(centroid / c_norm)
+
+        slot_unit = np.array(slot_key, dtype=float)
+        slot_norm = np.linalg.norm(slot_unit)
+        if slot_norm < 1e-9:
+            return None
+        slot_unit = slot_unit / slot_norm
+        target_vecs.append(slot_unit)
+
+    try:
+        rot, _ = Rotation.align_vectors(target_vecs, source_vecs)
+    except Exception:
+        return None
+
+    rotated = rot.apply(positions)
+
+    T = np.zeros(3)
+    for slot_key, bidxs in slot_groups.items():
+        valid = [i for i in bidxs if i < n_atoms]
+        centroid = np.mean([rotated[i] for i in valid], axis=0)
+        slot_unit = np.array(slot_key, dtype=float)
+        slot_norm = np.linalg.norm(slot_unit)
+        slot_unit = slot_unit / slot_norm
+
+        ring_radius = float(np.mean([np.linalg.norm(rotated[i] - centroid) for i in valid]))
+        binding_sym = mol.GetAtomWithIdx(valid[0]).GetSymbol()
+        d_mc_bond = _bond_length(metal_sym, binding_sym)
+        if d_mc_bond > ring_radius:
+            d_mc = float(np.sqrt(d_mc_bond**2 - ring_radius**2))
+        else:
+            d_mc = d_mc_bond * 0.80
+        T += slot_unit * d_mc - centroid
+
+    T /= len(slot_groups)
+    final_positions = rotated + T
+    return final_positions, symbols, mol
+
+
 def _stitch_eta_fragment(
     frag_smiles: str,
     binding_idxs: list[int],
@@ -558,6 +662,7 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
     # Each entry: (frag_mol, binding_idxs_in_frag)
     fragment_mol_parts: list[tuple[Chem.Mol, list[int]]] = []
     has_all_mols: bool = True
+    has_multi_eta: bool = False  # True if any fragment has eta at multiple slots
 
     for frag_idx, frag_smiles in enumerate(parsed_oin.fragments):
         if frag_idx == parsed_oin.metal_fragment_idx:
@@ -576,9 +681,29 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
             # Use centroid-plane alignment instead of per-atom Kabsch.
             unique_dirs = list({vt: None for vt in vec_tuples}.keys())
             if len(unique_dirs) != 1:
-                # Multiple distinct slot directions for one eta fragment —
-                # uncommon; fall back to Molassembler DG.
-                return None
+                # Multi-eta-slot fragment (ansa-metallocene: one fragment,
+                # multiple eta groups at different slots).
+                has_multi_eta = True
+                result = _stitch_multi_eta_fragment(
+                    frag_smiles,
+                    vecs,
+                    metal_sym,
+                )
+                if result is None:
+                    return None
+                frag_positions, frag_symbols, frag_mol = result
+                all_binding_idxs = [v.atom_in_fragment_idx for v in vecs]
+                eta_start = len(all_pos)
+                all_pos.extend(frag_positions)
+                all_syms.extend(frag_symbols)
+                all_frag_idxs.extend([frag_idx] * len(frag_positions))
+                eta_frag_ranges.append((eta_start, len(all_pos), np.array(unique_dirs[0], dtype=float)))
+                if frag_mol is not None:
+                    fragment_mol_parts.append((frag_mol, all_binding_idxs))
+                else:
+                    has_all_mols = False
+                continue
+
             eta_slot_vec = np.array(unique_dirs[0], dtype=float)
             eta_slot_norm = float(np.linalg.norm(eta_slot_vec))
             if eta_slot_norm < 1e-9:
@@ -712,8 +837,11 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
                 all_pos[i] = rot_best.apply(orig_rel[k]) + centroid
 
         # Final collision check after ring-rotation optimisation
-        if _inter_frag_min(all_pos, all_frag_idxs) < 1.60:
-            return None  # Still clashing → DG fallback
+        final_min = _inter_frag_min(all_pos, all_frag_idxs)
+        # For ansa-metallocenes (multi-eta fragments with different slots), the
+        # simultaneous alignment doesn't guarantee geometric accuracy; rely on DG.
+        if has_multi_eta or final_min < 1.60:
+            return None  # Multi-eta or collision → DG fallback
 
     lines = [str(n), f"Template-generated from OIN ({geo_code})"]
     for sym, pos in zip(all_syms, all_pos):
@@ -849,20 +977,26 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
     from rdkit import Chem  # noqa: PLC0415
     from rdkit.Chem import AllChem  # noqa: PLC0415
 
-    mol = Chem.MolFromSmiles(smiles)
+    mol = Chem.MolFromSmiles(smiles, sanitize=False)
     if mol is None:
-        mol = Chem.MolFromSmiles(smiles, sanitize=False)
-        if mol is None:
-            return {"error": "RDKit could not parse SMILES for ETKDG fallback", "ok": False}
+        return {"error": "RDKit could not parse SMILES for ETKDG fallback", "ok": False}
+    # Try full sanitization first; if that fails (e.g. kekulization issues with
+    # aromatic eta ligands), fall back to partial sanitization without properties.
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
         try:
-            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE)
         except Exception:
-            pass
+            pass  # best effort; keep whatever state we have
 
     mol = Chem.AddHs(mol)
     _fb_params = AllChem.ETKDGv3()
     _fb_params.randomSeed = 42
-    result = AllChem.EmbedMolecule(mol, _fb_params)
+    try:
+        result = AllChem.EmbedMolecule(mol, _fb_params)
+    except Exception as e:
+        return {"error": f"RDKit ETKDG embedding failed: {e}", "ok": False}
     if result == -1:
         return {"error": "RDKit ETKDG embedding failed", "ok": False}
 
@@ -1325,10 +1459,19 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
         # Kekulize for Molassembler compatibility (aromatic lowercase atoms are
         # not understood by Molassembler).  Done in-place after AddHs — no
         # SMILES round-trip — so atom_in_fragment_idx indices remain valid.
-        try:
-            Chem.Kekulize(lig_mol, clearAromaticFlags=True)
-        except Exception:
-            pass  # keep aromatic form; final combined MolToSmiles may still work
+        # However, skip kekulization if aromatic C atoms are binding atoms
+        # (eta ligands), as kekulization + dative bonds cause valence errors.
+        has_aromatic_c_binding = any(
+            lig_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetIsAromatic()
+            and lig_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetSymbol() == 'C'
+            for vec in vectors
+            if vec.atom_in_fragment_idx < lig_mol.GetNumAtoms()
+        )
+        if not has_aromatic_c_binding:
+            try:
+                Chem.Kekulize(lig_mol, clearAromaticFlags=True)
+            except Exception:
+                pass  # keep aromatic form; final combined MolToSmiles may still work
 
         lig_atom_offset = rw.GetNumAtoms()
         # Merge ligand atoms into combined mol
@@ -1345,10 +1488,32 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
     # Minimal sanitization: skip SETAROMATICITY so atoms already kekulized
     # at the fragment level are not re-aromaticized in the combined mol
     # (which would prevent kekulization of the metal-chelate ring system).
+    # Also skip KEKULIZE if aromatic C atoms are bonded to the metal, since
+    # such bonds create unkekulizable aromatic rings.
     _SKIP_AROM = (
         Chem.SanitizeFlags.SANITIZE_ALL
         ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
     )
+    # Check if any metal-ligand bonds are to aromatic carbons
+    has_aromatic_c_metal_bonds = False
+    for vec_group in frag_vectors.values():
+        for vec in vec_group:
+            if vec.fragment_idx == parsed_oin.metal_fragment_idx:
+                continue
+            # Check if any binding atom in this fragment is aromatic C
+            frag_smiles = parsed_oin.fragments[vec.fragment_idx]
+            try:
+                test_mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+                if (test_mol and vec.atom_in_fragment_idx < test_mol.GetNumAtoms() and
+                    test_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetIsAromatic() and
+                    test_mol.GetAtomWithIdx(vec.atom_in_fragment_idx).GetSymbol() == 'C'):
+                    has_aromatic_c_metal_bonds = True
+                    break
+            except:
+                pass
+    if has_aromatic_c_metal_bonds:
+        _SKIP_AROM ^= Chem.SanitizeFlags.SANITIZE_KEKULIZE
+
     Chem.SanitizeMol(rw, _SKIP_AROM, catchErrors=True)
     try:
         smiles = Chem.MolToSmiles(rw.GetMol())
