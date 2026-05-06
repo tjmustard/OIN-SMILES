@@ -590,6 +590,54 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     except FileNotFoundError:
         print("Skipping TiCat4 example: File not found.")
 
+    # Example: PdCl2-R-BINAP (axial-chiral BINAP ligand)
+    try:
+        pdcl2_binap_xyz = read_file_content(os.path.join(os.path.dirname(__file__), 'PdCl2-R-BINAP.xyz'))
+
+        pdcl2_binap_ex = Example(
+            name="PdCl2-R-BINAP (XYZ -> OIN-SMILES)",
+            xyz_content=pdcl2_binap_xyz,
+            description="Palladium complex with axial-chiral R-BINAP diphosphine ligand.",
+            expected_smiles="[Pd@SP1_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd@SP1_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
+            expected_ligands=["P", "Cl"]
+        )
+        examples.append(pdcl2_binap_ex)
+    except FileNotFoundError:
+        print("Skipping PdCl2-R-BINAP example: File not found.")
+
+    # Example: PdCl2-RR-BDNN (N-chiral diphosphine ligand)
+    try:
+        pdcl2_bdnn_xyz = read_file_content(os.path.join(os.path.dirname(__file__), 'PdCl2-RR-BDNN.xyz'))
+
+        pdcl2_bdnn_ex = Example(
+            name="PdCl2-RR-BDNN (XYZ -> OIN-SMILES)",
+            xyz_content=pdcl2_bdnn_xyz,
+            description="Palladium complex with RR-BDNN N-chiral diphosphine ligand (R,R-bis(diethylamino)naphthalene).",
+            expected_smiles="[Pd@SP1_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd@SP1_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_ligands=["N", "Cl"]
+        )
+        examples.append(pdcl2_bdnn_ex)
+    except FileNotFoundError:
+        print("Skipping PdCl2-RR-BDNN example: File not found.")
+
+    # Example: PdCl2-RR-BDPP (P-chiral diphosphine ligand)
+    try:
+        pdcl2_bdpp_xyz = read_file_content(os.path.join(os.path.dirname(__file__), 'PdCl2-RR-BDPP.xyz'))
+
+        pdcl2_bdpp_ex = Example(
+            name="PdCl2-RR-BDPP (XYZ -> OIN-SMILES)",
+            xyz_content=pdcl2_bdpp_xyz,
+            description="Palladium complex with RR-BDPP P-chiral diphosphine ligand (R,R-bis(diphenylphosphinoyl)benzene).",
+            expected_smiles="[Pd@SP1_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd@SP1_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_ligands=["P", "Cl"]
+        )
+        examples.append(pdcl2_bdpp_ex)
+    except FileNotFoundError:
+        print("Skipping PdCl2-RR-BDPP example: File not found.")
+
     # Add tmQM examples (Added last so they don't displace manual examples when limiting)
     if include_tmqm:
         tmqm_dir = os.path.join(os.path.dirname(__file__), 'tmQM')
