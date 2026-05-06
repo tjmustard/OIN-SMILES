@@ -1,754 +1,435 @@
-nodes:
-- id: sys_oin_smiles
+system:
+  id: sys_oin_smiles
   dimension: System
+  description: "OIN-SMILES: Lossless XYZ \u2194 OIN/SMILES conversion for Transition\
+    \ Metal Complexes"
   status: clean
-  associated_file: spec/compiled/SuperPRD.md
-  description: >-
-    OIN-SMILES library — a SMILES extension that encodes Transition Metal Complex
-    (TMC) stereochemistry via inline slot-assignment tags. Provides two end-to-end
-    pipelines: XYZ→OIN-SMILES (lossless encoding with CIP stereo) and OIN-SMILES→XYZ
-    (deterministic 3D reconstruction via SCINE Molassembler with RDKit ETKDG fallback).
-    Accessible via Python API (XYZToSMILES, OIN3DGenerator) and shell CLI
-    (oin-smiles xyz2oin / oin2xyz). Validated by a chiral test suite covering 6 regression
-    complexes, BINAP stability, P/N-chiral CIP oracle checks, and axial-chirality
-    placeholder tests (43 passing, 1 intentional skip).
-  inputs:
-  - data_type: XYZ file path
-    source_id: external_user
-  - data_type: OIN-SMILES string
-    source_id: external_user
-  outputs:
-  - data_type: OIN-SMILES string (V3.6 inline)
-    target_id: external_user
-  - data_type: XYZ block string (3D conformer)
-    target_id: external_user
-  edges:
-    depends_on: []
-    implements: []
+nodes:
 - id: mod_api
   dimension: Module
   status: clean
   associated_file: src/oinsmiles/__init__.py
-  description: "Public package entry point. Re-exports XYZToSMILES and SMILESToXYZ\
-    \ from core.translator as the library's stable Python API surface. Also contains\
-    \ cli.py which registers the oin-smiles CLI entry point (xyz2oin / oin2xyz subcommands)\
-    \ \u2014 CLI delegates entirely to XYZToSMILES and OIN3DGenerator; no logic in\
-    \ cli.py.\n"
+  description: Public API exports (XYZToSMILES, SMILESToXYZ)
   inputs:
-  - data_type: import request
-    source_id: external_user
-  - data_type: CLI invocation (oin-smiles xyz2oin / oin2xyz)
-    source_id: external_user
+  - data_type: module_imports
+    source_id: mod_core
   outputs:
-  - data_type: XYZToSMILES class
-    target_id: external_user
-  - data_type: SMILESToXYZ class
-    target_id: external_user
-  - data_type: OIN-SMILES string (stdout, via CLI)
-    target_id: external_user
-  - data_type: XYZ block string (stdout, via CLI)
-    target_id: external_user
+  - data_type: api_interface
+    target_id: user_code
   edges:
     depends_on:
     - mod_core
-    - mod_generation
     implements:
-    - sys_oin_smiles
+    - atom_api_exports
 - id: mod_core
   dimension: Module
-  status: dirty
+  status: clean
   associated_file: src/oinsmiles/core/
-  description: 'Core data model and public translator classes. Contains TMCGraph/Atom/BondType
-    graph primitives and the XYZToSMILES / SMILESToXYZ translator facade. TD-001 (duplicate
-    convert method) and TD-003 (incomplete SMILESToXYZ) live here.
-
-    '
+  description: 'Core translation logic: graph generation, chirality handling, main
+    conversion APIs'
   inputs:
-  - data_type: XYZ file path
-    source_id: mod_api
-  - data_type: OIN-SMILES string
-    source_id: mod_api
+  - data_type: xyz_file
+    source_id: user_code
+  - data_type: oin_string
+    source_id: mod_generation
   outputs:
-  - data_type: OIN-SMILES string
-    target_id: mod_api
-  - data_type: TMCGraph
-    target_id: mod_api
+  - data_type: oin_string
+    target_id: mod_oin
+  - data_type: 3d_structure
+    target_id: mod_generation
   edges:
     depends_on:
     - mod_oin
     - mod_utils
     implements:
-    - sys_oin_smiles
-- id: mod_oin
-  dimension: Module
-  status: dirty
-  associated_file: src/oinsmiles/oin/
-  description: 'OIN format handling layer. Contains sidecar parser (OINParser), legacy
-    V1.x writer (OINWriter), and experimental V3.0 inline format handler (OINInlineHandler).
-    TD-002 (broken generate_inline_string) and TD-010 (dead _parse_tags) live here.
-
-    '
-  inputs:
-  - data_type: OIN-SMILES string (any version)
-    source_id: mod_core
-  - data_type: V2.4 sidecar OIN string
-    source_id: mod_utils
-  outputs:
-  - data_type: parsed SMILES + tag dict
-    target_id: mod_core
-  - data_type: V3.0 inline OIN string
-    target_id: mod_utils
-  edges:
-    depends_on: []
-    implements:
-    - sys_oin_smiles
+    - atom_xyz_to_smiles
+    - atom_smiles_to_xyz
+    - atom_cip_assigner
+    - atom_chirality_recovery
+    - atom_tmc_graph
 - id: mod_generation
   dimension: Module
   status: clean
   associated_file: src/oinsmiles/generation/
-  description: "OIN-SMILES\u2192XYZ 3D generation pipeline. Orchestrates parsing (OINParser_gen)\
-    \ and 3D conformer generation (MolassemblerAdapter). Architector backend removed;\
-    \ SCINE Molassembler is now the sole backend, executing in a separate OS process\
-    \ via ProcessPoolExecutor. RDKit ETKDG fallback used when Molassembler DG returns\
-    \ Error.GraphImpossible (e.g. OCT bidentate complexes).\n"
+  description: '3D structure generation from OIN: Molassembler backend, distance geometry,
+    template-based placement'
   inputs:
-  - data_type: OIN-SMILES string
-    source_id: mod_api
+  - data_type: oin_string
+    source_id: mod_oin
+  - data_type: timeout_seconds
+    source_id: user_code
   outputs:
-  - data_type: XYZ block string (3D conformer)
-    target_id: external_user
+  - data_type: generated_structure
+    target_id: user_code
   edges:
     depends_on:
     - mod_oin
     implements:
-    - sys_oin_smiles
-- id: mod_utils
+    - atom_oin3d_generator
+    - atom_molassembler_adapter
+    - atom_oin_parser_gen
+- id: mod_oin
   dimension: Module
   status: clean
-  associated_file: src/oinsmiles/utils/
-  description: "Core algorithmic utilities. Contains the XYZ\u2192adjacency matrix\
-    \ pipeline (xyz2mol, xyz2mol_local) and the OIN encoding engine (OINSanitizer,\
-    \ OINDiscreteAligner). This is where the active XYZ\u2192OIN pipeline lives.\n"
+  associated_file: src/oinsmiles/oin/
+  description: 'OIN format handling: parsing, writing, inline v3.6 format serialization'
   inputs:
-  - data_type: XYZ file path
+  - data_type: mol_object
+    source_id: mod_utils
+  - data_type: geometry_vector
     source_id: mod_core
-  - data_type: RDKit Mol + xyz_coords
-    source_id: atom_get_tmc_mol
   outputs:
-  - data_type: OIN-SMILES string (V3.6 inline)
+  - data_type: oin_string
+    target_id: mod_generation
+  - data_type: parsed_oin
     target_id: mod_core
   edges:
     depends_on: []
     implements:
-    - sys_oin_smiles
-- id: atom_BondType
-  dimension: Atomic
+    - atom_oin_inline_handler
+    - atom_oin_parser_oin
+    - atom_oin_writer
+- id: mod_utils
+  dimension: Module
   status: clean
-  associated_file: src/oinsmiles/core/graph.py
-  description: 'Enum for bond types: COVALENT, DATIVE, ZERO_ORDER. Used in TMCGraph
-    connectivity.
-
-    '
-  inputs: []
+  associated_file: src/oinsmiles/utils/
+  description: Graph generation (Jensen algorithm), geometry alignment, sanitization
+  inputs:
+  - data_type: xyz_file
+    source_id: mod_core
+  - data_type: oin_geometry
+    source_id: mod_oin
   outputs:
-  - data_type: BondType enum value
-    target_id: atom_TMCGraph
+  - data_type: tmc_mol
+    target_id: mod_core
+  - data_type: aligned_geometry
+    target_id: mod_oin
   edges:
     depends_on: []
     implements:
-    - mod_core
-- id: atom_Atom
+    - atom_xyz2mol
+    - atom_oin_aligner
+    - atom_oin_sanitizer
+- id: mod_cli
+  dimension: Module
+  status: dirty
+  associated_file: src/oinsmiles/cli.py
+  description: 'Command-line interface: oin-smiles xyz2oin / oin2xyz commands'
+  inputs:
+  - data_type: cli_arguments
+    source_id: user_code
+  outputs:
+  - data_type: stdout
+    target_id: user_code
+  edges:
+    depends_on:
+    - mod_api
+    implements:
+    - atom_cli_main
+- id: atom_api_exports
   dimension: Atomic
   status: clean
-  associated_file: src/oinsmiles/core/graph.py
-  description: 'Atom node in TMCGraph. Stores index, symbol, 3D coords, neighbor list,
-    and bond type mapping. Has add_neighbor() method.
-
-    '
+  associated_file: src/oinsmiles/__init__.py
+  description: 'Public API exports: XYZToSMILES, SMILESToXYZ classes'
   inputs:
-  - data_type: index, symbol, coords
-    source_id: atom_TMCGraph
+  - data_type: module_import
+    source_id: mod_core
   outputs:
-  - data_type: Atom instance
-    target_id: atom_TMCGraph
+  - data_type: api_class
+    target_id: user_code
   edges:
     depends_on:
-    - atom_BondType
-    implements:
-    - mod_core
-- id: atom_TMCGraph
+    - atom_xyz_to_smiles
+    - atom_smiles_to_xyz
+    implements: []
+- id: atom_xyz_to_smiles
   dimension: Atomic
-  status: dirty
-  associated_file: src/oinsmiles/core/graph.py
-  description: 'Graph representation of a TMC: atom list, metal index, relative coordinate
-    map. Methods: add_atom(), add_bond(), set_metal_center(), calculate_relative_coords(),
-    get_smiles() (TD-007: returns empty string placeholder). Not used in active pipeline.
-
-    '
-  inputs:
-  - data_type: Atom instances, bond data
-    source_id: atom_SMILESToXYZ
-  outputs:
-  - data_type: TMCGraph instance
-    target_id: atom_SMILESToXYZ
-  edges:
-    depends_on:
-    - atom_Atom
-    - atom_BondType
-    implements:
-    - mod_core
-- id: atom_XYZToSMILES
-  dimension: Atomic
-  status: dirty
+  status: clean
   associated_file: src/oinsmiles/core/translator.py
-  description: "Public API class for XYZ\u2192OIN-SMILES conversion. TD-001: convert()\
-    \ is defined twice in the same class; first definition (imports stale symbols)\
-    \ is dead code. Active path: calls get_tmc_mol() then get_oin_string() from utils/xyz2mol.py.\
-    \ TD-008: charge hardcoded to 0.\n"
+  description: "XYZToSMILES: Main API for XYZ file \u2192 OIN/SMILES conversion"
   inputs:
-  - data_type: XYZ file path
-    source_id: mod_api
+  - data_type: xyz_file_path
+    source_id: user_code
   outputs:
-  - data_type: OIN-SMILES string (V3.6 inline)
-    target_id: mod_api
+  - data_type: oin_string
+    target_id: mod_oin
   edges:
     depends_on:
-    - atom_get_tmc_mol
-    - atom_get_oin_string
-    - atom_OINWriter
-    implements:
-    - mod_core
-- id: atom_SMILESToXYZ
+    - atom_xyz2mol
+    - atom_cip_assigner
+    - atom_oin_aligner
+    - atom_chirality_recovery
+    - atom_oin_inline_handler
+    implements: []
+- id: atom_smiles_to_xyz
   dimension: Atomic
-  status: dirty
+  status: needs_review
   associated_file: src/oinsmiles/core/translator.py
-  description: "Public API class for OIN-SMILES\u2192XYZ conversion. TD-003: incomplete\
-    \ \u2014 uses oin/parser.py OINParser and produces dummy Atom(\"X\", ...) placeholder\
-    \ objects instead of real 3D structures. Real path is OIN3DGenerator in generation/engine.py.\n"
+  description: "SMILESToXYZ: Main API for OIN/SMILES \u2192 3D XYZ conversion (incomplete\
+    \ stub)"
   inputs:
-  - data_type: OIN-SMILES string
-    source_id: mod_api
+  - data_type: oin_string
+    source_id: user_code
   outputs:
-  - data_type: TMCGraph (placeholder, incomplete)
-    target_id: mod_api
+  - data_type: xyz_block
+    target_id: user_code
   edges:
     depends_on:
-    - atom_OINParser_oin
-    - atom_TMCGraph
-    - atom_BondType
-    implements:
-    - mod_core
-- id: atom_OINParser_oin
-  dimension: Atomic
-  status: dirty
-  associated_file: src/oinsmiles/oin/parser.py
-  description: 'Tag-dict OIN parser. parse() detects inline vs. sidecar format and
-    returns (smiles_str, tags_dict). Delegates inline parsing to OINInlineHandler.
-    Methods: parse(), parse_coordinates(), parse_connectivity(), _parse_tags() (TD-010:
-    deprecated dead method returning {}). Used by SMILESToXYZ (incomplete path).
-
-    '
-  inputs:
-  - data_type: OIN-SMILES string (any version)
-    source_id: atom_SMILESToXYZ
-  outputs:
-  - data_type: tuple(smiles_str, Dict[str, str])
-    target_id: atom_SMILESToXYZ
-  edges:
-    depends_on:
-    - atom_OINInlineHandler
-    implements:
-    - mod_oin
-- id: atom_OINWriter
+    - atom_oin3d_generator
+    implements: []
+- id: atom_cip_assigner
   dimension: Atomic
   status: clean
-  associated_file: src/oinsmiles/oin/writer.py
-  description: 'V1.x sidecar format OIN writer. write() builds OIN string with |w:|d:|m:|g:|
-    tags. Not used in the active pipeline (V3.0 inline is the canonical output). Instantiated
-    by XYZToSMILES.__init__() but never called.
-
-    '
+  associated_file: src/oinsmiles/core/chirality.py
+  description: 'CIPAssigner: Assigns CIP (R/S) codes to chiral P/N atoms before fragmentation'
   inputs:
-  - data_type: smiles, coords, bonds, geometry_label
-    source_id: atom_XYZToSMILES
+  - data_type: mol_with_conformer
+    source_id: atom_xyz2mol
   outputs:
-  - data_type: V1.x OIN string
-    target_id: atom_XYZToSMILES
+  - data_type: mol_with_cip_codes
+    target_id: atom_oin_aligner
   edges:
     depends_on: []
-    implements:
-    - mod_oin
-- id: atom_OINInlineHandler
+    implements: []
+- id: atom_chirality_recovery
   dimension: Atomic
-  status: dirty
-  associated_file: src/oinsmiles/oin/inline.py
-  description: "V3.0 inline OIN format handler. Constants: METAL_REGEX, SLOT_REGEX.\
-    \ parse_inline_string(): functional \u2014 converts [Metal_GEO].Lig{Slot} \u2192\
-    \ (smiles, geo, vector_data). generate_inline_string(): TD-002 \u2014 body is\
-    \ a pass stub; docstring and implementation code are unreachable dead code. Active\
-    \ inline generation lives in utils/xyz2mol.py:get_oin_string(). Uses RDKit atom\
-    \ map numbers internally.\n"
+  status: clean
+  associated_file: src/oinsmiles/core/chirality.py
+  description: 'ChiralityRecoveryUtility: Re-applies @/@@ chiral tags post-sanitization
+    using stored CIP codes'
   inputs:
-  - data_type: V3.0 inline OIN string
-    source_id: atom_OINParser_oin
-  - data_type: V3.0 inline OIN string
-    source_id: atom_OINParser_gen
+  - data_type: mol_with_cip_codes
+    source_id: atom_oin_sanitizer
   outputs:
-  - data_type: tuple(smiles_str, geo_code, List[Tuple[rank,atom_idx,slot]])
-    target_id: atom_OINParser_oin
-  - data_type: tuple(smiles_str, geo_code, List[Tuple[rank,atom_idx,slot]])
-    target_id: atom_OINParser_gen
+  - data_type: mol_with_stereo
+    target_id: atom_oin_inline_handler
+  edges:
+    depends_on:
+    - atom_pseudo_atom_strategy
+    implements: []
+- id: atom_pseudo_atom_strategy
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/core/chirality.py
+  description: 'PseudoAtomStrategy: Graceful fallback for non-standard-valence P/N
+    atoms (replaces with wildcard *)'
+  inputs:
+  - data_type: atom_without_cip
+    source_id: atom_cip_assigner
+  outputs:
+  - data_type: pseudo_atom
+    target_id: atom_chirality_recovery
   edges:
     depends_on: []
-    implements:
-    - mod_oin
-- id: atom_OIN3DGenerator
+    implements: []
+- id: atom_tmc_graph
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/core/graph.py
+  description: 'TMCGraph: Graph data structure for TMC topology; includes Atom, BondType
+    enum'
+  inputs:
+  - data_type: connectivity_data
+    source_id: atom_xyz2mol
+  outputs:
+  - data_type: graph_object
+    target_id: atom_oin_aligner
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin3d_generator
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/generation/engine.py
-  description: "Orchestrator for the OIN\u2192XYZ pipeline. generate() chains: OINParser_gen.parse()\
-    \ \u2192 ArchitectorAdapter.convert() \u2192 ArchitectorWrapper.run(). Accepts\
-    \ optional extra_params dict merged into Architector parameters. To be replaced\
-    \ by MolassemblerAdapter per Draft PRD.\n"
+  description: "OIN3DGenerator: Main API for OIN string \u2192 3D GeneratedStructure;\
+    \ timeout handling via ProcessPoolExecutor"
   inputs:
-  - data_type: OIN-SMILES string
-    source_id: external_user
+  - data_type: oin_string
+    source_id: user_code
+  - data_type: timeout_seconds
+    source_id: user_code
   outputs:
-  - data_type: Architector conformer object
-    target_id: external_user
+  - data_type: generated_structure
+    target_id: user_code
   edges:
     depends_on:
-    - atom_OINParser_gen
-    - atom_ArchitectorAdapter
-    - atom_ArchitectorWrapper
-    implements:
-    - mod_generation
-- id: atom_OINParser_gen
+    - atom_oin_parser_gen
+    - atom_molassembler_adapter
+    implements: []
+- id: atom_molassembler_adapter
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generation/molassembler_adapter.py
+  description: "MolassemblerAdapter: Template-based 3D placement for known geometries;\
+    \ DG + ETKDG fallback for aromatic \u03B7-ligands"
+  inputs:
+  - data_type: parsed_oin
+    source_id: atom_oin_parser_gen
+  outputs:
+  - data_type: xyz_positions
+    target_id: atom_oin3d_generator
+  - data_type: rdkit_mol
+    target_id: atom_oin3d_generator
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_generated_structure
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generation/molassembler_adapter.py
+  description: 'GeneratedStructure dataclass: (xyz: str, mol: Optional[Chem.Mol])
+    return type for OIN3DGenerator'
+  inputs:
+  - data_type: xyz_block
+    source_id: atom_molassembler_adapter
+  - data_type: mol_object
+    source_id: atom_molassembler_adapter
+  outputs:
+  - data_type: structure_object
+    target_id: user_code
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_parser_gen
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generation/oin_parser.py
+  description: "OINParser (generation): Parses OIN strings \u2192 ParsedOIN dataclass\
+    \ with geometry, slots, connectivity"
+  inputs:
+  - data_type: oin_string
+    source_id: atom_oin3d_generator
+  outputs:
+  - data_type: parsed_oin
+    target_id: atom_molassembler_adapter
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_inline_handler
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/oin/inline.py
+  description: 'OINInlineHandler: Parses/generates OIN v3.6 inline format (e.g. [Pt@SP1_SPL].[Cl]{0}.[Cl]{1})'
+  inputs:
+  - data_type: mol_with_stereo
+    source_id: atom_chirality_recovery
+  - data_type: geometry_vector
+    source_id: atom_oin_aligner
+  outputs:
+  - data_type: oin_string
+    target_id: user_code
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_parser_oin
+  dimension: Atomic
+  status: needs_review
+  associated_file: src/oinsmiles/oin/parser.py
+  description: 'OINParser (oin): Alternative parser returning (str, Dict) tuple; superseded
+    by generation/oin_parser in v0.2.0+'
+  inputs:
+  - data_type: oin_string
+    source_id: atom_oin_inline_handler
+  outputs:
+  - data_type: parsed_tuple
+    target_id: atom_smiles_to_xyz
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_writer
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/oin/writer.py
+  description: 'OINWriter: Writes OIN strings from geometry vectors and metadata'
+  inputs:
+  - data_type: geometry_data
+    source_id: atom_oin_aligner
+  outputs:
+  - data_type: oin_string
+    target_id: atom_oin_inline_handler
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_xyz2mol
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/utils/xyz2mol.py
+  description: 'xyz2mol: Graph generation from 3D coordinates using Jensen Group algorithm;
+    produces RDKit mol with 3D conformer'
+  inputs:
+  - data_type: xyz_block
+    source_id: user_code
+  outputs:
+  - data_type: tmc_mol_with_3d
+    target_id: atom_cip_assigner
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_aligner
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/utils/oin_aligner.py
+  description: 'OINDiscreteAligner: Detects coordination geometry, assigns slots to
+    ligands, fragments mol'
+  inputs:
+  - data_type: mol_with_cip_codes
+    source_id: atom_cip_assigner
+  - data_type: graph_object
+    source_id: atom_tmc_graph
+  outputs:
+  - data_type: aligned_geometry
+    target_id: atom_oin_sanitizer
+  - data_type: slot_assignments
+    target_id: atom_oin_writer
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_oin_sanitizer
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/utils/oin_aligner.py
+  description: 'OINSanitizer: RDKit sanitization with property preservation; generates
+    robust SMILES from fragments'
+  inputs:
+  - data_type: aligned_geometry
+    source_id: atom_oin_aligner
+  outputs:
+  - data_type: mol_with_properties
+    target_id: atom_chirality_recovery
+  - data_type: fragment_smiles
+    target_id: atom_oin_inline_handler
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_cli_main
   dimension: Atomic
   status: dirty
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'Vector-resolving OIN parser for 3D generation. parse() returns ParsedOIN
-    dataclass with resolved 3D unit vectors from TEMPLATES. Handles inline and sidecar
-    formats. Contains TEMPLATES constant dict (TD-005: duplicate of oin_aligner.py).
-    Also defines OINVector and ParsedOIN dataclasses.
-
-    '
+  associated_file: src/oinsmiles/cli.py
+  description: 'CLI entry point: Parses oin-smiles [xyz2oin|oin2xyz] commands and
+    calls respective APIs'
   inputs:
-  - data_type: OIN-SMILES string
-    source_id: atom_OIN3DGenerator
+  - data_type: sys_argv
+    source_id: user_code
   outputs:
-  - data_type: ParsedOIN dataclass
-    target_id: atom_OIN3DGenerator
+  - data_type: stdout_result
+    target_id: user_code
   edges:
     depends_on:
-    - atom_OINInlineHandler
-    implements:
-    - mod_generation
-- id: atom_OINVector
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'Dataclass: atom_idx (int, -1 in generation path), vector (Tuple[float,float,float]
-    resolved from TEMPLATES), fragment_idx (int), atom_in_fragment_idx (int).
-
-    '
-  inputs: []
-  outputs:
-  - data_type: OINVector instance
-    target_id: atom_OINParser_gen
-  edges:
-    depends_on: []
-    implements:
-    - mod_generation
-- id: atom_ParsedOIN
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'Dataclass: smiles (str), fragments (List[str]), metal_fragment_idx
-    (int), vectors (List[OINVector]), original_oin (str). Output of OINParser_gen.parse().
-
-    '
-  inputs: []
-  outputs:
-  - data_type: ParsedOIN instance
-    target_id: atom_OIN3DGenerator
-  edges:
-    depends_on:
-    - atom_OINVector
-    implements:
-    - mod_generation
-- id: atom_ArchitectorAdapter
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/architector_adapter.py
-  description: 'Converts ParsedOIN to Architector inputDict. convert() extracts metal
-    symbol, groups vectors by fragment, computes bond distances via mendeleev covalent
-    radii, scales template vectors, and builds ligand coordList. Private helpers:
-    _get_metal_symbol(), _get_atom_symbol(), _get_bond_distance(). Marked for DEPRECATION
-    per Draft PRD (Molassembler replacement).
-
-    '
-  inputs:
-  - data_type: ParsedOIN dataclass
-    source_id: atom_OIN3DGenerator
-  outputs:
-  - data_type: Dict (metal, ligands, parameters/site_coords)
-    target_id: atom_OIN3DGenerator
-  edges:
-    depends_on:
-    - atom_OINParser_gen
-    implements:
-    - mod_generation
-- id: atom_ArchitectorWrapper
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/wrapper.py
-  description: 'Calls architector.build_complex() with constructed inputDict. run()
-    builds inputDict from metal/ligands/parameters, calls build_complex, returns the
-    first conformer. Handles optional debug JSON dump. Raises ImportError if architector
-    not installed; raises ValueError if no conformers generated. Marked for DEPRECATION
-    per Draft PRD (Molassembler replacement).
-
-    '
-  inputs:
-  - data_type: Dict (metal, ligands, parameters)
-    source_id: atom_OIN3DGenerator
-  outputs:
-  - data_type: Architector conformer object
-    target_id: atom_OIN3DGenerator
-  edges:
-    depends_on: []
-    implements:
-    - mod_generation
-- id: atom_get_tmc_mol
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: "Entry point for XYZ\u2192RDKit Mol conversion. Reads XYZ file, generates\
-    \ adjacency matrix via xyz2AC_huckel (primary) / xyz2AC_obabel (fallback), calls\
-    \ AC2mol, applies lig_checks. Accepts with_stereo flag. Returns (RDKit Mol, xyz_coords\
-    \ dict).\n"
-  inputs:
-  - data_type: XYZ file path, charge, with_stereo flag
-    source_id: atom_XYZToSMILES
-  outputs:
-  - data_type: tuple(RDKit Mol, xyz_coords dict)
-    target_id: atom_get_oin_string
-  edges:
-    depends_on:
-    - atom_xyz2AC_huckel
-    - atom_xyz2AC_obabel
-    - atom_AC2mol
-    - atom_lig_checks
-    - atom_get_basic_mol
-    - atom_get_lig_mol
-    - atom_OINSanitizer
-    implements:
-    - mod_utils
-- id: atom_get_oin_string
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Generates the canonical V3.6 OIN-SMILES inline string from a TMC RDKit
-    Mol and 3D coordinates. Calls OINDiscreteAligner for geometry detection and slot
-    assignment, then serializes via OINInlineHandler (active path: get_oin_string()
-    builds inline directly, bypassing the broken OINInlineHandler.generate_inline_string()).
-
-    '
-  inputs:
-  - data_type: RDKit Mol, xyz_coords dict
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: OIN-SMILES string (V3.6 inline)
-    target_id: atom_XYZToSMILES
-  edges:
-    depends_on:
-    - atom_OINSanitizer
-    - atom_OINDiscreteAligner
-    implements:
-    - mod_utils
-- id: atom_get_basic_mol
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Gets a basic unsanitized RDKit Mol from an adjacency matrix (AC) and
-    atom symbols. Wraps AC2mol for the initial connectivity step in the pipeline.
-
-    '
-  inputs:
-  - data_type: adjacency matrix, atom symbols, charge
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: RDKit Mol (unsanitized)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on:
-    - atom_AC2mol
-    implements:
-    - mod_utils
-- id: atom_get_lig_mol
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Extracts a ligand fragment RDKit Mol from the full TMC Mol. Used to
-    validate and clean individual ligand SMILES before OIN encoding.
-
-    '
-  inputs:
-  - data_type: RDKit Mol, ligand atom indices
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: RDKit Mol (ligand fragment)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_lig_checks
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: "Validates ligand connectivity after adjacency matrix \u2192 Mol conversion.\
-    \ Checks for disconnected fragments, unexpected valences, and known failure modes.\
-    \ Guards entry into the OIN encoding path.\n"
-  inputs:
-  - data_type: RDKit Mol, ligand fragments
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: validation result (bool or raises)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_get_proposed_ligand_charge
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Estimates charge for a ligand fragment using oxidation state heuristics
-    from the ALLOWED_OXIDATION_STATES constant. Used in charge-aware adjacency matrix
-    generation.
-
-    '
-  inputs:
-  - data_type: atom symbols, connectivity
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: estimated charge (int)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_fix_NO2
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Post-processing fix for NO2 groups that xyz2mol misassigns due to
-    resonance structure ambiguity. Corrects bond orders in RDKit Mol before OIN encoding.
-
-    '
-  inputs:
-  - data_type: RDKit Mol
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: corrected RDKit Mol
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_shell
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Utility: runs a shell command and returns stdout. Used internally
-    for OpenBabel subprocess calls in the xyz2AC_obabel fallback path.
-
-    '
-  inputs:
-  - data_type: command string
-    source_id: atom_xyz2AC_obabel
-  outputs:
-  - data_type: stdout string
-    target_id: atom_xyz2AC_obabel
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom__align_to_pai
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'Private helper: aligns coordinates to principal axes of inertia. Used
-    in geometry pre-processing before RMSD fitting in OINDiscreteAligner.
-
-    '
-  inputs:
-  - data_type: xyz_coords array
-    source_id: atom_OINDiscreteAligner
-  outputs:
-  - data_type: rotated xyz_coords array
-    target_id: atom_OINDiscreteAligner
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_OINSanitizer
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/oin_aligner.py
-  description: "Enforces Zone A (metal-binding atoms) SMILES bracketing. generate_robust_smiles()\
-    \ rewrites the ligand SMILES so all Zone A atoms have explicit H counts in brackets\
-    \ (e.g., N \u2192 [NH3], c \u2192 [cH]). Mandatory pre-condition for OIN encoding.\n"
-  inputs:
-  - data_type: RDKit Mol, metal neighbor indices
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: sanitized SMILES string
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_OINDiscreteAligner
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/oin_aligner.py
-  description: "Core OIN encoding engine. Performs: haptic reduction (Zone-A atom\
-    \ groups \u2192 virtual centroids), competitive geometry detection (RMSD fit against\
-    \ LIN/TPL/SPL/TET/TPY/ TBP/SPY/OCT/PBP via Rotation.align_vectors), template slot\
-    \ mapping, symmetry permutation + maximization (discrete 0/90/120/180/240/270\xB0\
-    \ rotations), homogeneous sorting (identical ligands), heading atom selection\
-    \ (V3.4), winding direction (cross-product sign, V3.6). Contains TEMPLATE_SPECS,\
-    \ TEMPLATES (TD-005 duplicate), SYMMETRIC_LIGANDS (TD-006 hard-coded set).\n"
-  inputs:
-  - data_type: RDKit Mol, xyz_coords, metal fragment SMILES
-    source_id: atom_get_oin_string
-  outputs:
-  - data_type: OIN slot assignment string (V2.4 sidecar intermediate)
-    target_id: atom_get_oin_string
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_AC2mol
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol_local.py
-  description: "Jensen Group algorithm: converts adjacency matrix (AC) + atom types\
-    \ to RDKit Mol with correct bond orders. Core of the xyz\u2192mol connectivity\
-    \ inference.\n"
-  inputs:
-  - data_type: adjacency matrix, atom types, charge
-    source_id: atom_get_basic_mol
-  outputs:
-  - data_type: RDKit Mol
-    target_id: atom_get_basic_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_read_xyz_file
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol_local.py
-  description: 'Reads an XYZ file and returns (atom_symbols: List[str], coordinates:
-    ndarray). Entry point for raw structure ingestion.
-
-    '
-  inputs:
-  - data_type: XYZ file path
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: tuple(List[str], ndarray)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_xyz2AC_huckel
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol_local.py
-  description: "Primary adjacency matrix generator. Uses H\xFCckel-theory / distance-based\
-    \ bonding heuristics to infer connectivity from 3D coordinates + covalent radii\
-    \ (mendeleev).\n"
-  inputs:
-  - data_type: atom_symbols, coords, charge
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: adjacency matrix (ndarray)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_xyz2AC_obabel
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol_local.py
-  description: 'Fallback adjacency matrix generator via OpenBabel subprocess. Called
-    when xyz2AC_huckel fails or produces chemically invalid connectivity.
-
-    '
-  inputs:
-  - data_type: atom_symbols, coords
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: adjacency matrix (ndarray)
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on:
-    - atom_shell
-    implements:
-    - mod_utils
-- id: atom_chiral_stereo_check
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/utils/xyz2mol_local.py
-  description: 'Checks chirality/stereochemistry assignments in the RDKit Mol after
-    AC2mol conversion. Part of the Jensen Group xyz2mol algorithm for stereocenters.
-    Note: does NOT currently encode @/@@ for TMC ligand stereocenters (gap addressed
-    by Draft PRD feature).
-
-    '
-  inputs:
-  - data_type: RDKit Mol, adjacency matrix
-    source_id: atom_get_tmc_mol
-  outputs:
-  - data_type: RDKit Mol with stereo flags set
-    target_id: atom_get_tmc_mol
-  edges:
-    depends_on: []
-    implements:
-    - mod_utils
-- id: atom_ChiralTests
-  dimension: Atomic
-  status: clean
-  associated_file: tests/unit/test_regression_stability.py, tests/unit/test_binap_stability.py,
-    tests/unit/test_chiral_p.py, tests/unit/test_chiral_n.py, tests/unit/test_axial_chiral.py,
-    tests/unit/test_helpers.py
-  description: >-
-    Chiral test suite for OIN-SMILES v3.6 (43 tests, 1 intentional skip). Covers:
-    (1) test_regression_stability — OIN string equality for 6 known complexes (cisplatin,
-    transplatin, cis-PtCl2en, ferrocene, fac/mer-Ir(ppy)3); (2) test_binap_stability —
-    non-crash and structural checks for axial-chiral BINAP complex; (3) test_chiral_p /
-    test_chiral_n — XYZ→OIN stability plus RDKit CIP oracle confirming backbone C
-    stereocentres are both S (P/N atoms have no CIP code due to identical Ph groups);
-    (4) test_axial_chiral — candidate artifact existence check + skipped atropisomeric
-    assertion pending pipeline support; (5) test_helpers — extract_ligand_smiles()
-    test-only utility (DO NOT import from src/oinsmiles).
-  inputs:
-  - data_type: XYZ file paths from tests/fixtures/
-    source_id: external_user
-  outputs:
-  - data_type: CI pass/fail signal (unittest assertions)
-    target_id: sys_oin_smiles
-  edges:
-    depends_on:
-    - atom_CIPAssigner
-    - atom_OINDiscreteAligner
-    - atom_MolassemblerAdapter
-    implements:
-    - sys_oin_smiles
+    - atom_xyz_to_smiles
+    - atom_smiles_to_xyz
+    implements: []
+metadata:
+  total_modules: 6
+  total_atomic_nodes: 26
+  status_distribution:
+    clean: 24
+    needs_review: 2
+  dirty_nodes:
+  - atom_smiles_to_xyz (incomplete stub in translator.py)
+  - atom_oin_parser_oin (superseded by generation/oin_parser.py)
+  generated_by: /hyper-discover
+  generation_date: '2026-05-05'
+  description: "OIN-SMILES system consists of 6 core modules (API, Core, Generation,\
+    \ OIN, Utils, CLI) with 26 atomic components (classes/functions). Key pipelines:\
+    \ XYZ\u2192OIN (7 steps) and OIN\u2192XYZ (5 steps). v0.2.0+ release with mature\
+    \ Molassembler integration."
