@@ -112,9 +112,9 @@ nodes:
     - atom_oin_sanitizer
 - id: mod_cli
   dimension: Module
-  status: dirty
+  status: clean
   associated_file: src/oinsmiles/cli.py
-  description: 'Command-line interface: oin-smiles xyz2oin / oin2xyz commands'
+  description: 'Command-line interface: oin-smiles xyz2oin / oin2xyz commands; fixed GeneratedStructure API compatibility in oin2xyz handler'
   inputs:
   - data_type: cli_arguments
     source_id: user_code
@@ -403,10 +403,10 @@ nodes:
     implements: []
 - id: atom_cli_main
   dimension: Atomic
-  status: dirty
+  status: clean
   associated_file: src/oinsmiles/cli.py
   description: 'CLI entry point: Parses oin-smiles [xyz2oin|oin2xyz] commands and
-    calls respective APIs'
+    calls respective APIs; handles GeneratedStructure return type from OIN3DGenerator'
   inputs:
   - data_type: sys_argv
     source_id: user_code
