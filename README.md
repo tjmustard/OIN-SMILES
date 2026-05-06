@@ -7,7 +7,7 @@
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ with exact isomer preservation.
 - **Open Isomer Notation (OIN) v3.6**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
-- **Deterministic 3D Generation**: Uses **SCINE Molassembler** as backend — template-based placement for all ligand types, distance geometry (DG) for fallback conformer generation.
+- **Deterministic 3D Generation**: Uses **SCINE Molassembler** as backend — template-based placement for all ligand types, distance geometry (DG) for fallback conformer generation. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
 - **P/N Stereocenter Encoding**: 3D-derived CIP codes for chiral phosphorus and nitrogen centers are encoded directly in the OIN string.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
@@ -160,10 +160,21 @@ Generated MOL/SDF files use **V3000 format** when dative bonds are present (M–
 
 The following complexes pass the full round-trip test (OIN string identity + RMSD < 1.0 Å):
 
+**Square Planar & Simple Geometries**
 - **Cisplatin** — square planar Pt
 - **Transplatin** — square planar Pt, trans isomer
 - **Ferrocene** — metallocene with eclipsed Cp rings
 - **VOacac2** — square pyramidal vanadium with bidentate acetylacetonate ligands
+
+**P/N Stereocenter Encoding**
+- **PdCl2-R-BINAP** — square planar Pd with axial-chiral BINAP diphosphine (2,2'-bis(diphenylphosphino)-1,1'-binaphthyl)
+- **PdCl2-RR-BDNN** — square planar Pd with RR-BDNN N-chiral diphosphine (N,N-bis(diethylamino)naphthalene with chiral centers on nitrogen)
+- **PdCl2-RR-BDPP** — square planar Pd with RR-BDPP P-chiral diphosphine (phosphorus stereocenters with proper @/@@ encoding in SMILES)
+
+**Ansa-Metallocenes (Aromatic η-Ligands)**
+- **TiCat1** — tetrahedral Ti with bridged Cp–Si(Me)₂–Cp ligand (3D generation fixed; round-trip bonding inference incomplete due to de-aromatization requirement)
+- **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
+- **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
 
 ## Acknowledgements
 
