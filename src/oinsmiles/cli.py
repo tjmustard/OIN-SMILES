@@ -38,7 +38,7 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     )
 
     try:
-        xyz_block = OIN3DGenerator().generate(args.oin)
+        result = OIN3DGenerator().generate(args.oin)
     except MolassemblerTimeoutError:
         print("Error: Molassembler timed out", file=sys.stderr)
         sys.exit(2)
@@ -46,7 +46,7 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    print(xyz_block)
+    print(result.xyz)
 
 
 def main() -> None:
