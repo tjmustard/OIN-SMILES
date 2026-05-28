@@ -1,8 +1,39 @@
-# OIN-SMILES
+<div align="center">
+    <img src="./media/OIN-SMILES-logo-dark.webp" alt="OIN-SMILES Logo" width="600"/>
+    <h1>OIN-SMILES</h1>
+    <h3><em>Lossless XYZ ↔ SMILES conversion for Transition Metal Complexes.</em></h3>
+</div>
 
-**OIN-SMILES** is a standalone, open-source Python library for lossless conversion between 3D XYZ structures and 1D SMILES strings for Transition Metal Complexes (TMCs). It implements the **Open Isomer Notation (OIN)** to preserve stereochemical fidelity.
+<p align="center">
+    <strong>An open-source Python library implementing Open Isomer Notation (OIN) — a 1D string format that captures coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry for perfect 3D reconstruction.</strong>
+</p>
 
-## Features
+<p align="center">
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
+</p>
+
+---
+
+## Table of Contents
+
+- [🔬 What is OIN-SMILES?](#-what-is-oin-smiles)
+- [✨ Features](#-features)
+- [⚡ Installation](#-installation)
+- [🚀 Usage](#-usage)
+- [✅ Verified Examples](#-verified-examples)
+- [🛠️ Development](#️-development)
+- [🙏 Acknowledgements](#-acknowledgements)
+- [📄 License](#-license)
+
+## 🔬 What is OIN-SMILES?
+
+Standard SMILES notation is lossy for transition metal complexes (TMCs): coordination geometry, isomer identity, and P/N stereochemistry are destroyed when you convert a 3D XYZ structure to a 1D string. This breaks any workflow that requires exact isomer preservation — database curation, ML training sets, round-trip structure exchange.
+
+**OIN-SMILES** solves this by implementing **Open Isomer Notation (OIN)** — an extended SMILES format that encodes everything needed to reconstruct the original 3D geometry from the string alone. A cisplatin complex becomes `[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`; that string unambiguously reconstructs the *cis* square planar geometry, not the *trans* isomer.
+
+## ✨ Features
 
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ with exact isomer preservation.
 - **Open Isomer Notation (OIN) v3.6**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry.
@@ -11,7 +42,7 @@
 - **P/N Stereocenter Encoding**: 3D-derived CIP codes for chiral phosphorus and nitrogen centers are encoded directly in the OIN string.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
-## Installation
+## ⚡ Installation
 
 This project uses `uv` for dependency management.
 
@@ -34,7 +65,7 @@ This project uses `uv` for dependency management.
     uv sync
     ```
 
-## Usage
+## 🚀 Usage
 
 ### CLI
 
@@ -112,7 +143,27 @@ generator = OIN3DGenerator(timeout=120)  # 120-second DG timeout
 
 A `MolassemblerTimeoutError` is raised if generation exceeds the timeout.
 
-## Development
+## ✅ Verified Examples
+
+The following complexes pass the full round-trip test (OIN string identity + RMSD < 1.0 Å):
+
+**Square Planar & Simple Geometries**
+- **Cisplatin** — square planar Pt
+- **Transplatin** — square planar Pt, trans isomer
+- **Ferrocene** — metallocene with eclipsed Cp rings
+- **VOacac2** — square pyramidal vanadium with bidentate acetylacetonate ligands
+
+**P/N Stereocenter Encoding**
+- **PdCl2-R-BINAP** — square planar Pd with axial-chiral BINAP diphosphine (2,2'-bis(diphenylphosphino)-1,1'-binaphthyl)
+- **PdCl2-RR-BDNN** — square planar Pd with RR-BDNN N-chiral diphosphine (N,N-bis(diethylamino)naphthalene with chiral centers on nitrogen)
+- **PdCl2-RR-BDPP** — square planar Pd with RR-BDPP P-chiral diphosphine (phosphorus stereocenters with proper @/@@ encoding in SMILES)
+
+**Ansa-Metallocenes (Aromatic η-Ligands)**
+- **TiCat1** — tetrahedral Ti with bridged Cp–Si(Me)₂–Cp ligand (3D generation fixed; round-trip bonding inference incomplete due to de-aromatization requirement)
+- **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
+- **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
+
+## 🛠️ Development
 
 ### Running Tests
 
@@ -154,34 +205,15 @@ All scripts write named output artifacts when `--output-dir` is specified:
 - `Ex1_CisPlatinXYZ-OIN-SMILES_generated.xyz` / `.mol` / `.sdf` — generated structure
 - `.mol` and `.sdf` files include full bond connectivity for generated structures
 
-Generated MOL/SDF files use **V3000 format** when dative bonds are present (M–L bonds), which is standard for organometallic structures.
+> [!NOTE]
+> Generated MOL/SDF files use **V3000 format** when dative bonds are present (M–L bonds), which is standard for organometallic structures.
 
-### Verified Examples
-
-The following complexes pass the full round-trip test (OIN string identity + RMSD < 1.0 Å):
-
-**Square Planar & Simple Geometries**
-- **Cisplatin** — square planar Pt
-- **Transplatin** — square planar Pt, trans isomer
-- **Ferrocene** — metallocene with eclipsed Cp rings
-- **VOacac2** — square pyramidal vanadium with bidentate acetylacetonate ligands
-
-**P/N Stereocenter Encoding**
-- **PdCl2-R-BINAP** — square planar Pd with axial-chiral BINAP diphosphine (2,2'-bis(diphenylphosphino)-1,1'-binaphthyl)
-- **PdCl2-RR-BDNN** — square planar Pd with RR-BDNN N-chiral diphosphine (N,N-bis(diethylamino)naphthalene with chiral centers on nitrogen)
-- **PdCl2-RR-BDPP** — square planar Pd with RR-BDPP P-chiral diphosphine (phosphorus stereocenters with proper @/@@ encoding in SMILES)
-
-**Ansa-Metallocenes (Aromatic η-Ligands)**
-- **TiCat1** — tetrahedral Ti with bridged Cp–Si(Me)₂–Cp ligand (3D generation fixed; round-trip bonding inference incomplete due to de-aromatization requirement)
-- **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
-- **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
-
-## Acknowledgements
+## 🙏 Acknowledgements
 
 - **SCINE Molassembler** — 3D structure generation and distance geometry.
 - **xyz2mol** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
 - **OpenBabel & XTB** — Chemical file handling and geometry optimization.
 
-## License
+## 📄 License
 
-MIT
+This project is licensed under the terms of the MIT open source license. Please refer to the [LICENSE](./LICENSE) file for the full terms.

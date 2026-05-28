@@ -1,0 +1,140 @@
+# Model Routing Heuristic Rules
+# Classifies skills into Claude model tiers based on complexity characteristics
+# Format: conditions → tier with confidence score
+
+tiers:
+  haiku:
+    description: "Fast, lightweight tasks with minimal reasoning"
+    conditions:
+      - name: "simple_deterministic"
+        tool_calls: [0, 3]
+        reasoning_intensity: ["none", "low"]
+        output_determinism: "high"
+        confidence: 0.95
+
+      - name: "read_only_operations"
+        tool_calls: [0, 2]
+        tools_allowed: ["Read", "Bash"]
+        reasoning_intensity: "low"
+        output_determinism: "high"
+        confidence: 0.90
+
+      - name: "text_processing"
+        tool_calls: [1, 3]
+        tools_allowed: ["Read", "Edit", "Write"]
+        reasoning_intensity: "low"
+        output_determinism: "high"
+        confidence: 0.85
+
+  sonnet:
+    description: "Balanced tasks with moderate reasoning and tool use"
+    conditions:
+      - name: "moderate_complexity"
+        tool_calls: [3, 8]
+        reasoning_intensity: ["low", "medium"]
+        output_determinism: "medium"
+        confidence: 0.90
+
+      - name: "multi_tool_coordination"
+        tool_calls: [4, 10]
+        tools_allowed: ["Read", "Edit", "Write", "Bash", "Agent"]
+        reasoning_intensity: "medium"
+        output_determinism: "medium"
+        confidence: 0.85
+
+      - name: "code_generation"
+        tool_calls: [3, 8]
+        tools_allowed: ["Read", "Edit", "Write"]
+        reasoning_intensity: "medium"
+        output_determinism: "medium"
+        confidence: 0.88
+
+      - name: "analysis_with_context"
+        tool_calls: [2, 6]
+        reasoning_intensity: "medium"
+        output_determinism: "medium"
+        confidence: 0.82
+
+  opus:
+    description: "Complex reasoning, multi-step coordination, novel problem-solving"
+    conditions:
+      - name: "high_complexity"
+        tool_calls: [8, 999]  # No upper limit
+        reasoning_intensity: ["medium", "high", "very_high"]
+        output_determinism: ["medium", "low"]
+        confidence: 0.95
+
+      - name: "strategic_decisions"
+        keywords: ["architecture", "design", "strategy", "optimization", "novel"]
+        reasoning_intensity: "high"
+        output_determinism: "low"
+        confidence: 0.90
+
+      - name: "multi_agent_coordination"
+        tools_allowed: ["Agent"]
+        tool_calls: [3, 999]
+        reasoning_intensity: "high"
+        confidence: 0.92
+
+      - name: "adversarial_reasoning"
+        keywords: ["red team", "security", "attack", "vulnerability"]
+        reasoning_intensity: "very_high"
+        output_determinism: "low"
+        confidence: 0.95
+
+# Model tier mapping
+model_mapping:
+  haiku:
+    model_id: "claude-haiku-4-5-20251001"
+    max_tokens: 8192
+    max_thinking_tokens: 1024
+    cost_per_mtok: 0.80
+    latency_ms: 100
+    use_cases: "Read-only, text processing, simple transformations"
+
+  sonnet:
+    model_id: "claude-sonnet-4-6"
+    max_tokens: 8192
+    max_thinking_tokens: 8192
+    cost_per_mtok: 3.00
+    latency_ms: 500
+    use_cases: "Code generation, analysis, multi-tool coordination"
+
+  opus:
+    model_id: "claude-opus-4-7"
+    max_tokens: 200000
+    max_thinking_tokens: 100000
+    cost_per_mtok: 15.00
+    latency_ms: 2000
+    use_cases: "Complex reasoning, strategic decisions, novel problems"
+
+# Fallback policy
+fallback:
+  default_model: "opus"
+  log_level: "WARN"
+  alert_terminal: true
+  alert_message: "⚠️ {skill} has no model assignment. Routing to Opus (fallback). Add META.yml to optimize."
+
+# Version compatibility
+versions:
+  haiku:
+    current: "claude-haiku-4-5-20251001"
+    supported:
+      - "claude-haiku-4-5-20251001"
+    retired: []
+
+  sonnet:
+    current: "claude-sonnet-4-6"
+    supported:
+      - "claude-sonnet-4-6"
+      - "claude-sonnet-4-5"
+    retired:
+      - "claude-sonnet-3-5-20241022"
+
+  opus:
+    current: "claude-opus-4-7"
+    supported:
+      - "claude-opus-4-7"
+    retired:
+      - "claude-opus-3-5-sonnet"
+      - "claude-opus-3"

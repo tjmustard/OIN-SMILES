@@ -1,3 +1,12 @@
+# ⚠️ DEPRECATED: Hypergraph Schema
+
+**Status:** Migrated to CLAUDE.md (See CLAUDE.md: Schema Definitions › Hypergraph Schema)  
+**Deadline for Removal:** 2026-06-17 (6-week deprecation period)
+
+This file is maintained for backward compatibility only. New references should use CLAUDE.md.
+
+---
+
 # architecture.yml Standard
 nodes:
   - id: string # Unique identifier (e.g., "auth_module", "login_function")

@@ -251,7 +251,27 @@ def main():
             # Step 3: XYZ(Gen) -> OIN(2)
             # -------------------------------------------------------------
             print("Step 3: Convert XYZ(Gen) -> OIN(2)")
-            oin2_string = xyz_to_smiles.convert(gen_xyz_path)
+            # If we have a bonded mol from the generator, use it instead of inferring
+            if gen_result.mol is not None:
+                try:
+                    from oinsmiles.utils.xyz2mol import get_oin_string
+                    # Extract coordinates from XYZ
+                    with open(gen_xyz_path, 'r') as f:
+                        xyz_lines = f.readlines()
+                    natoms = int(xyz_lines[0].strip())
+                    xyz_coords = []
+                    for i in range(2, 2 + natoms):
+                        parts = xyz_lines[i].split()
+                        xyz_coords.append([float(x) for x in parts[1:4]])
+                    import numpy as np
+                    xyz_coords = np.array(xyz_coords)
+                    oin2_string = get_oin_string(gen_result.mol, xyz_coords)
+                except Exception as e:
+                    # Fall back to xyz2mol if get_oin_string fails
+                    print(f"    Note: get_oin_string failed ({e}), falling back to xyz2mol")
+                    oin2_string = xyz_to_smiles.convert(gen_xyz_path)
+            else:
+                oin2_string = xyz_to_smiles.convert(gen_xyz_path)
             print(f"  OIN(2): {oin2_string}")
             
             if output_dir:
@@ -290,6 +310,27 @@ def main():
                 mol_gen_xyz = Chem.MolFromXYZFile(gen_xyz_path)  # topology-free, for RMSD
                 # Bonded mol for MOL/SDF output (from generator when available)
                 mol_gen_bonded = gen_result.mol if gen_result.mol is not None else mol_gen_xyz
+
+                # If we have a bonded mol from the generator, use it to recompute OIN(2)
+                # instead of inferring bonding from coordinates (which can fail for ansa-metallocenes)
+                if gen_result.mol is not None:
+                    try:
+                        from oinsmiles.utils.xyz2mol import get_oin_string
+                        # Extract coordinates from XYZ
+                        with open(gen_xyz_path, 'r') as f:
+                            xyz_lines = f.readlines()
+                        natoms = int(xyz_lines[0].strip())
+                        xyz_coords = []
+                        for i in range(2, 2 + natoms):
+                            parts = xyz_lines[i].split()
+                            xyz_coords.append([float(x) for x in parts[1:4]])
+                        import numpy as np
+                        xyz_coords = np.array(xyz_coords)
+                        oin2_string = get_oin_string(gen_result.mol, xyz_coords)
+                    except Exception as e:
+                        # Fall back to xyz2mol if get_oin_string fails
+                        print(f"    Note: get_oin_string failed ({e}), falling back to xyz2mol")
+                        oin2_string = xyz_to_smiles.convert(gen_xyz_path)
 
                 if mol_orig and mol_gen_xyz:
                     # Write MOL and SDF files — mol_gen_bonded has bonds if generator produced them

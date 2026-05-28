@@ -17,6 +17,9 @@ dependencies = [
     "xtb>=22.1",
 ]
 
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+
 [project.scripts]
 oin-smiles = "oinsmiles.cli:main"
 

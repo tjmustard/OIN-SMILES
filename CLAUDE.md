@@ -1,102 +1,180 @@
 # Claude Code Integration Guide
 
-This document serves as both a manual for human developers and **foundational system instructions** for Claude Code. By reading this file, Claude Code understands how to natively orchestrate the Hypergraph Coding Agent Framework.
-
-## For Human Developers
-
-The Hypergraph Framework was originally designed for manual LLM copy-pasting and manual script execution. With **Claude Code**, the entire process is automated using built-in tools.
-
-### The Automated Workflow
-You do not need to manually open new context windows or run the Python scripts yourself. Simply instruct Claude Code to transition through the phases:
-1. **Onboarding**: "Run the Discover phase" or "Run the Baseline phase."
-2. **Specification**: "Activate the Architect skill and let's design a new feature." → "Now run the Red Team skill on that draft." → "Let's Resolve the trade-offs."
-3. **Execution**: "Implement MiniPRD-1." Claude Code will automatically check the blast radius, write the code, and verify it.
-
-### Available Slash Commands
-Use these commands to invoke the framework's specialized agents:
-
-| Command | Phase | Description |
-|---|---|---|
-| `/architect` | Phase 1 | State-machine interview → generates `Draft_PRD.md` |
-| `/redteam` | Phase 1 | Adversarial analysis → generates `RedTeam_Report.md` |
-| `/resolve` | Phase 1 | Mediates trade-offs → compiles `SuperPRD.md` + `MiniPRD` files |
-| `/audit` | Phase 2 | Verifies code against MiniPRD → reconciles `architecture.yml` |
-| `/discover` | Phase -1 | Scans codebase → initializes `architecture.yml` |
-| `/baseline` | Phase -1 | Reverse-engineers system → generates baseline `SuperPRD.md` |
-| `/sop` | Any | Explains the Master SOP and guides you to the right phase |
+> **For Human Developers:** See `README.md` for the complete usage guide, available slash
+> commands, and setup instructions.
 
 ---
 
 ## For Claude Code: System Mandates
 
-**CRITICAL INSTRUCTIONS FOR CLAUDE CODE:** When operating in this workspace, you must adhere to the following framework rules:
+Read `AGENTS.md` for the full framework system mandates that apply to all IDEs.
 
-### 1. Skill Integration
-You have native access to the framework's phases via the custom slash commands defined in `.claude/commands/`. When the user requests a phase or invokes a command, load and follow its specific procedural guidance strictly.
+**Claude Code-specific overrides and additions:**
 
-### 2. Autonomous Tool Execution
-- You MUST autonomously execute the deterministic Python scripts in `.agents/scripts/` using your **Bash tool** when mandated by a skill's instructions.
-- If a skill requires calculating the blast radius, run:
-  ```bash
-  python .agents/scripts/hypergraph_updater.py spec/compiled/architecture.yml [node_ids]
-  ```
-- If a skill requires flushing the active workspace, run:
-  ```bash
-  python .agents/scripts/archive_specs.py [Feature_Name]
-  ```
-- Always verify the script completed successfully by checking the exit code and output.
+### Tool Names
+When skills say "read/write/run/edit a file," use these Claude Code tools:
 
-### 3. State Management
-- Treat `spec/compiled/architecture.yml` as the **absolute ground truth** for the project's state.
-- Write temporary drafts and reports to `spec/active/` using the **Write** tool.
-- Ensure all generated specifications strictly adhere to the templates in `.agents/schemas/`.
-- Use the **Read** tool to inspect existing specs before modifying or generating new ones.
+| Action | Tool |
+|---|---|
+| Read a file | **Read** tool |
+| Write a file | **Write** tool |
+| Edit a file | **Edit** tool |
+| Run a shell command | **Bash** tool |
+| Ask the user a question | **AskUserQuestion** tool |
+| Search file patterns | **Glob** tool |
+| Search file contents | **Grep** tool |
 
-### 4. Interactive Interviews
-When acting as the Architect or Resolution Agent, use the **AskUserQuestion** tool to gather structured constraints efficiently. Enforce the **Pacing Loop**: never ask more than **2 questions per turn**.
+### Skill Invocation
+Skills are available as slash commands in `.claude/commands/`. Each command is a thin bridge
+that reads its corresponding `.agents/skills/hyper-<name>/SKILL.md`. When the user invokes a command,
+the skill file provides the full instructions.
 
-### 5. No Probabilistic Traversal
-Do not guess architectural dependencies. Always rely on the output of `hypergraph_updater.py` to understand the blast radius before executing code modifications.
+### Task Tracking
+For any task involving 3 or more steps, use the built-in task tools **before** starting work:
+- **TaskCreate** — create tasks with clear subjects
+- **TaskUpdate** — mark `in_progress` when starting, `completed` when done
+- **TaskList** — check overall progress
 
-### 6. File Lifecycle Rules
-- **Read** existing files before overwriting them.
-- **Never** write to `spec/archive/` manually — use `archive_specs.py` exclusively.
-- **Never** read from `spec/archive/` or `tests/candidate_outputs/` during agentic tasks (treat these as blocked per `.agentignore`).
-
-### 7. Rules Always Active
-Apply the project rules from `.agents/rules/` to all code generation:
-- `.agents/rules/python.md` — Python style, type hints, and architectural constraints
-- `.agents/rules/security.md` — Input validation, secrets management, file system constraints
-- `.agents/rules/testing.md` — Testing standards
-- `.agents/rules/package-management.md` — Dependency management
-
-### 8. Task Tracking
-For any task involving 3 or more steps, always use the built-in task list tools (TaskCreate, TaskUpdate, TaskList) to track progress before starting work.
-
-### 9. Context Window Management
-When a skill instructs you to "open a new context window," in Claude Code this means: **complete the current agent turn**, then inform the user to start a new conversation thread for the next phase. This prevents cross-contamination between adversarial agents (e.g., the Red Team must not see the Architect's conversation).
+### Context Window Management
+When a skill instructs you to "open a new context window": **complete the current agent turn**,
+then inform the user to start a new conversation thread for the next phase. This prevents
+cross-contamination between adversarial agents (the Red Team must not see the Architect's
+conversation history).
 
 ---
 
-## Directory Structure Reference
+## Schema Definitions (Persistent Rules)
 
+**Note:** These schemas are embedded in CLAUDE.md to reduce per-message token overhead.
+For the authoritative versions, see `.agents/schemas/` directory (deprecated; migration in progress).
+
+### SuperPRD Schema
+
+SuperPRD (Super Product Requirements Document) is the comprehensive specification for a feature.
+Use this template when compiling a full feature specification from architect and red team input.
+
+**Structure:**
 ```
-.agents/
-├── skills/         # Skill definitions (source of truth for .claude/commands/)
-├── schemas/        # Immutable templates (MiniPRD, SuperPRD, hypergraph)
-├── scripts/        # Deterministic state management
-│   ├── hypergraph_updater.py   # BFS blast radius propagation
-│   └── archive_specs.py        # Active spec flushing
-├── workflows/      # Workflow definitions
-├── rules/          # Always-on coding standards
-└── memory/         # Project context files
+# SuperPRD: [Feature Name]
 
-spec/
-├── active/         # Working drafts (temporary, will be archived)
-├── compiled/       # Ground truth (SuperPRD, MiniPRDs, architecture.yml)
-└── archive/        # Historical — DO NOT READ during agent tasks
+## 1. Introduction & Goals
+- Problem Statement: [Why are we building this?]
+- Solution Overview: [High-level approach]
+- Target Audience: [Who is this for?]
 
-tests/
-├── candidate_outputs/  # Unverified AI outputs — DO NOT READ during tasks
-└── fixtures/           # Verified regression baselines
+## 2. Confidence Mandate
+- Confidence Score: [1-10] (must be calculated before proceeding)
+- Clarifying Questions: [List any open questions]
+
+## 3. Scope
+- In-Scope: [Features included]
+- Out-of-Scope: [Explicitly excluded features]
+
+## 4. User Stories (Atomic)
+| ID | User Story | Acceptance Criteria | Priority |
+| US-001 | As [User], I want [Action] so that [Outcome] | 1. Criterion A<br>2. Criterion B | High |
+
+## 5. Technical Specifications
+- Architecture & Resolved Trade-offs: [System design + trade-off log]
+- System Graph Blast Radius: [Affected nodes in architecture.yml]
+- Execution Checklist: [List of MiniPRDs to execute]
+- API Contracts / Schema: [Type definitions]
+- Dependencies: [Libraries/frameworks]
+
+## 6. Negative Constraints
+- **DO NOT** [Anti-pattern 1]
+- **DO NOT** [Anti-pattern 2]
+
+## 7. Risks & Mitigation
+- Risk 1: [Description] → Mitigation: [Action]
+
+## 8. Success Metrics
+- [Metric 1]
+- [Metric 2]
 ```
+
+**Reference:** See `.agents/schemas/SuperPRD_Template.md` (deprecated; use CLAUDE.md above)
+
+---
+
+### MiniPRD Schema
+
+MiniPRD (Mini Product Requirements Document) is a modular, executable specification for a single
+feature module. Generate one MiniPRD per independent task.
+
+**Structure:**
+```
+# MiniPRD: [Module Name]
+
+**Hypergraph Node ID:** [node_id]
+**Parent Node:** [parent_node_id]
+
+## 1. The Confidence Mandate
+- Confidence Score: [1-10] (required before implementation)
+- Clarifying Questions: [If < 9, list questions needed]
+
+## 2. Atomic User Stories
+- US-001: As [User Type], I want [Action] so that [Value]
+- US-002: ...
+
+## 3. Implementation Plan (Task List)
+- [ ] Task 1: [Specific, <10 min effort]
+- [ ] Task 2: ...
+
+## 4. The Negative Space (Constraints)
+- **DO NOT** [Anti-pattern]
+- **DO NOT** [Architectural violation]
+
+## 5. Integration Tests & Verification
+- Test 1 (Deterministic): [Input] → [Expected Output]
+- Test 2 (Novel): [Input] → [Candidate Artifact routing]
+```
+
+**Reference:** See `.agents/schemas/MiniPRD_template.md` (deprecated; use CLAUDE.md above)
+
+---
+
+### Hypergraph Schema (architecture.yml)
+
+The hypergraph is a YAML file (`spec/compiled/architecture.yml`) that tracks system dependencies as a directed acyclic graph.
+
+**Node Structure:**
+```yaml
+nodes:
+  - id: [unique_identifier]
+    dimension: [System | Module | Atomic]  # Layer of abstraction
+    status: [clean | dirty | needs_review]  # Build state
+    associated_file: [path_to_source]  # MiniPRD, source code, or doc
+    description: [semantic_purpose]  # What this node does
+    inputs:
+      - data_type: [type_name]
+        source_id: [upstream_node_id]
+    outputs:
+      - data_type: [type_name]
+        target_id: [downstream_node_id]
+    edges:
+      depends_on: [list_of_node_ids]  # Architectural dependencies
+      implements: [list_of_node_ids]  # Hierarchical link (Atomic→Module)
+```
+
+**Status Values:**
+- `clean` — Implementation verified against specification; ready for use
+- `dirty` — Recently modified; awaiting audit review
+- `needs_review` — Dependent on modified node; blast-radius mark
+
+**Reference:** See `.agents/schemas/hypergraph_schema.md` (deprecated; use CLAUDE.md above)
+
+---
+
+## Migration Notice
+
+**Effective:** 2026-05-03  
+**Deadline:** 2026-06-17 (6-week deprecation period)
+
+All `.agents/schemas/` files have been migrated to CLAUDE.md to reduce per-message context overhead.
+Old files marked with `.deprecated` suffix; will be deleted after 2026-06-17.
+
+**For Developers:**
+- Update custom skills to reference "CLAUDE.md: Schema Definitions" instead of `.agents/schemas/` files
+- See `docs/MIGRATION_RULES.md` for detailed migration guide
+- CI lint will enforce CLAUDE.md-only references post-deadline

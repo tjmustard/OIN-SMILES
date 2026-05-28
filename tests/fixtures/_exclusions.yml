@@ -1,0 +1,45 @@
+---
+# Exclusions from verification and metal-first invariant checks
+# These fixtures are valid but do not conform to the metal-first atom ordering
+# expected in typical Molassembler outputs.
+
+excluded_fixtures:
+  - filename: PdCl2-R-BINAP.xyz
+    reason: >
+      Pd complex with axial-chiral BINAP diphosphine (P-stereocenter test fixture).
+      Ligand atoms ordered first in XYZ due to generation-order effects; first atom
+      is carbon (BINAP), not Pd metal. This is a known artifact of ETKDG embedding
+      with full ligand complex geometry. Verified as valid Pd-complex geometry
+      via round-trip RMSD < 1.0 Å in integration tests.
+    introduced: v0.2.1
+    reference: MiniPRD_ChiralTests.md
+
+  - filename: PdCl2-RR-BDNN.xyz
+    reason: >
+      Pd complex with N-chiral diphosphine (BDNN; N-stereocenter test fixture).
+      Ligand atoms ordered first in XYZ due to ETKDG embedding; first atom is
+      nitrogen, not Pd metal. Verified as valid Pd-complex geometry via round-trip
+      RMSD < 1.0 Å in integration tests. Extends test coverage to polydentate
+      diphosphines with N-stereocenters.
+    introduced: v0.2.1
+    reference: MiniPRD_ChiralTests.md
+
+  - filename: PdCl2-RR-BDPP.xyz
+    reason: >
+      Pd complex with P-chiral diphosphine (BDPP; P-stereocenter test fixture).
+      Ligand atoms ordered first in XYZ due to ETKDG embedding; first atom is
+      phosphorus, not Pd metal. Verified as valid Pd-complex geometry via round-trip
+      RMSD < 1.0 Å in integration tests. Extends test coverage to polydentate
+      diphosphines with P-stereocenters and CIP-based chiral tag encoding.
+    introduced: v0.2.1
+    reference: MiniPRD_ChiralTests.md
+
+# VERIFICATION NOTES:
+# The metal-first invariant (fragments[0] = transition metal) is a canonical-form
+# guarantee for OIN parsing and direct-parser fragment mapping. These fixtures
+# violate the XYZ atom ordering but maintain valid 3D geometry and correct
+# Pd-N/Pd-P bonding. Round-trip tests (XYZ → OIN → XYZ) confirm geometry
+# preservation and correctness.
+#
+# Future verification tools should respect this exclusion list when running
+# metal-first checks across the fixture directory.

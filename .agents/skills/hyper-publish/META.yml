@@ -1,0 +1,10 @@
+name: hyper-publish
+description: "Touch git-changed files to update mtime, commit, and push to remote"
+assigned_model: haiku
+model_version: "claude-haiku-4-5-20251001"
+max_thinking_tokens: 1024
+tool_calls: 5
+reasoning_intensity: "low"
+output_determinism: "high"
+cost_sensitivity: "high"
+latency_critical: true
