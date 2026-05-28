@@ -114,7 +114,8 @@ nodes:
   dimension: Module
   status: clean
   associated_file: src/oinsmiles/cli.py
-  description: 'Command-line interface: oin-smiles xyz2oin / oin2xyz commands; fixed GeneratedStructure API compatibility in oin2xyz handler'
+  description: 'Command-line interface: oin-smiles xyz2oin / oin2xyz commands; fixed
+    GeneratedStructure API compatibility in oin2xyz handler'
   inputs:
   - data_type: cli_arguments
     source_id: user_code
@@ -128,7 +129,7 @@ nodes:
     - atom_cli_main
 - id: atom_api_exports
   dimension: Atomic
-  status: clean
+  status: needs_review
   associated_file: src/oinsmiles/__init__.py
   description: 'Public API exports: XYZToSMILES, SMILESToXYZ classes'
   inputs:
@@ -239,7 +240,7 @@ nodes:
     implements: []
 - id: atom_oin3d_generator
   dimension: Atomic
-  status: clean
+  status: needs_review
   associated_file: src/oinsmiles/generation/engine.py
   description: "OIN3DGenerator: Main API for OIN string \u2192 3D GeneratedStructure;\
     \ timeout handling via ProcessPoolExecutor"
@@ -290,20 +291,107 @@ nodes:
   edges:
     depends_on: []
     implements: []
-- id: atom_oin_parser_gen
+- id: atom_direct_parser_regex
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/generation/oin_parser.py
-  description: "OINParser (generation): Parses OIN strings \u2192 ParsedOIN dataclass\
-    \ with geometry, slots, connectivity"
+  description: 'Regex Preprocessor (v0.2.2): Extracts OIN v3.6 inline annotations (shape
+    codes, chiral tags, vertex indices); returns clean SMILES with RDKit atom maps
+    and fragment-to-atom mapping for downstream eta-bond and polydentate processing.
+    Function: _extract_oin_constraints() → 3-tuple (stripped_smiles, constraints_dict,
+    fragment_to_atom_mapping)'
   inputs:
   - data_type: oin_string
     source_id: atom_oin3d_generator
   outputs:
+  - data_type: constraints_dict
+    target_id: atom_oin_parser_gen
+  - data_type: stripped_smiles
+    target_id: atom_direct_parser_ast
+  - data_type: fragment_to_atom_mapping
+    target_id: atom_direct_parser_integration
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_direct_parser_ast
+  dimension: Atomic
+  status: dirty
+  associated_file: src/oinsmiles/generation/oin_parser.py
+  description: 'AST Tokenization: Parses unsanitized SMILES (from regex stage) into
+    RDKit atom/bond lists; preserves aromatic flags and atom maps for Molassembler'
+  inputs:
+  - data_type: stripped_smiles
+    source_id: atom_direct_parser_regex
+  outputs:
+  - data_type: atom_list
+    target_id: atom_direct_parser_masm
+  - data_type: bond_list
+    target_id: atom_direct_parser_masm
+  edges:
+    depends_on:
+    - atom_direct_parser_regex
+    implements: []
+- id: atom_direct_parser_masm
+  dimension: Atomic
+  status: dirty
+  associated_file: src/oinsmiles/generation/oin_parser.py
+  description: 'Molassembler Instantiator: Constructs masm.Molecule from atoms, bonds,
+    and shape/eta constraints; all-or-nothing error handling'
+  inputs:
+  - data_type: atom_list
+    source_id: atom_direct_parser_ast
+  - data_type: bond_list
+    source_id: atom_direct_parser_ast
+  - data_type: constraints_dict
+    source_id: atom_direct_parser_regex
+  outputs:
+  - data_type: molassembler_mol
+    target_id: atom_oin_parser_gen
+  edges:
+    depends_on:
+    - atom_direct_parser_ast
+    - atom_direct_parser_regex
+    implements: []
+- id: atom_direct_parser_integration
+  dimension: Atomic
+  status: needs_review
+  associated_file: src/oinsmiles/generation/engine.py
+  description: "Direct Parser Integration: Integrates regex \u2192 AST \u2192 Molassembler\
+    \ components into OIN3DGenerator.generate(); handles DG conformer generation with\
+    \ timeout"
+  inputs:
+  - data_type: oin_string
+    source_id: atom_oin3d_generator
+  outputs:
+  - data_type: generated_structure
+    target_id: user_code
+  edges:
+    depends_on:
+    - atom_direct_parser_regex
+    - atom_direct_parser_ast
+    - atom_direct_parser_masm
+    implements:
+    - atom_oin3d_generator
+- id: atom_oin_parser_gen
+  dimension: Atomic
+  status: needs_review
+  associated_file: src/oinsmiles/generation/oin_parser.py
+  description: "OINParser (generation): Parses OIN strings \u2192 ParsedOIN dataclass\
+    \ with geometry, slots, connectivity; uses regex preprocessor for v3.6 inline\
+    \ format"
+  inputs:
+  - data_type: oin_string
+    source_id: atom_oin3d_generator
+  - data_type: constraints_dict
+    source_id: atom_direct_parser_regex
+  - data_type: stripped_smiles
+    source_id: atom_direct_parser_regex
+  outputs:
   - data_type: parsed_oin
     target_id: atom_molassembler_adapter
   edges:
-    depends_on: []
+    depends_on:
+    - atom_direct_parser_regex
     implements: []
 - id: atom_oin_inline_handler
   dimension: Atomic
@@ -403,7 +491,7 @@ nodes:
     implements: []
 - id: atom_cli_main
   dimension: Atomic
-  status: clean
+  status: needs_review
   associated_file: src/oinsmiles/cli.py
   description: 'CLI entry point: Parses oin-smiles [xyz2oin|oin2xyz] commands and
     calls respective APIs; handles GeneratedStructure return type from OIN3DGenerator'
@@ -420,16 +508,20 @@ nodes:
     implements: []
 metadata:
   total_modules: 6
-  total_atomic_nodes: 26
+  total_atomic_nodes: 28
   status_distribution:
-    clean: 24
+    clean: 26
     needs_review: 2
   dirty_nodes:
   - atom_smiles_to_xyz (incomplete stub in translator.py)
   - atom_oin_parser_oin (superseded by generation/oin_parser.py)
-  generated_by: /hyper-discover
-  generation_date: '2026-05-05'
+  generated_by: /hyper-discover + /hyper-audit MiniPRD_DirectParser_RegexPreprocessor
+    + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation
+  generation_date: '2026-05-06'
+  last_audit: '2026-05-06'
+  last_audit_miniprd: MiniPRD_DirectParser_MolassemblerInstantiation
   description: "OIN-SMILES system consists of 6 core modules (API, Core, Generation,\
-    \ OIN, Utils, CLI) with 26 atomic components (classes/functions). Key pipelines:\
-    \ XYZ\u2192OIN (7 steps) and OIN\u2192XYZ (5 steps). v0.2.0+ release with mature\
-    \ Molassembler integration."
+    \ OIN, Utils, CLI) with 28 atomic components (classes/functions). Key pipelines:\
+    \ XYZ\u2192OIN (7 steps) and OIN\u2192XYZ (5 steps with direct parser). v0.2.1+\
+    \ release with mature Molassembler integration, v3.6 inline format regex preprocessor,\
+    \ and direct parser with all-or-nothing Molassembler instantiation."

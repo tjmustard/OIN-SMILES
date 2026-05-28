@@ -23,6 +23,7 @@ Template-based generator (added for improved geometric fidelity):
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
@@ -111,25 +112,37 @@ def _stitch_multi_eta_fragment(
     vectors: list,
     metal_sym: str,
 ) -> tuple[np.ndarray, list[str], "Chem.Mol | None"] | None:
-    """Place an ansa-metallocene fragment with eta groups at multiple slot directions.
+    """Place an ansa-metallocene fragment by decomposing into independent rings.
 
-    For fragments where multiple distinct slot directions bind eta atoms (e.g.
-    SiMe2-bridged Cp2), groups binding atoms by slot, ETKDG-embeds the full
-    organic fragment, then uses Rotation.align_vectors to simultaneously align
-    all eta-group centroids to their respective slot units.
+    For bridged fragments (e.g. SiMe2-bridged bis-Cp), the algorithm:
+    1. Generates an ETKDG conformer of the complete fragment (both rings + Si + H)
+    2. Extracts ring positions directly from the conformer (no SMILES re-parsing)
+    3. Applies centroid-plane alignment to transform each ring to its target slot
+    4. Reconstructs the bridge atom (Si) and its methyl substituents geometrically
 
-    Returns
-    -------
-    (positions, symbols, mol) or None on failure.
-    mol is the RDKit Mol with bond connectivity.
+    This avoids SMILES re-parsing failures (e.g. standalone Cp anion kekulization)
+    and correctly includes all H atoms in the coordinate transformation.
 
-    NOTE: Currently returns None (disabled) — the simultaneous alignment logic
-    does not account for bridging-atom constraints and produces incorrect
-    geometries. Ansa-metallocenes are better handled by the DG path.
+    Returns (positions, symbols, mol) or None on failure.
     """
-    # Disabled pending geometry fix
-    return None
+    from rdkit.Chem import AllChem as _AllChem  # noqa: PLC0415
+    from scipy.spatial.transform import Rotation as _Rotation  # noqa: PLC0415
 
+    print(f"[DEBUG] _stitch_multi_eta_fragment called with frag_smiles={frag_smiles}, {len(vectors)} vectors", file=sys.stderr)
+
+    # ── Phase 1: Setup ─────────────────────────────────────────────────────
+    slot_groups: dict[tuple, list[int]] = {}
+    for v in vectors:
+        key = tuple(round(x, 4) for x in v.vector)
+        slot_groups.setdefault(key, []).append(v.atom_in_fragment_idx)
+
+    print(f"[DEBUG] slot_groups: {len(slot_groups)} groups", file=sys.stderr)
+
+    if len(slot_groups) < 2:
+        print(f"[DEBUG] Not multi-eta (only {len(slot_groups)} slot group(s)), returning None", file=sys.stderr)
+        return None  # Not multi-eta
+
+    # Parse fragment mol
     mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
     if mol is None:
         return None
@@ -141,69 +154,356 @@ def _stitch_multi_eta_fragment(
         except Exception:
             pass
 
-    mol = Chem.AddHs(mol)
-    params = AllChem.ETKDGv3()
-    params.randomSeed = 42
-    try:
-        r = AllChem.EmbedMolecule(mol, params)
-    except Exception:
-        r = -1
-    if r != 0:
+    # ── Phase 2: Find bridge atom and ipso carbons ─────────────────────────
+    all_binding: set[int] = set(i for idxs in slot_groups.values() for i in idxs)
+    bridge_idx: int | None = None
+    ipso_per_slot: dict[tuple, int] = {}
+
+    for atom in mol.GetAtoms():
+        if atom.GetIdx() in all_binding:
+            continue
+        connected_slots: dict[tuple, int] = {}
+        for nbr in atom.GetNeighbors():
+            for slot_key, bidxs in slot_groups.items():
+                if nbr.GetIdx() in bidxs:
+                    connected_slots[slot_key] = nbr.GetIdx()
+                    break
+        if len(connected_slots) >= 2:
+            bridge_idx = atom.GetIdx()
+            ipso_per_slot = connected_slots
+            break
+
+    if bridge_idx is None:
         return None
 
-    n_atoms = mol.GetNumAtoms()
-    positions = np.array(
-        [list(mol.GetConformer().GetAtomPosition(i)) for i in range(n_atoms)],
-        dtype=float,
-    )
-    symbols = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
+    # ── Phase 3: BFS to find ring atom sets ────────────────────────────────
+    def _bfs_atoms(mol, seeds: set, exclude_idx: int) -> set:
+        visited = set(seeds)
+        queue = list(seeds)
+        while queue:
+            cur = queue.pop()
+            for nbr in mol.GetAtomWithIdx(cur).GetNeighbors():
+                ni = nbr.GetIdx()
+                if ni != exclude_idx and ni not in visited:
+                    visited.add(ni)
+                    queue.append(ni)
+        return visited
 
-    source_vecs = []
-    target_vecs = []
-    for slot_key, bidxs in slot_groups.items():
-        valid = [i for i in bidxs if i < n_atoms]
-        if not valid:
+    # ── Phase 4: ETKDG on full fragment mol ────────────────────────────────
+    def _embed_fragment(smiles: str) -> "Chem.Mol | None":
+        """Generate 3D coordinates for fragment SMILES using ETKDG.
+
+        Handles aromatic rings (Cp, indenyl) that cannot be kekulized by
+        converting aromatic bonds to SINGLE and clearing aromatic flags
+        before distance-geometry embedding.
+        """
+        _params = _AllChem.ETKDGv3()
+        _params.randomSeed = 42
+
+        m = Chem.MolFromSmiles(smiles, sanitize=False)
+        if m is None:
             return None
-        centroid = np.mean([positions[i] for i in valid], axis=0)
-        c_norm = np.linalg.norm(centroid)
-        if c_norm < 1e-6:
+
+        # Compute implicit valences (needed for AddHs)
+        try:
+            Chem.SanitizeMol(m, Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+        except Exception:
             return None
-        source_vecs.append(centroid / c_norm)
+
+        # Convert aromatic bonds to SINGLE to avoid kekulization failures
+        # (Cp rings have 5π electrons, can't be kekulized with standard valences)
+        rw = Chem.RWMol(m)
+        for bond in rw.GetBonds():
+            if bond.GetIsAromatic() or bond.GetBondTypeAsDouble() == 1.5:
+                bond.SetBondType(Chem.BondType.SINGLE)
+                bond.SetIsAromatic(False)
+        for atom in rw.GetAtoms():
+            atom.SetIsAromatic(False)
+        m = rw.GetMol()
+
+        # Add explicit hydrogens
+        try:
+            m = Chem.AddHs(m)
+        except Exception:
+            return None
+
+        # Embed with ETKDG
+        if _AllChem.EmbedMolecule(m, _params) == 0:
+            return m
+
+        return None
+
+    mol_h = _embed_fragment(frag_smiles)
+    etkdg_ok = (mol_h is not None)
+
+    if etkdg_ok:
+        n_atoms_h = mol_h.GetNumAtoms()
+        etkdg_pos = np.array(
+            [list(mol_h.GetConformer().GetAtomPosition(i)) for i in range(n_atoms_h)],
+            dtype=float,
+        )
+        print(f"[DEBUG] ETKDG embedding succeeded: {n_atoms_h} atoms", file=sys.stderr)
+    else:
+        print(f"[DEBUG] ETKDG embedding failed, will use analytic fallback", file=sys.stderr)
+        etkdg_pos = None
+
+    def _ring_atoms_with_H(mol_h: Chem.Mol, heavy_idxs: set) -> list[int]:
+        """Return heavy_idxs ∪ all H neighbors of those heavy atoms."""
+        result = list(heavy_idxs)
+        for hi in heavy_idxs:
+            for nbr in mol_h.GetAtomWithIdx(hi).GetNeighbors():
+                ni = nbr.GetIdx()
+                if mol_h.GetAtomWithIdx(ni).GetAtomicNum() == 1:
+                    result.append(ni)
+        return result
+
+    # ── Phase 5: Transform ring positions to target slot ──────────────────
+    placed_results: dict[tuple, tuple] = {}
+
+    for slot_idx, (slot_key, bidxs) in enumerate(slot_groups.items()):
+        ring_heavy_idxs = _bfs_atoms(mol, set(bidxs), bridge_idx)
 
         slot_unit = np.array(slot_key, dtype=float)
-        slot_norm = np.linalg.norm(slot_unit)
+        slot_norm = float(np.linalg.norm(slot_unit))
         if slot_norm < 1e-9:
             return None
         slot_unit = slot_unit / slot_norm
-        target_vecs.append(slot_unit)
 
-    try:
-        rot, _ = Rotation.align_vectors(target_vecs, source_vecs)
-    except Exception:
-        return None
+        if etkdg_ok:
+            # Direct ETKDG path
+            ring_all_idxs = _ring_atoms_with_H(mol_h, ring_heavy_idxs)
+            ring_etkdg_pos = etkdg_pos[ring_all_idxs]
+            ring_syms = [mol_h.GetAtomWithIdx(i).GetSymbol() for i in ring_all_idxs]
 
-    rotated = rot.apply(positions)
-
-    T = np.zeros(3)
-    for slot_key, bidxs in slot_groups.items():
-        valid = [i for i in bidxs if i < n_atoms]
-        centroid = np.mean([rotated[i] for i in valid], axis=0)
-        slot_unit = np.array(slot_key, dtype=float)
-        slot_norm = np.linalg.norm(slot_unit)
-        slot_unit = slot_unit / slot_norm
-
-        ring_radius = float(np.mean([np.linalg.norm(rotated[i] - centroid) for i in valid]))
-        binding_sym = mol.GetAtomWithIdx(valid[0]).GetSymbol()
-        d_mc_bond = _bond_length(metal_sym, binding_sym)
-        if d_mc_bond > ring_radius:
-            d_mc = float(np.sqrt(d_mc_bond**2 - ring_radius**2))
+            binding_etkdg_pos = np.array([etkdg_pos[i] for i in bidxs], dtype=float)
+            centroid = binding_etkdg_pos.mean(axis=0)
+            ring_radius = float(np.mean([np.linalg.norm(p - centroid) for p in binding_etkdg_pos]))
+            print(f"[DEBUG] Ring {slot_idx} (ETKDG): {len(ring_all_idxs)} atoms, ring_radius={ring_radius:.4f}", file=sys.stderr)
         else:
-            d_mc = d_mc_bond * 0.80
-        T += slot_unit * d_mc - centroid
+            # Analytic fallback: place binding atoms on a circle with correct H counts
+            n_bind = len(bidxs)
+            n_H_per_heavy = {
+                i: mol.GetAtomWithIdx(i).GetTotalNumHs()
+                for i in ring_heavy_idxs
+            }
+            sorted_heavy = sorted(ring_heavy_idxs)
+            cc_bond = 1.40
+            circumradius = cc_bond / (2.0 * np.sin(np.pi / n_bind))
+            ring_etkdg_pos_list = []
+            ring_syms = []
+            for k, hidx in enumerate(sorted_heavy):
+                ang = 2.0 * np.pi * k / len(sorted_heavy)
+                pos = np.array([circumradius * np.cos(ang), circumradius * np.sin(ang), 0.0])
+                ring_etkdg_pos_list.append(pos)
+                ring_syms.append(mol.GetAtomWithIdx(hidx).GetSymbol())
+                n_H = n_H_per_heavy[hidx]
+                for _ in range(n_H):
+                    h_pos = pos * (1.0 + 1.08 / circumradius)
+                    ring_etkdg_pos_list.append(h_pos)
+                    ring_syms.append('H')
+            ring_etkdg_pos = np.array(ring_etkdg_pos_list, dtype=float)
+            ring_all_idxs = list(range(len(ring_etkdg_pos_list)))
 
-    T /= len(slot_groups)
-    final_positions = rotated + T
-    return final_positions, symbols, mol
+            bidx_to_local = {hidx: k for k, hidx in enumerate(sorted_heavy)}
+            binding_local_idxs = [bidx_to_local[i] for i in bidxs if i in bidx_to_local]
+            binding_etkdg_pos = ring_etkdg_pos[binding_local_idxs]
+            centroid = binding_etkdg_pos.mean(axis=0)
+            ring_radius = float(np.mean([np.linalg.norm(p - centroid) for p in binding_etkdg_pos]))
+            print(f"[DEBUG] Ring {slot_idx} (analytic): {len(ring_etkdg_pos)} atoms, ring_radius={ring_radius:.4f}", file=sys.stderr)
+
+        if ring_radius < 1e-6:
+            return None
+
+        # M-C bond length → centroid distance
+        binding_sym_str = mol.GetAtomWithIdx(list(bidxs)[0]).GetSymbol()
+        m_c_bl = _bond_length(metal_sym, binding_sym_str)
+        if m_c_bl > ring_radius:
+            centroid_dist = float(np.sqrt(m_c_bl**2 - ring_radius**2))
+        else:
+            centroid_dist = m_c_bl * 0.80
+
+        target_centroid = slot_unit * centroid_dist
+
+        # Plane normal from SVD on centered binding positions
+        centered_bp = binding_etkdg_pos - centroid
+        _, _, vh = np.linalg.svd(centered_bp)
+        plane_normal = vh[-1]
+        if float(np.dot(plane_normal, slot_unit)) < 0:
+            plane_normal = -plane_normal
+
+        # Rotate and translate
+        try:
+            rot, _ = _Rotation.align_vectors([slot_unit], [plane_normal])
+        except Exception:
+            return None
+        ring_pos = rot.apply(ring_etkdg_pos - centroid) + target_centroid
+
+        # Ipso position
+        ipso_old = ipso_per_slot[slot_key]
+        if etkdg_ok:
+            ipso_local = ring_all_idxs.index(ipso_old)
+        else:
+            sorted_heavy = sorted(ring_heavy_idxs)
+            ipso_local = sorted_heavy.index(ipso_old)
+        ipso_placed = ring_pos[ipso_local]
+
+        placed_results[slot_key] = (ring_pos, ring_syms, ipso_placed)
+
+    # ── Phase 6: Place Si bridge atom ──────────────────────────────────────
+    def _place_bridge_atom(p1: np.ndarray, p2: np.ndarray, bond_length: float = 1.87) -> np.ndarray:
+        """Find Si position given two ipso C positions and bond length constraints."""
+        mid = (p1 + p2) / 2.0
+        half_d = float(np.linalg.norm(p2 - p1) / 2.0)
+        h_sq = bond_length**2 - half_d**2
+        if h_sq < 0:
+            h = 0.0
+        else:
+            h = float(np.sqrt(h_sq))
+
+        seg = (p2 - p1) / float(np.linalg.norm(p2 - p1))
+        mid_perp = mid - float(np.dot(mid, seg)) * seg
+        norm_mid_perp = float(np.linalg.norm(mid_perp))
+
+        if norm_mid_perp < 1e-9:
+            arb = np.array([1.0, 0.0, 0.0], dtype=float) if abs(seg[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            direction = arb - float(np.dot(arb, seg)) * seg
+            direction = direction / float(np.linalg.norm(direction))
+        else:
+            direction = mid_perp / norm_mid_perp
+
+        return mid + h * direction
+
+    slot_keys = list(slot_groups.keys())
+    ipso1 = placed_results[slot_keys[0]][2]  # ipso_placed from phase 5
+    ipso2 = placed_results[slot_keys[1]][2]  # ipso_placed from phase 5
+
+    print(f"[DEBUG] ipso1={ipso1}, ipso2={ipso2}", file=sys.stderr)
+
+    si_pos = _place_bridge_atom(ipso1, ipso2)
+    print(f"[DEBUG] si_pos={si_pos}", file=sys.stderr)
+    print(f"[DEBUG] Si-ipso1 dist={np.linalg.norm(si_pos - ipso1):.4f}, Si-ipso2 dist={np.linalg.norm(si_pos - ipso2):.4f}", file=sys.stderr)
+
+    # ── Phase 7: Place Si substituents (methyl groups) ──────────────────────
+    def _place_tetrahedral_methyls(
+        si_pos: np.ndarray, ipso1: np.ndarray, ipso2: np.ndarray,
+        si_c_bond: float = 1.87, c_h_bond: float = 1.09
+    ) -> list[tuple[str, np.ndarray]]:
+        """Place methyl C and H atoms tetrahedral around Si."""
+        v1 = (ipso1 - si_pos) / float(np.linalg.norm(ipso1 - si_pos))
+        v2 = (ipso2 - si_pos) / float(np.linalg.norm(ipso2 - si_pos))
+
+        sum12 = v1 + v2
+        cross12 = np.cross(v1, v2)
+        cross_norm = float(np.linalg.norm(cross12))
+
+        if cross_norm < 1e-9:
+            arb = np.array([1.0, 0.0, 0.0], dtype=float) if abs(v1[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            perp = arb - float(np.dot(arb, v1)) * v1
+            perp = perp / float(np.linalg.norm(perp))
+        else:
+            perp = cross12 / cross_norm
+
+        mid_v34 = -sum12 / 2.0
+        mid_norm = float(np.linalg.norm(mid_v34))
+
+        if mid_norm < 1e-9:
+            t = 1.0 / np.sqrt(2.0)
+        else:
+            t_sq = 1.0 - mid_norm**2
+            t = float(np.sqrt(max(0.0, t_sq)))
+
+        # BUG FIX: Remove the * 2.0 scaling that breaks tetrahedral angles
+        v3 = mid_v34 + t * perp
+        v4 = mid_v34 - t * perp
+
+        v3_norm = float(np.linalg.norm(v3))
+        v4_norm = float(np.linalg.norm(v4))
+
+        if v3_norm > 1e-9:
+            v3 = v3 / v3_norm
+        else:
+            v3 = np.array([0.0, 0.0, 1.0], dtype=float)
+
+        if v4_norm > 1e-9:
+            v4 = v4 / v4_norm
+        else:
+            v4 = np.array([0.0, 0.0, -1.0], dtype=float)
+
+        me1_pos = si_pos + si_c_bond * v3
+        me2_pos = si_pos + si_c_bond * v4
+
+        results: list[tuple[str, np.ndarray]] = []
+        tet_angle = float(np.arccos(-1.0 / 3.0))
+
+        for me_pos, v_me in [(me1_pos, v3), (me2_pos, v4)]:
+            results.append(('C', me_pos))
+            v_to_si = -v_me
+            arb2 = np.array([1.0, 0.0, 0.0], dtype=float) if abs(v_to_si[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            u1 = arb2 - float(np.dot(arb2, v_to_si)) * v_to_si
+            u1 = u1 / float(np.linalg.norm(u1))
+            u2 = np.cross(v_to_si, u1)
+
+            for k in range(3):
+                phi = 2.0 * np.pi * k / 3.0
+                # BUG FIX: H atoms should be at tet_angle from v_to_si (away from Si),
+                # not from v_me. Change: cos(tet_angle)*v_me → -cos(tet_angle)*v_me
+                h_dir = -float(np.cos(tet_angle)) * v_me + float(np.sin(tet_angle)) * (float(np.cos(phi)) * u1 + float(np.sin(phi)) * u2)
+                h_dir = h_dir / float(np.linalg.norm(h_dir))
+                results.append(('H', me_pos + c_h_bond * h_dir))
+
+        return results
+
+    me_atoms = _place_tetrahedral_methyls(si_pos, ipso1, ipso2)
+
+    # Debug: print methyl positions
+    for i, (sym, pos) in enumerate(me_atoms):
+        if sym == 'C':
+            dist_to_si = np.linalg.norm(pos - si_pos)
+            print(f"[DEBUG] Methyl C{i}: pos={pos}, dist_to_si={dist_to_si:.4f}", file=sys.stderr)
+
+    # ── Phase 8: Assemble and return ───────────────────────────────────────
+    all_positions: list[np.ndarray] = []
+    all_symbols: list[str] = []
+
+    # Assemble positions from all rings
+    for i, slot_key in enumerate(slot_keys):
+        ring_pos, ring_syms, ipso_placed = placed_results[slot_key]
+        all_positions.extend(ring_pos)
+        all_symbols.extend(ring_syms)
+
+    # Add Si
+    si_atom_idx = len(all_positions)
+    all_positions.append(si_pos)
+    all_symbols.append('Si')
+
+    # Add methyls (2 C atoms + 6 H atoms)
+    me_atom_start_idx = len(all_positions)
+    for sym, pos in me_atoms:
+        all_positions.append(pos)
+        all_symbols.append(sym)
+
+    # Heavy-atom tracking: map input fragment heavy atom indices to output global indices
+    heavy_atom_map: dict[int, int] = {}
+    output_idx = 0
+    for slot_idx, slot_key in enumerate(slot_keys):
+        ring_pos, ring_syms, _ = placed_results[slot_key]
+        ring_heavy_idxs = _bfs_atoms(mol, set(slot_groups[slot_key]), bridge_idx)
+        if etkdg_ok:
+            ring_all_idxs = _ring_atoms_with_H(mol_h, ring_heavy_idxs)
+            for local_i, global_heavy_idx in enumerate(ring_all_idxs):
+                if mol_h.GetAtomWithIdx(global_heavy_idx).GetAtomicNum() != 1:
+                    heavy_atom_map[global_heavy_idx] = output_idx + local_i
+        else:
+            sorted_heavy = sorted(ring_heavy_idxs)
+            for k, hidx in enumerate(sorted_heavy):
+                heavy_atom_map[hidx] = output_idx + k
+        output_idx += len(ring_syms)
+
+    heavy_atom_map[bridge_idx] = si_atom_idx
+    print(f"[DEBUG] Heavy atom map: {heavy_atom_map}", file=sys.stderr)
+
+    # Return XYZ positions and symbols; mol=None for now (XYZ is the deliverable)
+    return np.array(all_positions, dtype=float), all_symbols, None
 
 
 def _stitch_eta_fragment(
@@ -247,9 +547,11 @@ def _stitch_eta_fragment(
     if mol is not None:
         try:
             Chem.SanitizeMol(mol)
+            Chem.SetAromaticity(mol)
         except Exception:
             try:
                 Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+                Chem.SetAromaticity(mol)
             except Exception:
                 for atom in mol.GetAtoms():
                     pass  # valence already calculated during partial sanitization
@@ -689,11 +991,13 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
                     return None
                 frag_positions, frag_symbols, frag_mol = result
                 all_binding_idxs = [v.atom_in_fragment_idx for v in vecs]
-                eta_start = len(all_pos)
                 all_pos.extend(frag_positions)
                 all_syms.extend(frag_symbols)
                 all_frag_idxs.extend([frag_idx] * len(frag_positions))
-                eta_frag_ranges.append((eta_start, len(all_pos), np.array(unique_dirs[0], dtype=float)))
+                # Do NOT add to eta_frag_ranges: the Kabsch alignment in
+                # _stitch_multi_eta_fragment already optimises placement
+                # for all eta groups simultaneously. Adding a single-axis
+                # ring-rotation entry would degrade the other ring's placement.
                 if frag_mol is not None:
                     fragment_mol_parts.append((frag_mol, all_binding_idxs))
                 else:

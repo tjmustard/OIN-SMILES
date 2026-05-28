@@ -1,3 +1,12 @@
+# ⚠️ DEPRECATED: MiniPRD Template
+
+**Status:** Migrated to CLAUDE.md (See CLAUDE.md: Schema Definitions › MiniPRD Schema)  
+**Deadline for Removal:** 2026-06-17 (6-week deprecation period)
+
+This file is maintained for backward compatibility only. New references should use CLAUDE.md.
+
+---
+
 # MiniPRD: [Module Name]
 **Hypergraph Node ID:** [node_id]
 **Parent Node:** [System level node_id]

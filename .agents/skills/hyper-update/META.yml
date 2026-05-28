@@ -1,0 +1,10 @@
+name: hyper-update
+description: "Interactive smart-upgrade command with customization preservation"
+assigned_model: opus
+model_version: "claude-opus-4-7"
+max_thinking_tokens: 8000
+tool_calls: 50
+reasoning_intensity: "high"
+output_determinism: "medium"
+cost_sensitivity: "medium"
+latency_critical: false
