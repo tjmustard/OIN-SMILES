@@ -1,3 +1,10 @@
+> **HACF as a Toolchain:** This project uses the Hypergraph Coding Agent Framework
+> (HACF) as its development toolchain. The skills in `.agents/skills/`, the scripts
+> in `.agents/scripts/`, and the schemas in `.agents/schemas/` are development tools —
+> they are **not** subjects of this project's plans, PRDs, or architecture docs.
+> When you create SuperPRDs, MiniPRDs, or architecture nodes, you are documenting
+> **this project**, not the HACF framework itself.
+
 # Gemini CLI Integration Guide
 
 This document serves as both a manual for human developers and **foundational system instructions** for `gemini-cli`. By reading this file, Gemini CLI understands how to natively orchestrate the Hypergraph Coding Agent Framework.

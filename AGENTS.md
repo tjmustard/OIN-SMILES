@@ -1,9 +1,16 @@
+> **HACF as a Toolchain:** This project uses the Hypergraph Coding Agent Framework
+> (HACF) as its development toolchain. The skills in `.agents/skills/`, the scripts
+> in `.agents/scripts/`, and the schemas in `.agents/schemas/` are development tools —
+> they are **not** subjects of this project's plans, PRDs, or architecture docs.
+> When you create SuperPRDs, MiniPRDs, or architecture nodes, you are documenting
+> **this project**, not the HACF framework itself.
+
 # OIN-SMILES - AGENTS.md
 
 ## Context
 This repository contains the "OIN-SMILES" library.
 It facilitates the conversion of 3D transition metal complexes to and from 1D SMILES format.
-It follows the MCAF (Managed Code Coding AI Framework).
+It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchain.
 
 ## Product Requirements
 - **Location**: All Product Requirements Documents (PRDs) are located in the `PRDs/` folder.
