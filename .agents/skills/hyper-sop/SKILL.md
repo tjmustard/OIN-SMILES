@@ -20,12 +20,16 @@ Briefly introduce the Hypergraph framework's core paradigm:
 
 ## Step 2: Determine User State
 
-Ask the user which phase they are in:
+Use **AskUserQuestion** to determine the user's current state:
 
-- **Phase -1: Legacy Onboarding** — Integrating the framework into an existing project
-- **Phase 0: System Initialization** — Starting a brand new greenfield project
-- **Phase 1: Specification** — Planning and designing a new feature
-- **Phase 2: Execution** — Writing code based on a completed MiniPRD
+```
+Which phase of the framework are you in?
+
+- Option A: Phase -1: Legacy Onboarding — Integrating the framework into an existing project
+- Option B: Phase 0: Initialization — Starting a brand new greenfield project
+- Option C: Phase 1: Specification — Planning and designing a new feature
+- Option D: Phase 2: Execution — Writing code against a compiled MiniPRD
+```
 
 ## Step 3: Provide Phase-Specific Guidance
 
@@ -61,4 +65,11 @@ Wait for the user's response, then provide the exact steps:
 
 ## Step 5: Next Actions
 
-Ask the user if they are ready to begin their chosen phase or if they have questions about any specific command.
+Use **AskUserQuestion**:
+
+```
+Ready to begin, or do you have questions?
+
+- Option A: Let's begin — start the selected phase now
+- Option B: I have questions — clarify something before starting
+```

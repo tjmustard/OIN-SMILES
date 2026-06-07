@@ -2,5 +2,19 @@
   "statusLine": {
     "type": "command",
     "command": "npx -y ccstatusline@latest"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(touch *)"
+    ]
+  },
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
   }
 }

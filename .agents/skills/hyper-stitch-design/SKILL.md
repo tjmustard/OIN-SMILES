@@ -24,7 +24,15 @@ This skill activates a UI/UX Designer and Frontend Specialist persona. It transl
 ### Step 1: Analyze the Aesthetic
 - Identify the desired visual style (e.g., Modern, Brutalist, Corporate, Minimalist).
 - If a reference image is provided, extract: color palette, typography, spacing rhythm, and shadow usage.
-- If no reference is provided, ask the user for 1–2 reference sites or a style keyword.
+- If no reference is provided, use **AskUserQuestion**:
+
+  ```
+  What design style or reference are we targeting?
+
+  - Option A: Provide a reference URL — paste a site URL you want to emulate
+  - Option B: Use a style keyword — describe the aesthetic (e.g., minimal, brutalist, glassmorphism)
+  - Option C: Match existing codebase — derive the design system from existing UI files
+  ```
 
 ### Step 2: Define the Design System
 Create or update `docs/DESIGN.md` with:

@@ -1,182 +1,86 @@
----
-name: System Architecture & Design Patterns
-description: OIN-SMILES technical architecture, pipeline design, and recurring patterns used across the codebase
-type: reference
----
 
-# OIN-SMILES System Architecture
+# System Patterns
 
-## Overview
-OIN-SMILES is a dual-pipeline system for lossless conversion between 3D molecular structures (XYZ) and 1D SMILES representations for Transition Metal Complexes (TMCs), using Open Isomer Notation (OIN v3.6) as the intermediate canonical format.
+## Purpose
+Documents the "How" — architectural decisions, design patterns, tech stack, and conventions for OIN-SMILES.
 
-## Pipeline 1: XYZ → OIN (3D Structure to SMILES)
+## Architecture: Two Independent Pipelines
 
-**Flow:**
+### XYZ → OIN (Forward)
 ```
-XYZToSMILES.convert(xyz_file)
-  ↓
-xyz2mol.get_tmc_mol() — Graph generation using Jensen Group algorithm
-  ↓
-CIPAssigner.assign_all() — Stereocenters (P/N atoms) before fragmentation
-  ↓
-OINDiscreteAligner — Geometry detection, slot assignment, fragmentation
-  ↓
-OINSanitizer.generate_robust_smiles() — RDKit sanitization, properties preserved
-  ↓
-ChiralityRecoveryUtility.recover() — Re-apply @/@@ after sanitization
-  ↓
-OINInlineHandler.generate_inline_string() — Final V3.6 format
-  ↓
-[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}
+XYZToSMILES.convert()
+  → xyz2mol.get_tmc_mol()         # Jensen Group graph algorithm
+  → CIPAssigner.assign_all()      # 3D-derived CIP codes for P/N atoms
+  → OINDiscreteAligner            # slot assignment & geometry template
+  → OINSanitizer                  # SMILES canonicalization
+  → OIN v3.6 inline string
 ```
 
-**Key Architectural Decisions:**
-1. **Early chirality assignment** — CIPAssigner runs on the full (pre-fragmentation) mol to capture 3D stereochemistry context
-2. **Property preservation** — Atom properties (CIP codes, chiral tags) survive RDKit sanitization through custom sanitizer
-3. **Regex-only parsing** — `parse_inline_string()` uses regex only (no MolFromSmiles round-trip) to preserve @/@@ markers
-4. **Graceful fallback** — PseudoAtomStrategy provides wildcards (*) for uncomputable stereocenters instead of crashing
-
-## Pipeline 2: OIN → XYZ (SMILES to 3D Structure)
-
-**Flow:**
+### OIN → XYZ (Reverse)
 ```
-OIN3DGenerator.generate(oin_string, timeout=60)
-  ↓
-generation/OINParser — Inline string parsing → ParsedOIN object
-  ↓
-molassembler_adapter._template_generate() — Template-based placement for known geometries
-  ↓
-molassembler_adapter._stitch_fragment() — Attach ligands (aromatic η-ligands use ETKDG)
-  ↓
-molassembler_adapter.generate_conformation() — Distance geometry (DG) fallback
-  ↓
-RDKit mol assembly — CombineMols + dative bonds + conformer
-  ↓
-GeneratedStructure(xyz: str, mol: Optional[Chem.Mol])
+OIN3DGenerator.generate()
+  → generation/OINParser          # returns ParsedOIN dataclass
+  → MolassemblerAdapter
+      → template-based placement  # primary path for all ligand types
+      → DG fallback               # distance geometry for remaining conformers
+  → GeneratedStructure(xyz, mol)
 ```
 
-**Key Architectural Decisions:**
-1. **Template-first strategy** — Known geometries (SP4, SP3, OC-6, etc.) use hand-coded templates for speed/accuracy
-2. **DG fallback** — Unplaced ligands or missing templates use SCINE Molassembler distance geometry (GIL-safe via ProcessPoolExecutor)
-3. **ETKDG for aromatic η-ligands** — 5-membered aromatic rings (Cp, indenyl) use de-aromatization + ETKDG embedding (avoids RDKit kekulization failures)
-4. **Dual output** — Returns both XYZ string (for geometry) and RDKit mol (for bond topology); mol is None for fallback cases
+## Metal Center Invariant
+The metal center is **always `fragments[0]`** in both pipelines. This is a load-bearing canonical-form property. Never reorder fragment lists.
 
-## Molassembler Integration
+## Two OINParser Classes (Not Interchangeable)
+| File | Class | Returns | Used by |
+|---|---|---|---|
+| `src/oinsmiles/oin/parser.py` | `OINParser` | `(str, Dict)` | `SMILESToXYZ` (incomplete) |
+| `src/oinsmiles/generation/oin_parser.py` | `OINParser` | `ParsedOIN` | `OIN3DGenerator` |
 
-**Module:** `src/oinsmiles/generation/molassembler_adapter.py`
+## Tech Stack
+- **Language**: Python ≥ 3.10
+- **Package manager**: `uv` (`uv sync`, `uv run`)
+- **3D generation**: SCINE Molassembler ≥ 2.0.0 (`import scine_molassembler as masm`)
+- **Graph operations**: RDKit (`Chem`, `AllChem`)
+- **Graph construction**: xyz2mol (Jensen Group algorithm, vendored)
+- **Build**: `uv build`, entry point `oin-smiles` registered in `pyproject.toml`
 
-**API Surface:**
-```python
-import scine_molassembler as masm
-
-# Create mol from SMILES
-mol = masm.io.experimental.from_smiles("N[Pt](N)(Cl)Cl")
-
-# Generate conformer (distance geometry)
-result = masm.dg.generate_conformation(mol, seed=42)
-# → numpy.ndarray (N_atoms × 3), units: Angstrom
-# or masm.dg.Error if failed
-
-# Write XYZ file
-masm.io.write("complex.xyz", mol, positions)  # positions in Angstrom
-```
-
-**Timeout Pattern:**
-```python
-from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeout
-
-def _molassembler_worker(args: dict) -> dict:
-    import scine_molassembler as masm
-    # ... work with masm ...
-    return {"positions": result.tolist()}
-
-with ProcessPoolExecutor(max_workers=1) as executor:
-    future = executor.submit(_molassembler_worker, args)
-    try:
-        result = future.result(timeout=60)  # GIL-safe timeout
-    except FuturesTimeout:
-        raise MolassemblerTimeoutError(f"timed out after 60s")
-```
-
-**Key Property:**
-- `Molecule` objects are picklable ✅
-- Module-level worker functions are picklable ✅
-- Ideal for `ProcessPoolExecutor` + timeout enforcement
-
-## OIN Format (v3.6)
-
-**Canonical inline format:**
-```
-[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}
-```
-
-**Components:**
-- `[Pt@SP1_SPL]` — Metal atom with chirality tag (@) and geometry code (SP1 = square planar)
-- `.[Cl]{0}` — Fragment (Cl ligand) with slot marker {0}
-- `N{2}` — Atom-level slot marker (nitrogen at slot 2)
-- Geometry codes: `SP1`, `SP3`, `OC-6`, `TBPY-5`, `PBP-1`, etc.
-- Chirality tags: `@` (R), `@@` (S), or absent (achiral)
-- Winding direction: `>` (clockwise), `<` (counterclockwise) — encoded in slot markers for v3.6
+## Key API (v0.2.0+)
+- `XYZToSMILES().convert(path)` → `str` (OIN v3.6 inline)
+- `OIN3DGenerator(timeout=60).generate(oin_str)` → `GeneratedStructure(xyz: str, mol: Optional[Chem.Mol])`
+- `GeneratedStructure.xyz` always available; `.mol` is None for eta fallback cases
 
 ## Design Patterns
+- **Template-first 3D placement**: Molassembler template placement is preferred over DG for all ligand types
+- **ProcessPoolExecutor for timeout**: DG runs in subprocess (not thread) for picklability
+- **CIPAssigner before fragmentation**: 3D-derived CIP codes must be computed on the full TMC mol, then propagated via atom properties
+- **`AssignAtomChiralTagsFromStructure` precedes `AssignStereochemistry`** to get @/@@ tags in SMILES
 
-### Pattern 1: Property Preservation Through Pipelines
-**Problem:** RDKit sanitization destroys custom atom properties (CIP codes, chiral tags)
-**Solution:** Custom `OINSanitizer` that:
-1. Copies atom properties before sanitization
-2. Re-applies properties post-sanitization
-3. Calls `CIPAssigner` AFTER `Chem.SanitizeMol()` (hard precondition)
+## SMILES Handling Conventions
+- `Chem.SanitizeMol()` is a hard precondition before `CIPAssigner.assign_all()`
+- Zone A P/N atoms (direct metal binders, `total_degree < 4` in fragment) → chiral tag cleared
+- `parse_inline_string()` uses regex only — no RDKit round-trip (preserves @/@@)
+- `OINSanitizer.generate_robust_smiles()` returns `(smiles, kmol)` with properties preserved
 
-### Pattern 2: Graceful Degradation for Non-Standard Stereocenters
-**Problem:** Some P/N atoms have non-standard valence (can't assign CIP codes)
-**Solution:** `PseudoAtomStrategy`:
-1. Attempt CIP assignment on all P/N atoms
-2. If no `_CIPCode` found: replace with wildcard atom (`*`, atomic_num=0)
-3. Call `strip_pseudo_atoms()` before OIN serialization
+## OIN Format Versions
+| Version | Format |
+|---|---|
+| V2.4 (sidecar, obsolete) | `[Pt].[Cl] \|g:SPL\|w:1.0:0;2.0:1\|` |
+| V3.0+ (inline) | `[Pt_SPL].N{0}.[Cl]{1}` |
+| V3.4 | Heading atom `{0>}` |
+| V3.6 (canonical) | Winding direction: `>` CW, `<` CCW |
 
-### Pattern 3: Template-First with Fallback
-**Problem:** 3D generation can fail for complex or unknown geometries
-**Solution:** `molassembler_adapter`:
-1. Try template-based placement (hand-coded coordinates)
-2. If template missing: invoke DG (SCINE Molassembler)
-3. If DG times out: return best-effort XYZ block with partial 3D
+## Technical Debt (Known)
+- **TD-001**: `XYZToSMILES.convert()` defined twice — second shadows first
+- **TD-002**: `OINInlineHandler.generate_inline_string()` has `pass` stub
+- **TD-003**: `SMILESToXYZ` in translator.py is incomplete (dummy atoms)
+- **TD-005**: `TEMPLATES`/`TEMPLATE_SPECS` duplicated across two files
 
-### Pattern 4: Aromatic Ligand De-aromatization
-**Problem:** RDKit can't kekulize 5-membered aromatic rings (5π violates Hückel)
-**Solution:** `_stitch_eta_fragment()`:
-1. Extract aromatic ring SMILES
-2. De-aromatize: change aromatic bonds→SINGLE, clear aromatic flags
-3. Run ETKDG embedding on full fragment (not just ring)
-4. Extract ring coordinates from conformer
+## Anti-Patterns
+- Do not reorder fragment lists — metal-first invariant is load-bearing
+- Do not call `Chem.SanitizeMol()` after `AssignAtomChiralTagsFromStructure` — it clears stereo tags
+- Do not use threading for DG timeout — Molassembler is not picklable via threads
+- Do not import molassembler as `scine.molassembler` — use `import scine_molassembler as masm`
 
-## Code Organization
-
-```
-src/oinsmiles/
-├── __init__.py              — Public API (XYZToSMILES, SMILESToXYZ)
-├── cli.py                   — CLI entry point (oin-smiles command)
-├── core/
-│   ├── chirality.py         — CIPAssigner, ChiralityRecoveryUtility, PseudoAtomStrategy
-│   ├── graph.py             — Graph utility functions
-│   └── translator.py        — XYZToSMILES, SMILESToXYZ wrappers
-├── generation/
-│   ├── engine.py            — OIN3DGenerator (main API, timeout handling)
-│   ├── molassembler_adapter.py  — Template placement, DG fallback, ETKDG logic
-│   └── oin_parser.py        — Inline string parsing
-├── oin/
-│   ├── inline.py            — OIN v3.6 inline format handler
-│   ├── parser.py            — Alternative parser (returns tuple, not used in v0.2.0+)
-│   └── writer.py            — OIN generation from geometry data
-└── utils/
-    ├── xyz2mol.py           — Graph generation (Jensen Group algorithm)
-    ├── xyz2mol_local.py     — Local fork with modifications
-    └── oin_aligner.py       — OINDiscreteAligner, OINSanitizer
-```
-
-## Testing Strategy
-
-**Unit tests:** `tests/unit/` — Individual component functionality
-**Integration tests:** `tests/integration/verify_roundtrip.py` — End-to-end XYZ→OIN→XYZ with RMSD validation
-**Regression tests:** Known complexes (Pt, Fe, Ir, Ti) validated against baseline RMSD thresholds
-
-**Test Suite:** `uv run python -m unittest discover tests`
+## Conventions
+- Testing: `uv run python -m unittest discover tests`
+- Integration verification: `tests/integration/verify_roundtrip.py`
+- RMSD metric: use **mean** RMSD across atoms, not max-per-atom (conformational flexibility makes per-atom thresholds noise-prone)

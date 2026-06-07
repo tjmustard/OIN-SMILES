@@ -91,10 +91,16 @@ Work through each target below. Skip targets that are clearly unaffected by the 
 
 **Find the current version:** Check the most recent `## [X.Y.Z]` header in `CHANGELOG.md`. That is the current released version. `## [Unreleased]` entries are pending release.
 
-**CRITICAL:** Before modifying, ask the user:
-> *"Are we bumping the version? If so, what is the new semantic version?"*
+**CRITICAL:** Before modifying, use **AskUserQuestion**:
 
-Wait for the response, then:
+```
+Are we releasing a new version with this change?
+
+- Option A: Yes — bump version (specify the new semantic version via Other)
+- Option B: No — update [Unreleased] only (add changes to the Unreleased section)
+```
+
+Then:
 - **Version bump:** Add a new `## [X.Y.Z] - YYYY-MM-DD` block below `## [Unreleased]`.
 - **No version bump:** Add entries under `## [Unreleased]`.
 
@@ -121,6 +127,20 @@ Wait for the response, then:
 ### Removed
 - **`.agents/schemas/` files**: Marked deprecated; will be deleted after 2026-06-17.
 ```
+
+---
+
+### Standard Repository Documents
+(`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `DEVELOPMENT.md`, `CITATION.cff`)
+
+**Purpose:** Provide consistent community, security, and development guidelines across all Hypergraph framework projects.
+
+**Update when:** The framework's core policies change, testing requirements change (affecting `DEVELOPMENT.md` or `CONTRIBUTING.md`), or project authors/metadata change.
+
+**Style rules:**
+- These files should largely remain stable once scaffolded via `/hyper-init`.
+- If a project-specific modification is required, ensure it doesn't violate the baseline rules established in the `.agents/schemas/project-templates/` directory.
+- When regenerating these files, always refer to `.agents/schemas/project-templates/` as the ground truth format and apply variable substitution.
 
 ---
 

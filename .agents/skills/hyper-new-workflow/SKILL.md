@@ -18,7 +18,15 @@ This skill converts a description of desired agent behavior into a properly form
 1. **Gather Inputs**
    - Extract the command name and its intended behavior from the user's request.
    - If only a description is provided, suggest a short, hyphen-separated name (e.g., `code-review`, `api-design`).
-   - Confirm a concise description for the frontmatter.
+   - Confirm a concise description for the frontmatter. Then use **AskUserQuestion** to confirm before drafting:
+
+     ```
+     Confirm the command name and description?
+
+     - Option A: Looks good — proceed as suggested
+     - Option B: Change the name — specify a different name (use Other)
+     - Option C: Change the description — modify the description (use Other)
+     ```
 
 2. **Draft the Skill File**
    - Create the skill directory: `.agents/skills/<command-name>/`

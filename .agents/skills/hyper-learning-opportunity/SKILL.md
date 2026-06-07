@@ -25,7 +25,24 @@ Technical PM with mid-level engineering knowledge. Understands architecture, can
 
 ### Deliver Three Levels
 
-Present each level and wait for the user to absorb it and signal readiness before moving on.
+Begin by using **AskUserQuestion** to check how deep the user wants to go:
+
+```
+What depth of explanation do you want?
+
+- Option A: Conceptual overview (Level 1 only) — what it is and why it exists
+- Option B: Practical walkthrough (Levels 1–2) — concepts + mechanics + trade-offs
+- Option C: Full deep dive (all 3 levels) — including implementation details and senior-engineer perspective
+```
+
+After delivering each level, use **AskUserQuestion** before advancing:
+
+```
+Ready to continue to the next level?
+
+- Option A: Yes, continue — move to the next level
+- Option B: Explain more here — go deeper on this level before advancing
+```
 
 #### Level 1: Core Concept
 - What this is and why it exists

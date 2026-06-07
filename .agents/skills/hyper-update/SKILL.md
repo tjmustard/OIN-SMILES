@@ -75,7 +75,15 @@ Sensitive files are:
    📝 File: CLAUDE.md
    Changed lines: 45 (schema definitions, tool names table)
    ```
-   Ask: `[R]eplace / [M]erge / [S]kip`
+   Use **AskUserQuestion**:
+
+   ```
+   How do you want to handle [FILENAME]?
+
+   - Option A: Replace — overwrite local with upstream version (backup created)
+   - Option B: Merge — section-by-section collaborative merge
+   - Option C: Skip — keep local version unchanged
+   ```
 
 3. **If Replace:**
    - Create `.agents/.backup/YYYY-MM-DD/` if not exists
@@ -96,7 +104,15 @@ Sensitive files are:
         - **Upstream changes:** (show the upstream version of this section)
         - **Your local version:** (show the local version of this section)
         - **Unified diff** (3 lines of context)
-     b. Ask: "Keep local / Accept upstream / Edit manually — which?"
+     b. Use **AskUserQuestion**:
+
+        ```
+        How do you want to handle this section: [SECTION_HEADING]?
+
+        - Option A: Keep local — use your existing version of this section
+        - Option B: Accept upstream — use the upstream version of this section
+        - Option C: Edit manually — paste a custom merged version (you will be prompted)
+        ```
      c. **CRITICAL: Do NOT advance to the next section until the user explicitly approves this one.** Wait for their response.
      d. If "Keep local" → use local version of this section
      e. If "Accept upstream" → use upstream version of this section
@@ -149,7 +165,7 @@ Sensitive files are:
 - User runs `/hyper-update` to upgrade the framework.
 - The local installation is already complete (`.agents/` exists).
 - The user wants to pull upstream improvements while keeping customizations.
-- After running `install.sh` upgrade mode fails to merge safely.
+- After running `HACF-install.sh` upgrade mode fails to merge safely.
 
 ---
 
