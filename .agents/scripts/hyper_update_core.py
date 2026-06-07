@@ -47,6 +47,15 @@ class HyperUpdateCore:
         "AGENTS.md",
         "GEMINI.md",
     ]
+
+    # Maps local destination filename -> upstream source path.
+    # These files are maintained as install templates so that the installed versions
+    # are framed for user projects, while the repo root files govern HACF development.
+    SENSITIVE_FILE_UPSTREAM_SOURCES = {
+        "CLAUDE.md": ".agents/install-templates/CLAUDE.md",
+        "AGENTS.md": ".agents/install-templates/AGENTS.md",
+        "GEMINI.md": ".agents/install-templates/GEMINI.md",
+    }
     SENSITIVE_DIRS = [
         ".claude/commands/",
         ".clinerules/",
@@ -226,7 +235,8 @@ class HyperUpdateCore:
 
         # Check sensitive files
         for sens_file in self.SENSITIVE_FILES:
-            upstream_path = self.upstream_dir / sens_file
+            upstream_src = self.SENSITIVE_FILE_UPSTREAM_SOURCES.get(sens_file, sens_file)
+            upstream_path = self.upstream_dir / upstream_src
             local_path = self.project_root / sens_file
 
             if upstream_path.exists() and local_path.exists():

@@ -1,0 +1,9 @@
+name: handoff
+description: Compacts the current conversation into a handoff document for a fresh agent to continue.
+assigned_model: sonnet
+model_version: "claude-sonnet-4-6"
+max_thinking_tokens: 4000
+reasoning_intensity: medium
+output_determinism: medium
+cost_sensitivity: medium
+latency_critical: false

@@ -16,7 +16,16 @@ This skill assumes the role of an expert Template Architect. Given a filled-out 
 ## How to use it
 
 1. **Wait for Input**
-   If the user did not provide a source document with the command, ask them to provide or paste the document they wish to convert. Do not proceed without it.
+   If the user did not provide a source document with the command, use **AskUserQuestion**:
+
+   ```
+   How would you like to provide the source document?
+
+   - Option A: I'll paste the content — type or paste the document directly
+   - Option B: It's already in a file — provide the file path and I will read it
+   ```
+
+   Do not proceed without the document.
 
 2. **Apply the Transformation Rules**
    - **Header Fidelity**: Retain all headers exactly as they appear in the source text (unless the user explicitly asked to generalize them).

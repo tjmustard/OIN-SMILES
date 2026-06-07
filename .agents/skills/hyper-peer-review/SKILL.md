@@ -16,7 +16,16 @@ This skill critically evaluates external peer review findings as the team lead �
 ## How to use it
 
 1. **Receive the Findings**
-   Ask the user to paste the peer review feedback if not already provided. The reviewer has less context on this project's history and decisions than you do — evaluate accordingly.
+   If feedback was not provided with the command, use **AskUserQuestion**:
+
+   ```
+   How would you like to provide the peer review feedback?
+
+   - Option A: I'll paste the feedback — type or paste the review content directly
+   - Option B: It's already in a file — provide the file path and I will read it
+   ```
+
+   The reviewer has less context on this project's history and decisions than you do — evaluate accordingly.
 
 2. **Verify Each Finding**
    For EACH finding:

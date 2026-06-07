@@ -19,11 +19,21 @@ This skill assumes the role of an elite, academic Prompt Engineer. It collaborat
    Begin every response — and the start of each revision iteration — with the exact word: **"Understood."**
 
 2. **Initial Requirements Gathering**
-   Ask the user for the core theme, subject, or goal of the prompt. Proactively ask best-practice questions:
+   Ask the user for the core theme, subject, or goal of the prompt. Proactively gather best-practice details:
    - What persona or role should the AI adopt?
-   - What is the desired output format (JSON, markdown, specific tone)?
    - What are the critical constraints, edge cases, or anti-patterns to avoid?
    - Do they have examples of inputs and desired outputs (few-shot prompting)?
+
+   For output format, use **AskUserQuestion**:
+
+   ```
+   What output format should the prompt target?
+
+   - Option A: Structured (JSON/YAML/table) — machine-parseable structured output
+   - Option B: Markdown prose — formatted human-readable text
+   - Option C: Raw text — plain unformatted response
+   - Option D: Step-by-step list — numbered or bulleted procedure
+   ```
 
    Wait for their initial input before drafting.
 
@@ -43,7 +53,13 @@ This skill assumes the role of an elite, academic Prompt Engineer. It collaborat
 5. **Finalization & Export**
    Once the user confirms completion:
    - Congratulate them on the successful design.
-   - Ask if they want to export the prompt as a reusable component:
-     - **`/hyper-new-workflow`**: Convert to a simple slash command workflow.
-     - **`/hyper-create-skill`**: Deeply integrate as a full agentic skill with `SKILL.md`, `scripts/`, and `examples/`.
+   - Use **AskUserQuestion** to ask if they want to export the prompt as a reusable component:
+
+     ```
+     Export this prompt as a reusable component?
+
+     - Option A: /hyper-new-workflow — convert to a simple slash command workflow
+     - Option B: /hyper-create-skill — deeply integrate as a full agentic skill (SKILL.md, scripts, examples)
+     - Option C: No export — keep in conversation for copy-paste
+     ```
    - If they choose an export option, package the final prompt, its intended name, and all contextual rules gathered during the session so the downstream skill has all required inputs.

@@ -20,15 +20,18 @@ This skill helps diagnose and recover from common failure states in the Hypergra
 
 ### Step 1: Identify the Symptom
 
-Ask the user to describe the issue, or present these common symptoms:
+Use **AskUserQuestion** to identify the symptom:
 
-1. **Context Bloat & Hallucination** — Builder is writing code for rejected features
-2. **Hypergraph Desynchronization** — `/hyper-audit` or `/hyper-redteam` fails or hallucinates Blast Radius
-3. **Red Team Scope Creep** — Red Team report suggests product features instead of vulnerabilities
-4. **YAML File Corruption** — `architecture.yml` throws a ParserError or sections get deleted
-5. **Infinite Loop Interview** — Architect asks the same questions repeatedly and won't generate a PRD
+```
+What symptom are you seeing?
 
-Wait for the user to select or describe their issue.
+- Option A: Context Bloat / Hallucination — Builder is writing code for rejected features
+- Option B: Hypergraph Desync — /hyper-audit or /hyper-redteam fails or has wrong blast radius
+- Option C: YAML Corruption or Infinite Loop Interview — architecture.yml parse error, or Architect repeatedly asks the same questions
+- Option D: Red Team Scope Creep — Red Team report suggests product features instead of vulnerabilities
+```
+
+If the user selects Option C, ask a brief follow-up to confirm whether it is the YAML corruption or the infinite loop interview before applying the fix.
 
 ### Step 2: Provide Diagnosis and Fix
 
@@ -70,4 +73,11 @@ Wait for the user to select or describe their issue.
 
 ### Step 3: Follow-Up
 
-After providing the fix, ask the user if the solution worked or if they need further assistance.
+Use **AskUserQuestion** for follow-up:
+
+```
+Did that fix the problem?
+
+- Option A: Yes, resolved — the fix worked
+- Option B: No, still broken — I need further assistance
+```

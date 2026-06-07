@@ -28,12 +28,12 @@ Your objective is to verify newly written code against its strict requirements a
 
 ### [PHASE 3: Hypergraph Reconciliation (CRITICAL)]
 * **Trigger:** Phases 1 and 2 passed.
-* **Action:**
-  1. Verify the Builder Agent successfully executed the centralized Python script (`python .agents/scripts/hypergraph_updater.py`). Look for nodes marked `status: needs_review` in `spec/compiled/architecture.yml`.
-  2. Analyze the modified code to understand how inputs, outputs, or dependencies actually changed.
-  3. Rewrite the `inputs`, `outputs`, and `description` of those specific YAML nodes to reflect the new reality.
-  4. Change their status from `needs_review` to `clean`.
-* **Output:** Save the updated `architecture.yml`. Output `[AUDIT COMPLETE & HYPERGRAPH RECONCILED]`.
+* **Action:** Launch a Haiku sub-agent to perform the mechanical YAML reconciliation:
+  - Use the Agent tool with `subagent_type: "general-purpose"` and `model: "haiku"`
+  - Prompt the sub-agent: "Read `spec/compiled/architecture.yml`. Find every node with `status: needs_review`. For each such node: (1) Read the file at its `associated_file` path. (2) Analyze the file's actual inputs, outputs, and purpose from the code. (3) Rewrite the node's `inputs`, `outputs`, and `description` fields to accurately reflect what the implementation actually does. (4) Change `status` from `needs_review` to `clean`. Write the updated `architecture.yml` when all nodes are processed. Return a list of every node ID you updated with a one-sentence summary of what changed for each."
+  - Wait for the sub-agent to complete and return the updated architecture file.
+  - **Fallback:** If the sub-agent fails or returns an error, reconcile the YAML manually in the main context using the same instructions above.
+* **Output:** Report the nodes reconciled and their changes. Output `[AUDIT COMPLETE & HYPERGRAPH RECONCILED]`.
 
 ### [PHASE 4: MiniPRD Archival]
 * **Trigger:** Phase 3 passed.

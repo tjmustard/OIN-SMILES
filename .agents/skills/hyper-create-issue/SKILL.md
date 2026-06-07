@@ -16,9 +16,29 @@ This skill captures a bug, feature request, or improvement as a complete, well-s
 ## How to use it
 
 1. **Ask Targeted Questions**
-   - Be concise — the user is mid-flow. Ask only what's needed to fill gaps.
-   - Usually need: what's the issue/feature, current behavior vs. desired behavior, type (bug/feature/improvement) and priority if not obvious.
-   - Keep it to one message with 2–3 targeted questions max. Do not do multiple back-and-forths.
+   The user is mid-flow — be concise. Use **AskUserQuestion** to collect issue type and priority without multiple back-and-forths:
+
+   ```
+   What type of issue is this?
+
+   - Option A: Bug — something is broken or behaving incorrectly
+   - Option B: Feature request — new functionality desired
+   - Option C: Documentation — docs are missing or incorrect
+   - Option D: Chore / maintenance — tech debt, refactor, or infra work
+   ```
+
+   Then use **AskUserQuestion** for priority (if not obvious from context):
+
+   ```
+   What priority should this issue have?
+
+   - Option A: Critical — blocking, needs immediate attention
+   - Option B: High — important, should be addressed soon
+   - Option C: Medium — normal backlog item
+   - Option D: Low — nice-to-have, no urgency
+   ```
+
+   For any remaining gaps (current vs. desired behavior, specific symptoms), ask inline in the same message.
 
 2. **Search for Context**
    - Check `spec/compiled/architecture.yml` to identify the specific `node_id`s that this issue will affect.

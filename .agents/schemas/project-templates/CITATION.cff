@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: >-
+  If you use {{PROJECT_NAME}} in your research or reference it in a paper,
+  please cite it using the metadata below.
+type: software
+title: "{{PROJECT_NAME}}"
+abstract: >-
+  {{PROJECT_DESCRIPTION}}
+authors:
+  - given-names: {{AUTHOR_NAME}}
+    family-names: ""
+    alias: {{GITHUB_USERNAME}}
+repository-code: "https://github.com/{{GITHUB_USERNAME}}/{{REPO_NAME}}"
+license: MIT
+version: "0.1.0"
+date-released: "YYYY-MM-DD"
+keywords:
+  - {{PROJECT_NAME}}

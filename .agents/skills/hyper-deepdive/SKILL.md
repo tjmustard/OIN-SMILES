@@ -38,5 +38,13 @@ This skill temporarily pauses the broader development plan and exhaustively rese
    - **Relevance**: How this applies to the current project/decision
 
 5. **Integrate Findings**
-   - Once the deep dive is complete, ask the user: "Would you like to integrate any of these findings into the Living Master Plan or the current specification?"
-   - If yes, update the relevant memory or spec files accordingly.
+   - Once the deep dive is complete, use **AskUserQuestion**:
+
+     ```
+     Would you like to integrate any of these findings into the Living Master Plan or the current specification?
+
+     - Option A: Yes — integrate findings (update activeContext.md and/or the relevant spec)
+     - Option B: No — keep as research only (leave the findings as a standalone artifact)
+     ```
+
+   - If the user selects Option A, update the relevant memory or spec files accordingly.

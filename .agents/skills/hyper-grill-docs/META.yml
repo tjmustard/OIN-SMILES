@@ -1,0 +1,9 @@
+name: grill-docs
+description: Domain sharpening session — updates CONTEXT.md and ADRs inline as decisions crystallise.
+assigned_model: sonnet
+model_version: "claude-sonnet-4-6"
+max_thinking_tokens: 8000
+reasoning_intensity: high
+output_determinism: medium
+cost_sensitivity: medium
+latency_critical: false
