@@ -16,5 +16,17 @@
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "basename \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\""
+          }
+        ]
+      }
+    ]
   }
 }
