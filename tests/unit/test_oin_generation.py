@@ -64,7 +64,9 @@ class TestOINParser(unittest.TestCase):
         # Multi-atom eta slots: ferrocene rings with heading atoms carrying
         # winding ('>' or '<') and trailing atoms carrying None. Non-heading atoms
         # must not clobber the heading atom's winding.
-        oin = "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        oin = (
+            "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        )
         parser = OINParser()
         parsed = parser.parse(oin)
 
