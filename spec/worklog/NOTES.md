@@ -22,10 +22,11 @@ Test baseline (2026-07-02, before any fixes):
 - Integration dir (`tests/integration`) aborts on discovery (HACF framework test
   requires Python 3.11) — **out of scope by decision**
 
-**Current status (2026-07-03, after TASK-01/02/03/04/10 + Stereo Phase 1): GREEN.**
+**Current status (2026-07-03, after TASK-01/02/03/04/10/20 + Stereo Phase 1): GREEN.**
 - `uv run python -m unittest discover tests` → 55 run, OK
-- `uv run python -m unittest discover tests/unit` → 63 run, OK (skipped=1,
-  expected failures=1) — includes Phase-1 winding tests + 3 stereo diagnostics
+- `uv run python -m unittest discover tests/unit` → 65 run, OK (skipped=1,
+  expected failures=3) — includes Phase-1 winding tests + 5 stereo diagnostics
+  (3 chiral/haptic from TASK-10 + 2 new P-stereocenter tests from TASK-20)
 - Note: root discovery does not recurse into `tests/unit` (no `__init__.py`
   there — see AGENTS.md); run both commands to cover everything.
 - Committed (main, ahead of origin, NOT pushed): 6950bff (tests green),
@@ -52,10 +53,13 @@ use `--no-verify` only while the hook is red, and say so in the message.
   `spec/archive/MiniPRD_WindingPlumbing_Phase1_AUDITED.md`. Suite: 63 unit
   tests OK (1 skip, 1 expected failure = the haptic diagnostic, which stays
   red until Phase 3 *uses* the winding).
-- **Next up: Phase 3 (haptic face control) or the Phase-2 prerequisite fixture**
-  (a genuine P/N-stereocenter complex — see roadmap Phase 0 + Fixtures).
-  Phase 3 can start now that winding reaches `ParsedOIN.winding_by_slot`;
-  needs its own MiniPRD via the HACF chain.
+- **TASK-20 is DONE** (2026-07-03): fixture `Rh-RR-DIPAMP-Cl2.xyz` provided,
+  diagnostic confirms a real, encoding-side gap (Zone-A P/N stripping) that
+  collapses Phase 2 into Phase 4 — see roadmap and Log entry.
+- **Next up: Phase 3 (haptic face control) or Phase 4 (Zone-A P/N stereo +
+  builder decision)** — both need their own MiniPRD via the HACF chain. Phase
+  3 can start now that winding reaches `ParsedOIN.winding_by_slot`. Phase 2 as
+  originally scoped is no longer a standalone next step (see TASK-20 finding).
 
 | Task | Status | Model tier | Depends on |
 |---|---|---|---|
@@ -65,9 +69,19 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | TASK-04 v3.7 descriptor-free metal token | DONE | Sonnet | TASK-01 |
 | TASK-10 stereo diagnostic round-trips | DONE | Sonnet | TASK-04 |
 | Stereo Phase 1 (winding plumbing) | DONE (executed + audited + review fix) | Sonnet/Opus | TASK-10 |
-| TASK-20 Phase 2 diagnostic | BLOCKED on human fixture (see spec) | Sonnet + human | Phase 1 |
-| Stereo Phase 2 fix | CONDITIONAL — only if TASK-20 fails | Sonnet/Opus | TASK-20 |
-| Stereo Phases 3–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | Phase 2 |
+| TASK-20 Phase 2 diagnostic | DONE — real gap confirmed (encoding-side, collapses into Phase 4) | Sonnet + human | Phase 1 |
+| Stereo Phase 2 fix | SUPERSEDED — folds into Phase 4 (Zone-A decision) | Sonnet/Opus | TASK-20 |
+| Stereo Phase 3 (haptic face) | NEXT (parallel) — HACF chain then Sonnet executor | Fable/Opus → Sonnet | Phase 1 ✓ |
+| Stereo Phase 4 (Zone-A P/N encoding) | NEXT (parallel) — DESIGN CONSULT first (`PHASE4-design-brief.md`) | Fable/Opus | TASK-20 |
+
+**Parallel plan (2026-07-03):** Phase 3 and Phase 4 run in separate sessions
+concurrently — they don't conflict (Phase 3 = code in `molassembler_adapter.py`;
+Phase 4 = design discussion touching no code yet, eventual impl in
+`core/chirality.py` + OIN format). Both may append to this NOTES.md Log;
+reconcile if concurrent. Phase 3 = familiar HACF-chain→Sonnet flow, acceptance
+= the ferrocene haptic diagnostic. Phase 4 = start with `/hyper-consult-cto`
+seeded by `PHASE4-design-brief.md` to pick a representation, THEN
+`/hyper-architect`.
 
 ## Decisions (append-only)
 
@@ -105,6 +119,23 @@ use `--no-verify` only while the hook is red, and say so in the message.
 - **D-5 (2026-07-02) — HACF framework tests excluded.** The failing
   `tests/integration` items (Python 3.11 gate, pytest-style fixtures) test the
   HACF toolchain, not this library.
+- **D-6 (2026-07-03, from TASK-20) — metal-bound P/N stereo is dropped at
+  ENCODING, and the information is recoverable, not lost.** `recover()`
+  (`core/chirality.py:155`) strips the tag for any P/N with `total_degree < 4`
+  (always true for a metal binder once the metal is excluded from the
+  fragment), and does so BEFORE the branch that would use `_OIN_CIPCode`.
+  But `_OIN_CIPCode` is computed by `CIPAssigner` from the intact 3D structure
+  (metal present) and is still attached to the atom — the strip just discards
+  it. `PseudoAtomStrategy` (`chirality.py:22`, currently dead code) was
+  purpose-built to backfill the metal as a wildcard 4th substituent for exactly
+  this case. **Implication:** Phase 2 (verify @/@@ through generation) has
+  nothing to test because no @/@@ reaches generation; it folds into Phase 4.
+  Phase 4 is a FORMAT/ENCODING decision (how does OIN represent a metal-bound
+  stereocenter — revive the wildcard-metal pseudo-atom, a lone-pair `[P@]`
+  3-neighbour SMILES convention, or a separate annotation like the metal
+  isomer's slot ordering?), NOT a generation-side code fix, and it touches
+  `core/chirality.py` (encode side), not just the builder. Because it changes
+  the OIN spec, start Phase 4 with a design consult, not `/hyper-architect`.
 
 ## Log
 
@@ -441,3 +472,64 @@ use `--no-verify` only while the hook is red, and say so in the message.
   winding is now available at `ParsedOIN.winding_by_slot`. Or build the
   Phase-2 P/N-stereocenter fixture first. Do NOT get entangled in the pending
   ruff/HACF tree churn; let that session land it.
+
+### 2026-07-03 — TASK-20 Phase 2 diagnostic: genuine P-stereocenter fixture (Sonnet)
+- **Fixture (human-provided this session):** `tests/fixtures/Rh-RR-DIPAMP-Cl2.xyz`
+  — RhCl2(DIPAMP), (R,R) at both P atoms (phenyl / 2-methoxyphenyl /
+  ethylene-bridge / metal substituents), built independently in Avogadro (not
+  chemically balanced/validated, built for round-trip diagnostic purposes
+  only — not derived from any oinsmiles output). Also copied to
+  `tests/integration/Rh-RR-DIPAMP-Cl2.xyz` per the dual-directory convention
+  already used for BDPP/BDNN/BINAP. Golden OIN written to
+  `tests/candidate_outputs/Rh-RR-DIPAMP-Cl2_oin.txt`.
+- Added two tests to `tests/unit/test_stereo_roundtrip_diagnostics.py`
+  (`@unittest.expectedFailure`, no `src/` changes), per TASK-20 spec:
+  `test_p_stereocenter_roundtrip` and `test_p_stereocenter_flip_inverts_cip`.
+- **Per-test diagnostic outcomes — BOTH FAIL, at the SANITY assertion, not
+  the round-trip assertion:**
+  - `XYZToSMILES().convert()` on the fixture produces
+    `[Rh_SPL].Cc1ccccc1P{0}(CCP{1}(c1ccccc1)c1ccccc1C)c1ccccc1.[Cl]{2}.[Cl]{3}`
+    — **no `@`/`@@` anywhere on either P atom**, despite both P atoms being
+    genuine CIP stereocentres in the input 3D geometry.
+  - Root cause: `ChiralityRecoveryUtility.recover()`
+    (`src/oinsmiles/core/chirality.py:155-158`) unconditionally clears the
+    chiral tag on any P/N atom with `total_degree < 4` in the
+    **post-fragmentation** ligand mol ("Zone A"). OIN's ligand-fragment SMILES
+    excludes the metal by construction, so **any P/N atom that binds the
+    metal directly always has exactly 3 neighbours in the fragment — it is
+    ALWAYS Zone A, ALWAYS stripped, for every possible fixture.** This is not
+    fixable by building a better fixture; it is a property of the encoding
+    scheme as implemented.
+  - `PseudoAtomStrategy` (`chirality.py:22`) exists specifically to backfill
+    a 4th (wildcard) substituent for this case, but repo-wide grep confirms
+    `strip_pseudo_atoms()` is never called anywhere outside its own
+    definition — it is dead code today, wired up in neither `xyz2mol.py` nor
+    anywhere else.
+  - `test_p_stereocenter_roundtrip` fails at
+    `self.assertIn("[P@", oin1, ...)` before the generation step ever runs —
+    OIN(1) already has nothing to lose.
+  - `test_p_stereocenter_flip_inverts_cip` fails at the same precondition:
+    no `@`/`@@` exists on the P atom to flip into a twin input, so the
+    generation-side flip experiment (`OIN3DGenerator.generate()` +
+    `AssignStereochemistryFrom3D` CIP-oracle comparison, per roadmap H-1) can
+    never even be attempted. Both are the same encoding gap surfacing twice,
+    not two independent failure modes.
+- **Phase-2 decision this implies:** Phase 2 ("verify/enforce ligand `@/@@`
+  through ETKDG") **cannot be validated as scoped**, because its own
+  prerequisite fixture (a P/N atom with three distinct substituents *and* the
+  metal bond) is definitionally a Zone-A atom — the exact case
+  `ROADMAP-stereo.md` Phase 4 already identifies as cleared at the
+  **encoding** (XYZ→OIN) stage, before generation ever runs. Phase 2's
+  generation-side ETKDG experiment is inapplicable until Phase 4 first
+  decides how (or whether) Zone-A stereocenters get encoded at all — Phase 2
+  and Phase 4 collapse into one decision point. Updated
+  `ROADMAP-stereo.md` accordingly.
+- **Acceptance results:**
+  - `uv run python -m unittest tests.unit.test_stereo_roundtrip_diagnostics -v`
+    → `Ran 5 tests in 2.372s` / `OK (expected failures=3)` ✓
+  - `uv run python -m unittest discover tests/unit` → `Ran 65 tests in 6.812s`
+    / `OK (skipped=1, expected failures=3)` ✓
+- No source under `src/` modified. No git commit made (per task
+  instructions). `Status:` in
+  `TASK-20-phase2-pn-stereocenter-diagnostic.md` set to
+  `DONE — real gap confirmed (encoding-side, collapses into Phase 4)`.
