@@ -31,10 +31,25 @@ fixing our own information flow would be premature.
 
 ## Phases
 
-### Phase 0 — Diagnostics (TASK-10, lightweight task, no MiniPRD)
-Three `expectedFailure` round-trip tests (chiral-P BDPP, chiral-N BDNN,
-ferrocene winding). Output: concrete mismatch data per pathway. Each later
-phase flips its test to a hard assert.
+### Phase 0 — Diagnostics (TASK-10) — DONE 2026-07-03
+Three round-trip tests in `tests/unit/test_stereo_roundtrip_diagnostics.py`.
+Results, which **revise the plan below**:
+- **Ligand `@/@@` on the primary (template) path is NOT lost** — chiral-P
+  (BDPP) and chiral-N (BDNN) round-trips passed byte-for-byte, so those two
+  tests are now plain passing tests, not `expectedFailure`.
+- **BUT the BDPP/BDNN fixtures don't test what their names imply.** Their
+  stereocenters are the **backbone carbons** (`C[C@@H](C[C@H](C)...`); the P
+  and N atoms each carry two identical phenyl groups and are NOT CIP centers.
+  So "chiral phosphine/amine generation" is still **unverified** — we proved
+  carbon `@/@@` survives, not P/N. **A dedicated fixture where P (or N) is
+  itself the stereocenter (three distinct substituents) is required** before
+  Phases 2/4 can be validated. This is the single most important Phase-0
+  finding.
+- **Winding IS lost (haptic test failed as expected).** Flipping ferrocene
+  ring-0 `{0>}`→`{0<}` produced byte-identical 3D output either way:
+  generation ignores input winding and re-derives it from geometry, because
+  `SLOT_REGEX` (`oin/inline.py:44`) drops the `>`/`<` suffix. This is the real
+  live gap; that test stays `expectedFailure` until Phase 3.
 
 ### Phase 1 — Preserve the signal (plumbing, MiniPRD)
 - `SLOT_REGEX` → `\{(\d+)([><])?\}` (capture winding).
@@ -46,8 +61,14 @@ phase flips its test to a hard assert.
   new unit tests for the parse plumbing.
 
 ### Phase 2 — Verify/enforce ligand `@/@@` through ETKDG (MiniPRD)
-- Experiment first: generate from BDNN OIN and from its `@↔@@`-flipped twin
-  via `_template_generate`; assign CIP from the resulting 3D
+- **Phase-0 update:** carbon-centered `@/@@` already survives the template
+  path (BDPP/BDNN pass). The open question narrowed to **P/N-atom-centered**
+  chirality, which no current fixture exercises. **Prerequisite: build a
+  fixture where the P or N atom is a genuine CIP stereocenter** (e.g. a
+  P-stereogenic phosphine with three different substituents + the metal bond),
+  with an RDKit-CIP-from-3D oracle, THEN run the flip experiment on it.
+- Experiment: generate from the new fixture's OIN and from its `@↔@@`-flipped
+  twin via `_template_generate`; assign CIP from the resulting 3D
   (`AssignStereochemistryFrom3D`) and check the codes are opposite.
 - If tags are dropped: fix at the fragment-SMILES→mol boundary (where
   `_stitch_fragment` builds its embed mol); if ETKDG ignores them: post-embed
@@ -81,8 +102,14 @@ phase flips its test to a hard assert.
 
 ## Fixtures & oracles
 
-- `tests/fixtures/PdCl2-RR-BDPP.xyz` (P-chiral), `PdCl2-RR-BDNN.xyz`
-  (N-chiral), `PdCl2-R-BINAP.xyz` (axial; end-state marker is the skipped
+- `tests/fixtures/PdCl2-RR-BDPP.xyz`, `PdCl2-RR-BDNN.xyz` — **misleadingly
+  named**: the "RR" stereocenters are the backbone CARBONS, not the P/N atoms
+  (which carry two identical phenyls → not CIP centers). Useful as
+  carbon-chirality pass-through fixtures only. **Do not treat as P/N-center
+  coverage** (Phase-0 finding, 2026-07-03).
+- **MISSING fixture (build for Phase 2):** a complex where the P or N atom is
+  itself a CIP stereocenter (three distinct substituents).
+- `PdCl2-R-BINAP.xyz` (axial; end-state marker is the skipped
   `tests/unit/test_axial_chiral.py` test), `ferrocene.xyz`, `fac/mer_irppy3.xyz`.
 - Golden strings: `tests/candidate_outputs/*.txt|.smi` (v3.7 style after
   TASK-04).
