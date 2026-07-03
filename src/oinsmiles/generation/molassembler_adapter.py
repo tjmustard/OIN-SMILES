@@ -1575,6 +1575,15 @@ def _stitch_fragment(
     # alignment with a large bite-distance mismatch (e.g. ppy: free C–N ~4.5 Å
     # vs chelated ~2.83 Å) folds inner ring atoms into the metal sphere, causing
     # XYZToSMILES to misidentify the topology on the round-trip.
+    #
+    # Also reject on non-binding H atoms within 1.8 Å of the metal centre.
+    # A genuine metal hydride's H is a BINDING atom (excluded from this check
+    # by definition), so hydride complexes are unaffected. A non-binding H
+    # this close to the metal is a spurious clash (e.g. DIPAMP: isolated
+    # P···P 4.408 Å vs target 3.182 Å bite-delta of 1.226 Å folds backbone H
+    # atoms to 1.39–1.65 Å) that gets misperceived as a Rh–H hydride on the
+    # XYZ→OIN round-trip; the DG fallback places these H atoms cleanly
+    # (~3.19 Å) instead.
     if len(binding_idxs) >= 2:
         _binding_set = set(binding_idxs)
         _nb_heavy_idxs = [i for i in range(n_atoms) if i not in _binding_set and symbols[i] != "H"]
@@ -1582,6 +1591,12 @@ def _stitch_fragment(
             _min_d_metal = float(np.linalg.norm(positions_aligned[_nb_heavy_idxs], axis=1).min())
             if _min_d_metal < 1.7:
                 return None  # Bidentate distortion too severe → fall back to DG
+
+        _nb_h_idxs = [i for i in range(n_atoms) if i not in _binding_set and symbols[i] == "H"]
+        if _nb_h_idxs:
+            _min_d_metal_h = float(np.linalg.norm(positions_aligned[_nb_h_idxs], axis=1).min())
+            if _min_d_metal_h < 1.8:
+                return None  # Non-binding H too close to metal → fall back to DG
 
     return positions_aligned, symbols, mol
 

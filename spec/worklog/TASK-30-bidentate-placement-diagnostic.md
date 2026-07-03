@@ -1,6 +1,19 @@
 # TASK-30: Bidentate/polydentate placement fidelity — diagnostic + decision
 
-Status: TODO
+Status: DONE (2026-07-03, Sonnet) — **MIX, resolved further than "likely":**
+root cause is **B** (genuine conformation mismatch — empirically confirmed,
+0/72 swept angles reach a safe H-to-metal distance, and the production
+algorithm's chosen angle already IS the global optimum of the full 360°
+sweep, so this is NOT an objective/grid bug). BUT the required fix is
+**cheap**, not the expensive "constrained re-embed" — forcing the DG
+fallback (already-existing code) for DIPAMP produces a clean chelate AND
+a byte-identical round trip with zero new engineering. So the actionable
+fix is B's other listed option ("make DG fallback the path for
+incompatible-bite polydentates"), achieved via a lightweight guard change
+(element-aware/H-inclusive `:1578` check, or a tighter reuse of the
+org-vs-target bite-distance delta already computed at `:1497`) — Sonnet-tier,
+NOT a full HACF MiniPRD. Full measured numbers: see NOTES.md Log,
+2026-07-03 "TASK-30 diagnostic" entry.
 Depends on: none (independent of the stereo roadmap; unblocks the two xfail'd
 round-trips `test_p_stereocenter_roundtrip` + `test_haptic_face_golden_match`)
 Suggested model: Sonnet (diagnostic needs measurement care)
