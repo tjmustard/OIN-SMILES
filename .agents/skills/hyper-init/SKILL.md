@@ -41,12 +41,34 @@ Once the variables are collected, read the generic templates from the `.agents/s
 - `DEVELOPMENT.md`
 - `README.md`
 - `SECURITY.md`
+- `pyproject.toml`
+
+---
+
+## Step 2b — Scaffold `pyproject.toml`
+
+Read `.agents/schemas/project-templates/pyproject.toml` and substitute:
+
+- `{{REPO_NAME}}` → the machine-readable repository name from Step 1
+- `{{PROJECT_DESCRIPTION}}` → the project description from Step 1
+- `{{PACKAGE_NAME}}` → `{{REPO_NAME}}` with hyphens replaced by underscores (e.g., `my-project` → `my_project`)
+
+Write the result to `pyproject.toml` in the project root.
+
+Then run:
+
+```bash
+uv add --dev ruff
+uv add --dev pytest
+```
+
+This installs the required dev tooling and generates `uv.lock`.
 
 ---
 
 ## Step 3 — Template Replacement and Output
 
-For each file:
+For each of the 7 documentation files (not `pyproject.toml` — already handled above):
 1. Replace all placeholder variables (e.g., `{{PROJECT_NAME}}`) with the user's provided answers.
 2. Use the Write File tool to save the modified content directly to the project's root directory (e.g., `/README.md`, `/SECURITY.md`).
 
@@ -54,4 +76,4 @@ For each file:
 
 ## Step 4 — Verify Output
 
-Run a brief `ls -la` in the root directory to confirm the 7 files have been created successfully. Inform the user that scaffolding is complete and point them to `/hyper-document` for any future documentation updates.
+Run a brief `ls -la` in the root directory to confirm all 8 files have been created successfully (`pyproject.toml` + the 7 documentation files). Inform the user that scaffolding is complete and point them to `/hyper-document` for any future documentation updates.
