@@ -22,12 +22,18 @@ Test baseline (2026-07-02, before any fixes):
 - Integration dir (`tests/integration`) aborts on discovery (HACF framework test
   requires Python 3.11) — **out of scope by decision**
 
-**Current status (2026-07-03, after TASK-01/02/03): ALL GREEN.**
+**Current status (2026-07-03, after TASK-01/02/03/04/10): GREEN + v3.7 shipped.**
 - `uv run python -m unittest discover tests` → 55 run, OK
-- `uv run python -m unittest discover tests/unit` → 52 run, OK (skipped=1)
+- `uv run python -m unittest discover tests/unit` → 55 run, OK (skipped=1,
+  expected failures=1) — includes the 3 new stereo diagnostics
 - Note: root discovery does not recurse into `tests/unit` (no `__init__.py`
   there — see AGENTS.md); run both commands to cover everything.
-- Changes uncommitted as of this entry. Next up: TASK-04 (v3.7 revert).
+- Committed: 6950bff (tests green), d691a5f (v3.7). TASK-10 + roadmap update
+  committed after.
+- **Next up: Phase 1 of ROADMAP-stereo.md (winding plumbing) — needs a HACF
+  MiniPRD first.** Phase-0 changed the priorities: winding loss is the real
+  live gap; ligand carbon `@/@@` already survives; genuine P/N-center coverage
+  needs a NEW fixture before Phase 2 (see roadmap Phase 0 + Fixtures).
 
 | Task | Status | Model tier | Depends on |
 |---|---|---|---|
@@ -35,7 +41,7 @@ Test baseline (2026-07-02, before any fixes):
 | TASK-02 vertex-index expectations | DONE | Haiku | — |
 | TASK-03 GeneratedStructure assert | DONE | Haiku | — |
 | TASK-04 v3.7 descriptor-free metal token | DONE | Sonnet | TASK-01 |
-| TASK-10 stereo diagnostic round-trips | TODO | Sonnet | TASK-04 |
+| TASK-10 stereo diagnostic round-trips | DONE | Sonnet | TASK-04 |
 | Stereo Phases 1–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | TASK-10 |
 
 ## Decisions (append-only)
@@ -192,3 +198,54 @@ Test baseline (2026-07-02, before any fixes):
   can reconcile.
 - No git commit made (per task instructions). `Status:` in
   `TASK-04-v37-descriptor-free-metal-token.md` set to `DONE`.
+
+### 2026-07-03 — TASK-10 stereo diagnostic round-trips (Sonnet)
+- Created `tests/unit/test_stereo_roundtrip_diagnostics.py` (new file only;
+  no `src/` changes) with `TestStereoRoundTripDiagnostics` — three round-trip
+  tests (XYZ → OIN(1) → `OIN3DGenerator.generate()` → temp XYZ → OIN(2))
+  measuring stereo loss on the OIN→XYZ generation side, per the task spec.
+- **Per-test diagnostic outcomes:**
+  1. `test_chiral_p_roundtrip` (fixture `PdCl2-RR-BDPP.xyz`) —
+     **UNEXPECTEDLY PASSED.** OIN(1) == OIN(2) verbatim:
+     `[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}`
+     for both. Per task point 4, converted this test from
+     `@unittest.expectedFailure` to a plain passing test (decorator removed,
+     docstring/comment updated noting the 2026-07-03 pass and root cause: in
+     this fixture the chirality is carried by backbone **carbon** atoms, not
+     the P atoms themselves (P atoms are not CIP stereocentres — both carry
+     two identical phenyl groups per the fixture's own docstring in
+     `test_chiral_p.py`), and ligand `@/@@` tags pass straight through SMILES
+     embedding during generation rather than being re-derived from 3D
+     geometry, so nothing is lost for this particular fixture. **Roadmap
+     implication:** Phase 1/2/4 can be downgraded to "add hard test" for this
+     specific pathway (now done); true P-atom-as-stereocentre coverage still
+     needs a dedicated fixture where P itself is a CIP center.
+  2. `test_chiral_n_roundtrip` (fixture `PdCl2-RR-BDNN.xyz`) —
+     **UNEXPECTEDLY PASSED**, same pattern: OIN(1) == OIN(2) verbatim
+     (`[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}`).
+     Converted to a plain passing test for the same reason (chirality lives
+     on backbone C atoms; N atoms are tertiary amines, not CIP stereocentres).
+  3. `test_haptic_face_winding` (fixture `ferrocene_oin.txt`, ring 0 winding
+     flipped `{0>}` → `{0<}`) — **FAILED AS EXPECTED** (kept
+     `@unittest.expectedFailure`). Exact mismatch captured:
+     - IN A:  `[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1`
+     - IN B:  `[Fe_LIN].[cH]{0<}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1`
+     - OUT A: `[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1`
+     - OUT B: `[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1`
+     - OUT A and OUT B are **byte-identical** — generation ignores the input
+       winding direction entirely and always re-derives a fixed winding
+       (`{0>}`, `{1<}`) from 3D geometry alone, regardless of what the input
+       OIN specified. Confirms the spec's root-cause description: `SLOT_REGEX`
+       (`src/oinsmiles/oin/inline.py:44`) only captures the numeric slot rank
+       and discards the `>`/`<` direction suffix during parsing, so flipped
+       input winding never reaches generation. This is genuine, reproducible
+       diagnostic data for Phase 3 — decorator left as `expectedFailure`.
+- **Acceptance results:**
+  - `uv run python -m unittest tests.unit.test_stereo_roundtrip_diagnostics -v`
+    → `Ran 3 tests in ~2s` / `OK (expected failures=1)` (2 passed as plain
+    tests, 1 expected failure) ✓
+  - `uv run python -m unittest discover tests/unit 2>&1 | tail -3` →
+    `Ran 55 tests in 4.910s` / `OK (skipped=1, expected failures=1)` ✓
+- No source under `src/` modified. No git commit made (per task
+  instructions). `Status:` in `TASK-10-stereo-diagnostic-roundtrips.md` set
+  to `DONE`.
