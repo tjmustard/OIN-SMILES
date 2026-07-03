@@ -1,6 +1,7 @@
 # Phase 4 design brief — encoding metal-bound (Zone-A) P/N stereocenters
 
-Status: DESIGN CONSULT needed (not a coding task yet)
+Status: DECIDED 2026-07-03 — see `PHASE4-decision.md` (Option A for P;
+N deferred to a future Option-C marker). Next: `/hyper-architect`.
 Use this to seed a `/hyper-consult-cto` or `/hyper-co-research` session. The
 output should be a DECISION on representation, which then becomes a MiniPRD via
 `/hyper-architect`. Do NOT jump to implementation from this brief.
