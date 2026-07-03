@@ -91,12 +91,23 @@ Honest state:
   symmetry-impossibility skip (symmetric ring → winding not observable).
 - **KNOWN-GAP (honest, xfail'd, NOT a regression):** the full byte-stable
   round-trip fails for both hard fixtures — `test_p_stereocenter_roundtrip`
-  (DIPAMP) and `test_haptic_face_golden_match` (halide-ferrocene). Cause is
-  PRE-EXISTING generation-fidelity bugs (`generate()` on complex bidentate /
-  substituted-eta produces Cl→H, `CC`→`C=C`, `SPL`→`SPY` corruption unrelated
-  to the stereo tag). The encoding carries the stereo and the generator gets
-  the P/ring chirality right; end-to-end structural fidelity on these hard
-  complexes is the next real target.
+  (DIPAMP) and `test_haptic_face_golden_match` (halide-ferrocene). **Root cause
+  pinned 2026-07-03 (Fable) — corrects an earlier mischaracterization:** it is
+  NOT atom corruption and NOT molassembler. Element census of generated DIPAMP
+  is IDENTICAL to the fixture (28 C, 2 P, 28 H, 1 Rh, 2 Cl) — nothing is lost.
+  The bug is PLACEMENT GEOMETRY in OIN's own template path: `_stitch_fragment`
+  (`molassembler_adapter.py:1508`) aligns a bidentate ligand from only 2 bite
+  vectors, which underdetermines the 3D rotation (scipy `align_vectors` warns
+  "poorly defined"); DIPAMP lands at a bad angle and collides with the metal
+  (3 ligand H atoms end up 1.4–1.65 Å from Rh; P donors pushed out to 2.72 Å).
+  The string diffs (`Cl`/`H` slot swaps, `C=C`, `SPL`→`SPY`) are a DOWNSTREAM
+  symptom — XYZ→OIN faithfully re-encoding a geometrically scrambled structure.
+  molassembler's DG worker (`:2215`) is not even invoked here (template path
+  returns a mol). Next real target: **polydentate Kabsch/bite-axis placement
+  in `_stitch_fragment`** — a geometry-quality bug predating the stereo work.
+  The encoding carries the stereo and the generator gets the P/ring chirality
+  right; only end-to-end structural fidelity on chelate/substituted-eta
+  complexes remains.
 - Zone-A **N** deferred: RDKit clears trivalent `[N@]` (amine inversion), so an
   in-fragment tag is impossible — needs an Option-C out-of-band marker (future).
 - Decision + spikes: `PHASE4-decision.md`. Specs archived under
