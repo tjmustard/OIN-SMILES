@@ -11,14 +11,9 @@ Covers:
   - Pre-merge backup restore on validation failure
 """
 
-import fcntl
-import os
 import sys
-import shutil
 import threading
-import time
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 import yaml
@@ -29,10 +24,10 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 import semantic_graph_merger as sgm  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_yaml(nodes):
     """Return a YAML string for a simple architecture doc."""
@@ -55,16 +50,18 @@ def _node(id_, description="desc", depends_on=None):
 # Test 1 — Routing guard: architecture prefix routes to merger
 # ---------------------------------------------------------------------------
 
+
 def test_routing_guard_architecture_prefix():
     """File named architecture_v2.yml should pass _is_valid_architecture_file."""
     assert sgm._is_valid_architecture_file("architecture_v2.yml") is True
     assert sgm._is_valid_architecture_file("ARCHITECTURE_GRAPH.YML") is True  # case-insensitive
-    assert sgm._is_valid_architecture_file("config.py") is False               # negative case
+    assert sgm._is_valid_architecture_file("config.py") is False  # negative case
 
 
 # ---------------------------------------------------------------------------
 # Test 2 — Routing guard: .yaml extension routes to merger
 # ---------------------------------------------------------------------------
+
 
 def test_routing_guard_yaml_extension():
     """Any .yaml file should pass the routing guard."""
@@ -75,6 +72,7 @@ def test_routing_guard_yaml_extension():
 # ---------------------------------------------------------------------------
 # Test 3 — Duplicate node (identical): silent dedup
 # ---------------------------------------------------------------------------
+
 
 def test_duplicate_node_identical_dedup(tmp_path):
     node = _node("my_module", description="same")
@@ -96,6 +94,7 @@ def test_duplicate_node_identical_dedup(tmp_path):
 # ---------------------------------------------------------------------------
 # Test 4 — Duplicate node (differing): REBASE_CONFLICT + output unmodified
 # ---------------------------------------------------------------------------
+
 
 def test_duplicate_node_differing_rebase_conflict(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
@@ -134,6 +133,7 @@ def test_duplicate_node_differing_rebase_conflict(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 5 — Post-merge schema validation: duplicate IDs
 # ---------------------------------------------------------------------------
+
 
 def test_schema_validation_duplicate_ids(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
@@ -177,6 +177,7 @@ def test_schema_validation_duplicate_ids(tmp_path, monkeypatch):
 # Test 6 — Post-merge schema validation: missing depends_on reference
 # ---------------------------------------------------------------------------
 
+
 def test_schema_validation_missing_depends_on(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     fw_path = tmp_path / "spec" / "active" / "FAILED_WORKFLOWS.md"
@@ -205,6 +206,7 @@ def test_schema_validation_missing_depends_on(tmp_path, monkeypatch):
 # Test 7 — Provenance staging lifecycle
 # ---------------------------------------------------------------------------
 
+
 def test_provenance_staging_lifecycle(tmp_path):
     """
     Verify that _write_provenance_staging() (from hyper_orchestrator) creates
@@ -222,9 +224,7 @@ def test_provenance_staging_lifecycle(tmp_path):
 
     # Write a minimal architecture.yml with a target node
     node = {"id": "provenance_integration", "dimension": "Module", "status": "dirty"}
-    arch_path.write_text(
-        yaml.dump({"nodes": [node]}, sort_keys=False), encoding="utf-8"
-    )
+    arch_path.write_text(yaml.dump({"nodes": [node]}, sort_keys=False), encoding="utf-8")
 
     # Patch constants in orchestrator module
     original_staging = orch.PROVENANCE_STAGING_DIR
@@ -258,9 +258,7 @@ def test_provenance_staging_lifecycle(tmp_path):
         orch._merge_provenance_into_arch(branch)
 
         data = yaml.safe_load(arch_path.read_text())
-        prov_node = next(
-            (n for n in data["nodes"] if n["id"] == "provenance_integration"), None
-        )
+        prov_node = next((n for n in data["nodes"] if n["id"] == "provenance_integration"), None)
         assert prov_node is not None, "Node must exist in architecture.yml"
         assert "_provenance" in prov_node, "_provenance block must be written"
         assert prov_node["_provenance"]["api_call_id"] == "msg_test_123"
@@ -273,6 +271,7 @@ def test_provenance_staging_lifecycle(tmp_path):
 # ---------------------------------------------------------------------------
 # Test 8 — FAILED_WORKFLOWS.md 50-entry cap via semantic_graph_merger
 # ---------------------------------------------------------------------------
+
 
 def test_failed_workflows_50_entry_cap(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
@@ -315,21 +314,35 @@ def test_failed_workflows_50_entry_cap(tmp_path, monkeypatch):
 # Test 9 — Concurrent write protection
 # ---------------------------------------------------------------------------
 
+
 def test_concurrent_write_protection(tmp_path):
     """
     Two threads writing to architecture.yml via _write_yaml_locked() must
     not corrupt the file; the final result must be valid YAML.
     """
     arch = tmp_path / "architecture.yml"
-    node = {"id": "a", "dimension": "Module", "status": "clean", "edges": {"depends_on": [], "implements": []}}
+    node = {
+        "id": "a",
+        "dimension": "Module",
+        "status": "clean",
+        "edges": {"depends_on": [], "implements": []},
+    }
     arch.write_text(yaml.dump({"nodes": [node]}), encoding="utf-8")
 
     errors: list[Exception] = []
 
     def writer(node_id: str):
         try:
-            data = {"nodes": [{"id": node_id, "dimension": "Module", "status": "clean",
-                                "edges": {"depends_on": [], "implements": []}}]}
+            data = {
+                "nodes": [
+                    {
+                        "id": node_id,
+                        "dimension": "Module",
+                        "status": "clean",
+                        "edges": {"depends_on": [], "implements": []},
+                    }
+                ]
+            }
             sgm._write_yaml_locked(str(arch), data)
         except Exception as exc:
             errors.append(exc)
@@ -351,6 +364,7 @@ def test_concurrent_write_protection(tmp_path):
 # ---------------------------------------------------------------------------
 # Test 10 — Pre-merge backup restore on validation failure
 # ---------------------------------------------------------------------------
+
 
 def test_pre_merge_backup_restore(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)

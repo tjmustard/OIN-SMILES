@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""
-Model Routing Matrix
+"""Model Routing Matrix
 
 Routes skills to appropriate Claude models (Opus/Sonnet/Haiku) based on META.yml
 metadata and heuristic rules. Handles fallback, version pinning, and user overrides.
 """
 
 import os
-import yaml
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Any, Dict, Optional
+
+import yaml
 
 
 class ModelTier(Enum):
     """Available Claude model tiers."""
+
     HAIKU = "haiku"
     SONNET = "sonnet"
     OPUS = "opus"
@@ -23,6 +24,7 @@ class ModelTier(Enum):
 @dataclass
 class ModelRouterResponse:
     """Response from model routing decision."""
+
     assigned_model: str  # "opus", "sonnet", "haiku"
     model_version: str  # Full model ID: "claude-opus-4-7"
     max_thinking_tokens: int
@@ -47,20 +49,16 @@ class ModelRouter:
             return {"model_mapping": {}, "fallback": {}, "versions": {}}
 
         try:
-            with open(self.rules_path, 'r') as f:
+            with open(self.rules_path, "r") as f:
                 return yaml.safe_load(f) or {}
         except Exception as e:
             print(f"Warning: Failed to load heuristic rules: {e}")
             return {"model_mapping": {}, "fallback": {}, "versions": {}}
 
     def route(
-        self,
-        skill_name: str,
-        user_override: Optional[str] = None,
-        verbose: bool = True
+        self, skill_name: str, user_override: Optional[str] = None, verbose: bool = True
     ) -> ModelRouterResponse:
-        """
-        Route a skill to an appropriate Claude model.
+        """Route a skill to an appropriate Claude model.
 
         Args:
             skill_name: Name of skill (e.g., "hyper-execute", "hyper-architect")
@@ -96,17 +94,16 @@ class ModelRouter:
     def _route_from_metadata(self, meta_path: str, verbose: bool) -> ModelRouterResponse:
         """Route based on skill's META.yml metadata."""
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 metadata = yaml.safe_load(f) or {}
 
             assigned_model = metadata.get("assigned_model", "opus").lower()
             model_version = metadata.get(
-                "model_version",
-                self.model_mapping.get(assigned_model, {}).get("model_id", "")
+                "model_version", self.model_mapping.get(assigned_model, {}).get("model_id", "")
             )
             max_thinking = metadata.get(
                 "max_thinking_tokens",
-                self.model_mapping.get(assigned_model, {}).get("max_thinking_tokens", 1024)
+                self.model_mapping.get(assigned_model, {}).get("max_thinking_tokens", 1024),
             )
 
             # Check version compatibility
@@ -119,7 +116,7 @@ class ModelRouter:
                 model_version=model_version,
                 max_thinking_tokens=max_thinking,
                 source="META.yml",
-                warning_message=warning
+                warning_message=warning,
             )
         except Exception as e:
             if verbose:
@@ -130,8 +127,7 @@ class ModelRouter:
         """Handle fallback when META.yml is missing."""
         default_model = self.fallback_policy.get("default_model", "opus")
         message = self.fallback_policy.get(
-            "alert_message",
-            f"⚠️ {skill_name} has no model assignment. Routing to Opus (fallback)."
+            "alert_message", f"⚠️ {skill_name} has no model assignment. Routing to Opus (fallback)."
         ).format(skill=skill_name)
 
         if verbose and self.fallback_policy.get("alert_terminal", True):
@@ -145,7 +141,7 @@ class ModelRouter:
             model_version=model_version,
             max_thinking_tokens=max_thinking,
             source="fallback",
-            warning_message=message
+            warning_message=message,
         )
 
     def _handle_user_override(self, override_tier: str) -> ModelRouterResponse:
@@ -162,14 +158,10 @@ class ModelRouter:
             model_version=model_version,
             max_thinking_tokens=max_thinking,
             source="user_override",
-            warning_message="User override applied (single run). Reverting to META.yml assignment after execution."
+            warning_message="User override applied (single run). Reverting to META.yml assignment after execution.",
         )
 
-    def _check_version_compatibility(
-        self,
-        model_tier: str,
-        model_version: str
-    ) -> Optional[str]:
+    def _check_version_compatibility(self, model_tier: str, model_version: str) -> Optional[str]:
         """Check if model version is supported; warn if retired."""
         tier_versions = self.versions.get(model_tier, {})
         supported = tier_versions.get("supported", [])
@@ -195,9 +187,7 @@ class SkillMetadataGenerator:
 
     @staticmethod
     def create_template(
-        skill_name: str,
-        assigned_model: str = "opus",
-        description: str = ""
+        skill_name: str, assigned_model: str = "opus", description: str = ""
     ) -> str:
         """Generate META.yml template for a skill."""
         return f"""---
@@ -232,7 +222,7 @@ if __name__ == "__main__":
 
         result = router.route(skill_name, override, verbose=True)
 
-        print(f"\nRouting Result:")
+        print("\nRouting Result:")
         print(f"  Skill: {skill_name}")
         print(f"  Model: {result.assigned_model}")
         print(f"  Version: {result.model_version}")

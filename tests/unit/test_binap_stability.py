@@ -7,6 +7,7 @@ is made because BINAP chirality is axial (atropisomeric), not P-centred.
 Fixture: tests/fixtures/PdCl2-R-BINAP.xyz  (81 atoms, K:19,38;)
 Candidate OIN artifact: tests/candidate_outputs/binap_oin.txt (2026-03-04)
 """
+
 import os
 import sys
 import unittest
@@ -21,7 +22,6 @@ _BINAP_XYZ = os.path.abspath(
 
 
 class TestBinapStability(unittest.TestCase):
-
     def test_binap_does_not_crash(self):
         """Pipeline returns a non-None OIN string for BINAP complex."""
         result = XYZToSMILES().convert(_BINAP_XYZ)

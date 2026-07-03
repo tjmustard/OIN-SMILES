@@ -41,6 +41,10 @@ ignore = ["D100", "D104"]
 # Test/diagnostic scripts: docstrings not required; standalone scripts do sys.path
 # setup before imports (E402) and carry long diagnostic/data lines (E501).
 "tests/**" = ["D", "E402", "E501"]
+# HACF toolchain scripts (not part of the OIN-SMILES public API): same rationale as
+# tests/** above, plus version-guard imports (import sys; check sys.version_info)
+# that must run before other imports, which trips E402.
+".agents/scripts/**" = ["D", "E402", "E501"]
 # Vendored xyz2mol algorithm (Jensen et al.); keep upstream docstring style.
 "src/oinsmiles/utils/xyz2mol_local.py" = ["D"]
 

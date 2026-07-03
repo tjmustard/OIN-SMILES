@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Patch .claude/settings.json to pre-approve git and gh commands.
+"""Patch .claude/settings.json to pre-approve git and gh commands.
 
 Adds or updates the "permissions" key with "allow" patterns for Bash(git *) and Bash(gh *).
 This prevents Claude Code from prompting for approval on every git/gh invocation.
@@ -18,7 +17,6 @@ from pathlib import Path
 
 def patch_settings_json():
     """Patch .claude/settings.json with git/gh permissions."""
-
     settings_path = Path(".claude/settings.json")
 
     # Read existing settings
@@ -66,9 +64,7 @@ def patch_settings_json():
             print(f"✅ Permissions updated. Added: {', '.join(added)}", file=sys.stderr)
             return True
         except IOError as e:
-            print(
-                f"❌ Error writing .claude/settings.json: {e}", file=sys.stderr
-            )
+            print(f"❌ Error writing .claude/settings.json: {e}", file=sys.stderr)
             return False
     else:
         print(

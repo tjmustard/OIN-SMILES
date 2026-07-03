@@ -1,12 +1,12 @@
-import unittest
-import sys
 import os
-import numpy as np
+import sys
+import unittest
 
 # Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
-from oinsmiles.core.graph import TMCGraph, Atom, BondType
+from oinsmiles.core.graph import BondType, TMCGraph
+
 
 class TestTMCGraph(unittest.TestCase):
     def setUp(self):
@@ -26,12 +26,12 @@ class TestTMCGraph(unittest.TestCase):
     def test_add_bond(self):
         idx1 = self.graph.add_atom("Pt", (0.0, 0.0, 0.0))
         idx2 = self.graph.add_atom("Cl", (2.0, 0.0, 0.0))
-        
+
         self.graph.add_bond(idx1, idx2, BondType.COVALENT)
-        
+
         atom1 = self.graph.atoms[idx1]
         atom2 = self.graph.atoms[idx2]
-        
+
         self.assertIn(atom2, atom1.neighbors)
         self.assertIn(atom1, atom2.neighbors)
         self.assertEqual(atom1.bonds[idx2], BondType.COVALENT)
@@ -45,15 +45,16 @@ class TestTMCGraph(unittest.TestCase):
     def test_calculate_relative_coords(self):
         self.graph.add_atom("A", (0.0, 0.0, 0.0))
         self.graph.add_atom("B", (2.0, 0.0, 0.0))
-        
+
         # Centroid should be (1.0, 0.0, 0.0)
         self.graph.calculate_relative_coords()
-        
+
         rel_A = self.graph.relative_coords[0]
         rel_B = self.graph.relative_coords[1]
-        
+
         self.assertAlmostEqual(rel_A[0], -1.0)
         self.assertAlmostEqual(rel_B[0], 1.0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

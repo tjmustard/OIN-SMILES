@@ -20,6 +20,7 @@ Template-based generator (added for improved geometric fidelity):
   ligands (multiple binding atoms at the same slot) are routed to Molassembler
   DG, which handles them correctly.
 """
+
 from __future__ import annotations
 
 import os
@@ -33,12 +34,13 @@ from typing import Optional
 import numpy as np
 from rdkit import Chem
 
-from .oin_parser import ParsedOIN, TEMPLATES
+from .oin_parser import TEMPLATES, ParsedOIN
 
 
 @dataclass
 class GeneratedStructure:
     """Result of 3D structure generation: XYZ block + optional bonded RDKit mol."""
+
     xyz: str
     mol: Optional[Chem.Mol] = None
 
@@ -48,10 +50,49 @@ class GeneratedStructure:
 # ===========================================================================
 
 _BOND_LENGTHS: dict[str, dict[str, float]] = {
-    "Ir": {"C": 2.00, "N": 2.12, "O": 2.05, "P": 2.30, "Cl": 2.35, "Br": 2.50, "I": 2.65, "S": 2.30, "F": 1.95},
-    "Pt": {"Cl": 2.31, "N": 2.10, "P": 2.25, "C": 2.00, "O": 2.05, "S": 2.30, "Br": 2.40, "I": 2.60, "F": 2.05},
-    "Pd": {"Cl": 2.30, "N": 2.10, "P": 2.30, "C": 2.00, "O": 2.05, "S": 2.30, "Br": 2.40, "As": 2.40, "F": 2.10},
-    "Fe": {"C": 1.80, "N": 2.00, "O": 2.00, "Cl": 2.20, "Br": 2.35, "I": 2.50, "H": 1.55, "P": 2.20},
+    "Ir": {
+        "C": 2.00,
+        "N": 2.12,
+        "O": 2.05,
+        "P": 2.30,
+        "Cl": 2.35,
+        "Br": 2.50,
+        "I": 2.65,
+        "S": 2.30,
+        "F": 1.95,
+    },
+    "Pt": {
+        "Cl": 2.31,
+        "N": 2.10,
+        "P": 2.25,
+        "C": 2.00,
+        "O": 2.05,
+        "S": 2.30,
+        "Br": 2.40,
+        "I": 2.60,
+        "F": 2.05,
+    },
+    "Pd": {
+        "Cl": 2.30,
+        "N": 2.10,
+        "P": 2.30,
+        "C": 2.00,
+        "O": 2.05,
+        "S": 2.30,
+        "Br": 2.40,
+        "As": 2.40,
+        "F": 2.10,
+    },
+    "Fe": {
+        "C": 1.80,
+        "N": 2.00,
+        "O": 2.00,
+        "Cl": 2.20,
+        "Br": 2.35,
+        "I": 2.50,
+        "H": 1.55,
+        "P": 2.20,
+    },
     "Cr": {"C": 1.85, "N": 2.05, "O": 1.95, "Cl": 2.30},
     "Re": {"C": 1.90, "N": 2.15, "O": 2.00, "Cl": 2.40},
     "Au": {"C": 2.00, "N": 2.10, "Cl": 2.30, "P": 2.25, "S": 2.30},
@@ -59,7 +100,7 @@ _BOND_LENGTHS: dict[str, dict[str, float]] = {
     "Cu": {"C": 1.90, "N": 2.00, "O": 1.95, "Cl": 2.25},
     "Hg": {"I": 2.65, "Cl": 2.40, "Br": 2.50, "N": 2.30},
     "Ti": {"Cl": 2.30, "N": 2.05, "O": 1.80, "C": 2.05},
-    "V":  {"O": 1.60, "N": 2.00, "Cl": 2.30},
+    "V": {"O": 1.60, "N": 2.00, "Cl": 2.30},
     "Zn": {"N": 2.05, "O": 2.00, "Cl": 2.25, "Br": 2.35, "S": 2.25, "Se": 2.40},
     "Ni": {"N": 2.00, "O": 2.00, "Cl": 2.20, "P": 2.20, "C": 1.90, "S": 2.20},
     "Ag": {"N": 2.20, "O": 2.30, "S": 2.40, "Cl": 2.40},
@@ -128,7 +169,11 @@ def _stitch_multi_eta_fragment(
     from rdkit.Chem import AllChem as _AllChem  # noqa: PLC0415
     from scipy.spatial.transform import Rotation as _Rotation  # noqa: PLC0415
 
-    print(f"[DEBUG] _stitch_multi_eta_fragment called with frag_smiles={frag_smiles}, {len(vectors)} vectors", file=sys.stderr)
+    print(
+        f"[DEBUG] _stitch_multi_eta_fragment called with frag_smiles={frag_smiles}, "
+        f"{len(vectors)} vectors",
+        file=sys.stderr,
+    )
 
     # ── Phase 1: Setup ─────────────────────────────────────────────────────
     slot_groups: dict[tuple, list[int]] = {}
@@ -139,7 +184,10 @@ def _stitch_multi_eta_fragment(
     print(f"[DEBUG] slot_groups: {len(slot_groups)} groups", file=sys.stderr)
 
     if len(slot_groups) < 2:
-        print(f"[DEBUG] Not multi-eta (only {len(slot_groups)} slot group(s)), returning None", file=sys.stderr)
+        print(
+            f"[DEBUG] Not multi-eta (only {len(slot_groups)} slot group(s)), returning None",
+            file=sys.stderr,
+        )
         return None  # Not multi-eta
 
     # Parse fragment mol
@@ -150,7 +198,9 @@ def _stitch_multi_eta_fragment(
         Chem.SanitizeMol(mol)
     except Exception:
         try:
-            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            Chem.SanitizeMol(
+                mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+            )
         except Exception:
             pass
 
@@ -234,7 +284,7 @@ def _stitch_multi_eta_fragment(
         return None
 
     mol_h = _embed_fragment(frag_smiles)
-    etkdg_ok = (mol_h is not None)
+    etkdg_ok = mol_h is not None
 
     if etkdg_ok:
         n_atoms_h = mol_h.GetNumAtoms()
@@ -244,7 +294,7 @@ def _stitch_multi_eta_fragment(
         )
         print(f"[DEBUG] ETKDG embedding succeeded: {n_atoms_h} atoms", file=sys.stderr)
     else:
-        print(f"[DEBUG] ETKDG embedding failed, will use analytic fallback", file=sys.stderr)
+        print("[DEBUG] ETKDG embedding failed, will use analytic fallback", file=sys.stderr)
         etkdg_pos = None
 
     def _ring_atoms_with_H(mol_h: Chem.Mol, heavy_idxs: set) -> list[int]:
@@ -278,14 +328,15 @@ def _stitch_multi_eta_fragment(
             binding_etkdg_pos = np.array([etkdg_pos[i] for i in bidxs], dtype=float)
             centroid = binding_etkdg_pos.mean(axis=0)
             ring_radius = float(np.mean([np.linalg.norm(p - centroid) for p in binding_etkdg_pos]))
-            print(f"[DEBUG] Ring {slot_idx} (ETKDG): {len(ring_all_idxs)} atoms, ring_radius={ring_radius:.4f}", file=sys.stderr)
+            print(
+                f"[DEBUG] Ring {slot_idx} (ETKDG): {len(ring_all_idxs)} atoms, "
+                f"ring_radius={ring_radius:.4f}",
+                file=sys.stderr,
+            )
         else:
             # Analytic fallback: place binding atoms on a circle with correct H counts
             n_bind = len(bidxs)
-            n_H_per_heavy = {
-                i: mol.GetAtomWithIdx(i).GetTotalNumHs()
-                for i in ring_heavy_idxs
-            }
+            n_H_per_heavy = {i: mol.GetAtomWithIdx(i).GetTotalNumHs() for i in ring_heavy_idxs}
             sorted_heavy = sorted(ring_heavy_idxs)
             cc_bond = 1.40
             circumradius = cc_bond / (2.0 * np.sin(np.pi / n_bind))
@@ -300,7 +351,7 @@ def _stitch_multi_eta_fragment(
                 for _ in range(n_H):
                     h_pos = pos * (1.0 + 1.08 / circumradius)
                     ring_etkdg_pos_list.append(h_pos)
-                    ring_syms.append('H')
+                    ring_syms.append("H")
             ring_etkdg_pos = np.array(ring_etkdg_pos_list, dtype=float)
             ring_all_idxs = list(range(len(ring_etkdg_pos_list)))
 
@@ -309,7 +360,11 @@ def _stitch_multi_eta_fragment(
             binding_etkdg_pos = ring_etkdg_pos[binding_local_idxs]
             centroid = binding_etkdg_pos.mean(axis=0)
             ring_radius = float(np.mean([np.linalg.norm(p - centroid) for p in binding_etkdg_pos]))
-            print(f"[DEBUG] Ring {slot_idx} (analytic): {len(ring_etkdg_pos)} atoms, ring_radius={ring_radius:.4f}", file=sys.stderr)
+            print(
+                f"[DEBUG] Ring {slot_idx} (analytic): {len(ring_etkdg_pos)} atoms, "
+                f"ring_radius={ring_radius:.4f}",
+                file=sys.stderr,
+            )
 
         if ring_radius < 1e-6:
             return None
@@ -365,7 +420,11 @@ def _stitch_multi_eta_fragment(
         norm_mid_perp = float(np.linalg.norm(mid_perp))
 
         if norm_mid_perp < 1e-9:
-            arb = np.array([1.0, 0.0, 0.0], dtype=float) if abs(seg[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            arb = (
+                np.array([1.0, 0.0, 0.0], dtype=float)
+                if abs(seg[0]) < 0.9
+                else np.array([0.0, 1.0, 0.0], dtype=float)
+            )
             direction = arb - float(np.dot(arb, seg)) * seg
             direction = direction / float(np.linalg.norm(direction))
         else:
@@ -381,12 +440,19 @@ def _stitch_multi_eta_fragment(
 
     si_pos = _place_bridge_atom(ipso1, ipso2)
     print(f"[DEBUG] si_pos={si_pos}", file=sys.stderr)
-    print(f"[DEBUG] Si-ipso1 dist={np.linalg.norm(si_pos - ipso1):.4f}, Si-ipso2 dist={np.linalg.norm(si_pos - ipso2):.4f}", file=sys.stderr)
+    print(
+        f"[DEBUG] Si-ipso1 dist={np.linalg.norm(si_pos - ipso1):.4f}, "
+        f"Si-ipso2 dist={np.linalg.norm(si_pos - ipso2):.4f}",
+        file=sys.stderr,
+    )
 
     # ── Phase 7: Place Si substituents (methyl groups) ──────────────────────
     def _place_tetrahedral_methyls(
-        si_pos: np.ndarray, ipso1: np.ndarray, ipso2: np.ndarray,
-        si_c_bond: float = 1.87, c_h_bond: float = 1.09
+        si_pos: np.ndarray,
+        ipso1: np.ndarray,
+        ipso2: np.ndarray,
+        si_c_bond: float = 1.87,
+        c_h_bond: float = 1.09,
     ) -> list[tuple[str, np.ndarray]]:
         """Place methyl C and H atoms tetrahedral around Si."""
         v1 = (ipso1 - si_pos) / float(np.linalg.norm(ipso1 - si_pos))
@@ -397,7 +463,11 @@ def _stitch_multi_eta_fragment(
         cross_norm = float(np.linalg.norm(cross12))
 
         if cross_norm < 1e-9:
-            arb = np.array([1.0, 0.0, 0.0], dtype=float) if abs(v1[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            arb = (
+                np.array([1.0, 0.0, 0.0], dtype=float)
+                if abs(v1[0]) < 0.9
+                else np.array([0.0, 1.0, 0.0], dtype=float)
+            )
             perp = arb - float(np.dot(arb, v1)) * v1
             perp = perp / float(np.linalg.norm(perp))
         else:
@@ -436,9 +506,13 @@ def _stitch_multi_eta_fragment(
         tet_angle = float(np.arccos(-1.0 / 3.0))
 
         for me_pos, v_me in [(me1_pos, v3), (me2_pos, v4)]:
-            results.append(('C', me_pos))
+            results.append(("C", me_pos))
             v_to_si = -v_me
-            arb2 = np.array([1.0, 0.0, 0.0], dtype=float) if abs(v_to_si[0]) < 0.9 else np.array([0.0, 1.0, 0.0], dtype=float)
+            arb2 = (
+                np.array([1.0, 0.0, 0.0], dtype=float)
+                if abs(v_to_si[0]) < 0.9
+                else np.array([0.0, 1.0, 0.0], dtype=float)
+            )
             u1 = arb2 - float(np.dot(arb2, v_to_si)) * v_to_si
             u1 = u1 / float(np.linalg.norm(u1))
             u2 = np.cross(v_to_si, u1)
@@ -447,9 +521,11 @@ def _stitch_multi_eta_fragment(
                 phi = 2.0 * np.pi * k / 3.0
                 # BUG FIX: H atoms should be at tet_angle from v_to_si (away from Si),
                 # not from v_me. Change: cos(tet_angle)*v_me → -cos(tet_angle)*v_me
-                h_dir = -float(np.cos(tet_angle)) * v_me + float(np.sin(tet_angle)) * (float(np.cos(phi)) * u1 + float(np.sin(phi)) * u2)
+                h_dir = -float(np.cos(tet_angle)) * v_me + float(np.sin(tet_angle)) * (
+                    float(np.cos(phi)) * u1 + float(np.sin(phi)) * u2
+                )
                 h_dir = h_dir / float(np.linalg.norm(h_dir))
-                results.append(('H', me_pos + c_h_bond * h_dir))
+                results.append(("H", me_pos + c_h_bond * h_dir))
 
         return results
 
@@ -457,7 +533,7 @@ def _stitch_multi_eta_fragment(
 
     # Debug: print methyl positions
     for i, (sym, pos) in enumerate(me_atoms):
-        if sym == 'C':
+        if sym == "C":
             dist_to_si = np.linalg.norm(pos - si_pos)
             print(f"[DEBUG] Methyl C{i}: pos={pos}, dist_to_si={dist_to_si:.4f}", file=sys.stderr)
 
@@ -474,10 +550,9 @@ def _stitch_multi_eta_fragment(
     # Add Si
     si_atom_idx = len(all_positions)
     all_positions.append(si_pos)
-    all_symbols.append('Si')
+    all_symbols.append("Si")
 
     # Add methyls (2 C atoms + 6 H atoms)
-    me_atom_start_idx = len(all_positions)
     for sym, pos in me_atoms:
         all_positions.append(pos)
         all_symbols.append(sym)
@@ -524,7 +599,7 @@ def _stitch_eta_fragment(
        *slot_unit* (pointing away from the metal).
     5. Translates the centroid to ``slot_unit * centroid_dist``.
 
-    Returns
+    Returns:
     -------
     (positions, symbols, mol) or None on failure.
     mol is the RDKit Mol with bond connectivity, or None for analytic-geometry fallback.
@@ -550,7 +625,9 @@ def _stitch_eta_fragment(
             Chem.SetAromaticity(mol)
         except Exception:
             try:
-                Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+                Chem.SanitizeMol(
+                    mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+                )
                 Chem.SetAromaticity(mol)
             except Exception:
                 for atom in mol.GetAtoms():
@@ -649,7 +726,9 @@ def _stitch_eta_fragment(
         heavy_pos = positions[heavy_indices]
         h_pos = positions[h_indices]
         positions = np.vstack([heavy_pos, h_pos])
-        symbols = [smiles_mol.GetAtomWithIdx(i).GetSymbol() for i in range(smiles_mol.GetNumAtoms())]
+        symbols = [
+            smiles_mol.GetAtomWithIdx(i).GetSymbol() for i in range(smiles_mol.GetNumAtoms())
+        ]
         etkdg_mol = smiles_mol
 
     return positions, symbols, etkdg_mol
@@ -678,7 +757,7 @@ def _stitch_fragment(
         monodentate orientation: non-binding atoms are rotated to face away
         from the metal (in the +slot direction) to prevent spurious M-H bonds.
 
-    Returns
+    Returns:
     -------
     (positions, symbols) or None on failure.
         positions: (N_atoms, 3) float array in Angstrom.
@@ -706,7 +785,9 @@ def _stitch_fragment(
         Chem.SanitizeMol(mol)
     except Exception:
         try:
-            Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+            Chem.SanitizeMol(
+                mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+            )
         except Exception:
             for atom in mol.GetAtoms():
                 pass  # valence already calculated during partial sanitization
@@ -751,9 +832,7 @@ def _stitch_fragment(
 
     conf = mol.GetConformer()
     n_atoms = mol.GetNumAtoms()
-    positions = np.array(
-        [list(conf.GetAtomPosition(i)) for i in range(n_atoms)], dtype=float
-    )
+    positions = np.array([list(conf.GetAtomPosition(i)) for i in range(n_atoms)], dtype=float)
     symbols = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
 
     # Validate binding indices (after AddHs, n_atoms may be larger than the
@@ -785,9 +864,7 @@ def _stitch_fragment(
                     outward_unit = outward / outward_norm
                     if float(np.dot(outward_unit, slot_u)) < 0.9:
                         try:
-                            rot_o, _ = Rotation.align_vectors(
-                                [slot_u], [outward_unit]
-                            )
+                            rot_o, _ = Rotation.align_vectors([slot_u], [outward_unit])
                             centered = positions - binding_pos
                             positions = rot_o.apply(centered) + binding_pos
                         except Exception:
@@ -838,21 +915,18 @@ def _stitch_fragment(
         # Precompute non-binding atom indices and forbidden positions array.
         _binding_set = set(binding_idxs)
         _nb_idxs = [i for i in range(n_atoms) if i not in _binding_set]
-        _forb_np = (
-            np.array(forbidden_positions, dtype=float)
-            if forbidden_positions
-            else None
-        )
+        _forb_np = np.array(forbidden_positions, dtype=float) if forbidden_positions else None
 
         def _has_clash(pos_arr: np.ndarray) -> bool:
-            """Return True if any non-binding atom is within 1.5 Å of any
-            already-placed atom (forbidden_positions)."""
+            """Return True if a non-binding atom clashes with a placed atom.
+
+            A clash is any non-binding atom within 1.5 Å of an
+            already-placed atom (forbidden_positions).
+            """
             if _forb_np is None or len(_nb_idxs) == 0:
                 return False
             nb = pos_arr[_nb_idxs]
-            dists = np.sqrt(
-                ((nb[:, None, :] - _forb_np[None, :, :]) ** 2).sum(axis=-1)
-            )
+            dists = np.sqrt(((nb[:, None, :] - _forb_np[None, :, :]) ** 2).sum(axis=-1))
             return bool(dists.min() < 1.5)
 
         centered = positions_aligned - t_center
@@ -891,14 +965,9 @@ def _stitch_fragment(
     # XYZToSMILES to misidentify the topology on the round-trip.
     if len(binding_idxs) >= 2:
         _binding_set = set(binding_idxs)
-        _nb_heavy_idxs = [
-            i for i in range(n_atoms)
-            if i not in _binding_set and symbols[i] != "H"
-        ]
+        _nb_heavy_idxs = [i for i in range(n_atoms) if i not in _binding_set and symbols[i] != "H"]
         if _nb_heavy_idxs:
-            _min_d_metal = float(
-                np.linalg.norm(positions_aligned[_nb_heavy_idxs], axis=1).min()
-            )
+            _min_d_metal = float(np.linalg.norm(positions_aligned[_nb_heavy_idxs], axis=1).min())
             if _min_d_metal < 1.7:
                 return None  # Bidentate distortion too severe → fall back to DG
 
@@ -981,7 +1050,7 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
             if len(unique_dirs) != 1:
                 # Multi-eta-slot fragment (ansa-metallocene: one fragment,
                 # multiple eta groups at different slots).
-                has_multi_eta = True
+                has_multi_eta = True  # noqa: F841  (state flag, kept for readability)
                 result = _stitch_multi_eta_fragment(
                     frag_smiles,
                     vecs,
@@ -1160,7 +1229,9 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
                 # old ETKDG geometry into the combined mol's conformer list.
                 frag_no_conf = Chem.RWMol(frag_mol)
                 frag_no_conf.RemoveAllConformers()
-                combined_rw = Chem.RWMol(Chem.CombineMols(combined_rw.GetMol(), frag_no_conf.GetMol()))
+                combined_rw = Chem.RWMol(
+                    Chem.CombineMols(combined_rw.GetMol(), frag_no_conf.GetMol())
+                )
                 for bidx in frag_binding_idxs:
                     global_bidx = frag_start + bidx
                     if global_bidx < combined_rw.GetNumAtoms():
@@ -1229,7 +1300,9 @@ def _reconstruct_mol_from_smiles_and_xyz(smiles: str, xyz_block: str) -> "Chem.M
             Chem.SanitizeMol(mol)
         except Exception:
             try:
-                Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+                Chem.SanitizeMol(
+                    mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+                )
             except Exception:
                 for atom in mol.GetAtoms():
                     pass  # valence already calculated during partial sanitization
@@ -1267,10 +1340,10 @@ def _reconstruct_mol_from_smiles_and_xyz(smiles: str, xyz_block: str) -> "Chem.M
 
 
 def _rdkit_etkdg_fallback(smiles: str) -> dict:
-    """Generate an XYZ block via RDKit ETKDGv3 for topologies that Molassembler
-    DG cannot embed (e.g. octahedral bidentate complexes).
+    """Generate an XYZ block via RDKit ETKDGv3 as a Molassembler fallback.
 
-    Returns the same dict schema as ``_molassembler_worker``.
+    Used for topologies that Molassembler DG cannot embed (e.g. octahedral
+    bidentate complexes). Returns the same dict schema as ``_molassembler_worker``.
     """
     from rdkit import Chem  # noqa: PLC0415
     from rdkit.Chem import AllChem  # noqa: PLC0415
@@ -1290,7 +1363,7 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
                 mol,
                 Chem.SanitizeFlags.SANITIZE_ALL
                 ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
-                ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+                ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY,
             )
         except Exception:
             pass  # best effort; keep whatever state we have
@@ -1310,7 +1383,6 @@ def _rdkit_etkdg_fallback(smiles: str) -> dict:
         return {"error": f"RDKit ETKDG embedding failed: {e}", "ok": False}
     if result == -1:
         return {"error": "RDKit ETKDG embedding failed", "ok": False}
-
 
     conf = mol.GetConformer()
     n = mol.GetNumAtoms()
@@ -1333,6 +1405,7 @@ def _min_inter_atomic_dist(positions: np.ndarray) -> float:
     if len(positions) < 2:
         return 999.0
     from scipy.spatial.distance import pdist  # noqa: PLC0415
+
     return float(pdist(positions).min())
 
 
@@ -1348,7 +1421,7 @@ def _best_from_ensemble(mol, seed: int, n: int = 10) -> np.ndarray | None:
     n:
         Number of conformers to generate (default 10).
 
-    Returns
+    Returns:
     -------
     np.ndarray of shape (N_atoms, 3) or None if all conformers failed.
     """
@@ -1356,9 +1429,7 @@ def _best_from_ensemble(mol, seed: int, n: int = 10) -> np.ndarray | None:
 
     results = masm.dg.generate_ensemble(mol, n, seed)
     scored = [
-        (pos, _min_inter_atomic_dist(pos))
-        for pos in results
-        if not isinstance(pos, masm.dg.Error)
+        (pos, _min_inter_atomic_dist(pos)) for pos in results if not isinstance(pos, masm.dg.Error)
     ]
     if not scored:
         return None
@@ -1380,7 +1451,7 @@ def _best_from_directed(mol, seed: int, max_size: int = 50) -> np.ndarray | None
     max_size:
         Ensemble cap — if ideal_ensemble_size > max_size, falls back to ensemble.
 
-    Returns
+    Returns:
     -------
     np.ndarray of shape (N_atoms, 3) or None if enumeration failed/skipped.
     """
@@ -1425,7 +1496,7 @@ def _molassembler_worker(args: dict) -> dict:
     seed : int
         Seed for deterministic DG generation.
 
-    Returns
+    Returns:
     -------
     dict
         On success: ``{"xyz_block": str, "ok": True}``
@@ -1522,16 +1593,12 @@ def _molassembler_worker(args: dict) -> dict:
                                 candidates: list = []  # (positions,) passing trans check
                                 for try_perm in range(n_perms):
                                     try:
-                                        mol.assign_stereopermutator(
-                                            metal_idx, try_perm
-                                        )
+                                        mol.assign_stereopermutator(metal_idx, try_perm)
                                     except Exception:
                                         break  # no more valid perms
                                     test_res = None
                                     for try_seed in range(seed, seed + 5):
-                                        r = masm.dg.generate_conformation(
-                                            mol, try_seed
-                                        )
+                                        r = masm.dg.generate_conformation(mol, try_seed)
                                         if not isinstance(r, masm.dg.Error):
                                             test_res = r
                                             break
@@ -1572,27 +1639,19 @@ def _molassembler_worker(args: dict) -> dict:
                                             result = candidates[0]
                                 # If no candidate matched, fall through to
                                 # standard generation below (result stays None).
-                            elif (
-                                expected_bindings
-                                and geo_code not in ("SPL",)
-                                and n_perms > 1
-                            ):
+                            elif expected_bindings and geo_code not in ("SPL",) and n_perms > 1:
                                 # Exact-slot-only feedback for geometries without
                                 # anti-parallel trans pairs (e.g. TPY).  SPL is
                                 # excluded because _pick_masm_permutation already
                                 # handles CIS/TRANS for square-planar complexes.
                                 for try_perm in range(n_perms):
                                     try:
-                                        mol.assign_stereopermutator(
-                                            metal_idx, try_perm
-                                        )
+                                        mol.assign_stereopermutator(metal_idx, try_perm)
                                     except Exception:
                                         break
                                     test_res = None
                                     for try_seed in range(seed, seed + 5):
-                                        r = masm.dg.generate_conformation(
-                                            mol, try_seed
-                                        )
+                                        r = masm.dg.generate_conformation(mol, try_seed)
                                         if not isinstance(r, masm.dg.Error):
                                             test_res = r
                                             break
@@ -1616,9 +1675,7 @@ def _molassembler_worker(args: dict) -> dict:
                             else:
                                 safe_perm = min(perm_idx, n_perms - 1)
                                 try:
-                                    mol.assign_stereopermutator(
-                                        metal_idx, safe_perm
-                                    )
+                                    mol.assign_stereopermutator(metal_idx, safe_perm)
                                 except Exception:
                                     pass  # invalid perm; proceed with default
             except Exception:
@@ -1687,7 +1744,7 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
     binding atom.  Falls back to the dot-disconnected ParsedOIN.smiles if
     the RDKit mol operations fail.
 
-    Notes
+    Notes:
     -----
     Binding atom indices come from ``OINVector.atom_in_fragment_idx``.  With
     the current regex-based ``parse_inline_string()`` these are always 0
@@ -1736,7 +1793,10 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
             Chem.SanitizeMol(lig_mol)
         except Exception:
             try:
-                Chem.SanitizeMol(lig_mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+                Chem.SanitizeMol(
+                    lig_mol,
+                    Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+                )
             except Exception:
                 for atom in lig_mol.GetAtoms():
                     pass  # valence already calculated during partial sanitization
@@ -1758,9 +1818,7 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
                     _a = lig_rw_pre.GetAtomWithIdx(_bidx)
                     _dv = _pt.GetDefaultValence(_a.GetSymbol())
                     if _dv > 0:  # skip variable-valence metals (dv == -1)
-                        _bsum = int(sum(
-                            b.GetBondTypeAsDouble() for b in _a.GetBonds()
-                        ))
+                        _bsum = int(sum(b.GetBondTypeAsDouble() for b in _a.GetBonds()))
                         if _bsum + 1 >= _dv:
                             _a.SetNoImplicit(True)
             lig_mol = Chem.AddHs(lig_rw_pre.GetMol())
@@ -1790,10 +1848,7 @@ def _build_connected_smiles(parsed_oin: ParsedOIN) -> str:
     # Minimal sanitization: skip SETAROMATICITY so atoms already kekulized
     # at the fragment level are not re-aromaticized in the combined mol
     # (which would prevent kekulization of the metal-chelate ring system).
-    _SKIP_AROM = (
-        Chem.SanitizeFlags.SANITIZE_ALL
-        ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
-    )
+    _SKIP_AROM = Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
     Chem.SanitizeMol(rw, _SKIP_AROM, catchErrors=True)
     try:
         smiles = Chem.MolToSmiles(rw.GetMol())
@@ -1908,7 +1963,7 @@ def _check_exact_slot_match(
     geo_code:
         Three-letter OIN geometry code (e.g. ``'OCT'``).
 
-    Returns
+    Returns:
     -------
     bool
         ``True`` only if every expected binding atom can be uniquely matched
@@ -1958,6 +2013,7 @@ def _check_exact_slot_match(
     # simultaneously maximises the total dot-product sum, ensuring the globally
     # best correspondence is found before the per-pair slot check is applied.
     from collections import defaultdict as _defaultdict  # noqa: PLC0415
+
     from scipy.optimize import linear_sum_assignment as _lsa  # noqa: PLC0415
 
     # Normalise expected slot vectors.
@@ -2063,8 +2119,9 @@ def _pick_masm_permutation(parsed_oin: ParsedOIN) -> int:
     if parsed_oin.geo_code != "SPL":
         return 0
 
-    import numpy as np
     from collections import defaultdict
+
+    import numpy as np
 
     # Map fragment SMILES → list of template vectors assigned to it.
     smiles_to_vectors: dict[str, list] = defaultdict(list)
@@ -2153,6 +2210,7 @@ class MolassemblerAdapter:
         ensemble_size: int = 10,
         max_directed_size: int = 50,
     ) -> None:
+        """Initialize the adapter with subprocess timeout and DG generation options."""
         self.timeout = timeout
         self.dg_strategy = dg_strategy
         self.ensemble_size = ensemble_size
@@ -2178,12 +2236,12 @@ class MolassemblerAdapter:
         seed:
             Seed for deterministic DG conformer generation (default 42).
 
-        Returns
+        Returns:
         -------
         str
             XYZ block string of the generated conformer.
 
-        Raises
+        Raises:
         ------
         MolassemblerTimeoutError
             If DG generation exceeds ``self.timeout`` seconds.
@@ -2234,14 +2292,10 @@ class MolassemblerAdapter:
             try:
                 result = fut.result(timeout=self.timeout)
             except FuturesTimeout:
-                raise MolassemblerTimeoutError(
-                    f"Molassembler timed out after {self.timeout}s"
-                )
+                raise MolassemblerTimeoutError(f"Molassembler timed out after {self.timeout}s")
 
         if not result.get("ok"):
-            raise RuntimeError(
-                f"Molassembler error: {result.get('error', 'unknown')}"
-            )
+            raise RuntimeError(f"Molassembler error: {result.get('error', 'unknown')}")
 
         xyz_block = result["xyz_block"]
         bonded_mol = _reconstruct_mol_from_smiles_and_xyz(connected_smiles, xyz_block)

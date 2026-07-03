@@ -1,4 +1,5 @@
 def main():
+    """Print a placeholder greeting."""
     print("Hello from oin-smiles!")
 
 

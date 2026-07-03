@@ -9,6 +9,7 @@ Fixture: tests/fixtures/PdCl2-RR-BDPP.xyz  (64 atoms, K:1,2;)
 Candidate OIN (2026-03-04):
   [Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}
 """
+
 import os
 import sys
 import unittest
@@ -20,7 +21,8 @@ from tests.unit.test_helpers import extract_ligand_smiles
 
 try:
     from rdkit import Chem
-    from rdkit.Chem import AllChem
+    from rdkit.Chem import AllChem  # noqa: F401  (import probe for RDKit availability)
+
     _RDKIT_AVAILABLE = True
 except ImportError:
     _RDKIT_AVAILABLE = False
@@ -31,13 +33,11 @@ _BDPP_XYZ = os.path.abspath(
 
 # Human-reviewed expected OIN string (2026-03-04, generated from above XYZ)
 _EXPECTED_OIN = (
-    "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)"
-    "P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
+    "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
 )
 
 
 class TestChiralP(unittest.TestCase):
-
     def _oin(self) -> str:
         return XYZToSMILES().convert(_BDPP_XYZ)
 

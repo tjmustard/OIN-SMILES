@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""
-Skill Metadata Loader
+"""Skill Metadata Loader
 
 Loads, validates, and manages skill metadata from META.yml files.
 Handles fallbacks for missing metadata and provides schema validation.
 """
 
 import os
-import yaml
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Any, Dict, Optional
+
+import yaml
 
 
 @dataclass
 class SkillMetadata:
     """Represents a skill's metadata configuration."""
+
     name: str
     assigned_model: str  # "opus", "sonnet", "haiku"
     model_version: Optional[str] = None
@@ -44,8 +44,7 @@ class MetaLoader:
         self.skills_base_dir = skills_base_dir
 
     def load(self, skill_name: str, verbose: bool = True) -> SkillMetadata:
-        """
-        Load metadata for a skill.
+        """Load metadata for a skill.
 
         Args:
             skill_name: Name of skill (e.g., "hyper-execute")
@@ -62,7 +61,7 @@ class MetaLoader:
             return self._default_metadata(skill_name)
 
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 data = yaml.safe_load(f) or {}
 
             # Validate required fields
@@ -82,14 +81,16 @@ class MetaLoader:
                 max_thinking_tokens=data.get("max_thinking_tokens"),
                 output_token_budget=data.get("output_token_budget"),
                 override=data.get("override"),
-                source="META.yml"
+                source="META.yml",
             )
 
             # Check for active override
             if metadata.override and metadata.override.get("scope") == "single_run":
                 if verbose:
-                    print(f"ℹ️  Single-run override active for {skill_name}: "
-                          f"{metadata.override.get('model')}")
+                    print(
+                        f"ℹ️  Single-run override active for {skill_name}: "
+                        f"{metadata.override.get('model')}"
+                    )
 
             return metadata
 
@@ -123,12 +124,11 @@ class MetaLoader:
             max_thinking_tokens=self.TIER_DEFAULTS["opus"]["max_thinking_tokens"],
             output_token_budget=self.TIER_DEFAULTS["opus"]["output_token_budget"],
             override=None,
-            source="default"
+            source="default",
         )
 
     def validate_schema(self, metadata: Dict[str, Any]) -> tuple:
-        """
-        Validate metadata against schema.
+        """Validate metadata against schema.
 
         Returns:
             (is_valid: bool, errors: List[str])

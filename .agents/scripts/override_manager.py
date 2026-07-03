@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""
-Override Manager
+"""Override Manager
 
 Manages skill model assignment overrides with scope lifecycle (single_run vs permanent).
 Handles override creation, persistence, and cleanup.
 """
 
 import os
-import yaml
 from datetime import datetime
-from typing import Optional
+
+import yaml
 
 
 class OverrideManager:
@@ -24,10 +23,9 @@ class OverrideManager:
         model: str,
         scope: str = "single_run",
         reason: str = "",
-        verbose: bool = True
+        verbose: bool = True,
     ) -> bool:
-        """
-        Set a model override for a skill.
+        """Set a model override for a skill.
 
         Args:
             skill_name: Name of skill (e.g., "hyper-execute")
@@ -53,7 +51,7 @@ class OverrideManager:
 
         # Load existing metadata
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 data = yaml.safe_load(f) or {}
         except FileNotFoundError:
             if verbose:
@@ -70,13 +68,13 @@ class OverrideManager:
             "scope": scope,
             "set_by": "override_manager",
             "set_at": datetime.utcnow().isoformat(),
-            "reason": reason
+            "reason": reason,
         }
 
         # Save updated metadata
         try:
             os.makedirs(os.path.dirname(meta_path), exist_ok=True)
-            with open(meta_path, 'w') as f:
+            with open(meta_path, "w") as f:
                 yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
             if verbose:
@@ -93,8 +91,7 @@ class OverrideManager:
             return False
 
     def clear_override(self, skill_name: str, verbose: bool = True) -> bool:
-        """
-        Clear an active override for a skill.
+        """Clear an active override for a skill.
 
         Args:
             skill_name: Name of skill
@@ -111,12 +108,12 @@ class OverrideManager:
             return True
 
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 data = yaml.safe_load(f) or {}
 
             if "override" in data:
                 del data["override"]
-                with open(meta_path, 'w') as f:
+                with open(meta_path, "w") as f:
                     yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
                 if verbose:
@@ -130,8 +127,7 @@ class OverrideManager:
             return False
 
     def check_single_run_override(self, skill_name: str) -> bool:
-        """
-        Check if skill has an active single_run override.
+        """Check if skill has an active single_run override.
 
         Returns:
             True if single_run override is active, False otherwise
@@ -142,7 +138,7 @@ class OverrideManager:
             return False
 
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 data = yaml.safe_load(f) or {}
 
             override = data.get("override", {})
@@ -165,7 +161,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 3:
-        print("Usage: python override_manager.py <skill_name> <model> [--scope single_run|permanent] [--reason 'text']")
+        print(
+            "Usage: python override_manager.py <skill_name> <model> [--scope single_run|permanent] [--reason 'text']"
+        )
         print("Example: python override_manager.py hyper-execute sonnet --scope single_run")
         sys.exit(1)
 

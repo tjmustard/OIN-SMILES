@@ -4,21 +4,22 @@ Tests use mocking so no actual SCINE Molassembler subprocess is spawned.
 Integration-level DG conformer generation is covered by the candidate
 artifact protocol (tests/candidate_outputs/).
 """
+
+import os
 import pickle
+import sys
 import unittest
 from unittest.mock import MagicMock, patch
-import sys
-import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
 from oinsmiles.generation.molassembler_adapter import (
     MolassemblerAdapter,
     MolassemblerTimeoutError,
-    _molassembler_worker,
     _build_connected_smiles,
+    _molassembler_worker,
 )
-from oinsmiles.generation.oin_parser import ParsedOIN, OINVector
+from oinsmiles.generation.oin_parser import OINVector, ParsedOIN
 
 
 def _cisplatin_parsed_oin() -> ParsedOIN:
@@ -28,9 +29,9 @@ def _cisplatin_parsed_oin() -> ParsedOIN:
         fragments=["[Pt]", "[Cl]", "[Cl]", "N", "N"],
         metal_fragment_idx=0,
         vectors=[
-            OINVector(atom_idx=-1, vector=(1, 0, 0),  fragment_idx=1, atom_in_fragment_idx=0),
+            OINVector(atom_idx=-1, vector=(1, 0, 0), fragment_idx=1, atom_in_fragment_idx=0),
             OINVector(atom_idx=-1, vector=(-1, 0, 0), fragment_idx=2, atom_in_fragment_idx=0),
-            OINVector(atom_idx=-1, vector=(0, 1, 0),  fragment_idx=3, atom_in_fragment_idx=0),
+            OINVector(atom_idx=-1, vector=(0, 1, 0), fragment_idx=3, atom_in_fragment_idx=0),
             OINVector(atom_idx=-1, vector=(0, -1, 0), fragment_idx=4, atom_in_fragment_idx=0),
         ],
         original_oin="[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
@@ -73,7 +74,6 @@ class TestMolassemblerWorkerPicklable(unittest.TestCase):
 class TestMolassemblerAdapter(unittest.TestCase):
     def test_timeout_raises_molassembler_timeout_error(self):
         """A timed-out future must raise MolassemblerTimeoutError (not FuturesTimeout)."""
-        from concurrent.futures import Future
         from concurrent.futures import TimeoutError as FuturesTimeout
 
         adapter = MolassemblerAdapter(timeout=1)

@@ -1,3 +1,3 @@
-from .core.translator import XYZToSMILES, SMILESToXYZ
+from .core.translator import SMILESToXYZ, XYZToSMILES
 
 __all__ = ["XYZToSMILES", "SMILESToXYZ"]

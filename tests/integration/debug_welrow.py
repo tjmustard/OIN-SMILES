@@ -1,19 +1,18 @@
-import sys
-import os
-import tempfile
 import logging
+import os
+import sys
+import tempfile
 import traceback
-from pathlib import Path
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 
 # Setup path to include src
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
-src_path = os.path.join(project_root, 'src')
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+src_path = os.path.join(project_root, "src")
 sys.path.append(src_path)
 
-from oinsmiles.utils.xyz2mol import get_tmc_mol, get_oin_string
+from oinsmiles.utils.xyz2mol import get_oin_string, get_tmc_mol
 
 welrow_xyz = """88
 CSD_code = WELROW | q = 0 | S = 0 | Stoichiometry = C40H36LaN2P3Se6 | MND = 8 | 2020-2024 CSD
@@ -103,7 +102,7 @@ H         8.62002302324905    5.02534062145899    6.20817029517173
 H         9.41829767830877    9.22725450410756    1.44857416348483
 """
 
-with tempfile.NamedTemporaryFile(mode='w', suffix='.xyz', delete=False) as tmp:
+with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as tmp:
     tmp.write(welrow_xyz)
     tmp_path = tmp.name
 

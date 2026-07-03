@@ -1,19 +1,19 @@
-from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeoutError
-from typing import Optional
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 
 import scine_molassembler as masm
 from rdkit import Chem
 
+from .molassembler_adapter import (
+    GeneratedStructure,
+    MolassemblerAdapter,
+    MolassemblerTimeoutError,
+)
 from .oin_parser import (
     OINParser,
     _extract_oin_constraints,
-    tokenize_unsanitized_smiles,
     construct_molassembler_mol,
-)
-from .molassembler_adapter import (
-    MolassemblerAdapter,
-    MolassemblerTimeoutError,
-    GeneratedStructure,
+    tokenize_unsanitized_smiles,
 )
 
 __all__ = ["OIN3DGenerator", "MolassemblerTimeoutError", "GeneratedStructure"]
@@ -25,12 +25,12 @@ def _dg_worker(mol_masm: masm.Molecule, seed: int = 42) -> str:
     Generates a conformer via Molassembler distance geometry and returns XYZ block.
     Runs in a separate process to isolate GIL-holding C++ code.
 
-    Returns
+    Returns:
     -------
     str
         XYZ block string
 
-    Raises
+    Raises:
     ------
     RuntimeError
         If DG generation fails
@@ -38,8 +38,8 @@ def _dg_worker(mol_masm: masm.Molecule, seed: int = 42) -> str:
     try:
         confs = masm.dg.generate_conformation(mol_masm, seed=seed)
         # Write to temporary file and read back as string
-        import tempfile
         import os
+        import tempfile
 
         with tempfile.NamedTemporaryFile(suffix=".xyz", delete=False) as f:
             tmp_path = f.name
@@ -83,13 +83,13 @@ def _translate_eta_vertex_to_atoms(
         Mapping from fragment rank to list of atom indices in connected SMILES.
         Example: {0: [0], 1: [1], 2: [2]} for cisplatin.
 
-    Returns
+    Returns:
     -------
     list[int]
         List of atom indices in the connected SMILES that should bond to the metal
         at this slot. Length 1 for monodentate; length > 1 for eta ligands.
 
-    Raises
+    Raises:
     ------
     ValueError
         If fragment_rank is not in frag_to_atom.
@@ -114,13 +114,13 @@ def parse_oin_direct(oin_smiles: str) -> GeneratedStructure:
     oin_smiles:
         OIN-SMILES string in v3.6 inline format (e.g., "[Pd_SQP].[Cl]{0}.[Cl]{1}")
 
-    Returns
+    Returns:
     -------
     GeneratedStructure
         xyz: XYZ block string with 3D coordinates
         mol: RDKit Mol with bond topology and 3D conformer (may be None)
 
-    Raises
+    Raises:
     ------
     ValueError
         If OIN parsing or Molassembler construction fails
@@ -181,7 +181,8 @@ def parse_oin_direct(oin_smiles: str) -> GeneratedStructure:
                 # Add bond from metal to first binding atom in ligand (use SINGLE for Molassembler)
                 rw_mol.AddBond(0, atom_offset, Chem.BondType.SINGLE)
 
-                # Update mapping: fragment_rank (in OIN space) → atom indices (in connected SMILES space)
+                # Update mapping: fragment_rank (in OIN space) → atom indices
+                # (in connected SMILES space)
                 updated_frag_to_atom[frag_rank] = lig_atom_indices
                 atom_offset += lig_mol.GetNumAtoms()
 
@@ -237,6 +238,7 @@ class OIN3DGenerator:
         dg_strategy: str = "single",
         ensemble_size: int = 10,
     ) -> None:
+        """Initialize the generator with parser and Molassembler adapter settings."""
         self.parser = OINParser()
         self.adapter = MolassemblerAdapter(
             timeout=timeout,
@@ -255,14 +257,14 @@ class OIN3DGenerator:
         oin_string:
             OIN-SMILES string (V3.0 inline or V2.4 sidecar format).
 
-        Returns
+        Returns:
         -------
         GeneratedStructure
             ``.xyz`` contains the XYZ block string.
             ``.mol`` contains an RDKit Mol with bond connectivity and a 3D
             conformer (None if connectivity could not be determined).
 
-        Raises
+        Raises:
         ------
         ValueError
             If OIN parsing or structure generation fails

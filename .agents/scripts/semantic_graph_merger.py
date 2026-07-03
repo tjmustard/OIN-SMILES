@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-semantic_graph_merger.py — Deterministic semantic merger for architecture.yml conflicts.
+"""semantic_graph_merger.py — Deterministic semantic merger for architecture.yml conflicts.
 
 Called during git rebase when architecture.yml (or architecture.yaml) has conflicts.
 NEVER uses AI. All merge decisions are deterministic.
@@ -11,7 +10,6 @@ CLI:
 
 import fcntl
 import os
-import re
 import shutil
 import sys
 import tempfile
@@ -20,17 +18,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-FAILED_WORKFLOWS_PATH = os.path.normpath(os.path.join(
-    os.path.dirname(__file__), "..", "..", "spec", "active", "FAILED_WORKFLOWS.md"
-))
-FAILED_WORKFLOWS_ARCHIVE_DIR = os.path.normpath(os.path.join(
-    os.path.dirname(__file__), "..", "..", "spec", "archive"
-))
+FAILED_WORKFLOWS_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "spec", "active", "FAILED_WORKFLOWS.md")
+)
+FAILED_WORKFLOWS_ARCHIVE_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "spec", "archive")
+)
 
 REQUIRED_NODE_FIELDS = {"id", "dimension", "status"}
 
@@ -39,9 +36,9 @@ REQUIRED_NODE_FIELDS = {"id", "dimension", "status"}
 # Task 8 — File-type routing guard
 # ---------------------------------------------------------------------------
 
+
 def _is_valid_architecture_file(filepath: str) -> bool:
-    """
-    Returns True if the file is a valid architecture YAML target.
+    """Returns True if the file is a valid architecture YAML target.
 
     Criteria (OR):
       (a) filename (basename without extension) contains 'architecture' (case-insensitive)
@@ -71,9 +68,9 @@ def _guard_file_type(filepath: str) -> None:
 # Task 11 — Extension normalization (canonical path resolution)
 # ---------------------------------------------------------------------------
 
+
 def _canonical_yaml_path(filepath: str) -> str:
-    """
-    Normalize .yml / .yaml paths to a single canonical path.
+    """Normalize .yml / .yaml paths to a single canonical path.
 
     Preference order:
       1. Use the path exactly as given if it exists on disk.
@@ -97,6 +94,7 @@ def _canonical_yaml_path(filepath: str) -> str:
 # ---------------------------------------------------------------------------
 # Task 9 — Locked file I/O helpers
 # ---------------------------------------------------------------------------
+
 
 def _read_yaml_locked(filepath: str) -> Dict[str, Any]:
     """Read and parse a YAML file under a shared (read) lock."""
@@ -123,6 +121,7 @@ def _write_yaml_locked(filepath: str, data: Dict[str, Any]) -> None:
 # Task 13 — Pre-merge backup
 # ---------------------------------------------------------------------------
 
+
 def _backup_file(filepath: str) -> str:
     """Copy filepath to filepath.bak and return the backup path."""
     bak_path = filepath + ".bak"
@@ -145,6 +144,7 @@ def _remove_backup(bak_path: str) -> None:
 # ---------------------------------------------------------------------------
 # FAILED_WORKFLOWS.md cap + rotation helpers (Task 2 Provenance MiniPRD)
 # ---------------------------------------------------------------------------
+
 
 def _count_failed_headers(path: str) -> int:
     if not os.path.exists(path):
@@ -170,6 +170,7 @@ def _rotate_failed_workflows() -> None:
 # ---------------------------------------------------------------------------
 # FAILED_WORKFLOWS.md writer
 # ---------------------------------------------------------------------------
+
 
 def _append_failed_workflow(entry: str) -> None:
     """Append a failure entry to FAILED_WORKFLOWS.md with 50-entry cap + rotation."""
@@ -240,6 +241,7 @@ def _build_schema_validation_failure_entry(
 # Task 10 — Merge algorithm with duplicate-ID conflict policy
 # ---------------------------------------------------------------------------
 
+
 def _nodes_are_identical(node_a: Dict[str, Any], node_b: Dict[str, Any]) -> bool:
     """Deep equality check for two node dicts."""
     return node_a == node_b
@@ -250,8 +252,7 @@ def _merge_node_lists(
     branch_nodes: List[Dict[str, Any]],
     yaml_filename: str,
 ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
-    """
-    Merge two node lists deterministically.
+    """Merge two node lists deterministically.
 
     Returns:
         (merged_list, None)          on success
@@ -312,9 +313,9 @@ def _merge_node_lists(
 # Task 12 — Post-merge schema validation
 # ---------------------------------------------------------------------------
 
+
 def _validate_architecture_yaml(filepath: str) -> Tuple[bool, str]:
-    """
-    Run post-merge schema validation checks.
+    """Run post-merge schema validation checks.
 
     Returns (True, "") on success, or (False, reason_string) on failure.
     """
@@ -371,9 +372,9 @@ def _validate_architecture_yaml(filepath: str) -> Tuple[bool, str]:
 # Top-level merge entry point
 # ---------------------------------------------------------------------------
 
+
 def semantic_merge(main_yaml_raw: str, branch_yaml_raw: str, output_yaml_raw: str) -> None:
-    """
-    Perform deterministic semantic merge of two architecture YAML files.
+    """Perform deterministic semantic merge of two architecture YAML files.
 
     Steps:
       1. Guard file types (Task 8)
@@ -418,9 +419,7 @@ def semantic_merge(main_yaml_raw: str, branch_yaml_raw: str, output_yaml_raw: st
     branch_nodes: List[Dict[str, Any]] = branch_data.get("nodes", []) or []
 
     # Task 10 — merge with conflict policy
-    merged_nodes, conflict_entry = _merge_node_lists(
-        main_nodes, branch_nodes, yaml_filename
-    )
+    merged_nodes, conflict_entry = _merge_node_lists(main_nodes, branch_nodes, yaml_filename)
 
     if conflict_entry is not None:
         # REBASE_CONFLICT — abort, do NOT touch output_yaml
@@ -478,9 +477,9 @@ def semantic_merge(main_yaml_raw: str, branch_yaml_raw: str, output_yaml_raw: st
 # Git conflict-marker support (1-arg invocation from hyper_orchestrator.py)
 # ---------------------------------------------------------------------------
 
+
 def _parse_conflict_markers(content: str) -> tuple:
-    """
-    Split a git conflict-marker file into (ours, theirs) strings.
+    """Split a git conflict-marker file into (ours, theirs) strings.
 
     Handles multiple conflict regions within the same file; non-conflicted
     lines are included in both output strings verbatim.
@@ -512,8 +511,7 @@ def _parse_conflict_markers(content: str) -> tuple:
 
 
 def _merge_from_conflict_markers(filepath: str) -> None:
-    """
-    1-arg mode: read a git-conflict-marked file, extract ours/theirs YAML
+    """1-arg mode: read a git-conflict-marked file, extract ours/theirs YAML
     versions, and call semantic_merge() with temporary intermediate files.
     """
     _guard_file_type(filepath)
@@ -526,8 +524,7 @@ def _merge_from_conflict_markers(filepath: str) -> None:
         sys.exit(1)
 
     if "<<<<<<<" not in content:
-        print(f"ERROR: {filepath} contains no git conflict markers (<<<<<<<). "
-              "Nothing to merge.")
+        print(f"ERROR: {filepath} contains no git conflict markers (<<<<<<<). Nothing to merge.")
         sys.exit(1)
 
     ours, theirs = _parse_conflict_markers(content)
@@ -535,14 +532,12 @@ def _merge_from_conflict_markers(filepath: str) -> None:
     main_tmp = branch_tmp = None
     try:
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yml", delete=False,
-            prefix="sgm_main_", encoding="utf-8"
+            mode="w", suffix=".yml", delete=False, prefix="sgm_main_", encoding="utf-8"
         ) as f:
             f.write(ours)
             main_tmp = f.name
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yml", delete=False,
-            prefix="sgm_branch_", encoding="utf-8"
+            mode="w", suffix=".yml", delete=False, prefix="sgm_branch_", encoding="utf-8"
         ) as f:
             f.write(theirs)
             branch_tmp = f.name

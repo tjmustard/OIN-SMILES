@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Hyper Daemon — Execute → Audit → Oracle → Fix loop
+"""Hyper Daemon — Execute → Audit → Oracle → Fix loop
 
 Supports two modes:
   - Standalone:     hyper_daemon.py <superprd_name> <miniprd_path>
@@ -10,6 +9,7 @@ The standalone mode behavior is identical in both paths (same loop, same guards)
 """
 
 import sys
+
 if sys.version_info < (3, 11):
     sys.exit("Python 3.11+ required")
 
@@ -20,7 +20,6 @@ import os
 import re
 import subprocess
 import tempfile
-import time
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -43,6 +42,7 @@ EXIT_TOKEN_OVERRUN = 3
 # Failure type enum (mirrors hyper_orchestrator.py — shared truth via enum)
 # ---------------------------------------------------------------------------
 
+
 class FailureType(str, Enum):
     ORACLE_FAILURE = "ORACLE_FAILURE"
     TOKEN_OVERRUN = "TOKEN_OVERRUN"
@@ -59,6 +59,7 @@ class FailureType(str, Enum):
 # FAILED_WORKFLOWS.md helpers
 # ---------------------------------------------------------------------------
 
+
 def _count_failed_headers(path: Path) -> int:
     if not path.exists():
         return 0
@@ -72,6 +73,7 @@ def _count_failed_headers(path: Path) -> int:
 def _rotate_failed_workflows() -> None:
     """Archive FAILED_WORKFLOWS.md when it reaches 50 entries."""
     import shutil
+
     FAILED_WORKFLOWS_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     iso = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     dest = FAILED_WORKFLOWS_ARCHIVE_DIR / f"FAILED_WORKFLOWS_{iso}.md"
@@ -119,6 +121,7 @@ def append_failed_workflow(
 # Agent subprocess runner
 # ---------------------------------------------------------------------------
 
+
 def _run_agent_script(
     script_name: str,
     args: list[str],
@@ -141,14 +144,16 @@ def _run_agent_script(
 # Task 18 — Oracle: --collect-only pre-flight
 # ---------------------------------------------------------------------------
 
+
 def _pytest_collect_count() -> int:
-    """
-    Run pytest --collect-only -q and parse item count.
+    """Run pytest --collect-only -q and parse item count.
     Returns the number of collected test items.
     """
     result = subprocess.run(
         ["uv", "run", "pytest", "--collect-only", "-q"],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     output = result.stdout + result.stderr
     # pytest outputs lines like "3 tests collected" or "no tests ran"
@@ -166,13 +171,14 @@ def _pytest_collect_count() -> int:
 
 
 def _run_oracle_tests() -> tuple[int, str, str]:
-    """
-    Run pytest with --maxfail=1 --tb=short.
+    """Run pytest with --maxfail=1 --tb=short.
     Returns (exit_code, stdout, stderr).
     """
     result = subprocess.run(
         ["uv", "run", "pytest", "--maxfail=1", "--tb=short"],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     return result.returncode, result.stdout, result.stderr
 
@@ -181,9 +187,9 @@ def _run_oracle_tests() -> tuple[int, str, str]:
 # Task 19 — Spec drift detector
 # ---------------------------------------------------------------------------
 
+
 def _extract_public_interface(source: str) -> set[str]:
-    """
-    Extract top-level public function/class names from Python source.
+    """Extract top-level public function/class names from Python source.
     Checks __all__ first; falls back to top-level def/class with no leading underscore.
     """
     try:
@@ -216,8 +222,7 @@ def _check_spec_drift(
     miniprd_path: Path,
     baseline_interface: set[str],
 ) -> bool:
-    """
-    Return True if spec drift exceeds SPEC_DRIFT_THRESHOLD.
+    """Return True if spec drift exceeds SPEC_DRIFT_THRESHOLD.
     Compares current on-disk Python files against the baseline interface captured
     at iteration 1.
     """
@@ -230,12 +235,11 @@ def _check_spec_drift(
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", "HEAD"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
-        changed_files = [
-            f for f in result.stdout.splitlines()
-            if f.endswith(".py")
-        ]
+        changed_files = [f for f in result.stdout.splitlines() if f.endswith(".py")]
         for filepath in changed_files:
             p = Path(filepath)
             if p.exists():
@@ -258,15 +262,16 @@ def _check_spec_drift(
 
 
 def _capture_baseline_interface(miniprd_path: Path) -> set[str]:
-    """
-    Capture the public interface from any Python files modified after the first execute.
+    """Capture the public interface from any Python files modified after the first execute.
     Called at the end of iteration 1.
     """
     names: set[str] = set()
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", "HEAD"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         for filepath in result.stdout.splitlines():
             if filepath.endswith(".py"):
@@ -286,14 +291,14 @@ def _capture_baseline_interface(miniprd_path: Path) -> set[str]:
 # Core Execute → Audit → Oracle → Fix loop
 # ---------------------------------------------------------------------------
 
+
 def run_loop(
     superprd_name: str,
     miniprd_path: Path,
     orchestrated_mode: bool = False,
     api_response_id: str = "",
 ) -> bool:
-    """
-    Execute the full autonomous loop.
+    """Execute the full autonomous loop.
     Returns True on success (all tests pass within MAX_ITERATIONS).
 
     Tasks implemented here:
@@ -374,7 +379,7 @@ def run_loop(
                 failure_type=FailureType.NO_TESTS_COLLECTED,
                 oracle_exit_code=5,
                 detail="pytest --collect-only reported 0 test items. "
-                       "Verify test files exist and are importable.",
+                "Verify test files exist and are importable.",
             )
             return False
 
@@ -409,13 +414,19 @@ def run_loop(
                 fix_script = Path(__file__).parent / "hyper_fix.py"
                 fix_result = subprocess.run(
                     [
-                        sys.executable, str(fix_script),
+                        sys.executable,
+                        str(fix_script),
                         str(miniprd_path),
-                        "--error-log", tmp_log_path,
-                        "--branch", branch_name,
-                        "--iteration", str(iteration),
+                        "--error-log",
+                        tmp_log_path,
+                        "--branch",
+                        branch_name,
+                        "--iteration",
+                        str(iteration),
                     ],
-                    env=env, capture_output=False, check=False,
+                    env=env,
+                    capture_output=False,
+                    check=False,
                 )
                 # Task 17 — stop_reason guard (daemon implementation):
                 # The daemon never calls client.messages.create() directly; API calls happen
@@ -434,7 +445,7 @@ def run_loop(
                         failure_type=FailureType.TOKEN_OVERRUN,
                         oracle_exit_code=oracle_exit_code,
                         detail="hyper_fix exited EXIT_TOKEN_OVERRUN (stop_reason=max_tokens); "
-                               "truncated output not written to disk.",
+                        "truncated output not written to disk.",
                     )
                     return False
             finally:
@@ -445,19 +456,27 @@ def run_loop(
 
     # Task 20 — max iterations reached; delegate ORACLE_FAILURE write to hyper_fix.py
     # so it is the canonical owner (Task 6 Autonomous Resolution MiniPRD)
-    print(f"[DAEMON] ORACLE_FAILURE: max {MAX_ITERATIONS} iterations reached without passing tests.")
+    print(
+        f"[DAEMON] ORACLE_FAILURE: max {MAX_ITERATIONS} iterations reached without passing tests."
+    )
     hyper_fix_script = Path(__file__).parent / "hyper_fix.py"
     env = os.environ.copy()
     env.update(env_vars)
     subprocess.run(
         [
-            sys.executable, str(hyper_fix_script),
-            str(miniprd_path), "--error-log", os.devnull,
-            "--branch", branch_name,
-            "--oracle-exit-code", str(oracle_exit_code),
+            sys.executable,
+            str(hyper_fix_script),
+            str(miniprd_path),
+            "--error-log",
+            os.devnull,
+            "--branch",
+            branch_name,
+            "--oracle-exit-code",
+            str(oracle_exit_code),
             "--record-oracle-failure",
         ],
-        env=env, check=False,
+        env=env,
+        check=False,
     )
     return False
 
@@ -466,13 +485,13 @@ def run_loop(
 # Orchestrated mode — called by hyper_orchestrator (Task 16)
 # ---------------------------------------------------------------------------
 
+
 def run_orchestrated_loop(
     superprd_name: str,
     miniprd_path: Path,
     api_response_id: str = "",
 ) -> bool:
-    """
-    Run the Execute → Audit → Oracle → Fix loop in orchestrated mode.
+    """Run the Execute → Audit → Oracle → Fix loop in orchestrated mode.
     The Anthropic API call was already made by the orchestrator; this function
     drives the subprocess-based execution pipeline only.
     """
@@ -489,9 +508,9 @@ def run_orchestrated_loop(
 # Standalone mode (Task 16)
 # ---------------------------------------------------------------------------
 
+
 def run_standalone(superprd_name: str, miniprd_path: Path) -> bool:
-    """
-    Standalone entry point. Behavior identical to orchestrated loop but
+    """Standalone entry point. Behavior identical to orchestrated loop but
     without expecting a pre-existing API response ID.
     """
     print(f"[DAEMON/STANDALONE] Starting loop for {miniprd_path.name}")
@@ -507,10 +526,11 @@ def run_standalone(superprd_name: str, miniprd_path: Path) -> bool:
 # Utility
 # ---------------------------------------------------------------------------
 
+
 def _derive_branch_name(miniprd_path: Path) -> str:
     stem = miniprd_path.stem
     if stem.startswith("MiniPRD_"):
-        stem = stem[len("MiniPRD_"):]
+        stem = stem[len("MiniPRD_") :]
     slug = stem.lower().replace("_", "-").replace(" ", "-")
     return f"feature/{slug}"
 
@@ -518,6 +538,7 @@ def _derive_branch_name(miniprd_path: Path) -> str:
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(

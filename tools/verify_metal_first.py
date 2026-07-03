@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Verification spike: Confirm that fragments[0] is always a transition metal.
+"""Verification spike: Confirm that fragments[0] is always a transition metal.
 
 This script gates MiniPRD_DirectParser_FragmentMapping_v0.2.2 (D3 gate).
 Before any code change lands, run this to assert the metal-first invariant
@@ -22,16 +21,61 @@ from typing import Set
 # Transition metal atomic numbers (3d, 4d, 5d blocks)
 TRANSITION_METALS: Set[str] = {
     # 3d metals
-    "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
     # 4d metals
-    "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
     # 5d metals
-    "La", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+    "La",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
     # Lanthanides (4f)
-    "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho",
-    "Er", "Tm", "Yb", "Lu",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
     # Actinides (5f)
-    "Th", "Pa", "U", "Np", "Pu", "Am", "Cm",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
 }
 
 
@@ -42,12 +86,12 @@ def extract_fragments(oin_smiles: str) -> list[str]:
     """
     # Remove OIN annotations to get clean SMILES
     clean = oin_smiles
-    clean = re.sub(r'_[A-Z0-9]+', '', clean)  # Remove shape codes
-    clean = re.sub(r'@SP[0-9]+', '', clean)   # Remove chiral tags
-    clean = re.sub(r'\{[0-9><]+\}', '', clean)  # Remove vertex indices
+    clean = re.sub(r"_[A-Z0-9]+", "", clean)  # Remove shape codes
+    clean = re.sub(r"@SP[0-9]+", "", clean)  # Remove chiral tags
+    clean = re.sub(r"\{[0-9><]+\}", "", clean)  # Remove vertex indices
 
     # Split by dots (fragment separators)
-    fragments = clean.split('.')
+    fragments = clean.split(".")
     return fragments
 
 
@@ -58,12 +102,12 @@ def get_first_atom_symbol(fragment_smiles: str) -> str:
     E.g., "[Pt@L1]" → "Pt", "[Cl]" → "Cl", "C" → "C"
     """
     # Match bracketed atoms: [symbol...] or just symbol
-    bracket_match = re.match(r'\[([A-Z][a-z]?)', fragment_smiles)
+    bracket_match = re.match(r"\[([A-Z][a-z]?)", fragment_smiles)
     if bracket_match:
         return bracket_match.group(1)
 
     # Match unbracketed atom (C, N, O, etc.)
-    simple_match = re.match(r'([A-Z][a-z]?)', fragment_smiles)
+    simple_match = re.match(r"([A-Z][a-z]?)", fragment_smiles)
     if simple_match:
         return simple_match.group(1)
 
@@ -76,7 +120,7 @@ def extract_metal_from_xyz(xyz_content: str) -> str:
     XYZ format: line 0 = count, line 1 = comment, line 2+ = atoms.
     Each atom line: symbol x y z
     """
-    lines = xyz_content.strip().split('\n')
+    lines = xyz_content.strip().split("\n")
     if len(lines) < 3:
         return ""
 
@@ -116,7 +160,13 @@ def verify_fixtures():
                 continue
 
             if metal_symbol not in TRANSITION_METALS:
-                results.append((fixture_path.name, "FAIL", f"First atom is '{metal_symbol}' (not a transition metal)"))
+                results.append(
+                    (
+                        fixture_path.name,
+                        "FAIL",
+                        f"First atom is '{metal_symbol}' (not a transition metal)",
+                    )
+                )
                 all_passed = False
             else:
                 results.append((fixture_path.name, "PASS", f"Metal: {metal_symbol}"))

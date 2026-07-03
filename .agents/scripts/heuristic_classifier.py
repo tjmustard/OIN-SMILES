@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""
-Heuristic Classifier
+"""Heuristic Classifier
 
 Analyzes skill characteristics and suggests appropriate Claude model tier.
 Helps developers assign correct model without guessing.
 """
 
-import yaml
 import re
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 
 class ModelTier(Enum):
     """Available model tiers."""
+
     HAIKU = "haiku"
     SONNET = "sonnet"
     OPUS = "opus"
@@ -23,6 +24,7 @@ class ModelTier(Enum):
 @dataclass
 class ClassifierSuggestion:
     """Suggestion for appropriate model tier."""
+
     suggested_tier: str  # "haiku", "sonnet", "opus"
     confidence: float  # 0.0 to 1.0
     reasoning: List[str]  # Human-readable reasons for suggestion
@@ -40,7 +42,7 @@ class SkillSpec:
         tool_calls: Optional[int] = None,
         reasoning_intensity: Optional[str] = None,
         output_determinism: Optional[str] = None,
-        content: Optional[str] = None
+        content: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -63,7 +65,6 @@ class SkillSpec:
         # Infer reasoning intensity from keywords
         heavy_keywords = ["complex", "adversarial", "architecture", "trade", "red team", "strategy"]
         medium_keywords = ["analyze", "generate", "optimize", "coordinate", "decide"]
-        light_keywords = ["format", "extract", "simple", "read", "list"]
 
         content_lower = (self.description + " " + self.content).lower()
 
@@ -95,15 +96,14 @@ class HeuristicClassifier:
     def _load_rules(self) -> Dict[str, Any]:
         """Load heuristic rules from YAML."""
         try:
-            with open(self.rules_path, 'r') as f:
+            with open(self.rules_path, "r") as f:
                 return yaml.safe_load(f) or {}
         except FileNotFoundError:
             print(f"Warning: Rules file not found: {self.rules_path}")
             return {"tiers": {}}
 
     def suggest(self, skill_spec: SkillSpec) -> ClassifierSuggestion:
-        """
-        Suggest appropriate model tier for a skill.
+        """Suggest appropriate model tier for a skill.
 
         Args:
             skill_spec: SkillSpec with skill characteristics
@@ -140,11 +140,9 @@ class HeuristicClassifier:
             confidence=min(best_score, 1.0),
             reasoning=reasoning,
             alternatives={
-                tier: min(score, 1.0)
-                for tier, score in scores.items()
-                if tier != best_tier
+                tier: min(score, 1.0) for tier, score in scores.items() if tier != best_tier
             },
-            rule_matched=matched_rules[best_tier]
+            rule_matched=matched_rules[best_tier],
         )
 
     def _score_tier(self, spec: SkillSpec, tier_name: str) -> tuple:
@@ -231,23 +229,20 @@ if __name__ == "__main__":
         skill_name = sys.argv[1]
         description = sys.argv[2] if len(sys.argv) > 2 else ""
 
-        spec = SkillSpec(
-            name=skill_name,
-            description=description
-        )
+        spec = SkillSpec(name=skill_name, description=description)
         spec.infer_characteristics()
 
         suggestion = classifier.suggest(spec)
 
-        print(f"\nClassification Result:")
+        print("\nClassification Result:")
         print(f"  Skill: {skill_name}")
         print(f"  Suggested Tier: {suggestion.suggested_tier}")
         print(f"  Confidence: {suggestion.confidence:.2f}")
         print(f"  Matched Rule: {suggestion.rule_matched}")
-        print(f"\nReasoning:")
+        print("\nReasoning:")
         for reason in suggestion.reasoning:
             print(f"  - {reason}")
-        print(f"\nAlternatives:")
+        print("\nAlternatives:")
         for tier, conf in suggestion.alternatives.items():
             print(f"  - {tier}: {conf:.2f}")
     else:

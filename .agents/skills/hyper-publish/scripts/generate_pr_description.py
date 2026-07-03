@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate a PR description from CHANGELOG [Unreleased] block.
+"""Generate a PR description from CHANGELOG [Unreleased] block.
 
 Extracts:
   - ## [Unreleased] block (preferred) or most recent version block
@@ -40,9 +39,7 @@ def parse_changelog(changelog_path):
             content = f.read()
 
         # Try [Unreleased] first
-        block_match = re.search(
-            r"## \[Unreleased\](.*?)(?=## \[|\Z)", content, re.DOTALL
-        )
+        block_match = re.search(r"## \[Unreleased\](.*?)(?=## \[|\Z)", content, re.DOTALL)
 
         if block_match:
             block_content = block_match.group(1)
@@ -52,9 +49,7 @@ def parse_changelog(changelog_path):
                 return result
 
         # [Unreleased] is empty or has no bullets — try most recent version block
-        block_match = re.search(
-            r"## \[\d+\.\d+\.\d+\](.*?)(?=## \[|\Z)", content, re.DOTALL
-        )
+        block_match = re.search(r"## \[\d+\.\d+\.\d+\](.*?)(?=## \[|\Z)", content, re.DOTALL)
 
         if block_match:
             block_content = block_match.group(1)
@@ -117,11 +112,10 @@ def generate_test_plan_items(bullets):
 
 def generate_pr_description(changelog_data):
     """Format changelog data as PR description markdown."""
-
     all_bullets = (
-        changelog_data.get("added", []) +
-        changelog_data.get("changed", []) +
-        changelog_data.get("removed", [])
+        changelog_data.get("added", [])
+        + changelog_data.get("changed", [])
+        + changelog_data.get("removed", [])
     )
 
     if not all_bullets:
@@ -156,7 +150,7 @@ def main():
         pr_description = generate_pr_description(changelog_data)
         print(pr_description, end="")
         sys.exit(0)
-    except Exception as e:
+    except Exception:
         # Fallback: output minimal template on any error
         fallback = (
             "## Summary\n"

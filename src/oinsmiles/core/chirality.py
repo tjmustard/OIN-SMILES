@@ -6,6 +6,7 @@ Three classes handle the full lifecycle of P/N stereocenter encoding:
     OINSanitizer strips the metal context.
   - PseudoAtomStrategy: fallback for P/N atoms with 4 neighbors but no computable CIP code.
 """
+
 from __future__ import annotations
 
 from rdkit import Chem
@@ -73,12 +74,12 @@ class CIPAssigner:
         mol:
             RDKit ``Mol`` with an embedded 3D conformer.  Must not be ``None``.
 
-        Returns
+        Returns:
         -------
         Chem.Mol
             The same mol object with updated atom properties and chiral tags.
 
-        Raises
+        Raises:
         ------
         ValueError
             If *mol* is ``None``.
@@ -130,7 +131,7 @@ class ChiralityRecoveryUtility:
         mol:
             Fragment ``Mol`` returned by ``OINSanitizer.generate_robust_smiles()``.
 
-        Returns
+        Returns:
         -------
         Chem.Mol
             Updated mol with corrected P/N chiral tags.

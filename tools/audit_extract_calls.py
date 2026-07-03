@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Audit tool: Find all call sites of extract_oin_constraints.
+"""Audit tool: Find all call sites of extract_oin_constraints.
 
 This tool enumerates every call site of extract_oin_constraints() in src/
 and tests/ to verify that the rename from extract_oin_constraints to
@@ -20,6 +19,7 @@ import re
 import sys
 from pathlib import Path
 from typing import List, Tuple
+
 
 def find_references(pattern: str) -> List[Tuple[Path, int, str]]:
     """Find all references to a function pattern in src/ and tests/.
@@ -49,19 +49,20 @@ def find_references(pattern: str) -> List[Tuple[Path, int, str]]:
 
 
 def main():
+    """Run the audit and print a summary of call sites."""
     print("\n" + "=" * 100)
     print("AUDIT: Call Sites of extract_oin_constraints()")
     print("=" * 100 + "\n")
 
     # Find both prefixed (_extract_oin_constraints) and unprefixed versions
-    unprefixed = find_references(r'\bextract_oin_constraints\b')
-    prefixed = find_references(r'\b_extract_oin_constraints\b')
+    unprefixed = find_references(r"\bextract_oin_constraints\b")
+    prefixed = find_references(r"\b_extract_oin_constraints\b")
 
     # Print unprefixed (should be zero after rename)
     if unprefixed:
         print("UNPREFIXED (extract_oin_constraints) — SHOULD BE ZERO AFTER TASK 3:")
         for file_path, line_num, line_content in unprefixed:
-            snippet = line_content[:80].replace('\n', '')
+            snippet = line_content[:80].replace("\n", "")
             print(f"  {file_path}:{line_num}: {snippet}")
         print()
 
@@ -69,7 +70,7 @@ def main():
     if prefixed:
         print("PREFIXED (_extract_oin_constraints) — Expected call sites:")
         for file_path, line_num, line_content in prefixed:
-            snippet = line_content[:80].replace('\n', '')
+            snippet = line_content[:80].replace("\n", "")
             print(f"  {file_path}:{line_num}: {snippet}")
         print()
 
