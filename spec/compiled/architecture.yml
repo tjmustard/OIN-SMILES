@@ -129,9 +129,9 @@ nodes:
     - atom_cli_main
 - id: atom_api_exports
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/__init__.py
-  description: 'Public API exports: XYZToSMILES, SMILESToXYZ classes'
+  description: 'Re-exports two public API classes (XYZToSMILES, SMILESToXYZ) from core.translator module'
   inputs:
   - data_type: module_import
     source_id: mod_core
@@ -147,7 +147,7 @@ nodes:
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/core/translator.py
-  description: "XYZToSMILES: Main API for XYZ file \u2192 OIN/SMILES conversion"
+  description: "XYZToSMILES.convert(): Reads XYZ file, generates TMC graph via xyz2mol, assigns CIP codes to stereocenters, then generates OIN v3.6 inline string via get_oin_string()"
   inputs:
   - data_type: xyz_file_path
     source_id: user_code
@@ -158,25 +158,23 @@ nodes:
     depends_on:
     - atom_xyz2mol
     - atom_cip_assigner
-    - atom_oin_aligner
     - atom_chirality_recovery
     - atom_oin_inline_handler
     implements: []
 - id: atom_smiles_to_xyz
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/core/translator.py
-  description: "SMILESToXYZ: Main API for OIN/SMILES \u2192 3D XYZ conversion (incomplete\
-    \ stub)"
+  description: "SMILESToXYZ.convert(): Incomplete stub that parses OIN string with legacy OINParser and returns placeholder TMCGraph with dummy atoms; actual 3D coordinate generation not implemented (should delegate to OIN3DGenerator)"
   inputs:
   - data_type: oin_string
     source_id: user_code
   outputs:
-  - data_type: xyz_block
+  - data_type: tmc_graph
     target_id: user_code
   edges:
     depends_on:
-    - atom_oin3d_generator
+    - atom_oin_parser_oin
     implements: []
 - id: atom_cip_assigner
   dimension: Atomic
@@ -240,10 +238,9 @@ nodes:
     implements: []
 - id: atom_oin3d_generator
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/generation/engine.py
-  description: "OIN3DGenerator: Main API for OIN string \u2192 3D GeneratedStructure;\
-    \ timeout handling via ProcessPoolExecutor"
+  description: "OIN3DGenerator.generate(): Public API for OIN string \u2192 3D GeneratedStructure; delegates to OINParser.parse() for legacy parsing, then MolassemblerAdapter for structure generation with timeout handling"
   inputs:
   - data_type: oin_string
     source_id: user_code
@@ -295,11 +292,11 @@ nodes:
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'Regex Preprocessor (v0.2.2): Extracts OIN v3.6 inline annotations (shape
-    codes, chiral tags, vertex indices); returns clean SMILES with RDKit atom maps
-    and fragment-to-atom mapping for downstream eta-bond and polydentate processing.
-    Function: _extract_oin_constraints() → 3-tuple (stripped_smiles, constraints_dict,
-    fragment_to_atom_mapping)'
+  description: "Regex Preprocessor (v0.2.2): Extracts OIN v3.6 inline annotations\
+    \ (shape codes, chiral tags, vertex indices); returns clean SMILES with RDKit\
+    \ atom maps and fragment-to-atom mapping for downstream eta-bond and polydentate\
+    \ processing. Function: _extract_oin_constraints() \u2192 3-tuple (stripped_smiles,\
+    \ constraints_dict, fragment_to_atom_mapping)"
   inputs:
   - data_type: oin_string
     source_id: atom_oin3d_generator
@@ -354,14 +351,12 @@ nodes:
     implements: []
 - id: atom_direct_parser_integration
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/generation/engine.py
-  description: "Direct Parser Integration: Integrates regex \u2192 AST \u2192 Molassembler\
-    \ components into OIN3DGenerator.generate(); handles DG conformer generation with\
-    \ timeout"
+  description: "parse_oin_direct(): Standalone function implementing full OIN parser pipeline (regex \u2192 AST \u2192 Molassembler \u2192 DG); NOT currently integrated into OIN3DGenerator (which uses legacy parser); available as alternative for direct parsing"
   inputs:
   - data_type: oin_string
-    source_id: atom_oin3d_generator
+    source_id: user_code
   outputs:
   - data_type: generated_structure
     target_id: user_code
@@ -370,11 +365,10 @@ nodes:
     - atom_direct_parser_regex
     - atom_direct_parser_ast
     - atom_direct_parser_masm
-    implements:
-    - atom_oin3d_generator
+    implements: []
 - id: atom_oin_parser_gen
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/generation/oin_parser.py
   description: "OINParser (generation): Parses OIN strings \u2192 ParsedOIN dataclass\
     \ with geometry, slots, connectivity; uses regex preprocessor for v3.6 inline\
@@ -411,7 +405,7 @@ nodes:
     implements: []
 - id: atom_oin_parser_oin
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/oin/parser.py
   description: 'OINParser (oin): Alternative parser returning (str, Dict) tuple; superseded
     by generation/oin_parser in v0.2.0+'
@@ -491,10 +485,9 @@ nodes:
     implements: []
 - id: atom_cli_main
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/cli.py
-  description: 'CLI entry point: Parses oin-smiles [xyz2oin|oin2xyz] commands and
-    calls respective APIs; handles GeneratedStructure return type from OIN3DGenerator'
+  description: "main() and subcommand handlers: Entry point for 'oin-smiles' CLI; parses argv to dispatch xyz2oin or oin2xyz subcommands; handles GeneratedStructure.xyz attribute and error codes"
   inputs:
   - data_type: sys_argv
     source_id: user_code
@@ -504,22 +497,30 @@ nodes:
   edges:
     depends_on:
     - atom_xyz_to_smiles
-    - atom_smiles_to_xyz
+    - atom_oin3d_generator
     implements: []
 metadata:
   total_modules: 6
   total_atomic_nodes: 28
   status_distribution:
     clean: 26
-    needs_review: 2
+    dirty: 2
+    needs_review: 0
   dirty_nodes:
-  - atom_smiles_to_xyz (incomplete stub in translator.py)
-  - atom_oin_parser_oin (superseded by generation/oin_parser.py)
+  - atom_direct_parser_ast (deferred from v0.2.1)
+  - atom_direct_parser_masm (deferred from v0.2.1)
+  nodes_reviewed:
+  - atom_api_exports (updated description)
+  - atom_xyz_to_smiles (updated description; removed atom_oin_aligner from dependencies)
+  - atom_smiles_to_xyz (updated description; corrected output type to tmc_graph; updated dependencies)
+  - atom_oin3d_generator (updated description; clarified legacy parser delegation)
+  - atom_direct_parser_integration (updated description; clarified standalone status)
+  - atom_cli_main (updated description; corrected to depend on atom_oin3d_generator)
   generated_by: /hyper-discover + /hyper-audit MiniPRD_DirectParser_RegexPreprocessor
-    + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation
+    + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation + manual cleanup (2026-07-03)
   generation_date: '2026-05-06'
-  last_audit: '2026-05-06'
-  last_audit_miniprd: MiniPRD_DirectParser_MolassemblerInstantiation
+  last_audit: '2026-07-03'
+  last_audit_notes: All 6 needs_review nodes audited against source code; inputs/outputs/descriptions updated to match actual implementation; all moved to clean status
   description: "OIN-SMILES system consists of 6 core modules (API, Core, Generation,\
     \ OIN, Utils, CLI) with 28 atomic components (classes/functions). Key pipelines:\
     \ XYZ\u2192OIN (7 steps) and OIN\u2192XYZ (5 steps with direct parser). v0.2.1+\

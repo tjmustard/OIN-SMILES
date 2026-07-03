@@ -1,24 +1,24 @@
-import dataclasses
-from dataclasses import dataclass
-from typing import List, Tuple, Dict
-import numpy as np
 import re
-from rdkit import Chem
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
 import scine_molassembler as masm
+from rdkit import Chem
 
 # --- Molassembler Shape Mapping (v0.2.1) ---
 # Maps OIN geometry codes to Molassembler shape names
 SCINE_SHAPE_MAP: Dict[str, str] = {
-    'LIN': 'Line',
-    'TPL': 'EquilateralTriangle',
-    'SQP': 'Square',  # Square Planar (primary code)
-    'SPL': 'Square',  # Square Planar (alternate code)
-    'TET': 'Tetrahedron',
-    'TPY': 'TrigonalPyramid',
-    'SPY': 'SquarePyramid',
-    'TBP': 'TrigonalBipyramid',
-    'OCT': 'Octahedron',
-    'PBP': 'PentagonalBipyramid',
+    "LIN": "Line",
+    "TPL": "EquilateralTriangle",
+    "SQP": "Square",  # Square Planar (primary code)
+    "SPL": "Square",  # Square Planar (alternate code)
+    "TET": "Tetrahedron",
+    "TPY": "TrigonalPyramid",
+    "SPY": "SquarePyramid",
+    "TBP": "TrigonalBipyramid",
+    "OCT": "Octahedron",
+    "PBP": "PentagonalBipyramid",
 }
 
 
@@ -107,19 +107,15 @@ def construct_molassembler_mol(
         # Note: Molassembler may add hydrogen atoms, so mol.graph.V might be > len(atoms)
         # We just verify that we have at least the heavy atoms
         if mol.graph.V < len(atoms):
-            raise ValueError(
-                f"Atom count too low: input has {len(atoms)}, mol has {mol.graph.V}"
-            )
+            raise ValueError(f"Atom count too low: input has {len(atoms)}, mol has {mol.graph.V}")
 
         # Step 2: Assign polyhedral shape to metal center (assume at index 0)
-        if 0 in constraints and 'shape' in constraints[0]:
-            shape_code = constraints[0]['shape']
+        if 0 in constraints and "shape" in constraints[0]:
+            shape_code = constraints[0]["shape"]
 
             if shape_code not in SCINE_SHAPE_MAP:
                 valid_shapes = list(SCINE_SHAPE_MAP.keys())
-                raise ValueError(
-                    f"Unknown shape '{shape_code}'; valid shapes: {valid_shapes}"
-                )
+                raise ValueError(f"Unknown shape '{shape_code}'; valid shapes: {valid_shapes}")
 
             try:
                 scine_shape_name = SCINE_SHAPE_MAP[shape_code]
@@ -146,8 +142,8 @@ def construct_molassembler_mol(
                 ) from e
 
         # Step 3: Add eta bonds (metal to ligand atoms at same slot)
-        if 0 in constraints and 'vertex_indices' in constraints[0]:
-            vertex_indices = constraints[0]['vertex_indices']
+        if 0 in constraints and "vertex_indices" in constraints[0]:
+            vertex_indices = constraints[0]["vertex_indices"]
             metal_idx = 0
 
             for vertex_index, frag_rank in enumerate(vertex_indices):
@@ -207,14 +203,12 @@ def construct_molassembler_mol(
         raise
     except Exception as e:
         # Wrap any other exception
-        raise ValueError(
-            f"Failed to construct Molassembler molecule: {e}"
-        ) from e
+        raise ValueError(f"Failed to construct Molassembler molecule: {e}") from e
+
 
 # --- Regex Preprocessor for Direct Parser (v0.2.1) ---
 def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dict[int, List[int]]]:
-    """
-    Extract polyhedral shape codes, chiral tags, vertex indices, and fragment-to-atom mapping.
+    r"""Extract polyhedral shape codes, chiral tags, vertex indices, and fragment-to-atom mapping.
 
     Args:
         oin_smiles: OIN-SMILES string in v3.6 format (e.g., "[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}")
@@ -222,8 +216,10 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
     Returns:
         3-tuple: (stripped_smiles, constraints_dict, fragment_to_atom_mapping)
         - stripped_smiles: SMILES with OIN annotations removed, with RDKit atom maps
-        - constraints_dict: {atom_idx: {'shape': str, 'chiral_tag': str, 'vertex_indices': list[int]}}
-        - fragment_to_atom_mapping: {fragment_rank: [atom_indices]} mapping fragment ranks to atom indices in connected SMILES
+        - constraints_dict: {atom_idx: {'shape': str, 'chiral_tag': str,
+          'vertex_indices': list[int]}}
+        - fragment_to_atom_mapping: {fragment_rank: [atom_indices]} mapping
+          fragment ranks to atom indices in connected SMILES
 
     Patterns extracted from v3.6 format:
     - Shape codes: _([A-Z0-9]+) → e.g., _SQP, _OC, _SPL, _LIN
@@ -231,9 +227,9 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
     - Vertex indices: \{([0-9><]+)\} → e.g., {0}, {1}, {0>} (> = CW, < = CCW)
     """
     # Regex patterns for extracting OIN v3.6 annotations
-    shape_pattern = r'_([A-Z0-9]+)'
-    chiral_pattern = r'@SP([0-9]+)'
-    vertex_pattern = r'\{([0-9><]+)\}'
+    shape_pattern = r"_([A-Z0-9]+)"
+    chiral_pattern = r"@SP([0-9]+)"
+    vertex_pattern = r"\{([0-9><]+)\}"
 
     constraints: Dict[int, Dict] = {}
     frag_vertex_map: Dict[int, int] = {}  # Maps fragment rank to vertex index
@@ -246,7 +242,7 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
         atom_idx = 0
         if atom_idx not in constraints:
             constraints[atom_idx] = {}
-        constraints[atom_idx]['shape'] = shape_code
+        constraints[atom_idx]["shape"] = shape_code
 
     # Extract chiral tag from metal atom
     chiral_match = re.search(chiral_pattern, oin_smiles)
@@ -255,16 +251,16 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
         atom_idx = 0
         if atom_idx not in constraints:
             constraints[atom_idx] = {}
-        constraints[atom_idx]['chiral_tag'] = chiral_tag
+        constraints[atom_idx]["chiral_tag"] = chiral_tag
 
     # Extract vertex indices per-fragment
     # Split the OIN string by fragments (dots) and look for {N} patterns in each
-    fragments = oin_smiles.split('.')
+    fragments = oin_smiles.split(".")
     for frag_rank, frag_smiles in enumerate(fragments):
         vertex_matches = re.findall(vertex_pattern, frag_smiles)
         if vertex_matches:
             # Take the first vertex annotation in this fragment
-            numeric_part = vertex_matches[0].rstrip('><')
+            numeric_part = vertex_matches[0].rstrip("><")
             if numeric_part.isdigit():
                 vertex_idx = int(numeric_part)
                 frag_vertex_map[frag_rank] = vertex_idx
@@ -283,18 +279,18 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
         if vertex_indices:
             if 0 not in constraints:
                 constraints[0] = {}
-            constraints[0]['vertex_indices'] = vertex_indices
+            constraints[0]["vertex_indices"] = vertex_indices
 
     # SECOND: Strip OIN annotations to produce clean SMILES
     stripped = oin_smiles
-    stripped = re.sub(shape_pattern, '', stripped)
-    stripped = re.sub(chiral_pattern, '', stripped)
-    stripped = re.sub(vertex_pattern, '', stripped)
+    stripped = re.sub(shape_pattern, "", stripped)
+    stripped = re.sub(chiral_pattern, "", stripped)
+    stripped = re.sub(vertex_pattern, "", stripped)
 
     # THIRD: Build fragment-to-atom mapping before adding atom maps
     # Split into fragments (separated by dots) and track which atoms belong to which fragment
     fragment_to_atom_mapping: Dict[int, List[int]] = {}
-    fragments = stripped.split('.')
+    fragments = stripped.split(".")
     atom_idx = 0
 
     for frag_rank, frag_smiles in enumerate(fragments):
@@ -302,18 +298,18 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
         # Count atoms in this fragment
         i = 0
         while i < len(frag_smiles):
-            if frag_smiles[i] == '[':
+            if frag_smiles[i] == "[":
                 # Bracketed atom
                 j = i + 1
-                while j < len(frag_smiles) and frag_smiles[j] != ']':
+                while j < len(frag_smiles) and frag_smiles[j] != "]":
                     j += 1
                 frag_atoms.append(atom_idx)
                 atom_idx += 1
                 i = j + 1
-            elif frag_smiles[i] in 'CNOPSBIFCcnopsbif':
+            elif frag_smiles[i] in "CNOPSBIFCcnopsbif":
                 # Unbracketed organic atom (both uppercase and lowercase aromatic)
                 # Check if it's a two-letter symbol (Cl, Br)
-                if i + 1 < len(frag_smiles) and frag_smiles[i:i+2] in ['Cl', 'Br']:
+                if i + 1 < len(frag_smiles) and frag_smiles[i : i + 2] in ["Cl", "Br"]:
                     i += 1
                 frag_atoms.append(atom_idx)
                 atom_idx += 1
@@ -326,23 +322,23 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
     # FOURTH: Insert RDKit atom maps for tracking through AST tokenization
     # Replace [Metal] → [Metal:1], [Cl] → [Cl:2], etc.
     atom_map_counter = 1
-    stripped_with_maps = ''
+    stripped_with_maps = ""
     i = 0
     while i < len(stripped):
-        if stripped[i] == '[':
+        if stripped[i] == "[":
             # Find the closing bracket
             j = i + 1
-            while j < len(stripped) and stripped[j] != ']':
+            while j < len(stripped) and stripped[j] != "]":
                 j += 1
             if j < len(stripped):
                 # Extract the atom specification
-                atom_spec = stripped[i+1:j]
+                atom_spec = stripped[i + 1 : j]
                 # Check if it already has an atom map (contains :)
-                if ':' not in atom_spec:
-                    stripped_with_maps += f'[{atom_spec}:{atom_map_counter}]'
+                if ":" not in atom_spec:
+                    stripped_with_maps += f"[{atom_spec}:{atom_map_counter}]"
                     atom_map_counter += 1
                 else:
-                    stripped_with_maps += stripped[i:j+1]
+                    stripped_with_maps += stripped[i : j + 1]
                 i = j + 1
             else:
                 stripped_with_maps += stripped[i]
@@ -355,8 +351,7 @@ def _extract_oin_constraints(oin_smiles: str) -> Tuple[str, Dict[int, Dict], Dic
 
 
 def tokenize_unsanitized_smiles(stripped_smiles: str) -> Tuple[List, List]:
-    """
-    Parse unsanitized SMILES into atom and bond lists for AST processing.
+    """Parse unsanitized SMILES into atom and bond lists for AST processing.
 
     Converts a SMILES string (with RDKit atom maps from regex stage) into lists of
     RDKit Atom and bond tuple objects. The molecule is parsed without sanitization
@@ -402,113 +397,131 @@ def tokenize_unsanitized_smiles(stripped_smiles: str) -> Tuple[List, List]:
 
     return atoms, bonds
 
+
 # --- V2.3 Templates for Parser Resolution ---
 def normalize_template(arr):
+    """Return the template with each row normalized to a unit vector."""
     return arr / np.linalg.norm(arr, axis=1)[:, None]
 
+
 TEMPLATES = {
-    'LIN': np.array([[0,0,1], [0,0,-1]]),
-    'TPL': np.array([[0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]]),
-    'SPL': np.array([[1,0,0], [0,1,0], [-1,0,0], [0,-1,0]]),
-    'SPY': np.array([
-        [0,0,1],
-        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
-    ]),
-    'TET': np.array([
-        [ 1,  1,  1], [ 1, -1, -1], [-1,  1, -1], [-1, -1,  1]
-    ]),
-    'TPY': np.array([
-        [0,0,1], 
-        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0] 
-    ]),
-    'TBP': np.array([
-        [0,0,1], [0,0,-1],
-        [0,1,0], [0.8660254,-0.5,0], [-0.8660254,-0.5,0]
-    ]),
-    'OCT': np.array([
-        [0,0,1], [0,0,-1],
-        [1,0,0], [-1,0,0], [0,1,0], [0,-1,0]
-    ]),
-    'PBP': np.array([
-        [0,0,1], [0,0,-1], # Axial
-        [1,0,0], # Eq 1 (0 deg)
-        [0.30901699, 0.95105652, 0], # Eq 2 (72 deg)
-        [-0.80901699, 0.58778525, 0], # Eq 3 (144 deg)
-        [-0.80901699, -0.58778525, 0], # Eq 4 (216 deg)
-        [0.30901699, -0.95105652, 0] # Eq 5 (288 deg)
-    ])
+    "LIN": np.array([[0, 0, 1], [0, 0, -1]]),
+    "TPL": np.array([[0, 1, 0], [0.8660254, -0.5, 0], [-0.8660254, -0.5, 0]]),
+    "SPL": np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0]]),
+    "SPY": np.array([[0, 0, 1], [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0]]),
+    "TET": np.array([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]),
+    "TPY": np.array([[0, 0, 1], [0, 1, 0], [0.8660254, -0.5, 0], [-0.8660254, -0.5, 0]]),
+    "TBP": np.array(
+        [[0, 0, 1], [0, 0, -1], [0, 1, 0], [0.8660254, -0.5, 0], [-0.8660254, -0.5, 0]]
+    ),
+    "OCT": np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0]]),
+    "PBP": np.array(
+        [
+            [0, 0, 1],
+            [0, 0, -1],  # Axial
+            [1, 0, 0],  # Eq 1 (0 deg)
+            [0.30901699, 0.95105652, 0],  # Eq 2 (72 deg)
+            [-0.80901699, 0.58778525, 0],  # Eq 3 (144 deg)
+            [-0.80901699, -0.58778525, 0],  # Eq 4 (216 deg)
+            [0.30901699, -0.95105652, 0],  # Eq 5 (288 deg)
+        ]
+    ),
 }
+
 
 @dataclass
 class OINVector:
+    """A coordination vector for one binding atom, with its fragment location."""
+
     atom_idx: int
     vector: Tuple[float, float, float]
     fragment_idx: int
     atom_in_fragment_idx: int
+    winding: Optional[str] = None
+
 
 @dataclass
 class ParsedOIN:
+    """Structured result of parsing an OIN string for 3D generation."""
+
     smiles: str
     fragments: List[str]
     metal_fragment_idx: int
     vectors: List[OINVector]
     original_oin: str
     geo_code: str = ""
+    winding_by_slot: Dict[int, Optional[str]] = field(default_factory=dict)
+
 
 class OINParser:
+    """Parse an OIN string into a ParsedOIN for the 3D generation pipeline."""
+
     def parse(self, oin_string: str) -> ParsedOIN:
+        """Parse an OIN string into a ParsedOIN structure."""
         # Check for V3.0 Inline Topology
         # Heuristic: No "|" separator AND contains Metal tag like [Pt_SPL]
         from ..oin.inline import OINInlineHandler
-        
+
         is_inline = False
         parts = oin_string.split("|")
         smiles = parts[0].strip()
         metadata = parts[1:] if len(parts) > 1 else []
-        
+
         if len(parts) == 1 and OINInlineHandler.METAL_REGEX.search(oin_string):
-             is_inline = True
-             
+            is_inline = True
+
         if is_inline:
-             # Convert Inline -> Standard (Sidecar) components
-             # Note: OINInlineHandler.parse_inline_string returns (smiles, geo, vector_list)
-             # but vector_list is just (Rank, Slot). We need to map to vectors.
-             
-             smiles, geo_code, vector_data = OINInlineHandler.parse_inline_string(oin_string)
-             fragments = smiles.split(".")
-             metal_fragment_idx = 0 # Assumption
-             
-             tmpl_vectors = TEMPLATES.get(geo_code)
-             vectors = []
-             
-             if tmpl_vectors is not None:
-                for lig_rank, atom_in_fragment_idx, slot_idx in vector_data:
-                    if slot_idx < len(tmpl_vectors):
-                        resolved_vec = tmpl_vectors[slot_idx] 
-                        
-                        vectors.append(OINVector(
+            # Convert Inline -> Standard (Sidecar) components
+            # Note: OINInlineHandler.parse_inline_string returns (smiles, geo, vector_list)
+            # but vector_list is just (Rank, Slot). We need to map to vectors.
+
+            smiles, geo_code, vector_data = OINInlineHandler.parse_inline_string(oin_string)
+            fragments = smiles.split(".")
+            metal_fragment_idx = 0  # Assumption
+
+            tmpl_vectors = TEMPLATES.get(geo_code)
+            vectors = []
+            winding_by_slot = {}
+
+            for sa in vector_data:
+                # Universal channel: populated for every slot assignment,
+                # regardless of whether a geometry template exists, so
+                # template-less (NON/eta) paths never lose winding.
+                # Guard prevents non-heading atoms (with winding=None) from clobbering
+                # the heading atom's winding in multi-atom slots (e.g., eta rings).
+                if sa.slot not in winding_by_slot or sa.winding is not None:
+                    winding_by_slot[sa.slot] = sa.winding
+
+                if tmpl_vectors is not None and sa.slot < len(tmpl_vectors):
+                    resolved_vec = tmpl_vectors[sa.slot]
+
+                    vectors.append(
+                        OINVector(
                             atom_idx=-1,
                             vector=tuple(resolved_vec.tolist()),
-                            fragment_idx=lig_rank,
-                            atom_in_fragment_idx=atom_in_fragment_idx
-                        ))
-             
-             return ParsedOIN(
+                            fragment_idx=sa.lig_rank,
+                            atom_in_fragment_idx=sa.atom_idx,
+                            winding=sa.winding,
+                        )
+                    )
+
+            return ParsedOIN(
                 smiles=smiles,
                 fragments=fragments,
                 metal_fragment_idx=metal_fragment_idx,
                 vectors=vectors,
                 original_oin=oin_string,
                 geo_code=geo_code,
-             )
+                winding_by_slot=winding_by_slot,
+            )
 
         # Standard / Legacy Parsing
-        
+
         fragments = smiles.split(".")
-        
+
         # Identify metal fragment (usually 0, but could check symbol if needed)
         metal_fragment_idx = 0
-        
+
         # 1. Identify Geometry Template First
         geo_code = ""
         tmpl_vectors = None
@@ -518,46 +531,52 @@ class OINParser:
                 geo_code = meta[2:]
                 tmpl_vectors = TEMPLATES.get(geo_code)
                 # Don't break, continue processing
-                
+
         vectors = []
-        
+
         for meta in metadata:
             if meta.startswith("w:"):
                 if tmpl_vectors is None:
                     # Cannot resolve vectors without geometry
                     continue
-                    
+
                 # Format: w:Rank.Idx:Slot;...
                 content = meta[2:]
                 items = content.split(";")
                 for item in items:
-                    if not item: continue
+                    if not item:
+                        continue
                     try:
                         # item format "Rank.Idx:Slot"
-                        if ":" not in item: continue
-                        
+                        if ":" not in item:
+                            continue
+
                         indices_str, slot_str = item.split(":", 1)
                         slot_idx = int(slot_str)
-                        
-                        if "." not in indices_str: continue
-                             
+
+                        if "." not in indices_str:
+                            continue
+
                         frag_idx_str, atom_idx_str = indices_str.split(".")
                         frag_idx = int(frag_idx_str)
                         atom_in_frag_idx = int(atom_idx_str)
-                        
+
                         # Resolve Vector
-                        if slot_idx >= len(tmpl_vectors): continue # Safety
+                        if slot_idx >= len(tmpl_vectors):
+                            continue  # Safety
                         resolved_vec = tmpl_vectors[slot_idx]
-                        
-                        vectors.append(OINVector(
-                            atom_idx= -1, 
-                            vector=tuple(resolved_vec.tolist()),
-                            fragment_idx=frag_idx,
-                            atom_in_fragment_idx=atom_in_frag_idx
-                        ))
+
+                        vectors.append(
+                            OINVector(
+                                atom_idx=-1,
+                                vector=tuple(resolved_vec.tolist()),
+                                fragment_idx=frag_idx,
+                                atom_in_fragment_idx=atom_in_frag_idx,
+                            )
+                        )
                     except ValueError:
-                        continue 
-                        
+                        continue
+
         return ParsedOIN(
             smiles=smiles,
             fragments=fragments,
