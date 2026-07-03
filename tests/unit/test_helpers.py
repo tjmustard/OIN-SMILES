@@ -10,7 +10,7 @@ def extract_ligand_smiles(oin_string: str) -> str:
 
     Returns the dot-separated ligand SMILES suitable for RDKit CIP oracle
     testing.  The metal fragment is identified by its ``_GEO`` suffix
-    (e.g. ``[Pt@SP1_SPL]``, ``[Fe_LIN]``).  Slot markers ``{N}``,
+    (e.g. ``[Pt_SPL]``, ``[Fe_LIN]``).  Slot markers ``{N}``,
     ``{N>}``, ``{N<}`` are removed.
 
     Parameters
@@ -25,7 +25,7 @@ def extract_ligand_smiles(oin_string: str) -> str:
 
     Examples
     --------
-    >>> extract_ligand_smiles("[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
+    >>> extract_ligand_smiles("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
     '[Cl].[Cl].N.N'
     """
     # Remove slot markers: {0}, {0>}, {1<}, etc.
