@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Task 1 — Python version guard (must be first executable line)
 import sys
+
 if sys.version_info < (3, 11):
     sys.exit("Python 3.11+ required")
 
@@ -61,6 +62,7 @@ LOG_DIR = Path(".agents/logs")
 # Task 1 (Provenance MiniPRD) — Failure type enum
 # ---------------------------------------------------------------------------
 
+
 class FailureType(str, Enum):
     ORACLE_FAILURE = "ORACLE_FAILURE"
     TOKEN_OVERRUN = "TOKEN_OVERRUN"
@@ -93,12 +95,18 @@ _structured_log_path: Optional[Path] = None
 # Structured logging (Task 13)
 # ---------------------------------------------------------------------------
 
+
 def _ensure_log_dir() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def structured_log(event_type: str, branch: str = "", iteration: int = 0,
-                   duration_ms: float = 0.0, extra: Optional[dict] = None) -> None:
+def structured_log(
+    event_type: str,
+    branch: str = "",
+    iteration: int = 0,
+    duration_ms: float = 0.0,
+    extra: Optional[dict] = None,
+) -> None:
     """Write a single JSON-Lines entry to the orchestrator log."""
     global _structured_log_path
     if _structured_log_path is None:
@@ -123,6 +131,7 @@ def structured_log(event_type: str, branch: str = "", iteration: int = 0,
 # FAILED_WORKFLOWS.md helpers (Tasks 2 + 3 from Provenance MiniPRD)
 # ---------------------------------------------------------------------------
 
+
 def _count_failed_headers(path: Path) -> int:
     if not path.exists():
         return 0
@@ -136,9 +145,7 @@ def _rotate_failed_workflows() -> None:
     iso = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     dest = FAILED_WORKFLOWS_ARCHIVE_DIR / f"FAILED_WORKFLOWS_{iso}.md"
     shutil.copy2(FAILED_WORKFLOWS_PATH, dest)
-    FAILED_WORKFLOWS_PATH.write_text(
-        "# Failed Workflows\n\n", encoding="utf-8"
-    )
+    FAILED_WORKFLOWS_PATH.write_text("# Failed Workflows\n\n", encoding="utf-8")
     print(f"[ROTATE] FAILED_WORKFLOWS.md archived to {dest}")
 
 
@@ -176,8 +183,9 @@ def append_failed_workflow(
     with FAILED_WORKFLOWS_PATH.open("a", encoding="utf-8") as fh:
         fh.write(entry)
 
-    structured_log("FAILED_WORKFLOW_APPENDED", branch=branch_name,
-                   extra={"failure_type": failure_type.value})
+    structured_log(
+        "FAILED_WORKFLOW_APPENDED", branch=branch_name, extra={"failure_type": failure_type.value}
+    )
 
 
 def warn_stale_failed_branches() -> None:
@@ -186,9 +194,7 @@ def warn_stale_failed_branches() -> None:
         return
     text = FAILED_WORKFLOWS_PATH.read_text(encoding="utf-8", errors="replace")
     # Match lines like: ## [FAILED] feature/foo — 2025-01-01T12:00:00+00:00
-    pattern = re.compile(
-        r"## \[FAILED\] (.+?) — (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[\+\-Z\d:]*)"
-    )
+    pattern = re.compile(r"## \[FAILED\] (.+?) — (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[\+\-Z\d:]*)")
     now = datetime.now(timezone.utc)
     stale: list[str] = []
     for match in pattern.finditer(text):
@@ -214,6 +220,7 @@ def warn_stale_failed_branches() -> None:
 # Task 2 — Global mutex
 # ---------------------------------------------------------------------------
 
+
 def _acquire_mutex() -> Any:
     """Acquire exclusive flock on .orchestrator.lock; exit if already held."""
     lock_path = LOCK_FILE
@@ -223,8 +230,7 @@ def _acquire_mutex() -> Any:
     except BlockingIOError:
         fd.close()
         sys.exit(
-            "ERROR: Another orchestrator instance is running. "
-            "Release .orchestrator.lock first."
+            "ERROR: Another orchestrator instance is running. Release .orchestrator.lock first."
         )
     return fd
 
@@ -233,13 +239,17 @@ def _acquire_mutex() -> Any:
 # Task 4 — Startup manifest
 # ---------------------------------------------------------------------------
 
+
 def _write_pid_manifest(branch_names: list[str]) -> None:
     PID_LOCK_FILE.write_text(
-        json.dumps({
-            "pid": os.getpid(),
-            "start_timestamp": datetime.now(timezone.utc).isoformat(),
-            "branches": branch_names,
-        }, indent=2),
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "start_timestamp": datetime.now(timezone.utc).isoformat(),
+                "branches": branch_names,
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
 
@@ -254,6 +264,7 @@ def _remove_pid_manifest() -> None:
 # ---------------------------------------------------------------------------
 # Task 11 — SIGTERM/SIGINT handler
 # ---------------------------------------------------------------------------
+
 
 def _cleanup_handler(signum: int, frame: Any) -> None:  # noqa: ARG001
     """Handle SIGTERM/SIGINT: write partial failures, release lock, exit."""
@@ -294,12 +305,11 @@ def _cleanup_handler(signum: int, frame: Any) -> None:  # noqa: ARG001
 # Task 3 — Startup validation gate
 # ---------------------------------------------------------------------------
 
+
 def _get_repo_size_bytes() -> int:
     """Approximate repo size using du."""
     try:
-        result = subprocess.run(
-            ["du", "-sb", "."], capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(["du", "-sb", "."], capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return int(result.stdout.split()[0])
     except Exception:
@@ -307,10 +317,8 @@ def _get_repo_size_bytes() -> int:
     return 50 * 1024 * 1024  # fallback 50 MB
 
 
-def _validate_startup(superprd_dir: Path, miniprd_files: list[Path],
-                      max_api_calls: int) -> None:
+def _validate_startup(superprd_dir: Path, miniprd_files: list[Path], max_api_calls: int) -> None:
     """Run all pre-flight checks in order; exit on any hard failure."""
-
     # Check 1 — ANTHROPIC_API_KEY
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
@@ -354,7 +362,9 @@ def _validate_startup(superprd_dir: Path, miniprd_files: list[Path],
         branch_name = _branch_name_for_miniprd(mf)
         result = subprocess.run(
             ["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if result.returncode == 0:
             colliding.append(branch_name)
@@ -369,6 +379,7 @@ def _validate_startup(superprd_dir: Path, miniprd_files: list[Path],
 # Branch naming
 # ---------------------------------------------------------------------------
 
+
 def _branch_name_for_miniprd(miniprd_path: Path) -> str:
     stem = miniprd_path.stem  # e.g. MiniPRD_Dynamic_Orchestrator
     slug = stem.lower().replace("_", "-").replace(" ", "-")
@@ -378,6 +389,7 @@ def _branch_name_for_miniprd(miniprd_path: Path) -> str:
 # ---------------------------------------------------------------------------
 # Task 5 — Idempotency check
 # ---------------------------------------------------------------------------
+
 
 def _has_provenance(node_id: str, arch_yaml_path: Path) -> bool:
     """Return True if the node already has a _provenance tag in architecture.yml."""
@@ -401,7 +413,7 @@ def _node_id_for_miniprd(miniprd_path: Path) -> str:
     stem = miniprd_path.stem  # e.g. MiniPRD_Dynamic_Orchestrator
     # Strip leading MiniPRD_ prefix if present
     if stem.startswith("MiniPRD_"):
-        stem = stem[len("MiniPRD_"):]
+        stem = stem[len("MiniPRD_") :]
     return stem.lower().replace("-", "_").replace(" ", "_")
 
 
@@ -409,12 +421,14 @@ def _node_id_for_miniprd(miniprd_path: Path) -> str:
 # Task 8 — Model allowlist enforcement
 # ---------------------------------------------------------------------------
 
+
 def _resolve_model(skill_name: str) -> str:
     """Use model_router.py to pick a model; enforce allowlist."""
     try:
         scripts_dir = Path(__file__).parent
         sys.path.insert(0, str(scripts_dir))
         from model_router import ModelRouter  # type: ignore[import-untyped]
+
         router = ModelRouter()
         response = router.route(skill_name, verbose=False)
         model = response.model_version
@@ -429,8 +443,7 @@ def _resolve_model(skill_name: str) -> str:
             extra={"requested_model": model, "substituted_model": MODEL_FALLBACK},
         )
         print(
-            f"[WARNING] Model '{model}' is not in MODEL_ALLOWLIST. "
-            f"Substituting '{MODEL_FALLBACK}'."
+            f"[WARNING] Model '{model}' is not in MODEL_ALLOWLIST. Substituting '{MODEL_FALLBACK}'."
         )
         model = MODEL_FALLBACK
     return model
@@ -439,6 +452,7 @@ def _resolve_model(skill_name: str) -> str:
 # ---------------------------------------------------------------------------
 # Task 9 — Prompt injection hardening
 # ---------------------------------------------------------------------------
+
 
 def _build_prompts(superprd_content: str, miniprd_content: str) -> tuple[str, str]:
     system_prompt = (
@@ -449,10 +463,7 @@ def _build_prompts(superprd_content: str, miniprd_content: str) -> tuple[str, st
         "</superprd_content>"
     )
     user_message = (
-        "<miniprd_content>\n"
-        f"{miniprd_content}\n"
-        "</miniprd_content>\n\n"
-        "Implement the MiniPRD above."
+        f"<miniprd_content>\n{miniprd_content}\n</miniprd_content>\n\nImplement the MiniPRD above."
     )
     return system_prompt, user_message
 
@@ -460,6 +471,7 @@ def _build_prompts(superprd_content: str, miniprd_content: str) -> tuple[str, st
 # ---------------------------------------------------------------------------
 # Task 10 — Pre-call token estimation
 # ---------------------------------------------------------------------------
+
 
 def _estimate_tokens(system_prompt: str, user_message: str) -> int:
     return (len(system_prompt) + len(user_message)) // 4
@@ -477,6 +489,7 @@ def _check_context_overflow(system_prompt: str, user_message: str) -> None:
 # ---------------------------------------------------------------------------
 # Provenance staging write (MiniPRD_Provenance Task 4 + 5)
 # ---------------------------------------------------------------------------
+
 
 def _write_provenance_staging(
     branch_name: str,
@@ -503,6 +516,7 @@ def _write_provenance_staging(
 # Task 6 + 7 — Worker function
 # ---------------------------------------------------------------------------
 
+
 def _worker(
     superprd_name: str,
     superprd_content: str,
@@ -510,8 +524,7 @@ def _worker(
     miniprd_content: str,
     arch_yaml_path: Path,
 ) -> dict:
-    """
-    Execute one MiniPRD subagent call in a thread.
+    """Execute one MiniPRD subagent call in a thread.
 
     Returns a result dict with keys: branch_name, success, message_id, error.
     """
@@ -521,8 +534,7 @@ def _worker(
 
     # Task 5 — idempotency check
     if _has_provenance(node_id, arch_yaml_path):
-        structured_log("SKIPPED_PROVENANCE_EXISTS", branch=branch_name,
-                       extra={"node_id": node_id})
+        structured_log("SKIPPED_PROVENANCE_EXISTS", branch=branch_name, extra={"node_id": node_id})
         print(f"[SKIP] {branch_name}: provenance already exists for node '{node_id}'")
         return {
             "branch_name": branch_name,
@@ -543,8 +555,11 @@ def _worker(
         try:
             _check_context_overflow(system_prompt, user_message)
         except ContextOverflowError as exc:
-            structured_log("CONTEXT_OVERFLOW", branch=branch_name,
-                           duration_ms=(time.monotonic() - t_start) * 1000)
+            structured_log(
+                "CONTEXT_OVERFLOW",
+                branch=branch_name,
+                duration_ms=(time.monotonic() - t_start) * 1000,
+            )
             append_failed_workflow(
                 branch_name=branch_name,
                 superprd_name=superprd_name,
@@ -563,13 +578,14 @@ def _worker(
             }
 
         # Spawn daemon subprocess on the branch
-        structured_log("WORKER_API_CALL_START", branch=branch_name,
-                       extra={"model": model})
+        structured_log("WORKER_API_CALL_START", branch=branch_name, extra={"model": model})
 
         # Create the branch
         checkout_result = subprocess.run(
             ["git", "checkout", "-b", branch_name],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if checkout_result.returncode != 0:
             raise RuntimeError(
@@ -618,7 +634,8 @@ def _worker(
                 "--orchestrated",
                 superprd_name,
                 str(miniprd_path),
-                "--api-response-id", message_id,
+                "--api-response-id",
+                message_id,
             ],
             capture_output=False,
             check=False,
@@ -641,9 +658,12 @@ def _worker(
                 "error": "",
             }
         else:
-            structured_log("WORKER_DAEMON_FAILED", branch=branch_name,
-                           duration_ms=duration_ms,
-                           extra={"returncode": daemon_result.returncode})
+            structured_log(
+                "WORKER_DAEMON_FAILED",
+                branch=branch_name,
+                duration_ms=duration_ms,
+                extra={"returncode": daemon_result.returncode},
+            )
             return {
                 "branch_name": branch_name,
                 "success": False,
@@ -654,8 +674,12 @@ def _worker(
 
     except Exception as exc:
         duration_ms = (time.monotonic() - t_start) * 1000
-        structured_log("WORKER_EXCEPTION", branch=branch_name, duration_ms=duration_ms,
-                       extra={"error": str(exc)})
+        structured_log(
+            "WORKER_EXCEPTION",
+            branch=branch_name,
+            duration_ms=duration_ms,
+            extra={"error": str(exc)},
+        )
         append_failed_workflow(
             branch_name=branch_name,
             superprd_name=superprd_name,
@@ -676,7 +700,8 @@ def _worker(
         # Always restore to main after branch work
         subprocess.run(
             ["git", "checkout", "main"],
-            capture_output=True, check=False,
+            capture_output=True,
+            check=False,
         )
         try:
             _in_flight_branches.remove(branch_name)
@@ -688,6 +713,7 @@ def _worker(
 # Task 12 — Sequential rebase pipeline
 # ---------------------------------------------------------------------------
 
+
 def _is_architecture_file(filepath: str) -> bool:
     """Return True if the file should be routed to semantic_graph_merger."""
     name = Path(filepath).name.lower()
@@ -698,45 +724,52 @@ def _is_architecture_file(filepath: str) -> bool:
 def _get_conflicted_files() -> list[str]:
     result = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=U"],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     return [f for f in result.stdout.splitlines() if f.strip()]
 
 
-def _handle_rebase_conflicts(branch_name: str, superprd_name: str,
-                              miniprd_path: str) -> bool:
+def _handle_rebase_conflicts(branch_name: str, superprd_name: str, miniprd_path: str) -> bool:
     """Attempt to resolve rebase conflicts. Return True if resolved."""
     conflicted = _get_conflicted_files()
     if not conflicted:
         return True
 
     all_resolved = True
-    merger_failed = False   # semantic_graph_merger writes its own FAILED_WORKFLOWS entry
-    resolver_failed = False  # AI resolver does not; orchestrator must write it
+    # semantic_graph_merger writes its own FAILED_WORKFLOWS entry; AI resolver does not,
+    # so only resolver_failed needs to be tracked for the orchestrator-level entry below.
+    resolver_failed = False
     for filepath in conflicted:
         if _is_architecture_file(filepath):
             # Route to semantic_graph_merger.py (handles its own failure logging)
             merger_script = Path(__file__).parent / "semantic_graph_merger.py"
             result = subprocess.run(
                 [sys.executable, str(merger_script), filepath],
-                capture_output=True, text=True, check=False,
+                capture_output=True,
+                text=True,
+                check=False,
             )
             if result.returncode != 0:
-                structured_log("SEMANTIC_MERGE_FAILED", branch=branch_name,
-                               extra={"file": filepath, "stderr": result.stderr[:500]})
+                structured_log(
+                    "SEMANTIC_MERGE_FAILED",
+                    branch=branch_name,
+                    extra={"file": filepath, "stderr": result.stderr[:500]},
+                )
                 all_resolved = False
-                merger_failed = True
                 break
         else:
             # Route to AI conflict resolver for whitelisted types
             resolver_script = Path(__file__).parent / "hyper_resolve_conflict.py"
             result = subprocess.run(
                 [sys.executable, str(resolver_script), filepath],
-                capture_output=True, text=True, check=False,
+                capture_output=True,
+                text=True,
+                check=False,
             )
             if result.returncode != 0:
-                structured_log("AI_RESOLVER_FAILED", branch=branch_name,
-                               extra={"file": filepath})
+                structured_log("AI_RESOLVER_FAILED", branch=branch_name, extra={"file": filepath})
                 all_resolved = False
                 resolver_failed = True
                 break
@@ -763,7 +796,9 @@ def _handle_rebase_conflicts(branch_name: str, superprd_name: str,
 
     cont = subprocess.run(
         ["git", "rebase", "--continue"],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
         env={**os.environ, "GIT_EDITOR": "true"},
     )
     return cont.returncode == 0
@@ -814,8 +849,9 @@ def _run_rebase_pipeline(
     successful_branches: list[dict],
 ) -> None:
     """Sequentially rebase each successful branch onto main."""
-    print(f"\n[REBASE] Starting sequential rebase pipeline for "
-          f"{len(successful_branches)} branch(es)…")
+    print(
+        f"\n[REBASE] Starting sequential rebase pipeline for {len(successful_branches)} branch(es)…"
+    )
 
     for result in successful_branches:
         branch_name = result["branch_name"]
@@ -826,25 +862,26 @@ def _run_rebase_pipeline(
         print(f"[REBASE] Rebasing {branch_name} onto main…")
 
         # Checkout branch
-        subprocess.run(["git", "checkout", "main"],
-                       capture_output=True, check=False)
-        subprocess.run(["git", "pull", "origin", "main"],
-                       capture_output=True, check=False)
-        subprocess.run(["git", "checkout", branch_name],
-                       capture_output=True, check=False)
+        subprocess.run(["git", "checkout", "main"], capture_output=True, check=False)
+        subprocess.run(["git", "pull", "origin", "main"], capture_output=True, check=False)
+        subprocess.run(["git", "checkout", branch_name], capture_output=True, check=False)
 
         rebase = subprocess.run(
             ["git", "rebase", "main"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
 
         if rebase.returncode != 0:
             resolved = _handle_rebase_conflicts(branch_name, superprd_name, miniprd_path)
             if not resolved:
-                structured_log("REBASE_FAILED", branch=branch_name,
-                               duration_ms=(time.monotonic() - t_start) * 1000)
-                subprocess.run(["git", "checkout", "main"],
-                               capture_output=True, check=False)
+                structured_log(
+                    "REBASE_FAILED",
+                    branch=branch_name,
+                    duration_ms=(time.monotonic() - t_start) * 1000,
+                )
+                subprocess.run(["git", "checkout", "main"], capture_output=True, check=False)
                 print(f"[REBASE] FAILED for {branch_name}. Continuing to next branch.")
                 continue
 
@@ -871,9 +908,9 @@ def _run_rebase_pipeline(
 # Main orchestration
 # ---------------------------------------------------------------------------
 
+
 def _load_superprd_miniprd_pairs(superprd_dir: Path) -> list[tuple[Path, Path, str]]:
-    """
-    Find SuperPRD and associated MiniPRDs in the superprd_dir.
+    """Find SuperPRD and associated MiniPRDs in the superprd_dir.
     Returns list of (superprd_path, miniprd_path, superprd_name).
     Strategy: pair each MiniPRD with the single SuperPRD in the dir, or
     match by name if multiple SuperPRDs exist.
@@ -948,8 +985,10 @@ def orchestrate(
         # Task 14 — data retention warning (before execution)
         warn_stale_failed_branches()
 
-        structured_log("ORCHESTRATOR_START",
-                       extra={"branch_count": len(branch_names), "branches": branch_names})
+        structured_log(
+            "ORCHESTRATOR_START",
+            extra={"branch_count": len(branch_names), "branches": branch_names},
+        )
 
         # Enforce the 8-worker cap for programmatic callers (CLI enforces it separately)
         if max_workers > MAX_WORKERS_DEFAULT:
@@ -980,9 +1019,7 @@ def orchestrate(
             }
 
         # Task 7 — wait with global timeout; abandon hung threads rather than blocking
-        done, not_done = concurrent.futures.wait(
-            list(futures.keys()), timeout=600
-        )
+        done, not_done = concurrent.futures.wait(list(futures.keys()), timeout=600)
         # Intentional deviation from MiniPRD Task 12 which specifies shutdown(wait=True).
         # futures.wait(timeout=600) is the timeout gate — after it returns, all futures
         # are either done or marked TIMEOUT_FAILURE. Using shutdown(wait=False) prevents
@@ -1013,9 +1050,9 @@ def orchestrate(
             try:
                 result = future.result()
             except Exception as exc:
-                structured_log("WORKER_FUTURE_EXCEPTION",
-                               branch=meta["branch_name"],
-                               extra={"error": str(exc)})
+                structured_log(
+                    "WORKER_FUTURE_EXCEPTION", branch=meta["branch_name"], extra={"error": str(exc)}
+                )
                 append_failed_workflow(
                     branch_name=meta["branch_name"],
                     superprd_name=meta["superprd_name"],
@@ -1038,10 +1075,10 @@ def orchestrate(
         # Task 14 / Task 3 (Provenance) — data retention warning after run
         warn_stale_failed_branches()
 
-        structured_log("ORCHESTRATOR_COMPLETE",
-                       extra={"successful_count": len(successful)})
-        print(f"\n[DONE] Orchestration complete. "
-              f"{len(successful)}/{len(pairs)} branches succeeded.")
+        structured_log("ORCHESTRATOR_COMPLETE", extra={"successful_count": len(successful)})
+        print(
+            f"\n[DONE] Orchestration complete. {len(successful)}/{len(pairs)} branches succeeded."
+        )
 
     finally:
         # Task 15 — clean exit
@@ -1062,6 +1099,7 @@ def orchestrate(
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -1093,10 +1131,7 @@ if __name__ == "__main__":
     # Enforce max_workers hard cap of 8 unless explicitly overridden via flag
     effective_max_workers = args.max_workers
     if effective_max_workers > 8:
-        print(
-            f"[WARN] --max-workers={effective_max_workers} exceeds hard cap of 8. "
-            "Clamping to 8."
-        )
+        print(f"[WARN] --max-workers={effective_max_workers} exceeds hard cap of 8. Clamping to 8.")
         effective_max_workers = 8
 
     orchestrate(

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-hyper_update_merge_engine.py — Sensitive file merge orchestration with per-section approval
+"""hyper_update_merge_engine.py — Sensitive file merge orchestration with per-section approval
 
 Implements:
 - File interaction prompting (Replace/Merge/Skip)
@@ -11,16 +10,17 @@ Implements:
 """
 
 import sys
-import re
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
 import yaml
 
 
 @dataclass
 class Section:
     """Represents a markdown section."""
+
     heading: str  # "### Section Name" or "" for preamble
     content: str  # Content of this section
     line_num: int  # Starting line number
@@ -50,8 +50,7 @@ class MergeEngine:
     # ==== Phase A: File Interaction Prompting ====
 
     def prompt_file_action(self, filename: str, diff_preview: str) -> str:
-        """
-        Prompt user for action on a file with changes.
+        """Prompt user for action on a file with changes.
         Returns: "replace", "merge", or "skip"
         """
         self.log_message(f"\n📝 File: {filename}")
@@ -60,9 +59,7 @@ class MergeEngine:
             self.log_message(f"  {line}")
 
         while True:
-            response = input(
-                "\n[R]eplace / [M]erge / [S]kip? (r/m/s): "
-            ).lower().strip()
+            response = input("\n[R]eplace / [M]erge / [S]kip? (r/m/s): ").lower().strip()
 
             if response in ("r", "replace"):
                 return "replace"
@@ -91,8 +88,7 @@ class MergeEngine:
     # ==== Phase B: Markdown Section Parsing ====
 
     def parse_sections(self, content: str) -> List[Section]:
-        """
-        Parse markdown into sections by ### headings.
+        """Parse markdown into sections by ### headings.
         Preserves code blocks (does not split within triple backticks).
         Returns: List of Section objects
         """
@@ -141,13 +137,11 @@ class MergeEngine:
     def approve_sections(
         self, upstream_sections: List[Section], local_sections: List[Section]
     ) -> Dict[str, str]:
-        """
-        Show each differing section and prompt for approval.
+        """Show each differing section and prompt for approval.
         Returns: Dict of heading -> approved content
         """
         approved = {}
         local_by_heading = {s.heading: s.content for s in local_sections}
-        upstream_by_heading = {s.heading: s.content for s in upstream_sections}
 
         # Process each upstream section
         total_sections = len(upstream_sections)
@@ -184,9 +178,11 @@ class MergeEngine:
                 self.log_message(local_content[:300])
 
                 while True:
-                    response = input(
-                        "\n[K]eep local / [A]ccept upstream / [E]dit manually? (k/a/e): "
-                    ).lower().strip()
+                    response = (
+                        input("\n[K]eep local / [A]ccept upstream / [E]dit manually? (k/a/e): ")
+                        .lower()
+                        .strip()
+                    )
 
                     if response in ("k", "keep"):
                         approved[heading] = local_content
@@ -218,8 +214,7 @@ class MergeEngine:
         return "\n".join(parts)
 
     def validate_file(self, filename: str, content: str) -> Tuple[bool, str]:
-        """
-        Validate merged file for syntax errors.
+        """Validate merged file for syntax errors.
         Returns: (is_valid, error_message)
         """
         if filename.endswith(".yml") or filename.endswith(".yaml"):
@@ -245,9 +240,13 @@ class MergeEngine:
         self.log_message(f"\n❌ Validation failed: {error}")
 
         while True:
-            response = input(
-                "What would you like to do?\n[K]eep original / [R]e-merge / [A]ccept anyway? (k/r/a): "
-            ).lower().strip()
+            response = (
+                input(
+                    "What would you like to do?\n[K]eep original / [R]e-merge / [A]ccept anyway? (k/r/a): "
+                )
+                .lower()
+                .strip()
+            )
 
             if response in ("k", "keep"):
                 return "keep_original"
@@ -296,8 +295,7 @@ class MergeEngine:
         local_content: str,
         backup_dir: Optional[Path] = None,
     ) -> Tuple[bool, Optional[str]]:
-        """
-        Orchestrate merge for a single file.
+        """Orchestrate merge for a single file.
         Returns: (success, final_content or None)
         """
         # Phase A: Determine action
@@ -334,9 +332,7 @@ class MergeEngine:
                 return True, None
             elif action == "remerge":
                 # Recursively re-merge
-                return self.merge_file(
-                    filename, upstream_content, local_content, backup_dir
-                )
+                return self.merge_file(filename, upstream_content, local_content, backup_dir)
             elif action == "accept_anyway":
                 pass  # Proceed with writing
 

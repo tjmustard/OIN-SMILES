@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""
-Thinking Token Monitor
+"""Thinking Token Monitor
 
 Resolves thinking token ceiling for skills based on model tier and per-skill overrides.
 Logs ceiling application for observability.
 """
 
 import os
-import yaml
 from typing import Optional
+
+import yaml
 
 
 class ThinkingTokenMonitor:
@@ -23,14 +23,8 @@ class ThinkingTokenMonitor:
     def __init__(self, skills_base_dir: str = ".agents/skills"):
         self.skills_base_dir = skills_base_dir
 
-    def monitor(
-        self,
-        skill_name: str,
-        model: str = "opus",
-        verbose: bool = True
-    ) -> int:
-        """
-        Monitor and resolve thinking token ceiling for a skill.
+    def monitor(self, skill_name: str, model: str = "opus", verbose: bool = True) -> int:
+        """Monitor and resolve thinking token ceiling for a skill.
 
         Args:
             skill_name: Name of skill (e.g., "hyper-execute")
@@ -64,7 +58,7 @@ class ThinkingTokenMonitor:
             return None
 
         try:
-            with open(meta_path, 'r') as f:
+            with open(meta_path, "r") as f:
                 data = yaml.safe_load(f) or {}
 
             return data.get("max_thinking_tokens")

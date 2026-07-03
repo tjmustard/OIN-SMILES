@@ -1,16 +1,22 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple
+
 
 class OINWriter:
+    """Serialize a SMILES string and geometry data into an OIN string."""
+
     def __init__(self):
+        """Initialize the writer."""
         pass
 
-    def write(self, smiles: str, coords: List[Tuple[int, float, float, float]], 
-              dative_bonds: List[Tuple[int, int]] = None, 
-              haptic_groups: List[str] = None, 
-              geometry_label: str = None) -> str:
-        """
-        Constructs the OIN string.
-        """
+    def write(
+        self,
+        smiles: str,
+        coords: List[Tuple[int, float, float, float]],
+        dative_bonds: List[Tuple[int, int]] = None,
+        haptic_groups: List[str] = None,
+        geometry_label: str = None,
+    ) -> str:
+        """Constructs the OIN string."""
         tags = []
 
         # w tag (Coordinates)

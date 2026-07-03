@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate a commit message suggestion from CHANGELOG [Unreleased] and git diff.
+"""Generate a commit message suggestion from CHANGELOG [Unreleased] and git diff.
 
 Reads:
   - CHANGELOG.md — extracts [Unreleased] block and recent version blocks for style reference
@@ -15,7 +14,6 @@ Exit code 1 on error (e.g., no git repo).
 """
 
 import json
-import os
 import re
 import subprocess
 import sys
@@ -25,9 +23,7 @@ from pathlib import Path
 def run_cmd(cmd, cwd="."):
     """Run shell command and return output, or None on error."""
     try:
-        result = subprocess.run(
-            cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=5)
         return result.stdout.strip() if result.returncode == 0 else None
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return None
@@ -75,9 +71,7 @@ def parse_changelog_best_block(changelog_path):
             content = f.read()
 
         # Try [Unreleased] first
-        unreleased_match = re.search(
-            r"## \[Unreleased\](.*?)(?=## \[|$)", content, re.DOTALL
-        )
+        unreleased_match = re.search(r"## \[Unreleased\](.*?)(?=## \[|$)", content, re.DOTALL)
         if unreleased_match:
             unreleased_block = unreleased_match.group(1)
             result = parse_changelog_section(unreleased_block)
@@ -86,9 +80,7 @@ def parse_changelog_best_block(changelog_path):
                 return result, None
 
         # [Unreleased] is empty or doesn't exist — try most recent version block
-        version_match = re.search(
-            r"## \[(\d+\.\d+\.\d+)\](.*?)(?=## \[|$)", content, re.DOTALL
-        )
+        version_match = re.search(r"## \[(\d+\.\d+\.\d+)\](.*?)(?=## \[|$)", content, re.DOTALL)
         if version_match:
             version = version_match.group(1)
             version_block = version_match.group(2)
@@ -112,7 +104,12 @@ def infer_style_from_recent_commits():
     commit_lines = logs.split("\n")
 
     release_count = sum(1 for line in commit_lines if "Release v" in line)
-    feat_count = sum(1 for line in commit_lines if line.split(None, 1)[1].startswith("feat:") if len(line.split(None, 1)) > 1)
+    feat_count = sum(
+        1
+        for line in commit_lines
+        if line.split(None, 1)[1].startswith("feat:")
+        if len(line.split(None, 1)) > 1
+    )
 
     # If recent commits are mostly releases, suggest Release format
     if release_count > 3:
@@ -136,9 +133,11 @@ def generate_subject(changelog_data, style, changed_paths, version=None):
     """Generate a commit subject line based on changelog and style.
 
     Args:
+        changelog_data: Parsed [Unreleased] block, keyed by change type.
+        style (str): Inferred commit style ("release", "conventional", or "imperative").
+        changed_paths (list[str]): Changed file paths, used for scope hints.
         version (str): If provided (e.g., "0.4.2"), use Release format regardless of style.
     """
-
     # Count changes by type
     added = len(changelog_data.get("added", []))
     changed = len(changelog_data.get("changed", []))
@@ -174,7 +173,12 @@ def generate_subject(changelog_data, style, changed_paths, version=None):
     if style == "release":
         return f"{dominant}: {first_item[:50]}"
     elif style == "conventional":
-        action = "feat" if "added" in dominant.lower() else "fix" if "changed" in dominant.lower() else "refactor"
+        if "added" in dominant.lower():
+            action = "feat"
+        elif "changed" in dominant.lower():
+            action = "fix"
+        else:
+            action = "refactor"
         return f"{action}: {first_item[:50]}"
     else:  # imperative
         verb_map = {"Added": "Add", "Changed": "Update", "Removed": "Remove"}
@@ -186,9 +190,9 @@ def generate_body(changelog_data):
     """Generate optional commit body from multiple changelog bullets."""
     # If there are multiple bullets, include them in body
     all_bullets = (
-        changelog_data.get("added", []) +
-        changelog_data.get("changed", []) +
-        changelog_data.get("removed", [])
+        changelog_data.get("added", [])
+        + changelog_data.get("changed", [])
+        + changelog_data.get("removed", [])
     )
 
     if len(all_bullets) <= 1:
@@ -225,9 +229,9 @@ def main():
             "body": body,
             "style": style if not version else "release",
             "source_bullets": (
-                changelog_data.get("added", []) +
-                changelog_data.get("changed", []) +
-                changelog_data.get("removed", [])
+                changelog_data.get("added", [])
+                + changelog_data.get("changed", [])
+                + changelog_data.get("removed", [])
             ),
         }
 

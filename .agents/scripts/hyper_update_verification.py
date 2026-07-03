@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-hyper_update_verification.py — Upstream verification, backup cleanup, and audit logging
+"""hyper_update_verification.py — Upstream verification, backup cleanup, and audit logging
 
 Implements:
 - GPG binary availability check
@@ -9,14 +8,13 @@ Implements:
 - Log rotation (keep last 10 log files)
 """
 
-import os
-import sys
 import json
 import shutil
 import subprocess
-from pathlib import Path
+import sys
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from pathlib import Path
+from typing import Optional, Tuple
 
 
 class UpstreamVerification:
@@ -46,13 +44,12 @@ class UpstreamVerification:
     # ==== Phase: GPG Binary Check ====
 
     def check_gpg_available(self) -> bool:
-        """
-        Verify GPG is installed before attempting signature verification.
+        """Verify GPG is installed before attempting signature verification.
         Returns True if GPG is available, False otherwise.
         """
         self.log_message("Checking GPG availability...")
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["gpg", "--version"],
                 check=True,
                 capture_output=True,
@@ -63,9 +60,10 @@ class UpstreamVerification:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def verify_upstream_commit(self, commit_sha: str, upstream_dir: Optional[str] = None) -> Tuple[bool, str]:
-        """
-        Verify GPG signature on upstream commit.
+    def verify_upstream_commit(
+        self, commit_sha: str, upstream_dir: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        """Verify GPG signature on upstream commit.
         Args: commit_sha (str), upstream_dir (optional path to cloned repo, defaults to current dir)
         Returns: (is_valid: bool, message: str)
         """
@@ -85,7 +83,10 @@ class UpstreamVerification:
                 return True, f"✅ GPG signature verified (commit SHA: {sha_short}...)"
             else:
                 # Signature is invalid or missing
-                return False, f"❌ Error: Upstream commit {commit_sha[:7]}... is not GPG-signed or signature is invalid.\nUpstream repository requires signed commits for security.\nAbort."
+                return (
+                    False,
+                    f"❌ Error: Upstream commit {commit_sha[:7]}... is not GPG-signed or signature is invalid.\nUpstream repository requires signed commits for security.\nAbort.",
+                )
         except FileNotFoundError:
             return False, "❌ Error: git command not found"
         except Exception as e:
@@ -94,8 +95,7 @@ class UpstreamVerification:
     # ==== Phase: Backup Cleanup Policy ====
 
     def cleanup_old_backups(self) -> Tuple[int, str]:
-        """
-        Remove backup directories older than BACKUP_RETENTION_DAYS.
+        """Remove backup directories older than BACKUP_RETENTION_DAYS.
         Returns: (count_deleted, log_message)
         """
         if not self.backup_dir.exists():
@@ -115,7 +115,9 @@ class UpstreamVerification:
                 # Handle both underscore and hyphen-based timestamps
                 if "T" in dir_name:
                     # Format: 2026-05-04T14-30-45Z
-                    timestamp_str = dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    timestamp_str = (
+                        dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    )
                     backup_time = datetime.fromisoformat(timestamp_str.replace("T", "T"))
                 else:
                     # Format: 2026-05-04 (old format)
@@ -142,8 +144,7 @@ class UpstreamVerification:
         return deleted_count, msg
 
     def get_backup_age_warnings(self) -> list:
-        """
-        Check for backups approaching the 30-day expiration (within 2 days).
+        """Check for backups approaching the 30-day expiration (within 2 days).
         Returns: List of warning messages
         """
         if not self.backup_dir.exists():
@@ -159,7 +160,9 @@ class UpstreamVerification:
             dir_name = backup_subdir.name
             try:
                 if "T" in dir_name:
-                    timestamp_str = dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    timestamp_str = (
+                        dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    )
                     backup_time = datetime.fromisoformat(timestamp_str.replace("T", "T"))
                 else:
                     backup_time = datetime.strptime(dir_name, "%Y-%m-%d")
@@ -171,10 +174,13 @@ class UpstreamVerification:
 
             # Warn if within 2 days of expiration
             if 0 <= days_remaining <= 2:
-                expiration_date = (backup_time + timedelta(days=self.BACKUP_RETENTION_DAYS)).strftime("%Y-%m-%d")
+                expiration_date = (
+                    backup_time + timedelta(days=self.BACKUP_RETENTION_DAYS)
+                ).strftime("%Y-%m-%d")
                 warnings.append(
                     f"⚠️  Backup from {dir_name} is {age.days} days old "
-                    f"(expires in {days_remaining} day{'s' if days_remaining != 1 else ''})"
+                    f"(expires in {days_remaining} day{'s' if days_remaining != 1 else ''} "
+                    f"on {expiration_date})"
                 )
 
         return warnings
@@ -190,8 +196,7 @@ class UpstreamVerification:
         files_processed: Optional[int] = None,
         error_msg: Optional[str] = None,
     ) -> str:
-        """
-        Write audit trail entry to JSON log file.
+        """Write audit trail entry to JSON log file.
         Returns: path to log file
         """
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -273,7 +278,9 @@ class UpstreamVerification:
             dir_name = backup_subdir.name
             try:
                 if "T" in dir_name:
-                    timestamp_str = dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    timestamp_str = (
+                        dir_name.replace("Z", "").replace("-", ":", 2).replace("-", "-", 2)
+                    )
                     backup_time = datetime.fromisoformat(timestamp_str.replace("T", "T"))
                 else:
                     backup_time = datetime.strptime(dir_name, "%Y-%m-%d")

@@ -5,14 +5,14 @@ Tests the fix for Blocker #4: eta-bond vertex indices must be translated
 from fragment ranks to actual atom indices in the connected SMILES.
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
-from oinsmiles.generation.engine import parse_oin_direct, _translate_eta_vertex_to_atoms
 from oinsmiles import XYZToSMILES
+from oinsmiles.generation.engine import _translate_eta_vertex_to_atoms, parse_oin_direct
 
 
 class TestEtaVertexTranslation(unittest.TestCase):
@@ -65,14 +65,16 @@ class TestEtaBondToSelfPrevention(unittest.TestCase):
 
         And adds eta bonds from Fe (0) to atoms 1-5 and 6-10.
         """
-        oin_string = "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        oin_string = (
+            "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        )
 
         try:
             result = parse_oin_direct(oin_string)
             # Should succeed without raising "bond-to-self" error
             self.assertIsNotNone(result.xyz)
             # XYZ block should have valid structure (at least the atom count line)
-            lines = result.xyz.strip().split('\n')
+            lines = result.xyz.strip().split("\n")
             self.assertGreater(len(lines), 2)  # At least atom count + blank line + atoms
             atom_count = int(lines[0])
             self.assertGreater(atom_count, 0)
@@ -89,8 +91,9 @@ class TestEtaBondToSelfPrevention(unittest.TestCase):
 
         This is a meta-test to ensure the regression check is in place.
         """
-        from oinsmiles.generation.oin_parser import construct_molassembler_mol
         import inspect
+
+        from oinsmiles.generation.oin_parser import construct_molassembler_mol
 
         source = inspect.getsource(construct_molassembler_mol)
         # Check that the bond-to-self prevention code exists
@@ -104,9 +107,7 @@ class TestEtaBondRoundTrip(unittest.TestCase):
     def setUp(self):
         """Load XYZ→OIN converter."""
         self.converter = XYZToSMILES()
-        self.fixtures_dir = os.path.join(
-            os.path.dirname(__file__), '..', 'fixtures'
-        )
+        self.fixtures_dir = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
     def test_ferrocene_roundtrip_parsing(self):
         """
@@ -115,7 +116,7 @@ class TestEtaBondRoundTrip(unittest.TestCase):
         This test uses the ferrocene fixture to generate the OIN string,
         then attempts to parse it with parse_oin_direct.
         """
-        ferrocene_xyz_path = os.path.join(self.fixtures_dir, 'ferrocene.xyz')
+        ferrocene_xyz_path = os.path.join(self.fixtures_dir, "ferrocene.xyz")
         if not os.path.exists(ferrocene_xyz_path):
             self.skipTest(f"Ferrocene fixture not found at {ferrocene_xyz_path}")
 
@@ -131,7 +132,7 @@ class TestEtaBondRoundTrip(unittest.TestCase):
             self.assertIsNotNone(result)
             self.assertIsNotNone(result.xyz)
             # Verify XYZ structure
-            lines = result.xyz.strip().split('\n')
+            lines = result.xyz.strip().split("\n")
             self.assertGreater(len(lines), 2)
         except (ValueError, NotImplementedError) as e:
             # Some ligand types may not be fully supported yet
@@ -185,9 +186,9 @@ class TestAnsaMetalloceneDisjointRings(unittest.TestCase):
         # Simulate a TiCat1-like structure with two separate Cp rings
         # In real usage, these would be computed from the actual OIN string
         frag_to_atom_multi_eta = {
-            0: [0],           # Metal
-            1: [1, 2, 3, 4, 5],    # First Cp ring (5 atoms)
-            2: [6, 7, 8, 9, 10],   # Second Cp ring (5 atoms, distinct)
+            0: [0],  # Metal
+            1: [1, 2, 3, 4, 5],  # First Cp ring (5 atoms)
+            2: [6, 7, 8, 9, 10],  # Second Cp ring (5 atoms, distinct)
         }
 
         # Extract ring 1 and ring 2 atoms
@@ -197,8 +198,9 @@ class TestAnsaMetalloceneDisjointRings(unittest.TestCase):
         # Verify they are disjoint
         intersection = ring1.intersection(ring2)
         self.assertEqual(
-            len(intersection), 0,
-            f"Ring atom sets must be disjoint, but found shared atoms: {intersection}"
+            len(intersection),
+            0,
+            f"Ring atom sets must be disjoint, but found shared atoms: {intersection}",
         )
 
         # Verify each ring has the expected number of atoms
@@ -206,5 +208,5 @@ class TestAnsaMetalloceneDisjointRings(unittest.TestCase):
         self.assertEqual(len(ring2), 5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

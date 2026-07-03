@@ -7,6 +7,7 @@ Subcommands
 xyz2oin <path>     Convert an XYZ file to an OIN-SMILES string (stdout).
 oin2xyz <oin>      Generate a 3D XYZ block from an OIN-SMILES string (stdout).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,8 +34,8 @@ def _cmd_xyz2oin(args: argparse.Namespace) -> None:
 
 def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     from oinsmiles.generation.engine import (  # noqa: PLC0415
-        OIN3DGenerator,
         MolassemblerTimeoutError,
+        OIN3DGenerator,
     )
 
     try:
@@ -50,6 +51,7 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    """Entry point for the ``oin-smiles`` command-line interface."""
     parser = argparse.ArgumentParser(
         prog="oin-smiles",
         description="OIN-SMILES toolkit: convert between XYZ structures and OIN-SMILES strings.",
@@ -70,7 +72,9 @@ def main() -> None:
     p_oin2xyz = subparsers.add_parser(
         "oin2xyz",
         help="Generate a 3D XYZ block from an OIN-SMILES string.",
-        description="Generate a 3D conformer from an OIN-SMILES string and print the XYZ block to stdout.",
+        description=(
+            "Generate a 3D conformer from an OIN-SMILES string and print the XYZ block to stdout."
+        ),
     )
     p_oin2xyz.add_argument("oin", type=str, help="OIN-SMILES string.")
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)

@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""
-Token Budget Checker
+"""Token Budget Checker
 
 Enforces output token budgets per MiniPRD to prevent runaway task costs.
 Checks estimated vs. ceiling (50k), suggests task splitting, tracks variance.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 
 @dataclass
 class BudgetCheckResult:
     """Result of budget check against 50k ceiling."""
+
     miniprd_name: str
     estimated_tokens: int
     ceiling: int
@@ -26,7 +26,9 @@ class BudgetCheckResult:
             self.message = f"Budget exceeds 50k ceiling: {self.estimated_tokens:,} tokens estimated"
         else:
             self.flag = False
-            self.message = f"Budget within limit: {self.estimated_tokens:,} / {self.ceiling:,} tokens"
+            self.message = (
+                f"Budget within limit: {self.estimated_tokens:,} / {self.ceiling:,} tokens"
+            )
 
 
 class BudgetChecker:
@@ -35,13 +37,9 @@ class BudgetChecker:
     BUDGET_CEILING = 50000
 
     def check(
-        self,
-        miniprd_name: str,
-        estimated_output_tokens: int,
-        verbose: bool = True
+        self, miniprd_name: str, estimated_output_tokens: int, verbose: bool = True
     ) -> BudgetCheckResult:
-        """
-        Check if estimated output tokens exceed 50k ceiling.
+        """Check if estimated output tokens exceed 50k ceiling.
 
         Args:
             miniprd_name: Name of MiniPRD (e.g., "MiniPRD_TokenBudgetEnforcement")
@@ -56,7 +54,7 @@ class BudgetChecker:
             estimated_tokens=estimated_output_tokens,
             ceiling=self.BUDGET_CEILING,
             flag=False,
-            suggested_subtasks=[]
+            suggested_subtasks=[],
         )
 
         if estimated_output_tokens > self.BUDGET_CEILING:
@@ -69,14 +67,9 @@ class BudgetChecker:
         return result
 
     def estimate_tokens(
-        self,
-        code_lines: int,
-        doc_pages: int,
-        test_cases: int,
-        verbose: bool = True
+        self, code_lines: int, doc_pages: int, test_cases: int, verbose: bool = True
     ) -> int:
-        """
-        Estimate output tokens using heuristic formula.
+        """Estimate output tokens using heuristic formula.
 
         Formula: code_lines / 40 + doc_pages * 500 + test_cases * 100
         - ~40 tokens per line of code
@@ -98,8 +91,12 @@ class BudgetChecker:
         total = int(code_tokens + doc_tokens + test_tokens)
 
         if verbose:
-            print(f"ℹ️  Token estimate: {code_lines} lines @ 40/line + {doc_pages} pages @ 500/page + {test_cases} tests @ 100/test")
-            print(f"    = {int(code_tokens)} + {int(doc_tokens)} + {int(test_tokens)} = {total:,} tokens")
+            print(
+                f"ℹ️  Token estimate: {code_lines} lines @ 40/line + {doc_pages} pages @ 500/page + {test_cases} tests @ 100/test"
+            )
+            print(
+                f"    = {int(code_tokens)} + {int(doc_tokens)} + {int(test_tokens)} = {total:,} tokens"
+            )
 
         return total
 
@@ -109,16 +106,16 @@ class BudgetChecker:
         print(f"{status}: {result.message}")
 
         if result.flag and result.suggested_subtasks:
-            print(f"\nSuggested splits:")
+            print("\nSuggested splits:")
             for subtask in result.suggested_subtasks:
                 print(f"  - {subtask}")
 
     def _generate_split_suggestions(self, miniprd_name: str) -> List[str]:
         """Generate suggestions for splitting oversized MiniPRDs."""
         return [
-            f"[A] Core logic and data structures",
-            f"[B] API endpoints and integrations",
-            f"[C] Testing and documentation",
+            "[A] Core logic and data structures",
+            "[B] API endpoints and integrations",
+            "[C] Testing and documentation",
         ]
 
 

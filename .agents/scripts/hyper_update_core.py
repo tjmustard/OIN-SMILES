@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-hyper_update_core.py — Core logic for /hyper-update skill
+"""hyper_update_core.py — Core logic for /hyper-update skill
 
 Implements Phase A-E:
 - Phase A: Upstream fetching & GPG verification
@@ -10,16 +9,15 @@ Implements Phase A-E:
 - Phase E: Preflight validation
 """
 
-import os
-import sys
 import json
-import tempfile
+import os
 import shutil
 import subprocess
-import time
-from pathlib import Path
+import sys
+import tempfile
 from datetime import datetime
-from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+from typing import Dict, List
 
 # Import verification module
 from hyper_update_verification import UpstreamVerification
@@ -126,9 +124,11 @@ class HyperUpdateCore:
 
             subprocess.run(
                 [
-                    "git", "clone",
+                    "git",
+                    "clone",
                     "--depth=1",
-                    "--branch", "main",
+                    "--branch",
+                    "main",
                     self.UPSTREAM_REPO,
                     str(self.upstream_dir),
                 ],
@@ -174,9 +174,11 @@ class HyperUpdateCore:
             self.gpg_verified = True
             self.log("✅ GPG signature verified")
         else:
-            self.error("Upstream commit is not GPG-signed or signature is invalid.\n"
-                      "Upstream repository requires signed commits for security.\n"
-                      "Abort.")
+            self.error(
+                "Upstream commit is not GPG-signed or signature is invalid.\n"
+                "Upstream repository requires signed commits for security.\n"
+                "Abort."
+            )
 
     # ==== PHASE B: Mutex Lock Management ====
 
@@ -324,7 +326,7 @@ class HyperUpdateCore:
         for line in result.stdout.strip().split("\n"):
             if not line:
                 continue
-            status, filepath = line[:2], line[3:]
+            filepath = line[3:]
 
             # Check if it's in sensitive areas
             if any(
@@ -390,7 +392,11 @@ class HyperUpdateCore:
                 self.log("No non-sensitive files to update")
 
             # Log successful completion
-            total_files = len(self.changes["auto_updated"]) + len(self.changes["replaced"]) + len(self.changes["merged"])
+            total_files = (
+                len(self.changes["auto_updated"])
+                + len(self.changes["replaced"])
+                + len(self.changes["merged"])
+            )
             self.log_file = self.verifier.log_audit_trail(
                 status="success",
                 commit_sha=self.commit_sha,

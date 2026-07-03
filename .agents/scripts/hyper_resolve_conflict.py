@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Hypergraph AI Conflict Resolver
+"""Hypergraph AI Conflict Resolver
 
 Resolves Git merge-conflict markers in supported text files using Claude.
 Enforces a strict JSON response schema, a confidence gate (≥85), post-
@@ -36,18 +35,20 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
-CONFIDENCE_THRESHOLD = 85                          # Task 13 — hardcoded, never lowerable
-API_TIMEOUT = 600                                   # Task 9
+CONFIDENCE_THRESHOLD = 85  # Task 13 — hardcoded, never lowerable
+API_TIMEOUT = 600  # Task 9
 FAILED_WORKFLOWS_PATH = Path("spec/active/FAILED_WORKFLOWS.md")
 
 # File-type whitelist (Task 7)
 SUPPORTED_EXTENSIONS: frozenset[str] = frozenset({".py", ".md", ".json", ".toml"})
 
 # Explicitly blocked files regardless of extension (Task 15 note)
-BLOCKED_FILENAMES: frozenset[str] = frozenset({
-    "architecture.yml",
-    "architecture.yaml",
-})
+BLOCKED_FILENAMES: frozenset[str] = frozenset(
+    {
+        "architecture.yml",
+        "architecture.yaml",
+    }
+)
 
 # Failure type tags
 FT_UNSUPPORTED_CONFLICT_TYPE = "UNSUPPORTED_CONFLICT_TYPE"
@@ -58,6 +59,7 @@ FT_LOW_CONFIDENCE = "LOW_CONFIDENCE"
 # ---------------------------------------------------------------------------
 # FAILED_WORKFLOWS.md helpers
 # ---------------------------------------------------------------------------
+
 
 def _append_failed_workflow(
     branch: str,
@@ -95,9 +97,11 @@ def _append_failed_workflow(
 # File-type guard (Task 7)
 # ---------------------------------------------------------------------------
 
-def _assert_supported_file(file_path: Path, branch: str, superprd_name: str, miniprd_path: str) -> None:
-    """
-    Exit 1 with UNSUPPORTED_CONFLICT_TYPE if:
+
+def _assert_supported_file(
+    file_path: Path, branch: str, superprd_name: str, miniprd_path: str
+) -> None:
+    """Exit 1 with UNSUPPORTED_CONFLICT_TYPE if:
     - filename is in BLOCKED_FILENAMES
     - extension is not in SUPPORTED_EXTENSIONS
     - file cannot be decoded as UTF-8 (binary detection)
@@ -110,8 +114,9 @@ def _assert_supported_file(file_path: Path, branch: str, superprd_name: str, min
             f"(architecture files are never sent to the resolver).",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_UNSUPPORTED_CONFLICT_TYPE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_UNSUPPORTED_CONFLICT_TYPE, 1, note
+        )
         sys.exit(1)
 
     # Extension whitelist
@@ -121,8 +126,9 @@ def _assert_supported_file(file_path: Path, branch: str, superprd_name: str, min
             f"[hyper_resolve_conflict] Unsupported file type '{file_path.suffix}'.",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_UNSUPPORTED_CONFLICT_TYPE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_UNSUPPORTED_CONFLICT_TYPE, 1, note
+        )
         sys.exit(1)
 
     # Binary detection: attempt UTF-8 decode
@@ -134,8 +140,9 @@ def _assert_supported_file(file_path: Path, branch: str, superprd_name: str, min
             f"[hyper_resolve_conflict] File is binary or not valid UTF-8: {file_path}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_UNSUPPORTED_CONFLICT_TYPE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_UNSUPPORTED_CONFLICT_TYPE, 1, note
+        )
         sys.exit(1)
 
 
@@ -159,8 +166,7 @@ _SYSTEM_PROMPT = (
 
 
 def _build_user_message(file_content: str, file_path: Path) -> str:
-    """
-    Task 8: Wrap conflicted content in <conflict_content> XML tag.
+    """Task 8: Wrap conflicted content in <conflict_content> XML tag.
     Never inject raw conflict markers as system-level instructions.
     """
     return (
@@ -176,9 +182,9 @@ def _build_user_message(file_content: str, file_path: Path) -> str:
 # Syntax validation (Task 14)
 # ---------------------------------------------------------------------------
 
+
 def _syntax_check(resolved_code: str, file_path: Path) -> Optional[str]:
-    """
-    Validate resolved_code for supported file types.
+    """Validate resolved_code for supported file types.
 
     Returns None on success, or an error description string on failure.
     """
@@ -193,6 +199,7 @@ def _syntax_check(resolved_code: str, file_path: Path) -> Optional[str]:
     elif ext in {".yaml", ".yml"}:
         try:
             import yaml  # optional dep; only needed for yaml files
+
             yaml.safe_load(resolved_code)
         except Exception as exc:
             return f"YAML parse error: {exc}"
@@ -211,6 +218,7 @@ def _syntax_check(resolved_code: str, file_path: Path) -> Optional[str]:
 # JSON response parsing (Tasks 9–12)
 # ---------------------------------------------------------------------------
 
+
 def _parse_resolver_response(
     raw_text: str,
     file_path: Path,
@@ -218,8 +226,7 @@ def _parse_resolver_response(
     superprd_name: str,
     miniprd_path: str,
 ) -> tuple[int, str, str]:
-    """
-    Parse the LLM response JSON. Applies Tasks 10, 11, 12.
+    """Parse the LLM response JSON. Applies Tasks 10, 11, 12.
 
     Returns (confidence_score, reasoning, resolved_code) on success.
     Exits 1 with RESOLVER_MALFORMED_RESPONSE on any parse/validation failure.
@@ -233,8 +240,9 @@ def _parse_resolver_response(
             f"[hyper_resolve_conflict] RESOLVER_MALFORMED_RESPONSE: {note}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_RESOLVER_MALFORMED_RESPONSE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_RESOLVER_MALFORMED_RESPONSE, 1, note
+        )
         sys.exit(1)
 
     # Task 12: error field check (model refusal)
@@ -245,23 +253,22 @@ def _parse_resolver_response(
             f"[hyper_resolve_conflict] Model refusal — error field: {error_field}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_RESOLVER_MALFORMED_RESPONSE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_RESOLVER_MALFORMED_RESPONSE, 1, note
+        )
         sys.exit(1)
 
     # Task 11: confidence_score type/range assertion
     raw_score = data.get("confidence_score")
     if not (isinstance(raw_score, int) and 0 <= raw_score <= 100):
-        note = (
-            f"confidence_score assertion failed: got {raw_score!r} "
-            f"(expected int 0-100)"
-        )
+        note = f"confidence_score assertion failed: got {raw_score!r} (expected int 0-100)"
         print(
             f"[hyper_resolve_conflict] RESOLVER_MALFORMED_RESPONSE: {note}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_RESOLVER_MALFORMED_RESPONSE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_RESOLVER_MALFORMED_RESPONSE, 1, note
+        )
         sys.exit(1)
 
     confidence_score: int = raw_score
@@ -275,6 +282,7 @@ def _parse_resolver_response(
 # Core resolver
 # ---------------------------------------------------------------------------
 
+
 def resolve_conflict(
     file_path: Path,
     branch: str,
@@ -282,9 +290,7 @@ def resolve_conflict(
     miniprd_path: str,
     model: str = DEFAULT_MODEL,
 ) -> None:
-    """
-    Full conflict resolution pipeline. Exits with appropriate code.
-    """
+    """Full conflict resolution pipeline. Exits with appropriate code."""
     # Task 7: file-type whitelist + binary detection
     _assert_supported_file(file_path, branch, superprd_name, miniprd_path)
 
@@ -314,8 +320,9 @@ def resolve_conflict(
             f"[hyper_resolve_conflict] RESOLVER_MALFORMED_RESPONSE: {note}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_RESOLVER_MALFORMED_RESPONSE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_RESOLVER_MALFORMED_RESPONSE, 1, note
+        )
         sys.exit(1)
 
     raw_text = message.content[0].text if message.content else ""
@@ -346,8 +353,7 @@ def resolve_conflict(
             f"< {CONFIDENCE_THRESHOLD}. File left unmodified.",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_LOW_CONFIDENCE, 1, note)
+        _append_failed_workflow(branch, superprd_name, miniprd_path, FT_LOW_CONFIDENCE, 1, note)
         sys.exit(1)
 
     # Task 14: Post-resolution syntax check
@@ -361,8 +367,9 @@ def resolve_conflict(
             f"[hyper_resolve_conflict] Syntax check failed — overriding confidence: {syntax_error}",
             file=sys.stderr,
         )
-        _append_failed_workflow(branch, superprd_name, miniprd_path,
-                                FT_RESOLVER_MALFORMED_RESPONSE, 1, note)
+        _append_failed_workflow(
+            branch, superprd_name, miniprd_path, FT_RESOLVER_MALFORMED_RESPONSE, 1, note
+        )
         sys.exit(1)
 
     # Task 15: Write resolved output — only here, only on full success
@@ -377,6 +384,7 @@ def resolve_conflict(
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(

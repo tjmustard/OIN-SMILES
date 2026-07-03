@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""
-Interrupt Detector & Recovery
+"""Interrupt Detector & Recovery
 
 Detects if context compaction was interrupted (e.g., /hyper-resolve killed before /compact)
 and automatically triggers recovery compaction at /hyper-execute start.
 """
 
-import os
 import glob
-from datetime import datetime, timedelta
-from typing import Tuple, Optional
+import os
+from datetime import datetime
+from typing import Tuple
+
 from compaction_engine import CompactionEngine
 
 
@@ -23,8 +23,7 @@ class InterruptDetector:
         self.verbose = verbose
 
     def detect_and_recover(self) -> Tuple[bool, str]:
-        """
-        Check if compaction is missing and recover if needed.
+        """Check if compaction is missing and recover if needed.
 
         Returns:
             (recovery_needed: bool, status_message: str)
@@ -39,7 +38,7 @@ class InterruptDetector:
 
             # Check if it's fresh (within last 2 hours, assuming /hyper-resolve took < 2h)
             mtime = os.path.getmtime(most_recent)
-            age_seconds = (datetime.utcnow().timestamp() - mtime)
+            age_seconds = datetime.utcnow().timestamp() - mtime
             is_fresh = age_seconds < (2 * 3600)  # 2 hours
 
             if is_fresh:
@@ -66,7 +65,7 @@ class InterruptDetector:
 
         # Run compaction on the transcript
         try:
-            with open(transcript_path, 'r') as f:
+            with open(transcript_path, "r") as f:
                 transcript = f.read()
 
             feature_name = self._extract_feature_name(transcript_path)
@@ -104,8 +103,7 @@ class InterruptDetector:
         return "feature"
 
     def cleanup_old_archives(self, retention_days: int = 90) -> Tuple[int, str]:
-        """
-        Clean up archived debate transcripts older than retention period.
+        """Clean up archived debate transcripts older than retention period.
 
         Returns:
             (count_deleted: int, status_message: str)

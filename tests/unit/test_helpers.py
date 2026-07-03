@@ -2,6 +2,7 @@
 
 DO NOT import these from src/oinsmiles — they are test utilities only.
 """
+
 import re
 
 
@@ -29,7 +30,7 @@ def extract_ligand_smiles(oin_string: str) -> str:
     '[Cl].[Cl].N.N'
     """
     # Remove slot markers: {0}, {0>}, {1<}, etc.
-    clean = re.sub(r'\{\d+[><]?\}', '', oin_string)
+    clean = re.sub(r"\{\d+[><]?\}", "", oin_string)
     # Split on fragment separator and drop the metal fragment
-    frags = clean.split('.')
-    return '.'.join(f for f in frags if not re.search(r'_[A-Z]{3}', f))
+    frags = clean.split(".")
+    return ".".join(f for f in frags if not re.search(r"_[A-Z]{3}", f))

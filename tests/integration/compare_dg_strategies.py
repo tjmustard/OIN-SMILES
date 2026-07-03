@@ -5,23 +5,25 @@ round-trip (XYZ→OIN→3D→OIN) on each of the curated examples. Records pass/
 + geometric quality metrics (min_dist, RMSD) for side-by-side comparison.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+import sys
 
-from oinsmiles.generation.engine import OIN3DGenerator
-from oinsmiles.generation.molassembler_adapter import _min_inter_atomic_dist
-from oinsmiles import XYZToSMILES
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
+
+import argparse
+import json
+import tempfile
+import time
+
 import numpy as np
 from rdkit import Chem
-import tempfile
-import argparse
-import time
-import json
-
-from verify_xyz_to_oin import get_examples
-from verify_roundtrip import normalize_oin_for_comparison, read_atom_count
 from rmsd_utils import calculate_tmc_rmsd
+from verify_roundtrip import normalize_oin_for_comparison, read_atom_count
+from verify_xyz_to_oin import get_examples
+
+from oinsmiles import XYZToSMILES
+from oinsmiles.generation.engine import OIN3DGenerator
+from oinsmiles.generation.molassembler_adapter import _min_inter_atomic_dist
 
 
 def _xyz_positions(xyz_path: str) -> np.ndarray:
@@ -83,7 +85,7 @@ def run_strategy_test(
     }
 
     try:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.xyz', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as f:
             input_xyz_path = f.name
             f.write(example.xyz_content)
 
@@ -101,23 +103,24 @@ def run_strategy_test(
                 # Save to output_dir if provided
                 if output_dir and example_index is not None:
                     import re
+
                     # Sanitize example name: remove special chars, keep alphanumeric and dash
-                    safe_name = re.sub(r'[^\w\-]', '', example.name)
+                    safe_name = re.sub(r"[^\w\-]", "", example.name)
                     # Use Ex1_ExampleName prefix
                     prefix = f"Ex{example_index}_{safe_name}_"
 
                     # Save original XYZ only once (on single strategy)
                     if strategy == "single":
                         orig_path = os.path.join(output_dir, f"{prefix}original.xyz")
-                        with open(orig_path, 'w') as f:
+                        with open(orig_path, "w") as f:
                             f.write(example.xyz_content)
 
                     xyz_out_path = os.path.join(output_dir, f"{prefix}{strategy}.xyz")
-                    with open(xyz_out_path, 'w') as f:
+                    with open(xyz_out_path, "w") as f:
                         f.write(gen_xyz_content)
                     result["xyz_saved"] = xyz_out_path
 
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.xyz', delete=False) as gen_f:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as gen_f:
                     gen_xyz_path = gen_f.name
                     gen_f.write(gen_xyz_content)
 
@@ -133,7 +136,8 @@ def run_strategy_test(
                 # Write MOL and SDF files — mol_gen_bonded has bonds if generator produced them
                 if output_dir and example_index is not None:
                     import re as _re_mol
-                    safe_name = _re_mol.sub(r'[^\w\-]', '', example.name)
+
+                    safe_name = _re_mol.sub(r"[^\w\-]", "", example.name)
                     prefix = f"Ex{example_index}_{safe_name}_"
 
                     if mol_orig and strategy == "single":
@@ -157,7 +161,11 @@ def run_strategy_test(
                         except Exception:
                             pass
 
-                result["rmsd"] = calculate_tmc_rmsd(mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded) if (mol_orig and mol_gen_xyz) else None
+                result["rmsd"] = (
+                    calculate_tmc_rmsd(mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded)
+                    if (mol_orig and mol_gen_xyz)
+                    else None
+                )
 
                 s1 = normalize_oin_for_comparison(oin1_string.strip())
                 s2 = normalize_oin_for_comparison(oin2_string.strip())
@@ -187,9 +195,7 @@ def run_strategy_test(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Compare DG strategies on curated examples"
-    )
+    parser = argparse.ArgumentParser(description="Compare DG strategies on curated examples")
     parser.add_argument("--output-dir", type=str, help="Directory to save detailed results")
     parser.add_argument("--limit", type=int, help="Limit number of examples to run")
     parser.add_argument("--include-tmqm", action="store_true", help="Include tmQM examples (slow)")
@@ -207,9 +213,9 @@ def main():
     strategies = ["single", "ensemble", "directed"]
     generators = {s: OIN3DGenerator(dg_strategy=s) for s in strategies}
 
-    print(f"\n{'='*100}")
+    print(f"\n{'=' * 100}")
     print(f"DG Strategy Comparison on {len(examples)} Examples")
-    print(f"{'='*100}\n")
+    print(f"{'=' * 100}\n")
 
     all_results = {}
 
@@ -252,9 +258,9 @@ def main():
 
         all_results[example.name] = example_results
 
-    print(f"\n{'='*100}")
+    print(f"\n{'=' * 100}")
     print("Summary Table (Pass/Fail Counts)")
-    print(f"{'='*100}\n")
+    print(f"{'=' * 100}\n")
 
     summary = {strategy: {"pass": 0, "fail": 0} for strategy in strategies}
     for strat_results in all_results.values():
@@ -277,11 +283,21 @@ def main():
             f.write(f"Tested {len(examples)} examples with 3 strategies.\n\n")
             f.write("## Generated Structures\n\n")
             f.write("For each example, generated XYZ files are saved with indexed example names:\n")
-            f.write("- `Ex1_ExampleName_original.xyz`, `Ex2_ExampleName_original.xyz`, ... — original input structures\n")
-            f.write("- `Ex1_ExampleName_single.xyz`, `Ex2_ExampleName_single.xyz`, ... — generated by single strategy\n")
-            f.write("- `Ex1_ExampleName_ensemble.xyz`, `Ex2_ExampleName_ensemble.xyz`, ... — generated by ensemble strategy\n")
-            f.write("- `Ex1_ExampleName_directed.xyz`, `Ex2_ExampleName_directed.xyz`, ... — generated by directed strategy\n\n")
-            f.write("These can be opened in any molecular viewer (PyMOL, Jmol, etc.) for visual QA.\n\n")
+            f.write(
+                "- `Ex1_ExampleName_original.xyz`, `Ex2_ExampleName_original.xyz`, ... — original input structures\n"
+            )
+            f.write(
+                "- `Ex1_ExampleName_single.xyz`, `Ex2_ExampleName_single.xyz`, ... — generated by single strategy\n"
+            )
+            f.write(
+                "- `Ex1_ExampleName_ensemble.xyz`, `Ex2_ExampleName_ensemble.xyz`, ... — generated by ensemble strategy\n"
+            )
+            f.write(
+                "- `Ex1_ExampleName_directed.xyz`, `Ex2_ExampleName_directed.xyz`, ... — generated by directed strategy\n\n"
+            )
+            f.write(
+                "These can be opened in any molecular viewer (PyMOL, Jmol, etc.) for visual QA.\n\n"
+            )
 
             f.write("## Per-Strategy Pass Rates\n\n")
             f.write("| Strategy | Pass | Fail | Rate |\n")
@@ -307,7 +323,9 @@ def main():
                             else "✓"
                         )
                     else:
-                        reason = (result.get("exception") or "validation failed").split("\n")[0][:30]
+                        reason = (result.get("exception") or "validation failed").split("\n")[0][
+                            :30
+                        ]
                         cols.append(f"✗ ({reason})")
                 f.write("| " + " | ".join(cols) + " |\n")
 
@@ -315,11 +333,11 @@ def main():
 
         json_path = os.path.join(output_dir, "comparison_strategies.json")
         with open(json_path, "w") as f:
-            json.dump({
-                "examples_tested": len(examples),
-                "summary": summary,
-                "results": all_results
-            }, f, indent=2)
+            json.dump(
+                {"examples_tested": len(examples), "summary": summary, "results": all_results},
+                f,
+                indent=2,
+            )
         print(f"JSON artifact written to: {json_path}")
 
 

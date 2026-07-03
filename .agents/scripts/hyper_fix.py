@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Hypergraph Bug Fix Agent
+"""Hypergraph Bug Fix Agent
 
 Triangulates a code fix from three sources: SuperPRD (global intent),
 MiniPRD (local intent), and the failing pytest error trace. Applies LLM-
@@ -14,7 +13,6 @@ CLI:
 """
 
 import argparse
-import ast
 import os
 import re
 import sys
@@ -32,7 +30,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
-MODEL_CONTEXT_LIMIT = 200_000          # tokens
+MODEL_CONTEXT_LIMIT = 200_000  # tokens
 MAX_ITERATIONS = 5
 FAILED_WORKFLOWS_PATH = Path("spec/active/FAILED_WORKFLOWS.md")
 
@@ -51,12 +49,14 @@ FT_ORACLE_FAILURE = "ORACLE_FAILURE"
 # Custom exceptions
 # ---------------------------------------------------------------------------
 
+
 class ContextOverflowError(RuntimeError):
     """Raised when estimated prompt tokens exceed the safe context window."""
 
 
 class TerminalFailure(SystemExit):
     """Raised to exit immediately after a failure entry has been written."""
+
     def __init__(self, failure_type: str, exit_code: int = 1):
         self.failure_type = failure_type
         super().__init__(exit_code)
@@ -65,6 +65,7 @@ class TerminalFailure(SystemExit):
 # ---------------------------------------------------------------------------
 # FAILED_WORKFLOWS.md helpers
 # ---------------------------------------------------------------------------
+
 
 def _append_failed_workflow(
     branch: str,
@@ -90,8 +91,7 @@ def _append_failed_workflow(
     with open(FAILED_WORKFLOWS_PATH, "a", encoding="utf-8") as fh:
         fh.write(entry)
     print(
-        f"[hyper_fix] Failure entry written to {FAILED_WORKFLOWS_PATH} "
-        f"(type={failure_type})",
+        f"[hyper_fix] Failure entry written to {FAILED_WORKFLOWS_PATH} (type={failure_type})",
         file=sys.stderr,
     )
 
@@ -121,6 +121,7 @@ def _fail(
 # File utilities
 # ---------------------------------------------------------------------------
 
+
 def _read_file(path: str) -> str:
     """Read a text file; return empty string and warn on failure."""
     try:
@@ -133,6 +134,7 @@ def _read_file(path: str) -> str:
 # ---------------------------------------------------------------------------
 # Token estimation (Task 4)
 # ---------------------------------------------------------------------------
+
 
 def _estimate_tokens(system_prompt: str, user_message: str) -> int:
     """Rough token estimate: characters // 4."""
@@ -195,8 +197,7 @@ def _extract_symbols_from_code_blocks(markdown: str) -> set[str]:
 
 
 def _collect_current_symbols(miniprd_content: str, miniprd_path: str) -> set[str]:
-    """
-    Find Python files referenced in the MiniPRD and collect their symbols.
+    """Find Python files referenced in the MiniPRD and collect their symbols.
 
     Strategy: look for file paths like ``foo/bar.py`` in the MiniPRD text,
     resolve relative to repo root, read each file that exists.
@@ -216,9 +217,7 @@ def _collect_current_symbols(miniprd_content: str, miniprd_path: str) -> set[str
         fpath = repo_root / match.group(1)
         if fpath.exists():
             try:
-                symbols |= _extract_symbols_from_source(
-                    fpath.read_text(encoding="utf-8")
-                )
+                symbols |= _extract_symbols_from_source(fpath.read_text(encoding="utf-8"))
             except Exception:
                 pass
     return symbols
@@ -231,8 +230,7 @@ def _check_spec_drift(
     superprd_name: str,
     iteration: int,
 ) -> None:
-    """
-    Task 5: Compare MiniPRD-specified symbols against current file symbols.
+    """Task 5: Compare MiniPRD-specified symbols against current file symbols.
 
     If >40% of originally specified symbols are missing/renamed, write
     SPEC_DRIFT and exit without consuming the iteration.
@@ -267,6 +265,7 @@ def _check_spec_drift(
 # Prompt construction (Tasks 1 & 2)
 # ---------------------------------------------------------------------------
 
+
 def _build_system_prompt() -> str:
     return (
         "You are the Hypergraph Framework Bug Fix Agent. "
@@ -285,9 +284,7 @@ def _build_user_message(
     miniprd_content: str,
     error_trace: str,
 ) -> str:
-    """
-    Task 2: Wrap each content source in XML tags (prompt injection hardening).
-    """
+    """Task 2: Wrap each content source in XML tags (prompt injection hardening)."""
     parts: list[str] = []
 
     if superprd_content.strip():
@@ -332,8 +329,7 @@ _CODE_FENCE = re.compile(r"```(?:python)?\n(.*?)```", re.DOTALL)
 
 
 def _parse_and_apply_patches(response_text: str, repo_root: Path) -> list[str]:
-    """
-    Parse '# FILE: <path>' + fenced code block pairs from the LLM response
+    """Parse '# FILE: <path>' + fenced code block pairs from the LLM response
     and write each corrected file to disk.
 
     Returns list of paths that were written.
@@ -370,6 +366,7 @@ def _parse_and_apply_patches(response_text: str, repo_root: Path) -> list[str]:
 # Repo root resolution
 # ---------------------------------------------------------------------------
 
+
 def _find_repo_root(miniprd_path: str) -> Path:
     candidate = Path(miniprd_path).resolve().parent
     for _ in range(10):
@@ -383,6 +380,7 @@ def _find_repo_root(miniprd_path: str) -> Path:
 # Main fix logic
 # ---------------------------------------------------------------------------
 
+
 def run_fix(
     miniprd_path: str,
     error_log_path: str,
@@ -391,8 +389,7 @@ def run_fix(
     iteration: int,
     model: str = DEFAULT_MODEL,
 ) -> None:
-    """
-    Core fix loop entry point. Raises TerminalFailure on any unrecoverable
+    """Core fix loop entry point. Raises TerminalFailure on any unrecoverable
     condition; returns normally on success.
     """
     miniprd_content = _read_file(miniprd_path)
@@ -409,9 +406,7 @@ def run_fix(
         if env_provenance:
             superprd_name = env_provenance
             candidate = (
-                Path(miniprd_path).parent.parent
-                / "drafts"
-                / f"SuperPRD_{env_provenance}.md"
+                Path(miniprd_path).parent.parent / "drafts" / f"SuperPRD_{env_provenance}.md"
             )
             if candidate.exists():
                 superprd_content = candidate.read_text(encoding="utf-8")
@@ -509,8 +504,7 @@ def record_oracle_failure(
     miniprd_path: str,
     oracle_exit_code: int,
 ) -> None:
-    """
-    Task 6: Called externally (or via --record-oracle-failure flag) when the
+    """Task 6: Called externally (or via --record-oracle-failure flag) when the
     Oracle still fails after iteration 5. Writes ORACLE_FAILURE entry and
     exits non-zero.
     """
@@ -527,6 +521,7 @@ def record_oracle_failure(
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -546,7 +541,7 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         "--superprd",
         default=None,
         help="Path to the SuperPRD Markdown file (optional; falls back to "
-             "HYPERGRAPH_PROVENANCE env var)",
+        "HYPERGRAPH_PROVENANCE env var)",
     )
     parser.add_argument(
         "--branch",

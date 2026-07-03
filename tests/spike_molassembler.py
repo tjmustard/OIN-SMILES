@@ -10,7 +10,6 @@ ProcessPoolExecutor isolation, and cisplatin conformer generation.
 Run with: uv run python tests/spike_molassembler.py
 """
 
-import os
 import pickle
 import sys
 from concurrent.futures import ProcessPoolExecutor, TimeoutError
@@ -24,9 +23,11 @@ CANDIDATE_OUTPUTS.mkdir(exist_ok=True)
 # SECTION 1: Import and version check
 # =============================================================================
 
+
 def check_import():
     """Task 3: Verify correct import path and version."""
     import scine_molassembler as masm  # noqa: PLC0415
+
     print(f"[OK] import scine_molassembler as masm  (version {masm.__version__})")
     return masm
 
@@ -35,14 +36,15 @@ def check_import():
 # MODULE-LEVEL WORKER — must be at module level for ProcessPoolExecutor pickle
 # =============================================================================
 
+
 def _molassembler_worker(args: dict) -> dict:
     """
     Module-level worker for ProcessPoolExecutor.
     args keys: smiles (str), seed (int)
     Returns: dict with 'positions_shape' or 'error'
     """
-    import scine_molassembler as masm  # noqa: PLC0415
     import numpy as np  # noqa: PLC0415, F401
+    import scine_molassembler as masm  # noqa: PLC0415
 
     smiles = args.get("smiles", "N")
     seed = args.get("seed", 42)
@@ -61,9 +63,11 @@ def _molassembler_worker(args: dict) -> dict:
 # SECTION 2: Picklability check
 # =============================================================================
 
+
 def check_picklability():
     """Task 4: Verify module-level worker is picklable."""
     import scine_molassembler as masm  # noqa: PLC0415
+
     mol = masm.io.experimental.from_smiles("N")
 
     # Test Molecule picklability
@@ -82,6 +86,7 @@ def check_picklability():
 # SECTION 3: ProcessPoolExecutor isolation
 # =============================================================================
 
+
 def check_process_pool():
     """Task 5: Confirm ProcessPoolExecutor isolation works."""
     with ProcessPoolExecutor(max_workers=1) as ex:
@@ -89,7 +94,9 @@ def check_process_pool():
         try:
             result = fut.result(timeout=10)
             assert result.get("ok"), f"Worker returned error: {result}"
-            print(f"[OK] ProcessPoolExecutor round-trip  positions_shape={result['positions_shape']}")
+            print(
+                f"[OK] ProcessPoolExecutor round-trip  positions_shape={result['positions_shape']}"
+            )
         except TimeoutError:
             print("[FAIL] ProcessPoolExecutor timed out after 10s")
             sys.exit(1)
@@ -98,6 +105,7 @@ def check_process_pool():
 # =============================================================================
 # SECTION 4: Cisplatin conformer
 # =============================================================================
+
 
 def generate_cisplatin():
     """Task 6: Generate cisplatin conformer, save to candidate_outputs/."""
@@ -130,6 +138,7 @@ def generate_cisplatin():
 # SECTION 5: API surface summary
 # =============================================================================
 
+
 def print_api_summary():
     """Print confirmed API signatures for MiniPRD_MolassemblerAdapter."""
     import scine_molassembler as masm  # noqa: PLC0415
@@ -139,13 +148,15 @@ def print_api_summary():
     print("CONFIRMED MOLASSEMBLER API SURFACE (for MolassemblerAdapter)")
     print("=" * 60)
     print(f"  Package version : {masm.__version__}")
-    print(f"  Import path     : import scine_molassembler as masm")
-    print(f"  Molecule SMILES : masm.io.experimental.from_smiles(smiles: str) -> Molecule")
-    print(f"  DG conformer    : masm.dg.generate_conformation(mol: Molecule, seed: int) -> ndarray | dg.Error")
-    print(f"  Write XYZ       : masm.io.write(filename: str, mol: Molecule, positions: ndarray)")
-    print(f"  Positions units : Angstrom (despite docs saying bohr — verified empirically)")
-    print(f"  Picklable       : Molecule YES  module-level function YES")
-    print(f"  DG error check  : isinstance(result, masm.dg.Error)")
+    print("  Import path     : import scine_molassembler as masm")
+    print("  Molecule SMILES : masm.io.experimental.from_smiles(smiles: str) -> Molecule")
+    print(
+        "  DG conformer    : masm.dg.generate_conformation(mol: Molecule, seed: int) -> ndarray | dg.Error"
+    )
+    print("  Write XYZ       : masm.io.write(filename: str, mol: Molecule, positions: ndarray)")
+    print("  Positions units : Angstrom (despite docs saying bohr — verified empirically)")
+    print("  Picklable       : Molecule YES  module-level function YES")
+    print("  DG error check  : isinstance(result, masm.dg.Error)")
     print("=" * 60)
 
 
@@ -164,4 +175,6 @@ if __name__ == "__main__":
     print_api_summary()
 
     print()
-    print("[DONE] All spike checks passed. See .agents/memory/molassembler_spike_results.md for decisions.")
+    print(
+        "[DONE] All spike checks passed. See .agents/memory/molassembler_spike_results.md for decisions."
+    )

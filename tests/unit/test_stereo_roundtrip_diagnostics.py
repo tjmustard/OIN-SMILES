@@ -18,6 +18,7 @@ phase flips one of these to a hard assert once fixed).
 
 This test module MEASURES ONLY — it must never modify anything under src/.
 """
+
 import os
 import re
 import sys
@@ -47,9 +48,7 @@ def _generate_and_reencode(oin_string: str) -> str:
     generator = OIN3DGenerator()
     structure = generator.generate(oin_string)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xyz", delete=False
-    ) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as tmp_file:
         tmp_file.write(structure.xyz)
         tmp_path = tmp_file.name
 
@@ -101,9 +100,7 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
         self.assertEqual(
             oin1,
             oin2,
-            f"OIN round-trip mismatch (P-stereocenters lost):\n"
-            f"  OIN(1): {oin1}\n"
-            f"  OIN(2): {oin2}",
+            f"OIN round-trip mismatch (P-stereocenters lost):\n  OIN(1): {oin1}\n  OIN(2): {oin2}",
         )
 
     # NOTE (2026-07-03): Same downgrade as test_chiral_p_roundtrip above —
@@ -136,9 +133,7 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
         self.assertEqual(
             oin1,
             oin2,
-            f"OIN round-trip mismatch (N-stereocenters lost):\n"
-            f"  OIN(1): {oin1}\n"
-            f"  OIN(2): {oin2}",
+            f"OIN round-trip mismatch (N-stereocenters lost):\n  OIN(1): {oin1}\n  OIN(2): {oin2}",
         )
 
     @unittest.expectedFailure
@@ -176,9 +171,7 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
         #  (b) winding markers survive the round trip at all (today: neither
         #      re-encoded string even contains a winding marker on ring 0).
         markers_present = winding_a is not None and winding_b is not None
-        markers_differ = (
-            markers_present and winding_a.group(0) != winding_b.group(0)
-        )
+        markers_differ = markers_present and winding_a.group(0) != winding_b.group(0)
 
         self.assertTrue(
             markers_present and markers_differ,

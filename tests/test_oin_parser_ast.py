@@ -1,7 +1,9 @@
 """Unit tests for AST tokenization in the Direct Parser (MiniPRD_DirectParser_ASTTokenization)."""
 
 import unittest
+
 from rdkit import Chem
+
 from oinsmiles.generation.oin_parser import tokenize_unsanitized_smiles
 
 
@@ -20,8 +22,8 @@ class TestASTTokenization(unittest.TestCase):
         self.assertEqual(atoms[0].GetAtomicNum(), 78)  # Pt
         self.assertEqual(atoms[1].GetAtomicNum(), 17)  # Cl
         self.assertEqual(atoms[2].GetAtomicNum(), 17)  # Cl
-        self.assertEqual(atoms[3].GetAtomicNum(), 7)   # N
-        self.assertEqual(atoms[4].GetAtomicNum(), 7)   # N
+        self.assertEqual(atoms[3].GetAtomicNum(), 7)  # N
+        self.assertEqual(atoms[4].GetAtomicNum(), 7)  # N
 
         # Verify indices are stable (0–4)
         for i, atom in enumerate(atoms):
@@ -50,9 +52,7 @@ class TestASTTokenization(unittest.TestCase):
         # Verify bonds extracted (should include aromatic C-C bonds)
         self.assertGreater(len(bonds), 0)
         # Check that aromatic bonds exist (BondType.Aromatic)
-        aromatic_bonds = [
-            b for b in bonds if b[2] == Chem.BondType.AROMATIC
-        ]
+        aromatic_bonds = [b for b in bonds if b[2] == Chem.BondType.AROMATIC]
         self.assertGreater(len(aromatic_bonds), 0)
 
     def test_implicit_hydrogens_preserved(self):
@@ -110,9 +110,7 @@ class TestASTTokenization(unittest.TestCase):
         atoms, bonds = tokenize_unsanitized_smiles(smiles)
 
         # Count aromatic bond types
-        aromatic_count = sum(
-            1 for _, _, bt in bonds if bt == Chem.BondType.AROMATIC
-        )
+        aromatic_count = sum(1 for _, _, bt in bonds if bt == Chem.BondType.AROMATIC)
         # Aromatic ring should have aromatic bonds in unsanitized state
         self.assertGreater(aromatic_count, 0)
 
@@ -132,7 +130,7 @@ class TestASTTokenization(unittest.TestCase):
 
     def test_malformed_smiles_raises_value_error(self):
         """Test 4: Malformed SMILES raises ValueError."""
-        malformed = "[Pt:1].[Cl:99" # Missing closing bracket
+        malformed = "[Pt:1].[Cl:99"  # Missing closing bracket
         with self.assertRaises(ValueError) as context:
             tokenize_unsanitized_smiles(malformed)
         self.assertIn("Failed to parse", str(context.exception))
