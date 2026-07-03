@@ -28,19 +28,19 @@ class TestRegressionStability(unittest.TestCase):
     def test_cisplatin(self):
         self.assertEqual(
             self._convert("cisplatin.xyz"),
-            "[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
+            "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
         )
 
     def test_transplatin(self):
         self.assertEqual(
             self._convert("transplatin.xyz"),
-            "[Pt@SP2_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
+            "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
         )
 
     def test_cis_ptcl2en(self):
         self.assertEqual(
             self._convert("cis_ptcl2en.xyz"),
-            "[Pt@SP1_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
+            "[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}",
         )
 
     def test_ferrocene(self):
@@ -52,13 +52,13 @@ class TestRegressionStability(unittest.TestCase):
     def test_fac_irppy3(self):
         self.assertEqual(
             self._convert("fac_irppy3.xyz"),
-            "[Ir@OH10_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
+            "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
         )
 
     def test_mer_irppy3(self):
         self.assertEqual(
             self._convert("mer_irppy3.xyz"),
-            "[Ir@OH2_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
+            "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
         )
 
 

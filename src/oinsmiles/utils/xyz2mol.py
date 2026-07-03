@@ -909,6 +909,7 @@ def get_oin_string(tmc_mol, xyz_coords):
     # Now process each fragment to generate SMILES and refine binding_atoms
     for i, item in enumerate(fragments_data):
         indices = item['indices'] # Old indices
+        is_metal = item['is_metal']
         frag_binding_atoms = item['binding_atoms'] # Retrieve correct binding atoms
         
         # 1. Identify Heavy Atoms and Hydrogen Counts

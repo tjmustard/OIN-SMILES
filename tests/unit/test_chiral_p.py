@@ -7,7 +7,7 @@ Fixture: tests/fixtures/PdCl2-RR-BDPP.xyz  (64 atoms, K:1,2;)
   two identical phenyl groups.
 
 Candidate OIN (2026-03-04):
-  [Pd@SP1_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}
+  [Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}
 """
 import os
 import sys
@@ -31,7 +31,7 @@ _BDPP_XYZ = os.path.abspath(
 
 # Human-reviewed expected OIN string (2026-03-04, generated from above XYZ)
 _EXPECTED_OIN = (
-    "[Pd@SP1_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)"
+    "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)"
     "P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
 )
 

@@ -1,6 +1,6 @@
 # TASK-04: OIN v3.7 — descriptor-free metal token (fix stale `is_metal` bug)
 
-Status: TODO
+Status: DONE
 Depends on: TASK-01 (the deleted root tests assert the old style)
 Suggested model: Sonnet
 
