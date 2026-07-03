@@ -34,7 +34,7 @@ Test baseline (2026-07-02, before any fixes):
 | TASK-01 delete stale root tests | DONE | Haiku | — |
 | TASK-02 vertex-index expectations | DONE | Haiku | — |
 | TASK-03 GeneratedStructure assert | DONE | Haiku | — |
-| TASK-04 v3.7 descriptor-free metal token | TODO | Sonnet | TASK-01 |
+| TASK-04 v3.7 descriptor-free metal token | DONE | Sonnet | TASK-01 |
 | TASK-10 stereo diagnostic round-trips | TODO | Sonnet | TASK-04 |
 | Stereo Phases 1–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | TASK-10 |
 
@@ -130,3 +130,65 @@ Test baseline (2026-07-02, before any fixes):
   `discover tests/unit` → **52 run, OK (skipped=1)**. Suite fully green.
 - Remaining known-red: none (axial-chiral skip is intentional; integration dir
   excluded per D-5).
+
+### 2026-07-03 — TASK-04 complete: v3.7 descriptor-free metal token (Sonnet)
+- **Source fix (1 line):** `src/oinsmiles/utils/xyz2mol.py` — in the second
+  per-fragment loop (`for i, item in enumerate(fragments_data):`), added
+  `is_metal = item['is_metal']` immediately after `indices = item['indices']`.
+  This stops the metal fragment from taking the stale `is_metal=False` ligand
+  branch, so it now flows through the intended `sanitized_smiles = f"[{...}]"`
+  path → `[Pt_SPL]` instead of `[Pt@SP1_SPL]`.
+- **Confirmation step:** ran `discover tests/unit` immediately after the source
+  fix (before touching expectations) — got exactly 7 failures (`test_n_stability`,
+  `test_p_stability`, `test_cis_ptcl2en`, `test_cisplatin`, `test_fac_irppy3`,
+  `test_mer_irppy3`, `test_transplatin`), every diff being *only* the removed
+  `@desc` segment (verified via diff inspection) — no slot-order or other
+  changes, so no STOP condition triggered.
+- **Test expectations updated** (transformation rule: strip `\[([A-Z][a-z]?)@[A-Z]+[0-9]+_` → `[\1_`):
+  - `tests/unit/test_regression_stability.py` — 5 strings (cisplatin, transplatin,
+    cis_ptcl2en, fac_irppy3, mer_irppy3)
+  - `tests/unit/test_chiral_n.py` — `_EXPECTED_OIN` + stale docstring "Candidate OIN" line (2 occurrences)
+  - `tests/unit/test_chiral_p.py` — `_EXPECTED_OIN` + stale docstring "Candidate OIN" line (2 occurrences)
+  - `tests/integration/verify_xyz_to_oin.py` — 28 occurrences (14
+    expected_smiles/expected_oin_string pairs; 2 more than the spec's listed 26
+    because the FeCO5 fixture uses `[Fe@TB8_TBP]`, matched by the same general
+    transformation regex but not explicitly enumerated in the spec's grep example)
+  - `tests/unit/test_helpers.py` — 2 docstring examples (line ~13, ~28)
+- **Golden files updated** (1 substitution each, all 9): `cisplatin_oin.txt`,
+  `transplatin_oin.txt`, `cis_ptcl2en_oin.txt`, `fac_irppy3_oin.txt`,
+  `mer_irppy3_oin.txt`, `bdnn_oin.txt`, `bdpp_oin.txt`, `binap_oin.txt`,
+  `axial_chiral_encoded.smi`
+- **Docs updated:** `README.md` (lines 34, 77, 95, 118, 124, 131 — rewrote the
+  `[Pt_SPL]` table-row explanation to describe metal+geometry template with
+  isomerism carried by slot order, no more "stereo descriptor" claim);
+  `CHANGELOG.md` (added new `### Fixed` v3.7 entry at top of `[Unreleased]`,
+  and annotated the old v0.2.0 "OIN v3.6 inline format" bullet to clarify
+  `@SP1` was a stale-variable bug, not a v3.6 design element).
+- **Leave-alone list respected, untouched:** `tests/test_direct_parser_regex.py`,
+  `tests/unit/test_molassembler_adapter.py:36`, `src/oinsmiles/oin/inline.py`
+  (`METAL_REGEX`), `src/oinsmiles/generation/oin_parser.py` docstrings,
+  `tests/unit/test_binap_stability.py:35`, `spec/archive/**`,
+  `verification_artifacts_*`. `src/oinsmiles/core/chirality.py` and all ligand
+  `@/@@` chiral tags also untouched.
+- **Final repo-wide grep** (`@SP[0-9]|@OH[0-9]`) confirms all remaining hits
+  are inside the leave-alone list, historical `verification_artifacts_*`/
+  `spec/archive/**`/`spec/worklog/*` files, or the intentionally-preserved
+  historical CHANGELOG v0.2.0 entry — nothing missed.
+- **Acceptance results:**
+  - `uv run python -m unittest discover tests/unit 2>&1 | tail -3` → `Ran 52
+    tests in 4.2s` / `OK (skipped=1)` — 0 failures ✓
+  - `uv run python -m unittest tests.test_direct_parser_regex 2>&1 | tail -3`
+    → `Ran 14 tests in 0.002s` / `OK` ✓
+  - Public API check (constructor is `XYZToSMILES()` + `.convert(path)` per
+    `src/oinsmiles/__init__.py` / `core/translator.py`, not the spec snippet's
+    `XYZToSMILES(path).convert()` form):
+    `XYZToSMILES().convert('tests/fixtures/cisplatin.xyz')` →
+    `[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`;
+    `XYZToSMILES().convert('tests/fixtures/transplatin.xyz')` →
+    `[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}` — descriptor-free, differ only in
+    slot order ✓
+- **Note:** `spec/compiled/architecture.yml:400` still says "v3.6" (cosmetic
+  drift now two versions behind — v3.7 shipped this task); next `/hyper-audit`
+  can reconcile.
+- No git commit made (per task instructions). `Status:` in
+  `TASK-04-v37-descriptor-free-metal-token.md` set to `DONE`.

@@ -31,7 +31,7 @@
 
 Standard SMILES notation is lossy for transition metal complexes (TMCs): coordination geometry, isomer identity, and P/N stereochemistry are destroyed when you convert a 3D XYZ structure to a 1D string. This breaks any workflow that requires exact isomer preservation — database curation, ML training sets, round-trip structure exchange.
 
-**OIN-SMILES** solves this by implementing **Open Isomer Notation (OIN)** — an extended SMILES format that encodes everything needed to reconstruct the original 3D geometry from the string alone. A cisplatin complex becomes `[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`; that string unambiguously reconstructs the *cis* square planar geometry, not the *trans* isomer.
+**OIN-SMILES** solves this by implementing **Open Isomer Notation (OIN)** — an extended SMILES format that encodes everything needed to reconstruct the original 3D geometry from the string alone. A cisplatin complex becomes `[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`; that string unambiguously reconstructs the *cis* square planar geometry, not the *trans* isomer.
 
 ## ✨ Features
 
@@ -74,7 +74,7 @@ This project uses `uv` for dependency management.
 oin-smiles xyz2oin complex.xyz
 
 # OIN → XYZ (prints XYZ block to stdout)
-oin-smiles oin2xyz "[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
+oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 ```
 
 ### 3D to 1D (XYZ to OIN)
@@ -92,7 +92,7 @@ print(oin)
 from oinsmiles.generation.engine import OIN3DGenerator
 
 generator = OIN3DGenerator()
-result = generator.generate("[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
+result = generator.generate("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
 # XYZ block (always available)
 with open("generated.xyz", "w") as f:
@@ -115,20 +115,20 @@ if result.mol is not None:
 **Cisplatin** (square planar, *cis* isomer):
 
 ```text
-[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}
+[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}
 ```
 
 **Transplatin** (square planar, *trans* isomer):
 
 ```text
-[Pt@SP2_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}
+[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}
 ```
 
 **Key fields:**
 
 | Element | Meaning |
 |---|---|
-| `[Pt@SP1_SPL]` | Metal atom; `SP1` = stereo descriptor (atom-order dependent); `SPL` = Square Planar geometry template |
+| `[Pt_SPL]` | Metal atom + geometry template (`SPL` = Square Planar); isomerism (cis/trans, fac/mer) is carried entirely by slot order, not by the metal token |
 | `{n}` | Slot tag — assigns the preceding binding atom to slot *n* of the geometry template |
 | `{n>}` / `{n<}` | Slot tag with winding direction (CW / CCW) for η-ligands |
 | `.` | Fragment separator (metal + each ligand) |

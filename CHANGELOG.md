@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **OIN v3.7: descriptor-free metal token** (`[Pt_SPL]`, was `[Pt@SP1_SPL]`). The `@desc` was an RDKit non-tetrahedral stereo leak via a stale `is_metal` variable in xyz2mol.py; isomer information was and remains fully encoded by slot ordering. Parsers continue to accept legacy `@desc` strings.
+
 ### Added
 - **Direct Parser Fragment Mapping (v0.2.2 Blocker #1) audit completion** (2026-05-10): `_extract_oin_constraints()` audited and verified. Returns 3-tuple `(stripped_smiles, constraints_dict, fragment_to_atom_mapping)` for downstream eta-bond and polydentate-ligand processing. Fragment mapping associates OIN fragment ranks to atom indices in the connected SMILES. Renamed from public `extract_oin_constraints` to private `_extract_oin_constraints` (never a public API; 31 total call sites updated, zero unprefixed references remaining). Verification spike `tools/verify_metal_first.py` confirms metal-first invariant on 6 baseline fixtures; 3 Pd chirality test fixtures documented in `tests/fixtures/_exclusions.yml` (all verified geometrically valid via round-trip RMSD < 1.0 Å). Audit tool `tools/audit_extract_calls.py` confirms rename completeness. 55/55 tests passing (5 new fragment mapping tests verify determinism, cisplatin/polydentate correctness, contiguous atom indices, and metal-at-fragment-zero invariant). Hypergraph node `atom_direct_parser_regex` updated with new output type and status set to `clean`. MiniPRD archived.
 - **Direct Parser Molassembler Instantiation audit completion** (2026-05-06): `MiniPRD_DirectParser_MolassemblerInstantiation.md` audited and verified. 20/20 unit tests passing (deterministic Cisplatin/TiCat1 construction, shape assignment, eta bond handling, error cases, all-or-nothing semantics). Implementation in `src/oinsmiles/generation/oin_parser.py` includes `construct_molassembler_mol()` (all-or-nothing transaction wrap), `convert_bond_type()` (RDKit→SCINE mapping), and `extract_oin_constraints()` (OIN v3.6 annotation extraction). SCINE shape mapping covers 10 geometries (SQP, SPL, OCT, TBP, LIN, TPL, TET, TPY, SPY, PBP). New hypergraph node `atom_direct_parser_masm` added to `architecture.yml`. MiniPRD archived.
@@ -35,7 +38,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **P/N stereocenter encoding** (`core/chirality.py`): `CIPAssigner` reads the full-TMC 3D conformer (pre-fragmentation) and stores CIP codes on P/N atoms; `ChiralityRecoveryUtility` verifies/corrects chiral tags post-fragmentation; `PseudoAtomStrategy` provides fallback for uncomputable stereocenters.
 - **CLI** (`oin-smiles`): two subcommands — `xyz2oin <path>` and `oin2xyz <oin>` — registered as a package entry point.
 - **`MolassemblerTimeoutError`** exported from `generation/engine.py`; `OIN3DGenerator` accepts a `timeout` parameter (default 60 s).
-- **OIN v3.6 inline format** as canonical output of `XYZToSMILES.convert()` (e.g. `[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`).
+- **OIN v3.6 inline format** as canonical output of `XYZToSMILES.convert()` (e.g. `[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`; the `@SP1` descriptor was a stale-variable bug, not a v3.6 design element — see v3.7 fix above).
 - Integration round-trip tests (`verify_roundtrip.py`): unified XYZ → OIN → XYZ → OIN flow with RMSD < 1.0 Å and string-identity checks.
 - Unit tests for chirality encoding, Molassembler adapter, regression stability, and axial chirality.
 
