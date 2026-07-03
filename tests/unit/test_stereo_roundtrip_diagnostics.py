@@ -245,14 +245,22 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
     # (``_OIN_CIPCode_LP``) on each Zone-A P bonded to exactly one metal, via
     # a dummy-metal copy computed while 3D is still present; recover() keeps
     # and verify-and-flips that tag instead of clearing it. The SANITY
-    # assertion below (OIN(1) carries @/@@ on the P atom) now PASSES. The
-    # round-trip assertion is still expected to fail: OIN->XYZ generation
-    # enforcement of the P tag (re-embed on mismatch) is MiniPRD-B
-    # (MiniPRD_ZoneA_P_GenEnforce.md, not yet implemented) -- today's
-    # regeneration also perturbs unrelated things (geometry code SPL->SPY,
-    # spurious H atoms, a C=C bond artifact), so OIN(2) still differs from
-    # OIN(1) for reasons well beyond just the P tag. Decorator stays ON.
-    @unittest.expectedFailure
+    # assertion below (OIN(1) carries @/@@ on the P atom) now PASSES.
+    #
+    # UPDATE (TASK-31, 2026-07-03): the round-trip assertion now PASSES too.
+    # Root cause of the prior GENERATION-side gap: the bidentate placement
+    # guard in ``_stitch_fragment`` (molassembler_adapter.py) only rejected
+    # non-binding HEAVY atoms within 1.7 A of the metal centre. DIPAMP's
+    # isolated bite distance (P...P 4.408 A) vs the SPL target (3.182 A)
+    # folds non-binding backbone H atoms to 1.39-1.65 A from Rh -- under the
+    # heavy-atom threshold, so Kabsch placement was accepted, and those H
+    # atoms were then misperceived as Rh-H hydrides on the XYZ->OIN
+    # round-trip. Extending the guard to also reject non-binding H atoms
+    # within 1.8 A of the metal now correctly routes DIPAMP to the existing
+    # Molassembler DG fallback, which places the chelate cleanly (Rh-P
+    # 2.41 A, min non-binding H 3.19 A) and reproduces OIN(1) byte-for-byte.
+    # Decorator removed -- MiniPRD-B re-embed enforcement was not needed for
+    # this fixture.
     def test_p_stereocenter_roundtrip(self):
         """P-stereocenter (donor atom itself) round-trip: XYZ -> OIN(1) ->
         generate 3D -> XYZ(2) -> OIN(2).
@@ -269,8 +277,9 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
 
         Diagnostic result (2026-07-03, post-Phase-4): the SANITY assertion
         now passes -- see the class-level NOTE above. The round-trip
-        assertion still fails: this is now purely a GENERATION-side
-        (OIN->XYZ) gap, tracked by MiniPRD-B.
+        assertion also now passes as of TASK-31 (bidentate placement guard
+        extended to reject non-binding H atoms near the metal, routing
+        DIPAMP to the DG fallback) -- see the UPDATE note above.
         """
         oin1 = XYZToSMILES().convert(_DIPAMP_XYZ)
 

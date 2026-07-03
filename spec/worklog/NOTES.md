@@ -75,17 +75,49 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | Stereo Phase 4a (Zone-A P encode) | DONE — DIPAMP emits `[P@]`; negative controls clean | Fable/Opus → Sonnet | TASK-20 |
 | Stereo Phase 4b (Zone-A P gen-enforce) | DONE — flip inverts CIP; full round-trip blocked by pre-existing gen bugs (xfail) | Sonnet | Phase 4a |
 | Stereo Phase 4 (Zone-A N) | DEFERRED — needs Option-C out-of-band marker (RDKit clears trivalent `[N@]`) | — | future |
-| TASK-30 bidentate placement diagnostic | TODO — NEXT; unblocks both xfail'd round-trips | Sonnet | — |
+| TASK-30 bidentate placement diagnostic | DONE — MIX (root cause B, fix is cheap; DG fallback already round-trips DIPAMP cleanly) | Sonnet | — |
+| TASK-31 bidentate placement fix | DONE — guard fix + xfail flip both work exactly as specified; the regression it surfaced in `test_zone_a_p_genenforce.py` (Phase 4b) is now cleared by TASK-32 | Sonnet | TASK-30 |
+| TASK-32 retarget Phase-4b Kabsch tests | DONE — 3 tests retargeted from DIPAMP to a synthetic monodentate P-stereocenter fixture that stays on the template path; suite fully green | Sonnet | TASK-31 |
+| FOLLOW-UP: `[P@]`-on-SPL enforcement asymmetry | TODO (not yet specced) | — | — |
+
+**Enforcement-asymmetry follow-up (flagged 2026-07-03, not yet a task):**
+`[P@]` on `[Pt_SPL]` warns "could not be enforced" while `[P@@]` on the
+identical complex enforces cleanly — Phase-4b's verify-and-reflect appears to
+reach only one enantiomer for certain geometries. Not blocking (TASK-32 steers
+its fixtures around it via TET geometry), but it's a real question about the
+reflect logic's completeness; worth a diagnostic before relying on Zone-A P
+enforcement for SPL complexes.
 
 **Separate workstream — generation fidelity (not stereo):** TASK-30 targets the
 polydentate placement bug in `_stitch_fragment` that causes the two remaining
-xfails. Diagnostic-first (measure which mechanism → cheap guard/objective fix
-vs deeper conformation-aware re-embed / DG-fallback MiniPRD). See
-`TASK-30-bidentate-placement-diagnostic.md`.
+xfails. **DONE (2026-07-03) — diagnostic decided MIX**: root cause is a
+genuine conformation mismatch (proven, not just likely), but the fix is
+cheap — widen the existing `:1578` heavy-atom-only guard to be H-inclusive
+so DIPAMP-class incompatible-bite bidentates route to the DG fallback, which
+the diagnostic proved already round-trips DIPAMP byte-identically. Next:
+a lightweight Sonnet-tier follow-on task to implement that guard change +
+the DIPAMP round-trip test (not a HACF MiniPRD). See
+`TASK-30-bidentate-placement-diagnostic.md` and the dated Log entry below
+for full measured numbers.
 
 **Phase 3 + Phase 4 BOTH DONE (2026-07-03), verified by Fable this session.**
-Suite: `discover tests/unit` → 112 run, OK (skipped=3, expected failures=2).
-Honest state:
+Suite (at that time): `discover tests/unit` → 112 run, OK (skipped=3, expected
+failures=2). **UPDATE (TASK-31, 2026-07-03, later same day):** the DIPAMP half
+of the xfail pair below is now fixed (see the TASK-31 Log entry) — `discover
+tests/unit` is now skipped=3, expected failures=1 (`test_haptic_face_golden_match`
+only) — but TASK-31 also surfaced a NEW, unrelated regression (2 failures + 1
+error in `test_zone_a_p_genenforce.py`, Phase 4b's own enforcement tests); see
+the TASK-31 Log entry for the full picture — **not** a clean "OK" suite run.
+**UPDATE (TASK-32, 2026-07-03, later still):** that regression is now CLEARED
+— the 3 affected `test_zone_a_p_genenforce.py` tests were retargeted from
+DIPAMP to a synthetic monodentate P-stereocenter fixture that verifiably
+stays on the template/Kabsch path (see the TASK-32 Log entry). Both TASK-31
+and TASK-32 are DONE. Current suite: `discover tests/unit` → 113 run, OK
+(skipped=3, expected failures=1, `test_haptic_face_golden_match` only);
+`discover tests` (root) → 55 run, OK; `test_zone_a_p_genenforce` → 12 run, OK;
+`test_p_stereocenter_roundtrip` passes (not xfail). This IS now a clean "OK"
+suite run end-to-end.
+Honest state (pre-TASK-31, Phase 3/4 session):
 - Phase 4a encode WORKS: `Rh-RR-DIPAMP-Cl2.xyz` → `[P@]{0}`/`[P@]{1}`
   (fragment-local lone-pair CIP convention; DIPAMP reads R,R as expected).
   Negative controls verified: symmetric BDPP/BDNN stay tag-free.
@@ -96,9 +128,11 @@ Honest state:
   correction is a proper rotation, CIP-invariant, idempotent (hard passes on
   `Ferrocene-halide-face` fixture). Plain ferrocene reclassified as a
   symmetry-impossibility skip (symmetric ring → winding not observable).
-- **KNOWN-GAP (honest, xfail'd, NOT a regression):** the full byte-stable
-  round-trip fails for both hard fixtures — `test_p_stereocenter_roundtrip`
-  (DIPAMP) and `test_haptic_face_golden_match` (halide-ferrocene). **Root cause
+- **KNOWN-GAP, DIPAMP half RESOLVED by TASK-31 (2026-07-03, later same day)
+  — see the TASK-31 Log entry.** `test_p_stereocenter_roundtrip` is no longer
+  xfail. `test_haptic_face_golden_match` (halide-ferrocene) remains xfail,
+  untouched, a separate eta-ring problem. Original diagnosis preserved below
+  for context. **Root cause
   pinned 2026-07-03 (Fable) — corrects an earlier mischaracterization:** it is
   NOT atom corruption and NOT molassembler. Element census of generated DIPAMP
   is IDENTICAL to the fixture (28 C, 2 P, 28 H, 1 Rh, 2 Cl) — nothing is lost.
@@ -727,3 +761,286 @@ expected failures=2 — same 2 as before this session, no new ones);
 on both touched files. No `spec/compiled/architecture.yml` edit and no
 `git commit` made (per task instructions — orchestrator handles both
 centrally).
+
+### 2026-07-03 — TASK-30 diagnostic: bidentate placement fidelity (Sonnet)
+
+Ran the TASK-30 diagnostic exactly as specified (measurement only, throwaway
+script in job scratchpad, **no `src/` changes**). Instrumented a captured
+copy of `_stitch_fragment`'s bidentate branch (identical ETKDG seed →
+identical deterministic conformer) to log the full 72-angle (5° step)
+bite-axis sweep instead of only the one angle production code keeps, and
+separately forced the DG-fallback path in-process (monkeypatch only, not a
+`src/` edit) to check its output quality.
+
+**Fixtures:** `Rh-RR-DIPAMP-Cl2.xyz` (bidentate P^P, the known-bad case) and
+`fac_irppy3.xyz` (tridentate ppy chelates, named in the code comment as a
+past concern).
+
+**Step 1 — baseline NN-to-metal distances, real unmodified pipeline:**
+- DIPAMP (template path, current production behavior): `H` min **1.390 Å**
+  from Rh (closest five: 1.39, 1.426, 1.652, 2.777, 2.784 — matches the
+  3-H-atoms-collapsed-onto-Rh symptom already pinned in D-4/the Log);
+  `C` min **1.754 Å** (a backbone/ring carbon just 0.054 Å above the
+  existing heavy-atom guard's 1.7 Å reject threshold — explains why the
+  guard doesn't fire); `P` (binding) 2.718 Å; `Cl` 2.35 Å.
+- fac_irppy3 (template path): **clean** — `C` min 2.177 Å, `H` min 3.333 Å,
+  `N` min 2.072 Å. No suspicious contacts. The ppy-chelate concern named in
+  the code comment is not currently manifesting for this fixture; DIPAMP is
+  the reproducing case.
+
+**Step 2 — instrumented bite-axis sweep for the DIPAMP P^P fragment**
+(`frag_smiles` binding atoms at indices `[7, 10]`, captured via monkeypatch
+from the real call):
+- Isolated (ETKDG, seed=42) ligand's own P···P separation: **4.408 Å**, vs.
+  target chelated bite distance **3.182 Å** — delta **1.226 Å** (inside the
+  existing 2.0 Å compatibility-check threshold, so the fragment is accepted
+  into the Kabsch/rotation path at all).
+- Production algorithm's chosen angle = **100°**, giving
+  min-H(nonbinding)-to-metal = **1.390 Å**.
+- Best achievable over the **full 360° sweep** (72 angles) for that same
+  metric: **also 1.390 Å, at the same 100° angle**. The production objective
+  and 5° grid are finding the actual global optimum — this rules out an
+  objective/grid bug.
+- **0 of 72 angles** reach a conservative "safe" H-to-metal threshold of
+  1.9 Å; worst case over the sweep is 0.261 Å. Every rigid rotation around
+  the bite axis collides.
+- **Conclusion: mechanism is B, not A** — confirms the task's own hypothesis
+  that when the isolated ligand's own bite distance doesn't match the
+  chelate's target bite distance, no rigid rotation can fix the collision.
+  This is a conformation problem, not a rotation-DOF problem.
+
+**Step 3 — forced DG fallback for DIPAMP** (guard artificially made to fire,
+in-process monkeypatch only): Molassembler DG produces a **clean chelate**
+— `H` min 3.189 Å, `C` min 3.252 Å, `P` (binding) 2.407/2.418 Å (physically
+reasonable Rh–P bond lengths), `Cl` min 2.398 Å, no suspicious contacts
+anywhere — **and re-encoding it through `XYZToSMILES` gives OIN(2) BYTE-
+IDENTICAL to OIN(1)**:
+`[Rh_SPL].Cc1ccccc1[P@]{0}(CC[P@]{1}(c1ccccc1)c1ccccc1C)c1ccccc1.[Cl]{2}.[Cl]{3}`.
+DG does **not** also fail — it already round-trips DIPAMP perfectly, zero new
+engineering required.
+
+**Decision: MIX, resolved further than "likely."** Root cause is genuinely
+**B** (conformation mismatch — proven, not assumed: the chosen angle already
+equals the sweep's global optimum, and no angle is safe). But unlike B's
+"constrained re-embed" fix option, the diagnostic shows **B's other listed
+fix option is already free**: DG fallback (existing code, `_molassembler_worker`)
+already handles this correctly. The only thing standing in the way is the
+`:1573-1584` guard, which checks only non-binding **heavy** atoms
+(`symbols[i] != "H"`) against a 1.7 Å threshold — DIPAMP's worst heavy-atom
+contact (1.754 Å) clears it by 0.054 Å, so H collisions at 0.26–1.39 Å pass
+through undetected. **Recommended follow-on: a lightweight Sonnet-tier task**
+(NOT a HACF MiniPRD) to make the `:1578` guard element-aware/H-inclusive (or
+reuse the org-vs-target bite-distance delta already computed at `:1497` with
+a tighter reject threshold), so DIPAMP-class incompatible-bite bidentates
+route to the already-correct DG fallback instead of being silently accepted
+by the template path. Add the DIPAMP round-trip assertion as this task's
+acceptance test (the existing xfail already tracks the symptom). Should also
+verify no regression on `fac_irppy3`/`mer_irppy3` and other bidentates
+(BDPP/BDNN/BINAP), since they currently pass through the template path
+cleanly and must keep doing so.
+
+No `src/` changes made. Diagnostic script discarded (job scratchpad only,
+not committed). `Status:` in `TASK-30-bidentate-placement-diagnostic.md` set
+to the decision summary above.
+
+### 2026-07-03 — TASK-31 bidentate placement fix: guard extended, but BLOCKED on an unanticipated regression (Sonnet)
+
+Implemented the fix exactly as specified in `TASK-31-bidentate-placement-fix.md`.
+
+**Guard change** (`src/oinsmiles/generation/molassembler_adapter.py`,
+`_stitch_fragment`, immediately after the existing `:1573-1584` non-binding
+heavy-atom guard): added a second check that rejects the bidentate/
+polydentate template placement (`len(binding_idxs) >= 2`) when any
+non-binding **H** atom lands within **1.8 Å** of the metal centre, returning
+`None` so the caller falls back to Molassembler DG. The existing 1.7 Å
+heavy-atom check, the bite-axis optimiser, and the DG worker were not
+touched; the `:1497` bite-delta threshold was not touched. Both new
+comparisons are next to each other in one small `if len(binding_idxs) >= 2:`
+block, matching the existing style.
+
+**Acceptance 1 — byte-stable real-pipeline round-trip (re-verifies TASK-30's
+monkeypatched claim end-to-end): PASS.**
+```
+DIPAMP round-trip byte-stable: [Rh_SPL].Cc1ccccc1[P@]{0}(CC[P@]{1}(c1ccccc1)c1ccccc1C)c1ccccc1.[Cl]{2}.[Cl]{3}
+```
+`o1 == o2` asserted true by the script; no exception raised.
+
+**Acceptance 2 — xfail flip: PASS.** Removed `@unittest.expectedFailure` from
+`test_p_stereocenter_roundtrip` in `tests/unit/test_stereo_roundtrip_diagnostics.py`
+and updated its docstring + the class-level NOTE above it. Run in isolation:
+`uv run python -m unittest tests.unit.test_stereo_roundtrip_diagnostics.TestStereoRoundTripDiagnostics.test_p_stereocenter_roundtrip -v`
+→ `OK` (1 test).
+
+**Acceptance 3/4 — full suite: BLOCKED, unanticipated regression found.**
+- `uv run python -m unittest discover tests/unit` → `Ran 112 tests` /
+  `FAILED (failures=2, errors=1, skipped=3, expected failures=1)`. The xfail
+  count dropped 2→1 exactly as intended and no new skips appeared, but 2
+  failures + 1 error appeared in `tests/unit/test_zone_a_p_genenforce.py`
+  (confirmed via `git stash` that this file was 100% green — `OK
+  (skipped=3, expected failures=2)`, zero failures/errors — on the
+  pre-TASK-31 tree).
+- `uv run python -m unittest discover tests` (root) → `Ran 55 tests`, `OK` —
+  unaffected.
+- `uv run python -m unittest tests.unit.test_regression_stability -v` → `Ran
+  6 tests`, `OK` — cisplatin, transplatin, cis-PtCl2(en), fac/mer-Ir(ppy)3 all
+  still produce their expected strings; nothing newly routes to DG. This part
+  of the acceptance is clean.
+
+**Root cause of the new regression, and why it's out of scope to fix here:**
+`test_zone_a_p_genenforce.py` (Phase 4b, MiniPRD_ZoneA_P_GenEnforce, DONE
+earlier 2026-07-03 — see the entry above) uses the SAME
+`Rh-RR-DIPAMP-Cl2.xyz` fixture to test a completely different mechanism: the
+mis-embed detection/re-embed-retry enforcement logic on the Kabsch/template
+placement path (`TestZoneAPForcedMisEmbedCorrection`,
+`TestZoneAPBoundedFailure`, and the DIPAMP case of
+`TestZoneAPNoRegression.test_dipamp_generation_is_clean`). Those tests inject
+a forced single-atom mis-embed via `_stitch_fragment`'s
+`_test_flip_chiral_idx` hook and assert the retry loop detects/corrects it
+(or, for the persistent case, warns exactly once and gives up cleanly) —
+all of which requires DIPAMP's P^P fragment to actually go through the
+template/Kabsch path with an assembled RDKit mol.
+
+TASK-31's new H-guard rejects DIPAMP's Kabsch placement **unconditionally**:
+the underlying cause (isolated ligand bite 4.408 Å vs. target 3.182 Å,
+delta 1.226 Å — a fixed geometric fact of this fixture, per TASK-30) folds
+non-binding H atoms to 1.39–1.65 Å from Rh on *every* attempt, chirality-flip
+or not. So DIPAMP now *always* routes straight to DG fallback, and the
+Kabsch-path retry/enforcement machinery these 3 tests exercise is no longer
+reachable for this fixture at all:
+- `test_dipamp_generation_is_clean` → ERROR: DG fallback path has no
+  assembled mol to verify the Zone-A P lone-pair CIP tag against, so it
+  raises `OINStereoWarning` ("stereo unenforced on fallback path") for both
+  P atoms, which this test runs under `-W error::OINStereoWarning`.
+- `test_persistent_mismatch_warns_once_and_completes_quickly` → FAIL: expects
+  exactly 1 `OINStereoWarning` (the enforcement loop's own bounded-failure
+  warning); gets 2 (one per Zone-A P atom from the DG-fallback observability
+  warning, unrelated to the injected mis-embed).
+- `test_single_atom_mis_embed_is_corrected_without_mirroring_co_resident` →
+  FAIL: expects the enforcement retry to SUCCEED (zero warnings, matching
+  CIP to the unforced baseline); gets the same 2 DG-fallback warnings instead,
+  because the injected mis-embed is now moot — the guard already rejected
+  the placement before the flip could matter.
+
+This conflict was not visible to TASK-30's diagnostic or named in TASK-31's
+regression list (which only named `fac_irppy3`/`mer_irppy3`/BDPP/BDNN/BINAP —
+all confirmed still clean, see above) because Phase 4b's tests didn't exist
+yet when TASK-30 was scoped as "generation fidelity, not stereo," and Phase
+4b in turn didn't anticipate a later fix that would make DIPAMP's Kabsch path
+permanently unreachable. Per TASK-31's own constraints (touch only the guard
+in `molassembler_adapter.py` and the one xfail in
+`test_stereo_roundtrip_diagnostics.py`; do not rewrite the guard; do not
+tighten `:1497`), there is no in-scope way to resolve this: fixing it needs
+either a different DIPAMP-like fixture for Phase 4b's Kabsch-path-specific
+tests, or an explicit acknowledgement in those 3 tests that DG-fallback
+behavior is now the correct, permanent outcome for this fixture. **Stopping
+here rather than forcing a fix** — this needs a human/architect decision
+(new follow-on task), not a unilateral change to a file outside this task's
+scope.
+
+**Status:** `TASK-31-bidentate-placement-fix.md` set to `BLOCKED` (not
+`DONE`) — the guard change and xfail flip are both correct and verified
+in isolation, but the task's own acceptance criterion #3 ("everything else
+unchanged") is violated by the newly-surfaced conflict above. Changes are
+**uncommitted**, left staged for review as instructed:
+`src/oinsmiles/generation/molassembler_adapter.py` (guard extension) and
+`tests/unit/test_stereo_roundtrip_diagnostics.py` (xfail removed + comments
+updated). `uv run ruff format` was run on the edited `src/` file.
+
+### 2026-07-03 — TASK-32: retarget Phase-4b Kabsch tests off DIPAMP (Sonnet)
+
+Clears the blocker TASK-31 left above. Kept the TASK-31 guard fix and
+un-xfail'd test untouched; retargeted the 3 `test_zone_a_p_genenforce.py`
+tests that depended on DIPAMP reaching the Kabsch/template path.
+
+**Verified facts used (from the TASK-32 spec, all re-confirmed empirically
+before wiring anything in):**
+- P-stereo enforcement (`_verify_zone_a_p`) runs at the assembled-complex
+  level in `_template_generate`, for ANY fragment carrying a Zone-A P tag
+  that reaches the template path — denticity-independent. A monodentate P
+  exercises the identical machinery DIPAMP's bidentate P^P used to.
+- Expected labels come straight from the OIN's own `[P@]`/`[P@@]` tag, so a
+  hand-written synthetic inline OIN is its own oracle — no new XYZ fixture
+  needed.
+
+**Fixtures chosen (both confirmed empirically, scratch one-liners, before
+wiring into any test):**
+- `_MONO_P_OIN = "[Ni_TET].c1ccccc1[P@]{0}(CC)C.[Cl]{1}.[Cl]{2}.[Cl]{3}"` —
+  simple monodentate P-stereocenter (phenyl/ethyl/methyl on P). Verified:
+  builds a mol, 0 `OINStereoWarning`s at baseline. Fragment-local P atom
+  index = 6 (parsed from `"c1ccccc1P(CC)C"`, sanitize=False).
+- `_MONO_P_CORESIDENT_OIN = "[Ni_TET].c1ccccc1[P@]{0}([C@@H](C)CC)C.[Cl]{1}.[Cl]{2}.[Cl]{3}"`
+  — same P-stereocenter, but one substituent is itself a carbon
+  stereocenter (`-CH(CH3)CH2CH3`, directly bonded to P). RDKit confirms both
+  atom 6 (P) and atom 7 (C) are genuine, distinct stereocenters
+  (`Chem.FindMolChiralCenters` → `[(6, 'S'), (7, 'S')]` on the isolated
+  fragment). Verified on the full OIN: builds a mol, 0 warnings at baseline,
+  `rdCIPLabeler` gives P=R / co-resident C=S on the assembled complex.
+- Both used `_TET` (Ni tetrahedral) rather than `_SPL`, per the spec's
+  explicit warning to AVOID `[P@]` on `[Pt_SPL]` (a noted "could not be
+  enforced" asymmetry — `[P@@]` on the same SPL complex is clean, `[P@]` is
+  not). Not chased further here, per the spec's instruction; left as a note
+  for a future task if the asymmetry needs root-causing.
+
+**Per-test retarget:**
+1. `test_dipamp_generation_is_clean` → renamed
+   `test_monodentate_p_generation_is_clean`, uses `_MONO_P_OIN`. Empirically
+   confirmed 0 `OINStereoWarning`s under `-W error::OINStereoWarning` before
+   wiring in. Kept the original intent: a P-stereocenter complex generates
+   clean on the enforcing template path.
+   Separately added `test_dipamp_dg_fallback_warns_honestly` (new, in the
+   same `TestZoneAPNoRegression` class): DIPAMP now legitimately routes to
+   DG (TASK-31) and must warn, not claim silence — asserts >=1
+   `OINStereoWarning` containing "stereo unenforced on fallback path" for
+   the real DIPAMP fixture. This documents TASK-31's routing decision as an
+   honest trade-off rather than a silent regression.
+2. `test_persistent_mismatch_warns_once_and_completes_quickly` — vehicle
+   swapped to `_MONO_P_OIN`; kept the `_test_flip_chiral_idx` forced-flip
+   mechanism (flip on every `_stitch_fragment` call to the P fragment,
+   never satisfiable) and the single-"could not be enforced"-warning
+   assertion. Empirically verified before wiring in: exactly 1
+   `OINStereoWarning` ("...could not be enforced to match the OIN-encoded
+   tag after 3 re-embed attempt(s)..."), mol still emitted, elapsed
+   ~0.25 s (well under the 30 s assertion / 60 s budget).
+3. `test_single_atom_mis_embed_is_corrected_without_mirroring_co_resident` —
+   vehicle swapped to `_MONO_P_CORESIDENT_OIN`. Co-resident stereocenter is
+   now the directly-bonded carbon (not a second P, since this ligand is
+   monodentate) — replaced `_p_cip_codes_by_idx` (P-only) with a new helper
+   `_p_and_co_resident_c_cip_codes` that reports CIP for both the Zone-A P
+   (via the existing metal-present recipe, `_metal_present_cip_label`) and
+   the co-resident carbon (via a direct `rdCIPLabeler` recompute — no
+   metal-dative-bond ambiguity for a non-metal-binding carbon). Empirically
+   verified end-to-end (scratch script, same forced-mis-embed-on-first-call
+   pattern as the production test) BEFORE wiring in: 0 warnings, mol
+   emitted, `call_count > 3` (5 in the verification run), and
+   `final_cip == baseline_cip` for BOTH the P (`R`) and the co-resident
+   carbon (`S`) — i.e. the co-resident carbon was provably undisturbed.
+   This was the fixture most at risk of not enforcing cleanly (spec said
+   STOP and report if so) — it enforced cleanly on first try, no STOP
+   needed.
+
+**Acceptance (exact commands run):**
+```
+uv run python -m unittest tests.unit.test_zone_a_p_genenforce -v 2>&1 | tail -6
+→ Ran 12 tests in 2.508s / OK
+
+uv run python -m unittest discover tests/unit 2>&1 | tail -3
+→ Ran 113 tests in 12.127s / OK (skipped=3, expected failures=1)
+
+uv run python -m unittest discover tests 2>&1 | tail -3
+→ Ran 55 tests in 0.013s / OK
+
+uv run python -m unittest tests.unit.test_stereo_roundtrip_diagnostics -v 2>&1 | grep -iE "p_stereocenter_roundtrip|OK|FAIL"
+→ test_p_stereocenter_roundtrip ... ok (not xfail)
+```
+Also re-ran `tests.unit.test_regression_stability` (TASK-31's own acceptance
+#4, to be doubly sure nothing else drifted): 6 tests, OK — cisplatin,
+transplatin, cis-PtCl2(en), fac/mer-Ir(ppy)3 all still clean.
+
+**No STOP conditions hit.** Both candidate fixtures enforced cleanly at
+baseline on the first empirical check; no `src/` enforcement logic was
+touched. Files touched: `tests/unit/test_zone_a_p_genenforce.py` only
+(`uv run ruff format` applied). `TASK-32-retarget-phase4b-kabsch-tests.md`
+set to `DONE`; `TASK-31-bidentate-placement-fix.md` flipped `BLOCKED` →
+`DONE` (its blocker is cleared). Nothing committed — the full set (TASK-31's
+guard fix + xfail flip, plus TASK-32's test retargets) is left unstaged for
+review, per instructions.
