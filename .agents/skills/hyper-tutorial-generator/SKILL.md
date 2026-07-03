@@ -61,7 +61,7 @@ Wait for the user's selection before proceeding.
 
 Based on the source material, propose:
 
-- **Directory name**: A hyphen-separated name (e.g., `context-clearing-workflow`, `hyper-publish-release-process`, `authentication-integration-test`)
+- **Directory name**: A hyphen-separated name (e.g., `context-clearing-workflow`, `hyper-publish-release-process`, `authentication-integration-test`). For version tour tutorials, recommend the format `<project-slug>-v<start>-v<end>` (e.g., `agnostic-engine-v0.1.0-v0.1.9`). Always present as a recommendation — the user confirms or changes at the HITL gate before any files are written.
 - **Tutorial title**: A human-readable title (e.g., "Context Clearing Workflow", "How to Use Hyper-Publish for Releases")
 - **Section outline**: A proposed outline based on the source (e.g., Overview → Prerequisites → Step-by-step → Expected Output → Troubleshooting)
 
@@ -85,6 +85,7 @@ Based on what the source material contains, propose which subdirectories are nee
 - `output_files/` — if there are expected outputs or results to showcase
 - `code_samples/` — if there are code snippets or script examples
 - `screenshots/` — if visual steps are described (placeholder for user to add images)
+- `architecture_evolution/` — for version tour or architecture-overview tutorials (version summary tables, state model diagrams, before/after comparisons)
 
 Ask via **AskUserQuestion**:
 
