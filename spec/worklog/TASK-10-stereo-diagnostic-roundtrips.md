@@ -1,6 +1,6 @@
 # TASK-10: Stereo diagnostic round-trip tests (expected failures)
 
-Status: TODO
+Status: DONE
 Depends on: TASK-04 (expected strings must be in v3.7 descriptor-free style)
 Suggested model: Sonnet
 
