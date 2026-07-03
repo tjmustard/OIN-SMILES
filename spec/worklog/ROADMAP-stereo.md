@@ -60,20 +60,36 @@ Results, which **revise the plan below**:
 - No behavior change in placement yet; acceptance = existing suite green +
   new unit tests for the parse plumbing.
 
-### Phase 2 — Verify/enforce ligand `@/@@` through ETKDG (MiniPRD)
-- **Phase-0 update:** carbon-centered `@/@@` already survives the template
-  path (BDPP/BDNN pass). The open question narrowed to **P/N-atom-centered**
-  chirality, which no current fixture exercises. **Prerequisite: build a
-  fixture where the P or N atom is a genuine CIP stereocenter** (e.g. a
-  P-stereogenic phosphine with three different substituents + the metal bond),
-  with an RDKit-CIP-from-3D oracle, THEN run the flip experiment on it.
-- Experiment: generate from the new fixture's OIN and from its `@↔@@`-flipped
-  twin via `_template_generate`; assign CIP from the resulting 3D
-  (`AssignStereochemistryFrom3D`) and check the codes are opposite.
-- If tags are dropped: fix at the fragment-SMILES→mol boundary (where
-  `_stitch_fragment` builds its embed mol); if ETKDG ignores them: post-embed
-  check-and-reflect of the offending stereocenter.
-- Flips TASK-10 tests (a)/(b) for the template path.
+### Phase 2 — Verify/enforce ligand `@/@@` through ETKDG (MiniPRD) — SUPERSEDED 2026-07-03, folds into Phase 4
+- **TASK-20 finding (2026-07-03):** the Phase-2 prerequisite fixture (a P/N
+  atom with three distinct substituents *and* the metal bond — see below) is
+  DEFINITIONALLY a Zone-A atom (bonded directly to the metal). Built and
+  tested against `Rh-RR-DIPAMP-Cl2.xyz` ((R,R)-DIPAMP RhCl2, both P atoms
+  genuine CIP stereocentres): `XYZToSMILES().convert()` produced
+  `[Rh_SPL].Cc1ccccc1P{0}(CCP{1}(c1ccccc1)c1ccccc1C)c1ccccc1.[Cl]{2}.[Cl]{3}`
+  — **no `@`/`@@` on either P atom.** Root cause:
+  `ChiralityRecoveryUtility.recover()` (`core/chirality.py:155-158`)
+  unconditionally clears the chiral tag on any P/N atom with
+  `total_degree < 4` in the post-fragmentation ligand mol, and a
+  metal-binding P/N atom always has exactly 3 fragment-local neighbours — so
+  it is *always* Zone A, for *any* fixture. `PseudoAtomStrategy`
+  (`chirality.py:22`), which exists to backfill the missing 4th substituent
+  for this exact case, is never invoked anywhere (dead code).
+- **Consequence: Phase 2's ETKDG verify/enforce experiment is inapplicable
+  as scoped.** There is no `@`/`@@` on a metal-bound P/N atom in ANY input
+  OIN for the generation side to preserve or lose — the signal never reaches
+  generation because it is stripped one stage earlier, at encoding. Phase 2
+  and Phase 4 are therefore **the same decision point**: Phase 4 must decide
+  how (or whether) Zone-A stereocenters get encoded at all before there is
+  anything for a Phase-2-style ETKDG experiment to verify.
+- Original Phase-2 plan (kept for reference, now superseded): generate from a
+  fixture's OIN and its `@↔@@`-flipped twin via `_template_generate`; assign
+  CIP from the resulting 3D (`AssignStereochemistryFrom3D`) and check the
+  codes are opposite; if tags are dropped, fix at the fragment-SMILES→mol
+  boundary or post-embed check-and-reflect. This remains valid **once Phase 4
+  produces an encoding that actually carries a P/N tag past the fragment
+  boundary** — at that point re-run TASK-20-style tests as the acceptance
+  check for the ETKDG side.
 
 ### Phase 3 — Haptic face control (MiniPRD)
 - In `_stitch_eta_fragment` (`molassembler_adapter.py:509`): after Kabsch
@@ -107,8 +123,11 @@ Results, which **revise the plan below**:
   (which carry two identical phenyls → not CIP centers). Useful as
   carbon-chirality pass-through fixtures only. **Do not treat as P/N-center
   coverage** (Phase-0 finding, 2026-07-03).
-- **MISSING fixture (build for Phase 2):** a complex where the P or N atom is
-  itself a CIP stereocenter (three distinct substituents).
+- `tests/fixtures/Rh-RR-DIPAMP-Cl2.xyz` (also under `tests/integration/`) —
+  **fixture built 2026-07-03 (TASK-20):** RhCl2(DIPAMP), P atoms are genuine
+  CIP stereocentres (metal + 3 distinct groups), built independently in
+  Avogadro. Confirms the P/N-center gap is real and encoding-side (see Phase
+  2/4). Golden: `tests/candidate_outputs/Rh-RR-DIPAMP-Cl2_oin.txt`.
 - `PdCl2-R-BINAP.xyz` (axial; end-state marker is the skipped
   `tests/unit/test_axial_chiral.py` test), `ferrocene.xyz`, `fac/mer_irppy3.xyz`.
 - Golden strings: `tests/candidate_outputs/*.txt|.smi` (v3.7 style after

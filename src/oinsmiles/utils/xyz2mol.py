@@ -13,6 +13,7 @@ from rdkit.Chem import GetPeriodicTable, rdchem, rdEHTTools, rdmolops
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
+from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
 from .oin_aligner import OINDiscreteAligner, OINSanitizer
 from .xyz2mol_local import (
     AC2mol,
@@ -21,15 +22,10 @@ from .xyz2mol_local import (
     xyz2AC_obabel,
 )
 
-# fmt: off
-TRANSITION_METALS = ["Sc","Ti","V","Cr","Mn","Fe","Co","La","Ni","Cu","Zn",
-                     "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","Lu",
-                     "Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg",
-]
-
-TRANSITION_METALS_NUM = [21,22,23,24,25,26,27,57,28,29,30,39,40,41,
-                         42,43,44,45,46,47,48,71,72,73,74,75,76,77,78,79,80,
-]
+# TRANSITION_METALS / TRANSITION_METALS_NUM single source of truth:
+# ../core/constants.py (imported above). Re-exported here (not copied) so
+# existing call sites and external importers of xyz2mol.TRANSITION_METALS*
+# keep working unchanged.
 
 
 ALLOWED_OXIDATION_STATES = {

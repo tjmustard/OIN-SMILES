@@ -71,17 +71,36 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | Stereo Phase 1 (winding plumbing) | DONE (executed + audited + review fix) | Sonnet/Opus | TASK-10 |
 | TASK-20 Phase 2 diagnostic | DONE — real gap confirmed (encoding-side, collapses into Phase 4) | Sonnet + human | Phase 1 |
 | Stereo Phase 2 fix | SUPERSEDED — folds into Phase 4 (Zone-A decision) | Sonnet/Opus | TASK-20 |
-| Stereo Phase 3 (haptic face) | NEXT (parallel) — HACF chain then Sonnet executor | Fable/Opus → Sonnet | Phase 1 ✓ |
-| Stereo Phase 4 (Zone-A P/N encoding) | NEXT (parallel) — DESIGN CONSULT first (`PHASE4-design-brief.md`) | Fable/Opus | TASK-20 |
+| Stereo Phase 3 (haptic face) | DONE — correction mechanism verified; full golden-match still xfail | Fable/Opus → Sonnet | Phase 1 ✓ |
+| Stereo Phase 4a (Zone-A P encode) | DONE — DIPAMP emits `[P@]`; negative controls clean | Fable/Opus → Sonnet | TASK-20 |
+| Stereo Phase 4b (Zone-A P gen-enforce) | DONE — flip inverts CIP; full round-trip blocked by pre-existing gen bugs (xfail) | Sonnet | Phase 4a |
+| Stereo Phase 4 (Zone-A N) | DEFERRED — needs Option-C out-of-band marker (RDKit clears trivalent `[N@]`) | — | future |
 
-**Parallel plan (2026-07-03):** Phase 3 and Phase 4 run in separate sessions
-concurrently — they don't conflict (Phase 3 = code in `molassembler_adapter.py`;
-Phase 4 = design discussion touching no code yet, eventual impl in
-`core/chirality.py` + OIN format). Both may append to this NOTES.md Log;
-reconcile if concurrent. Phase 3 = familiar HACF-chain→Sonnet flow, acceptance
-= the ferrocene haptic diagnostic. Phase 4 = start with `/hyper-consult-cto`
-seeded by `PHASE4-design-brief.md` to pick a representation, THEN
-`/hyper-architect`.
+**Phase 3 + Phase 4 BOTH DONE (2026-07-03), verified by Fable this session.**
+Suite: `discover tests/unit` → 112 run, OK (skipped=3, expected failures=2).
+Honest state:
+- Phase 4a encode WORKS: `Rh-RR-DIPAMP-Cl2.xyz` → `[P@]{0}`/`[P@]{1}`
+  (fragment-local lone-pair CIP convention; DIPAMP reads R,R as expected).
+  Negative controls verified: symmetric BDPP/BDNN stay tag-free.
+- Phase 4b enforce WORKS at the P-chirality level: flipping both tags inverts
+  both regenerated CIP labels; regenerated CIP matches original (hard passes in
+  `test_zone_a_p_genenforce.py`).
+- Phase 3 haptic correction WORKS: per-ring flip inverts only that ring,
+  correction is a proper rotation, CIP-invariant, idempotent (hard passes on
+  `Ferrocene-halide-face` fixture). Plain ferrocene reclassified as a
+  symmetry-impossibility skip (symmetric ring → winding not observable).
+- **KNOWN-GAP (honest, xfail'd, NOT a regression):** the full byte-stable
+  round-trip fails for both hard fixtures — `test_p_stereocenter_roundtrip`
+  (DIPAMP) and `test_haptic_face_golden_match` (halide-ferrocene). Cause is
+  PRE-EXISTING generation-fidelity bugs (`generate()` on complex bidentate /
+  substituted-eta produces Cl→H, `CC`→`C=C`, `SPL`→`SPY` corruption unrelated
+  to the stereo tag). The encoding carries the stereo and the generator gets
+  the P/ring chirality right; end-to-end structural fidelity on these hard
+  complexes is the next real target.
+- Zone-A **N** deferred: RDKit clears trivalent `[N@]` (amine inversion), so an
+  in-fragment tag is impossible — needs an Option-C out-of-band marker (future).
+- Decision + spikes: `PHASE4-decision.md`. Specs archived under
+  `spec/archive/{...StereoPhase3_HapticFace, ...ZoneA_P_Encoding}/`.
 
 ## Decisions (append-only)
 
@@ -533,3 +552,160 @@ seeded by `PHASE4-design-brief.md` to pick a representation, THEN
   instructions). `Status:` in
   `TASK-20-phase2-pn-stereocenter-diagnostic.md` set to
   `DONE — real gap confirmed (encoding-side, collapses into Phase 4)`.
+
+### 2026-07-03 — Phase 3 DraftPRD via /hyper-architect (Opus)
+- Ran `/hyper-architect` for ROADMAP-stereo.md Phase 3 (haptic face control).
+  Output: **`spec/active/Draft_PRD_StereoPhase3_HapticFace.md`** (NOT the default
+  `Draft_PRD.md`, which is already occupied by the parallel Phase 4 Zone-A
+  session — did not clobber it). Run `/hyper-redteam` against the Phase-3 file.
+- Codebase-first exploration resolved most of the design before interviewing;
+  five decisions taken with the user:
+  - **Winding channel:** consume per-vector `OINVector.winding` at the placement
+    site, NOT `ParsedOIN.winding_by_slot` (the brief named the latter, but the
+    integer slot isn't available where eta groups are keyed by rounded
+    vector-direction tuple; the heading atom's `.winding` already carries the marker).
+  - **Correction operator:** proper **180° rotation about an in-plane axis through
+    the ring centroid** (det +1) — NOT a reflection and NOT the roadmap's literal
+    "mirror across the ring plane" (a no-op for planar rings). Reflection was
+    rejected because it inverts pendant-substituent chirality (collides with Phase
+    4). User confirmed this equals the free-ligand degenerate case of a future
+    tether-dihedral flip.
+  - **Convention parity:** extract a shared `signed_circulation` helper
+    (new `src/oinsmiles/oin/winding.py`) called by BOTH `_determine_winding`
+    (encode, `oin_aligner.py:634`) and the new placement correction — kills the
+    sign-inversion bug class.
+  - **Multi-eta (bridged):** single-eta gets full correction; bridged multi-eta
+    only a coherent whole-fragment flip (can't reflect one ring without tearing the
+    Si bridge). Independent bridged-ring control DEFERRED to a future
+    tether-dihedral-rotation method (user's note).
+  - **Optimiser ordering (derived, safe):** the post-placement ring-rotation
+    optimiser (`molassembler_adapter.py:1170`) only rotates about the metal→centroid
+    axis, which preserves circulation sign, so a correction applied inside the stitch
+    function survives it.
+- **RESOLVED the roadmap's open question + KEY FINDING:** V3.6 winding pins a
+  *physically observable* prochiral face **only for substituted rings.** For
+  **unsubstituted ferrocene the winding is NOT a geometric observable** — a regular
+  Cp maps onto itself as a point-set under the face-swap, so the swapped structure is
+  geometrically identical and re-encodes identically (matches the existing
+  `OUT A == OUT B` diagnostic). Therefore `test_haptic_face_winding` (ferrocene) is
+  **unsatisfiable by any geometry-only correction** and the Phase-3 plan **demotes it
+  to a documented `skip`**, re-targeting acceptance onto the user-provided
+  **`tests/integration/Ferrocene-halide-face.xyz`** (each Cp desymmetrized by
+  H/OH/Cl/Br/I → face is a hard observable). Verified this fixture encodes as
+  `[Fe_LIN].Oc{0<}1[cH]{0}c{0}(Cl)c{0}(Br)c{0}1I.Oc{1}1[cH]{1}c{1}(I)c{1<}(Br)c{1}1Cl`
+  (winding markers present on both rings). New acceptance = **faithful per-ring
+  round-trip** on that fixture (Candidate-Artifact golden
+  `tests/candidate_outputs/Ferrocene-halide-face_oin.txt`).
+- This deviates from the brief's literal "flip the ferrocene expected-failure to a
+  hard pass" — approved by user in-session.
+- **Next: new conversation, `/hyper-redteam` on
+  `spec/active/Draft_PRD_StereoPhase3_HapticFace.md`.** RedTeam focus suggestions:
+  (a) convention-parity of `signed_circulation` (encode/generate sign must match
+  exactly); (b) re-encoder heading-atom stability on the substituted fixture
+  (per-ring regex vs exact-string); (c) inertness on non-eta paths.
+- No `src/` code modified this session (only `spec/active/` draft + this Log entry).
+
+### 2026-07-03 — MiniPRD_ZoneA_P_GenEnforce.md (MiniPRD-B) executed (Sonnet)
+
+Implemented the generation-side half of Stereo Phase 4 (Zone-A P
+stereocenter encoding), consuming the `_OIN_CIPCode_LP` / `[P@]`/`[P@@]`
+contract MiniPRD-A (`MiniPRD_ZoneA_P_Encode.md`) already landed. All work in
+`src/oinsmiles/generation/molassembler_adapter.py`
+(node `atom_molassembler_adapter`) + new test file
+`tests/unit/test_zone_a_p_genenforce.py`. Confidence self-assessment: 8/10
+going in (matches SuperPRD §2's own generation-side score), no blocking
+ambiguity found — proceeded per the Confidence Mandate, residual items noted
+below and in this session's final report.
+
+**What was built:** `_verify_zone_a_p()` (reuses MiniPRD-A's
+`_build_dummy_metal_copy`/`_lp_cip_label` from `core/chirality.py`, never
+reimplemented) verifies each Zone-A P atom in the assembled complex (post
+placement, metal present, DATIVE-bonded) against the OIN-encoded expected
+label (`_zone_a_p_expected_labels()`, a graph-based `rdCIPLabeler` recompute
+off the fragment's own `[P@]`/`[P@@]` tag — same recipe
+`ChiralityRecoveryUtility.recover()` used to bake the tag in, so it reflects
+the OIN's own encoded intent independent of whatever 3D conformer later
+gets embedded). On mismatch, `_template_generate` re-embeds ONLY the
+offending fragment with a new ETKDG seed via `_stitch_fragment` (which
+gained a `seed` parameter, replacing the hardcoded 42), up to 3 attempts;
+never a mirror/improper transform. Persistent mismatch after 3 attempts →
+structure emitted anyway + `OINStereoWarning`. Paths with no assembled mol
+(eta fallback, DG fallback) skip enforcement and warn instead, via
+`_warn_zone_a_p_fallback()` called from `MolassemblerAdapter.generate()`
+(both the template-path-with-no-mol branch and the DG-fallback branch,
+independent of whether `_reconstruct_mol_from_smiles_and_xyz` happens to
+still produce a mol). Task 7's test-only injection seam:
+`_stitch_fragment(..., _test_flip_chiral_idx=<local_p_idx>)` flips one
+atom's chiral tag before ETKDG embeds — a genuine, localized mis-embed
+(never a whole-fragment mirror), which is what makes "co-resident
+stereocenter retains its configuration" a real, checkable assertion on
+DIPAMP's bidentate (both-P-in-one-fragment) fragment.
+
+**Q3 finding (Candidate Artifact — Test 7):** fed a trivalent `[P@]` SMILES
+to `masm.io.experimental.from_smiles` directly (several shapes tried,
+including a DIPAMP-like `CC(=O)[P@](c1ccccc1)CC` and a bare
+`[P@](Cl)(Br)I`). Result: **it does not silently drop the stereopermutator —
+it raises `RuntimeError: Mismatched shape for set chiral data` and fails to
+construct the `masm.Molecule` at all.** The same SMILES without the `@`/`@@`
+tag constructs fine. This is a harder failure mode than the MiniPRD
+anticipated ("drops" implied a successful-but-unstereo mol), but it turns
+out to be **already handled**: `_molassembler_worker`'s existing
+`try: mol = masm.io.experimental.from_smiles(smiles) / except Exception:
+return _rdkit_etkdg_fallback(smiles)` (pre-existing code, not part of this
+MiniPRD) catches this exact exception and falls through to plain RDKit
+ETKDG, which — like the primary template path — respects the SMILES-encoded
+chiral tag correctly. **Decision: no code change to `_molassembler_worker`**
+(the MiniPRD's conditional "if dropped: set an atom stereopermutator
+explicitly" doesn't apply cleanly — the mol object never exists to set a
+stereopermutator on, since construction itself throws before that point;
+attempting to strip the tag, construct a masm mol, then manually assign a
+matching stereopermutation index would be new, non-trivial, unvalidated
+mechanics chasing a path that already degrades safely). What WAS added:
+since the DG path (Molassembler or its ETKDG fallback) never runs the
+verify-and-re-embed enforcement — that's pinned to `_template_generate`'s
+assembled-complex stage only — `MolassemblerAdapter.generate()` now warns
+via `_warn_zone_a_p_fallback()` whenever the OIN carries a Zone-A P tag and
+generation takes the DG-fallback branch, so the "unenforced, but the
+geometry is probably fine because ETKDG independently respects the tag" gap
+is visible rather than silent (Task 5, RISK-9).
+
+**Verified empirically (not just unit-tested):** on the real DIPAMP fixture,
+`_template_generate` reaches the assembled-complex stage cleanly (`geo_code
+SPL`, `mol` present) and the Zone-A P verify step passes with **zero**
+mismatches on the unforced path — confirms the SuperPRD's own framing
+("re-embed is a safety net, not a hot path"). A scripted forced single-atom
+mis-embed (via the Task-7 hook) was corrected in exactly 1 re-embed attempt,
+converging back to the SAME CIP pair as the unforced baseline, with the
+co-resident P atom (same bidentate fragment) never touched. A scripted
+*persistent* forced mis-embed exhausted all 3 attempts, warned exactly once,
+completed in well under 1 second (budget is 60s).
+
+**Residual gap, explicitly out of scope (not fixed here):** the
+byte-identical XYZ→OIN→XYZ→OIN round trip for DIPAMP
+(`test_p_stereocenter_roundtrip`, `tests/unit/test_stereo_roundtrip_diagnostics.py`)
+remains `@unittest.expectedFailure`. Manually re-encoding the regenerated
+structure shows the P `@`/`@@` tags themselves survive correctly, but OTHER,
+pre-existing, unrelated generation-fidelity artifacts corrupt the rest of
+the string on THIS fixture: `geo_code` drifts `SPL`→`SPY`, the ethylene
+bridge `CC` becomes `C=C`, and one `Cl` is lost in favor of extra `H` atoms
+— i.e. `xyz2mol`'s bond-order perception on the regenerated coordinates,
+not Zone-A P stereo. This exactly matches what the pre-existing docstring
+on that test already documented before this session started. MiniPRD-B's
+own Test 2 was scoped to what's achievable given that: CIP-from-3D on the
+regenerated metal-present complex now matches the original
+(`test_regenerated_metal_present_cip_matches_original`,
+`tests/unit/test_zone_a_p_genenforce.py`) — the full string-level round trip
+needs a separate, unrelated bond-order-perception fix outside this
+MiniPRD's scope.
+
+**Tests:** new file `tests/unit/test_zone_a_p_genenforce.py`, 11 tests
+(Task 1 ParsedOIN-passthrough audit; US-B1 enantiomer discrimination,
+forced-mis-embed correction, bounded-failure, fallback observability ×2;
+US-B2 CIP round-trip; no-regression ×5 incl. cisplatin/ferrocene/BDPP/DIPAMP
+clean generation under `-W error::OINStereoWarning`). Full suite:
+`uv run python -m unittest discover tests/unit` → 112 run, OK (skipped=3,
+expected failures=2 — same 2 as before this session, no new ones);
+`uv run python -m unittest discover tests` → 55 run, OK. `ruff check` clean
+on both touched files. No `spec/compiled/architecture.yml` edit and no
+`git commit` made (per task instructions — orchestrator handles both
+centrally).

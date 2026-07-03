@@ -5,6 +5,8 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from ..oin.winding import signed_circulation
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -638,60 +640,43 @@ class OINDiscreteAligner:
 
         Determines if the SMILES winding (Star -> Next) is Clockwise (>) or
         Counter-Clockwise (<) relative to the template Slot Z vector.
+
+        Builds the coords/star index in SMILES-fragment order and delegates
+        the sign computation to `signed_circulation` (`oin/winding.py`), the
+        single source of truth shared with the generation-side haptic-face
+        correction (Stereo Phase 3). The `n < 3` degenerate default now lives
+        in that helper, not here.
         """
-        n = len(constituent_indices)
-        if n < 3:
-            return ">"  # Linear/Monodentate defaults to Forward
-
-        # Transform Logic: We need the vectors in the TEMPLATE FRAME to compare
-        # with Slot Z (which is in Template Frame).
-        # We assume 'grp_coords' are in Molecular Frame (centered on metal?) if
-        # coming from virtual_atom 'group_coords'.
-        # Check _reduce_hapticity: 'group_coords': grp_coords - metal_origin.
-        # Yes, Centered at Metal.
-
-        # 1. Identify Star Index in the List
+        # 1. Identify Star Index in the List. `constituent_indices` and
+        # `grp_coords` are already in SMILES/fragment order (ascending
+        # local_idx -- see `_reduce_hapticity`), matching
+        # `signed_circulation`'s ordering contract.
         try:
-            list_idx = constituent_indices.index(star_idx)
+            star_local_idx = constituent_indices.index(star_idx)
         except ValueError:
             return ">"
 
-        # 2. Get Coords for Star and Next
-        # grp_coords are ordered matching constituent_indices?
-        # _reduce_hapticity: grp.sort(key=lambda k: zone_a_info[k][3]) then
-        # grp_coords = binding_coords[grp]
-        # So yes, grp_coords[k] corresponds to constituent_indices[k].
+        # 2. `slot_z` is the TEMPLATE-FRAME vector from the metal (template
+        # origin) outward to this slot -- already metal->centroid outward by
+        # construction in TEMPLATE_SPECS. Assert/normalize that convention
+        # here so a malformed template can't silently flip the helper's sign.
+        slot_z_norm = np.linalg.norm(slot_z)
+        if slot_z_norm < 1e-9:
+            raise ValueError("slot_z must be a nonzero, outward-facing (metal->centroid) vector")
+        axis_template = slot_z / slot_z_norm
 
-        # Star Coord (Molecular Frame)
-        coord_star = grp_coords[list_idx]
+        # 3. `grp_coords` is in the MOLECULAR frame (centered on the metal --
+        # see `_reduce_hapticity`: 'group_coords': grp_coords - metal_origin).
+        # Rather than rotate every coordinate into the template frame, rotate
+        # the axis into the molecular frame: rotations preserve dot products,
+        # so dot(R.a, b) == dot(a, R^-1.b).
+        axis_mol = (
+            alignment_rotation.inv().apply(axis_template)
+            if alignment_rotation is not None
+            else axis_template
+        )
 
-        # Next Atom (Cyclic +1 in SMILES order)
-        next_list_idx = (list_idx + 1) % n
-        coord_next = grp_coords[next_list_idx]
-
-        # Centroid of the group (Molecular Frame)
-        centroid = np.mean(grp_coords, axis=0)
-
-        # Vectors relative to Centroid (Molecular Frame)
-        v_star_mol = coord_star - centroid
-        v_next_mol = coord_next - centroid
-
-        # Transform to Template Frame if rotation exists
-        if alignment_rotation:
-            v_star = alignment_rotation.apply(v_star_mol)
-            v_next = alignment_rotation.apply(v_next_mol)
-        else:
-            v_star = v_star_mol
-            v_next = v_next_mol
-
-        # 3. Cross Product (Star x Next) -> Winding Normal (Template Frame)
-        winding_normal = np.cross(v_star, v_next)
-
-        # 4. Dot with Slot Z (Template Frame)
-        # Note: 'slot_z' passed here is usually normalized or Pos vector.
-        dot = np.dot(winding_normal, slot_z)
-
-        return ">" if dot >= 0 else "<"
+        return signed_circulation(grp_coords, star_local_idx, axis_mol)
 
     def _brute_force_symmetries(self, vectors):
         n = len(vectors)
