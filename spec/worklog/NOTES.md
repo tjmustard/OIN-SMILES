@@ -30,10 +30,17 @@ Test baseline (2026-07-02, before any fixes):
   there — see AGENTS.md); run both commands to cover everything.
 - Committed: 6950bff (tests green), d691a5f (v3.7). TASK-10 + roadmap update
   committed after.
-- **Next up: Phase 1 of ROADMAP-stereo.md (winding plumbing) — needs a HACF
-  MiniPRD first.** Phase-0 changed the priorities: winding loss is the real
-  live gap; ligand carbon `@/@@` already survives; genuine P/N-center coverage
-  needs a NEW fixture before Phase 2 (see roadmap Phase 0 + Fixtures).
+- **Stereo Phase 1 (winding plumbing) is DONE** (2026-07-03): full HACF chain
+  (`/hyper-architect` → `/hyper-redteam` → `/hyper-resolve` → `/hyper-execute`
+  → `/hyper-audit`), plus a post-audit review fix (winding_by_slot clobbering
+  guard — see Log). MiniPRD archived as
+  `spec/archive/MiniPRD_WindingPlumbing_Phase1_AUDITED.md`. Suite: 63 unit
+  tests OK (1 skip, 1 expected failure = the haptic diagnostic, which stays
+  red until Phase 3 *uses* the winding).
+- **Next up: Phase 3 (haptic face control) or the Phase-2 prerequisite fixture**
+  (a genuine P/N-stereocenter complex — see roadmap Phase 0 + Fixtures).
+  Phase 3 can start now that winding reaches `ParsedOIN.winding_by_slot`;
+  needs its own MiniPRD via the HACF chain.
 
 | Task | Status | Model tier | Depends on |
 |---|---|---|---|
@@ -42,7 +49,8 @@ Test baseline (2026-07-02, before any fixes):
 | TASK-03 GeneratedStructure assert | DONE | Haiku | — |
 | TASK-04 v3.7 descriptor-free metal token | DONE | Sonnet | TASK-01 |
 | TASK-10 stereo diagnostic round-trips | DONE | Sonnet | TASK-04 |
-| Stereo Phases 1–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | TASK-10 |
+| Stereo Phase 1 (winding plumbing) | DONE (executed + audited + review fix) | Sonnet/Opus | TASK-10 |
+| Stereo Phases 2–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | Phase 1 |
 
 ## Decisions (append-only)
 
@@ -199,6 +207,28 @@ Test baseline (2026-07-02, before any fixes):
 - No git commit made (per task instructions). `Status:` in
   `TASK-04-v37-descriptor-free-metal-token.md` set to `DONE`.
 
+### 2026-07-03 — Phase 1 DraftPRD via /hyper-architect (Fable)
+- Ran `/hyper-architect` for ROADMAP-stereo.md Phase 1 ("Preserve the signal" —
+  winding plumbing). Output: `spec/active/Draft_PRD.md`.
+- Codebase-first: enumerated the full `vector_data` consumer set before asking
+  anything. Four sites — producer `oin/inline.py:353`; unpackers
+  `generation/oin_parser.py:485` (3-way) and `oin/parser.py:34` (2-way, **already
+  broken** — TD-003 dead path); asserts `tests/unit/test_inline.py:21,30`.
+- One interview question (the flagged main risk — tuple contract change).
+  **Resolved: `SlotAssignment` `typing.NamedTuple` with `winding: Optional[str]
+  = None`** (user-selected over plain 4-tuple / sidecar dict). Keeps `[0..2]`
+  positional reads valid so a missed consumer degrades gracefully.
+- Architect decisions (self-resolved): winding stored as literal `'>'`/`'<'`/`None`
+  (no enum); threading scoped to the **inline** path only (legacy V2.4 sidecar
+  `w:` path stays `None`); `_build_connected_smiles` is verify-unchanged, not
+  edited; `test_haptic_face_winding` **must stay `expectedFailure`** (Phase 3
+  gate, not this phase).
+- **Next: start a new conversation, run `/hyper-redteam` on
+  `spec/active/Draft_PRD.md`.** Red Team focus: §5.1 consumer-map completeness,
+  `NamedTuple` pickling across the molassembler `ProcessPoolExecutor` boundary,
+  and guarding against winding leaking into placement behavior.
+- No `src/` code modified this session.
+
 ### 2026-07-03 — TASK-10 stereo diagnostic round-trips (Sonnet)
 - Created `tests/unit/test_stereo_roundtrip_diagnostics.py` (new file only;
   no `src/` changes) with `TestStereoRoundTripDiagnostics` — three round-trip
@@ -249,3 +279,129 @@ Test baseline (2026-07-02, before any fixes):
 - No source under `src/` modified. No git commit made (per task
   instructions). `Status:` in `TASK-10-stereo-diagnostic-roundtrips.md` set
   to `DONE`.
+
+### 2026-07-03 — Phase 1 RedTeam + Resolve → compiled (Opus)
+- Ran `/hyper-redteam` then `/hyper-resolve` on `spec/active/Draft_PRD.md`.
+  Red Team verdict: draft "unusually disciplined"; §5.1 consumer map CONFIRMED
+  complete against repo-wide grep. Five findings, two of which changed
+  acceptance criteria.
+- **Resolved decisions (all 5 findings dispositioned):**
+  - **RT #1 (material gap) — winding was conditionally dropped at `ParsedOIN`**:
+    the copy at `oin_parser.py:485` sits inside `if tmpl_vectors is not None:`,
+    so any template-less geometry (`NON`, template-less eta) got `vectors=[]`
+    and lost winding — precisely the haptic/eta family Phase 3 targets.
+    Ferrocene passed only because `LIN` is a template key. **Fix:** new
+    `ParsedOIN.winding_by_slot: Dict[int, Optional[str]]` populated on **all**
+    paths, *outside* the template gate, keyed by slot (also immune to the
+    `slot_idx >= len(tmpl_vectors)` overflow drop). Deliberately a
+    `ParsedOIN`-level channel — NOT placeholder `OINVector`s — so the adapter's
+    `vectors` iteration stays byte-inert (structural, not merely tested).
+  - **RT #2 (`^` alphabet)** — the suffix is the *heading* marker and the
+    generate side normalizes `^`→`>` (`oin/inline.py:245`). **Fix:** parse regex
+    `\{(\d+)([><^])?\}`, normalize `^`→`>` on capture; store literal `>`/`<`/
+    `None`. Named the second generate-side stripper `oin/inline.py:89` as a
+    known, out-of-scope winding-erasure site.
+  - **RT #3** — reworded RISK-1/US-003: primary safety is the closed enumerated
+    consumer set; positional-**index** reads stay valid, positional-**unpack**
+    reads fail fast (intended), not "graceful degradation."
+  - **RT #4** — deleted the `NamedTuple` pickling / `ProcessPoolExecutor` stress
+    item: the worker boundary (`molassembler_adapter.py:2220`) carries a
+    primitives-only dict; `OINVector`/`SlotAssignment` never pickle. Non-issue.
+  - **RT #5** — added a pre/post XYZ byte-diff harness as a hard gate on §8
+    inertness (was inferred from a green suite). Named `test_oin_generation.py`
+    as a verify-unchanged collateral site.
+- **Compiled** (in `spec/compiled/`):
+  `SuperPRD_StereoPhase1_Winding.md` (v1.0.0, confidence 10/10, RT disposition
+  log in §9) and `MiniPRD_WindingPlumbing_Phase1.md` (12 tasks, 5 verification
+  tests). `spec/active/` flushed via `archive_specs.py` →
+  `spec/archive/20260703_080740_StereoPhase1_Winding/` (Draft_PRD + RedTeam).
+- **Next: `/hyper-execute` `MiniPRD_WindingPlumbing_Phase1.md`.** No `src/`
+  code modified this session.
+
+### 2026-07-03 — spec/compiled cleanup: move stalled DirectParser chain to spec/skipped/ (Sonnet)
+- User asked what in `spec/compiled/` was actually being skipped vs genuinely
+  pending, since a stalled feature sitting in `spec/compiled/` reads as
+  "waiting to be built." Audited every file there against `src/` and git
+  history rather than trusting spec-doc status fields.
+- **Confirmed stalled and moved to new `spec/skipped/` folder** (7 files):
+  `SuperPRD_DirectParser.md`, `SuperPRD_DirectParser_v0.2.2.md`,
+  `MiniPRD_DirectParser_Polydentate_v0.2.2.md`,
+  `MiniPRD_DirectParser_EtaBonds_v0.2.2.md`,
+  `MiniPRD_DirectParser_Tests_v0.2.2.md`,
+  `MiniPRD_DirectParser_Permutation_v0.2.2.md`,
+  `MiniPRD_DirectParser_Verification.md`. Evidence: `parse_oin_direct()`
+  (`generation/engine.py:107`) exists but is never called outside its own
+  definition; `OIN3DGenerator.generate()` still runs only the legacy
+  `OINParser.parse()` + `MolassemblerAdapter.generate()` path; no
+  `permutation.py`/`polydentate.py` modules exist; no `backend` param
+  anywhere in `src/`. Only 1 of the 5 audit-identified blockers
+  (FragmentMapping) was ever executed/audited
+  (`spec/archive/MiniPRD_DirectParser_FragmentMapping_v0.2.2_AUDITED.md`).
+  `MiniPRD_DirectParser_Verification.md` was doubly stale — still labeled
+  v0.2.1 and blocked by the already-deferred `MiniPRD_DirectParser_Integration`.
+  See `spec/skipped/README.md` for the full rationale.
+- **Deleted 5 empty (0-byte) orphan files** left in `spec/compiled/` by the
+  `5c42db7` bulk commit, which moved their real content to `spec/archive/`
+  (`SuperPRD_ChiralPNStereocenters.md`, `MiniPRD_ChiralEncoding_AUDITED.md`,
+  `MiniPRD_ChiralTests_AUDITED.md`, `MiniPRD_MolassemblerAdapter_AUDITED.md`,
+  `MiniPRD_MolassemblerSpike_AUDITED.md`) but left the old-named files behind
+  empty instead of removing them: `SuperPRD.md`, `MiniPRD_ChiralEncoding.md`,
+  `MiniPRD_ChiralTests.md`, `MiniPRD_MolassemblerAdapter.md`,
+  `MiniPRD_MolassemblerSpike.md`. The features they describe are shipped and
+  live in `src/` (`core/chirality.py::CIPAssigner`,
+  `generation/molassembler_adapter.py::MolassemblerAdapter`) — deleting was
+  safe since nothing was lost.
+- **`spec/compiled/` now holds only:** `MiniPRD_WindingPlumbing_Phase1.md`,
+  `SuperPRD_StereoPhase1_Winding.md`, `architecture.yml`.
+- **Flag for next session:** the "Next" line above (`/hyper-execute` still
+  needed) is now stale — `git status` shows uncommitted changes to
+  `src/oinsmiles/generation/oin_parser.py`, `src/oinsmiles/oin/inline.py`,
+  `src/oinsmiles/oin/parser.py`, `tests/unit/test_inline.py`,
+  `tests/unit/test_oin_generation.py`, plus a new untracked
+  `tests/unit/test_winding_inertness.py`, that already implement most of
+  `MiniPRD_WindingPlumbing_Phase1.md`'s task list (`SlotAssignment`
+  NamedTuple, `winding_by_slot`, normalized `^`→`>` capture, etc.).
+  `uv run python -m unittest discover tests/unit` is green (62 run, OK,
+  skipped=1, expected failures=1) as of this session. Someone began
+  `/hyper-execute` on this MiniPRD in an earlier, unlogged session — verify
+  against the MiniPRD's task list and either finish/commit or continue from
+  here, don't restart.
+- Only `spec/` files touched this session (moves, one deletion set, this
+  log entry). No `src/` or test files modified. No git commit made.
+
+### 2026-07-03 — Phase 1 post-audit review (Fable)
+- Reviewed the uncommitted Phase-1 winding plumbing end-to-end. **Verified
+  good:** `SLOT_REGEX` captures `([><^])?` with `^`→`>` normalization (an
+  explicit red-teamed MiniPRD decision); `SlotAssignment` NamedTuple is
+  back-compat safe (both consumers use attribute access, no 3-way unpacking
+  remains); `OINVector.winding` threads correctly on template paths; legacy
+  strings parse with `winding=None`; suite green (62 unit tests, 1 skip,
+  1 expected failure — haptic diagnostic untouched, as required); spec
+  reorganization (`spec/skipped/`, empty-husk deletions) checked and coherent;
+  ruff config added in pyproject.toml explains large formatter-only diffs.
+- **BUG FOUND (P0 for Phase 3): `winding_by_slot` is clobbered on multi-atom
+  slots.** In `generation/oin_parser.py` (`OINParser.parse`, inline branch)
+  the loop does `winding_by_slot[sa.slot] = sa.winding` for EVERY slot
+  assignment; an η-ring has 5 assignments per slot with winding only on the
+  heading atom, so the trailing `None`s overwrite it. Reproduction: parsing
+  the ferrocene OIN with `{0>}`/`{1<}` yields
+  `winding_by_slot == {0: None, 1: None}` while `vectors[].winding` is
+  correct. The passing test (`test_parse_inline_winding_survives_template_less_geometry`)
+  only covers a single-atom slot (`[Fe_NON].[Cl]{0>}`), hence the green audit.
+  Fix: assign only when meaningful, e.g.
+  `if sa.slot not in winding_by_slot or sa.winding is not None:` before the
+  assignment; add an eta-ring (multi-atom slot) assertion for
+  `winding_by_slot` to `tests/unit/test_oin_generation.py`.
+- Phase-1 work (incl. this fix) still uncommitted; commit as one unit once
+  fixed.
+
+### 2026-07-03 — Winding-by-slot guard fix (Haiku)
+- **Bug:** `OINParser.parse()` line 490 in `src/oinsmiles/generation/oin_parser.py` unconditionally assigned `winding_by_slot[sa.slot] = sa.winding` for every slot assignment. Multi-atom slots (e.g., η-rings in ferrocene) have 5 assignments sharing one slot, with winding only on the heading atom; trailing atoms carry `None`, which overwrote the real winding.
+- **Reproduction:** parsing `[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1` yielded `winding_by_slot == {0: None, 1: None}` (incorrect, should be `{0: '>', 1: '<'}`).
+- **Fix:** guarded assignment at line 490–493: `if sa.slot not in winding_by_slot or sa.winding is not None: winding_by_slot[sa.slot] = sa.winding`. Prevents non-heading atoms from clobbering real winding while still initializing slots with no winding to `None`.
+- **Test added:** `tests/unit/test_oin_generation.py::test_winding_by_slot_survives_multi_atom_eta_slots` — parses ferrocene OIN with multi-atom eta slots and asserts `winding_by_slot == {0: '>', 1: '<'}`.
+- **Acceptance results:**
+  - `uv run python -m unittest tests.unit.test_oin_generation -v` → `Ran 5 tests in 0.001s` / `OK` ✓
+  - `uv run python -m unittest discover tests/unit` → `Ran 63 tests in 6.369s` / `OK (skipped=1, expected failures=1)` ✓
+  - Direct probe: `OINParser().parse('[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1').winding_by_slot` → `{0: '>', 1: '<'}` ✓
+- Only touched `src/oinsmiles/generation/oin_parser.py` (1 guard line + 1 comment line) and `tests/unit/test_oin_generation.py` (new test). No git commit made.
