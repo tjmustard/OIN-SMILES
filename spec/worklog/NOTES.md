@@ -65,7 +65,9 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | TASK-04 v3.7 descriptor-free metal token | DONE | Sonnet | TASK-01 |
 | TASK-10 stereo diagnostic round-trips | DONE | Sonnet | TASK-04 |
 | Stereo Phase 1 (winding plumbing) | DONE (executed + audited + review fix) | Sonnet/Opus | TASK-10 |
-| Stereo Phases 2–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | Phase 1 |
+| TASK-20 Phase 2 diagnostic | BLOCKED on human fixture (see spec) | Sonnet + human | Phase 1 |
+| Stereo Phase 2 fix | CONDITIONAL — only if TASK-20 fails | Sonnet/Opus | TASK-20 |
+| Stereo Phases 3–4 | ROADMAP (needs MiniPRDs) | Sonnet/Opus | Phase 2 |
 
 ## Decisions (append-only)
 
