@@ -113,7 +113,7 @@ class TestMolassemblerAdapter(unittest.TestCase):
                 adapter.generate(parsed)
 
     def test_successful_generate_returns_xyz_block(self):
-        """A successful worker result must return the XYZ block string."""
+        """A successful worker result returns a GeneratedStructure whose .xyz is the XYZ block string."""
         adapter = MolassemblerAdapter(timeout=60)
         parsed = _cisplatin_parsed_oin()
         expected_xyz = "9\n\nPt 0.0 0.0 0.0\n..."
@@ -130,7 +130,7 @@ class TestMolassemblerAdapter(unittest.TestCase):
             mock_executor.submit.return_value = mock_future
 
             result = adapter.generate(parsed)
-            self.assertEqual(result, expected_xyz)
+            self.assertEqual(result.xyz, expected_xyz)
 
 
 if __name__ == "__main__":
