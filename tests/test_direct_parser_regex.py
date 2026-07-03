@@ -17,7 +17,8 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
         self.assertIn(0, constraints)
         self.assertEqual(constraints[0]['shape'], 'SPL')
         self.assertEqual(constraints[0]['chiral_tag'], '@SP1')
-        self.assertEqual(sorted(constraints[0]['vertex_indices']), [0, 1, 2, 3])
+        # vertex_indices values are fragment ranks (metal = rank 0, ligands start at 1); list position = slot
+        self.assertEqual(sorted(constraints[0]['vertex_indices']), [1, 2, 3, 4])
 
         # Verify stripped SMILES is clean
         self.assertNotIn('_', stripped)
@@ -38,8 +39,8 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
         self.assertIn(0, constraints)
         self.assertEqual(constraints[0]['shape'], 'LIN')
 
-        # Verify vertex indices (0 and 1, extracted from heading atoms {0>} and {1>})
-        self.assertEqual(sorted(constraints[0]['vertex_indices']), [0, 1])
+        # Verify vertex indices (1 and 2, extracted from heading atoms {0>} and {1>})
+        self.assertEqual(sorted(constraints[0]['vertex_indices']), [1, 2])
 
         # Verify stripped SMILES preserves aromatic notation (with atom maps added)
         self.assertIn('cH', stripped)  # aromatic CH present (may have atom maps)
@@ -55,7 +56,7 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
 
         # Verify vertex indices are extracted even without shape
         self.assertIn(0, constraints)
-        self.assertEqual(constraints[0]['vertex_indices'], [0, 1])
+        self.assertEqual(constraints[0]['vertex_indices'], [1, 2])
 
     def test_no_chiral_tag(self):
         """Test: OIN without chiral tag (shape only)."""
@@ -68,7 +69,7 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
         # Chiral tag should not be present
         self.assertNotIn('chiral_tag', constraints[0])
         # Vertex indices should be present
-        self.assertEqual(constraints[0]['vertex_indices'], [0, 1])
+        self.assertEqual(constraints[0]['vertex_indices'], [1, 2])
 
     def test_various_shapes(self):
         """Test: Various polyhedral shape codes."""
@@ -108,8 +109,8 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
 
         # Heading markers should be stripped
         self.assertNotIn('>', stripped)
-        # Vertex indices should still be extracted (0 and 1)
-        self.assertEqual(sorted(constraints[0]['vertex_indices']), [0, 1])
+        # Vertex indices should still be extracted (1 and 2)
+        self.assertEqual(sorted(constraints[0]['vertex_indices']), [1, 2])
 
     def test_heading_marker_counterclockwise(self):
         """Test: Heading marker for counterclockwise winding (<)."""
@@ -120,7 +121,7 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
         # Heading markers should be stripped
         self.assertNotIn('<', stripped)
         # Vertex indices should still be extracted
-        self.assertEqual(sorted(constraints[0]['vertex_indices']), [0, 1])
+        self.assertEqual(sorted(constraints[0]['vertex_indices']), [1, 2])
 
     def test_multiple_vertex_indices(self):
         """Test: Fragment with many vertex indices."""
@@ -129,7 +130,7 @@ class TestExtractOINConstraintsV36(unittest.TestCase):
         stripped, constraints, _ = _extract_oin_constraints(oin_smiles)
 
         # Verify all vertex indices are captured
-        expected_indices = [0, 1, 2, 3, 4, 5]
+        expected_indices = [1, 2, 3, 4, 5, 6]
         self.assertEqual(sorted(constraints[0]['vertex_indices']), expected_indices)
 
     def test_atom_map_insertion(self):
