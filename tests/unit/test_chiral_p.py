@@ -45,6 +45,18 @@ class TestChiralP(unittest.TestCase):
         """Round-trip: encode XYZ → OIN matches human-reviewed candidate."""
         self.assertEqual(self._oin(), _EXPECTED_OIN)
 
+    def test_p_no_spurious_zone_a_tag(self):
+        """Negative control (Stereo Phase 4, Q4/RISK-4): BDPP's P atoms bind
+        Pd directly (Zone-A) but are NOT CIP stereocentres (two identical
+        phenyl groups). The Zone-A P lone-pair CIP feature must not leak a
+        spurious [P@]/[P@@] tag onto them -- byte-identical golden (above)
+        plus this explicit tag-absence assertion, per the MiniPRD's negative
+        constraints.
+        """
+        oin = self._oin()
+        self.assertNotIn("[P@]", oin)
+        self.assertNotIn("[P@@]", oin)
+
     @unittest.skipUnless(_RDKIT_AVAILABLE, "rdkit not installed")
     def test_p_cip_oracle(self):
         """RDKit CIP oracle: backbone C stereocentres are both S.

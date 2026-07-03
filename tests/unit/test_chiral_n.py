@@ -44,6 +44,17 @@ class TestChiralN(unittest.TestCase):
         """Round-trip: encode XYZ → OIN matches human-reviewed candidate."""
         self.assertEqual(self._oin(), _EXPECTED_OIN)
 
+    def test_n_no_spurious_chiral_tag(self):
+        """Negative control (Stereo Phase 4): nitrogen is explicitly out of
+        scope for the Zone-A lone-pair CIP feature (trivalent [N@] is
+        RDKit-cleared as non-stereogenic amine inversion) -- Zone-A N must
+        keep today's clearing behaviour. Byte-identical golden (above) plus
+        this explicit tag-absence assertion.
+        """
+        oin = self._oin()
+        self.assertNotIn("[N@]", oin)
+        self.assertNotIn("[N@@]", oin)
+
     @unittest.skipUnless(_RDKIT_AVAILABLE, "rdkit not installed")
     def test_n_cip_oracle(self):
         """RDKit CIP oracle: backbone C stereocentres are both S.

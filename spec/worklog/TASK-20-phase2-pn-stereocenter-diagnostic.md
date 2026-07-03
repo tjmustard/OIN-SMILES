@@ -1,6 +1,6 @@
 # TASK-20: Phase 2 diagnostic — genuine P/N-stereocenter round-trip
 
-Status: BLOCKED (needs fixture — see Prerequisite)
+Status: DONE — real gap confirmed (encoding-side, collapses into Phase 4). See spec/worklog/NOTES.md Log entry for 2026-07-03.
 Depends on: TASK-10 (Phase 0), Stereo Phase 1 (winding plumbing, committed 6820d3a)
 Suggested model: Sonnet (diagnostic); fixture step is HUMAN (chemistry)
 
@@ -75,6 +75,30 @@ uv run python -m unittest discover tests/unit 2>&1 | tail -3   # suite still OK
   fix sites per roadmap: fragment-SMILES→mol boundary in `_stitch_fragment`
   (`molassembler_adapter.py`), or post-embed check-and-reflect of the P/N
   stereocenter.
+
+**Actual outcome (2026-07-03):** Both tests fail, but NOT at the round-trip
+assertion — they fail at the SANITY assertion, before generation ever runs.
+`XYZToSMILES().convert()` on `tests/fixtures/Rh-RR-DIPAMP-Cl2.xyz` (both P
+atoms genuine CIP stereocentres) produces no `@`/`@@` on either P atom at
+all. Root cause: `ChiralityRecoveryUtility.recover()`
+(`src/oinsmiles/core/chirality.py:155-158`) unconditionally clears the
+chiral tag on any P/N atom with `total_degree < 4` in the
+post-fragmentation ligand mol ("Zone A"). Since OIN's ligand-fragment SMILES
+excludes the metal by construction, a directly metal-bound P/N atom always
+has exactly 3 fragment-local neighbours — it is *always* Zone A, for *any*
+fixture. This is not a fixture problem; it is an **XYZ→OIN encoding gap**,
+not the OIN→XYZ generation gap the roadmap's Phase 2 was scoped to test.
+`PseudoAtomStrategy` (`chirality.py:22`), designed to backfill the missing
+4th substituent for exactly this case, is never invoked anywhere in `src/`
+(dead code).
+
+**Decision:** Phase 2 as originally scoped cannot be validated — there is
+nothing for the OIN→XYZ generation path to preserve, because the signal is
+already gone at encoding time. Phase 2 folds into Phase 4 (Zone-A P/N
+stereo + builder decision): Phase 4 must first decide how (or whether)
+Zone-A stereocenters get encoded before a Phase-2-style ETKDG experiment has
+anything to test. `ROADMAP-stereo.md` Phase 2 section updated accordingly.
+No code fix authored in this task (out of scope — measurement only).
 
 ## Constraints / DO NOT
 

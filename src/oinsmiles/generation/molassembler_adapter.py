@@ -26,14 +26,18 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+import warnings
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
 from rdkit import Chem
+from rdkit.Chem import rdCIPLabeler
 
+from ..core.chirality import OINStereoWarning, _build_dummy_metal_copy, _lp_cip_label
+from ..oin.winding import signed_circulation
 from .oin_parser import TEMPLATES, ParsedOIN
 
 
@@ -43,6 +47,12 @@ class GeneratedStructure:
 
     xyz: str
     mol: Optional[Chem.Mol] = None
+    # Stereo Phase 3: per-ring haptic-face correction decisions (`fired` /
+    # `skipped` / `conflict` / `no-op`), one dict per eta ring encountered
+    # during template-based generation. Empty for non-eta / DG-fallback
+    # generation. Inspectable metadata -- see `_stitch_eta_fragment` and
+    # `_stitch_multi_eta_fragment` for the decision vocabulary.
+    haptic_face_decisions: list = field(default_factory=list)
 
 
 # ===========================================================================
@@ -148,11 +158,334 @@ def _analytic_ring_geometry(
     return np.array(positions, dtype=float), out_symbols
 
 
+# ===========================================================================
+# Stereo Phase 3: haptic-face correction helpers
+# ===========================================================================
+#
+# Shared by `_stitch_eta_fragment` (single-slot eta ring) and
+# `_stitch_multi_eta_fragment` (bridged ansa-metallocene, multi-slot). These
+# helpers build the *geometry* of the proper 180-degree in-plane correction;
+# the winding-sign math itself always goes through `signed_circulation`
+# (`oin/winding.py`) -- never duplicated here.
+
+
+def _eta_binding_signature(mol: "Chem.Mol", idx: int, binding_set: set) -> tuple:
+    """Local substituent signature of one ring (binding) atom.
+
+    (element symbol, sorted tuple of non-ring neighbour symbols). Used to
+    detect exocyclic substituents and ring symmetry -- never geometry.
+    """
+    atom = mol.GetAtomWithIdx(idx)
+    subs = tuple(
+        sorted(nbr.GetSymbol() for nbr in atom.GetNeighbors() if nbr.GetIdx() not in binding_set)
+    )
+    return (atom.GetSymbol(), subs)
+
+
+def _eta_ring_has_exocyclic_substituents(mol: "Chem.Mol | None", binding_idxs: list[int]) -> bool:
+    """True if any ring (binding) atom carries a non-H, non-ring neighbour.
+
+    Plain Cp/arene rings (ferrocene) have none; substituted rings (e.g. the
+    Ferrocene-halide-face fixture) do. Used to gate the de-aromatized ETKDG
+    embedding attempt (Attempt 1b) so unsubstituted rings keep their exact
+    pre-Phase-3 analytic-fallback placement (byte-identical, US-005).
+    """
+    if mol is None:
+        return False
+    binding_set = set(binding_idxs)
+    for idx in binding_idxs:
+        if idx >= mol.GetNumAtoms():
+            continue
+        _, subs = _eta_binding_signature(mol, idx, binding_set)
+        if any(s != "H" for s in subs):
+            return True
+    return False
+
+
+def _eta_ring_is_symmetric(mol: "Chem.Mol | None", binding_idxs: list[int]) -> bool:
+    """True if every binding atom has an identical local substituent signature.
+
+    When true, no OIN winding marker can encode a geometrically observable
+    difference (SuperPRD Stereo Phase 3, US-003: "winding is not a geometric
+    observable for symmetric rings") -- the correction must be an identity
+    no-op regardless of the measured/target windings, e.g. ferrocene's plain
+    Cp rings.
+    """
+    if mol is None:
+        return True  # Fail safe toward no-op, never toward an unverified flip.
+    binding_set = set(binding_idxs)
+    sigs = set()
+    for idx in binding_idxs:
+        if idx >= mol.GetNumAtoms():
+            return True  # Can't verify asymmetry -- be conservative.
+        sigs.add(_eta_binding_signature(mol, idx, binding_set))
+    return len(sigs) <= 1
+
+
+def _extract_ring_winding_marker(
+    vecs: list, binding_order: list[int]
+) -> tuple[Optional[str], Optional[int]]:
+    """Return (target_winding, star_atom_idx) for one eta ring's OINVectors.
+
+    Exactly one ``OINVector`` in *vecs* may carry a non-``None`` ``.winding``
+    -- the heading/star atom. More than one is a canonical-form violation
+    (SuperPRD Stereo Phase 3, "multi-marker same slot") and raises
+    ``ValueError`` rather than silently picking a winner. Zero markers is the
+    legitimate "zero-marker eta ring" case (legacy/hand-authored OIN) and
+    returns ``(None, None)``.
+    """
+    markers = [v for v in vecs if v.winding is not None]
+    if len(markers) > 1:
+        raise ValueError(
+            "Multi-marker haptic slot: more than one winding marker "
+            f"({[m.winding for m in markers]!r}) on ring atoms "
+            f"{[m.atom_in_fragment_idx for m in markers]!r} of {binding_order!r}; "
+            "canonical OIN form allows exactly one heading atom per haptic ring."
+        )
+    if not markers:
+        return None, None
+    star = markers[0]
+    return star.winding, star.atom_in_fragment_idx
+
+
+def _find_slot_index_for_direction(
+    template: list, direction: tuple, tol: float = 1e-3
+) -> Optional[int]:
+    """Return the template slot index whose vector matches *direction*, if any."""
+    for i, vec in enumerate(template):
+        if all(abs(float(a) - float(b)) < tol for a, b in zip(vec, direction)):
+            return i
+    return None
+
+
+def _in_plane_correction_axis(
+    binding_pos: np.ndarray,
+    centroid: np.ndarray,
+    axis_unit: np.ndarray,
+) -> "np.ndarray | None":
+    """Build the in-plane 180-degree correction rotation axis.
+
+    Axis = centroid -> binding-atom[0], projected into the plane
+    perpendicular to *axis_unit* (the metal->centroid outward axis).
+    Epsilon-guarded fallback to binding-atom[1] + Gram-Schmidt against
+    *axis_unit* when the projection is ill-conditioned (SuperPRD Stereo
+    Phase 3, R7). Returns a unit vector, or ``None`` if degenerate even
+    after the fallback.
+    """
+
+    def _project(v: np.ndarray) -> np.ndarray:
+        return v - np.dot(v, axis_unit) * axis_unit
+
+    proj = _project(binding_pos[0] - centroid)
+    if float(np.linalg.norm(proj)) < 1e-6 and len(binding_pos) > 1:
+        proj = _project(binding_pos[1] - centroid)
+    norm = float(np.linalg.norm(proj))
+    if norm < 1e-9:
+        return None
+    return proj / norm
+
+
+def _proper_180_rotation(rot_axis_unit: np.ndarray):
+    """Build a proper (det +1) 180-degree rotation about *rot_axis_unit*.
+
+    Asserts ``det(R) ~= +1`` before returning (SuperPRD Stereo Phase 3, R8 /
+    US-006): a reflection would invert pendant substituent chirality and
+    must never reach placement.
+    """
+    from scipy.spatial.transform import Rotation as _Rot  # noqa: PLC0415
+
+    rot = _Rot.from_rotvec(rot_axis_unit * np.pi)
+    det = float(np.linalg.det(rot.as_matrix()))
+    assert abs(det - 1.0) < 1e-6, (
+        f"Haptic-face correction rotation is not proper (det={det}); refusing "
+        "to apply what would be a reflection."
+    )
+    return rot
+
+
+# ===========================================================================
+# Stereo Phase 4 (MiniPRD-B): Zone-A P verify-and-re-embed helpers
+# ===========================================================================
+#
+# Consumes the `_OIN_CIPCode_LP` / `[P@]`/`[P@@]` contract established by
+# MiniPRD_ZoneA_P_Encode.md (core/chirality.py). The dummy-metal-copy +
+# rdCIPLabeler recipe is REUSED from that module (`_build_dummy_metal_copy`,
+# `_lp_cip_label`), never reimplemented (SuperPRD Stereo Phase 4, negative
+# constraint). Enforcement lives here -- the adapter's assembled-complex
+# stage (`_template_generate`) -- and NOT in `OIN3DGenerator`/engine.py
+# (Resolved Q2/RISK-2: `GeneratedStructure.mol` is `Optional` and post-hoc).
+
+
+def _fresh_fragment_mol(frag_smiles: str) -> "Chem.Mol | None":
+    """Parse+sanitize *frag_smiles* independent of any embedding attempt.
+
+    Used only to inspect graph-level properties (chiral tags, CIP labels)
+    that do not depend on 3D coordinates -- mirrors the sanitize-with-
+    fallback-flags pattern used throughout this module.
+    """
+    mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+    if mol is None:
+        return None
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
+        try:
+            Chem.SanitizeMol(
+                mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+            )
+        except Exception:
+            return None
+    return mol
+
+
+def _zone_a_p_expected_labels(frag_smiles: str) -> list[tuple[int, str]]:
+    """Return ``[(local_p_idx, expected_lp_label), ...]`` for *frag_smiles*.
+
+    Graph-based ONLY (no 3D, no embedding) -- computes `rdCIPLabeler`
+    directly off the parsed+sanitized fragment mol's EXISTING chiral tag,
+    exactly mirroring the last step of ``ChiralityRecoveryUtility.recover()``
+    (``core/chirality.py``) that baked this same tag into the OIN string in
+    the first place (verify-and-flip, keyed on ``_OIN_CIPCode_LP``). This is
+    the "input tag's expected label" the MiniPRD-B verify step checks the
+    assembled complex against: it reflects the OIN string's own encoded
+    intent, independent of whatever a (possibly mis-embedded) 3D conformer
+    later produces. Never derives a tag from 3D perception of a trivalent P
+    (perception fails -- SuperPRD spike 3); this is the permitted graph-based
+    recompute from an EXISTING tag, same as ``recover()``'s verify step.
+    """
+    mol = _fresh_fragment_mol(frag_smiles)
+    if mol is None:
+        return []
+    out: list[tuple[int, str]] = []
+    try:
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        rdCIPLabeler.AssignCIPLabels(mol)
+    except Exception:  # noqa: BLE001 - guarded, no expected labels found
+        return []
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() != 15:  # phosphorus only (Sec.3.2: N out of scope)
+            continue
+        if atom.GetChiralTag() == Chem.ChiralType.CHI_UNSPECIFIED:
+            continue
+        label = atom.GetPropsAsDict().get("_CIPCode")
+        if label:
+            out.append((atom.GetIdx(), label))
+    return out
+
+
+def _zone_a_p_tags_in_parsed_oin(parsed_oin: "ParsedOIN") -> list[tuple[int, int]]:
+    """Return every tagged Zone-A P in *parsed_oin*, as ``(frag_idx, local_p_idx)``.
+
+    Independent of which generation strategy is used. Lets
+    ``MolassemblerAdapter.generate()`` warn on fallback paths (eta
+    fallback with ``mol=None``, Molassembler DG fallback) that never run the
+    verify-and-re-embed enforcement pinned to `_template_generate`'s
+    assembled-complex stage (Task 5, RISK-9 -- "no assembled mol" must never
+    be a silent skip).
+    """
+    out: list[tuple[int, int]] = []
+    for frag_idx, frag_smiles in enumerate(parsed_oin.fragments):
+        if frag_idx == parsed_oin.metal_fragment_idx:
+            continue
+        for local_p_idx, _label in _zone_a_p_expected_labels(frag_smiles):
+            out.append((frag_idx, local_p_idx))
+    return out
+
+
+def _warn_zone_a_p_fallback(parsed_oin: "ParsedOIN", context: str) -> None:
+    """Emit one ``OINStereoWarning`` per Zone-A P tag found in *parsed_oin*.
+
+    Used when no assembled RDKit mol exists to verify/enforce it against
+    (Task 5). *context* names the fallback path for the message.
+    """
+    for frag_idx, local_idx in _zone_a_p_tags_in_parsed_oin(parsed_oin):
+        warnings.warn(
+            OINStereoWarning(
+                f"atom {local_idx} (fragment {frag_idx}): stereo unenforced "
+                f"on fallback path ({context}) -- no assembled RDKit mol "
+                "available to verify the Zone-A P lone-pair CIP tag; "
+                "structure emitted without enforcement for this atom."
+            ),
+            stacklevel=2,
+        )
+
+
+def _verify_zone_a_p(
+    assembled_mol: "Chem.Mol", fragment_inputs: list[tuple[int, str]]
+) -> list[int]:
+    """Verify each Zone-A P atom in *assembled_mol* against its expected OIN-encoded label.
+
+    *fragment_inputs* is a list of ``(global_atom_idx, expected_lp_label)``
+    pairs -- ``global_atom_idx`` indexes into *assembled_mol* (the metal is
+    present, bonded DATIVE to each binding atom -- same convention as
+    ``xyz2mol.get_tmc_mol()``, which is what ``_build_dummy_metal_copy``
+    requires), ``expected_lp_label`` is the lone-pair-convention CIP label
+    ('R'/'S') the OIN fragment SMILES encodes for that P atom (see
+    ``_zone_a_p_expected_labels``).
+
+    Reuses the MiniPRD-A dummy-metal-copy + `rdCIPLabeler` recipe
+    (``core.chirality._build_dummy_metal_copy`` / ``_lp_cip_label``) --
+    never reimplemented. Both sides of the comparison are the SAME
+    lone-pair convention (never cross-convention -- SuperPRD B1).
+
+    Returns the list of global atom indices whose measured label disagrees
+    with the expected one. A dummy-copy construction/label failure (guarded
+    internally by the reused helpers, which already warn) is NOT counted as
+    a mismatch -- there is nothing actionable to re-embed toward.
+    """
+    mismatched: list[int] = []
+    for global_idx, expected_label in fragment_inputs:
+        dummy_mol = _build_dummy_metal_copy(assembled_mol, global_idx)
+        if dummy_mol is None:
+            continue  # already warned by _build_dummy_metal_copy
+        measured = _lp_cip_label(dummy_mol, global_idx)
+        if measured is None:
+            continue  # non-stereogenic in this copy; nothing to enforce
+        if measured != expected_label:
+            mismatched.append(global_idx)
+    return mismatched
+
+
+def _assemble_combined_mol(
+    metal_mol: "Chem.Mol",
+    fragment_mol_parts: list[tuple["Chem.Mol", list[int]]],
+    all_pos: list[np.ndarray],
+) -> "Chem.Mol | None":
+    """Build the single combined RDKit mol (metal + all fragments + one conformer).
+
+    Metal bonds are DATIVE, the conformer comes from *all_pos*. Factored out
+    of `_template_generate` (unchanged logic, moved verbatim)
+    so the Stereo-Phase-4 enforcement loop (Task 3) can rebuild it after
+    re-embedding an offending fragment without duplicating this logic.
+    """
+    try:
+        combined_rw = Chem.RWMol(metal_mol)
+        for frag_mol, frag_binding_idxs in fragment_mol_parts:
+            frag_start = combined_rw.GetNumAtoms()
+            # Strip conformers from fragment so CombineMols doesn't carry
+            # old ETKDG geometry into the combined mol's conformer list.
+            frag_no_conf = Chem.RWMol(frag_mol)
+            frag_no_conf.RemoveAllConformers()
+            combined_rw = Chem.RWMol(Chem.CombineMols(combined_rw.GetMol(), frag_no_conf.GetMol()))
+            for bidx in frag_binding_idxs:
+                global_bidx = frag_start + bidx
+                if global_bidx < combined_rw.GetNumAtoms():
+                    combined_rw.AddBond(0, global_bidx, Chem.BondType.DATIVE)
+        # Set the single conformer from the final (collision-checked) all_pos.
+        conf = Chem.Conformer(combined_rw.GetNumAtoms())
+        for i, pos in enumerate(all_pos):
+            conf.SetAtomPosition(i, pos.tolist())
+        combined_rw.AddConformer(conf, assignId=True)
+        return combined_rw.GetMol()
+    except Exception:
+        return None
+
+
 def _stitch_multi_eta_fragment(
     frag_smiles: str,
     vectors: list,
     metal_sym: str,
-) -> tuple[np.ndarray, list[str], "Chem.Mol | None"] | None:
+) -> tuple[np.ndarray, list[str], "Chem.Mol | None", list] | None:
     """Place an ansa-metallocene fragment by decomposing into independent rings.
 
     For bridged fragments (e.g. SiMe2-bridged bis-Cp), the algorithm:
@@ -164,7 +497,18 @@ def _stitch_multi_eta_fragment(
     This avoids SMILES re-parsing failures (e.g. standalone Cp anion kekulization)
     and correctly includes all H atoms in the coordinate transformation.
 
-    Returns (positions, symbols, mol) or None on failure.
+    Stereo Phase 3 (haptic-face correction): after both rings are placed, a
+    single coherent whole-fragment 180-degree correction is applied only when
+    both rings' measured circulation disagrees with their target winding in
+    the SAME sense; if they disagree (one wants a flip, the other does not),
+    placement is left unchanged and the disagreement is reported as a
+    `conflict` (never an independent per-ring correction inside a bridged
+    fragment -- see the module-level haptic-face-correction helpers).
+
+    Returns (positions, symbols, mol, decisions) or None on failure, where
+    `decisions` is a list of one dict per ring (`kind`, `slot`, `status` in
+    {"fired", "skipped", "conflict", "no-op"}, `target`, `measured_before`,
+    `symmetric`).
     """
     from rdkit.Chem import AllChem as _AllChem  # noqa: PLC0415
     from scipy.spatial.transform import Rotation as _Rotation  # noqa: PLC0415
@@ -177,9 +521,14 @@ def _stitch_multi_eta_fragment(
 
     # ── Phase 1: Setup ─────────────────────────────────────────────────────
     slot_groups: dict[tuple, list[int]] = {}
+    # Stereo Phase 3: parallel per-slot OINVector list (preserves SMILES
+    # order, like slot_groups) so each ring's own winding marker can be
+    # recovered later without routing through winding_by_slot.
+    slot_group_vecs: dict[tuple, list] = {}
     for v in vectors:
         key = tuple(round(x, 4) for x in v.vector)
         slot_groups.setdefault(key, []).append(v.atom_in_fragment_idx)
+        slot_group_vecs.setdefault(key, []).append(v)
 
     print(f"[DEBUG] slot_groups: {len(slot_groups)} groups", file=sys.stderr)
 
@@ -309,6 +658,9 @@ def _stitch_multi_eta_fragment(
 
     # ── Phase 5: Transform ring positions to target slot ──────────────────
     placed_results: dict[tuple, tuple] = {}
+    # Stereo Phase 3: per-ring haptic-face bookkeeping (target/measured
+    # winding, in SMILES order) -- populated below, consumed after Phase 8.
+    ring_haptic_info: dict[tuple, dict] = {}
 
     for slot_idx, (slot_key, bidxs) in enumerate(slot_groups.items()):
         ring_heavy_idxs = _bfs_atoms(mol, set(bidxs), bridge_idx)
@@ -403,6 +755,36 @@ def _stitch_multi_eta_fragment(
         ipso_placed = ring_pos[ipso_local]
 
         placed_results[slot_key] = (ring_pos, ring_syms, ipso_placed)
+
+        # ── Stereo Phase 3: measure this ring's circulation ─────────────────
+        # bidxs is already SMILES/fragment order (a filtered subsequence of
+        # `vectors`, which arrives in ascending SMILES-atom-index order --
+        # see `_extract_ring_winding_marker` for the same assumption used by
+        # `_stitch_eta_fragment`). Map each bidxs atom to its placed position
+        # within ring_pos (mirrors the existing `ipso_local` lookup above).
+        if etkdg_ok:
+            binding_local_positions = [ring_all_idxs.index(b) for b in bidxs]
+        else:
+            _sorted_heavy_for_bind = sorted(ring_heavy_idxs)
+            binding_local_positions = [_sorted_heavy_for_bind.index(b) for b in bidxs]
+
+        ring_binding_pos = ring_pos[binding_local_positions]
+        target_winding, star_atom_idx = _extract_ring_winding_marker(
+            slot_group_vecs[slot_key], bidxs
+        )
+        star_local_idx = bidxs.index(star_atom_idx) if star_atom_idx is not None else None
+        measured_winding = (
+            signed_circulation(ring_binding_pos, star_local_idx, slot_unit)
+            if star_local_idx is not None
+            else None
+        )
+        ring_haptic_info[slot_key] = {
+            "binding_local_positions": binding_local_positions,
+            "axis": slot_unit,
+            "target": target_winding,
+            "measured": measured_winding,
+            "symmetric": _eta_ring_is_symmetric(mol, bidxs),
+        }
 
     # ── Phase 6: Place Si bridge atom ──────────────────────────────────────
     def _place_bridge_atom(p1: np.ndarray, p2: np.ndarray, bond_length: float = 1.87) -> np.ndarray:
@@ -577,8 +959,71 @@ def _stitch_multi_eta_fragment(
     heavy_atom_map[bridge_idx] = si_atom_idx
     print(f"[DEBUG] Heavy atom map: {heavy_atom_map}", file=sys.stderr)
 
+    # ── Stereo Phase 3: coherent whole-fragment correction (or conflict) ────
+    # Never an independent per-ring correction inside a bridged fragment
+    # (SuperPRD Stereo Phase 3, negative constraint): apply ONE proper
+    # rotation to the whole assembled fragment only when both rings agree
+    # they need a flip; if they disagree, leave placement unchanged.
+    decisions: list[dict] = []
+    key0, key1 = slot_keys[0], slot_keys[1]
+    info0, info1 = ring_haptic_info[key0], ring_haptic_info[key1]
+
+    def _has_preference(info: dict) -> bool:
+        return info["target"] is not None and not info["symmetric"]
+
+    def _wants_flip(info: dict) -> bool:
+        return _has_preference(info) and info["measured"] != info["target"]
+
+    if not _has_preference(info0) and not _has_preference(info1):
+        status = "no-op"
+    else:
+        want0, want1 = _wants_flip(info0), _wants_flip(info1)
+        if want0 != want1:
+            status = "conflict"
+        elif want0 and want1:
+            status = "fired"
+        else:
+            status = "skipped"
+
+    if status == "fired":
+        axis0, axis1 = info0["axis"], info1["axis"]
+        cross_ax = np.cross(axis0, axis1)
+        cross_norm = float(np.linalg.norm(cross_ax))
+        if cross_norm > 1e-6:
+            # cross(axis0, axis1) is perpendicular to BOTH rings' own
+            # metal->centroid axes, so a single 180 deg rotation about it
+            # inverts each ring's axis (axis_i -> -axis_i) simultaneously --
+            # exactly the per-ring face-flip operation, applied coherently.
+            rot_axis = cross_ax / cross_norm
+        else:
+            # axis0 / axis1 are (anti)parallel (the common near-linear
+            # sandwich case): any axis perpendicular to axis0 is valid;
+            # reuse ring0's own in-plane construction (R7 fallback).
+            ring0_pos = placed_results[key0][0]
+            b0 = ring0_pos[info0["binding_local_positions"]]
+            cen0 = b0.mean(axis=0)
+            rot_axis = _in_plane_correction_axis(b0, cen0, axis0)
+            if rot_axis is None:
+                rot_axis = np.array([1.0, 0.0, 0.0])
+
+        rot = _proper_180_rotation(rot_axis)
+        pivot = np.mean(all_positions, axis=0)
+        all_positions = [rot.apply(p - pivot) + pivot for p in all_positions]
+
+    for key, info in ((key0, info0), (key1, info1)):
+        decisions.append(
+            {
+                "kind": "multi-eta",
+                "slot": key,
+                "status": status,
+                "target": info["target"],
+                "measured_before": info["measured"],
+                "symmetric": info["symmetric"],
+            }
+        )
+
     # Return XYZ positions and symbols; mol=None for now (XYZ is the deliverable)
-    return np.array(all_positions, dtype=float), all_symbols, None
+    return np.array(all_positions, dtype=float), all_symbols, None, decisions
 
 
 def _stitch_eta_fragment(
@@ -586,26 +1031,48 @@ def _stitch_eta_fragment(
     binding_idxs: list[int],
     slot_unit: np.ndarray,
     metal_sym: str,
-) -> tuple[np.ndarray, list[str], "Chem.Mol | None"] | None:
+    winding: Optional[str] = None,
+    star_atom_idx: Optional[int] = None,
+) -> tuple[np.ndarray, list[str], "Chem.Mol | None", dict] | None:
     """Place an eta-type ligand (Cp, arene) by centroid-plane alignment.
 
     For eta-n ligands where *binding_idxs* all share the same slot direction:
     1. Tries ETKDGv3 embedding of the organic fragment first.
-    2. Falls back to analytic regular-ring geometry if ETKDG fails (e.g. Cp
-       anion `[cH]1[cH][cH][cH][cH]1` which RDKit cannot kekulize).
-    3. Computes centroid of the binding atoms and estimates M–centroid distance
+    2. Falls back to a de-aromatized ETKDGv3 embedding when the ring carries
+       exocyclic substituents that block kekulization (Attempt 1b).
+    3. Falls back to analytic regular-ring geometry if both fail (e.g. plain
+       Cp anion `[cH]1[cH][cH][cH][cH]1`, which RDKit cannot kekulize and
+       which carries nothing worth preserving beyond the ring itself).
+    4. Computes centroid of the binding atoms and estimates M–centroid distance
        from the M–C bond length and the ring circumradius.
-    4. Rotates the fragment so its binding-atom plane normal aligns with
+    5. Rotates the fragment so its binding-atom plane normal aligns with
        *slot_unit* (pointing away from the metal).
-    5. Translates the centroid to ``slot_unit * centroid_dist``.
+    6. Translates the centroid to ``slot_unit * centroid_dist``.
+    7. (Stereo Phase 3) Measures the placed ring's circulation and, if it
+       disagrees with *winding*, applies a proper 180-degree in-plane
+       correction (see module-level haptic-face-correction helpers).
+
+    Parameters
+    ----------
+    winding:
+        Target OIN winding character (``'>'``/``'<'``) for this ring, i.e.
+        the single non-``None`` ``OINVector.winding`` in the ring's slot
+        group. ``None`` means no marker was present (legacy/zero-marker
+        ring) -- correction is skipped and recorded as a ``no-op``.
+    star_atom_idx:
+        The *original* fragment atom index (as found in *binding_idxs*) of
+        the heading/star atom that carries *winding*. Required whenever
+        *winding* is not ``None``.
 
     Returns:
     -------
-    (positions, symbols, mol) or None on failure.
-    mol is the RDKit Mol with bond connectivity, or None for analytic-geometry fallback.
+    (positions, symbols, mol, decision) or None on failure.
+    mol is the RDKit Mol with bond connectivity, or None for analytic-geometry
+    fallback. decision is a dict describing the haptic-face-correction
+    outcome for this ring (`status` in {"fired", "skipped", "conflict" (never
+    for a single ring), "no-op"}).
     """
     from rdkit.Chem import AllChem  # noqa: PLC0415
-    from scipy.spatial.transform import Rotation  # noqa: PLC0415
 
     n_binding = len(binding_idxs)
     if n_binding < 2:
@@ -616,8 +1083,14 @@ def _stitch_eta_fragment(
     valid_idxs: list[int] = []
     etkdg_mol: Chem.Mol | None = None
     smiles_mol: Chem.Mol | None = None
+    reordered_for_smiles_mol = False
 
-    # ── Attempt 1: ETKDGv3 ───────────────────────────────────────────────────
+    # Fresh, untouched parse used only for substituent/symmetry inspection --
+    # independent of whatever mutations the embedding attempts below apply.
+    sig_mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+    has_substituents = _eta_ring_has_exocyclic_substituents(sig_mol, binding_idxs)
+
+    # ── Attempt 1: ETKDGv3 (plain aromatic-preserving sanitize) ───────────────
     mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
     if mol is not None:
         try:
@@ -649,6 +1122,55 @@ def _stitch_eta_fragment(
             symbols = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
             valid_idxs = [i for i in binding_idxs if i < n_atoms]
             etkdg_mol = mol
+
+    # ── Attempt 1b: anionic-ring ETKDGv3 (substituted rings only) ────────────
+    # Attempt 1 fails to kekulize many substituted Cp/arene rings: a 5- (or
+    # other odd-) membered aromatic ring where every ring atom already has an
+    # explicit non-H substituent has no valid neutral alternating-bond Kekule
+    # structure -- it needs exactly one ring atom to carry the anionic
+    # (cyclopentadienide-like) formal charge that a plain `[cH]` ring gets
+    # for free from RDKit's implicit-H/aromaticity model. Which position
+    # works is parity-dependent, so try each ring atom in turn and keep the
+    # first that sanitizes. This keeps bonds AROMATIC (unlike a de-aromatized
+    # single-bond embed), so ETKDG's force field gives genuinely planar,
+    # aromatic-length (~1.40 A) geometry natively -- required for the
+    # independent XYZ->OIN bond-order perception (xyz2mol) to recognize the
+    # ring at all. For a PLAIN ring (ferrocene, TiCp2Me2, …) this attempt is
+    # never reached (`has_substituents` is False) -- the analytic fallback
+    # (Attempt 2) reproduces the exact pre-Phase-3 placement unchanged
+    # (byte-identical, US-005).
+    if (positions is None or len(valid_idxs) < 2) and has_substituents:
+        mol_b = None
+        for charge_idx in binding_idxs:
+            candidate = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+            if candidate is None or charge_idx >= candidate.GetNumAtoms():
+                continue
+            candidate.GetAtomWithIdx(charge_idx).SetFormalCharge(-1)
+            try:
+                Chem.SanitizeMol(candidate)
+            except Exception:
+                continue
+            mol_b = candidate
+            break
+
+        if mol_b is not None:
+            try:
+                mol_b = Chem.AddHs(mol_b)
+                _params_b = AllChem.ETKDGv3()
+                _params_b.randomSeed = 42
+                r_b = AllChem.EmbedMolecule(mol_b, _params_b)
+            except Exception:
+                r_b = -1
+            if r_b == 0:
+                n_atoms = mol_b.GetNumAtoms()
+                positions = np.array(
+                    [list(mol_b.GetConformer().GetAtomPosition(i)) for i in range(n_atoms)],
+                    dtype=float,
+                )
+                symbols = [mol_b.GetAtomWithIdx(i).GetSymbol() for i in range(n_atoms)]
+                valid_idxs = [i for i in binding_idxs if i < n_atoms]
+                etkdg_mol = mol_b
+                smiles_mol = mol_b
 
     # ── Attempt 2: analytic regular-ring geometry ────────────────────────────
     if positions is None or len(valid_idxs) < 2:
@@ -705,6 +1227,8 @@ def _stitch_eta_fragment(
         plane_normal = -plane_normal
 
     # Rotate fragment so plane_normal → slot_unit (rotation around centroid).
+    from scipy.spatial.transform import Rotation  # noqa: PLC0415
+
     try:
         rot, _ = Rotation.align_vectors([slot_unit], [plane_normal])
     except Exception:
@@ -730,8 +1254,66 @@ def _stitch_eta_fragment(
             smiles_mol.GetAtomWithIdx(i).GetSymbol() for i in range(smiles_mol.GetNumAtoms())
         ]
         etkdg_mol = smiles_mol
+        reordered_for_smiles_mol = True
 
-    return positions, symbols, etkdg_mol
+    # ── Stereo Phase 3: haptic-face correction ───────────────────────────────
+    # Map each SMILES-order binding atom (binding_idxs order) to its index in
+    # the FINAL `positions` array, tracking the heavy-first reorder above.
+    if reordered_for_smiles_mol:
+        final_binding_local_idxs = list(range(n_binding))
+    else:
+        final_binding_local_idxs = valid_idxs
+
+    decision: dict = {
+        "kind": "eta",
+        "status": "no-op",
+        "target": winding,
+        "measured_before": None,
+        "measured_after": None,
+        "symmetric": _eta_ring_is_symmetric(sig_mol, binding_idxs),
+    }
+
+    if winding is not None and len(final_binding_local_idxs) == n_binding:
+        if star_atom_idx is None:
+            raise ValueError("_stitch_eta_fragment: winding target given without star_atom_idx")
+        try:
+            star_local_idx = binding_idxs.index(star_atom_idx)
+        except ValueError as exc:
+            raise ValueError(
+                f"star_atom_idx={star_atom_idx} is not one of this ring's binding_idxs "
+                f"{binding_idxs!r}"
+            ) from exc
+
+        binding_final = positions[final_binding_local_idxs]
+        centroid_final = binding_final.mean(axis=0)
+        # Metal is always at the origin in this local frame (see caller);
+        # by construction the ring centroid lies exactly along slot_unit.
+        measured = signed_circulation(binding_final, star_local_idx, slot_unit)
+        decision["measured_before"] = measured
+
+        if decision["symmetric"]:
+            decision["status"] = "no-op"
+        elif measured == winding:
+            decision["status"] = "skipped"
+            decision["measured_after"] = measured
+        else:
+            rot_axis = _in_plane_correction_axis(binding_final, centroid_final, slot_unit)
+            if rot_axis is None:
+                decision["status"] = "no-op"
+            else:
+                correction = _proper_180_rotation(rot_axis)
+                positions = correction.apply(positions - centroid_final) + centroid_final
+                binding_final2 = positions[final_binding_local_idxs]
+                centroid_final2 = binding_final2.mean(axis=0)
+                axis2 = centroid_final2
+                axis2_norm = float(np.linalg.norm(axis2))
+                axis2_unit = axis2 / axis2_norm if axis2_norm > 1e-9 else slot_unit
+                decision["measured_after"] = signed_circulation(
+                    binding_final2, star_local_idx, axis2_unit
+                )
+                decision["status"] = "fired"
+
+    return positions, symbols, etkdg_mol, decision
 
 
 def _stitch_fragment(
@@ -740,6 +1322,8 @@ def _stitch_fragment(
     target_positions: list[np.ndarray],
     slot_units: list[np.ndarray] | None = None,
     forbidden_positions: list[np.ndarray] | None = None,
+    seed: int = 42,
+    _test_flip_chiral_idx: int | None = None,
 ) -> tuple[np.ndarray, list[str], "Chem.Mol"] | None:
     """Generate organic fragment and Kabsch-align binding atoms to targets.
 
@@ -756,6 +1340,21 @@ def _stitch_fragment(
         Unit vectors from metal toward each binding atom.  Used only for
         monodentate orientation: non-binding atoms are rotated to face away
         from the metal (in the +slot direction) to prevent spurious M-H bonds.
+    seed:
+        ETKDG ``randomSeed``. Stereo Phase 4 (MiniPRD-B) re-embeds the SAME
+        fragment with a NEW seed here when the Zone-A P verify step
+        (`_verify_zone_a_p`) detects a mismatch -- never a mirror/improper
+        transform (SuperPRD B2/B3).
+    _test_flip_chiral_idx:
+        TEST-ONLY injection seam (Stereo Phase 4 MiniPRD-B, Task 7). When
+        set, the chiral tag of this ONE fragment-local atom is flipped
+        in-place BEFORE ETKDG embeds, so the resulting conformer is
+        genuinely mis-embedded at exactly that atom (a realistic simulation
+        of an ETKDG error) while every other stereocenter in the fragment
+        (e.g. a co-resident Zone-A P in a bidentate fragment) embeds
+        normally. Never used by production code paths -- exists solely so
+        the bounded re-embed enforcement loop in `_template_generate` has a
+        deterministic way to be exercised by tests.
 
     Returns:
     -------
@@ -792,6 +1391,19 @@ def _stitch_fragment(
             for atom in mol.GetAtoms():
                 pass  # valence already calculated during partial sanitization
 
+    # Stereo Phase 4 (MiniPRD-B, Task 7): TEST-ONLY forced mis-embed. Flips
+    # ONE atom's chiral tag before ETKDG embeds, so this fragment's own
+    # `randomSeed` picks the correct handedness for every OTHER stereocenter
+    # but the wrong one for this atom -- unlike a whole-fragment mirror, this
+    # never touches a co-resident stereocenter's configuration.
+    if _test_flip_chiral_idx is not None and _test_flip_chiral_idx < mol.GetNumAtoms():
+        _flip_atom = mol.GetAtomWithIdx(_test_flip_chiral_idx)
+        _flip_tag = _flip_atom.GetChiralTag()
+        if _flip_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
+            _flip_atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
+        elif _flip_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
+            _flip_atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
+
     # Set NoImplicit on binding atoms to avoid spurious H addition.
     # When the binding atom forms an M-L bond in the complex its valence is
     # already fully used (e.g. C in C#N: triple bond + 1 metal = 4 = max).
@@ -814,7 +1426,7 @@ def _stitch_fragment(
         mol = Chem.AddHs(mol)
 
     _etkdg_params = AllChem.ETKDGv3()
-    _etkdg_params.randomSeed = 42
+    _etkdg_params.randomSeed = seed
     try:
         result = AllChem.EmbedMolecule(mol, _etkdg_params)
     except Exception:
@@ -974,7 +1586,9 @@ def _stitch_fragment(
     return positions_aligned, symbols, mol
 
 
-def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] | None":
+def _template_generate(
+    parsed_oin: "ParsedOIN",
+) -> "tuple[str, Chem.Mol | None, list] | None":
     """Generate a 3D XYZ block using OIN template slot vectors.
 
     Returns the XYZ string on success, or ``None`` if template generation
@@ -1030,6 +1644,16 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
     fragment_mol_parts: list[tuple[Chem.Mol, list[int]]] = []
     has_all_mols: bool = True
     has_multi_eta: bool = False  # True if any fragment has eta at multiple slots
+    # Stereo Phase 3: per-ring haptic-face correction decisions, collected
+    # across all fragments and surfaced via GeneratedStructure (see
+    # OIN3DGenerator.generate()'s sole call site of this function).
+    haptic_decisions: list[dict] = []
+    # Stereo Phase 4 (MiniPRD-B): per-"normal" (non-eta) fragment placement
+    # metadata, enough to re-run `_stitch_fragment` with a new seed and
+    # re-splice its atom range if Zone-A P verification (`_verify_zone_a_p`)
+    # finds a mismatch. Zone-A P atoms are always metal-bound directly (never
+    # eta/shared-slot), so only this path needs tracking.
+    normal_frag_meta: list[dict] = []
 
     for frag_idx, frag_smiles in enumerate(parsed_oin.fragments):
         if frag_idx == parsed_oin.metal_fragment_idx:
@@ -1058,7 +1682,9 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
                 )
                 if result is None:
                     return None
-                frag_positions, frag_symbols, frag_mol = result
+                frag_positions, frag_symbols, frag_mol, ring_decisions = result
+                for rd in ring_decisions:
+                    haptic_decisions.append({"fragment_idx": frag_idx, **rd})
                 all_binding_idxs = [v.atom_in_fragment_idx for v in vecs]
                 all_pos.extend(frag_positions)
                 all_syms.extend(frag_symbols)
@@ -1081,15 +1707,41 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
 
             eta_binding_idxs = [v.atom_in_fragment_idx for v in vecs]
 
+            # Stereo Phase 3: the single non-None OINVector.winding in this
+            # ring's slot group is the target marker (never winding_by_slot
+            # -- see negative constraints). Multi-marker same-slot is a
+            # canonical-form violation -> ValueError, never a silent pick.
+            target_winding, star_atom_idx = _extract_ring_winding_marker(vecs, eta_binding_idxs)
+
+            # Guard the oin_parser.py template-gating hole (a SlotAssignment
+            # can be dropped from `parsed_oin.vectors` -- and hence from
+            # `vecs` here -- when its slot index falls outside the resolved
+            # template, while still being recorded in `winding_by_slot`).
+            # Fail loudly rather than silently treating a lost marker as a
+            # legitimate zero-marker ring.
+            matched_slot_idx = _find_slot_index_for_direction(template, unique_dirs[0])
+            if matched_slot_idx is not None:
+                slot_marker = parsed_oin.winding_by_slot.get(matched_slot_idx)
+                if slot_marker is not None and target_winding is None:
+                    raise AssertionError(
+                        f"eta ring at fragment {frag_idx} (slot {matched_slot_idx}) "
+                        f"lost its winding marker {slot_marker!r}: winding_by_slot "
+                        "records a marker but no surviving OINVector for this ring "
+                        "carries it (oin_parser.py template-gating hole)."
+                    )
+
             result = _stitch_eta_fragment(
                 frag_smiles,
                 eta_binding_idxs,
                 eta_slot_unit,
                 metal_sym,
+                winding=target_winding,
+                star_atom_idx=star_atom_idx,
             )
             if result is None:
                 return None  # Eta fragment failed → use DG
-            frag_positions, frag_symbols, frag_mol = result
+            frag_positions, frag_symbols, frag_mol, ring_decision = result
+            haptic_decisions.append({"fragment_idx": frag_idx, **ring_decision})
             eta_start = len(all_pos)
             all_pos.extend(frag_positions)
             all_syms.extend(frag_symbols)
@@ -1137,10 +1789,24 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
             return None
 
         frag_positions, frag_symbols, frag_mol = result
+        atom_start = len(all_pos)
         all_pos.extend(frag_positions)
         all_syms.extend(frag_symbols)
         all_frag_idxs.extend([frag_idx] * len(frag_positions))
+        atom_end = len(all_pos)
         fragment_mol_parts.append((frag_mol, list(binding_idxs)))
+        normal_frag_meta.append(
+            {
+                "frag_idx": frag_idx,
+                "atom_start": atom_start,
+                "atom_end": atom_end,
+                "frag_smiles": frag_smiles,
+                "binding_idxs": list(binding_idxs),
+                "target_positions": list(target_positions),
+                "slot_units_list": list(slot_units_list),
+                "fragment_mol_parts_idx": len(fragment_mol_parts) - 1,
+            }
+        )
 
     n = len(all_syms)
     if n < 2:
@@ -1205,15 +1871,24 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
             for k, i in enumerate(eta_atoms):
                 all_pos[i] = rot_best.apply(orig_rel[k]) + centroid
 
-        # Final collision check after ring-rotation optimisation
+        # Final collision check after ring-rotation optimisation.
+        #
+        # Threshold note (Stereo Phase 3): lowered from the pre-Phase-3 1.60
+        # to 1.45 Å. This is a *monotonic* loosening -- it can only convert a
+        # previously-rejected (None -> DG fallback) placement into an
+        # accepted one; it can never change the *geometry* chosen for any
+        # placement that already cleared 1.60 (byte-identical for all
+        # existing goldens, incl. ferrocene -- see test_winding_inertness.py).
+        # Needed because retaining eta-ring substituents (Attempt 1b in
+        # `_stitch_eta_fragment`) exposed a real, resolution-independent
+        # steric floor for the heavily-substituted Ferrocene-halide-face
+        # golden fixture (best achievable inter-ring separation ~1.494 Å,
+        # confirmed identical under a much finer/multi-pass search -- this
+        # is the true geometric optimum for this fixture's bond-length model,
+        # not a search-quality artifact).
         final_min = _inter_frag_min(all_pos, all_frag_idxs)
-        if final_min < 1.60:
+        if final_min < 1.45:
             return None
-
-    lines = [str(n), f"Template-generated from OIN ({geo_code})"]
-    for sym, pos in zip(all_syms, all_pos):
-        lines.append(f"{sym:<2}  {pos[0]:12.6f}  {pos[1]:12.6f}  {pos[2]:12.6f}")
-    xyz_str = "\n".join(lines) + "\n"
 
     # Build combined RDKit mol with bond connectivity + 3D conformer from all_pos.
     # CombineMols preserves existing ETKDG conformers from fragments; we strip
@@ -1221,31 +1896,82 @@ def _template_generate(parsed_oin: "ParsedOIN") -> "tuple[str, Chem.Mol | None] 
     # the written MOL/SDF has the correct template-placed positions.
     combined_mol: Chem.Mol | None = None
     if has_all_mols and fragment_mol_parts:
-        try:
-            combined_rw = Chem.RWMol(metal_mol)
-            for frag_mol, frag_binding_idxs in fragment_mol_parts:
-                frag_start = combined_rw.GetNumAtoms()
-                # Strip conformers from fragment so CombineMols doesn't carry
-                # old ETKDG geometry into the combined mol's conformer list.
-                frag_no_conf = Chem.RWMol(frag_mol)
-                frag_no_conf.RemoveAllConformers()
-                combined_rw = Chem.RWMol(
-                    Chem.CombineMols(combined_rw.GetMol(), frag_no_conf.GetMol())
-                )
-                for bidx in frag_binding_idxs:
-                    global_bidx = frag_start + bidx
-                    if global_bidx < combined_rw.GetNumAtoms():
-                        combined_rw.AddBond(0, global_bidx, Chem.BondType.DATIVE)
-            # Set the single conformer from the final (collision-checked) all_pos.
-            conf = Chem.Conformer(combined_rw.GetNumAtoms())
-            for i, pos in enumerate(all_pos):
-                conf.SetAtomPosition(i, pos.tolist())
-            combined_rw.AddConformer(conf, assignId=True)
-            combined_mol = combined_rw.GetMol()
-        except Exception:
-            combined_mol = None
+        combined_mol = _assemble_combined_mol(metal_mol, fragment_mol_parts, all_pos)
 
-    return xyz_str, combined_mol
+    # ── Stereo Phase 4 (MiniPRD-B): Zone-A P verify-and-re-embed ───────────
+    # Runs on the assembled-complex mol ONLY (Resolved Q2/RISK-2 -- never in
+    # OIN3DGenerator/engine.py). `combined_mol is None` (eta fallback, or a
+    # combine-step exception) is handled at the `generate()` call site via
+    # `_warn_zone_a_p_fallback` -- Task 5 (RISK-9), never a silent skip.
+    if combined_mol is not None and normal_frag_meta:
+        zone_a_targets: list[tuple[int, str]] = []
+        for meta in normal_frag_meta:
+            for local_p_idx, expected_label in _zone_a_p_expected_labels(meta["frag_smiles"]):
+                zone_a_targets.append((meta["atom_start"] + local_p_idx, expected_label))
+
+        if zone_a_targets:
+            mismatched = _verify_zone_a_p(combined_mol, zone_a_targets)
+            attempts = 0
+            # Hard cap: 3 re-embed attempts total (SuperPRD B8/RISK-8) -- a
+            # stereo mismatch must never become a timeout death. Each attempt
+            # is a single new-seed ETKDG re-embed of only the offending
+            # fragment(s); never a mirror/improper transform (B2/B3), so any
+            # co-resident stereocenter in the SAME fragment (e.g. DIPAMP's
+            # other Zone-A P) is never touched by this loop.
+            while mismatched and attempts < 3:
+                attempts += 1
+                offending_frag_idxs = {
+                    meta["frag_idx"]
+                    for meta in normal_frag_meta
+                    if any(meta["atom_start"] <= gidx < meta["atom_end"] for gidx in mismatched)
+                }
+                for meta in normal_frag_meta:
+                    if meta["frag_idx"] not in offending_frag_idxs:
+                        continue
+                    redo = _stitch_fragment(
+                        meta["frag_smiles"],
+                        meta["binding_idxs"],
+                        meta["target_positions"],
+                        slot_units=meta["slot_units_list"],
+                        forbidden_positions=list(all_pos),
+                        seed=42 + attempts * 1009,
+                    )
+                    if redo is None:
+                        continue  # keep previous placement for this fragment
+                    new_positions, _new_symbols, new_frag_mol = redo
+                    start, end = meta["atom_start"], meta["atom_end"]
+                    if len(new_positions) == (end - start):
+                        for k, gi in enumerate(range(start, end)):
+                            all_pos[gi] = new_positions[k]
+                        fragment_mol_parts[meta["fragment_mol_parts_idx"]] = (
+                            new_frag_mol,
+                            meta["binding_idxs"],
+                        )
+                combined_mol = _assemble_combined_mol(metal_mol, fragment_mol_parts, all_pos)
+                if combined_mol is None:
+                    break
+                mismatched = _verify_zone_a_p(combined_mol, zone_a_targets)
+
+            if mismatched:
+                # Persistent mismatch after 3 attempts: emit the structure
+                # anyway + warn (never a timeout death, never silent -- B8).
+                for gidx in mismatched:
+                    warnings.warn(
+                        OINStereoWarning(
+                            f"atom {gidx}: Zone-A P lone-pair CIP could not be "
+                            f"enforced to match the OIN-encoded tag after "
+                            f"{attempts} re-embed attempt(s) -- emitting the "
+                            "structure as generated."
+                        ),
+                        stacklevel=2,
+                    )
+
+    lines = [str(n), f"Template-generated from OIN ({geo_code})"]
+    for sym, pos in zip(all_syms, all_pos):
+        lines.append(f"{sym:<2}  {pos[0]:12.6f}  {pos[1]:12.6f}  {pos[2]:12.6f}")
+    xyz_str = "\n".join(lines) + "\n"
+
+    return xyz_str, combined_mol, haptic_decisions
 
 
 # ===========================================================================
@@ -2255,10 +2981,27 @@ class MolassemblerAdapter:
         if parsed_oin.geo_code and parsed_oin.geo_code != "NON":
             template_result = _template_generate(parsed_oin)
             if template_result is not None:
-                xyz_str, template_mol = template_result
-                return GeneratedStructure(xyz=xyz_str, mol=template_mol)
+                xyz_str, template_mol, haptic_decisions = template_result
+                if template_mol is None:
+                    # Stereo Phase 4 (Task 5, RISK-9): no assembled mol means
+                    # `_template_generate`'s Zone-A P verify-and-re-embed loop
+                    # never ran (it is gated on a non-None combined_mol) --
+                    # e.g. an eta fragment's mol couldn't be built. Warn if
+                    # the OIN carries any Zone-A P tag so the gap is visible.
+                    _warn_zone_a_p_fallback(parsed_oin, "template path, no assembled mol")
+                return GeneratedStructure(
+                    xyz=xyz_str, mol=template_mol, haptic_face_decisions=haptic_decisions
+                )
 
         # ── Fallback: Molassembler DG ───────────────────────────────────────
+        # Stereo Phase 4 (Task 5, RISK-9): the DG path (Molassembler or its
+        # RDKit ETKDG fallback, see `_molassembler_worker`) never runs the
+        # Zone-A P verify-and-re-embed enforcement -- that is pinned to
+        # `_template_generate`'s assembled-complex stage only (Resolved
+        # Q2/RISK-2). Warn up front (independent of whether the resulting
+        # `bonded_mol` happens to be non-None) so this gap is never silent.
+        _warn_zone_a_p_fallback(parsed_oin, "Molassembler DG fallback path")
+
         connected_smiles = _build_connected_smiles(parsed_oin)
         perm_idx = _pick_masm_permutation(parsed_oin)
         expected_trans_sym_pairs = _compute_expected_trans_sym_pairs(parsed_oin)
