@@ -75,6 +75,13 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | Stereo Phase 4a (Zone-A P encode) | DONE — DIPAMP emits `[P@]`; negative controls clean | Fable/Opus → Sonnet | TASK-20 |
 | Stereo Phase 4b (Zone-A P gen-enforce) | DONE — flip inverts CIP; full round-trip blocked by pre-existing gen bugs (xfail) | Sonnet | Phase 4a |
 | Stereo Phase 4 (Zone-A N) | DEFERRED — needs Option-C out-of-band marker (RDKit clears trivalent `[N@]`) | — | future |
+| TASK-30 bidentate placement diagnostic | TODO — NEXT; unblocks both xfail'd round-trips | Sonnet | — |
+
+**Separate workstream — generation fidelity (not stereo):** TASK-30 targets the
+polydentate placement bug in `_stitch_fragment` that causes the two remaining
+xfails. Diagnostic-first (measure which mechanism → cheap guard/objective fix
+vs deeper conformation-aware re-embed / DG-fallback MiniPRD). See
+`TASK-30-bidentate-placement-diagnostic.md`.
 
 **Phase 3 + Phase 4 BOTH DONE (2026-07-03), verified by Fable this session.**
 Suite: `discover tests/unit` → 112 run, OK (skipped=3, expected failures=2).
