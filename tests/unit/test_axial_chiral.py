@@ -13,6 +13,7 @@ chirality.
 Fixture: tests/fixtures/PdCl2-R-BINAP.xyz  (81 atoms, K:19,38;, R-BINAP)
 Candidate artifact: tests/candidate_outputs/axial_chiral_encoded.smi (2026-03-04)
 """
+
 import os
 import sys
 import unittest
@@ -25,6 +26,7 @@ from tests.unit.test_helpers import extract_ligand_smiles
 try:
     from rdkit import Chem
     from rdkit.Chem import FindPotentialStereo, StereoInfo
+
     _RDKIT_AVAILABLE = True
 except ImportError:
     _RDKIT_AVAILABLE = False
@@ -34,12 +36,13 @@ _BINAP_XYZ = os.path.abspath(
 )
 
 _CANDIDATE_ARTIFACT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../tests/candidate_outputs/axial_chiral_encoded.smi")
+    os.path.join(
+        os.path.dirname(__file__), "../../tests/candidate_outputs/axial_chiral_encoded.smi"
+    )
 )
 
 
 class TestAxialChiral(unittest.TestCase):
-
     def _oin(self) -> str:
         return XYZToSMILES().convert(_BINAP_XYZ)
 
@@ -84,8 +87,7 @@ class TestAxialChiral(unittest.TestCase):
         self.assertIsNotNone(mol)
         stereo_info = FindPotentialStereo(mol)
         atropisomeric = [
-            s for s in stereo_info
-            if s.type == StereoInfo.StereoType.Bond_Atropisomeric
+            s for s in stereo_info if s.type == StereoInfo.StereoType.Bond_Atropisomeric
         ]
         self.assertGreater(
             len(atropisomeric),

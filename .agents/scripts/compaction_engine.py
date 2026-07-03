@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Context Compaction Engine
+"""Context Compaction Engine
 
 Collapses full /hyper-resolve debate transcripts into "Final Truth" documents
 that preserve trade-off reasoning while discarding verbatim debate text.
@@ -8,14 +7,15 @@ that preserve trade-off reasoning while discarding verbatim debate text.
 
 import hashlib
 import re
-from datetime import datetime
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from datetime import datetime
+from typing import List, Optional
 
 
 @dataclass
 class TradeoffEntry:
     """Represents a single decision made during resolution."""
+
     title: str
     architect_position: str
     red_team_position: str
@@ -27,6 +27,7 @@ class TradeoffEntry:
 @dataclass
 class CompactionResult:
     """Result of compaction operation."""
+
     success: bool
     final_truth_content: str
     archived_transcript_path: str
@@ -42,8 +43,7 @@ class CompactionEngine:
         self.tradeoffs: List[TradeoffEntry] = []
 
     def compact(self, transcript: str) -> CompactionResult:
-        """
-        Extract trade-off entries from a debate transcript.
+        """Extract trade-off entries from a debate transcript.
 
         Args:
             transcript: Full /hyper-resolve debate text
@@ -61,7 +61,7 @@ class CompactionEngine:
                     final_truth_content="",
                     archived_transcript_path="",
                     tradeoff_count=0,
-                    error_message="No tradeoffs found in transcript"
+                    error_message="No tradeoffs found in transcript",
                 )
 
             # Generate archive path
@@ -76,7 +76,7 @@ class CompactionEngine:
                 final_truth_content=final_truth,
                 archived_transcript_path=archive_path,
                 tradeoff_count=len(self.tradeoffs),
-                error_message=None
+                error_message=None,
             )
         except Exception as e:
             return CompactionResult(
@@ -84,12 +84,11 @@ class CompactionEngine:
                 final_truth_content="",
                 archived_transcript_path="",
                 tradeoff_count=0,
-                error_message=f"Compaction failed: {str(e)}"
+                error_message=f"Compaction failed: {str(e)}",
             )
 
     def _extract_tradeoffs(self, transcript: str) -> List[TradeoffEntry]:
-        """
-        Parse transcript to extract tradeoff entries.
+        """Parse transcript to extract tradeoff entries.
         Looks for structured sections with Architect/Red Team/Resolution.
         """
         tradeoffs = []
@@ -109,14 +108,16 @@ class CompactionEngine:
             mitigations = self._extract_list_items(content, "mitigation")
 
             if architect_pos and red_team_pos and resolution:
-                tradeoffs.append(TradeoffEntry(
-                    title=title,
-                    architect_position=architect_pos,
-                    red_team_position=red_team_pos,
-                    resolution=resolution,
-                    risks=risks,
-                    mitigations=mitigations
-                ))
+                tradeoffs.append(
+                    TradeoffEntry(
+                        title=title,
+                        architect_position=architect_pos,
+                        red_team_position=red_team_pos,
+                        resolution=resolution,
+                        risks=risks,
+                        mitigations=mitigations,
+                    )
+                )
 
         return tradeoffs
 
@@ -134,7 +135,11 @@ class CompactionEngine:
             return []
 
         items_text = match.group(1)
-        items = [line.strip() for line in items_text.split("\n") if line.strip().startswith(("-", "*", "•"))]
+        items = [
+            line.strip()
+            for line in items_text.split("\n")
+            if line.strip().startswith(("-", "*", "•"))
+        ]
         return [item.lstrip("-*•").strip() for item in items]
 
     def _hash_transcript(self, transcript: str) -> str:
@@ -214,14 +219,14 @@ if __name__ == "__main__":
     feature_name = sys.argv[2] if len(sys.argv) > 2 else "feature"
 
     try:
-        with open(transcript_path, 'r') as f:
+        with open(transcript_path, "r") as f:
             transcript = f.read()
 
         engine = CompactionEngine(feature_name)
         result = engine.compact(transcript)
 
         if result.success:
-            print(f"✅ COMPACTION SUCCESS")
+            print("✅ COMPACTION SUCCESS")
             print(f"Tradeoffs extracted: {result.tradeoff_count}")
             print(f"Archive path: {result.archived_transcript_path}")
             print(f"\nFinal Truth (first 500 chars):\n{result.final_truth_content[:500]}...\n")

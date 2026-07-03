@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-hypergraph_updater.py — Hypergraph blast-radius propagation and provenance staging.
+"""hypergraph_updater.py — Hypergraph blast-radius propagation and provenance staging.
 
 Subcommands
 -----------
@@ -25,7 +24,6 @@ from typing import List, Optional, Set
 
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -40,15 +38,16 @@ PROVENANCE_STAGING_DIR = os.path.normpath(PROVENANCE_STAGING_DIR)
 # Original function — preserved exactly
 # ---------------------------------------------------------------------------
 
+
 def propagate_blast_radius(yaml_path: str, dirty_node_ids: List[str]) -> None:
     try:
-        with open(yaml_path, 'r') as f:
-            data = yaml.safe_load(f) or {'nodes': []}
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f) or {"nodes": []}
     except FileNotFoundError:
         print(f"CRITICAL ERROR: Hypergraph not found at {yaml_path}")
         sys.exit(1)
 
-    nodes = {node['id']: node for node in data.get('nodes', [])}
+    nodes = {node["id"]: node for node in data.get("nodes", [])}
 
     for n_id in dirty_node_ids:
         if n_id not in nodes:
@@ -56,7 +55,7 @@ def propagate_blast_radius(yaml_path: str, dirty_node_ids: List[str]) -> None:
             sys.exit(1)
 
     for n_id in dirty_node_ids:
-        nodes[n_id]['status'] = 'dirty'
+        nodes[n_id]["status"] = "dirty"
 
     queue = list(dirty_node_ids)
     processed: Set[str] = set(dirty_node_ids)
@@ -64,23 +63,23 @@ def propagate_blast_radius(yaml_path: str, dirty_node_ids: List[str]) -> None:
     while queue:
         current_id = queue.pop(0)
         current_node = nodes[current_id]
-        edges = current_node.get('edges', {})
+        edges = current_node.get("edges", {})
 
-        for parent_id in edges.get('implements', []):
+        for parent_id in edges.get("implements", []):
             if parent_id in nodes and parent_id not in processed:
-                nodes[parent_id]['status'] = 'needs_review'
+                nodes[parent_id]["status"] = "needs_review"
                 processed.add(parent_id)
                 queue.append(parent_id)
 
         for node_id, node_data in nodes.items():
-            if current_id in node_data.get('edges', {}).get('depends_on', []):
+            if current_id in node_data.get("edges", {}).get("depends_on", []):
                 if node_id not in processed:
-                    nodes[node_id]['status'] = 'needs_review'
+                    nodes[node_id]["status"] = "needs_review"
                     processed.add(node_id)
                     queue.append(node_id)
 
     # Task 9 (Provenance MiniPRD) — exclusive lock on all writes to architecture.yml
-    with open(yaml_path, 'w') as f:
+    with open(yaml_path, "w") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         try:
             yaml.dump(data, f, sort_keys=False, default_flow_style=False)
@@ -105,14 +104,14 @@ def propagate_blast_radius(yaml_path: str, dirty_node_ids: List[str]) -> None:
 # Task 4 & 5 — Provenance staging write (with exclusive file lock)
 # ---------------------------------------------------------------------------
 
+
 def write_provenance_staging(
     branch_name: str,
     superprd_name: str,
     miniprd_path: str,
     api_call_id: str,
 ) -> None:
-    """
-    Write provenance staging entry to .provenance_staging/<branch_name>.yml.
+    """Write provenance staging entry to .provenance_staging/<branch_name>.yml.
 
     Called after daemon exit 0 (success) and BEFORE any rebase attempt.
     Acquires an exclusive lock before writing to prevent TOCTOU corruption.
@@ -154,9 +153,9 @@ def write_provenance_staging(
 # Task 6 — Rebase pipeline provenance merge
 # ---------------------------------------------------------------------------
 
+
 def _branch_name_to_node_id(branch_name: str) -> Optional[str]:
-    """
-    Derive the architecture node ID from a branch name.
+    """Derive the architecture node ID from a branch name.
 
     Convention: branch name contains the node ID with hyphens in place of
     underscores.  E.g. 'feature/hyper-orchestrator' → 'hyper_orchestrator'.
@@ -174,8 +173,7 @@ def _branch_name_to_node_id(branch_name: str) -> Optional[str]:
 
 
 def merge_provenance_to_arch(branch_name: str, yaml_path: str) -> None:
-    """
-    Read .provenance_staging/<branch_name>.yml and write the _provenance block
+    """Read .provenance_staging/<branch_name>.yml and write the _provenance block
     to the relevant node in architecture.yml.
 
     The relevant node is identified by converting the branch name to a node ID
@@ -260,6 +258,7 @@ def merge_provenance_to_arch(branch_name: str, yaml_path: str) -> None:
 # Task 7 — Staging file cleanup
 # ---------------------------------------------------------------------------
 
+
 def cleanup_provenance_staging(branch_name: str) -> None:
     """Delete .provenance_staging/<branch_name>.yml after provenance is merged."""
     staging_file = os.path.join(PROVENANCE_STAGING_DIR, f"{branch_name}.yml")
@@ -306,9 +305,9 @@ def cleanup_staging_dir() -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def _parse_and_dispatch(argv: List[str]) -> None:
     """Parse CLI arguments and dispatch to the appropriate function."""
-
     if not argv:
         _print_usage()
         sys.exit(1)
@@ -341,7 +340,15 @@ def _parse_and_dispatch(argv: List[str]) -> None:
         miniprd = _flag_value("--miniprd")
         api_call_id = _flag_value("--api-call-id")
 
-        missing = [f for f, v in [("--superprd", superprd), ("--miniprd", miniprd), ("--api-call-id", api_call_id)] if v is None]
+        missing = [
+            f
+            for f, v in [
+                ("--superprd", superprd),
+                ("--miniprd", miniprd),
+                ("--api-call-id", api_call_id),
+            ]
+            if v is None
+        ]
         if missing:
             print(f"ERROR: Missing required flag(s): {', '.join(missing)}")
             sys.exit(1)
@@ -353,9 +360,7 @@ def _parse_and_dispatch(argv: List[str]) -> None:
     # ------------------------------------------------------------------
     elif first == "--merge-provenance":
         if len(argv) < 3:
-            print(
-                "Usage: hypergraph_updater.py --merge-provenance <branch_name> <yaml_path>"
-            )
+            print("Usage: hypergraph_updater.py --merge-provenance <branch_name> <yaml_path>")
             sys.exit(1)
         merge_provenance_to_arch(argv[1], argv[2])
 
@@ -364,9 +369,7 @@ def _parse_and_dispatch(argv: List[str]) -> None:
     # ------------------------------------------------------------------
     elif first == "--cleanup-provenance":
         if len(argv) < 2:
-            print(
-                "Usage: hypergraph_updater.py --cleanup-provenance <branch_name>"
-            )
+            print("Usage: hypergraph_updater.py --cleanup-provenance <branch_name>")
             sys.exit(1)
         cleanup_provenance_staging(argv[1])
 

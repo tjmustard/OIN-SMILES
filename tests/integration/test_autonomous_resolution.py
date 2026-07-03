@@ -7,27 +7,24 @@ Covers:
   - hyper_fix.py: spec drift
 """
 
-import ast
 import json
-import os
 import sys
-import textwrap
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / ".agents" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-import hyper_resolve_conflict as hrc  # noqa: E402
 import hyper_fix as hf  # noqa: E402
-
+import hyper_resolve_conflict as hrc  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _fake_message(content_text, stop_reason="end_turn"):
     msg = SimpleNamespace()
@@ -45,6 +42,7 @@ def _resolve_response(confidence, resolved_code, error=None):
 # Test 1 — Whitelist blocks .lock file (no API call)
 # ---------------------------------------------------------------------------
 
+
 def test_whitelist_blocks_lock_file(tmp_path, monkeypatch):
     """A .lock conflict file must exit 1 with UNSUPPORTED_CONFLICT_TYPE, no API call."""
     lock_file = tmp_path / "poetry.lock"
@@ -56,11 +54,13 @@ def test_whitelist_blocks_lock_file(tmp_path, monkeypatch):
 
     api_called = []
     with patch("anthropic.Anthropic") as mock_anthropic:
-        mock_anthropic.return_value.messages.create.side_effect = (
-            lambda *a, **kw: api_called.append(True) or _fake_message("{}")
+        mock_anthropic.return_value.messages.create.side_effect = lambda *a, **kw: (
+            api_called.append(True) or _fake_message("{}")
         )
         with pytest.raises(SystemExit) as exc_info:
-            hrc.resolve_conflict(lock_file, branch="test", superprd_name="test", miniprd_path="test")
+            hrc.resolve_conflict(
+                lock_file, branch="test", superprd_name="test", miniprd_path="test"
+            )
 
     assert exc_info.value.code == 1
     assert not api_called, "API must NOT be called for unsupported file types"
@@ -71,6 +71,7 @@ def test_whitelist_blocks_lock_file(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 2 — Binary file blocked regardless of extension
 # ---------------------------------------------------------------------------
+
 
 def test_binary_file_blocked(tmp_path, monkeypatch):
     """A .py file containing null bytes must be treated as UNSUPPORTED_CONFLICT_TYPE."""
@@ -93,6 +94,7 @@ def test_binary_file_blocked(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 3 — JSON decode failure → RESOLVER_MALFORMED_RESPONSE
 # ---------------------------------------------------------------------------
+
 
 def test_json_decode_failure(tmp_path, monkeypatch):
     """Malformed JSON from API must set confidence=0, leave file unmodified, log RESOLVER_MALFORMED_RESPONSE."""
@@ -119,6 +121,7 @@ def test_json_decode_failure(tmp_path, monkeypatch):
 # Test 4 — Confidence assertion: float value rejected
 # ---------------------------------------------------------------------------
 
+
 def test_confidence_assertion_float(tmp_path, monkeypatch):
     """confidence_score: 0.91 (float) must fail isinstance check → exit 1."""
     py_file = tmp_path / "f.py"
@@ -128,7 +131,9 @@ def test_confidence_assertion_float(tmp_path, monkeypatch):
     fw_path = tmp_path / "spec" / "active" / "FAILED_WORKFLOWS.md"
     monkeypatch.setattr(hrc, "FAILED_WORKFLOWS_PATH", fw_path)
 
-    response_json = json.dumps({"confidence_score": 0.91, "resolved_code": "x = 1\n", "error": None})
+    response_json = json.dumps(
+        {"confidence_score": 0.91, "resolved_code": "x = 1\n", "error": None}
+    )
     with patch("anthropic.Anthropic") as mock_anthropic:
         mock_anthropic.return_value.messages.create.return_value = _fake_message(response_json)
         with pytest.raises(SystemExit) as exc_info:
@@ -143,6 +148,7 @@ def test_confidence_assertion_float(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 5 — Confidence assertion: out-of-range value rejected
 # ---------------------------------------------------------------------------
+
 
 def test_confidence_assertion_out_of_range(tmp_path, monkeypatch):
     """confidence_score: 150 must fail 0 <= score <= 100 check → exit 1."""
@@ -167,6 +173,7 @@ def test_confidence_assertion_out_of_range(tmp_path, monkeypatch):
 # Test 6 — Confidence below gate (72 < 85) → file unmodified
 # ---------------------------------------------------------------------------
 
+
 def test_confidence_below_gate(tmp_path, monkeypatch):
     py_file = tmp_path / "h.py"
     original = "z = 3\n"
@@ -176,12 +183,14 @@ def test_confidence_below_gate(tmp_path, monkeypatch):
     fw_path = tmp_path / "spec" / "active" / "FAILED_WORKFLOWS.md"
     monkeypatch.setattr(hrc, "FAILED_WORKFLOWS_PATH", fw_path)
 
-    response_json = json.dumps({
-        "confidence_score": 72,
-        "resolved_code": "z = 999\n",
-        "error": None,
-        "reasoning": "low confidence explanation",
-    })
+    response_json = json.dumps(
+        {
+            "confidence_score": 72,
+            "resolved_code": "z = 999\n",
+            "error": None,
+            "reasoning": "low confidence explanation",
+        }
+    )
     with patch("anthropic.Anthropic") as mock_anthropic:
         mock_anthropic.return_value.messages.create.return_value = _fake_message(response_json)
         with pytest.raises(SystemExit) as exc_info:
@@ -194,6 +203,7 @@ def test_confidence_below_gate(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 7 — Syntax check overrides high confidence
 # ---------------------------------------------------------------------------
+
 
 def test_syntax_overrides_confidence(tmp_path, monkeypatch):
     """confidence=92, but resolved_code has a SyntaxError → file unmodified."""
@@ -220,6 +230,7 @@ def test_syntax_overrides_confidence(tmp_path, monkeypatch):
 # Test 8 — Full pass: confidence 90 + valid Python → file written, exit 0
 # ---------------------------------------------------------------------------
 
+
 def test_full_pass(tmp_path, monkeypatch):
     py_file = tmp_path / "j.py"
     py_file.write_text("<<<<<<< HEAD\nx = 1\n=======\nx = 2\n>>>>>>> branch\n", encoding="utf-8")
@@ -242,6 +253,7 @@ def test_full_pass(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 9 — Spec drift in hyper_fix.py exits without consuming iteration
 # ---------------------------------------------------------------------------
+
 
 def test_spec_drift_exits_without_iteration(tmp_path, monkeypatch):
     """
@@ -296,6 +308,7 @@ def test_spec_drift_exits_without_iteration(tmp_path, monkeypatch):
 # Test 10 — Error field in response → RESOLVER_MALFORMED_RESPONSE
 # ---------------------------------------------------------------------------
 
+
 def test_error_field_resolver_malformed(tmp_path, monkeypatch):
     """response["error"] = "Content policy violation" → RESOLVER_MALFORMED_RESPONSE, exit 1."""
     py_file = tmp_path / "k.py"
@@ -306,11 +319,13 @@ def test_error_field_resolver_malformed(tmp_path, monkeypatch):
     fw_path = tmp_path / "spec" / "active" / "FAILED_WORKFLOWS.md"
     monkeypatch.setattr(hrc, "FAILED_WORKFLOWS_PATH", fw_path)
 
-    response_json = json.dumps({
-        "confidence_score": 90,
-        "resolved_code": "pass\n",
-        "error": "Content policy violation",
-    })
+    response_json = json.dumps(
+        {
+            "confidence_score": 90,
+            "resolved_code": "pass\n",
+            "error": "Content policy violation",
+        }
+    )
     with patch("anthropic.Anthropic") as mock_anthropic:
         mock_anthropic.return_value.messages.create.return_value = _fake_message(response_json)
         with pytest.raises(SystemExit) as exc_info:

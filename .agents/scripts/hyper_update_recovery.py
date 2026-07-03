@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-hyper_update_recovery.py — Backup management and interrupt recovery for hyper-update
+"""hyper_update_recovery.py — Backup management and interrupt recovery for hyper-update
 
 Implements:
 - Phase A: Timestamped backup directory creation (ISO 8601)
@@ -10,12 +9,12 @@ Implements:
 - Phase E: /hyper-recover command (list backups, restore files)
 """
 
-import sys
 import json
 import shutil
+import sys
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 
 class RecoveryManager:
@@ -47,8 +46,7 @@ class RecoveryManager:
         return datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
 
     def _create_backup_dir(self) -> Path:
-        """
-        Create backup directory with current timestamp (lazy creation).
+        """Create backup directory with current timestamp (lazy creation).
         Only called when first file is actually backed up.
         """
         if self.backup_dir is None:
@@ -56,7 +54,9 @@ class RecoveryManager:
             try:
                 backup_path.mkdir(parents=True, exist_ok=True)
                 self.backup_dir = backup_path
-                self.log_message(f"🔐 Backup created: {self.BACKUP_BASE_DIR}/{self.current_timestamp}/")
+                self.log_message(
+                    f"🔐 Backup created: {self.BACKUP_BASE_DIR}/{self.current_timestamp}/"
+                )
             except OSError as e:
                 self.error(f"Failed to create backup directory: {e}")
 
@@ -65,8 +65,7 @@ class RecoveryManager:
     # ==== Phase B: Backup Before Mutation ====
 
     def backup_file(self, file_path: str) -> bool:
-        """
-        Back up a file before mutation.
+        """Back up a file before mutation.
         Returns: True if successful, False otherwise
         """
         file_path = Path(file_path)
@@ -85,7 +84,7 @@ class RecoveryManager:
 
             # Verify backup
             if not backup_path.exists() or backup_path.stat().st_size == 0:
-                raise OSError(f"Backup verification failed: file size is 0")
+                raise OSError("Backup verification failed: file size is 0")
 
             self.log_message(f"Backed up {file_path.name}")
             return True
@@ -136,13 +135,12 @@ class RecoveryManager:
             try:
                 self.lock_file.unlink()
             except OSError:
-                self.log_message(f"⚠️  Warning: Could not delete lock file")
+                self.log_message("⚠️  Warning: Could not delete lock file")
 
     # ==== Phase D: Interrupt Detection & Recovery ====
 
     def check_for_interrupt(self) -> Optional[Dict]:
-        """
-        Check if merge was interrupted and prompt user.
+        """Check if merge was interrupted and prompt user.
         Returns: merge state if user chooses to resume, None if starting fresh
         """
         state = self.load_merge_state()
@@ -154,10 +152,10 @@ class RecoveryManager:
 
         # Check if lock is stale (older than 24 hours)
         if lock_age > self.STALE_LOCK_HOURS:
-            self.log_message(
-                f"\n⚠️  Merge in progress from {start_time} (older than 24 hours)"
+            self.log_message(f"\n⚠️  Merge in progress from {start_time} (older than 24 hours)")
+            response = (
+                input("This lock appears stale. Start fresh upgrade? (Y/n): ").lower().strip()
             )
-            response = input("This lock appears stale. Start fresh upgrade? (Y/n): ").lower().strip()
             if response in ("y", "yes", ""):
                 self.clear_merge_state()
                 return None
@@ -224,8 +222,7 @@ class RecoveryManager:
             return "unknown age"
 
     def restore_file(self, filename: str, backup_date: str) -> bool:
-        """
-        Restore a file from a backup.
+        """Restore a file from a backup.
         Creates meta-backup of current version before restoring.
         Returns: True if successful, False otherwise
         """
@@ -255,7 +252,9 @@ class RecoveryManager:
 
             try:
                 shutil.copy2(file_path, meta_backup_path)
-                self.log_message(f"💾 Meta-backup created: {self.BACKUP_BASE_DIR}/{meta_backup_timestamp}/{filename}")
+                self.log_message(
+                    f"💾 Meta-backup created: {self.BACKUP_BASE_DIR}/{meta_backup_timestamp}/{filename}"
+                )
             except (OSError, IOError) as e:
                 self.error(f"Failed to create meta-backup: {e}")
 
@@ -263,9 +262,7 @@ class RecoveryManager:
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(backup_source, file_path)
-            self.log_message(
-                f"✅ Restored {filename} from {backup_source.parent.name}"
-            )
+            self.log_message(f"✅ Restored {filename} from {backup_source.parent.name}")
             return True
         except (OSError, IOError) as e:
             self.error(f"Restore failed: {e}")

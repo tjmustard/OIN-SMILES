@@ -1,14 +1,14 @@
 """Unit tests for Molassembler instantiation in Direct Parser (MiniPRD_DirectParser_MolassemblerInstantiation)."""
 
 import unittest
-from rdkit import Chem
+
 import scine_molassembler as masm
+from rdkit import Chem
 
 from oinsmiles.generation.oin_parser import (
-    _extract_oin_constraints,
-    tokenize_unsanitized_smiles,
     construct_molassembler_mol,
     convert_bond_type,
+    tokenize_unsanitized_smiles,
 )
 
 
@@ -76,8 +76,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
         # For this test, we don't add eta bonds (empty vertex_indices)
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [],  # No additional eta bonds
+                "shape": "SQP",
+                "vertex_indices": [],  # No additional eta bonds
             }
         }
 
@@ -109,8 +109,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [],  # No eta bonds
+                "shape": "SQP",
+                "vertex_indices": [],  # No eta bonds
             }
         }
 
@@ -154,8 +154,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [],  # No additional eta bonds
+                "shape": "SQP",
+                "vertex_indices": [],  # No additional eta bonds
             }
         }
 
@@ -180,8 +180,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'OCT',
-                'vertex_indices': [],  # No additional eta bonds
+                "shape": "OCT",
+                "vertex_indices": [],  # No additional eta bonds
             }
         }
 
@@ -203,8 +203,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'INVALID_SHAPE',
-                'vertex_indices': [1],
+                "shape": "INVALID_SHAPE",
+                "vertex_indices": [1],
             }
         }
 
@@ -234,8 +234,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'SPL',
-                'vertex_indices': [],  # Specify eta bonds only if they don't conflict
+                "shape": "SPL",
+                "vertex_indices": [],  # Specify eta bonds only if they don't conflict
             }
         }
 
@@ -259,8 +259,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [],  # No eta bonds
+                "shape": "SQP",
+                "vertex_indices": [],  # No eta bonds
             }
         }
 
@@ -282,8 +282,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [99],  # Atom 99 doesn't exist
+                "shape": "SQP",
+                "vertex_indices": [99],  # Atom 99 doesn't exist
             }
         }
 
@@ -312,7 +312,7 @@ class TestConstructMolassemblerMol(unittest.TestCase):
             rw_mol.AddBond(i, j, bond_type)
         mol_rdkit = rw_mol.GetMol()
 
-        constraints = {0: {'shape': 'SQP'}}
+        constraints = {0: {"shape": "SQP"}}
 
         # Note: Molassembler from_smiles will validate bonds, so we may get error
         # during molecule construction or during eta bond addition
@@ -357,8 +357,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
         # Manually define constraints as would come from OIN regex
         constraints = {
             0: {
-                'shape': 'SQP',
-                'vertex_indices': [],  # No additional eta bonds
+                "shape": "SQP",
+                "vertex_indices": [],  # No additional eta bonds
             }
         }
 
@@ -401,8 +401,8 @@ class TestConstructMolassemblerMol(unittest.TestCase):
 
         constraints = {
             0: {
-                'shape': 'OCT',  # Octahedral
-                'vertex_indices': [],  # No eta bonds for this test
+                "shape": "OCT",  # Octahedral
+                "vertex_indices": [],  # No eta bonds for this test
             }
         }
 
@@ -449,9 +449,7 @@ class TestConstructMolassemblerMol(unittest.TestCase):
         mol_rdkit = rw_mol.GetMol()
 
         # Invalid shape
-        constraints = {
-            0: {'shape': 'INVALID', 'vertex_indices': [1]}
-        }
+        constraints = {0: {"shape": "INVALID", "vertex_indices": [1]}}
 
         try:
             construct_molassembler_mol(atoms, bonds, constraints, mol_rdkit=mol_rdkit)

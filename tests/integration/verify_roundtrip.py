@@ -1,28 +1,30 @@
-import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+import sys
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
+
+import argparse
+import re as _re
+import shutil
+import tempfile
+
+from rdkit import Chem
+from rmsd_utils import calculate_tmc_rmsd
+
+from oinsmiles import XYZToSMILES
 from oinsmiles.generation.engine import OIN3DGenerator
-from oinsmiles.generation.oin_parser import OINParser as _OINParser
 from oinsmiles.generation.molassembler_adapter import (
     _build_connected_smiles,
-    _pick_masm_permutation,
     _compute_expected_trans_sym_pairs,
     _get_binding_sym,
+    _pick_masm_permutation,
 )
-import numpy as np
-from rdkit import Chem
-from rdkit.Chem import rdMolAlign
-from oinsmiles import XYZToSMILES
-from rmsd_utils import calculate_tmc_rmsd
-import tempfile
-import argparse
-import shutil
+from oinsmiles.generation.oin_parser import OINParser as _OINParser
 
-import re as _re
-_METAL_STEREO_RE = _re.compile(r'\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]')
+_METAL_STEREO_RE = _re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
 
-_WINDING_RE = _re.compile(r'\{(\d+)[><]\}')
+_WINDING_RE = _re.compile(r"\{(\d+)[><]\}")
+
 
 def read_atom_count(xyz_path: str) -> int:
     """Read the atom count from the first line of an XYZ file.
@@ -62,18 +64,19 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
        structures map to the same OIN after normalization (e.g., OCT with N atoms
        at slots {3,5} vs {5,3} both normalize to {0,1} for the N atoms).
     """
-    s = _METAL_STEREO_RE.sub(r'[\1_\2]', oin_string)
+    s = _METAL_STEREO_RE.sub(r"[\1_\2]", oin_string)
     # Normalize [OH2] → O (bound water notation equivalence)
-    s = s.replace('[OH2]', 'O')
+    s = s.replace("[OH2]", "O")
     # Normalize winding direction: {n>} → {n}, {n<} → {n}
-    s = _WINDING_RE.sub(r'{\1}', s)
+    s = _WINDING_RE.sub(r"{\1}", s)
     # Collapse multiple consecutive dots and strip trailing dots
-    while '..' in s:
-        s = s.replace('..', '.')
-    s = s.rstrip('.')
+    while ".." in s:
+        s = s.replace("..", ".")
+    s = s.rstrip(".")
 
     # Canonicalize slot numbering: renumber slots in order of first appearance
     import re as _re_canon
+
     slot_map = {}
     next_slot = 0
 
@@ -83,9 +86,9 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
         if old_slot not in slot_map:
             slot_map[old_slot] = next_slot
             next_slot += 1
-        return '{' + str(slot_map[old_slot]) + '}'
+        return "{" + str(slot_map[old_slot]) + "}"
 
-    s = _re_canon.sub(r'\{(\d+)\}', replace_slot, s)
+    s = _re_canon.sub(r"\{(\d+)\}", replace_slot, s)
     return s
 
 
@@ -108,12 +111,14 @@ def _log_step2_inputs(oin_string: str) -> None:
         if parsed.vectors:
             print("  vectors:")
             for vec in parsed.vectors:
-                sym = _get_binding_sym(
-                    parsed.fragments[vec.fragment_idx],
-                    vec.atom_in_fragment_idx
-                ) or "?"
-                print(f"    frag[{vec.fragment_idx}] {sym:<2}  "
-                      f"slot({vec.vector[0]:7.3f}, {vec.vector[1]:7.3f}, {vec.vector[2]:7.3f})")
+                sym = (
+                    _get_binding_sym(parsed.fragments[vec.fragment_idx], vec.atom_in_fragment_idx)
+                    or "?"
+                )
+                print(
+                    f"    frag[{vec.fragment_idx}] {sym:<2}  "
+                    f"slot({vec.vector[0]:7.3f}, {vec.vector[1]:7.3f}, {vec.vector[2]:7.3f})"
+                )
 
         print("\n  [Molassembler Inputs]")
         connected_smiles = _build_connected_smiles(parsed)
@@ -131,10 +136,7 @@ def _log_step2_inputs(oin_string: str) -> None:
         for vec in parsed.vectors:
             if vec.fragment_idx == parsed.metal_fragment_idx:
                 continue
-            sym = _get_binding_sym(
-                parsed.fragments[vec.fragment_idx],
-                vec.atom_in_fragment_idx
-            )
+            sym = _get_binding_sym(parsed.fragments[vec.fragment_idx], vec.atom_in_fragment_idx)
             if sym:
                 expected_bindings.append((sym, tuple(vec.vector)))
 
@@ -147,13 +149,16 @@ def _log_step2_inputs(oin_string: str) -> None:
         print(f"  [Parse diagnostic error (non-fatal): {e}]")
 
 
-from verify_xyz_to_oin import get_examples, Example
 from reporting import VerificationReporter
+from verify_xyz_to_oin import get_examples
+
 
 def main():
     parser = argparse.ArgumentParser(description="Verify OIN Round-Trip")
     parser.add_argument("--output-dir", type=str, help="Directory to save verification artifacts")
-    parser.add_argument("--limit", type=int, help="Limit number of examples to run (for fast testing)")
+    parser.add_argument(
+        "--limit", type=int, help="Limit number of examples to run (for fast testing)"
+    )
     args = parser.parse_args()
 
     output_dir = args.output_dir
@@ -162,37 +167,39 @@ def main():
         print(f"Saving artifacts to: {output_dir}")
 
     print("Verifying Round-Trip Tests (V2.3 String Identity)")
-    
+
     reporter = VerificationReporter("Round-Trip Verification Report")
-    
+
     xyz_to_smiles = XYZToSMILES()
     generator = OIN3DGenerator()
-    
+
     examples = get_examples()
     if args.limit:
         print(f"Limiting to first {args.limit} examples.")
-        examples = examples[:args.limit]
+        examples = examples[: args.limit]
 
     print(f"Loaded {len(examples)} examples.")
-    
+
     for i, example in enumerate(examples, 1):
-        print(f"\n==================================================")
+        print("\n==================================================")
         print(f"Running Round-Trip for Example {i}: {example.name}")
-        print(f"==================================================")
-        
-        safe_name = "".join(x for x in example.name if x.isalnum() or x in (' ', '-', '_')).replace(' ', '_')
-        
+        print("==================================================")
+
+        safe_name = "".join(x for x in example.name if x.isalnum() or x in (" ", "-", "_")).replace(
+            " ", "_"
+        )
+
         # --- Unified Round-Trip Test ---
         # Flow: XYZ -> OIN(1) -> XYZ(Gen) -> OIN(2)
         # Checks: RMSD(XYZ, XYZ_Gen) < 1.0  AND  OIN(1) == OIN(2)
-        
+
         test_name = f"{example.name} (Unified Round-Trip)"
-        print(f"\n--- Unified Round-Trip (XYZ -> OIN -> XYZ -> OIN) ---")
-        
+        print("\n--- Unified Round-Trip (XYZ -> OIN -> XYZ -> OIN) ---")
+
         try:
             # 0. Setup Paths
             base_name = f"Ex{i}_{safe_name}"
-            
+
             if output_dir:
                 input_xyz_path = os.path.join(output_dir, f"{base_name}_input.xyz")
                 gen_xyz_path = os.path.join(output_dir, f"{base_name}_generated.xyz")
@@ -209,19 +216,21 @@ def main():
             # Step 1: START (Determine Input)
             # -------------------------------------------------------------
             start_oin = None
-            
+
             if example.xyz_content:
                 # Flow A: Start from XYZ
-                with open(input_xyz_path, 'w') as f: f.write(example.xyz_content)
-                
+                with open(input_xyz_path, "w") as f:
+                    f.write(example.xyz_content)
+
                 # XYZ -> OIN(1)
                 print("Step 1: Convert Input XYZ -> OIN(1)")
                 oin1_string = xyz_to_smiles.convert(input_xyz_path)
                 print(f"  OIN(1): {oin1_string}")
-                
+
                 if output_dir:
-                    with open(oin1_path, 'w') as f: f.write(oin1_string)
-                
+                    with open(oin1_path, "w") as f:
+                        f.write(oin1_string)
+
                 start_oin = oin1_string
             else:
                 # Flow B: Start from OIN (if no XYZ provided)
@@ -231,7 +240,7 @@ def main():
                     print("Skipping: No XYZ content and no OIN string provided.")
                     reporter.log_failure(test_name, "No data provided")
                     continue
-                
+
                 print(f"Step 1: Start from provided OIN: {start_oin}")
                 oin1_string = start_oin
                 # No input XYZ path to compare RMSD against later (unless we generate one?)
@@ -244,9 +253,9 @@ def main():
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
             _log_step2_inputs(oin1_string)
             gen_result = generator.generate(oin1_string)
-            with open(gen_xyz_path, 'w') as f:
+            with open(gen_xyz_path, "w") as f:
                 f.write(gen_result.xyz)
-                
+
             # -------------------------------------------------------------
             # Step 3: XYZ(Gen) -> OIN(2)
             # -------------------------------------------------------------
@@ -255,8 +264,9 @@ def main():
             if gen_result.mol is not None:
                 try:
                     from oinsmiles.utils.xyz2mol import get_oin_string
+
                     # Extract coordinates from XYZ
-                    with open(gen_xyz_path, 'r') as f:
+                    with open(gen_xyz_path, "r") as f:
                         xyz_lines = f.readlines()
                     natoms = int(xyz_lines[0].strip())
                     xyz_coords = []
@@ -264,6 +274,7 @@ def main():
                         parts = xyz_lines[i].split()
                         xyz_coords.append([float(x) for x in parts[1:4]])
                     import numpy as np
+
                     xyz_coords = np.array(xyz_coords)
                     oin2_string = get_oin_string(gen_result.mol, xyz_coords)
                 except Exception as e:
@@ -273,9 +284,10 @@ def main():
             else:
                 oin2_string = xyz_to_smiles.convert(gen_xyz_path)
             print(f"  OIN(2): {oin2_string}")
-            
+
             if output_dir:
-                with open(oin2_path, 'w') as f: f.write(oin2_string)
+                with open(oin2_path, "w") as f:
+                    f.write(oin2_string)
 
             # -------------------------------------------------------------
             # Step 4: Verification
@@ -283,7 +295,7 @@ def main():
             print("\n--- Verification Results ---")
             passed = True
             details = []
-            
+
             # Check 1: String Identity (OIN 1 vs OIN 2)
             # Normalize: strip atom-ordering-dependent @SP/@OH/@TB descriptors
             # from the metal fragment before comparing — the slot assignments
@@ -298,7 +310,7 @@ def main():
                 details.append(msg)
             else:
                 passed = False
-                msg = f"[FAIL] OIN Stability: Mismatch"
+                msg = "[FAIL] OIN Stability: Mismatch"
                 print(msg)
                 print(f"  Expected: {s1}")
                 print(f"  Got:      {s2}")
@@ -316,8 +328,9 @@ def main():
                 if gen_result.mol is not None:
                     try:
                         from oinsmiles.utils.xyz2mol import get_oin_string
+
                         # Extract coordinates from XYZ
-                        with open(gen_xyz_path, 'r') as f:
+                        with open(gen_xyz_path, "r") as f:
                             xyz_lines = f.readlines()
                         natoms = int(xyz_lines[0].strip())
                         xyz_coords = []
@@ -325,6 +338,7 @@ def main():
                             parts = xyz_lines[i].split()
                             xyz_coords.append([float(x) for x in parts[1:4]])
                         import numpy as np
+
                         xyz_coords = np.array(xyz_coords)
                         oin2_string = get_oin_string(gen_result.mol, xyz_coords)
                     except Exception as e:
@@ -369,7 +383,9 @@ def main():
                         print(msg)
                         details.append(f"<b>High RMSD: {rmsd:.4f}</b>")
                 else:
-                    msg = "[WARN] RDKit failed to support RMSD calc (atom mismatch or parsing error)"
+                    msg = (
+                        "[WARN] RDKit failed to support RMSD calc (atom mismatch or parsing error)"
+                    )
                     print(msg)
                     details.append(msg)
                     metrics["rmsd"] = None
@@ -384,7 +400,9 @@ def main():
                 atom_count_generated = read_atom_count(gen_xyz_path)
                 metrics["atom_count_input"] = atom_count_input
                 metrics["atom_count_generated"] = atom_count_generated
-                print(f"  Atom count — Input: {atom_count_input}, Generated: {atom_count_generated}")
+                print(
+                    f"  Atom count — Input: {atom_count_input}, Generated: {atom_count_generated}"
+                )
                 if atom_count_input != atom_count_generated:
                     passed = False
                     msg = (
@@ -403,16 +421,19 @@ def main():
             if passed:
                 reporter.log_success(test_name, " | ".join(details), metrics=metrics)
             else:
-                reporter.log_failure(test_name, "Validations Failed", got="<br>".join(details), metrics=metrics)
+                reporter.log_failure(
+                    test_name, "Validations Failed", got="<br>".join(details), metrics=metrics
+                )
 
             # Cleanup
             if not output_dir:
-                if 'tmp_dir' in locals() and os.path.exists(tmp_dir):
+                if "tmp_dir" in locals() and os.path.exists(tmp_dir):
                     shutil.rmtree(tmp_dir)
 
         except Exception as e:
             print(f"Unified Test FAILED: {e}")
             import traceback
+
             traceback.print_exc()
             reporter.log_failure(test_name, f"Exception: {str(e)}")
 
@@ -422,6 +443,7 @@ def main():
         json_path = os.path.join(output_dir, "summary_roundtrip.json")
         reporter.write_summary_json(json_path)
         print(f"JSON summary written to: {json_path}")
+
 
 if __name__ == "__main__":
     main()

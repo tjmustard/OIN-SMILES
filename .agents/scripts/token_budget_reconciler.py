@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""
-Token Budget Reconciler
+"""Token Budget Reconciler
 
 Reconciles estimated vs. actual output tokens post-execution.
 Tracks variance and flags estimation model drift (>20% variance).
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class ReconciliationResult:
     """Result of post-execution token budget reconciliation."""
+
     miniprd_name: str
     estimated_tokens: int
     actual_tokens: int
@@ -22,7 +21,9 @@ class ReconciliationResult:
 
     def __post_init__(self):
         if self.estimated_tokens > 0:
-            self.variance_percent = ((self.actual_tokens - self.estimated_tokens) / self.estimated_tokens * 100)
+            self.variance_percent = (
+                (self.actual_tokens - self.estimated_tokens) / self.estimated_tokens * 100
+            )
         else:
             self.variance_percent = 0
 
@@ -35,14 +36,9 @@ class TokenBudgetReconciler:
     VARIANCE_THRESHOLD = 20  # percent
 
     def reconcile(
-        self,
-        miniprd_name: str,
-        estimated_tokens: int,
-        actual_tokens: int,
-        verbose: bool = True
+        self, miniprd_name: str, estimated_tokens: int, actual_tokens: int, verbose: bool = True
     ) -> ReconciliationResult:
-        """
-        Reconcile estimated vs. actual output tokens.
+        """Reconcile estimated vs. actual output tokens.
 
         Args:
             miniprd_name: Name of MiniPRD
@@ -58,7 +54,7 @@ class TokenBudgetReconciler:
             estimated_tokens=estimated_tokens,
             actual_tokens=actual_tokens,
             variance_percent=0,
-            investigation_required=False
+            investigation_required=False,
         )
 
         if verbose:
@@ -71,12 +67,16 @@ class TokenBudgetReconciler:
         direction = "+" if result.variance_percent > 0 else ""
         variance_str = f"{direction}{result.variance_percent:.1f}%"
 
-        print(f"📊 {result.miniprd_name}: {result.actual_tokens:,} / {result.estimated_tokens:,} tokens (variance: {variance_str})")
+        print(
+            f"📊 {result.miniprd_name}: {result.actual_tokens:,} / {result.estimated_tokens:,} tokens (variance: {variance_str})"
+        )
 
         if result.investigation_required:
-            print(f"⚠️  Variance exceeds {self.VARIANCE_THRESHOLD}% threshold — investigate estimation model accuracy")
-            print(f"   • Review estimation formula (code_lines/40 + doc_pages*500 + test_cases*100)")
-            print(f"   • Update heuristic if pattern emerges across multiple MiniPRDs")
+            print(
+                f"⚠️  Variance exceeds {self.VARIANCE_THRESHOLD}% threshold — investigate estimation model accuracy"
+            )
+            print("   • Review estimation formula (code_lines/40 + doc_pages*500 + test_cases*100)")
+            print("   • Update heuristic if pattern emerges across multiple MiniPRDs")
         else:
             print(f"✅ Variance within acceptable range ({self.VARIANCE_THRESHOLD}%)")
 

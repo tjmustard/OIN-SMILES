@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Ceiling Enforcer
+"""Ceiling Enforcer
 
 Enforces thinking token ceilings by comparing actual consumption against limits.
 Detects breaches, logs events, and suggests recovery actions.
@@ -8,12 +7,14 @@ Detects breaches, logs events, and suggests recovery actions.
 
 from dataclasses import dataclass
 from typing import List
+
 from thinking_token_monitor import ThinkingTokenMonitor
 
 
 @dataclass
 class EnforceResult:
     """Result of ceiling enforcement check."""
+
     skill_name: str
     model: str
     actual_tokens: int
@@ -22,7 +23,9 @@ class EnforceResult:
     utilization_percent: float
 
     def __post_init__(self):
-        self.utilization_percent = (self.actual_tokens / self.ceiling * 100) if self.ceiling > 0 else 0
+        self.utilization_percent = (
+            (self.actual_tokens / self.ceiling * 100) if self.ceiling > 0 else 0
+        )
 
 
 class CeilingEnforcer:
@@ -32,14 +35,9 @@ class CeilingEnforcer:
         self.monitor = ThinkingTokenMonitor(skills_base_dir)
 
     def enforce(
-        self,
-        skill_name: str,
-        model: str,
-        actual_thinking_tokens: int,
-        verbose: bool = True
+        self, skill_name: str, model: str, actual_thinking_tokens: int, verbose: bool = True
     ) -> EnforceResult:
-        """
-        Enforce thinking token ceiling and detect breaches.
+        """Enforce thinking token ceiling and detect breaches.
 
         Args:
             skill_name: Name of skill
@@ -58,7 +56,7 @@ class CeilingEnforcer:
             actual_tokens=actual_thinking_tokens,
             ceiling=ceiling,
             breach=actual_thinking_tokens > ceiling,
-            utilization_percent=0
+            utilization_percent=0,
         )
         result.utilization_percent = (actual_thinking_tokens / ceiling * 100) if ceiling > 0 else 0
 
@@ -73,11 +71,15 @@ class CeilingEnforcer:
             self._emit_breach_alert(result)
         else:
             utilization_pct = f"{result.utilization_percent:.0f}%"
-            print(f"✅ {result.skill_name}: {result.actual_tokens:,} / {result.ceiling:,} tokens ({utilization_pct})")
+            print(
+                f"✅ {result.skill_name}: {result.actual_tokens:,} / {result.ceiling:,} tokens ({utilization_pct})"
+            )
 
     def _emit_breach_alert(self, result: EnforceResult) -> None:
         """Emit detailed breach alert with recovery suggestions."""
-        print(f"\n⚠️ Thinking ceiling exceeded: {result.actual_tokens:,} / {result.ceiling:,} tokens ({result.model})")
+        print(
+            f"\n⚠️ Thinking ceiling exceeded: {result.actual_tokens:,} / {result.ceiling:,} tokens ({result.model})"
+        )
         print(f"Skill: {result.skill_name}")
         print(f"Utilization: {result.utilization_percent:.1f}%\n")
 
@@ -86,10 +88,12 @@ class CeilingEnforcer:
         for i, suggestion in enumerate(suggestions, 1):
             print(f"  [{i}] {suggestion}")
 
-        print(f"\n💡 Recovery options:")
-        print(f"  1. Resubmit Phase 1 with reduced scope")
-        print(f"  2. Run: /hyper-config override-ceiling {result.skill_name} {int(result.ceiling * 1.5)} --reason 'Complex task with high reasoning'")
-        print(f"  3. Contact framework maintainer if repeatedly hitting ceiling\n")
+        print("\n💡 Recovery options:")
+        print("  1. Resubmit Phase 1 with reduced scope")
+        print(
+            f"  2. Run: /hyper-config override-ceiling {result.skill_name} {int(result.ceiling * 1.5)} --reason 'Complex task with high reasoning'"
+        )
+        print("  3. Contact framework maintainer if repeatedly hitting ceiling\n")
 
     def _generate_split_suggestions(self, result: EnforceResult) -> List[str]:
         """Generate suggested split points based on skill."""
@@ -98,7 +102,7 @@ class CeilingEnforcer:
             "Phase 1: Initial analysis and scoping",
             "Phase 2: Core logic and implementation",
             "Phase 3: Edge cases and validation",
-            "Phase 4: Integration and documentation"
+            "Phase 4: Integration and documentation",
         ]
         return suggestions
 

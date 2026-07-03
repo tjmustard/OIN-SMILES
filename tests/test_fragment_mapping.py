@@ -1,6 +1,7 @@
 """Unit tests for fragment mapping in Direct Parser (MiniPRD_DirectParser_FragmentMapping_v0.2.2)."""
 
 import unittest
+
 from src.oinsmiles.generation.oin_parser import _extract_oin_constraints
 
 
@@ -19,7 +20,9 @@ class TestFragmentMapping(unittest.TestCase):
 
         # All mappings should be identical
         for mapping in mappings[1:]:
-            self.assertEqual(mapping, mappings[0], "Fragment mapping changed across calls (non-deterministic)")
+            self.assertEqual(
+                mapping, mappings[0], "Fragment mapping changed across calls (non-deterministic)"
+            )
 
     def test_cisplatin_mapping_correct(self):
         """Test: Cisplatin OIN has correct fragment-to-atom mapping."""

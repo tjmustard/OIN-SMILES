@@ -18,10 +18,11 @@ This handles ligand reordering (e.g., Ir(ppy)3 with 3 equivalent ppy ligands)
 and finds the rotation that optimally aligns the coordination frame.
 """
 
-import numpy as np
 import itertools
-from scipy.spatial.transform import Rotation
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
+from scipy.spatial.transform import Rotation
 
 
 def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
@@ -45,8 +46,12 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
         conf1 = mol1.GetConformer()
         conf2 = mol2.GetConformer()
 
-        coords1 = np.array([conf1.GetAtomPosition(i) for i in range(mol1.GetNumAtoms())], dtype=float)
-        coords2 = np.array([conf2.GetAtomPosition(i) for i in range(mol2.GetNumAtoms())], dtype=float)
+        coords1 = np.array(
+            [conf1.GetAtomPosition(i) for i in range(mol1.GetNumAtoms())], dtype=float
+        )
+        coords2 = np.array(
+            [conf2.GetAtomPosition(i) for i in range(mol2.GetNumAtoms())], dtype=float
+        )
 
         # Find metal atom in both molecules (lookup by atomic number)
         metal_idx1, metal_idx2 = _find_metal_atoms(mol1, mol2)
@@ -59,9 +64,18 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
         # For mol2, try to use bonded information if available
         mol2_for_sphere = mol2_bonded if mol2_bonded is not None else mol2
         conf2_for_coords = mol2_bonded.GetConformer() if mol2_bonded is not None else conf2
-        coords2_for_sphere = np.array([conf2_for_coords.GetAtomPosition(i) for i in range(mol2_for_sphere.GetNumAtoms())], dtype=float) if mol2_bonded is not None else coords2
+        coords2_for_sphere = (
+            np.array(
+                [conf2_for_coords.GetAtomPosition(i) for i in range(mol2_for_sphere.GetNumAtoms())],
+                dtype=float,
+            )
+            if mol2_bonded is not None
+            else coords2
+        )
 
-        sphere2 = _extract_coordination_sphere(mol2_for_sphere, coords2_for_sphere, metal_idx2, use_bonds=True)
+        sphere2 = _extract_coordination_sphere(
+            mol2_for_sphere, coords2_for_sphere, metal_idx2, use_bonds=True
+        )
 
         if not sphere1 or not sphere2:
             return 999.0
@@ -72,7 +86,9 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
 
         for element in sphere1:
             if len(sphere1[element]) != len(sphere2[element]):
-                print(f"[RMSD DEBUG] Count mismatch for {element}: {len(sphere1[element])} vs {len(sphere2[element])}")
+                print(
+                    f"[RMSD DEBUG] Count mismatch for {element}: {len(sphere1[element])} vs {len(sphere2[element])}"
+                )
                 return 999.0
 
         # Center both at the metal
@@ -88,6 +104,7 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
     except Exception as e:
         print(f"RMSD calculation failed: {e}")
         import traceback
+
         traceback.print_exc()
         return 999.0
 
@@ -101,10 +118,37 @@ def _find_metal_atoms(mol1, mol2):
         tuple: (metal_idx_mol1, metal_idx_mol2) or (None, None) if not found
     """
     METAL_ATOMIC_NUMBERS = {
-        22, 23, 24, 25, 26, 27, 28, 29, 30,  # Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn (3d)
-        40, 41, 42, 43, 44, 45, 46, 47, 48,  # Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd (4d)
-        72, 73, 74, 75, 76, 77, 78, 79, 80,  # Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg (5d)
-        57, 58, 59, 60,                       # La, Ce, Pr, Nd (lanthanides)
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,  # Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn (3d)
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,  # Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd (4d)
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,  # Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg (5d)
+        57,
+        58,
+        59,
+        60,  # La, Ce, Pr, Nd (lanthanides)
     }
 
     metal_idx1 = None
@@ -148,7 +192,7 @@ def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=
 
         # Add all atoms bonded to the metal (excluding H)
         for neighbor in metal_atom.GetNeighbors():
-            if neighbor.GetSymbol() == 'H':  # Skip H atoms
+            if neighbor.GetSymbol() == "H":  # Skip H atoms
                 continue
             neighbor_idx = neighbor.GetIdx()
             atom_sym = neighbor.GetSymbol()
@@ -163,17 +207,46 @@ def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=
     # M-I bonds (~2.75 Å) and too loose for ring-C backbone atoms (~2.9 Å).
     # Cutoff per ligand atom = r_cov(metal) + r_cov(ligand) + 0.45 Å tolerance.
     COVALENT_RADII = {
-        1: 0.31,  6: 0.76,  7: 0.71,  8: 0.66,  9: 0.57,   # H C N O F
-        15: 1.07, 16: 1.05, 17: 1.02, 35: 1.20, 53: 1.39,  # P S Cl Br I
-        22: 1.36, 23: 1.22, 24: 1.18, 25: 1.17, 26: 1.25,  # Ti V Cr Mn Fe
-        27: 1.16, 28: 1.21, 29: 1.38, 30: 1.31,             # Co Ni Cu Zn
-        40: 1.45, 41: 1.34, 42: 1.30, 43: 1.27, 44: 1.25,  # Zr Nb Mo Tc Ru
-        45: 1.25, 46: 1.28, 47: 1.44, 48: 1.48,             # Rh Pd Ag Cd
-        72: 1.44, 73: 1.34, 74: 1.30, 75: 1.28, 76: 1.26,  # Hf Ta W Re Os
-        77: 1.27, 78: 1.28, 79: 1.44, 80: 1.32,             # Ir Pt Au Hg
+        1: 0.31,
+        6: 0.76,
+        7: 0.71,
+        8: 0.66,
+        9: 0.57,  # H C N O F
+        15: 1.07,
+        16: 1.05,
+        17: 1.02,
+        35: 1.20,
+        53: 1.39,  # P S Cl Br I
+        22: 1.36,
+        23: 1.22,
+        24: 1.18,
+        25: 1.17,
+        26: 1.25,  # Ti V Cr Mn Fe
+        27: 1.16,
+        28: 1.21,
+        29: 1.38,
+        30: 1.31,  # Co Ni Cu Zn
+        40: 1.45,
+        41: 1.34,
+        42: 1.30,
+        43: 1.27,
+        44: 1.25,  # Zr Nb Mo Tc Ru
+        45: 1.25,
+        46: 1.28,
+        47: 1.44,
+        48: 1.48,  # Rh Pd Ag Cd
+        72: 1.44,
+        73: 1.34,
+        74: 1.30,
+        75: 1.28,
+        76: 1.26,  # Hf Ta W Re Os
+        77: 1.27,
+        78: 1.28,
+        79: 1.44,
+        80: 1.32,  # Ir Pt Au Hg
     }
     DEFAULT_RADIUS = 1.50  # fallback for unlisted elements
-    TOLERANCE = 0.55       # generous tolerance covers bond elongation in generated structures
+    TOLERANCE = 0.55  # generous tolerance covers bond elongation in generated structures
 
     metal_atom = mol.GetAtomWithIdx(metal_idx)
     r_metal = COVALENT_RADII.get(metal_atom.GetAtomicNum(), DEFAULT_RADIUS)
@@ -189,7 +262,7 @@ def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=
         if i == metal_idx:
             continue
         atom = mol.GetAtomWithIdx(i)
-        if atom.GetSymbol() == 'H':
+        if atom.GetSymbol() == "H":
             continue
         r_ligand = COVALENT_RADII.get(atom.GetAtomicNum(), DEFAULT_RADIUS)
         bond_cutoff = cutoff if cutoff is not None else (r_metal + r_ligand + TOLERANCE)
@@ -245,7 +318,7 @@ def _compute_greedy_rmsd(sphere1_centered, sphere2_centered):
         coords2_rotated = rot.apply(coords2_all)
         rmsd = np.sqrt(np.mean(np.sum((coords1_all - coords2_rotated) ** 2, axis=1)))
         return rmsd
-    except:
+    except Exception:
         return 999.0
 
 
@@ -283,7 +356,7 @@ def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
     element_order = sorted(sphere1_centered.keys())
     perm_iterators = [element_perms[el] for el in element_order]
 
-    min_rmsd = float('inf')
+    min_rmsd = float("inf")
 
     for perm_combo in itertools.product(*perm_iterators):
         # Build matched atom-pair arrays
@@ -309,7 +382,7 @@ def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
 
             if rmsd < min_rmsd:
                 min_rmsd = rmsd
-        except:
+        except Exception:
             continue
 
-    return min_rmsd if min_rmsd != float('inf') else 999.0
+    return min_rmsd if min_rmsd != float("inf") else 999.0

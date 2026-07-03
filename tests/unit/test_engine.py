@@ -1,9 +1,9 @@
+import os
+import sys
 import unittest
 from unittest.mock import MagicMock
-import sys
-import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
 from oinsmiles.generation.engine import OIN3DGenerator
 
@@ -31,5 +31,5 @@ class TestOIN3DGenerator(unittest.TestCase):
         self.assertEqual(result, expected_xyz)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

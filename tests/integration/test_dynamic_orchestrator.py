@@ -14,15 +14,12 @@ Covers hyper_orchestrator.py and hyper_daemon.py:
 
 import concurrent.futures
 import fcntl
-import json
-import os
 import signal
-import subprocess
 import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -30,13 +27,13 @@ import yaml
 SCRIPTS_DIR = Path(__file__).parent.parent.parent / ".agents" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
+import hyper_daemon as daemon  # noqa: E402
 import hyper_orchestrator as orch  # noqa: E402
-import hyper_daemon as daemon       # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_fw_path(tmp_path):
     p = tmp_path / "spec" / "active" / "FAILED_WORKFLOWS.md"
@@ -55,6 +52,7 @@ def _patch_fw(monkeypatch, tmp_path):
 # Test 1 — Global mutex: second process exits with clear error
 # ---------------------------------------------------------------------------
 
+
 def test_mutex_second_process_exits(tmp_path, monkeypatch):
     """
     If .orchestrator.lock is already held, orchestrate() must exit with an
@@ -62,7 +60,7 @@ def test_mutex_second_process_exits(tmp_path, monkeypatch):
     """
     monkeypatch.chdir(tmp_path)
     lock_path = tmp_path / ".orchestrator.lock"
-    fw = _patch_fw(monkeypatch, tmp_path)
+    _patch_fw(monkeypatch, tmp_path)
     monkeypatch.setattr(orch, "LOCK_FILE", lock_path)
     monkeypatch.setattr(orch, "PID_LOCK_FILE", tmp_path / ".orchestrator.pid.lock")
     monkeypatch.setattr(orch, "LOG_DIR", tmp_path / ".agents" / "logs")
@@ -87,6 +85,7 @@ def test_mutex_second_process_exits(tmp_path, monkeypatch):
 # Test 2 — Startup validation: null byte in .md file exits before threads
 # ---------------------------------------------------------------------------
 
+
 def test_startup_validation_null_byte(tmp_path, monkeypatch):
     """A .md file containing \\x00 must cause exit before any thread is spawned."""
     monkeypatch.chdir(tmp_path)
@@ -108,6 +107,7 @@ def test_startup_validation_null_byte(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 3 — Branch collision exits before spawning threads
 # ---------------------------------------------------------------------------
+
 
 def test_branch_collision_exits(tmp_path, monkeypatch):
     """If a target branch already exists, _validate_startup must exit listing it."""
@@ -147,6 +147,7 @@ def test_branch_collision_exits(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 4 — TOKEN_OVERRUN sentinel breaks daemon loop without counting iteration
 # ---------------------------------------------------------------------------
+
 
 def test_token_overrun_exits_loop(tmp_path, monkeypatch):
     """
@@ -200,7 +201,8 @@ def test_token_overrun_exits_loop(tmp_path, monkeypatch):
     assert "TOKEN_OVERRUN" in fw.read_text(), "TOKEN_OVERRUN must be written to FAILED_WORKFLOWS.md"
     # Truncated output must not be written to disk; only the MiniPRD fixture file exists
     unexpected = [
-        p for p in tmp_path.rglob("*")
+        p
+        for p in tmp_path.rglob("*")
         if p.is_file() and p.suffix in (".py", ".txt") and p != miniprd
     ]
     assert not unexpected, f"No code output should be written on TOKEN_OVERRUN; found: {unexpected}"
@@ -209,6 +211,7 @@ def test_token_overrun_exits_loop(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 5 — NO_TESTS_COLLECTED does not increment iteration counter
 # ---------------------------------------------------------------------------
+
 
 def test_no_tests_collected_no_iteration(tmp_path, monkeypatch):
     """When pytest --collect-only returns 0, abort without counting it as an iteration."""
@@ -238,6 +241,7 @@ def test_no_tests_collected_no_iteration(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 6 — Hung worker marked TIMEOUT_FAILURE after wait timeout
 # ---------------------------------------------------------------------------
+
 
 def test_hung_worker_timeout_failure(tmp_path, monkeypatch):
     """
@@ -270,7 +274,8 @@ def test_hung_worker_timeout_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(orch, "_remove_pid_manifest", lambda: None)
     monkeypatch.setattr(orch, "warn_stale_failed_branches", lambda: None)
     monkeypatch.setattr(
-        orch, "_load_superprd_miniprd_pairs",
+        orch,
+        "_load_superprd_miniprd_pairs",
         lambda d: [(superprd_file, miniprd, "TestSuperPRD")],
     )
 
@@ -285,7 +290,8 @@ def test_hung_worker_timeout_failure(tmp_path, monkeypatch):
     mock_executor.shutdown = MagicMock()
 
     monkeypatch.setattr(
-        concurrent.futures, "wait",
+        concurrent.futures,
+        "wait",
         lambda fs, timeout=None: (frozenset(), frozenset(fs)),
     )
 
@@ -303,6 +309,7 @@ def test_hung_worker_timeout_failure(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 7 — SIGTERM handler releases lock and writes partial FAILED_WORKFLOWS.md
 # ---------------------------------------------------------------------------
+
 
 def test_sigterm_releases_lock(tmp_path, monkeypatch):
     """SIGTERM handler must release fcntl lock and write entries for in-flight branches."""
@@ -343,6 +350,7 @@ def test_sigterm_releases_lock(tmp_path, monkeypatch):
 # Test 8 — Idempotency: node with existing _provenance is skipped
 # ---------------------------------------------------------------------------
 
+
 def test_idempotency_skips_provisioned_node(tmp_path, monkeypatch):
     """
     If a node already has _provenance in architecture.yml, _worker must return
@@ -359,9 +367,7 @@ def test_idempotency_skips_provisioned_node(tmp_path, monkeypatch):
             "timestamp": "2025-01-01T00:00:00Z",
         },
     }
-    arch_path.write_text(
-        yaml.dump({"nodes": [node]}, sort_keys=False), encoding="utf-8"
-    )
+    arch_path.write_text(yaml.dump({"nodes": [node]}, sort_keys=False), encoding="utf-8")
     monkeypatch.setattr(orch, "ARCH_YAML_PATH", arch_path)
 
     miniprd = tmp_path / "MiniPRD_Test.md"
@@ -375,6 +381,7 @@ def test_idempotency_skips_provisioned_node(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 9 — Orchestrator-level TOKEN_OVERRUN when API returns stop_reason=max_tokens
 # ---------------------------------------------------------------------------
+
 
 def test_orchestrator_token_overrun_from_api(tmp_path, monkeypatch):
     """When Anthropic API returns stop_reason='max_tokens', _worker must write
@@ -431,6 +438,7 @@ def test_orchestrator_token_overrun_from_api(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Test 10 — Idempotency: _worker returns immediately when _provenance exists
 # ---------------------------------------------------------------------------
+
 
 def test_idempotency_worker_skips_e2e(tmp_path, monkeypatch):
     """When architecture.yml already has _provenance for the target node, _worker
