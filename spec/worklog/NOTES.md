@@ -78,15 +78,31 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | TASK-30 bidentate placement diagnostic | DONE — MIX (root cause B, fix is cheap; DG fallback already round-trips DIPAMP cleanly) | Sonnet | — |
 | TASK-31 bidentate placement fix | DONE — guard fix + xfail flip both work exactly as specified; the regression it surfaced in `test_zone_a_p_genenforce.py` (Phase 4b) is now cleared by TASK-32 | Sonnet | TASK-30 |
 | TASK-32 retarget Phase-4b Kabsch tests | DONE — 3 tests retargeted from DIPAMP to a synthetic monodentate P-stereocenter fixture that stays on the template path; suite fully green | Sonnet | TASK-31 |
-| FOLLOW-UP: `[P@]`-on-SPL enforcement asymmetry | TODO (not yet specced) | — | — |
+| CONFIRMED BUG: SPL Zone-A P enforcement is one-sided | TODO — fix needs a design decision (reflection vs face-aware placement) | Fable/Opus → Sonnet | Phase 4b |
 
-**Enforcement-asymmetry follow-up (flagged 2026-07-03, not yet a task):**
-`[P@]` on `[Pt_SPL]` warns "could not be enforced" while `[P@@]` on the
-identical complex enforces cleanly — Phase-4b's verify-and-reflect appears to
-reach only one enantiomer for certain geometries. Not blocking (TASK-32 steers
-its fixtures around it via TET geometry), but it's a real question about the
-reflect logic's completeness; worth a diagnostic before relying on Zone-A P
-enforcement for SPL complexes.
+**CONFIRMED correctness bug (verified 2026-07-03, Fable — was the "asymmetry
+follow-up"):** On square-planar (`SPL`) complexes, Zone-A P enforcement cannot
+produce both enantiomers — it always emits one fixed configuration and warns
+when the target is the other. Measured (`_metal_present_cip_label` on the
+generated mol, ligand `c1ccccc1[P?]{0}(CC)C` on `[Pt_SPL]`):
+- target `[P@]`  → generated P CIP **S**, warns "could not be enforced" (WRONG:
+  asked for R, got S)
+- target `[P@@]` → generated P CIP **S**, no warning (right by luck — embed
+  already matched)
+- contrast `[Pt_TET]`: `[P@]`→R, `[P@@]`→S, both clean (enforcement works).
+**Root cause:** the enforcement "correction" is a new-seed ETKDG re-embed
+(molassembler_adapter.py :1936-1968), deliberately NOT a reflection (to protect
+co-resident stereocenters). But the metal-present CIP on SPL is fixed by
+PLACEMENT geometry (which face of the P pyramid the metal lands on), not by the
+embed chirality a new seed varies — so re-embedding can never flip it; only a
+reflection (the excluded operation) or a face-aware placement would.
+**Impact:** SPL is the most common TMC geometry (Pt/Pd, cisplatin analogs); ~half
+of Zone-A-P-on-SPL inputs generate the WRONG enantiomer (honestly warned, but
+wrong 3D). Undercuts the Phase-4a/4b "enforcement works" claim for SPL.
+**Fix is a design decision, not a quick patch:** reflect-with-co-resident-
+protection, or face-aware placement that puts the metal on the target face.
+Recommend a `/hyper-consult-cto` (like Phase 4) before a MiniPRD. Not yet
+dispatched — awaiting direction.
 
 **Separate workstream — generation fidelity (not stereo):** TASK-30 targets the
 polydentate placement bug in `_stitch_fragment` that causes the two remaining
