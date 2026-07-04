@@ -1240,8 +1240,12 @@ match unrelated to this fix); `discover tests` → 55 OK;
 Committed the fix (tracked: `molassembler_adapter.py`, `core/chirality.py`,
 `test_zone_a_p_genenforce.py`, the AUDITED MiniPRD/architecture.yml/SuperPRD
 updates, worklog decision + process docs, and the two new P-phosphine
-fixtures). **NOT pushed** (per standing instruction). Branch remains ahead of
-origin.
+fixtures). Committed as `da2bc27`. One trivial pre-commit fix applied at commit
+time: shortened an over-long docstring summary line the executor left in
+`_sweep_rotation_for_clash_avoidance` (E501) — no behaviour change. The
+whole-repo ruff pre-commit hook is now GREEN (the ruff-adoption session
+finished), so no `--no-verify` was needed. **NOT pushed** (per standing
+instruction). Branch remains ahead of origin.
 
 **Known follow-ups carried forward (not blocking, from the exec session's own
 "Known gaps"):** (1) no real *compatible-bite* bidentate 3D fixture yet — the
