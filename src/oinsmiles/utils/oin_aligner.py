@@ -247,7 +247,6 @@ class OINDiscreteAligner:
             # Using the first one from the supplied list.
 
             first_binding_atom_mass = lig["binding_atoms"][0][1]
-            base_sort_key = (i, first_binding_atom_mass, lig["smiles"])
 
             binding_coords = np.array([ba[2] for ba in lig["binding_atoms"]])
             # We need to track which atom is which. The 'binding_atoms' list has entries.
@@ -305,7 +304,6 @@ class OINDiscreteAligner:
                         "local_idx": rep_idx,
                         # List of all atoms in this haptic group
                         "constituent_indices": constituent_indices,
-                        "key": base_sort_key,
                         "coords": centroid - metal_origin,
                         "group_coords": grp_coords
                         - metal_origin,  # Store centered group coords for heading calc
@@ -406,6 +404,61 @@ class OINDiscreteAligner:
 
         return best_mapping, best_rmsd, best_R
 
+    @staticmethod
+    def _fragment_mol_for_canonicalization(smiles):
+        """Parse a fragment SMILES into an index-aligned mol for canonicalization.
+
+        Atom indices line up 1:1 with `local_idx`/`constituent_indices`.
+        `Chem.MolFromSmiles(smiles, sanitize=False)` is the exact same
+        construction `xyz2mol.py` uses to derive `local_idx`
+        (`smiles_mol = Chem.MolFromSmiles(sanitized_smiles, sanitize=False)`
+        at xyz2mol.py:952), so no substructure-match re-mapping is needed --
+        the indices are already the same numbering by construction (RT-2).
+        Sanitizes everything except kekulization: Zone-A atoms carry forced
+        explicit-H counts (`OINSanitizer`) that can defeat RDKit's kekulizer,
+        but ring/aromaticity perception (needed for a meaningful canonical
+        rank) does not require kekulization. Returns None on any failure
+        (RT-3 fail-safe -- callers must fall back to existing behavior).
+        """
+        try:
+            mol = Chem.MolFromSmiles(smiles, sanitize=False)
+            if mol is None:
+                return None
+            Chem.SanitizeMol(mol, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+            return mol
+        except Exception:
+            return None
+
+    @classmethod
+    def _canonical_heading_atom(cls, smiles, constituent_indices):
+        """Return the constituent atom with the lowest canonical rank (RC2).
+
+        Uses `Chem.CanonicalRankAtoms(breakTies=True)`; returns None if it
+        cannot be computed/mapped (RT-2/RT-3 fail-safe).
+        """
+        mol = cls._fragment_mol_for_canonicalization(smiles)
+        if mol is None or mol.GetNumAtoms() <= max(constituent_indices, default=-1):
+            return None
+        try:
+            ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=True))
+        except Exception:
+            return None
+        return min(constituent_indices, key=lambda idx: ranks[idx])
+
+    @classmethod
+    def _canonical_ring_signature(cls, smiles):
+        """Return a heading-independent canonical SMILES for the fragment (RC1).
+
+        Returns None if it cannot be computed (RT-2/RT-3 fail-safe).
+        """
+        mol = cls._fragment_mol_for_canonicalization(smiles)
+        if mol is None:
+            return None
+        try:
+            return Chem.MolToSmiles(mol, canonical=True)
+        except Exception:
+            return None
+
     def _permute_and_serialize(
         self, slot_assignment, tmpl_vectors, geometry_name=None, alignment_rotation=None
     ):
@@ -505,6 +558,78 @@ class OINDiscreteAligner:
         if not best_final_map:
             return "error"
 
+        # 3b. RC1 -- scoped eta-only rank swap (content-canonical fragment
+        # order). Only same-mass, single-virtual-atom haptic (eta) fragments
+        # -- e.g. two differently-substituted Cp rings -- are eligible;
+        # every non-eta fragment and the metal (rank 0) keep their exact
+        # rank (US-001.3, RT-1/Option A). This permutes WHICH content occupies
+        # the SAME set of rank slots the eligible fragments already occupy;
+        # it never introduces, removes, or touches any other rank.
+        by_rank_for_swap = defaultdict(list)
+        for x in best_final_map:
+            by_rank_for_swap[x["rank"]].append(x)
+
+        eta_fragment_ranks_by_mass = defaultdict(list)
+        for rank, items in by_rank_for_swap.items():
+            if len(items) == 1 and len(items[0].get("constituent_indices", [])) > 1:
+                eta_fragment_ranks_by_mass[items[0]["chem_id"][0]].append(rank)
+
+        for _mass, ranks in eta_fragment_ranks_by_mass.items():
+            if len(ranks) < 2:
+                continue  # only one eta fragment at this mass -- nothing to swap
+
+            candidates = []
+            fail_safe = False
+            for rank in ranks:
+                item = by_rank_for_swap[rank][0]
+                signature = self._canonical_ring_signature(item["chem_id"][1])
+                if signature is None:
+                    fail_safe = True
+                    break
+                candidates.append((item, signature))
+
+            if fail_safe:
+                # RT-3: never a silent partial reorder -- leave this whole
+                # same-mass group at its existing (arrival-order) ranks.
+                continue
+
+            def _winding_tiebreak(entry):
+                # Content-identical-ring tiebreak ONLY (D-RC1). Winding
+                # character is start-invariant (RT-4), so any constituent
+                # atom works as the provisional star -- the final heading
+                # atom need not be known yet.
+                item, _sig = entry
+                slot_def = TEMPLATE_SPECS.get(geometry_name, {}).get(item["slot"])
+                if slot_def is None or item.get("group_coords") is None:
+                    return ""
+                c_indices = sorted(item["constituent_indices"])
+                return self._determine_winding(
+                    grp_coords=item["group_coords"],
+                    star_idx=c_indices[0],
+                    constituent_indices=c_indices,
+                    slot_z=np.array(slot_def["pos"]),
+                    slot_x_ref=np.array(slot_def["ref"]),
+                    alignment_rotation=alignment_rotation,
+                )
+
+            candidates.sort(
+                key=lambda entry: (
+                    entry[1],  # canonical_ring_smiles (heading-independent)
+                    _winding_tiebreak(entry),
+                    # Final deterministic tiebreak. Not the fixture's original
+                    # XYZ atom index (unstable across a generate/re-encode
+                    # round trip) -- the ring's own lowest constituent
+                    # local_idx, which is derived from canonical SMILES atom
+                    # order and is therefore itself embedding-independent.
+                    min(entry[0]["constituent_indices"]),
+                )
+            )
+
+            for new_rank, (item, _sig) in zip(sorted(ranks), candidates):
+                item["rank"] = new_rank
+
+        best_final_map.sort(key=lambda x: (x["rank"], x["local_idx"]))
+
         # 4. Heading Atom Selection (V3.4)
         heading_local_indices = set()
 
@@ -516,7 +641,35 @@ class OINDiscreteAligner:
 
             template_spec = TEMPLATE_SPECS[geometry_name]
 
+            # 4a. Content-canonical heading (RC2): for substituted/asymmetric
+            # eta rings (NOT in SYMMETRIC_LIGANDS), choose the ring atom with
+            # the lowest Chem.CanonicalRankAtoms rank -- a topological
+            # property, invariant to 3D embedding orientation (US-002).
+            # Falls back to the geometric best_idx loop below if the
+            # canonical rank can't be computed/mapped (RT-2/RT-3 fail-safe).
+            content_canonical_ranks_handled = set()
             for rank, items in by_rank.items():
+                first_item = items[0]
+                smiles = first_item["chem_id"][1]
+                grp_coords = first_item.get("group_coords")
+                constituent_indices = first_item.get("constituent_indices", [])
+
+                if smiles in SYMMETRIC_LIGANDS:
+                    continue
+                if grp_coords is None or len(grp_coords) < 2:
+                    continue
+
+                canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
+                if canonical_idx is None:
+                    continue
+
+                heading_local_indices.add((rank, canonical_idx))
+                content_canonical_ranks_handled.add(rank)
+
+            for rank, items in by_rank.items():
+                if rank in content_canonical_ranks_handled:
+                    continue
+
                 first_item = items[0]
                 slot_idx = first_item["slot"]
 

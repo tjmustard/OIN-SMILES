@@ -466,30 +466,28 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         self.assertEqual(np.__version__, _BLESSED_NUMPY_VERSION)
         self.assertEqual(scipy.__version__, _BLESSED_SCIPY_VERSION)
 
-    @unittest.expectedFailure
     def test_haptic_face_golden_match(self):
-        """Test 1 (Deterministic — golden, US-001.3).
+        """Test 1 (Deterministic — golden, US-001.3 / US-003).
 
-        Ferrocene-halide-face.xyz's OIN(1) -> generate -> re-encode should
-        reproduce the pinned §5.1 hand-verified golden string exactly.
+        Ferrocene-halide-face.xyz's OIN(1) -> generate -> re-encode must
+        reproduce the pinned §5.1 golden string exactly.
 
-        Diagnostic result (2026-07-03, post-implementation): the correction
-        mechanism itself is verified correct (per-ring winding sense survives
-        -- see test_haptic_face_per_ring_flip_inverts_only_that_ring and
-        test_haptic_face_two_branch_coverage below, both hard passes), but
-        the exact STRING does not match byte-for-byte. Root cause (R2,
-        "re-encoder heading-atom instability", anticipated by the SuperPRD):
-        the XYZ->OIN re-encoder (i) is free to choose a different specific
-        ring atom as the visible heading/marker atom each round trip (here it
-        moves between rounds -- confirmed by direct inspection, not a
-        one-off), and (ii) is free to list the two (chemically distinct)
-        rings in either fragment order. Neither changes the physical winding
-        sense or the ring's substituent identity (verified independently by
-        the per-ring, content-anchored tests below) -- it is a pre-existing
-        re-encoder canonicalization instability, not a generation-side
-        correction bug. Kept as a hard `expectedFailure` (never silently
-        downgraded) per the MiniPRD's R2 escape hatch, so a future re-encoder
-        stability fix flips this to a real pass automatically.
+        Fixed by MiniPRD_EtaRingCanonicalization.md (2026-07-04): the prior
+        `expectedFailure` root-caused to two re-encoder canonicalization
+        instabilities, both now closed in `OINDiscreteAligner`
+        (`utils/oin_aligner.py`) -- (RC1) content-distinct eta-ring fragment
+        order was arrival-order-dependent (fixed via a scoped eta-only rank
+        swap keyed on heading-independent canonical ring SMILES); (RC2) the
+        heading atom of a substituted eta ring was chosen by 3D geometric
+        alignment (orientation-dependent) rather than ring topology (fixed
+        via lowest `Chem.CanonicalRankAtoms(breakTies=True)`). Neither change
+        touches the winding CHARACTER itself (`_determine_winding` /
+        `signed_circulation` stay frozen) -- see
+        `test_haptic_face_r2_geometric_fallback_never_auto_substituted` and
+        the RC2 start-invariance/reflection tests below for the safety
+        argument. The golden string was re-pinned to the new (still
+        content-equivalent, same winding sense per ring) heading positions;
+        see `spec/worklog/NOTES.md` for the verification record.
         """
         with open(_HALIDE_FACE_GOLDEN_PATH) as f:
             golden = f.read().strip()
@@ -848,6 +846,245 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             _template_generate(parsed)
+
+
+class TestEtaRingCanonicalization(unittest.TestCase):
+    """MiniPRD_EtaRingCanonicalization.md acceptance tests (RT-5 hardening).
+
+    Covers RC1 (scoped eta-only fragment-order swap) and RC2 (canonical-rank
+    heading atom) in ``OINDiscreteAligner`` -- the two fixes that closed
+    ``test_haptic_face_golden_match`` above.
+    """
+
+    def test_non_eta_fragment_order_is_inert(self):
+        """Test 2 (RT-5): complexes with zero haptic (eta) donor groups have
+        no fragment eligible for RC1/RC2, so encoding must stay byte-
+        identical to each fixture's pre-existing pinned regression golden."""
+        cases = [
+            ("cisplatin.xyz", "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"),
+            ("transplatin.xyz", "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}"),
+            ("cis_ptcl2en.xyz", "[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}"),
+            (
+                "fac_irppy3.xyz",
+                "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
+            ),
+            (
+                "mer_irppy3.xyz",
+                "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
+            ),
+            (
+                "PdCl2-RR-BDPP.xyz",
+                "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)"
+                "P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            ),
+            (
+                "PdCl2-RR-BDNN.xyz",
+                "[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)"
+                "N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            ),
+            (
+                "PdCl2-R-BINAP.xyz",
+                "[Pd_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}"
+                "(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
+            ),
+        ]
+        for filename, expected in cases:
+            with self.subTest(filename=filename):
+                actual = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, filename))
+                self.assertEqual(actual, expected)
+
+    def test_symmetric_eta_ring_is_inert(self):
+        """Test 3 (RT-5), plain-ferrocene half: an UNSUBSTITUTED Cp ring's
+        SMILES is a literal member of ``SYMMETRIC_LIGANDS`` (first-wins,
+        untouched by RC1/RC2) -- encoding must stay byte-identical."""
+        actual = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "ferrocene.xyz"))
+        self.assertEqual(
+            actual,
+            "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1."
+            "[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1",
+        )
+
+    def test_mono_substituted_eta_ring_relabel_is_winding_preserving(self):
+        """Test 3 (RT-5), ansa-metallocene half.
+
+        A mono-substituted Cp ring (TiCat1's Si-bridged ring) is NOT a
+        literal member of ``SYMMETRIC_LIGANDS`` (that set only contains bare,
+        unsubstituted ring SMILES) -- it IS eligible for RC2, and its
+        canonical-rank heading atom differs from the pre-fix geometric pick.
+        This is a deliberate, verified deviation from the MiniPRD's Test 3
+        wording (which assumed this fixture would be SYMMETRIC_LIGANDS-
+        protected): re-verified here as a pure winding-preserving relabel --
+        same ring content signature, same winding CHARACTER, only the
+        specific marked atom moves -- exactly the RC2 safety property, not a
+        regression. See spec/worklog/NOTES.md for the sign-off record.
+        """
+        ticat1_xyz = os.path.join(os.path.dirname(__file__), "../integration/TiCat1.xyz")
+        actual = XYZToSMILES().convert(ticat1_xyz)
+        pre_fix_golden = (
+            "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0<}1)"
+            "c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
+        )
+        self.assertEqual(
+            _ring_winding_by_signature(actual),
+            _ring_winding_by_signature(pre_fix_golden),
+            "RC2 must preserve each ring's content signature -> winding "
+            "character mapping even though the marked atom moved",
+        )
+
+    def test_rc1_scoped_swap_never_touches_non_eta_ranks(self):
+        """Test 4 (RT-5): RC1 permutes ONLY same-mass eta fragments among the
+        rank slots they already occupy; every non-eta fragment's rank/content
+        stays fixed regardless of the eta fragments' arrival order.
+
+        Constructs two content-distinct 5-membered eta rings (reusing the
+        real, non-symmetric halide-ring SMILES from the golden fixture) at
+        ranks 2 and 3 (deliberately non-1), bracketed by two ordinary
+        monodentate (non-eta) fragments at ranks 1 and 4. Calls
+        ``_permute_and_serialize`` directly (bypassing 3D/XYZ) with the two
+        eta rings' arrival order swapped between two runs, and asserts (a)
+        the non-eta ranks' tags are byte-identical between runs and (b) the
+        eta ranks end up hosting the SAME content regardless of which one
+        arrived first -- the arrival-order-invariance RC1 exists to
+        guarantee.
+        """
+        from collections import defaultdict
+
+        from scipy.spatial.transform import Rotation
+
+        from oinsmiles.utils.oin_aligner import TEMPLATES, OINDiscreteAligner
+
+        geometry_name = "TET"
+        tmpl_vectors = TEMPLATES[geometry_name]
+        aligner = OINDiscreteAligner(metal_idx=0, ligands=[])
+
+        ring_a_smiles = "Oc1cc(Cl)c(Br)c1I"
+        ring_b_smiles = "Oc1cc(I)c(Br)c1Cl"
+        ring_indices = [1, 2, 3, 5, 7]
+        angles = np.linspace(0, 2 * np.pi, len(ring_indices), endpoint=False)
+        ring_coords = np.array([[np.cos(a), np.sin(a), 0.0] for a in angles])
+
+        def _mono(rank):
+            return {
+                "rank": rank,
+                "local_idx": 0,
+                "constituent_indices": [0],
+                "coords": np.zeros(3),
+                "group_coords": np.array([[0.0, 0.0, 0.0]]),
+                "chem_id": (35.45, "[Cl]"),
+            }
+
+        def _ring(rank, smiles):
+            return {
+                "rank": rank,
+                "local_idx": min(ring_indices),
+                "constituent_indices": list(ring_indices),
+                "coords": np.zeros(3),
+                "group_coords": ring_coords,
+                "chem_id": (16.0, smiles),  # same mass -> same RC1 swap bucket
+            }
+
+        def _run(ring_at_rank2, ring_at_rank3):
+            slot_assignment = [
+                _mono(1),
+                _ring(2, ring_at_rank2),
+                _ring(3, ring_at_rank3),
+                _mono(4),
+            ]
+            result = aligner._permute_and_serialize(
+                slot_assignment,
+                tmpl_vectors,
+                geometry_name=geometry_name,
+                alignment_rotation=Rotation.identity(),
+            )
+            by_rank = defaultdict(list)
+            for tag in result.split(";"):
+                rank = int(tag.split(".", 1)[0])
+                by_rank[rank].append(tag)
+            return by_rank
+
+        forward = _run(ring_a_smiles, ring_b_smiles)
+        swapped = _run(ring_b_smiles, ring_a_smiles)
+
+        self.assertEqual(
+            forward[1],
+            swapped[1],
+            "non-eta rank 1 must be byte-identical regardless of eta arrival order",
+        )
+        self.assertEqual(
+            forward[4],
+            swapped[4],
+            "non-eta rank 4 must be byte-identical regardless of eta arrival order",
+        )
+
+        # RC1 only reassigns the RANK LABEL for content-canonicalization; the
+        # SLOT number is a physical-geometry attribute of wherever the
+        # fragment happened to arrive and is deliberately NOT touched by the
+        # swap (rank and slot are independent fields in the "rank.idx:slot"
+        # tag). So compare content per rank ignoring slot -- this is the
+        # actual invariant RC1 promises: which ring CONTENT is labeled with
+        # which rank number must not depend on arrival order.
+        def _content_ignoring_slot(tags):
+            sig = set()
+            for tag in tags:
+                rank_idx, _slot_and_marker = tag.split(":")
+                marker = "".join(c for c in _slot_and_marker if c in "<>")
+                sig.add((rank_idx, marker))
+            return frozenset(sig)
+
+        forward_content_by_rank = {r: _content_ignoring_slot(t) for r, t in forward.items()}
+        swapped_content_by_rank = {r: _content_ignoring_slot(t) for r, t in swapped.items()}
+
+        self.assertEqual(
+            forward_content_by_rank[2],
+            swapped_content_by_rank[2],
+            "rank 2 must host the same ring content regardless of which ring arrived first",
+        )
+        self.assertEqual(
+            forward_content_by_rank[3],
+            swapped_content_by_rank[3],
+            "rank 3 must host the same ring content regardless of which ring arrived first",
+        )
+        self.assertNotEqual(
+            forward_content_by_rank[2],
+            forward_content_by_rank[3],
+            "sanity: the two rings are genuinely content-distinct",
+        )
+
+    def test_rc2_winding_start_invariance_and_reflection(self):
+        """Test 5 (RT-5 / US-004 / RT-4): live assertion that
+        ``signed_circulation``'s winding character is (a) identical for
+        every possible choice of star atom on a genuinely asymmetric ring
+        (start-invariance, the property RC2 relies on to be safe), and (b) a
+        synthetically reflected copy of the same ring still yields the
+        FLIPPED character -- proving canonicalization never masks a real
+        reflection. Kept in addition to (not instead of) the existing
+        ``test_haptic_face_r2_geometric_fallback_never_auto_substituted``
+        skip.
+        """
+        from oinsmiles.oin.winding import signed_circulation
+
+        # Irregular (non-symmetric) planar pentagon -- analogous to a
+        # differently-pentahalo-substituted ring, so no accidental symmetry
+        # could make start-invariance trivially true.
+        angles = np.radians([0, 50, 130, 200, 290])
+        coords = np.array([[np.cos(a), np.sin(a), 0.0] for a in angles])
+        axis = np.array([0.0, 0.0, 1.0])
+
+        base_char = signed_circulation(coords, 0, axis)
+        for star in range(len(coords)):
+            self.assertEqual(
+                signed_circulation(coords, star, axis),
+                base_char,
+                f"winding character must be start-invariant (star={star})",
+            )
+
+        reflected = coords.copy()
+        reflected[:, 1] *= -1.0
+        self.assertNotEqual(
+            signed_circulation(reflected, 0, axis),
+            base_char,
+            "a reflected ring must flip the winding character",
+        )
 
 
 if __name__ == "__main__":

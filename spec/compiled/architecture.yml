@@ -538,7 +538,16 @@ nodes:
     detects coordination geometry via template matching (LIN/TPL/SPL/TET/TPY/TBP/SPY/OCT/PBP),
     reduces hapticity to virtual atoms, assigns slots, applies maximization + homogeneous
     sorting + heading-atom selection for canonical geometry string, delegating winding
-    sign to oin.winding.signed_circulation'
+    sign to oin.winding.signed_circulation. Eta-ring canonicalization (2026-07-04,
+    MiniPRD_EtaRingCanonicalization): a scoped eta-only rank swap reorders only
+    same-mass, content-distinct haptic (eta) fragments among the rank slots they
+    already occupy, keyed on heading-independent canonical ring SMILES with winding
+    sense as a content-identical tiebreak only (RC1); the heading atom of a
+    substituted/asymmetric eta ring not in SYMMETRIC_LIGANDS is chosen by lowest
+    Chem.CanonicalRankAtoms rank instead of 3D geometric alignment, both with a
+    fail-safe fallback to the prior geometric behavior (RC2). Both fixes are
+    order-invariant, non-eta/metal ranks and the SYMMETRIC_LIGANDS path are
+    untouched by construction, and neither touches winding-sign computation.'
   inputs:
   - data_type: mol_with_cip_codes
     source_id: atom_cip_assigner
@@ -614,9 +623,13 @@ metadata:
     helper; moved dirty -> clean)
   - atom_molassembler_adapter (MiniPRD-C /hyper-audit -- documented the full dummy-metal-embed
     Zone-A-P fix in _stitch_fragment plus the DG-path enforcement loop; moved dirty -> clean)
+  - atom_oin_aligner (2026-07-04 /hyper-audit MiniPRD_EtaRingCanonicalization -- documented
+    the RC1 scoped eta-only rank swap and RC2 canonical-rank heading atom selection;
+    already clean, description expanded only)
   generated_by: /hyper-discover + /hyper-audit MiniPRD_DirectParser_RegexPreprocessor
     + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation + manual cleanup
     + 2026-07-03 needs_review resolution + 2026-07-03 /hyper-audit MiniPRD_ZoneA_P_SPL_DummyEmbed
+    + 2026-07-04 /hyper-audit MiniPRD_EtaRingCanonicalization
   generation_date: '2026-05-06'
   last_audit: '2026-07-03'
   last_audit_notes: All 5 needs_review nodes (atom_api_exports, atom_xyz_to_smiles,
