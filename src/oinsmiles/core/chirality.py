@@ -262,6 +262,37 @@ def _metal_present_cip_label(mol: Chem.Mol, p_idx: int) -> str | None:
         return None
 
 
+def _attach_dummy_metal(mol: Chem.RWMol, p_idx: int) -> int:
+    """Append a Z=0 wildcard as stereogenic P *p_idx*'s 4th substituent, in place.
+
+    Generation-side counterpart to ``_build_dummy_metal_copy`` (Stereo Phase
+    4 MiniPRD-C): that helper CONVERTS an EXISTING metal neighbour on an
+    already-coordinated P (and raises when none exists) -- this helper
+    ATTACHES a brand-new dummy to a metal-free fragment atom, before ETKDG
+    ever embeds it, so the P's ``[P@]``/``[P@@]`` tag genuinely controls a
+    4-coordinate tetrahedron instead of describing an under-determined
+    3-coordinate one. New code, not a revival of the deleted
+    ``PseudoAtomStrategy``, and never calls ``_build_dummy_metal_copy``.
+
+    Mirrors ``_build_dummy_metal_copy``'s valence-bookkeeping fix (SINGLE
+    bond + ``NoImplicit(True)`` on both atoms, see :func:`_build_dummy_metal_copy`
+    docstring) so RDKit perceives 4 real substituents on P and honours the
+    chiral tag through embedding instead of topping up a phantom implicit H.
+
+    Mutates *mol* in place; the dummy is appended as the highest atom index.
+
+    Returns:
+    -------
+    int
+        The new dummy atom's index.
+    """
+    dummy_idx = mol.AddAtom(Chem.Atom(0))
+    mol.AddBond(p_idx, dummy_idx, Chem.BondType.SINGLE)
+    mol.GetAtomWithIdx(dummy_idx).SetNoImplicit(True)
+    mol.GetAtomWithIdx(p_idx).SetNoImplicit(True)
+    return dummy_idx
+
+
 class CIPAssigner:
     """Assigns 3D-derived CIP codes and chiral tags to P/N stereocenters.
 

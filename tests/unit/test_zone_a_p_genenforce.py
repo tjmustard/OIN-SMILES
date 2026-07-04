@@ -38,13 +38,40 @@ from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
 from oinsmiles import OINStereoWarning, XYZToSMILES
-from oinsmiles.core.chirality import _metal_present_cip_label
+from oinsmiles.core.chirality import _lp_cip_label, _metal_present_cip_label
 from oinsmiles.generation import molassembler_adapter as ma
 from oinsmiles.generation.engine import OIN3DGenerator
 from oinsmiles.generation.oin_parser import OINParser, OINVector, ParsedOIN
 
 _FIXTURES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../fixtures"))
+_INTEGRATION_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../integration"))
 _DIPAMP_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Cl2.xyz")
+
+# MiniPRD-C (Zone-A P SPL Dummy-Metal Embed) fixtures.
+# Monodentate 3D round-trip fixture (Test 4, ACCEPTANCE/HARD GATE): built
+# independently in Avogadro (not derived from any oinsmiles output), a
+# genuine P stereocentre (o-tolyl / phenyl / methyl / metal) on Rh_SPL with
+# a PMe3 co-ligand. Lives in tests/integration/ only (not dual-copied to
+# tests/fixtures/ -- an existing, pre-MiniPRD-C inconsistency in this repo's
+# fixture layout, not introduced here).
+_MONO_P_SPL_REAL_XYZ = os.path.join(_INTEGRATION_DIR, "Rh-Single-Chiral-Phosphine.xyz")
+
+# Two incompatible-bite bidentate 3D fixtures (Test 8): both confirmed
+# empirically (this MiniPRD's own spike) to route to the DG fallback via
+# ee0b3f0's bite-distortion guard -- the MiniPRD's Task 8 text calls the
+# first "(compatible-bite)", which is incorrect (see spec/process/ for the
+# resolution): DIPAMP is the incompatible-bite case ee0b3f0 was written for.
+# Per user decision, both fixtures are used as incompatible-bite regression
+# cases; the compatible-bite bidentate 3D case remains a known gap.
+_DIPAMP_PH_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Ph-Cl2.xyz")
+
+# Same monodentate P-stereocentre fragment as _MONO_P_FRAG_NO_TAGS below, but
+# on [Pt_SPL] instead of [Ni_TET] -- exercises the CONFIRMED SPL bug this
+# MiniPRD fixes directly (self-oracle, no XYZ needed).
+_MONO_P_SPL_OIN = "[Pt_SPL].c1ccccc1[P@]{0}(CC)C.[Cl]{1}.[Cl]{2}.[Cl]{3}"
+_MONO_P_SPL_FRAG_TAGGED_R = "c1ccccc1[P@](CC)C"
+_MONO_P_SPL_FRAG_TAGGED_S = "c1ccccc1[P@@](CC)C"
+_MONO_P_CORESIDENT_SPL_OIN = "[Pt_SPL].c1ccccc1[P@]{0}([C@@H](C)CC)C.[Cl]{1}.[Cl]{2}.[Cl]{3}"
 
 # The DIPAMP ligand fragment, chirality markers stripped, used to locate the
 # fragment-local atom index of each P atom (same numbering `_stitch_fragment`
@@ -205,6 +232,206 @@ class TestZoneAPEnantiomerDiscrimination(unittest.TestCase):
         self.assertTrue(all(cip_b), f"struct_b missing CIP labels: {cip_b}")
         self.assertNotEqual(
             cip_a, cip_b, f"flipping both P tags did not invert regenerated CIP: {cip_a} vs {cip_b}"
+        )
+
+
+def _single_p_global_idx(mol: Chem.Mol) -> int:
+    """Return the GetIdx() of the sole P atom in *mol* (fixtures below have exactly one)."""
+    p_idxs = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 15]
+    assert len(p_idxs) == 1, f"expected exactly one P atom, found {len(p_idxs)}"
+    return p_idxs[0]
+
+
+class TestZoneAPSPLDummyEmbed(unittest.TestCase):
+    """MiniPRD-C Test 1 (ACCEPTANCE): the CONFIRMED SPL bug this MiniPRD
+    fixes -- spec/worklog/SPL-P-enforcement-decision.md. Before the
+    dummy-metal embed, SPL's metal-present CIP was fixed by which face the
+    metal happened to land on, not by the ETKDG re-embed seed, so only ONE
+    of [P@]/[P@@] ever enforced cleanly (the other always warned "could not
+    be enforced"). Both tags must now enforce cleanly, with like-for-like
+    (lone-pair) labels matching the OIN-encoded intent and OPPOSITE
+    metal-present CIPs (enantiomer discrimination).
+    """
+
+    def test_both_spl_tags_enforce_cleanly_with_opposite_metal_present_cip(self):
+        metal_present_labels = {}
+        for tag, frag in (
+            ("[P@]", _MONO_P_SPL_FRAG_TAGGED_R),
+            ("[P@@]", _MONO_P_SPL_FRAG_TAGGED_S),
+        ):
+            oin = f"[Pt_SPL].c1ccccc1{tag}{{0}}(CC)C.[Cl]{{1}}.[Cl]{{2}}.[Cl]{{3}}"
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                structure = OIN3DGenerator().generate(oin)
+            self.assertIsNotNone(structure.mol, f"expected an assembled mol for {tag}")
+
+            stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
+            enforce_warnings = [
+                w for w in stereo_warnings if "could not be enforced" in str(w.message)
+            ]
+            self.assertEqual(
+                enforce_warnings,
+                [],
+                f"{tag} must enforce cleanly on SPL (this MiniPRD's own bug fix): "
+                f"{[str(w.message) for w in enforce_warnings]}",
+            )
+
+            p_global_idx = _single_p_global_idx(structure.mol)
+            expected_lp = dict(ma._zone_a_p_expected_labels(frag))[_mono_p_frag_p_local_idx()]
+            dummy = ma._build_dummy_metal_copy(structure.mol, p_global_idx)
+            self.assertIsNotNone(dummy, f"dummy-metal copy failed for {tag}")
+            measured_lp = _lp_cip_label(dummy, p_global_idx)
+            self.assertEqual(
+                measured_lp,
+                expected_lp,
+                f"{tag}: like-for-like LP label mismatch (measured={measured_lp}, "
+                f"expected={expected_lp})",
+            )
+
+            metal_present_labels[tag] = _metal_present_cip_label(structure.mol, p_global_idx)
+
+        self.assertTrue(all(metal_present_labels.values()), metal_present_labels)
+        self.assertNotEqual(
+            metal_present_labels["[P@]"],
+            metal_present_labels["[P@@]"],
+            f"opposite tags must give opposite metal-present CIPs: {metal_present_labels}",
+        )
+
+    def test_first_embed_enforces_without_entering_reembed_loop(self):
+        """Test 6: with Tasks 1-6 correct, `_verify_zone_a_p` returns no
+        mismatches on the FIRST embed for both tags on SPL, so the re-embed
+        loop's attempt counter stays 0 -- correctness moved to embed time,
+        the loop is a pure safety net (Task 7).
+        """
+        for tag in ("[P@]", "[P@@]"):
+            oin = f"[Pt_SPL].c1ccccc1{tag}{{0}}(CC)C.[Cl]{{1}}.[Cl]{{2}}.[Cl]{{3}}"
+            call_count = {"n": 0}
+            orig_stitch = ma._stitch_fragment
+
+            def _wrapped(frag_smiles, binding_idxs, target_positions, **kwargs):
+                call_count["n"] += 1
+                return orig_stitch(frag_smiles, binding_idxs, target_positions, **kwargs)
+
+            with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    structure = OIN3DGenerator().generate(oin)
+            self.assertIsNotNone(structure.mol)
+            # Exactly one _stitch_fragment call for the single ligand
+            # fragment (Cl atoms are single-atom fragments too, but the
+            # P-bearing ligand is what matters): no retry attempt fired.
+            self.assertEqual(
+                call_count["n"],
+                4,
+                f"expected no re-embed retries for {tag} (4 fragments, 1 call each): "
+                f"got {call_count['n']} _stitch_fragment calls",
+            )
+
+
+class TestZoneAPSPLForcedMisEmbedCorrection(unittest.TestCase):
+    """MiniPRD-C Test 3 (co-resident safety on SPL) and Test 7
+    (loop-with-dummy): extends MiniPRD-B's forced-mis-embed test to SPL,
+    and explicitly asserts no Z=0/`*` atom survives the re-embed loop's own
+    dummy attach+strip (Task 6's postcondition, exercised on the loop path).
+    """
+
+    def test_single_atom_mis_embed_on_spl_is_corrected_without_mirroring_co_resident(self):
+        oin1 = _MONO_P_CORESIDENT_SPL_OIN
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            baseline_structure = OIN3DGenerator().generate(oin1)
+        self.assertIsNotNone(baseline_structure.mol)
+        baseline_cip = _p_and_co_resident_c_cip_codes(baseline_structure.mol)
+        self.assertTrue(any(k[0] == "P" for k in baseline_cip))
+        self.assertTrue(any(k[0] == "C" for k in baseline_cip))
+
+        target_p_local_idx = _mono_p_coresident_frag_p_local_idx()
+        orig_stitch = ma._stitch_fragment
+        call_count = {"n": 0}
+
+        def _wrapped(frag_smiles, binding_idxs, target_positions, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1 and target_p_local_idx in binding_idxs:
+                kwargs["_test_flip_chiral_idx"] = target_p_local_idx
+            return orig_stitch(frag_smiles, binding_idxs, target_positions, **kwargs)
+
+        with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                structure = OIN3DGenerator().generate(oin1)
+
+        self.assertIsNotNone(structure.mol, "expected an assembled mol after enforcement")
+        stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
+        self.assertEqual(
+            stereo_warnings,
+            [],
+            f"enforcement should have SUCCEEDED: {[str(w.message) for w in stereo_warnings]}",
+        )
+
+        final_cip = _p_and_co_resident_c_cip_codes(structure.mol)
+        self.assertEqual(
+            final_cip,
+            baseline_cip,
+            f"enforcement must converge to the SAME CIP labels: baseline={baseline_cip} "
+            f"final={final_cip}",
+        )
+        self.assertGreater(call_count["n"], 4, "expected at least one re-embed attempt")
+
+        # Task 6 postcondition, exercised on the LOOP path (Test 7): no Z=0
+        # dummy leaked into the final assembled mol, and atom count is
+        # exactly what it would be with no dummy ever having existed.
+        self.assertFalse(
+            any(a.GetAtomicNum() == 0 for a in structure.mol.GetAtoms()),
+            "no Z=0 dummy atom may survive the re-embed loop",
+        )
+        n_declared = int(structure.xyz.strip().split("\n")[0])
+        self.assertNotIn(
+            "*",
+            {line.split()[0] for line in structure.xyz.strip().split("\n")[2 : 2 + n_declared]},
+            "no '*' (Z=0) token may appear in the written XYZ block",
+        )
+
+
+class TestZoneAPByteStableRoundTrip(unittest.TestCase):
+    """MiniPRD-C Test 4 (ACCEPTANCE, HARD GATE, C5): XYZ->OIN->XYZ->OIN on
+    the monodentate real-3D fixture -> second OIN byte-identical to the
+    first. Per C5, the fixture's absolute configuration is trusted as-is
+    (RISK-C3 accepted); reviewer sign-off recorded post-hoc.
+    """
+
+    def test_rh_single_chiral_phosphine_round_trips_byte_identically(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            oin1 = XYZToSMILES().convert(_MONO_P_SPL_REAL_XYZ)
+
+        with warnings.catch_warnings(record=True) as caught2:
+            warnings.simplefilter("always")
+            structure = OIN3DGenerator().generate(oin1)
+
+        self.assertIsNotNone(structure.mol, "expected an assembled mol")
+        stereo_warnings = [
+            w for w in list(caught) + list(caught2) if issubclass(w.category, OINStereoWarning)
+        ]
+        self.assertEqual(
+            stereo_warnings,
+            [],
+            f"expected clean generation: {[str(w.message) for w in stereo_warnings]}",
+        )
+
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as f:
+            f.write(structure.xyz)
+            tmp_path = f.name
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                oin2 = XYZToSMILES().convert(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+        self.assertEqual(
+            oin1, oin2, f"round trip not byte-identical:\n  oin1={oin1}\n  oin2={oin2}"
         )
 
 
@@ -414,11 +641,15 @@ class TestZoneAPFallbackObservability(unittest.TestCase):
         self.assertIn("stereo unenforced on fallback path", str(stereo_warnings[0].message))
         self.assertIn("atom 6", str(stereo_warnings[0].message))  # local P atom idx
 
-    def test_dg_fallback_path_warns_when_zone_a_p_tag_present(self):
-        """DG-path (geo_code='NON') never runs the assembled-complex
-        enforcement -- must warn whenever the OIN carries a Zone-A P tag,
-        independent of whether `_reconstruct_mol_from_smiles_and_xyz`
-        happens to succeed.
+    def test_dg_fallback_total_failure_raises_without_stereo_warning(self):
+        """MiniPRD-C (Task 5, C2) supersedes the old unconditional up-front
+        warning: enforcement now runs AFTER a `bonded_mol` exists (a
+        set-based `_zone_a_p_measured_labels_dg` comparison, since the
+        connected SMILES is canonicalised and per-atom index tracking isn't
+        available here). When Molassembler itself fails outright (``ok:
+        False``), generation raises `RuntimeError` before any mol exists to
+        verify -- the exception itself is the loud, non-silent signal
+        (RISK-9's intent), so no separate OINStereoWarning fires here.
         """
         from concurrent.futures import TimeoutError as FuturesTimeout  # noqa: F401
         from unittest.mock import MagicMock
@@ -450,8 +681,53 @@ class TestZoneAPFallbackObservability(unittest.TestCase):
                     ma.MolassemblerAdapter().generate(parsed)
 
         stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
-        self.assertEqual(len(stereo_warnings), 1)
-        self.assertIn("Molassembler DG fallback path", str(stereo_warnings[0].message))
+        self.assertEqual(stereo_warnings, [])
+
+
+class TestZoneAPIncompatibleBiteDGEnforcement(unittest.TestCase):
+    """MiniPRD-C Test 8 (C2): bidentate Zone-A-P chelates whose bite is
+    incompatible with template placement (ee0b3f0 routes these to the DG
+    fallback) must STILL be enforced -- Task 5's set-based verify-and-
+    reseed loop on the DG-produced mol. Both fixtures here are confirmed
+    (this MiniPRD's own spike) to be the incompatible-bite case; no
+    compatible-bite bidentate 3D fixture currently exists (known gap, user
+    decision 2026-07-03: not blocking this MiniPRD).
+    """
+
+    def _assert_enforces_cleanly_via_dg(self, xyz_path):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            oin = XYZToSMILES().convert(xyz_path)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            structure = OIN3DGenerator().generate(oin)
+
+        self.assertTrue(len(structure.xyz) > 0)
+        stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
+        self.assertEqual(
+            stereo_warnings,
+            [],
+            f"expected clean DG-path enforcement (no fallback/could-not-enforce "
+            f"warning): {[str(w.message) for w in stereo_warnings]}",
+        )
+        self.assertIsNotNone(structure.mol, "expected a reconstructed mol on the DG path")
+        self.assertFalse(
+            any(a.GetAtomicNum() == 0 for a in structure.mol.GetAtoms()),
+            "no Z=0 dummy atom may survive onto the DG-path mol",
+        )
+        n_declared = int(structure.xyz.strip().split("\n")[0])
+        self.assertNotIn(
+            "*",
+            {line.split()[0] for line in structure.xyz.strip().split("\n")[2 : 2 + n_declared]},
+            "no '*' (Z=0) token may appear in the written XYZ block",
+        )
+
+    def test_dipamp_enforces_cleanly_via_dg_fallback(self):
+        self._assert_enforces_cleanly_via_dg(_DIPAMP_XYZ)
+
+    def test_dipamp_ph_enforces_cleanly_via_dg_fallback(self):
+        self._assert_enforces_cleanly_via_dg(_DIPAMP_PH_XYZ)
 
 
 class TestZoneAPNoRegression(unittest.TestCase):
@@ -488,31 +764,6 @@ class TestZoneAPNoRegression(unittest.TestCase):
         """
         self._assert_generates_clean(_MONO_P_OIN)
 
-    def test_dipamp_dg_fallback_warns_honestly(self):
-        """TASK-32 (2026-07-03): DIPAMP's bite is incompatible with the
-        Kabsch/template path, so TASK-31 routes it to the Molassembler DG
-        fallback instead. The DG path never runs the assembled-complex
-        Zone-A P enforcement, so it must warn -- NOT silently claim to be
-        clean (Test 5 / RISK-9). This documents that TASK-31's routing
-        decision is an honest, observable trade-off, not a silent
-        stereo-enforcement regression.
-        """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            oin = XYZToSMILES().convert(_DIPAMP_XYZ)
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            structure = OIN3DGenerator().generate(oin)
-
-        self.assertTrue(len(structure.xyz) > 0)
-        stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
-        self.assertGreater(
-            len(stereo_warnings), 0, "expected an honest DG-fallback stereo warning for DIPAMP"
-        )
-        for w in stereo_warnings:
-            self.assertIn("stereo unenforced on fallback path", str(w.message))
-
     def test_bdpp_generation_unaffected(self):
         """BDPP: P atoms are NOT CIP stereocentres (no _OIN_CIPCode_LP) --
         chirality lives on backbone carbon, an ordinary (pre-existing,
@@ -521,6 +772,71 @@ class TestZoneAPNoRegression(unittest.TestCase):
             warnings.simplefilter("ignore")
             oin = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "PdCl2-RR-BDPP.xyz"))
         self._assert_generates_clean(oin)
+
+    def test_tag_free_goldens_never_enter_dummy_embed_branch(self):
+        """MiniPRD-C Task 10 (C4.4): tag-free goldens stay byte-identical
+        AND the dummy-embed branch is proven NEVER ENTERED for them via a
+        branch-entry spy on `_attach_dummy_metal` -- not merely an output
+        byte-diff (a byte-diff alone couldn't distinguish "branch never
+        ran" from "branch ran and happened to cancel out").
+        """
+        golden_oins = []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            golden_oins.append(("cisplatin", "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"))
+            golden_oins.append(
+                (
+                    "transplatin",
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "transplatin.xyz")),
+                )
+            )
+            golden_oins.append(
+                (
+                    "cis_ptcl2en",
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "cis_ptcl2en.xyz")),
+                )
+            )
+            golden_oins.append(
+                ("ferrocene", XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "ferrocene.xyz")))
+            )
+            golden_oins.append(
+                (
+                    "fac_irppy3",
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "fac_irppy3.xyz")),
+                )
+            )
+            golden_oins.append(
+                (
+                    "mer_irppy3",
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "mer_irppy3.xyz")),
+                )
+            )
+
+        from oinsmiles.core import chirality as chirality_mod
+
+        call_count = {"n": 0}
+        orig_attach = chirality_mod._attach_dummy_metal
+
+        def _spy(mol, p_idx):
+            call_count["n"] += 1
+            return orig_attach(mol, p_idx)
+
+        for name, oin in golden_oins:
+            call_count["n"] = 0
+            with mock.patch.object(ma, "_attach_dummy_metal", side_effect=_spy):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    structure = OIN3DGenerator().generate(oin)
+            stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
+            self.assertEqual(stereo_warnings, [], f"{name}: unexpected stereo warning(s)")
+            self.assertTrue(len(structure.xyz) > 0, f"{name}: expected non-empty XYZ")
+            self.assertEqual(
+                call_count["n"],
+                0,
+                f"{name}: dummy-embed branch was entered ({call_count['n']} calls) for a "
+                "tag-free golden -- must be gated strictly on "
+                "_zone_a_p_expected_labels(frag_smiles) non-empty",
+            )
 
 
 if __name__ == "__main__":
