@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.0"><img src="https://img.shields.io/badge/release-v0.3.0-blue" alt="Latest Release"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
 </p>
@@ -36,10 +36,11 @@ Standard SMILES notation is lossy for transition metal complexes (TMCs): coordin
 ## ✨ Features
 
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ with exact isomer preservation.
-- **Open Isomer Notation (OIN) v3.6**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry.
+- **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
 - **Deterministic 3D Generation**: Uses **SCINE Molassembler** as backend — template-based placement for all ligand types, distance geometry (DG) for fallback conformer generation. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
-- **P/N Stereocenter Encoding**: 3D-derived CIP codes for chiral phosphorus and nitrogen centers are encoded directly in the OIN string.
+- **P Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
+- **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
 ## ⚡ Installation
@@ -110,7 +111,7 @@ if result.mol is not None:
 
 `generate()` accepts an optional `timeout` (seconds, default 60) passed to the `OIN3DGenerator` constructor.
 
-### OIN v3.6 Inline Format
+### OIN v3.7 Inline Format
 
 **Cisplatin** (square planar, *cis* isomer):
 
@@ -131,6 +132,7 @@ if result.mol is not None:
 | `[Pt_SPL]` | Metal atom + geometry template (`SPL` = Square Planar); isomerism (cis/trans, fac/mer) is carried entirely by slot order, not by the metal token |
 | `{n}` | Slot tag — assigns the preceding binding atom to slot *n* of the geometry template |
 | `{n>}` / `{n<}` | Slot tag with winding direction (CW / CCW) for η-ligands |
+| `[P@]` / `[P@@]` | Metal-bound phosphorus stereocenter (lone-pair CIP convention) |
 | `.` | Fragment separator (metal + each ligand) |
 
 **Geometry templates:** `LIN`, `TPL`, `TET`, `SPL`, `SPY`, `TBP`, `OCT`, `PBP`, `TPY`
