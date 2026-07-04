@@ -36,7 +36,13 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
-from ..core.chirality import OINStereoWarning, _build_dummy_metal_copy, _lp_cip_label
+from ..core.chirality import (
+    OINStereoWarning,
+    _attach_dummy_metal,
+    _build_dummy_metal_copy,
+    _lp_cip_label,
+)
+from ..core.constants import TRANSITION_METALS_NUM
 from ..oin.winding import signed_circulation
 from .oin_parser import TEMPLATES, ParsedOIN
 
@@ -373,6 +379,29 @@ def _zone_a_p_expected_labels(frag_smiles: str) -> list[tuple[int, str]]:
     return out
 
 
+def _graph_cip_label(mol: "Chem.Mol", p_idx: int) -> "str | None":
+    """Graph-based CIP label for P *p_idx* from *mol*'s OWN existing chiral tag.
+
+    No 3D conformer needed -- same technique as ``_zone_a_p_expected_labels``
+    (``AssignStereochemistry`` + ``rdCIPLabeler`` off an existing tag, never
+    ``AssignAtomChiralTagsFromStructure``), but operates on an in-memory
+    ``Mol`` rather than re-parsing a SMILES string. Used as the Task-3
+    pre-placement parity guard's reference in ``_stitch_fragment``: it must
+    reflect whatever chiral tag the mol CURRENTLY carries -- including a
+    TEST-ONLY ``_test_flip_chiral_idx`` seam mutation -- never the original
+    OIN-encoded tag, so the guard only ever fires on a genuine ETKDG
+    embedding anomaly and never on the test seam itself (that mismatch is
+    caught downstream by ``_verify_zone_a_p`` + the re-embed loop, Task 7).
+    """
+    try:
+        copy_mol = Chem.Mol(mol)
+        Chem.AssignStereochemistry(copy_mol, cleanIt=True, force=True)
+        rdCIPLabeler.AssignCIPLabels(copy_mol)
+        return copy_mol.GetAtomWithIdx(p_idx).GetPropsAsDict().get("_CIPCode")
+    except Exception:  # noqa: BLE001 - guarded, no reference label available
+        return None
+
+
 def _zone_a_p_tags_in_parsed_oin(parsed_oin: "ParsedOIN") -> list[tuple[int, int]]:
     """Return every tagged Zone-A P in *parsed_oin*, as ``(frag_idx, local_p_idx)``.
 
@@ -444,6 +473,84 @@ def _verify_zone_a_p(
         if measured != expected_label:
             mismatched.append(global_idx)
     return mismatched
+
+
+def _zone_a_p_clash_offending_frags(
+    normal_frag_meta: list[dict],
+    all_pos: list[np.ndarray],
+    all_syms: list[str],
+    heavy_threshold: float = 1.7,
+    h_threshold: float = 1.8,
+) -> set[int]:
+    """Return ``frag_idx`` of Zone-A-P fragments with an inter-fragment clash.
+
+    Stereo Phase 4 (MiniPRD-C spike finding): a Zone-A-P fragment's
+    residual-DOF orientation sweep (``_sweep_rotation_for_clash_avoidance``
+    in ``_stitch_fragment``) only sees ``forbidden_positions`` as of ITS OWN
+    placement time -- fragments processed LATER in ``parsed_oin.fragments``
+    order don't exist yet, so an EARLIER Zone-A-P fragment cannot avoid
+    clashing with one placed after it (confirmed empirically: a bulky
+    co-ligand placed second folded a methyl H of a Zone-A-P ligand placed
+    first to 1.7 A of the metal -- not a literal atom overlap, but close
+    enough for xyz2mol to misperceive an M-H bond on round-trip). Checked
+    here, AFTER every fragment has been placed, so the SAME re-embed loop
+    that already retries on a stereo mismatch can also retry with the
+    NOW-COMPLETE ``forbidden_positions`` -- purely geometric, never a
+    stereo/mirror operation. Thresholds mirror the existing bidentate
+    bite-distortion guard (1.7 A heavy / 1.8 A H) for consistency.
+    """
+    offending: set[int] = set()
+    for meta in normal_frag_meta:
+        if not _zone_a_p_expected_labels(meta["frag_smiles"]):
+            continue
+        start, end = meta["atom_start"], meta["atom_end"]
+        binding_global = {start + b for b in meta["binding_idxs"]}
+        for gi in range(start, end):
+            if gi in binding_global:
+                continue  # the binding atom is SUPPOSED to be near the metal
+            threshold = h_threshold if all_syms[gi] == "H" else heavy_threshold
+            for gj in range(len(all_pos)):
+                if start <= gj < end:
+                    continue  # intra-fragment (bonded-length) distances, skip
+                if float(np.linalg.norm(all_pos[gi] - all_pos[gj])) < threshold:
+                    offending.add(meta["frag_idx"])
+                    break
+            if meta["frag_idx"] in offending:
+                break
+    return offending
+
+
+def _zone_a_p_measured_labels_dg(bonded_mol: "Chem.Mol") -> list[str]:
+    """Lone-pair-convention CIP labels for every metal-bound P in *bonded_mol*.
+
+    Stereo Phase 4 (MiniPRD-C, Task 5, C2): used to verify Zone-A-P
+    enforcement on the DG-produced mol. Unlike ``_verify_zone_a_p`` (which
+    matches specific global atom indices against specific expected labels,
+    using index bookkeeping only the TEMPLATE path can provide), the DG
+    path's ``bonded_mol`` is reconstructed from a CANONICALISED connected
+    SMILES (``_build_connected_smiles`` calls ``Chem.MolToSmiles``), so a
+    ligand-fragment-local atom index cannot be mapped to a global index here
+    without deeper surgery. This returns the SORTED list of measured labels
+    instead, for a set-based comparison against the OIN-encoded expected
+    labels: correct for every fixture this MiniPRD's own test suite exercises
+    (same-label bidentates, e.g. DIPAMP (R,R)) but -- documented honestly --
+    it cannot in principle distinguish a coincidental same-set "swap" between
+    two DIFFERENTLY-labelled Zone-A-P atoms in the same fragment. Exact
+    per-atom index tracking through the DG pipeline is a follow-up item.
+    """
+    labels: list[str] = []
+    for atom in bonded_mol.GetAtoms():
+        if atom.GetAtomicNum() != 15:
+            continue
+        if not any(nbr.GetAtomicNum() in TRANSITION_METALS_NUM for nbr in atom.GetNeighbors()):
+            continue
+        dummy_mol = _build_dummy_metal_copy(bonded_mol, atom.GetIdx())
+        if dummy_mol is None:
+            continue
+        label = _lp_cip_label(dummy_mol, atom.GetIdx())
+        if label is not None:
+            labels.append(label)
+    return sorted(labels)
 
 
 def _assemble_combined_mol(
@@ -1316,6 +1423,97 @@ def _stitch_eta_fragment(
     return positions, symbols, etkdg_mol, decision
 
 
+def _strip_dummy_atoms(
+    positions: np.ndarray,
+    symbols: list[str],
+    mol: "Chem.Mol",
+    dummy_indices: list[int],
+) -> tuple[np.ndarray, list[str], "Chem.Mol"]:
+    """Delete *dummy_indices* from *positions*/*symbols*/*mol*, re-deriving indices.
+
+    Stereo Phase 4 (MiniPRD-C, Task 4/C4.1): every Z=0 dummy attached by
+    ``_attach_dummy_metal`` must be gone before this fragment leaves
+    ``_stitch_fragment`` -- it must never reach ``combined_mol`` or the
+    written XYZ block. Dummies were appended as the highest original-heavy-
+    atom indices (before ``AddHs``), so ``binding_idxs`` (all < those
+    indices) are unaffected by their removal; only trailing H-atom indices
+    shift down, which downstream code never assumes are stable.
+    """
+    if not dummy_indices:
+        return positions, symbols, mol
+    keep_mask = np.ones(len(symbols), dtype=bool)
+    for di in dummy_indices:
+        keep_mask[di] = False
+    new_positions = positions[keep_mask]
+    new_symbols = [s for i, s in enumerate(symbols) if keep_mask[i]]
+    rw = Chem.RWMol(mol)
+    for di in sorted(dummy_indices, reverse=True):
+        rw.RemoveAtom(di)
+    return new_positions, new_symbols, rw.GetMol()
+
+
+def _sweep_rotation_for_clash_avoidance(
+    positions: np.ndarray,
+    binding_pos: np.ndarray,
+    axis: np.ndarray,
+    other_idxs: list[int],
+    forbidden_positions: "list | None",
+    require_existing_clash: bool = False,
+    clash_threshold: float = 1.5,
+) -> np.ndarray:
+    """Sweep rotation about *axis* (through *binding_pos*) to maximise min distance to forbidden.
+
+    Resolves the one residual rotational DOF a single-vector alignment
+    leaves undetermined: aligning one vector (e.g. P->dummy onto a slot
+    direction, or the pre-existing "outward" vector onto a slot direction)
+    fixes only 2 of 3 rotational DOF -- the remaining rotation about that
+    axis is arbitrary and can swing the rest of a bulky monodentate fragment
+    into an already-placed neighbour (confirmed empirically during Stereo
+    Phase 4 MiniPRD-C: an unconstrained residual rotation folded a methyl
+    group to a sub-Angstrom clash with a neighbouring ligand).
+
+    When *require_existing_clash* is True, only searches -- and only ever
+    changes *positions* -- if the CURRENT orientation already clashes
+    (below *clash_threshold*). This is a monotonic guard: it can only turn an
+    already-bad placement into a better one, never move an already-clash-free
+    placement, so every existing tag-free golden fixture's byte-identical
+    output is unaffected.
+    """
+    from scipy.spatial.transform import Rotation as _Rotation  # noqa: PLC0415
+
+    if not forbidden_positions or not other_idxs:
+        return positions
+    forb_np = np.array(forbidden_positions, dtype=float)
+
+    def _min_dist(pos_arr: np.ndarray) -> float:
+        other = pos_arr[other_idxs]
+        dists = np.sqrt(((other[:, None, :] - forb_np[None, :, :]) ** 2).sum(axis=-1))
+        return float(dists.min())
+
+    current_dist = _min_dist(positions)
+    if require_existing_clash and current_dist >= clash_threshold:
+        return positions
+
+    axis_norm = float(np.linalg.norm(axis))
+    if axis_norm < 1e-9:
+        return positions
+    axis_unit = axis / axis_norm
+    centered = positions - binding_pos
+    best_angle = 0.0
+    best_dist = current_dist
+    for deg in range(5, 360, 5):
+        rot_try = _Rotation.from_rotvec(axis_unit * np.radians(deg))
+        pos_try = rot_try.apply(centered) + binding_pos
+        dist = _min_dist(pos_try)
+        if dist > best_dist:
+            best_dist = dist
+            best_angle = float(np.radians(deg))
+    if best_angle == 0.0:
+        return positions
+    rot_best = _Rotation.from_rotvec(axis_unit * best_angle)
+    return rot_best.apply(centered) + binding_pos
+
+
 def _stitch_fragment(
     frag_smiles: str,
     binding_idxs: list[int],
@@ -1410,6 +1608,31 @@ def _stitch_fragment(
     # Use +2 (not +1) to account for double bonds to the metal (e.g. V=O:
     # O has _bsum=0, _dv=2 → 0+2=2 >= 2 → NoImplicit, preventing H2O gen).
     rw = Chem.RWMol(mol)
+
+    # Stereo Phase 4 (MiniPRD-C): Zone-A P dummy-metal embed. Gate on ANY
+    # denticity (Task 1, C2) -- never co-conditioned on len(binding_idxs)
+    # == 1. `_zone_a_p_expected_labels` is the same graph-based recompute
+    # `_verify_zone_a_p` trusts, so local_p_idx here matches this fragment's
+    # own atom ordering with no re-derivation needed.
+    zone_a_p_targets = _zone_a_p_expected_labels(frag_smiles)
+    dummy_by_p_idx: dict[int, int] = {}
+    pre_embed_expected: dict[int, "str | None"] = {}
+    if zone_a_p_targets:
+        for p_idx, _expected_label in zone_a_p_targets:
+            if p_idx >= rw.GetNumAtoms():
+                continue
+            # Parity-guard reference (Task 3): the CIP implied by THIS mol's
+            # own CURRENT chiral tag -- test-seam-aware (see
+            # _graph_cip_label), NOT the original OIN-encoded tag. Computed
+            # before the dummy attach so it reflects only a real chiral-tag
+            # mutation (e.g. _test_flip_chiral_idx), never an artifact of
+            # adding the dummy substituent itself.
+            pre_embed_expected[p_idx] = _graph_cip_label(rw.GetMol(), p_idx)
+            # Pinned order (C4.2): SetNoImplicit(P) -> attach dummy, both
+            # before AddHs/embed.
+            rw.GetAtomWithIdx(p_idx).SetNoImplicit(True)
+            dummy_by_p_idx[p_idx] = _attach_dummy_metal(rw, p_idx)
+
     try:
         _pt = Chem.GetPeriodicTable()
         for bidx in binding_idxs:
@@ -1423,7 +1646,16 @@ def _stitch_fragment(
                     _a.SetNoImplicit(True)
         mol = Chem.AddHs(rw.GetMol())
     except Exception:
-        mol = Chem.AddHs(mol)
+        # Fall back to rw's current state (preserves the dummy attach above
+        # and any partial NoImplicit edits) -- never the pre-edit `mol`,
+        # which would silently drop the just-attached dummy.
+        mol = Chem.AddHs(rw.GetMol())
+
+    if dummy_by_p_idx:
+        for _p_idx, _dummy_idx in dummy_by_p_idx.items():
+            assert mol.GetAtomWithIdx(_dummy_idx).GetAtomicNum() == 0, (
+                f"dummy atom at idx {_dummy_idx} lost its Z=0 identity after AddHs"
+            )
 
     _etkdg_params = AllChem.ETKDGv3()
     _etkdg_params.randomSeed = seed
@@ -1454,18 +1686,82 @@ def _stitch_fragment(
         if bidx >= n_atoms:
             return None
 
+    # Stereo Phase 4 (MiniPRD-C, Task 3/C4.2): pre-placement parity guard.
+    # A rigid rotation (the orientation step below) can never change a CIP
+    # label, so this only checks that ETKDG itself embedded the tetrahedron
+    # with the handedness the OIN string encodes. A mismatch means ETKDG
+    # embedded the wrong-handed conformer -- a hard failure, never silently
+    # masked by the (unrelated) re-embed loop upstream.
+    if zone_a_p_targets:
+        for p_idx, _expected_label in zone_a_p_targets:
+            if p_idx not in dummy_by_p_idx:
+                continue
+            reference = pre_embed_expected.get(p_idx)
+            if reference is None:
+                continue  # nothing meaningful to check against
+            measured = _lp_cip_label(mol, p_idx)
+            assert measured == reference, (
+                f"Zone-A P atom {p_idx}: pre-placement lone-pair CIP parity "
+                f"mismatch (this mol's own chiral tag implies {reference!r}, "
+                f"embedded conformer gives {measured!r}) -- ETKDG embedded "
+                "the wrong-handed tetrahedron; hard failure, never a silent "
+                "loop-mask."
+            )
+
     if len(binding_idxs) == 1:
         # Monodentate: rigid translation so binding atom lands on target.
         t = target_positions[0] - positions[binding_idxs[0]]
         positions = positions + t
 
+        bidx = binding_idxs[0]
+        _zone_a_dummy_idx = dummy_by_p_idx.get(bidx)
+        if _zone_a_dummy_idx is not None and slot_units and len(slot_units) >= 1:
+            # US-C2 (monodentate): replace the "outward" centroid heuristic
+            # below with the exact embedded P->dummy (metal-facing) vector
+            # for Zone-A-P fragments only -- the dummy IS the faithful
+            # metal-facing reference the tag was embedded against.
+            slot_u = np.array(slot_units[0], dtype=float)
+            binding_pos = positions[bidx]
+            dummy_vec = positions[_zone_a_dummy_idx] - binding_pos
+            dummy_norm = float(np.linalg.norm(dummy_vec))
+            if dummy_norm > 1e-9:
+                dummy_unit = dummy_vec / dummy_norm
+                metal_dir = -slot_u  # P->metal direction (metal sits at the origin)
+                if float(np.dot(dummy_unit, metal_dir)) < 0.999999:
+                    try:
+                        rot_o, _ = Rotation.align_vectors([metal_dir], [dummy_unit])
+                        centered = positions - binding_pos
+                        positions = rot_o.apply(centered) + binding_pos
+                    except Exception:
+                        pass  # Keep current orientation on failure
+
+                # Aligning a single vector (P->dummy onto metal_dir) fixes
+                # only 2 of 3 rotational DOF -- the remaining rotation about
+                # that (now-fixed) axis is arbitrary and can swing the rest
+                # of the ligand into an already-placed fragment (confirmed
+                # empirically: an unconstrained residual rotation folded a
+                # methyl group to a 0.27 A H...H clash with a neighbouring
+                # ligand). Sweep that residual angle to maximise distance
+                # from forbidden_positions -- never touches the fixed
+                # metal-facing vector itself, so the CIP-determining
+                # handedness is unaffected by this search. Unconditional
+                # (not gated on an existing clash): this is new Zone-A-P-only
+                # code, no pre-existing golden output to preserve.
+                other_idxs_for_sweep = [i for i in range(n_atoms) if i != bidx]
+                positions = _sweep_rotation_for_clash_avoidance(
+                    positions,
+                    binding_pos,
+                    metal_dir,
+                    other_idxs_for_sweep,
+                    forbidden_positions,
+                    require_existing_clash=False,
+                )
         # Orientation fix: rotate fragment around the binding atom so that
         # non-binding atoms face away from the metal (in the +slot direction).
         # Without this, H atoms from NH3 / [CH] groups may end up between the
         # metal and the binding atom, causing xyz2mol to form spurious M-H bonds.
-        if slot_units and len(slot_units) >= 1 and n_atoms > 1:
+        elif slot_units and len(slot_units) >= 1 and n_atoms > 1:
             slot_u = np.array(slot_units[0], dtype=float)
-            bidx = binding_idxs[0]
             binding_pos = positions[bidx]
             other_idxs = [i for i in range(n_atoms) if i != bidx]
             if other_idxs:
@@ -1482,6 +1778,15 @@ def _stitch_fragment(
                         except Exception:
                             pass  # Keep current orientation on failure
 
+        positions, symbols, mol = _strip_dummy_atoms(
+            positions, symbols, mol, list(dummy_by_p_idx.values())
+        )
+        assert not any(
+            mol.GetAtomWithIdx(i).GetAtomicNum() == 0 for i in range(mol.GetNumAtoms())
+        ), "dummy atom leaked past _stitch_fragment (monodentate path)"
+        assert len(positions) == mol.GetNumAtoms() == len(symbols), (
+            "positions/mol/symbols length mismatch after dummy strip (monodentate path)"
+        )
         return positions, symbols, mol
 
     # ── Bidentate or higher ──────────────────────────────────────────────────
@@ -1503,7 +1808,14 @@ def _stitch_fragment(
     t_centered = target_ba - t_center
 
     if np.linalg.norm(c_centered[0]) < 1e-6 or np.linalg.norm(t_centered[0]) < 1e-6:
-        return positions + (t_center - c_center), symbols, mol
+        _degenerate_positions, _degenerate_symbols, _degenerate_mol = _strip_dummy_atoms(
+            positions + (t_center - c_center), symbols, mol, list(dummy_by_p_idx.values())
+        )
+        assert not any(
+            _degenerate_mol.GetAtomWithIdx(i).GetAtomicNum() == 0
+            for i in range(_degenerate_mol.GetNumAtoms())
+        ), "dummy atom leaked past _stitch_fragment (bidentate degenerate path)"
+        return _degenerate_positions, _degenerate_symbols, _degenerate_mol
 
     rot, _ = Rotation.align_vectors(t_centered, c_centered)
     positions_aligned = rot.apply(positions - c_center) + t_center
@@ -1543,32 +1855,82 @@ def _stitch_fragment(
 
         centered = positions_aligned - t_center
 
-        initial_min_dist = float(np.linalg.norm(positions_aligned, axis=1).min())
-        initial_no_clash = not _has_clash(positions_aligned)
+        # Stereo Phase 4 (MiniPRD-C, Q-C1): for Zone-A-P bidentate fragments
+        # this bite-axis rotation is the ONE residual DOF scipy's 2-vector
+        # align_vectors leaves undetermined -- and it is EXACTLY the DOF
+        # that decides which face each P's dummy (metal-facing reference)
+        # ends up on. Resolve it by maximising a least-squares-style
+        # alignment score of the embedded P->dummy vector(s) onto the
+        # metal-facing direction(s) (-slot_units[binding_rank]), overriding
+        # the clash-avoidance objective used below for non-Zone-A-P
+        # fragments -- stereochemical correctness takes priority here. The
+        # existing post-search clash/distance rejection further below still
+        # applies unchanged and routes an incompatible-bite result to DG
+        # (Task 5) if this angle distorts the geometry too much.
+        _p_dummy_ranks = (
+            [
+                (rank, dummy_by_p_idx[bidx])
+                for rank, bidx in enumerate(binding_idxs)
+                if bidx in dummy_by_p_idx
+            ]
+            if slot_units
+            else []
+        )
 
-        best_angle = 0.0
-        best_no_clash = initial_no_clash
-        best_no_clash_dist = initial_min_dist if initial_no_clash else -1.0
-        best_any_dist = initial_min_dist  # Fallback when all angles clash
+        if _p_dummy_ranks:
 
-        for deg in range(5, 360, 5):
-            rot_try = Rotation.from_rotvec(bite_axis_unit * np.radians(deg))
-            pos_try = rot_try.apply(centered) + t_center
-            min_dist = float(np.linalg.norm(pos_try, axis=1).min())
-            no_clash = not _has_clash(pos_try)
+            def _dummy_alignment_score(pos_arr: np.ndarray) -> float:
+                score = 0.0
+                for rank, dummy_idx in _p_dummy_ranks:
+                    p_bidx = binding_idxs[rank]
+                    vec = pos_arr[dummy_idx] - pos_arr[p_bidx]
+                    vnorm = float(np.linalg.norm(vec))
+                    if vnorm < 1e-9:
+                        continue
+                    target_dir = -np.array(slot_units[rank], dtype=float)
+                    score += float(np.dot(vec / vnorm, target_dir))
+                return score
 
-            if no_clash:
-                if not best_no_clash or min_dist > best_no_clash_dist:
-                    best_no_clash = True
-                    best_no_clash_dist = min_dist
+            best_angle = 0.0
+            best_score = _dummy_alignment_score(positions_aligned)
+            for deg in range(5, 360, 5):
+                rot_try = Rotation.from_rotvec(bite_axis_unit * np.radians(deg))
+                pos_try = rot_try.apply(centered) + t_center
+                score = _dummy_alignment_score(pos_try)
+                if score > best_score:
+                    best_score = score
                     best_angle = float(np.radians(deg))
-            elif not best_no_clash and min_dist > best_any_dist:
-                best_any_dist = min_dist
-                best_angle = float(np.radians(deg))
 
-        if best_angle != 0.0:
-            rot_best = Rotation.from_rotvec(bite_axis_unit * best_angle)
-            positions_aligned = rot_best.apply(centered) + t_center
+            if best_angle != 0.0:
+                rot_best = Rotation.from_rotvec(bite_axis_unit * best_angle)
+                positions_aligned = rot_best.apply(centered) + t_center
+        else:
+            initial_min_dist = float(np.linalg.norm(positions_aligned, axis=1).min())
+            initial_no_clash = not _has_clash(positions_aligned)
+
+            best_angle = 0.0
+            best_no_clash = initial_no_clash
+            best_no_clash_dist = initial_min_dist if initial_no_clash else -1.0
+            best_any_dist = initial_min_dist  # Fallback when all angles clash
+
+            for deg in range(5, 360, 5):
+                rot_try = Rotation.from_rotvec(bite_axis_unit * np.radians(deg))
+                pos_try = rot_try.apply(centered) + t_center
+                min_dist = float(np.linalg.norm(pos_try, axis=1).min())
+                no_clash = not _has_clash(pos_try)
+
+                if no_clash:
+                    if not best_no_clash or min_dist > best_no_clash_dist:
+                        best_no_clash = True
+                        best_no_clash_dist = min_dist
+                        best_angle = float(np.radians(deg))
+                elif not best_no_clash and min_dist > best_any_dist:
+                    best_any_dist = min_dist
+                    best_angle = float(np.radians(deg))
+
+            if best_angle != 0.0:
+                rot_best = Rotation.from_rotvec(bite_axis_unit * best_angle)
+                positions_aligned = rot_best.apply(centered) + t_center
 
     # Reject bidentate placement if any non-binding heavy atom ends up within
     # 1.7 Å of the metal centre (origin).  This catches cases where Kabsch
@@ -1584,20 +1946,43 @@ def _stitch_fragment(
     # atoms to 1.39–1.65 Å) that gets misperceived as a Rh–H hydride on the
     # XYZ→OIN round-trip; the DG fallback places these H atoms cleanly
     # (~3.19 Å) instead.
+    # Zone-A-P dummy atoms are intentionally placed metal-facing (that is
+    # their whole purpose) and are stripped before this fragment is ever
+    # combined with the metal -- exclude them from the clash checks below,
+    # which police REAL non-binding atoms only.
+    _dummy_idx_set = set(dummy_by_p_idx.values())
+
     if len(binding_idxs) >= 2:
         _binding_set = set(binding_idxs)
-        _nb_heavy_idxs = [i for i in range(n_atoms) if i not in _binding_set and symbols[i] != "H"]
+        _nb_heavy_idxs = [
+            i
+            for i in range(n_atoms)
+            if i not in _binding_set and i not in _dummy_idx_set and symbols[i] != "H"
+        ]
         if _nb_heavy_idxs:
             _min_d_metal = float(np.linalg.norm(positions_aligned[_nb_heavy_idxs], axis=1).min())
             if _min_d_metal < 1.7:
                 return None  # Bidentate distortion too severe → fall back to DG
 
-        _nb_h_idxs = [i for i in range(n_atoms) if i not in _binding_set and symbols[i] == "H"]
+        _nb_h_idxs = [
+            i
+            for i in range(n_atoms)
+            if i not in _binding_set and i not in _dummy_idx_set and symbols[i] == "H"
+        ]
         if _nb_h_idxs:
             _min_d_metal_h = float(np.linalg.norm(positions_aligned[_nb_h_idxs], axis=1).min())
             if _min_d_metal_h < 1.8:
                 return None  # Non-binding H too close to metal → fall back to DG
 
+    positions_aligned, symbols, mol = _strip_dummy_atoms(
+        positions_aligned, symbols, mol, list(dummy_by_p_idx.values())
+    )
+    assert not any(mol.GetAtomWithIdx(i).GetAtomicNum() == 0 for i in range(mol.GetNumAtoms())), (
+        "dummy atom leaked past _stitch_fragment (bidentate path)"
+    )
+    assert len(positions_aligned) == mol.GetNumAtoms() == len(symbols), (
+        "positions/mol/symbols length mismatch after dummy strip (bidentate path)"
+    )
     return positions_aligned, symbols, mol
 
 
@@ -1926,6 +2311,14 @@ def _template_generate(
 
         if zone_a_targets:
             mismatched = _verify_zone_a_p(combined_mol, zone_a_targets)
+            # Stereo Phase 4 (MiniPRD-C spike finding): a Zone-A-P fragment's
+            # residual-DOF clash sweep only sees fragments placed BEFORE it
+            # (forbidden_positions is a snapshot at ITS placement time) -- so
+            # it can clash with a fragment placed LATER. Reuse this SAME
+            # retry loop (now that every fragment has been placed at least
+            # once, forbidden_positions is complete) to re-run the sweep
+            # with full information. Purely geometric; never touches stereo.
+            clashing_frags = _zone_a_p_clash_offending_frags(normal_frag_meta, all_pos, all_syms)
             attempts = 0
             # Hard cap: 3 re-embed attempts total (SuperPRD B8/RISK-8) -- a
             # stereo mismatch must never become a timeout death. Each attempt
@@ -1933,13 +2326,13 @@ def _template_generate(
             # fragment(s); never a mirror/improper transform (B2/B3), so any
             # co-resident stereocenter in the SAME fragment (e.g. DIPAMP's
             # other Zone-A P) is never touched by this loop.
-            while mismatched and attempts < 3:
+            while (mismatched or clashing_frags) and attempts < 3:
                 attempts += 1
                 offending_frag_idxs = {
                     meta["frag_idx"]
                     for meta in normal_frag_meta
                     if any(meta["atom_start"] <= gidx < meta["atom_end"] for gidx in mismatched)
-                }
+                } | clashing_frags
                 for meta in normal_frag_meta:
                     if meta["frag_idx"] not in offending_frag_idxs:
                         continue
@@ -1966,6 +2359,9 @@ def _template_generate(
                 if combined_mol is None:
                     break
                 mismatched = _verify_zone_a_p(combined_mol, zone_a_targets)
+                clashing_frags = _zone_a_p_clash_offending_frags(
+                    normal_frag_meta, all_pos, all_syms
+                )
 
             if mismatched:
                 # Persistent mismatch after 3 attempts: emit the structure
@@ -3009,14 +3405,13 @@ class MolassemblerAdapter:
                 )
 
         # ── Fallback: Molassembler DG ───────────────────────────────────────
-        # Stereo Phase 4 (Task 5, RISK-9): the DG path (Molassembler or its
-        # RDKit ETKDG fallback, see `_molassembler_worker`) never runs the
-        # Zone-A P verify-and-re-embed enforcement -- that is pinned to
-        # `_template_generate`'s assembled-complex stage only (Resolved
-        # Q2/RISK-2). Warn up front (independent of whether the resulting
-        # `bonded_mol` happens to be non-None) so this gap is never silent.
-        _warn_zone_a_p_fallback(parsed_oin, "Molassembler DG fallback path")
-
+        # Stereo Phase 4 (MiniPRD-C, Task 5, C2): this path keeps its own
+        # placement (incompatible-bite chelates are routed here by ee0b3f0's
+        # bite-distortion guard), but Zone-A-P enforcement now ALSO runs
+        # here via a bounded reseed-and-verify loop -- see
+        # _zone_a_p_measured_labels_dg for the set-based comparison this
+        # requires (the canonicalised connected SMILES makes exact per-atom
+        # index tracking unavailable here, unlike the template path).
         connected_smiles = _build_connected_smiles(parsed_oin)
         perm_idx = _pick_masm_permutation(parsed_oin)
         expected_trans_sym_pairs = _compute_expected_trans_sym_pairs(parsed_oin)
@@ -3033,28 +3428,71 @@ class MolassemblerAdapter:
             )
             if sym is not None:
                 expected_bindings.append((sym, tuple(vec.vector)))  # type: ignore[arg-type]
-        args = {
-            "smiles": connected_smiles,
-            "seed": seed,
-            "geo_code": parsed_oin.geo_code,
-            "perm_idx": perm_idx,
-            "expected_trans_sym_pairs": expected_trans_sym_pairs,
-            "expected_bindings": expected_bindings,
-            "dg_strategy": self.dg_strategy,
-            "ensemble_size": self.ensemble_size,
-            "max_directed_size": self.max_directed_size,
-        }
 
-        with ProcessPoolExecutor(max_workers=1) as ex:
-            fut = ex.submit(_molassembler_worker, args)
-            try:
-                result = fut.result(timeout=self.timeout)
-            except FuturesTimeout:
-                raise MolassemblerTimeoutError(f"Molassembler timed out after {self.timeout}s")
+        zone_a_expected_labels = sorted(
+            label
+            for frag_idx, frag_smiles in enumerate(parsed_oin.fragments)
+            if frag_idx != parsed_oin.metal_fragment_idx
+            for _local_idx, label in _zone_a_p_expected_labels(frag_smiles)
+        )
 
-        if not result.get("ok"):
-            raise RuntimeError(f"Molassembler error: {result.get('error', 'unknown')}")
+        bonded_mol: "Chem.Mol | None" = None
+        xyz_block = ""
+        dg_attempts = 0
+        # Hard cap 3 attempts (mirrors the template path's bounded re-embed
+        # loop, B8/RISK-8): a stereo mismatch must never become a timeout
+        # death. Only reseeds when there is something to enforce; a plain
+        # (non-Zone-A-P) DG generation always runs exactly once, unchanged.
+        max_attempts = 3 if zone_a_expected_labels else 1
+        while dg_attempts < max_attempts:
+            dg_attempts += 1
+            args = {
+                "smiles": connected_smiles,
+                "seed": seed if dg_attempts == 1 else seed + dg_attempts * 1009,
+                "geo_code": parsed_oin.geo_code,
+                "perm_idx": perm_idx,
+                "expected_trans_sym_pairs": expected_trans_sym_pairs,
+                "expected_bindings": expected_bindings,
+                "dg_strategy": self.dg_strategy,
+                "ensemble_size": self.ensemble_size,
+                "max_directed_size": self.max_directed_size,
+            }
 
-        xyz_block = result["xyz_block"]
-        bonded_mol = _reconstruct_mol_from_smiles_and_xyz(connected_smiles, xyz_block)
+            with ProcessPoolExecutor(max_workers=1) as ex:
+                fut = ex.submit(_molassembler_worker, args)
+                try:
+                    result = fut.result(timeout=self.timeout)
+                except FuturesTimeout:
+                    raise MolassemblerTimeoutError(f"Molassembler timed out after {self.timeout}s")
+
+            if not result.get("ok"):
+                raise RuntimeError(f"Molassembler error: {result.get('error', 'unknown')}")
+
+            xyz_block = result["xyz_block"]
+            bonded_mol = _reconstruct_mol_from_smiles_and_xyz(connected_smiles, xyz_block)
+
+            if not zone_a_expected_labels:
+                break  # nothing to enforce, first (only) attempt stands
+            if bonded_mol is None:
+                continue  # try a fresh seed; nothing to verify without a mol
+            measured = _zone_a_p_measured_labels_dg(bonded_mol)
+            if measured == zone_a_expected_labels:
+                break  # enforced -- no warning
+
+        if zone_a_expected_labels:
+            if bonded_mol is None:
+                _warn_zone_a_p_fallback(
+                    parsed_oin, "Molassembler DG fallback path, no reconstructed mol"
+                )
+            elif _zone_a_p_measured_labels_dg(bonded_mol) != zone_a_expected_labels:
+                warnings.warn(
+                    OINStereoWarning(
+                        "Zone-A P lone-pair CIP could not be enforced to match the "
+                        f"OIN-encoded tag(s) on the Molassembler DG fallback path "
+                        f"after {dg_attempts} attempt(s) -- emitting the structure "
+                        "as generated."
+                    ),
+                    stacklevel=2,
+                )
+
         return GeneratedStructure(xyz=xyz_block, mol=bonded_mol)

@@ -22,7 +22,21 @@ Test baseline (2026-07-02, before any fixes):
 - Integration dir (`tests/integration`) aborts on discovery (HACF framework test
   requires Python 3.11) — **out of scope by decision**
 
-**Current status (2026-07-03, after TASK-01/02/03/04/10/20 + Stereo Phase 1): GREEN.**
+**Current status (2026-07-03, after MiniPRD-C SPL Zone-A P fix + independent
+verify): GREEN. SPL one-sided-enforcement bug CLOSED.**
+- `uv run python -m unittest discover tests` → 55 run, OK
+- `uv run python -m unittest discover tests/unit` → 119 run, OK (skipped=3,
+  expected failures=1 = `test_haptic_face_golden_match` only)
+- Independent probe (Fable, 2026-07-03) reproduces the design-brief evidence
+  table with the fix in place: `SPL [P@]→R`, `SPL [P@@]→S`, **both no warning**
+  (was: both `S`, `[P@]` warned "could not be enforced"); TET unchanged
+  (`[P@]→R`, `[P@@]→S`). Bug closed.
+- `/hyper-audit` ran: nodes the fix touched (`atom_molassembler_adapter`,
+  `atom_chirality_recovery`) are `clean`. The 2 remaining `dirty` nodes
+  (`atom_direct_parser_ast`, `atom_direct_parser_masm`) are the DEFERRED
+  DirectParser workstream — pre-existing, unrelated to this fix.
+
+**Historical status line (2026-07-03, after TASK-01/02/03/04/10/20 + Stereo Phase 1): GREEN.**
 - `uv run python -m unittest discover tests` → 55 run, OK
 - `uv run python -m unittest discover tests/unit` → 65 run, OK (skipped=1,
   expected failures=3) — includes Phase-1 winding tests + 5 stereo diagnostics
@@ -76,9 +90,9 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | Stereo Phase 4b (Zone-A P gen-enforce) | DONE — flip inverts CIP; full round-trip blocked by pre-existing gen bugs (xfail) | Sonnet | Phase 4a |
 | Stereo Phase 4 (Zone-A N) | DEFERRED — needs Option-C out-of-band marker (RDKit clears trivalent `[N@]`) | — | future |
 | TASK-30 bidentate placement diagnostic | DONE — MIX (root cause B, fix is cheap; DG fallback already round-trips DIPAMP cleanly) | Sonnet | — |
-| TASK-31 bidentate placement fix | DONE — guard fix + xfail flip both work exactly as specified; the regression it surfaced in `test_zone_a_p_genenforce.py` (Phase 4b) is now cleared by TASK-32 | Sonnet | TASK-30 |
+| TASK-31 bidentate placement fix | DONE — guard fix + xfail flip both work exactly as specified; the regression it surfaced in `test_zone_a_p_genenforce.py` (Phase 4b) is now cleared by TASK-32. Its "incompatible-bite → DG" routing decision is absorbed into MiniPRD-C (Zone-A P SPL Dummy-Metal Embed): DG-routed bidentates now also get stereo enforcement | Sonnet | TASK-30 |
 | TASK-32 retarget Phase-4b Kabsch tests | DONE — 3 tests retargeted from DIPAMP to a synthetic monodentate P-stereocenter fixture that stays on the template path; suite fully green | Sonnet | TASK-31 |
-| CONFIRMED BUG: SPL Zone-A P enforcement is one-sided | TODO — fix needs a design decision (reflection vs face-aware placement) | Fable/Opus → Sonnet | Phase 4b |
+| CONFIRMED BUG: SPL Zone-A P enforcement is one-sided | DONE — fixed via Option E (dummy-metal embed), MiniPRD-C (`MiniPRD_ZoneA_P_SPL_DummyEmbed.md`) executed 2026-07-03 (Sonnet). Both `[P@]`/`[P@@]` now enforce cleanly on SPL with opposite metal-present CIPs; bidentate incompatible-bite chelates (DIPAMP, DIPAMP-Ph) enforced via the DG fallback too. See `SPL-P-enforcement-decision.md` for the original design rationale | Fable/Opus → Sonnet | Phase 4b |
 
 **CONFIRMED correctness bug (verified 2026-07-03, Fable — was the "asymmetry
 follow-up"):** On square-planar (`SPL`) complexes, Zone-A P enforcement cannot
@@ -101,11 +115,18 @@ of Zone-A-P-on-SPL inputs generate the WRONG enantiomer (honestly warned, but
 wrong 3D). Undercuts the Phase-4a/4b "enforcement works" claim for SPL.
 **Fix is a design decision, not a quick patch:** reflect-with-co-resident-
 protection, or face-aware placement that puts the metal on the target face.
-**NEXT: `/hyper-consult-cto` seeded by `SPL-P-enforcement-design-brief.md`**
-(3 options: E embed-with-dummy-metal / P face-aware-placement / R
-reflect-with-co-resident-protection) → decision → `/hyper-architect` MiniPRD →
-Sonnet executor. Run the consult on Fable 5 or Opus 4.8 (reasoning-heavy);
-execute on Sonnet.
+**DECIDED (2026-07-03, Fable, `/hyper-consult-cto`): Option E — dummy-metal
+embed.** Attach a Z=0 wildcard as P's 4th neighbour before ETKDG so `[P@]`/
+`[P@@]` embed as true 4-coordinate mirror images and the dummy's position is
+the metal-facing reference; strip the dummy at placement. Symmetric with the
+encode side (`_build_dummy_metal_copy`); revives the dead-code
+`PseudoAtomStrategy` wildcard-dummy on the generation side. P rejected
+(under-defined — CIP is proper-rotation-invariant, so it collapses into E or R);
+R rejected (whole-fragment reflection + un-flip bookkeeping re-introduces the
+exact co-resident fragility the safety test guards). Full rationale, co-resident
+-safety sketch, TET-non-regression argument, and fixture/oracle plan in
+`SPL-P-enforcement-decision.md`. **NEXT: `/hyper-architect` → MiniPRD → Sonnet
+executor.**
 
 **Separate workstream — generation fidelity (not stereo):** TASK-30 targets the
 polydentate placement bug in `_stitch_fragment` that causes the two remaining
@@ -1063,3 +1084,170 @@ set to `DONE`; `TASK-31-bidentate-placement-fix.md` flipped `BLOCKED` →
 `DONE` (its blocker is cleared). Nothing committed — the full set (TASK-31's
 guard fix + xfail flip, plus TASK-32's test retargets) is left unstaged for
 review, per instructions.
+
+### 2026-07-03 — MiniPRD_ZoneA_P_SPL_DummyEmbed.md (MiniPRD-C) executed (Sonnet)
+
+Implemented Option E (dummy-metal embed), closing the CONFIRMED one-sided
+SPL enforcement bug and absorbing TASK-31's incompatible-bite bidentate
+scope. Confidence going in: 7/10 per the MiniPRD's own Confidence Mandate
+(two flagged spike items: bidentate Kabsch orientation Q-C1, incompatible
+-bite DG enforcement Q-C2) — both spiked empirically below, per instruction.
+
+**Fixture decisions (made with the user before coding, via clarifying
+questions):** `Rh-Single-Chiral-Phosphine.xyz` (user-supplied, in
+`tests/integration/`) used in place of the MiniPRD's named `PtCl2-PAMP.xyz`
+(never existed) for Test 4. `Rh-RR-DIPAMP-Ph-Cl2.xyz` (user-supplied) was
+spiked and found to ALSO be incompatible-bite (routes to DG, same as
+`Rh-RR-DIPAMP-Cl2.xyz`) — the MiniPRD's own Task 8/Test 8 text calling
+DIPAMP "(compatible-bite bidentate)" is incorrect (contradicts commit
+`ee0b3f0`, which specifically routes DIPAMP to DG for its incompatible
+bite). Per user decision, both fixtures are used as two incompatible-bite
+regression cases; a real compatible-bite bidentate 3D fixture remains a
+known gap for a future MiniPRD, not blocking this one.
+
+**What was built:**
+- `core/chirality.py`: new `_attach_dummy_metal(mol, p_idx)` — appends a
+  Z=0 wildcard to a metal-free stereogenic P (net-new code per the
+  MiniPRD's C1 resolution; never calls `_build_dummy_metal_copy`, which
+  converts an existing metal neighbour and raises without one).
+- `generation/molassembler_adapter.py` `_stitch_fragment`: Zone-A-P
+  detection (any denticity) → pinned order (`SetNoImplicit(P)` → attach
+  dummy → `AddHs` → embed) → pre-placement parity guard (compares against
+  the mol's OWN current chiral tag via new `_graph_cip_label`, not the
+  original OIN tag, so the existing `_test_flip_chiral_idx` test seam still
+  works — the outer re-embed loop is what's supposed to catch that
+  deliberate mismatch, not this guard) → orientation by P→dummy vector
+  (monodentate: single rotation; bidentate: reuses the existing bite-axis
+  residual-DOF search, replacing its clash-avoidance objective with a
+  dummy-vector-alignment objective for Zone-A-P fragments only) → dummy
+  strip (new `_strip_dummy_atoms`) → hard postcondition (no Z=0 atom, atom
+  count consistent) at every return point.
+- **Spike-surfaced bug (Q-C1's real risk, confirmed empirically as
+  anticipated):** aligning a single vector (P→dummy onto the metal
+  direction) fixes only 2 of 3 rotational DOF; the residual rotation is
+  arbitrary and — confirmed on `Rh-Single-Chiral-Phosphine.xyz` — swung a
+  methyl group into a 0.27 Å clash with the co-ligand (PMe3). Fixed by
+  reusing the SAME residual-DOF search pattern the bidentate branch already
+  used for its bite axis (new `_sweep_rotation_for_clash_avoidance`,
+  shared by both). A SECOND spike round found this still wasn't enough:
+  fragments are placed in OIN order, so a Zone-A-P fragment placed FIRST
+  cannot see a bulkier ligand placed SECOND (`forbidden_positions` is a
+  snapshot at ITS OWN placement time) — confirmed via a non-deterministic-
+  looking failure that was actually a real, reproducible order-dependent
+  gap. Fixed by extending the EXISTING assembled-complex re-embed loop
+  (previously stereo-only) to ALSO retry a Zone-A-P fragment on a
+  post-placement inter-fragment clash (new `_zone_a_p_clash_offending_frags`,
+  1.7 Å heavy / 1.8 Å H thresholds matching the pre-existing bidentate
+  guard) — by the time this loop runs, every fragment has been placed at
+  least once, so `forbidden_positions` is finally complete. Both fixes are
+  geometry-only; neither touches stereo or applies a mirror/improper
+  transform.
+- **User-requested general (tag-free) clash-avoidance investment was tried
+  and reverted:** attempting the same residual-DOF sweep for non-Zone-A-P
+  monodentate ligands (even monotonically gated on an already-existing
+  clash) changed 2 existing golden fixtures' byte-identical output
+  (`test_haptic_face_bridged_ansa_conflict_no_regression` /
+  `..._natural_no_regression`, an ansa-metallocene's methyl ligands).
+  Reverted immediately; the MiniPRD's own negative-space constraint ("DO
+  NOT change the embed or orientation path for tag-free fragments... every
+  existing golden must stay byte-identical") is treated as load-bearing
+  over the ad-hoc request. Flagged to the user before proceeding.
+- **Task 5 (C2 override):** the DG fallback path now also verifies Zone-A-P
+  enforcement (new `_zone_a_p_measured_labels_dg`, bounded 3-attempt reseed
+  loop) instead of unconditionally warning "stereo unenforced." Necessarily
+  a SET-based comparison (sorted list of measured vs. expected lone-pair
+  labels), not per-atom index matching: `_build_connected_smiles` calls
+  `Chem.MolToSmiles` (canonicalising), so a fragment-local atom index
+  cannot be mapped to a global index in the DG-reconstructed mol without
+  deeper surgery — documented as an honest, known limitation (correct for
+  every fixture this MiniPRD's suite exercises; theoretically could miss a
+  same-set "swap" between two DIFFERENTLY-labelled Zone-A-P atoms in one
+  fragment, not something the current fixtures exhibit).
+- Two pre-existing tests' expectations were superseded by this MiniPRD's
+  explicit design (its Negative Space section literally overrides the old
+  "don't touch the DG path" constraint): `test_dipamp_dg_fallback_warns_honestly`
+  → removed (DIPAMP now enforces silently via Task 5, folded into the new
+  `TestZoneAPIncompatibleBiteDGEnforcement` class alongside DIPAMP-Ph);
+  `test_dg_fallback_path_warns_when_zone_a_p_tag_present` → renamed/updated
+  (`RuntimeError` on total DG failure is now the loud signal itself, no
+  separate warning fires before a mol exists to verify).
+- New tests in `tests/unit/test_zone_a_p_genenforce.py`: `TestZoneAPSPLDummyEmbed`
+  (Test 1/6 — both SPL tags enforce with opposite metal-present CIP, first
+  embed needs no retry), `TestZoneAPSPLForcedMisEmbedCorrection` (Test 3/7 —
+  co-resident safety + no Z=0 leak on the loop path), `TestZoneAPByteStableRoundTrip`
+  (Test 4, hard gate — `Rh-Single-Chiral-Phosphine.xyz` round-trips
+  byte-identically), `TestZoneAPIncompatibleBiteDGEnforcement` (Test 8 — both
+  DIPAMP fixtures enforce via DG, no Z=0 leak), plus a Task 10 branch-entry
+  spy (`test_tag_free_goldens_never_enter_dummy_embed_branch`, patches
+  `_attach_dummy_metal` and asserts zero calls for cisplatin, transplatin,
+  cis-PtCl2(en), ferrocene, fac/mer-Ir(ppy)3).
+
+**Acceptance results:**
+- `uv run python -m unittest tests.unit.test_zone_a_p_genenforce -v` →
+  `Ran 18 tests` / `OK`
+- `uv run python -m unittest discover tests/unit` → `Ran 119 tests` / `OK
+  (skipped=3, expected failures=1)` — matches the documented baseline count
+  plus this session's 6 net-new test methods.
+- `uv run python -m unittest discover tests` (root) → `Ran 55 tests` / `OK`
+
+**Hypergraph:** `atom_molassembler_adapter` and `atom_chirality_recovery`
+flagged dirty via `hypergraph_updater.py` (blast radius also touches
+`atom_cli_main`, `atom_oin3d_generator`, `atom_api_exports`,
+`atom_xyz_to_smiles`) — awaiting `/hyper-audit` to rewrite descriptions and
+clear.
+
+**Known gaps for follow-up (not blocking this MiniPRD):** (1) no real
+compatible-bite bidentate 3D fixture exists yet — Test 8's "compatible-bite"
+half is currently unexercised by a real structure; (2) DG-path enforcement
+is set-based, not per-atom-indexed (documented limitation above); (3) the
+`[P@@]` tag on `Rh-Single-Chiral-Phosphine.xyz`'s exact ligand combination
+still produces a geometrically valid but topologically-misread structure
+(`SPY` instead of `SPL`) in one specific case found during spiking — not
+part of any acceptance test, not investigated further under this MiniPRD's
+timebox.
+
+No git commit made (per task instructions). Next: `/hyper-audit
+spec/compiled/MiniPRD_ZoneA_P_SPL_DummyEmbed.md`.
+
+### 2026-07-03 — MiniPRD-C audit + independent verify + commit (Fable)
+
+Picked up the completed MiniPRD-C execution session. Confirmed `/hyper-audit`
+had already run (AUDITED MiniPRD + RedTeam_Report archived under
+`spec/archive/20260703_173152_ZoneA_P_SPL_DummyEmbed/`; the two nodes the fix
+touched — `atom_molassembler_adapter`, `atom_chirality_recovery` — are back to
+`status: clean` in `architecture.yml`). The only remaining `dirty` nodes are
+`atom_direct_parser_ast` / `atom_direct_parser_masm`, the DEFERRED DirectParser
+workstream — pre-existing, untouched by this fix.
+
+**Independent verification (not just re-running the session's own asserts):**
+re-ran the design brief's exact 4-row probe (`_metal_present_cip_label` on the
+generated mol, `c1ccccc1[P?]{0}(CC)C`) against the fixed code —
+
+| target | before (brief) | after (this fix) |
+|---|---|---|
+| `[Pt_SPL]` `[P@]`  | S, warns "could not be enforced" | **R, no warning** |
+| `[Pt_SPL]` `[P@@]` | S, no warning | **S, no warning** |
+| `[Pt_TET]` `[P@]`  | R, no warning | R, no warning (unchanged) |
+| `[Pt_TET]` `[P@@]` | S, no warning | S, no warning (unchanged) |
+
+Both SPL enantiomers are now reachable and correct with no warning — the
+one-sided-enforcement correctness bug is CLOSED. TET is untouched (no
+regression). Suite: `discover tests/unit` → 119 OK (skipped=3, xfail=1, the
+sole remaining xfail being `test_haptic_face_golden_match`, an eta-ring golden
+match unrelated to this fix); `discover tests` → 55 OK;
+`test_zone_a_p_genenforce` → 24 OK; `test_regression_stability` all byte-stable.
+
+Committed the fix (tracked: `molassembler_adapter.py`, `core/chirality.py`,
+`test_zone_a_p_genenforce.py`, the AUDITED MiniPRD/architecture.yml/SuperPRD
+updates, worklog decision + process docs, and the two new P-phosphine
+fixtures). **NOT pushed** (per standing instruction). Branch remains ahead of
+origin.
+
+**Known follow-ups carried forward (not blocking, from the exec session's own
+"Known gaps"):** (1) no real *compatible-bite* bidentate 3D fixture yet — the
+DG-enforcement path's compatible-bite half is exercised only synthetically;
+(2) DG-path Zone-A-P enforcement is set-based, not per-atom-indexed (documented
+limitation — correct for all current fixtures, could theoretically miss a
+same-set label swap between two differently-labelled Zone-A P in one fragment);
+(3) `test_haptic_face_golden_match` remains the sole xfail (separate eta-ring
+placement problem, Phase-3 residual). None of these reopen the SPL bug.

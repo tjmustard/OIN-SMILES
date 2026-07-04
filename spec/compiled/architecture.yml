@@ -129,39 +129,43 @@ nodes:
     - atom_cli_main
 - id: atom_api_exports
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/__init__.py
-  description: Re-exports two public API classes (XYZToSMILES, SMILESToXYZ) from core.translator
-    module
+  description: Re-exports three public API items from core modules; XYZToSMILES and SMILESToXYZ
+    classes from core.translator, plus OINStereoWarning exception from core.chirality
   inputs:
-  - data_type: module_import
+  - data_type: module_imports
     source_id: mod_core
   outputs:
-  - data_type: api_class
+  - data_type: api_classes
     target_id: user_code
   edges:
     depends_on:
     - atom_xyz_to_smiles
     - atom_smiles_to_xyz
+    - atom_cip_assigner
     implements: []
 - id: atom_xyz_to_smiles
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/core/translator.py
-  description: 'XYZToSMILES.convert(): Reads XYZ file, generates TMC graph via xyz2mol,
-    assigns CIP codes to stereocenters, then generates OIN v3.6 inline string via
-    get_oin_string()'
+  description: 'XYZToSMILES.convert(): Reads XYZ file path, calls get_tmc_mol() to
+    generate 3D conformer, sanitizes with RDKit, assigns CIP codes to P/N stereocenters,
+    then calls get_oin_string() to perform fragmentation, geometry detection via OINDiscreteAligner,
+    and serialization to OIN v3.6 inline format'
   inputs:
   - data_type: xyz_file_path
     source_id: user_code
   outputs:
   - data_type: oin_string
-    target_id: mod_oin
+    target_id: user_code
   edges:
     depends_on:
     - atom_xyz2mol
     - atom_cip_assigner
     - atom_chirality_recovery
+    - atom_oin_aligner
+    - atom_oin_sanitizer
     - atom_oin_inline_handler
     implements: []
 - id: atom_smiles_to_xyz
@@ -206,7 +210,13 @@ nodes:
     using stored CIP codes; Stereo Phase 4: a Zone-A P carrying _OIN_CIPCode_LP is
     kept and verify-and-flipped (never cleared), checked before the degree-keyed branches;
     Zone-A P/N without the property, and all N, keep the prior clearing behaviour
-    (PseudoAtomStrategy scaffolding removed, behaviour retained)'
+    (PseudoAtomStrategy scaffolding removed, behaviour retained). Stereo Phase 4
+    MiniPRD-C also adds a standalone helper in this file, _attach_dummy_metal(mol,
+    p_idx) (called from molassembler_adapter._stitch_fragment, not part of
+    ChiralityRecoveryUtility): appends a Z=0 wildcard as a metal-free Zone-A P atom''s
+    4th substituent before ETKDG embedding so its [P@]/[P@@] tag controls a true
+    4-coordinate tetrahedron; mirrors, but never calls, _build_dummy_metal_copy''s
+    valence-bookkeeping fix'
   inputs:
   - data_type: mol_with_cip_codes
     source_id: atom_oin_sanitizer
@@ -233,11 +243,12 @@ nodes:
     implements: []
 - id: atom_oin3d_generator
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/generation/engine.py
-  description: "OIN3DGenerator.generate(): Public API for OIN string \u2192 3D GeneratedStructure;\
-    \ delegates to OINParser.parse() for legacy parsing, then MolassemblerAdapter\
-    \ for structure generation with timeout handling"
+  description: "OIN3DGenerator.generate(): Converts OIN-SMILES string to 3D GeneratedStructure\
+    \ (xyz block + RDKit mol); instantiates OINParser (from generation/oin_parser.py\
+    \ with v3.6 inline format support) and MolassemblerAdapter for template-based/DG\
+    \ generation with Stereo Phase 4 Z-A P verification and timeout handling"
   inputs:
   - data_type: oin_string
     source_id: user_code
@@ -286,11 +297,28 @@ nodes:
     \ that fail plain kekulization, and haptic-face correction (see generation.molassembler_adapter.haptic_face_correction)\
     \ after placement; final post-optimisation collision threshold loosened 1.60->1.45\
     \ \xC5 (monotonic, byte-identical for all previously-passing placements); Stereo\
-    \ Phase 4: _verify_zone_a_p checks the assembled complex's Zone-A P labels (dummy-metal\
-    \ copy + rdCIPLabeler, reusing core/chirality.py helpers) against the input [P@]/[P@@]\
-    \ tag and re-embeds the offending fragment with a new seed (\u22643 attempts,\
-    \ never a mirror/improper transform); persistent mismatch or a no-assembled-mol\
-    \ fallback path (eta/DG) emits the structure anyway with an OINStereoWarning"
+    \ Phase 4 MiniPRD-B: _verify_zone_a_p checks the assembled complex's Zone-A P labels\
+    \ (dummy-metal copy + rdCIPLabeler, reusing core/chirality.py helpers) against the\
+    \ input [P@]/[P@@] tag and re-embeds the offending fragment with a new seed (\u2264\
+    3 attempts, never a mirror/improper transform); persistent mismatch or a\
+    \ no-assembled-mol fallback path (eta/DG) emits the structure anyway with an\
+    \ OINStereoWarning. Stereo Phase 4 MiniPRD-C (dummy-metal embed, fixes the SPL\
+    \ one-sided-enforcement bug): _stitch_fragment attaches a Z=0 dummy (via\
+    \ core.chirality._attach_dummy_metal) as the 4th substituent on every Zone-A-P\
+    \ atom of any denticity before AddHs/ETKDG, asserts a pre-placement lone-pair-CIP\
+    \ parity guard against the mol's own live chiral tag, orients the fragment by the\
+    \ embedded P\u2192dummy vector(s) (monodentate: single-vector rotation plus a\
+    \ residual-DOF clash sweep via _sweep_rotation_for_clash_avoidance; bidentate:\
+    \ bite-axis angle sweep maximising P\u2192dummy/slot alignment via\
+    \ _dummy_alignment_score), then strips every dummy (_strip_dummy_atoms) before\
+    \ returning, with a hard postcondition assert (no Z=0 atom, stable atom count) at\
+    \ every _stitch_fragment return point. The assembled-complex re-embed loop also\
+    \ retries on post-placement inter-fragment clashes (_zone_a_p_clash_offending_frags),\
+    \ not just stereo mismatches. The Molassembler DG fallback path (incompatible-bite\
+    \ bidentates, routed here by the ee0b3f0 bite-distortion guard) gains Zone-A-P\
+    \ enforcement via a bounded 3-attempt reseed loop and a set-based label comparison\
+    \ (_zone_a_p_measured_labels_dg, since _build_connected_smiles canonicalises indices\
+    \ away), superseding the old unconditional _warn_zone_a_p_fallback call on that path."
   inputs:
   - data_type: parsed_oin
     source_id: atom_oin_parser_gen
@@ -503,20 +531,23 @@ nodes:
     implements: []
 - id: atom_oin_aligner
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/utils/oin_aligner.py
-  description: 'OINDiscreteAligner: Detects coordination geometry, assigns slots to
-    ligands, fragments mol; _determine_winding delegates its sign computation to the
-    shared oin.winding.signed_circulation helper'
+  description: 'OINSanitizer and OINDiscreteAligner: OINSanitizer.generate_robust_smiles()
+    forces explicit H on Zone-A atoms to prevent SMILES drift; OINDiscreteAligner
+    detects coordination geometry via template matching (LIN/TPL/SPL/TET/TPY/TBP/SPY/OCT/PBP),
+    reduces hapticity to virtual atoms, assigns slots, applies maximization + homogeneous
+    sorting + heading-atom selection for canonical geometry string, delegating winding
+    sign to oin.winding.signed_circulation'
   inputs:
   - data_type: mol_with_cip_codes
     source_id: atom_cip_assigner
-  - data_type: graph_object
-    source_id: atom_tmc_graph
+  - data_type: ligand_data_dict
+    source_id: atom_xyz2mol
   outputs:
-  - data_type: aligned_geometry
-    target_id: atom_oin_sanitizer
-  - data_type: slot_assignments
+  - data_type: canonical_geometry_string
+    target_id: atom_oin_writer
+  - data_type: aligned_coordinates
     target_id: atom_oin_writer
   edges:
     depends_on:
@@ -541,16 +572,17 @@ nodes:
     implements: []
 - id: atom_cli_main
   dimension: Atomic
-  status: needs_review
+  status: clean
   associated_file: src/oinsmiles/cli.py
-  description: 'main() and subcommand handlers: Entry point for ''oin-smiles'' CLI;
-    parses argv to dispatch xyz2oin or oin2xyz subcommands; handles GeneratedStructure.xyz
-    attribute and error codes'
+  description: 'main() entry point and subcommand dispatchers: Creates argparse parser
+    for ''oin-smiles'' command; dispatches xyz2oin subcommand via _cmd_xyz2oin (calls
+    XYZToSMILES().convert(), prints OIN string) or oin2xyz subcommand via _cmd_oin2xyz
+    (calls OIN3DGenerator().generate(), prints result.xyz); handles errors and exit codes'
   inputs:
   - data_type: sys_argv
     source_id: user_code
   outputs:
-  - data_type: stdout_result
+  - data_type: stdout_oin_or_xyz
     target_id: user_code
   edges:
     depends_on:
@@ -559,31 +591,47 @@ nodes:
     implements: []
 metadata:
   total_modules: 6
-  total_atomic_nodes: 28
+  total_atomic_nodes: 23
   status_distribution:
-    clean: 26
+    clean: 27
     dirty: 2
     needs_review: 0
   dirty_nodes:
   - atom_direct_parser_ast (deferred from v0.2.1)
   - atom_direct_parser_masm (deferred from v0.2.1)
   nodes_reviewed:
-  - atom_api_exports (updated description)
-  - atom_xyz_to_smiles (updated description; removed atom_oin_aligner from dependencies)
-  - atom_smiles_to_xyz (updated description; corrected output type to tmc_graph; updated
-    dependencies)
-  - atom_oin3d_generator (updated description; clarified legacy parser delegation)
-  - atom_direct_parser_integration (updated description; clarified standalone status)
-  - atom_cli_main (updated description; corrected to depend on atom_oin3d_generator)
+  - atom_api_exports (added OINStereoWarning to exports; added atom_cip_assigner dependency)
+  - atom_xyz_to_smiles (clarified get_oin_string() handles full fragmentation/geometry/serialization
+    pipeline; added atom_oin_aligner and atom_oin_sanitizer dependencies; changed target_id
+    from mod_oin to user_code)
+  - atom_oin3d_generator (clarified v3.6 inline format support and Stereo Phase 4 Zone-A
+    P verification)
+  - atom_oin_aligner (expanded description to cover both OINSanitizer and OINDiscreteAligner;
+    revised inputs/outputs to match actual data flow with ligand_data_dict and canonical_geometry_string)
+  - atom_cli_main (clarified subcommand handlers and error handling; changed output type to
+    stdout_oin_or_xyz)
+  - atom_chirality_recovery (MiniPRD-C /hyper-audit -- documented the new _attach_dummy_metal
+    helper; moved dirty -> clean)
+  - atom_molassembler_adapter (MiniPRD-C /hyper-audit -- documented the full dummy-metal-embed
+    Zone-A-P fix in _stitch_fragment plus the DG-path enforcement loop; moved dirty -> clean)
   generated_by: /hyper-discover + /hyper-audit MiniPRD_DirectParser_RegexPreprocessor
     + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation + manual cleanup
-    (2026-07-03)
+    + 2026-07-03 needs_review resolution + 2026-07-03 /hyper-audit MiniPRD_ZoneA_P_SPL_DummyEmbed
   generation_date: '2026-05-06'
   last_audit: '2026-07-03'
-  last_audit_notes: All 6 needs_review nodes audited against source code; inputs/outputs/descriptions
-    updated to match actual implementation; all moved to clean status
+  last_audit_notes: All 5 needs_review nodes (atom_api_exports, atom_xyz_to_smiles,
+    atom_oin3d_generator, atom_oin_aligner, atom_cli_main) audited against source code;
+    inputs/outputs/descriptions updated to match actual implementation; all moved to
+    clean status. Separately, /hyper-audit of MiniPRD_ZoneA_P_SPL_DummyEmbed reconciled
+    the 2 dirty nodes it directly touched (atom_chirality_recovery, atom_molassembler_adapter)
+    to clean. The 2 remaining dirty nodes (atom_direct_parser_ast, atom_direct_parser_masm)
+    are unrelated, pre-existing v0.2.1 direct-parser debt, intentionally left untouched
+    (out of scope for this audit).
   description: "OIN-SMILES system consists of 6 core modules (API, Core, Generation,\
-    \ OIN, Utils, CLI) with 28 atomic components (classes/functions). Key pipelines:\
-    \ XYZ\u2192OIN (7 steps) and OIN\u2192XYZ (5 steps with direct parser). v0.2.1+\
-    \ release with mature Molassembler integration, v3.6 inline format regex preprocessor,\
-    \ and direct parser with all-or-nothing Molassembler instantiation."
+    \ OIN, Utils, CLI) with 23 atomic components (classes/functions) distributed across\
+    \ two main pipelines. XYZ\u2192OIN pipeline (7 steps): xyz2mol graph generation \u2192 CIP\
+    \ assignment \u2192 sanitization \u2192 geometry alignment \u2192 winding detection \u2192 inline serialization.\
+    \ OIN\u2192XYZ pipeline (5 steps): OIN parsing with regex preprocessing \u2192 Molassembler\
+    \ instantiation \u2192 template-based/DG generation \u2192 Stereo Phase 4 Zone-A P verification.\
+    \ v0.2.1+ release with mature Molassembler integration, v3.6 inline format support,\
+    \ and optional direct parser."
