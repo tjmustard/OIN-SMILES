@@ -4,15 +4,15 @@
 ## Purpose
 Captures the current state of OIN-SMILES development. Updated after significant task completions. Read first to understand where to pick up.
 
-## Current State (as of 2026-06-07)
+## Current State (as of 2026-07-04)
 
 ### Release Status
 - **v0.2.0** — Released 2026-03-07: Molassembler backend, P/N stereocenter encoding, CLI, OIN v3.6
-- **v0.2.1** — In `[Unreleased]`: CLI fix, P/N fixtures (BINAP, BDNN, BDPP), TiCat1/3/4 ETKDG fix, Direct Parser audit completions
-- **v0.2.2** — Planned: Direct Parser bugfixes (5 P0/P1 blockers, see audit doc below)
+- **v0.3.0** — In `CHANGELOG.md [0.3.0] - 2026-07-04` (pyproject synced): OIN v3.7 descriptor-free metal token; stereo round-trip arc (winding preservation, haptic-face control, Zone-A P `[P@]`/`[P@@]` encoding + square-planar enforcement); eta-ring canonicalization; bidentate incompatible-bite → DG routing; plus the prior v0.2.1 work (CLI fix, P/N fixtures, TiCat ETKDG fix, Direct Parser audits). Not yet pushed/tagged.
+- **v0.2.2 (Direct Parser bugfixes)** — still planned/deferred (5 P0/P1 blockers, see below); superseded numbering-wise by 0.3.0 but the work itself is untouched.
 
 ### No Active Sprint
-No MiniPRD is currently in progress. Next work requires creating `MiniPRD_DirectParser_Bugfixes_v0.2.2.md` via `/hyper-architect`.
+The stereo diagnostic backlog opened 2026-07-02 is fully closed — test suite green with **zero expected failures** (`discover tests/unit` 124 OK; `discover tests` 55 OK; `verify_xyz_to_oin.py` 25/25). Session-persistent detail lives in `spec/worklog/NOTES.md` (read first). Deferred, non-blocking follow-ups: Zone-A N encoding (needs Option-C out-of-band marker), a real compatible-bite bidentate 3D fixture, DG-path set-based enforcement limitation, and the Direct Parser bugfixes below.
 
 ## Direct Parser — Deferred to v0.2.2
 **Audit doc**: `spec/audit/DirectParser_IntegrationAudit_20260506.md`
@@ -28,7 +28,15 @@ Integration is blocked by 5 issues in `src/oinsmiles/generation/oin_parser.py`:
 
 ## Recent Completions
 
-### v0.2.1 Work (in [Unreleased])
+### v0.3.0 Stereo Round-Trip Arc (2026-07-02 → 07-04)
+- **OIN v3.7 descriptor-free metal token** — fixed a stale `is_metal` bug that leaked RDKit's `@SP1` into the metal token (`xyz2mol.py`).
+- **Winding preservation (Phase 1)** — `{n>}`/`{n<}` markers now parse through to `ParsedOIN.winding_by_slot` (`oin/inline.py`, `generation/oin_parser.py`).
+- **Haptic-face control (Phase 3)** — winding marker steers the generated ring face; per-ring signed-circulation mirror correction (`generation/molassembler_adapter.py`, `oin/winding.py`).
+- **Zone-A P encoding + SPL enforcement (Phase 4 / MiniPRD-C)** — `[P@]`/`[P@@]` on metal-bound P; dummy-metal embed makes both enantiomers reachable on square-planar (`core/chirality.py`, `generation/molassembler_adapter.py`).
+- **Eta-ring canonicalization** — multi-substituted η-rings round-trip byte-stably: canonical ring-SMILES fragment order + lowest-`CanonicalRankAtoms` heading atom (`utils/oin_aligner.py`).
+- **Bidentate incompatible-bite → DG routing** — DIPAMP-class chelates fall back to distance geometry instead of colliding on the template path.
+
+### v0.2.1 Work (folded into [0.3.0])
 - **Direct Parser MiniPRD audits (4 of 5)**: RegexPreprocessor, ASTTokenization, MolassemblerInstantiation, FragmentMapping — all audited, archived. Integration MiniPRD deferred.
 - **CLI fix**: `oin2xyz` command updated to access `.xyz` from `GeneratedStructure` return type
 - **P/N stereocenters fixtures**: PdCl2-R-BINAP, PdCl2-RR-BDNN, PdCl2-RR-BDPP — all pass round-trip RMSD < 1.0 Å
@@ -45,7 +53,8 @@ Integration is blocked by 5 issues in `src/oinsmiles/generation/oin_parser.py`:
 - `XYZToSMILES.convert()` defined twice — second shadows first — TD-001
 
 ## Key Files for Next Session
+- `spec/worklog/NOTES.md` — session-persistent state for the stereo arc; read first
 - `src/oinsmiles/generation/oin_parser.py` — Direct Parser implementation (blockers above)
 - `spec/audit/DirectParser_IntegrationAudit_20260506.md` — full analysis of 5 blockers
-- `spec/compiled/SuperPRD.md` — system of record (v1.1.0)
-- `CHANGELOG.md` `[Unreleased]` — pending v0.2.1 release entries
+- `spec/compiled/SuperPRD_Stereo*.md` — per-feature SuperPRDs (the monolithic `SuperPRD.md` no longer exists)
+- `CHANGELOG.md` `[0.3.0]` — the released-but-unpushed 0.3.0 entries
