@@ -93,6 +93,7 @@ use `--no-verify` only while the hook is red, and say so in the message.
 | TASK-31 bidentate placement fix | DONE — guard fix + xfail flip both work exactly as specified; the regression it surfaced in `test_zone_a_p_genenforce.py` (Phase 4b) is now cleared by TASK-32. Its "incompatible-bite → DG" routing decision is absorbed into MiniPRD-C (Zone-A P SPL Dummy-Metal Embed): DG-routed bidentates now also get stereo enforcement | Sonnet | TASK-30 |
 | TASK-32 retarget Phase-4b Kabsch tests | DONE — 3 tests retargeted from DIPAMP to a synthetic monodentate P-stereocenter fixture that stays on the template path; suite fully green | Sonnet | TASK-31 |
 | CONFIRMED BUG: SPL Zone-A P enforcement is one-sided | DONE — fixed via Option E (dummy-metal embed), MiniPRD-C (`MiniPRD_ZoneA_P_SPL_DummyEmbed.md`) executed 2026-07-03 (Sonnet). Both `[P@]`/`[P@@]` now enforce cleanly on SPL with opposite metal-present CIPs; bidentate incompatible-bite chelates (DIPAMP, DIPAMP-Ph) enforced via the DG fallback too. See `SPL-P-enforcement-decision.md` for the original design rationale | Fable/Opus → Sonnet | Phase 4b |
+| HAPTIC CANON: eta-ring fragment-order + heading-atom non-determinism | TODO — diagnostic DONE (root causes pinned, see brief + Log 2026-07-03). The sole remaining xfail `test_haptic_face_golden_match` is a re-encoder canonicalization instability (NOT a stereo bug): fragment order is arrival-order (`oin_aligner.py:250` `base_sort_key` leads with `i`) and heading atom is geometry-dependent for substituted eta rings (`:540-560`, `SYMMETRIC_LIGANDS` override at `:573` misses them). Seed `/hyper-architect` with `spec/worklog/haptic-canonicalization-design-brief.md`. RED-TEAM: must stay a pure winding-preserving relabeling (keep the R2 skip meaningful) | Fable/Opus → Sonnet | Phase 3 |
 
 **CONFIRMED correctness bug (verified 2026-07-03, Fable — was the "asymmetry
 follow-up"):** On square-planar (`SPL`) complexes, Zone-A P enforcement cannot
@@ -1246,6 +1247,41 @@ time: shortened an over-long docstring summary line the executor left in
 whole-repo ruff pre-commit hook is now GREEN (the ruff-adoption session
 finished), so no `--no-verify` was needed. **NOT pushed** (per standing
 instruction). Branch remains ahead of origin.
+
+### 2026-07-03 — Next-fix diagnostic: haptic-face golden-match canonicalization (Fable)
+
+Diagnosed the sole remaining xfail (`test_haptic_face_golden_match`) to seed the
+next session. It is NOT a stereo/generation bug — the physical winding is
+already correct (the content-anchored per-ring tests are hard passes). It is a
+CANONICALIZATION non-determinism in the XYZ→OIN encoder. Measured diff (real):
+
+```
+GOLDEN  : [Fe_LIN].Oc{0<}1[cH]{0}c{0}(Cl)c{0}(Br)c{0}1I.Oc{1}1[cH]{1}c{1}(I)c{1<}(Br)c{1}1Cl
+REENCODE: [Fe_LIN].Oc{0}1[cH]{0<}c{0}(I)c{0}(Br)c{0}1Cl.Oc{1}1[cH]{1}c{1}(Cl)c{1}(Br)c{1<}1I
+```
+
+Two winding-preserving relabelings (rings matched by CONTENT): (1) the two
+distinct pentahalo-Cp rings SWAP fragment order; (2) the heading atom (which
+ring atom carries the `<` marker) drifts within a ring — same traversal
+direction, same marker char, only the visible heading moves.
+
+Root causes pinned (both `oin_aligner.py`, `OINDiscreteAligner`): RC1 fragment
+order = arrival order (`:250` `base_sort_key = (i, mass, smiles)` leads with the
+enumerate index `i`); RC2 heading atom = geometry-dependent for substituted eta
+rings (`:540-560` picks the atom best-aligned to the slot `ref_vec`; the
+`SYMMETRIC_LIGANDS` forced-heading override at `:573` only catches unsubstituted
+rings). Blast radius is narrow — symmetric-eta and non-eta fragments are
+untouched by construction — but `base_sort_key` is shared, so red-team must
+confirm no golden shifts.
+
+Wrote `spec/worklog/haptic-canonicalization-design-brief.md` (measured diff,
+both root-cause file:lines, the design space, the "must stay a pure
+winding-preserving relabeling / keep the R2 skip meaningful" correctness trap,
+and the non-regression constraints). **NEXT: `/hyper-architect` seeded by that
+brief → red-team → resolve → execute (Sonnet) → audit.** Acceptance:
+`test_haptic_face_golden_match` flips xfail→pass; `discover tests/unit` becomes
+skipped=3 / **expected failures=0**; no golden shifts. Task-table row added
+("HAPTIC CANON", TODO).
 
 **Known follow-ups carried forward (not blocking, from the exec session's own
 "Known gaps"):** (1) no real *compatible-bite* bidentate 3D fixture yet — the
