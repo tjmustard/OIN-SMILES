@@ -1459,3 +1459,13 @@ fixture; DG-path set-based enforcement limitation; the one-off `[P@@]`
 SPY-misread noted in MiniPRD-C's known gaps; README/CHANGELOG do not yet
 document v3.7 or any of the stereo features. Branch ahead of origin, NOT
 pushed (standing instruction).
+
+**Commit note (033f1c5):** at commit time the executor's new docstrings tripped
+the ruff pre-commit hook (D205/D209). `ruff check --fix` auto-fixed 2 but
+CORRUPTED one — it truncated `_fragment_mol_for_canonicalization`'s summary to
+`"""Parse a` and dropped the rest of the sentence. Caught it (re-read before
+trusting the autofix), rewrote all three helper docstrings by hand (one-line
+summary + blank + body), re-ran `test_stereo_roundtrip_diagnostics` (25 OK,
+xfail=0) to confirm no behaviour change, then committed. No logic touched —
+docstrings only. Lesson logged: `ruff --fix` on D-rules can eat docstring text;
+always re-read the file after an autofix.
