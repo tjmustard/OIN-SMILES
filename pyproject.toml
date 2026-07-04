@@ -1,6 +1,6 @@
 [project]
 name = "oin-smiles"
-version = "0.1.0"
+version = "0.3.0"
 description = "OIN-SMILES: A Python library for generating OIN-SMILES from molecular structures"
 readme = "README.md"
 requires-python = ">=3.10"
