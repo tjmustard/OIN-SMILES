@@ -101,8 +101,11 @@ of Zone-A-P-on-SPL inputs generate the WRONG enantiomer (honestly warned, but
 wrong 3D). Undercuts the Phase-4a/4b "enforcement works" claim for SPL.
 **Fix is a design decision, not a quick patch:** reflect-with-co-resident-
 protection, or face-aware placement that puts the metal on the target face.
-Recommend a `/hyper-consult-cto` (like Phase 4) before a MiniPRD. Not yet
-dispatched — awaiting direction.
+**NEXT: `/hyper-consult-cto` seeded by `SPL-P-enforcement-design-brief.md`**
+(3 options: E embed-with-dummy-metal / P face-aware-placement / R
+reflect-with-co-resident-protection) → decision → `/hyper-architect` MiniPRD →
+Sonnet executor. Run the consult on Fable 5 or Opus 4.8 (reasoning-heavy);
+execute on Sonnet.
 
 **Separate workstream — generation fidelity (not stereo):** TASK-30 targets the
 polydentate placement bug in `_stitch_fragment` that causes the two remaining
