@@ -2,7 +2,7 @@
 
 ## Metadata
 - **Project Name**: OIN-SMILES — Metal-bound (Zone-A) P stereocenter encoding, Phase 4
-- **Version**: 1.0.0 (Compiled — post `/hyper-resolve`, 2026-07-03)
+- **Version**: 1.1.0 (Compiled — MiniPRD-C resolved via `/hyper-resolve`, 2026-07-03; adds SPL/bidentate dummy-embed, absorbs TASK-31)
 - **Status**: Ready for `/hyper-execute`
 - **Owner**: Architect Agent (Fable) / Thomas Mustard
 - **Roadmap ref**: `spec/worklog/ROADMAP-stereo.md` § Phase 4 (absorbs superseded Phase 2)
@@ -13,6 +13,10 @@
 - **Child MiniPRDs**:
   - `spec/compiled/MiniPRD_ZoneA_P_Encode.md` (MiniPRD-A, encode side)
   - `spec/compiled/MiniPRD_ZoneA_P_GenEnforce.md` (MiniPRD-B, generation side)
+  - `spec/compiled/MiniPRD_ZoneA_P_SPL_DummyEmbed.md` (MiniPRD-C, generation-side
+    SPL/bidentate dummy-embed — fixes the one-sided-SPL bug MiniPRD-B warns on;
+    seeded by `spec/worklog/SPL-P-enforcement-decision.md` Option E; Red Team +
+    `/hyper-resolve` 2026-07-03; see §5.5 Resolved Trade-offs Log C1–C5)
 
 ---
 
@@ -330,9 +334,58 @@ The following nodes in `spec/compiled/architecture.yml` are affected:
 
 ### 5.3 Execution Checklist (MiniPRDs)
 Execute in order — A establishes the property contract B consumes:
-- [ ] `spec/compiled/MiniPRD_ZoneA_P_Encode.md` (MiniPRD-A)
-- [ ] `spec/compiled/MiniPRD_ZoneA_P_GenEnforce.md` (MiniPRD-B; HITL golden
-      sign-off per §9 may proceed in parallel with B)
+- [x] `spec/compiled/MiniPRD_ZoneA_P_Encode.md` (MiniPRD-A) — DONE
+- [x] `spec/compiled/MiniPRD_ZoneA_P_GenEnforce.md` (MiniPRD-B; HITL golden
+      sign-off per §9 may proceed in parallel with B) — DONE
+- [ ] `spec/compiled/MiniPRD_ZoneA_P_SPL_DummyEmbed.md` (MiniPRD-C) — resolved,
+      ready for `/hyper-execute`. Fixes the one-sided-SPL correctness bug
+      MiniPRD-B honestly warns on; extends enforcement to all bidentate Zone-A-P
+      including incompatible-bite (absorbs TASK-31). See §5.3.1.
+
+### 5.3.1 Resolved Trade-offs Log — MiniPRD-C (`/hyper-resolve`, 2026-07-03, Thomas Mustard)
+
+MiniPRD-C (`spec/compiled/MiniPRD_ZoneA_P_SPL_DummyEmbed.md`) was Red-Teamed
+(`RedTeam_Report.md`, 7 findings: 2 blocker, 2 high, 2 medium, 1 low) and resolved
+in this session. Full detail lives in MiniPRD-C §0; the SuperPRD-level record:
+
+- **C1 — Attach helper (Blockers 1 & 2):** the draft's reuse targets are dead —
+  `PseudoAtomStrategy`/`PSEUDO_ATOMIC_NUM` were deleted from `src/` (verified:
+  `grep` empty; `chirality.py:22` now imports `TRANSITION_METALS_NUM`), and
+  `_build_dummy_metal_copy` *raises* on a metal-free fragment and *converts* a
+  metal rather than *attaching* a dummy. **Resolution:** a new dedicated
+  `_attach_dummy_metal(mol, p_idx)` in `core/chirality.py` — net-new code (not a
+  revival), mirroring only the SINGLE-bond + `NoImplicit` valence-fix recipe.
+- **C2 — Denticity scope (Finding 3 + expansion):** the gate is also true for
+  bidentate Zone-A-P, whose branch had no strip → dummy leak. **Resolution:**
+  extend the dummy-embed to **all** Zone-A-P of any denticity, **including
+  incompatible-bite chelates**. This **absorbs TASK-31** and **supersedes** commit
+  `ee0b3f0`'s "route incompatible-bite Zone-A-P to DG without enforcement": DG
+  still handles *placement* for incompatible bites, but the dummy-embed +
+  `_verify_zone_a_p` enforcement now runs on that path too. The original
+  MiniPRD-C "template-path only" / "DO NOT touch DG-fallback" constraints are
+  formally overridden (MiniPRD-C §4 OVERRIDE notes).
+- **C3 — Test-1 oracle (Finding 4):** never compare `_metal_present_cip_label`
+  against `_zone_a_p_expected_labels` (divergent conventions). **Resolution:**
+  enforcement asserts like-for-like `_lp_cip_label` == `_zone_a_p_expected_labels`
+  (the pair `_verify_zone_a_p` trusts, B1); discrimination asserts opposite
+  `_metal_present_cip_label` for `[P@]` vs `[P@@]`.
+- **C4 — NFR/robustness defaults (Findings 5, 6, 7 + Test-5) — approved as a
+  group:** hard `_stitch_fragment` postcondition (no Z=0 atom returned;
+  `len(positions)` dummy-absent-stable) + acceptance-gate guard "no generated XYZ
+  contains a Z=0/`*` atom"; pinned op order `SetNoImplicit(P)` → attach (SINGLE,
+  `NoImplicit`) → `AddHs` → embed → align → strip-before-return + pre-placement
+  `_lp_cip_label` parity assert (hard failure, not silent loop-mask); Test 7
+  loop-with-dummy via `_test_flip_chiral_idx`; branch-entry-counter inertness
+  proof (not byte-diff alone).
+- **C5 — PAMP fixture gating (Candidate Artifact):** **hard merge gate
+  immediately** — Test 4 (byte-stable `PtCl2-PAMP` round trip) blocks now,
+  trusting the Avogadro fixture's absolute configuration as-is. *Accepted risk
+  (RISK-C3):* round-trip stability pinned to an unverified reference; reviewer
+  sign-off recorded post-hoc in `spec/worklog/`, non-blocking.
+
+**Scope-change consequences to reconcile downstream:** flip the CONFIRMED-BUG row
+and the TASK-31 row in `spec/worklog/NOTES.md` on MiniPRD-C completion; note that
+`ee0b3f0`'s enforcement-free incompatible-bite routing is superseded for Zone-A-P.
 
 ### 5.4 API Contracts / Schema
 ```python
