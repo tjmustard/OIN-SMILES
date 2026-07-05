@@ -11,6 +11,7 @@ dependencies = [
     "numba>=0.62.1",
     "numpy>=2.2.6",
     "openbabel-wheel>=3.1.1.22",
+    "pulp>=3.3.2",
     "rdkit>=2025.9.3",
     "scine-molassembler>=2.0.0",
     "scipy>=1.15.3",
