@@ -1583,3 +1583,35 @@ spec authoring only. Target node `atom_molassembler_adapter`.
   gen.mol consumer sweep, conformer/all_pos alignment after RenumberAtoms,
   emission-space binding-index correctness, coverage-guard completeness, ring-info
   dependency). No git commit made; draft left unstaged for the chain.
+
+### 2026-07-05 — MACE adoption + geometry-classification audit (Opus)
+- **MACE MLIP optimizer** adopted on `feature/metallogen-3d-generator` as the
+  MetalloGen geometry-refinement path (faster than xTB, GFN-quality). Verification
+  fixtures regenerated from MACE geometries; fixtures moved
+  `tests/integration/*.xyz → tests/fixtures/*.xyz`. Model weights (403 MB) gitignored
+  under `models/mace/`. Committed as its own commit **66a2725**.
+- MACE geometries shifted 3 XYZ→OIN encoder classifications (22/25). **Audited each
+  vs the actual geometry** (read-only diagnostic dumping virtual-atom unit vectors +
+  angles + per-candidate Kabsch RMSD):
+  - **VOacac2 — encoder was wrong.** `TEMPLATE_SPECS["SPY"]` idealized basal donors
+    coplanar (90° from apex); real square-pyramidal complexes pucker (metal lifted
+    toward apex → apex-basal ~105°, trans-basal ~150°, no ~180° pair). MACE vanadyl
+    (apex-basal 104-107, trans-basal 146-152) lost angular RMSD to TBP (0.470 vs
+    0.540). **Fix:** re-derived SPY basal at ~105° (z=-0.2588, xy·0.9659), keeping
+    ±x/±y so slot numbering / apex-at-{0} unchanged. VOacac2 SPY RMSD 0.540→0.055,
+    now `[V_SPY]`. Genuine TBP safe (FeCO5 true ~180° axial pair TBP 0.003; ReF7 PBP).
+  - **TiCat3/4 — encoder was right, goldens stale.** Bent metallocene (Cp-Ti-Cp 132°,
+    Me-Ti-Me 90°) is pseudo-tetrahedral; encoder emits `[Ti_TET]` (TET 0.364 < TPY
+    0.463 < SPL 1.235). **Fix:** updated hardcoded `expected_oin_string`/`expected_smiles`
+    TPY→TET in `verify_xyz_to_oin.py`.
+  - Committed as **c3d0cff**.
+- **Eta-ligand coordination vector = haptic-group centroid** (`_reduce_hapticity`
+  oin_aligner.py:314, clusters within 1.6 Å, one virtual atom per ring), NOT per-atom.
+- Result: **verify_xyz_to_oin 25/25**; unit suites green (tests/unit 127 skip 3,
+  tests 55). Tree clean. No push (standing instruction).
+- **Next (round-trip suite, 15/25 MACE, deferred — NOT part of this audit):** stereo
+  carry (BDPP/BDNN mirror — `build_contract_mol` uses `AssignStereochemistryFrom3D`
+  at metallogen_adapter.py:342 instead of template `@/@@`); cyclometalated aryl-C H
+  (`[cH]{0}` vs `c{0}` on fac/mer-Ir); TiCat2 eta aromaticity + TiCat1/2/3/4 RMSD-999
+  eta coord-sphere extraction (geometry). See plan
+  `~/.claude/plans/how-much-of-the-breezy-emerson.md` §C.
