@@ -80,3 +80,5 @@ dmypy.json
 .agent
 .python*
 uv*
+# Local scratch / backup fixtures (not for VCS)
+tests/backup/

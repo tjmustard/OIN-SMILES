@@ -269,7 +269,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 1: CisPlatin (XYZ -> OIN-SMILES)
     try:
-        cisplatin_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "CisPlatin.xyz"))
+        cisplatin_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/CisPlatin.xyz"))
 
         cisplatin_xyz_ex = Example(
             name="CisPlatin (XYZ -> OIN-SMILES)",
@@ -286,7 +286,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 2: TransPlatin (XYZ -> OIN-SMILES)
     try:
         transplatin_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "TransPlatin.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/TransPlatin.xyz")
         )
 
         transplatin_xyz_ex = Example(
@@ -304,7 +304,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 3: Cis-PtCl2(en) (XYZ -> OIN-SMILES)
     try:
         cisptcl2en_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "Cis-PtCl2(en).xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/Cis-PtCl2(en).xyz")
         )
 
         cisptcl2en_xyz_ex = Example(
@@ -321,7 +321,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 4: Ferrocene (XYZ -> OIN-SMILES)
     try:
-        ferrocene_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "Ferrocene.xyz"))
+        ferrocene_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/Ferrocene.xyz"))
 
         ferrocene_ex = Example(
             name="Ferrocene (XYZ -> OIN-SMILES)",
@@ -338,7 +338,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 5: PdCl2PhenPhosMe (XYZ -> OIN-SMILES)
     try:
         pd_phenphos_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2PhenPhosMe.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2PhenPhosMe.xyz")
         )
 
         pd_phenphos_ex = Example(
@@ -354,7 +354,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 6: fac-Ir(ppy)3 (XYZ -> OIN-SMILES)
     try:
-        fac_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "fac-Ir(ppy)3.xyz"))
+        fac_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/fac-Ir(ppy)3.xyz"))
 
         fac_ir_ex = Example(
             name="fac-Ir(ppy)3 (XYZ -> OIN-SMILES)",
@@ -369,7 +369,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 7: mer-Ir(ppy)3 (XYZ -> OIN-SMILES)
     try:
-        mer_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "mer-Ir(ppy)3.xyz"))
+        mer_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/mer-Ir(ppy)3.xyz"))
 
         mer_ir_ex = Example(
             name="mer-Ir(ppy)3 (XYZ -> OIN-SMILES)",
@@ -385,7 +385,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 8: PtMeNH3ClBr-Cis (XYZ -> OIN-SMILES)
     try:
         pt_cis_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PtMeNH3ClBr-Cis.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PtMeNH3ClBr-Cis.xyz")
         )
 
         pt_cis_ex = Example(
@@ -402,7 +402,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 9: PtMeNH3ClBr-Trans (XYZ -> OIN-SMILES)
     try:
         pt_trans_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PtMeNH3ClBr-Trans.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PtMeNH3ClBr-Trans.xyz")
         )
 
         pt_trans_ex = Example(
@@ -418,7 +418,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 10: CuCN2 (XYZ -> OIN-SMILES)
     try:
-        cucn2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "CuCN2.xyz"))
+        cucn2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/CuCN2.xyz"))
 
         cucn2_ex = Example(
             name="CuCN2 (XYZ -> OIN-SMILES)",
@@ -433,7 +433,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: FeCO5 (XYZ -> OIN-SMILES)
     try:
-        feco5_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "FeCO5.xyz"))
+        feco5_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/FeCO5.xyz"))
 
         feco5_ex = Example(
             name="FeCO5 (XYZ -> OIN-SMILES)",
@@ -448,7 +448,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: FeH2(CO)4 (XYZ -> OIN-SMILES)
     try:
-        feh2co4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "FeH2(CO)4.xyz"))
+        feh2co4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/FeH2(CO)4.xyz"))
 
         feh2co4_ex = Example(
             name="FeH2(CO)4 (XYZ -> OIN-SMILES)",
@@ -463,7 +463,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: HgI3 (XYZ -> OIN-SMILES)
     try:
-        hgi3_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "HgI3.xyz"))
+        hgi3_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/HgI3.xyz"))
 
         hgi3_ex = Example(
             name="HgI3 (XYZ -> OIN-SMILES)",
@@ -478,7 +478,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 12: ReF7 (XYZ -> OIN-SMILES)
     try:
-        ref7_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "ReF7.xyz"))
+        ref7_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/ReF7.xyz"))
 
         ref7_ex = Example(
             name="ReF7 (XYZ -> OIN-SMILES)",
@@ -493,7 +493,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 13: TiCl4 (XYZ -> OIN-SMILES)
     try:
-        ticl4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "TiCl4.xyz"))
+        ticl4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/TiCl4.xyz"))
 
         ticl4_ex = Example(
             name="TiCl4 (XYZ -> OIN-SMILES)",
@@ -508,7 +508,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 14: TiCp2Me2 (XYZ -> OIN-SMILES)
     try:
-        ticp2me2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "TiCp2Me2.xyz"))
+        ticp2me2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/TiCp2Me2.xyz"))
 
         ticp2me2_ex = Example(
             name="TiCp2Me2 (XYZ -> OIN-SMILES)",
@@ -524,7 +524,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 15: VOacac2 (XYZ -> OIN-SMILES)
     try:
-        voacac2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "VOacac2.xyz"))
+        voacac2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/VOacac2.xyz"))
 
         # Note: acac appears as anionic radical form in OIN due to sanitization
         voacac2_ex = Example(
@@ -540,7 +540,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 16: Zeises_salt (XYZ -> OIN-SMILES)
     try:
-        zeises_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "Zeises_salt.xyz"))
+        zeises_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "../fixtures/Zeises_salt.xyz"))
 
         zeises_ex = Example(
             name="Zeises_salt (XYZ -> OIN-SMILES)",
@@ -555,7 +555,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat1
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat1.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat1.xyz"), "r") as f:
             ticat1_xyz = f.read()
         ticat1_ex = Example(  # Changed from XYZToOINExample to Example
             name="TiCat1 (XYZ -> OIN-SMILES)",
@@ -571,7 +571,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat2
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat2.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat2.xyz"), "r") as f:
             ticat2_xyz = f.read()
         ticat2_ex = Example(  # Changed from XYZToOINExample to Example
             name="TiCat2 (XYZ -> OIN-SMILES)",
@@ -586,7 +586,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat3
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat3.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat3.xyz"), "r") as f:
             ticat3_xyz = f.read()
         ticat3_ex = Example(
             name="TiCat3 (XYZ -> OIN-SMILES)",
@@ -601,7 +601,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat4
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat4.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat4.xyz"), "r") as f:
             ticat4_xyz = f.read()
         ticat4_ex = Example(
             name="TiCat4 (XYZ -> OIN-SMILES)",
@@ -617,7 +617,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example: PdCl2-R-BINAP (axial-chiral BINAP ligand)
     try:
         pdcl2_binap_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-R-BINAP.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-R-BINAP.xyz")
         )
 
         pdcl2_binap_ex = Example(
@@ -635,7 +635,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example: PdCl2-RR-BDNN (N-chiral diphosphine ligand)
     try:
         pdcl2_bdnn_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-RR-BDNN.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-RR-BDNN.xyz")
         )
 
         pdcl2_bdnn_ex = Example(
@@ -653,7 +653,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example: PdCl2-RR-BDPP (P-chiral diphosphine ligand)
     try:
         pdcl2_bdpp_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-RR-BDPP.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-RR-BDPP.xyz")
         )
 
         pdcl2_bdpp_ex = Example(

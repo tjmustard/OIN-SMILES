@@ -59,11 +59,11 @@ def generate_3d_structures(
 
     if optimizer:
         from .ml_optimizer import ASEOptimizer
-        try:
-            opt = ASEOptimizer(method=optimizer)
-        except Exception as e:
-            print(f"Failed to initialize optimizer '{optimizer}': {e}")
-            opt = None
+        
+        # We explicitly do NOT catch initialization exceptions here.
+        # If the user asks for an optimizer and it fails to load,
+        # we want to fail loudly rather than silently falling back to FF.
+        opt = ASEOptimizer(method=optimizer)
             
         if opt:
             optimized_mols = []

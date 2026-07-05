@@ -116,7 +116,7 @@ class TestEtaBondRoundTrip(unittest.TestCase):
         This test uses the ferrocene fixture to generate the OIN string,
         then attempts to parse it with parse_oin_direct.
         """
-        ferrocene_xyz_path = os.path.join(self.fixtures_dir, "ferrocene.xyz")
+        ferrocene_xyz_path = os.path.join(self.fixtures_dir, "Ferrocene.xyz")
         if not os.path.exists(ferrocene_xyz_path):
             self.skipTest(f"Ferrocene fixture not found at {ferrocene_xyz_path}")
 
