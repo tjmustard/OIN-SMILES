@@ -164,6 +164,18 @@ def main():
         type=str,
         help="Run only examples whose name contains this substring (case-insensitive).",
     )
+    parser.add_argument(
+        "--ff-preset",
+        type=str,
+        default=None,
+        help="FF convergence preset for the MetalloGen engine (loose/default/tight/very_tight).",
+    )
+    parser.add_argument(
+        "--optimizer",
+        type=str,
+        default=None,
+        help="Post-FF optimizer for the MetalloGen engine (e.g. 'xtb'). Default: FF only.",
+    )
     args = parser.parse_args()
 
     output_dir = args.output_dir
@@ -176,7 +188,9 @@ def main():
     reporter = VerificationReporter("Round-Trip Verification Report")
 
     xyz_to_smiles = XYZToSMILES()
-    generator = OIN3DGenerator()
+    generator = OIN3DGenerator(ff_preset=args.ff_preset, optimizer=args.optimizer)
+    if args.ff_preset or args.optimizer:
+        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r}")
 
     examples = get_examples()
     if args.only:

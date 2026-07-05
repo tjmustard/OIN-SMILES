@@ -239,6 +239,8 @@ class OIN3DGenerator:
         ensemble_size: int = 10,
         engine: str = "legacy",
         optimizer: str | None = None,
+        ff_preset: str | None = None,
+        ff_params: dict | None = None,
     ) -> None:
         """Initialize the generator with a parser and a generation backend.
 
@@ -257,6 +259,8 @@ class OIN3DGenerator:
                 dg_strategy=dg_strategy,
                 ensemble_size=ensemble_size,
                 optimizer=optimizer,
+                ff_preset=ff_preset,
+                ff_params=ff_params,
             )
         elif engine == "legacy":
             self.adapter = MolassemblerAdapter(
