@@ -956,49 +956,45 @@ def get_oin_string(tmc_mol, xyz_coords):
         # get 'local_idx' correctly.
         # RDKit's MolToSmiles canonicalization reorders atoms.
 
-        smiles_mol = Chem.MolFromSmiles(sanitized_smiles, sanitize=False)
-
-        if smiles_mol is None:
-            # Fallback/Debug: Sanitization produced invalid SMILES?
-            logger.error(f"Failed to parse generated SMILES: {sanitized_smiles}")
-            frag_to_smiles_idx = {}
-        else:
-            # We need to map `frag_mol` (original indices) to `smiles_mol`.
-            # We use `sanitized_mol` (which has same indices as frag_mol but compatible properties)
-            # to match against `smiles_mol`.
-            try:
-                # Use sanitized_mol as Query? Or Target?
-                # SubstructMatch(query). sanitized_mol is the "Source",
-                # smiles_mol is "Target/Query structure".
-                # match[i] maps query_atom_i to target_atom_j?
-                # Mol.GetSubstructMatch(query) -> tuple of atom indices in Mol
-                # that match query atoms.
-                # So if we use `sanitized_mol.GetSubstructMatch(smiles_mol)`:
-                # match[0] is the index in `sanitized_mol` that corresponds to
-                # Atom 0 in `smiles_mol`.
-                # match[1] is ... Atom 1 in `smiles_mol`.
-                # This is exactly what we need.
-                match = sanitized_mol.GetSubstructMatch(smiles_mol)
-            except Exception as e:
-                logger.warning(f"SubstructMatch failed for {sanitized_smiles}: {e}")
-                match = None
-        # match[i] = index of atom in frag_mol that corresponds to atom i in smiles_mol?
-        # No, match is "indices of atoms in frag_mol that match atoms 0,1,2...
-        # in query(smiles_mol)".
-        # So match[0] is the atom index in frag_mol that corresponds to Atom 0 in SMILES.
-        # match[1] is Atom 1 in SMILES, etc.
-
-        # We want: Given atom in frag_mol (which maps to global), what is its SMILES index?
+        # We want: given a fragment atom (which maps to a global/binding index),
+        # what is its position in `sanitized_smiles`? That position is the
+        # LocalIdx the inline handler uses to place the {slot} marker.
+        #
+        # Prefer RDKit's own canonical output order (set on `sanitized_mol` by the
+        # MolToSmiles that produced `sanitized_smiles`). It is symmetry-free.
+        # GetSubstructMatch can return a WRONG automorphism on near-symmetric
+        # ligands -- e.g. the two ortho carbons of a cyclometalated aryl look
+        # identical to the matcher, so the binding marker lands on a CH instead of
+        # the deprotonated X-type carbon and the string drifts c{N} -> [cH]{N}.
         frag_to_smiles_idx = {}
-        if match:
-            for s_idx, f_idx in enumerate(match):
+        output_order = None
+        if sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder"):
+            try:
+                raw = sanitized_mol.GetProp("_smilesAtomOutputOrder")
+                output_order = [
+                    int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""
+                ]
+            except Exception:
+                output_order = None
+
+        if output_order is not None:
+            # output_order[pos] = fragment-atom index emitted at SMILES position pos
+            for s_idx, f_idx in enumerate(output_order):
                 frag_to_smiles_idx[f_idx] = s_idx
         else:
-            # Fallback (should not happen if SMILES generated from mol)
-            # Maybe due to stereochem differences or sanitization?
-            # Safe fallback: linear mapping? No.
-            # If match fails, we might have issues.
-            pass
+            # Fallback: substructure match against a re-parse of the SMILES.
+            smiles_mol = Chem.MolFromSmiles(sanitized_smiles, sanitize=False)
+            if smiles_mol is None:
+                logger.error(f"Failed to parse generated SMILES: {sanitized_smiles}")
+            else:
+                try:
+                    match = sanitized_mol.GetSubstructMatch(smiles_mol)
+                except Exception as e:
+                    logger.warning(f"SubstructMatch failed for {sanitized_smiles}: {e}")
+                    match = None
+                if match:
+                    for s_idx, f_idx in enumerate(match):
+                        frag_to_smiles_idx[f_idx] = s_idx
 
         # Update frag_binding_atoms with local_idx
         # stored as: (global_idx, mass, coords)
