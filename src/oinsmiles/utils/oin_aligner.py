@@ -36,6 +36,27 @@ class OINSanitizer:
         # Create a modifiable copy
         rw_mol = Chem.RWMol(ligand_mol)
 
+        # 0. Restore aromatic bond type on ring bonds between aromatic-flagged
+        # atoms that are still typed SINGLE. The OIN→XYZ generator de-aromatizes
+        # rings for ETKDG (aromatic → SINGLE) and never restores them, so a
+        # re-encode of the generator's bonded mol would otherwise serialize an
+        # aromatic Cp as [cH]-[cH]-... . Guard on IsInRing() so genuine biaryl
+        # single bonds (e.g. Ir(ppy)3 phenyl-pyridine, BINAP binaphthyl) are
+        # left untouched. This is a no-op on fragments perceived from real 3D
+        # geometry (already AROMATIC-typed), so pass-1 output is unchanged.
+        # A staged SanitizeMol was rejected here: a charge-less Cp anion raises
+        # KekulizeException, and SANITIZE_ALL ^ KEKULIZE + SetAromaticity leaves
+        # the bond types SINGLE (see spec/worklog/TASK-42 probe).
+        for bond in rw_mol.GetBonds():
+            if (
+                bond.GetBondType() == Chem.BondType.SINGLE
+                and bond.IsInRing()
+                and bond.GetBeginAtom().GetIsAromatic()
+                and bond.GetEndAtom().GetIsAromatic()
+            ):
+                bond.SetBondType(Chem.BondType.AROMATIC)
+                bond.SetIsAromatic(True)
+
         # 1. Force Explicit H attributes on Zone A atoms
         for idx in binding_indices_in_ligand:
             atom = rw_mol.GetAtomWithIdx(idx)

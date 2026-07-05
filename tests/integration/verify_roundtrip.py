@@ -12,7 +12,7 @@ from rdkit import Chem
 from rmsd_utils import calculate_tmc_rmsd
 
 from oinsmiles import XYZToSMILES
-from oinsmiles.generation.engine import OIN3DGenerator
+from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
 from oinsmiles.generation.molassembler_adapter import (
     _build_connected_smiles,
     _compute_expected_trans_sym_pairs,
@@ -159,6 +159,11 @@ def main():
     parser.add_argument(
         "--limit", type=int, help="Limit number of examples to run (for fast testing)"
     )
+    parser.add_argument(
+        "--only",
+        type=str,
+        help="Run only examples whose name contains this substring (case-insensitive).",
+    )
     args = parser.parse_args()
 
     output_dir = args.output_dir
@@ -174,6 +179,10 @@ def main():
     generator = OIN3DGenerator()
 
     examples = get_examples()
+    if args.only:
+        needle = args.only.lower()
+        examples = [e for e in examples if needle in e.name.lower()]
+        print(f"Filtering to {len(examples)} example(s) matching '{args.only}'.")
     if args.limit:
         print(f"Limiting to first {args.limit} examples.")
         examples = examples[: args.limit]
@@ -435,6 +444,18 @@ def main():
             import traceback
 
             traceback.print_exc()
+            if output_dir:
+                # Persist a forensic trail for crashed examples (e.g. TiCat3/4
+                # leave no step2.oin). Prefer base_name (computed at the top of
+                # the try with the correct outer index) over rebuilding from i,
+                # which the step-3 coordinate loops shadow.
+                try:
+                    stem = base_name if "base_name" in locals() else f"Ex{i}_{safe_name}"
+                    err_path = os.path.join(output_dir, f"{stem}_error.txt")
+                    with open(err_path, "w") as fh:
+                        fh.write(f"{type(e).__name__}: {e}\n\n{traceback.format_exc()}")
+                except Exception:
+                    pass
             reporter.log_failure(test_name, f"Exception: {str(e)}")
 
     # Final Summary
