@@ -237,14 +237,37 @@ class OIN3DGenerator:
         timeout: int = 60,
         dg_strategy: str = "single",
         ensemble_size: int = 10,
+        engine: str = "legacy",
+        optimizer: str | None = None,
     ) -> None:
-        """Initialize the generator with parser and Molassembler adapter settings."""
+        """Initialize the generator with a parser and a generation backend.
+
+        ``engine="legacy"`` (default) uses the Molassembler/stitch adapter.
+        ``engine="metallogen"`` uses the MetalloGen dummy-metal + CoordMap embed
+        backend (``oinsmiles.generator3d``). Both expose ``generate(parsed)``, so
+        the ``generate()`` delegation below is identical for either.
+        """
         self.parser = OINParser()
-        self.adapter = MolassemblerAdapter(
-            timeout=timeout,
-            dg_strategy=dg_strategy,
-            ensemble_size=ensemble_size,
-        )
+        self.engine = engine
+        if engine == "metallogen":
+            from .metallogen_adapter import MetalloGenAdapter
+
+            self.adapter = MetalloGenAdapter(
+                timeout=timeout,
+                dg_strategy=dg_strategy,
+                ensemble_size=ensemble_size,
+                optimizer=optimizer,
+            )
+        elif engine == "legacy":
+            self.adapter = MolassemblerAdapter(
+                timeout=timeout,
+                dg_strategy=dg_strategy,
+                ensemble_size=ensemble_size,
+            )
+        else:
+            raise ValueError(
+                f"Unknown engine {engine!r}; expected 'legacy' or 'metallogen'"
+            )
 
     def generate(self, oin_string: str) -> GeneratedStructure:
         """Convert an OIN-SMILES string to a 3D structure.
