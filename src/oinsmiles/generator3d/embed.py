@@ -431,7 +431,7 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
 
             if failed or positions is None:
                 # Try different molecule ...
-                alternative_ace_mol = alternative_ace_mol.get_valid_molecule(False, method='xyz2mol',MetalCenters=[metal_index])
+                alternative_ace_mol = alternative_ace_mol.get_valid_molecule(False, method='pulp',MetalCenters=[metal_index])
                 rd_mol = alternative_ace_mol.get_rd_mol()
                 print("Trying ", Chem.MolToSmiles(rd_mol))
                 

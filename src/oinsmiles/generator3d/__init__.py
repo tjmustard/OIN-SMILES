@@ -2,10 +2,10 @@ from . import om
 from . import embed
 from . import clean_geometry
 
-def generate_3d_structures(m_smiles, num_conformers=1):
+def generate_3d_structures(m_smiles, num_conformers=1, optimizer=None, pool_size=5):
     """
     Generate 3D structures from an m-SMILES string.
-    Returns a list of successful geometries as molecule objects.
+    Returns a list of successful geometries as molecule objects, sorted by energy if an optimizer is used.
     """
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
@@ -14,17 +14,28 @@ def generate_3d_structures(m_smiles, num_conformers=1):
         return []
 
     cleaner = clean_geometry.TMCOptimizer()
-    options = [0, 1]
-    scales = [0.8, 0.9, 1.0, 1.1]
+    options = [0, 1, 2] # Added one more option to increase pool variety
+    scales = [0.8, 0.9, 1.0, 1.1, 1.2]
     
+    # Target number of initial structures to generate
+    target_pool = pool_size if optimizer else num_conformers
     successful_mols = []
     
     for scale in scales:
         for option in options:
-            if len(successful_mols) >= num_conformers:
+            if len(successful_mols) >= target_pool:
                 break
-                
-            positions = embed.get_embedding(metal_complex, scale, option, align=True, use_random=True)
+
+            # A single scale/option combo can raise inside the embed (e.g. an
+            # RDKit valence exception on a dative donor); skip it rather than
+            # letting one bad combo abort the whole pool.
+            try:
+                positions = embed.get_embedding(
+                    metal_complex, scale, option, align=True, use_random=True
+                )
+            except Exception as e:
+                print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                positions = None
             if positions is not None:
                 tmp_complex = metal_complex.copy()
                 tmp_complex.set_position(positions)
@@ -35,10 +46,35 @@ def generate_3d_structures(m_smiles, num_conformers=1):
                 if success:
                     successful_mols.append(tmp_complex.get_molecule())
                     
-        if len(successful_mols) >= num_conformers:
+        if len(successful_mols) >= target_pool:
             break
             
-    return successful_mols
+    if not successful_mols:
+        return []
+
+    if optimizer:
+        from .ml_optimizer import ASEOptimizer
+        try:
+            opt = ASEOptimizer(method=optimizer)
+        except Exception as e:
+            print(f"Failed to initialize optimizer '{optimizer}': {e}")
+            opt = None
+            
+        if opt:
+            optimized_mols = []
+            for mol in successful_mols:
+                success, energy, new_mol = opt.optimize(mol)
+                if success:
+                    optimized_mols.append((energy, new_mol))
+                else:
+                    # Keep the original if optimization fails but penalize its rank
+                    optimized_mols.append((float('inf'), mol))
+            
+            # Sort by energy
+            optimized_mols.sort(key=lambda x: x[0])
+            successful_mols = [m[1] for m in optimized_mols]
+            
+    return successful_mols[:num_conformers]
 
 def get_xyz_string(molecule):
     """

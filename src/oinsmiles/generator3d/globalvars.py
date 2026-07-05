@@ -30,7 +30,7 @@ actinide_metal = ['Ac','Th','Pa','U' ,'Np','Pu','Am','Cm','Bk','Cf','Es','Fm','M
 CN_known_geometries_dict = {
     2:  ['2_linear', '2_bent_135', '2_bent_90'],
     3:  ['3_trigonal_planar', '3_trigonal_pyramidal', '3_t_shaped'],
-    4:  ['4_tetrahedral', '4_seesaw', '4_square_planar'],
+    4:  ['4_tetrahedral', '4_seesaw', '4_square_planar', '4_trigonal_pyramidal'],
     5:  ['5_trigonal_bipyramidal', '5_square_pyramidal', '5_pentagonal_planar'],
     6:  ['6_octahedral', '6_trigonal_prismatic', '6_pentagonal_pyramidal', '6_hexagonal_planar'],
     7:  ['7_pentagonal_bipyramidal', '7_hexagonal_pyramidal', '7_capped_trigonal_prismatic', '7_capped_octahedral'],
@@ -54,6 +54,7 @@ known_geometries_angle_dict = {
     '4_tetrahedral'  : [109.5, 109.5, 109.5, 109.5, 109.5, 109.5],
     '4_square_planar': [90.0, 90.0, 90.0, 90.0, 180.0, 180.0],
     '4_seesaw'       : [90.0, 90.0, 90.0, 90.0, 90.0, 180.0],
+    '4_trigonal_pyramidal': [90.0, 90.0, 90.0, 120.0, 120.0, 120.0],
     # CN = 5
     '5_trigonal_bipyramidal': [90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 110.0, 125.0, 125.0, 180.0],
     '5_square_pyramidal'    : [90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 180.0, 180.0],
@@ -98,6 +99,7 @@ known_geometries_vector_dict = {
     '4_tetrahedral': np.array([[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]]/np.sqrt(3)),
     '4_square_planar': np.array([[1,0,0],[-1,0,0],[0,1,0],[0,-1,0]]),
     '4_seesaw': np.array([[0,0,1],[0,0,-1],[1,0,0],[0,1,0]]),
+    '4_trigonal_pyramidal': np.array([[0, 0, 1], [0, 1, 0], [0.8660254, -0.5, 0], [-0.8660254, -0.5, 0]]),
     #### CN 5
     '5_trigonal_bipyramidal': np.array([[0,0,2],[0,0,-2],[2,0,0],[-1,np.sqrt(3),0],[-1,-np.sqrt(3),0]])/2,
     '5_square_pyramidal': np.array([[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1]]),
@@ -176,6 +178,7 @@ known_geometries_permutation_dict = {
     '4_tetrahedral': [(1,2,3,4), (2,1,3,4)],
     '4_square_planar': [(1,2,3,4), (1,3,2,4), (1,4,2,3)],
     '4_seesaw': [(1,2,3,4), (1,2,4,3), (1,3,2,4), (1,3,4,2), (1,4,2,3), (1,4,3,2), (2,3,1,4), (2,3,4,1), (2,4,1,3), (2,4,3,1), (3,4,1,2), (3,4,2,1)],
+    '4_trigonal_pyramidal': [(1,2,3,4)],
     #### CN 5
     '5_trigonal_bipyramidal': [
         (1,2,3,4,5),

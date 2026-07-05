@@ -3,10 +3,9 @@ from rdkit import Chem
 def get_ligand_from_smiles(mapped_smiles):
     from . import process
     
-    params = Chem.SmilesParserParams()
-    params.removeHs = False
-    rd_mol = Chem.MolFromSmiles(mapped_smiles,params)
-    rd_mol = Chem.AddHs(rd_mol)
+    rd_mol = Chem.MolFromSmiles(mapped_smiles, sanitize=False)
+    rd_mol.UpdatePropertyCache(strict=False)
+    rd_mol = Chem.AddHs(rd_mol, explicitOnly=False, addCoords=False)
     ace_mol = process.get_ace_mol_from_rd_mol(rd_mol)
     n = len(ace_mol.atom_list)
     binding_infos = dict()
