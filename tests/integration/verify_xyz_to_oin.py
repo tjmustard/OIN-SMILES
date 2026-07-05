@@ -592,8 +592,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat3 (XYZ -> OIN-SMILES)",
             xyz_content=ticat3_xyz,
             description="Titanium Catalyst 3",
-            expected_smiles="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2<}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
-            expected_oin_string="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2<}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat3_ex)
     except FileNotFoundError:
@@ -607,8 +607,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat4 (XYZ -> OIN-SMILES)",
             xyz_content=ticat4_xyz,
             description="Titanium Catalyst 4",
-            expected_smiles="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2>}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
-            expected_oin_string="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2>}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat4_ex)
     except FileNotFoundError:

@@ -147,11 +147,20 @@ TEMPLATE_SPECS = {
         4: {"pos": [-0.8660254, -0.5, 0], "ref": [0, 0, 1]},
     },
     "SPY": {
+        # Real square-pyramidal complexes lift the metal toward the apical ligand,
+        # so the four basal donors sit BELOW the metal's equatorial plane
+        # (apex-basal angle ~105 deg, trans-basal ~150 deg), not coplanar (90/180).
+        # An idealized 90 deg template loses the angular RMSD to TBP for puckered
+        # cases like the vanadyl VOacac2 (apex-basal 104-107, trans-basal 146-152).
+        # Basal pos = [sin(105)*cos(phi), sin(105)*sin(phi), cos(105)] keeps the
+        # +-x/+-y directions (so slot numbering / apex-at-{0} is unchanged) while
+        # matching real geometry. Genuine TBP still wins its own cases via a true
+        # ~180 deg axial pair, which a puckered SPY (max trans ~150) cannot match.
         0: {"pos": [0, 0, 1], "ref": [1, 0, 0]},
-        1: {"pos": [1, 0, 0], "ref": [0, 0, 1]},
-        2: {"pos": [-1, 0, 0], "ref": [0, 0, 1]},
-        3: {"pos": [0, 1, 0], "ref": [0, 0, 1]},
-        4: {"pos": [0, -1, 0], "ref": [0, 0, 1]},
+        1: {"pos": [0.9659258, 0, -0.2588190], "ref": [0, 0, 1]},
+        2: {"pos": [-0.9659258, 0, -0.2588190], "ref": [0, 0, 1]},
+        3: {"pos": [0, 0.9659258, -0.2588190], "ref": [0, 0, 1]},
+        4: {"pos": [0, -0.9659258, -0.2588190], "ref": [0, 0, 1]},
     },
     "OCT": {
         0: {"pos": [0, 0, 1], "ref": [1, 0, 0]},
