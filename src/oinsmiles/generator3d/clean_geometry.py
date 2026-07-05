@@ -31,16 +31,28 @@ def print_rd_geometry(rd_mol, positions):
 
 class TMCOptimizer:
     
-    def __init__(self, step_size = 0.1):
+    def __init__(
+        self,
+        step_size=0.1,
+        ff_max_iters=200,
+        ff_force_tol=1e-4,
+        ff_energy_tol=1e-6,
+        d_converge=0.05,
+        num_relaxation=5,
+    ):
 
-        self.step_size = step_size  
-        
-        self.num_relaxation = 5
+        self.step_size = step_size
+
+        self.num_relaxation = num_relaxation
         self.maximal_displacement = 0.5
         self.ratio_criteria = 0.6
         self.atom_d_criteria = 0.5
         self.bond_criteria = 1.2
-        self.d_converge = 0.05 # Convergence criteria for FF opt
+        self.d_converge = d_converge  # Scan-level geometry convergence (Angstrom)
+        # RDKit ForceField.Minimize() convergence knobs (defaults match RDKit).
+        self.ff_max_iters = ff_max_iters
+        self.ff_force_tol = ff_force_tol
+        self.ff_energy_tol = ff_energy_tol
         self.fix_value = 20.0
         self.binding_fix_value = 2000.0
         self.chk_file = 'scan.chk'
@@ -291,7 +303,11 @@ class TMCOptimizer:
                         if ff is None:
                             continue
                         try:
-                            ff.Minimize()
+                            ff.Minimize(
+                                maxIts=self.ff_max_iters,
+                                forceTol=self.ff_force_tol,
+                                energyTol=self.ff_energy_tol,
+                            )
                         except:
                             continue
                         

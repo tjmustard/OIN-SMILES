@@ -13,6 +13,7 @@ what preserves geometric isomerism (e.g. keeps cisplatin cis, not trans).
 
 import contextlib
 import logging
+import os
 import re
 import sys
 
@@ -24,6 +25,48 @@ from .molassembler_adapter import GeneratedStructure
 from .oin_parser import OINParser, ParsedOIN
 
 logger = logging.getLogger(__name__)
+
+# Force-field convergence presets for the constrained MMFF/UFF cleanup. Each maps
+# to TMCOptimizer kwargs: ff_max_iters / ff_force_tol / ff_energy_tol feed
+# RDKit's ForceField.Minimize(); d_converge is the scan-level geometry tolerance
+# (Angstrom); num_relaxation is the number of pull-in scan cycles. Tighter presets
+# relax the ligand backbones closer to the FF minimum at the cost of runtime.
+# Select via OIN3DGenerator(engine="metallogen", ff_preset="tight"), the
+# OIN_FF_PRESET env var, or verify_roundtrip.py --ff-preset.
+FF_PRESETS = {
+    "loose": {"ff_max_iters": 100, "ff_force_tol": 1e-3, "ff_energy_tol": 1e-4, "d_converge": 0.10},
+    "default": {"ff_max_iters": 200, "ff_force_tol": 1e-4, "ff_energy_tol": 1e-6, "d_converge": 0.05},
+    "tight": {
+        "ff_max_iters": 2000,
+        "ff_force_tol": 1e-5,
+        "ff_energy_tol": 1e-7,
+        "d_converge": 0.02,
+        "num_relaxation": 8,
+    },
+    "very_tight": {
+        "ff_max_iters": 10000,
+        "ff_force_tol": 1e-6,
+        "ff_energy_tol": 1e-8,
+        "d_converge": 0.01,
+        "num_relaxation": 12,
+    },
+}
+
+
+def _resolve_ff_params(ff_preset=None, ff_params=None):
+    """Merge a named FF preset (arg or OIN_FF_PRESET env) with explicit overrides."""
+    preset = ff_preset or os.environ.get("OIN_FF_PRESET")
+    resolved = {}
+    if preset:
+        if preset not in FF_PRESETS:
+            raise ValueError(
+                f"Unknown ff_preset {preset!r}; choose from {sorted(FF_PRESETS)}"
+            )
+        resolved.update(FF_PRESETS[preset])
+    if ff_params:
+        resolved.update(ff_params)  # explicit kwargs win over the preset
+    return resolved or None
+
 
 OIN_TO_METALLOGEN_GEO = {
     "LIN": "2_linear",
@@ -285,6 +328,8 @@ class MetalloGenAdapter:
         dg_strategy: str = "single",
         ensemble_size: int = 1,
         optimizer: str | None = None,
+        ff_preset: str | None = None,
+        ff_params: dict | None = None,
     ) -> None:
         self.timeout = timeout
         self.dg_strategy = dg_strategy
@@ -293,6 +338,8 @@ class MetalloGenAdapter:
         # optimizer="xtb" -> refine the FF pool with GFN2-xTB and energy-rank
         # (requires xtb-python + ase; degrades gracefully to FF if unavailable).
         self.optimizer = optimizer
+        # FF convergence knobs (named preset + optional explicit overrides).
+        self.ff_params = _resolve_ff_params(ff_preset, ff_params)
 
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         msmiles = convert_parsed_to_msmiles(parsed)
@@ -305,6 +352,7 @@ class MetalloGenAdapter:
                 msmiles,
                 num_conformers=self.ensemble_size,
                 optimizer=self.optimizer,
+                ff_params=self.ff_params,
             )
         if not mols:
             raise ValueError(
@@ -331,6 +379,8 @@ class OIN3DGeneratorMetallogen:
         ensemble_size: int = 1,
         dg_strategy: str = "single",
         optimizer: str | None = None,
+        ff_preset: str | None = None,
+        ff_params: dict | None = None,
     ) -> None:
         self.parser = OINParser()
         self.adapter = MetalloGenAdapter(
@@ -338,6 +388,8 @@ class OIN3DGeneratorMetallogen:
             dg_strategy=dg_strategy,
             ensemble_size=ensemble_size,
             optimizer=optimizer,
+            ff_preset=ff_preset,
+            ff_params=ff_params,
         )
 
     def generate(self, oin_string: str) -> GeneratedStructure:

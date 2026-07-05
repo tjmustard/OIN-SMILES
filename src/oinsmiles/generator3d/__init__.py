@@ -2,10 +2,15 @@ from . import om
 from . import embed
 from . import clean_geometry
 
-def generate_3d_structures(m_smiles, num_conformers=1, optimizer=None, pool_size=5):
+def generate_3d_structures(
+    m_smiles, num_conformers=1, optimizer=None, pool_size=5, ff_params=None
+):
     """
     Generate 3D structures from an m-SMILES string.
     Returns a list of successful geometries as molecule objects, sorted by energy if an optimizer is used.
+
+    ff_params: optional dict of TMCOptimizer convergence knobs
+    (ff_max_iters, ff_force_tol, ff_energy_tol, d_converge, num_relaxation).
     """
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
@@ -13,7 +18,7 @@ def generate_3d_structures(m_smiles, num_conformers=1, optimizer=None, pool_size
         print(f"Failed to parse m-SMILES: {e}")
         return []
 
-    cleaner = clean_geometry.TMCOptimizer()
+    cleaner = clean_geometry.TMCOptimizer(**(ff_params or {}))
     options = [0, 1, 2] # Added one more option to increase pool variety
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
     
