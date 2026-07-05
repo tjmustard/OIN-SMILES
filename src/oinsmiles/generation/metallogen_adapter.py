@@ -112,7 +112,19 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                     if not is_haptic:
                         atom.SetNoImplicit(True)
                         atom.SetNumExplicitHs(0)
-            
+            elif atom.GetSymbol() in ("O", "S"):
+                # Anionic / oxo chalcogen donor (enolate, alkoxide, oxo, thiolate):
+                # the covalent metal bond replaces what would be an implicit H.
+                atom.SetNoImplicit(True)
+                atom.SetNumExplicitHs(0)
+            elif atom.GetSymbol() == "N":
+                # Amide / imide N (>= 2 heavy neighbours) is an anionic X-type donor;
+                # strip its H. Dative amines (NH3, NHR2) have < 2 heavy neighbours -> keep.
+                heavy = sum(1 for nb in atom.GetNeighbors() if nb.GetAtomicNum() > 1)
+                if heavy >= 2:
+                    atom.SetNoImplicit(True)
+                    atom.SetNumExplicitHs(0)
+
             # MetalloGen map numbers are 1-based (slot index + 1).
             atom.SetAtomMapNum(mg_slot_idx + 1)
 
