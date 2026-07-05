@@ -540,7 +540,14 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
             ]
             lig_mol, lig_charge = get_lig_mol(m, lig_charge, lig_coordinating_atoms)
             if not lig_mol:
-                return None
+                try:
+                    frag_smiles = Chem.MolToSmiles(m)
+                except Exception:
+                    frag_smiles = f"<{m.GetNumAtoms()} atoms>"
+                raise ValueError(
+                    f"get_lig_mol failed for ligand fragment #{i} "
+                    f"(SMILES: {frag_smiles!r}); cannot build TMC mol"
+                )
 
             # Restore __origIdx from m to lig_mol
             if lig_mol.GetNumAtoms() == m.GetNumAtoms():

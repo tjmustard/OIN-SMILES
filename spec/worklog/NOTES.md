@@ -1469,3 +1469,117 @@ summary + blank + body), re-ran `test_stereo_roundtrip_diagnostics` (25 OK,
 xfail=0) to confirm no behaviour change, then committed. No logic touched —
 docstrings only. Lesson logged: `ruff --fix` on D-rules can eat docstring text;
 always re-read the file after an autofix.
+
+### 2026-07-04 — η-ligand round-trip recovery: Phase 0 (WS-0/1/2) executed (Opus)
+
+New effort (separate from the closed stereo backlog) — see
+`spec/worklog/ROUNDTRIP-eta-recovery-handoff.md`. Resolved policy Q1–Q4 with
+the user first: **Q4 lossless = string identity AND RMSD<1.0** (both);
+**Q1 rotamer phase = ENCODE it (V3.8 format bump)** — user chose the format
+change over accept+document, so WS-7 is now a real MiniPRD required to bring
+TiCp2Me2 to RMSD<1.0; **Q2 = template support** for TiCat2 mixed η/σ;
+**Q3 = emit-with-warning** for the WS-4 clash gate. Materialized
+`TASK-40/41/42-*.md` (self-contained), then executed all three.
+
+Baseline this session (verified green before any edit): `discover tests` 55 OK,
+`discover tests/unit` 124 OK/3 skip/0 xfail, `verify_xyz_to_oin.py` 25/25,
+`verify_roundtrip.py` **19/25** (6 η-ligand fails: Ferrocene, TiCp2Me2,
+TiCat1–4). Saved to `/tmp/baseline_rt`.
+
+- **WS-0 / TASK-40 DONE** — `tests/integration/verify_roundtrip.py`: added
+  `--only SUBSTRING` (case-insensitive name filter, applied before `--limit`)
+  and a failure-artifact dump in the outer `except` (writes
+  `<base_name>_error.txt` when `--output-dir` is set; uses `base_name` not the
+  step-3-shadowed `i`). `--only Ferrocene`=1, `--only TiCat`=4; full run 19/6
+  with identical failing set; TiCat3 crash now leaves an artifact. Harness-only;
+  suites unchanged.
+- **WS-1 / TASK-41 DONE** — `src/oinsmiles/utils/xyz2mol.py`: the bare
+  `return None` in `get_tmc_mol`'s `if not lig_mol` guard → descriptive
+  `ValueError(f"get_lig_mol failed for ligand fragment #{i} (SMILES: ...)")`.
+  Audit confirmed: the only bare-None in `get_tmc_mol`; the two `return
+  None, charge` at `:372`/`:387` are `get_lig_mol`'s 2-tuple contract (left
+  alone). `translator.py` already wraps → surfaces as `xyz2mol failed:
+  get_lig_mol failed for ligand fragment #1 (SMILES: '...')` on TiCat3/4 (was
+  `cannot unpack non-iterable NoneType`). Captured the TiCat3 generated XYZ as
+  `tests/fixtures/ticat3_generated_broken.xyz`; new
+  `tests/unit/test_xyz2mol_errors.py` pins the ValueError (deterministic —
+  feeding a fixed XYZ to get_tmc_mol is reproducible). Suites: 55 / 125 (skip=3,
+  xfail=0) / 25.
+- **WS-2 / TASK-42 DONE — fix corrected by the mandatory probe.** The handoff's
+  staged `SanitizeMol` does NOT work: **(a)** full sanitize raises
+  `KekulizeException` on a charge-less Cp anion (5 aromatic C, no charge), and
+  **(b)** `SANITIZE_ALL ^ SANITIZE_KEKULIZE` + `SetAromaticity` re-flags atoms
+  but leaves bond TYPES `SINGLE`, so `[cH]-[cH]-...` dashes survive. Probe
+  (`/tmp/.../scratchpad/probe_e1*.py`) showed pass-1 (perceived) Cp fragments
+  have `AROMATIC` bond type → `c1cccc1`, while pass-2 (generator mol) fragments
+  have `SINGLE` bonds between aromatic atoms → `[cH]1-[cH]-...`. **Actual fix**
+  in `OINSanitizer.generate_robust_smiles` (`oin_aligner.py`): before the
+  H-locking loop, restore `AROMATIC` bond type on `SINGLE` bonds between
+  aromatic-flagged atoms, guarded by `bond.IsInRing()` so genuine biaryl single
+  bonds (Ir(ppy)3 phenyl-pyridine, BINAP binaphthyl) are preserved. No-op on
+  pass-1 (0 bonds changed) → **diff gate held: 25 pass-1 strings byte-identical**
+  (`verify_xyz_to_oin` still 25/25). `xyz2mol.py:918` NOT touched — the
+  in-function fix suffices (probe step 3). New
+  `tests/unit/test_oin_sanitizer_aromaticity.py` (2 tests: broken-Cp
+  re-aromatizes dash-free; biaryl single bond preserved). **Ferrocene round-trip
+  flipped to PASS** (string + RMSD 0.9773); full round-trip **19→20/25**, zero
+  regressions. TiCp2Me2 string now PASS, RMSD 1.6752 still FAIL (Phase 1–2 +
+  WS-7). Suites: 55 / 127 (skip=3, xfail=0) / 25.
+
+**Phase 0 landing state:** round-trip **20/25**; remaining 5 = TiCp2Me2, TiCat1–4
+(all Phase 1+). `discover tests` 55 OK, `discover tests/unit` 127 OK/3 skip/0
+xfail, `verify_xyz_to_oin.py` 25/25. No git commit (standing instruction —
+staged for review). **Next: Phase 1 · WS-3 (MiniPRD-D)** — G1+G3
+`_stitch_multi_eta_fragment` returns a real bonded mol (unblocks TiCat1/3/4
+topology + string); needs the full HACF chain, not a TASK file.
+
+### 2026-07-04 — Phase 1 · WS-3 (MiniPRD-D): Draft PRD via /hyper-architect (Opus)
+
+Ran `/hyper-architect` for WS-3 (G1+G3). Output:
+**`spec/active/Draft_PRD_MiniPRD_D_MultiEtaMol.md`** (WS-3-specific filename so it
+doesn't clobber other drafts; `spec/active/` was empty). No `src/` code modified —
+spec authoring only. Target node `atom_molassembler_adapter`.
+
+- **Codebase-first (resolved before interviewing):** traced
+  `_stitch_multi_eta_fragment` (`:591`, returns `mol=None` at `:1133`), the
+  de-aromatize-without-restore in `_embed_fragment` (`:719-728`, = G3), the
+  `heavy_atom_map` emission mapping (`:1050-1067`), and the **hidden caller
+  contract** — `_assemble_combined_mol` (`:577-580`) wires DATIVE bonds by
+  indexing `frag_mol`'s own atoms with fragment-SMILES `bidx`, but the
+  reconstructed mol is in emission order → **must return remapped emission-space
+  binding indices** (4-tuple → 5-tuple) and update the caller (`:2085-2099`).
+- **Empirical probe (ground truth in the PRD, don't re-derive):** TiCat1
+  `generate(...).mol is None` today; ansa frag =
+  `C[Si](C)(c1[cH][cH][cH][cH]1)c1[cH][cH][cH][cH]1` parses (sanitize=False) with
+  **10 aromatic atoms + 10 aromatic bonds** → `mol` (`:650`) is a sound G3 source;
+  27 emission atoms == 27 `mol_h` atoms (bijection feasible).
+- **KEY blast-radius finding:** the RMSD path **already consumes `gen_result.mol`**
+  (`verify_roundtrip.py:333` `mol_gen_bonded = gen_result.mol if not None else
+  mol_gen_xyz` → `:381` `calculate_tmc_rmsd(..., mol2_bonded=...)`). Making the mol
+  non-None flips the coordination-sphere extraction to the reconstructed bonded
+  mol — so miswired dative bonds would *silently* corrupt RMSD, not just the
+  string. Flagged for red team (R1/R4/§9).
+- **3 decisions taken with the user (see PRD §5.1 D-1/D-2/D-3):**
+  1. **G3 = FULL aromatic restoration** (atom flags + bond types) from `mol`, NOT
+     atom-flags-only-lean-on-WS-2. WS-2's re-aromatizer (`oin_aligner.py:50-58`)
+     only fires when both endpoint atoms are already `IsAromatic`, and
+     `_embed_fragment` clears those — so atom flags are mandatory regardless; full
+     restore makes `gen.mol` valid for all consumers + WS-2 a provable no-op.
+  2. **Degrade = `logger.warning`** (never `warnings.warn`/`OINStereoWarning` — the
+     `-W error` coupling that bit TASK-31/32) + soft return (`mol=None`, XYZ kept,
+     never bare `None`). Coverage guard: exactly-2-rings + SiMe2 bridge + total
+     `output→mol_h` bijection + `etkdg_ok`; else withhold the mol.
+  3. **Acceptance = enforced `tests/unit` invariant pins** (mol-not-None, **12
+     DATIVE bonds**, aromatic ring bonds, conformer/atom-count alignment,
+     `normalize(OIN1)==normalize(OIN2)`) **+ integration confirmation** via
+     `verify_roundtrip.py`; RMSD measured-not-gated; **no candidate artifacts**
+     (all outputs deterministic or self-checking).
+- DoD (restated in PRD §8): TiCat1/3/4 `gen.mol is not None` + correct topology;
+  step-2 re-encode via `get_oin_string` (not `convert()` — this also removes the
+  TiCat3/4 crash); normalized string identity; Ferrocene byte-identical; all
+  suites green; 25 pass-1 encode strings byte-identical. **NOT RMSD** (WS-4).
+- **Next: new conversation, `/hyper-redteam` on
+  `spec/active/Draft_PRD_MiniPRD_D_MultiEtaMol.md`** (seed focus in PRD §9:
+  gen.mol consumer sweep, conformer/all_pos alignment after RenumberAtoms,
+  emission-space binding-index correctness, coverage-guard completeness, ring-info
+  dependency). No git commit made; draft left unstaged for the chain.
