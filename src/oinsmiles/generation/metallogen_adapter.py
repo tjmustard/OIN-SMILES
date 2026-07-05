@@ -211,16 +211,36 @@ def _oin_fragment_templates(parsed: ParsedOIN) -> list:
     return templates
 
 
+def _flatten_template(t):
+    """Connectivity-only copy of a template (all single bonds, no aromatic/charge).
+
+    Used only for substructure matching, so bond orders can be transferred even
+    from templates that never sanitize (e.g. C#O, O valence 3)."""
+    ft = Chem.RWMol(t)
+    for b in ft.GetBonds():
+        b.SetBondType(Chem.BondType.SINGLE)
+        b.SetIsAromatic(False)
+    for a in ft.GetAtoms():
+        a.SetIsAromatic(False)
+        a.SetFormalCharge(0)
+    m = ft.GetMol()
+    try:
+        m.UpdatePropertyCache(strict=False)
+    except Exception:
+        pass
+    return m
+
+
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """Build a contract-compliant RDKit mol from a MetalloGen result.
 
     Connectivity + coordinates come from MetalloGen (``adj_matrix``, atom_list);
-    bond orders + aromaticity come from the OIN ligand-fragment SMILES (via
-    ``AssignBondOrdersFromTemplate``); stereo is perceived from the 3D geometry.
-    Metal is at its native index with DATIVE metal->donor bonds. Returns None on
-    any failure (caller falls back to coordinate-only output).
+    bond orders + aromaticity + formal charges are transferred per fragment from
+    the OIN ligand-fragment SMILES via a connectivity substructure match (robust
+    to non-sanitizable templates such as C#O); stereo is perceived from the 3D
+    geometry. Metal is at its native index with DATIVE metal->donor bonds. Returns
+    None on any failure (caller falls back to coordinate-only output).
     """
-    from rdkit.Chem import AllChem
     from rdkit.Geometry import Point3D
 
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
@@ -262,6 +282,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         )
 
         templates = _oin_fragment_templates(parsed)
+        flats = [_flatten_template(t) for t in templates]
         used = [False] * len(templates)
 
         for fi, fm in enumerate(frag_mols):
@@ -282,20 +303,30 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                 if a in loc and bb in loc:
                     q.AddBond(loc[a], loc[bb], Chem.BondType.SINGLE)
             qmol = q.GetMol()
+            try:
+                qmol.UpdatePropertyCache(strict=False)
+            except Exception:
+                pass
             for ti, t in enumerate(templates):
                 if used[ti] or t.GetNumAtoms() != qmol.GetNumAtoms():
                     continue
-                try:
-                    fixed = AllChem.AssignBondOrdersFromTemplate(t, qmol)
-                except Exception:
+                # Connectivity-only match, then copy real bond orders / aromaticity /
+                # charge from the template (works even when the template can't sanitize).
+                match = qmol.GetSubstructMatch(flats[ti])
+                if not match or len(match) != t.GetNumAtoms():
                     continue
-                for b in fixed.GetBonds():
-                    rb = rw.GetBondBetweenAtoms(q2g[b.GetBeginAtomIdx()], q2g[b.GetEndAtomIdx()])
+                for b in t.GetBonds():
+                    rb = rw.GetBondBetweenAtoms(
+                        q2g[match[b.GetBeginAtomIdx()]], q2g[match[b.GetEndAtomIdx()]]
+                    )
                     rb.SetBondType(b.GetBondType())
                     rb.SetIsAromatic(b.GetIsAromatic())
-                for a in range(fixed.GetNumAtoms()):
-                    if fixed.GetAtomWithIdx(a).GetIsAromatic():
-                        rw.GetAtomWithIdx(q2g[a]).SetIsAromatic(True)
+                for ai in range(t.GetNumAtoms()):
+                    rwa = rw.GetAtomWithIdx(q2g[match[ai]])
+                    ta = t.GetAtomWithIdx(ai)
+                    if ta.GetIsAromatic():
+                        rwa.SetIsAromatic(True)
+                    rwa.SetFormalCharge(ta.GetFormalCharge())
                 used[ti] = True
                 break
 
