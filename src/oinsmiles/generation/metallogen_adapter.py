@@ -207,6 +207,12 @@ def _oin_fragment_templates(parsed: ParsedOIN) -> list:
             t = Chem.RemoveHs(t)
         except Exception:
             pass
+        # Label CIP so build_contract_mol can carry encoded sp3 stereo (the
+        # template's @/@@ is the ground truth vs the stochastic embed handedness).
+        try:
+            Chem.AssignStereochemistry(t, cleanIt=True, force=True)
+        except Exception:
+            pass
         templates.append(t)
     return templates
 
@@ -284,6 +290,8 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         templates = _oin_fragment_templates(parsed)
         flats = [_flatten_template(t) for t in templates]
         used = [False] * len(templates)
+        # global contract-atom idx -> encoded CIP code for sp3 carbon stereocentres
+        carbon_stereo_targets: dict[int, str] = {}
 
         for fi, fm in enumerate(frag_mols):
             orig = mapping[fi]
@@ -327,6 +335,11 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                     if ta.GetIsAromatic():
                         rwa.SetIsAromatic(True)
                     rwa.SetFormalCharge(ta.GetFormalCharge())
+                    # Record encoded CIP for sp3 carbon stereocentres so we can
+                    # override the (stochastic) embed handedness below. P/N Zone-A
+                    # donors are left to ChiralityRecoveryUtility.
+                    if ta.GetAtomicNum() == 6 and ta.HasProp("_CIPCode"):
+                        carbon_stereo_targets[q2g[match[ai]]] = ta.GetProp("_CIPCode")
                 used[ti] = True
                 break
 
@@ -345,6 +358,33 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                 step()
             except Exception:
                 pass
+
+        # Carry ENCODED sp3-carbon stereo. The embed picks a random handedness
+        # at backbone stereocentres, so 3D-perceived stereo can be the enantiomer
+        # of what the OIN fragment SMILES encodes. Where the geometry-derived CIP
+        # disagrees with the template CIP, flip the tag -- the perceive-then-flip
+        # pattern ChiralityRecoveryUtility already uses for Zone-A P (a bare tag
+        # flip does not survive get_oin_string's fragment rebuild; a CIP-validated
+        # one does). Bounded fixed point: flipping one centre can change another's
+        # CIP priority ranking.
+        if carbon_stereo_targets:
+            _CW = Chem.ChiralType.CHI_TETRAHEDRAL_CW
+            _CCW = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
+            for _ in range(3):
+                try:
+                    Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+                except Exception:
+                    break
+                changed = False
+                for gidx, want in carbon_stereo_targets.items():
+                    a = mol.GetAtomWithIdx(gidx)
+                    cur = a.GetPropsAsDict().get("_CIPCode")
+                    tag = a.GetChiralTag()
+                    if cur and cur != want and tag in (_CW, _CCW):
+                        a.SetChiralTag(_CCW if tag == _CW else _CW)
+                        changed = True
+                if not changed:
+                    break
         return mol
     except Exception:
         return None
