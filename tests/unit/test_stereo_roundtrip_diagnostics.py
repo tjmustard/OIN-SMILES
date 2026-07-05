@@ -45,7 +45,7 @@ _DIPAMP_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Cl2.xyz")
 
 # Stereo Phase 3 (Haptic Face Correction) fixtures.
 _HALIDE_FACE_XYZ = os.path.join(
-    os.path.dirname(__file__), "../integration/Ferrocene-halide-face.xyz"
+    _FIXTURES_DIR, "Ferrocene-halide-face.xyz"
 )
 _HALIDE_FACE_GOLDEN_PATH = os.path.join(_CANDIDATES_DIR, "Ferrocene-halide-face_oin.txt")
 _CHIRALITY_WITNESS_OIN_PATH = os.path.join(_CANDIDATES_DIR, "ChiralityWitnessRing_oin.txt")
@@ -861,15 +861,15 @@ class TestEtaRingCanonicalization(unittest.TestCase):
         no fragment eligible for RC1/RC2, so encoding must stay byte-
         identical to each fixture's pre-existing pinned regression golden."""
         cases = [
-            ("cisplatin.xyz", "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"),
-            ("transplatin.xyz", "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}"),
-            ("cis_ptcl2en.xyz", "[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}"),
+            ("CisPlatin.xyz", "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"),
+            ("TransPlatin.xyz", "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}"),
+            ("Cis-PtCl2(en).xyz", "[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}"),
             (
-                "fac_irppy3.xyz",
+                "fac-Ir(ppy)3.xyz",
                 "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
             ),
             (
-                "mer_irppy3.xyz",
+                "mer-Ir(ppy)3.xyz",
                 "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1",
             ),
             (
@@ -897,7 +897,7 @@ class TestEtaRingCanonicalization(unittest.TestCase):
         """Test 3 (RT-5), plain-ferrocene half: an UNSUBSTITUTED Cp ring's
         SMILES is a literal member of ``SYMMETRIC_LIGANDS`` (first-wins,
         untouched by RC1/RC2) -- encoding must stay byte-identical."""
-        actual = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "ferrocene.xyz"))
+        actual = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "Ferrocene.xyz"))
         self.assertEqual(
             actual,
             "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1."
@@ -918,7 +918,7 @@ class TestEtaRingCanonicalization(unittest.TestCase):
         specific marked atom moves -- exactly the RC2 safety property, not a
         regression. See spec/worklog/NOTES.md for the sign-off record.
         """
-        ticat1_xyz = os.path.join(os.path.dirname(__file__), "../integration/TiCat1.xyz")
+        ticat1_xyz = os.path.join(_FIXTURES_DIR, "TiCat1.xyz")
         actual = XYZToSMILES().convert(ticat1_xyz)
         pre_fix_golden = (
             "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0<}1)"

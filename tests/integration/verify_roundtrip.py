@@ -176,7 +176,21 @@ def main():
         default=None,
         help="Post-FF optimizer for the MetalloGen engine (e.g. 'xtb'). Default: FF only.",
     )
+    parser.add_argument(
+        "--ensemble-size",
+        type=int,
+        default=None,
+        help="Number of conformers to generate and optimize. Default depends on the backend.",
+    )
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Force CPU execution.",
+    )
     args = parser.parse_args()
+
+    if args.cpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     output_dir = args.output_dir
     if output_dir:
@@ -188,9 +202,13 @@ def main():
     reporter = VerificationReporter("Round-Trip Verification Report")
 
     xyz_to_smiles = XYZToSMILES()
-    generator = OIN3DGenerator(ff_preset=args.ff_preset, optimizer=args.optimizer)
-    if args.ff_preset or args.optimizer:
-        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r}")
+    generator = OIN3DGenerator(
+        ff_preset=args.ff_preset, 
+        optimizer=args.optimizer,
+        ensemble_size=args.ensemble_size
+    )
+    if args.ff_preset or args.optimizer or args.ensemble_size:
+        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size}")
 
     examples = get_examples()
     if args.only:

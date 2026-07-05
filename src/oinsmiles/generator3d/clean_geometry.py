@@ -39,6 +39,7 @@ class TMCOptimizer:
         ff_energy_tol=1e-6,
         d_converge=0.05,
         num_relaxation=5,
+        default_ff="uff",
     ):
 
         self.step_size = step_size
@@ -49,6 +50,7 @@ class TMCOptimizer:
         self.atom_d_criteria = 0.5
         self.bond_criteria = 1.2
         self.d_converge = d_converge  # Scan-level geometry convergence (Angstrom)
+        self.default_ff = default_ff
         # RDKit ForceField.Minimize() convergence knobs (defaults match RDKit).
         self.ff_max_iters = ff_max_iters
         self.ff_force_tol = ff_force_tol
@@ -298,7 +300,10 @@ class TMCOptimizer:
                                 force_constant = binding_fix_value
                             uff.UFFAddPositionConstraint(atom_idx,maxDispl=0.00,forceConstant = force_constant)
 
-                    ffs = [mmff,uff] 
+                    if self.default_ff.lower() == "uff":
+                        ffs = [uff, mmff]
+                    else:
+                        ffs = [mmff, uff]
                     for ff in ffs:
                         if ff is None:
                             continue

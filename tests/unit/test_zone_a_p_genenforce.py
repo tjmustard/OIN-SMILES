@@ -54,7 +54,7 @@ _DIPAMP_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Cl2.xyz")
 # a PMe3 co-ligand. Lives in tests/integration/ only (not dual-copied to
 # tests/fixtures/ -- an existing, pre-MiniPRD-C inconsistency in this repo's
 # fixture layout, not introduced here).
-_MONO_P_SPL_REAL_XYZ = os.path.join(_INTEGRATION_DIR, "Rh-Single-Chiral-Phosphine.xyz")
+_MONO_P_SPL_REAL_XYZ = os.path.join(_FIXTURES_DIR, "Rh-Single-Chiral-Phosphine.xyz")
 
 # Two incompatible-bite bidentate 3D fixtures (Test 8): both confirmed
 # empirically (this MiniPRD's own spike) to route to the DG fallback via
@@ -748,7 +748,7 @@ class TestZoneAPNoRegression(unittest.TestCase):
     def test_ferrocene_generation_is_clean(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            oin = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "ferrocene.xyz"))
+            oin = XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "Ferrocene.xyz"))
         self._assert_generates_clean(oin)
 
     def test_monodentate_p_generation_is_clean(self):
@@ -787,28 +787,28 @@ class TestZoneAPNoRegression(unittest.TestCase):
             golden_oins.append(
                 (
                     "transplatin",
-                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "transplatin.xyz")),
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "TransPlatin.xyz")),
                 )
             )
             golden_oins.append(
                 (
                     "cis_ptcl2en",
-                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "cis_ptcl2en.xyz")),
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "Cis-PtCl2(en).xyz")),
                 )
             )
             golden_oins.append(
-                ("ferrocene", XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "ferrocene.xyz")))
+                ("ferrocene", XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "Ferrocene.xyz")))
             )
             golden_oins.append(
                 (
                     "fac_irppy3",
-                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "fac_irppy3.xyz")),
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "fac-Ir(ppy)3.xyz")),
                 )
             )
             golden_oins.append(
                 (
                     "mer_irppy3",
-                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "mer_irppy3.xyz")),
+                    XYZToSMILES().convert(os.path.join(_FIXTURES_DIR, "mer-Ir(ppy)3.xyz")),
                 )
             )
 
