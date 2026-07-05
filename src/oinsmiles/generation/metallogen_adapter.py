@@ -135,6 +135,135 @@ def convert_oin_to_msmiles(oin_string: str) -> str:
     return convert_parsed_to_msmiles(OINParser().parse(oin_string))
 
 
+def _oin_fragment_templates(parsed: ParsedOIN) -> list:
+    """Heavy-atom RDKit templates (correct bond orders + stereo) per OIN ligand."""
+    templates = []
+    for k, frag in enumerate(parsed.fragments):
+        if k == parsed.metal_fragment_idx:
+            continue
+        t = Chem.MolFromSmiles(frag, sanitize=False)
+        if t is None:
+            continue
+        try:
+            Chem.SanitizeMol(t)
+        except Exception:
+            t.UpdatePropertyCache(strict=False)
+        try:
+            t = Chem.RemoveHs(t)
+        except Exception:
+            pass
+        templates.append(t)
+    return templates
+
+
+def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
+    """Build a contract-compliant RDKit mol from a MetalloGen result.
+
+    Connectivity + coordinates come from MetalloGen (``adj_matrix``, atom_list);
+    bond orders + aromaticity come from the OIN ligand-fragment SMILES (via
+    ``AssignBondOrdersFromTemplate``); stereo is perceived from the 3D geometry.
+    Metal is at its native index with DATIVE metal->donor bonds. Returns None on
+    any failure (caller falls back to coordinate-only output).
+    """
+    from rdkit.Chem import AllChem
+    from rdkit.Geometry import Point3D
+
+    from ..utils.xyz2mol import TRANSITION_METALS_NUM
+
+    try:
+        syms = [a.get_element() for a in mg_mol.atom_list]
+        coords = [a.get_coordinate() for a in mg_mol.atom_list]
+        adj = np.array(mg_mol.adj_matrix)
+        n = len(syms)
+        if adj.shape != (n, n) or n == 0:
+            return None
+
+        rw = Chem.RWMol()
+        for s in syms:
+            rw.AddAtom(Chem.Atom(s))
+        for i in range(n):
+            for j in range(i + 1, n):
+                if adj[i, j] > 0:
+                    rw.AddBond(i, j, Chem.BondType.SINGLE)
+        conf = Chem.Conformer(n)
+        for i, (x, y, z) in enumerate(coords):
+            conf.SetAtomPosition(i, Point3D(float(x), float(y), float(z)))
+        rw.AddConformer(conf, assignId=True)
+
+        metal_idx = next(
+            (i for i in range(n) if rw.GetAtomWithIdx(i).GetAtomicNum() in TRANSITION_METALS_NUM),
+            None,
+        )
+        if metal_idx is None:
+            return None
+        donors = [b.GetOtherAtomIdx(metal_idx) for b in rw.GetAtomWithIdx(metal_idx).GetBonds()]
+
+        frag_rw = Chem.RWMol(rw)
+        for d in donors:
+            frag_rw.RemoveBond(metal_idx, d)
+        mapping = []
+        frag_mols = Chem.GetMolFrags(
+            frag_rw, asMols=True, sanitizeFrags=False, fragsMolAtomMapping=mapping
+        )
+
+        templates = _oin_fragment_templates(parsed)
+        used = [False] * len(templates)
+
+        for fi, fm in enumerate(frag_mols):
+            orig = mapping[fi]
+            if metal_idx in orig:
+                continue
+            heavy_local = [
+                k for k in range(fm.GetNumAtoms()) if fm.GetAtomWithIdx(k).GetAtomicNum() != 1
+            ]
+            q = Chem.RWMol()
+            q2g = []
+            loc = {}
+            for k in heavy_local:
+                loc[k] = q.AddAtom(Chem.Atom(fm.GetAtomWithIdx(k).GetAtomicNum()))
+                q2g.append(orig[k])
+            for b in fm.GetBonds():
+                a, bb = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
+                if a in loc and bb in loc:
+                    q.AddBond(loc[a], loc[bb], Chem.BondType.SINGLE)
+            qmol = q.GetMol()
+            for ti, t in enumerate(templates):
+                if used[ti] or t.GetNumAtoms() != qmol.GetNumAtoms():
+                    continue
+                try:
+                    fixed = AllChem.AssignBondOrdersFromTemplate(t, qmol)
+                except Exception:
+                    continue
+                for b in fixed.GetBonds():
+                    rb = rw.GetBondBetweenAtoms(q2g[b.GetBeginAtomIdx()], q2g[b.GetEndAtomIdx()])
+                    rb.SetBondType(b.GetBondType())
+                    rb.SetIsAromatic(b.GetIsAromatic())
+                for a in range(fixed.GetNumAtoms()):
+                    if fixed.GetAtomWithIdx(a).GetIsAromatic():
+                        rw.GetAtomWithIdx(q2g[a]).SetIsAromatic(True)
+                used[ti] = True
+                break
+
+        for d in donors:
+            rw.GetBondBetweenAtoms(metal_idx, d).SetBondType(Chem.BondType.DATIVE)
+
+        mol = rw.GetMol()
+        # No full sanitize: the OIN encoder allows non-standard valences (C#O,
+        # charge-less Cp). Perceive rings + 3D stereo leniently.
+        for step in (
+            lambda: mol.UpdatePropertyCache(strict=False),
+            lambda: Chem.GetSymmSSSR(mol),
+            lambda: Chem.AssignStereochemistryFrom3D(mol),
+        ):
+            try:
+                step()
+            except Exception:
+                pass
+        return mol
+    except Exception:
+        return None
+
+
 class MetalloGenAdapter:
     """Generation backend mirroring ``MolassemblerAdapter.generate(parsed)``."""
 
@@ -171,9 +300,10 @@ class MetalloGenAdapter:
             )
 
         xyz_str = get_xyz_string(mols[0])
-        # Phase B reconstructs a contract-compliant bonded mol (metal@0, DATIVE,
-        # single conformer). Until then the mol channel is None.
-        return GeneratedStructure(xyz=xyz_str, mol=None)
+        # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.
+        # None on failure -> callers fall back to coordinate re-perception.
+        mol = build_contract_mol(parsed, mols[0])
+        return GeneratedStructure(xyz=xyz_str, mol=mol)
 
 
 class OIN3DGeneratorMetallogen:
