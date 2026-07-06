@@ -883,3 +883,27 @@ class OINDiscreteAligner:
             if matches == n:
                 valid.add(tuple(perm))
         return sorted(list(valid))
+
+
+def classify_coordination_geometry(donor_vectors):
+    """Return the best-matching OIN geometry code for a set of donor vectors.
+
+    ``donor_vectors`` is an iterable of length-3 array-likes, each the
+    metal-centered vector ``donor_pos - metal_pos`` of a single coordinating atom
+    (no hapticity reduction -- pass one vector per discrete donor). Returns the
+    OIN geometry code (e.g. ``"SPL"``, ``"TET"``, ``"TPY"``, ``"OCT"``) chosen by
+    the same discrete-template matcher the XYZ->OIN encoder uses, or ``None`` if
+    no template matched.
+
+    This wraps ``OINDiscreteAligner._find_best_geometry_match``, which is pure
+    w.r.t. instance state (it reads only its arguments and the module-level
+    ``TEMPLATES``), so a throwaway aligner with empty ligands is sufficient. Note
+    the candidate set is chosen purely by coordination number (len of the input),
+    and for ``n > 7`` the matcher falls back to ``"OCT"`` as a best effort -- so
+    callers that need an eta/haptic guard must gate on the expected coordination
+    number themselves rather than relying on a ``None`` return.
+    """
+    virtual_atoms = [{"coords": np.asarray(v, dtype=float)} for v in donor_vectors]
+    aligner = OINDiscreteAligner(0, [])  # ligands unused by the matcher
+    result = aligner._find_best_geometry_match(len(virtual_atoms), virtual_atoms)
+    return result[0] if result else None

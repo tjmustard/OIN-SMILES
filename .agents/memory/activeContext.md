@@ -9,6 +9,7 @@ Captures the current state of OIN-SMILES development. Updated after significant 
 ### Release Status
 - **v0.2.0** — Released 2026-03-07: Molassembler backend, P/N stereocenter encoding, CLI, OIN v3.6
 - **v0.3.0** — In `CHANGELOG.md [0.3.0] - 2026-07-04` (pyproject synced): OIN v3.7 descriptor-free metal token; stereo round-trip arc (winding preservation, haptic-face control, Zone-A P `[P@]`/`[P@@]` encoding + square-planar enforcement); eta-ring canonicalization; bidentate incompatible-bite → DG routing; plus the prior v0.2.1 work (CLI fix, P/N fixtures, TiCat ETKDG fix, Direct Parser audits). Not yet pushed/tagged.
+- **v0.3.1** — In `CHANGELOG.md [0.3.1] - 2026-07-05`: MACE MLIP optimizer support, FF convergence knobs, Distinct RMSD error codes, and stability fixes for Ir drift, BDPP/BDNN, FeCO5/FeH2CO4.
 - **v0.2.2 (Direct Parser bugfixes)** — still planned/deferred (5 P0/P1 blockers, see below); superseded numbering-wise by 0.3.0 but the work itself is untouched.
 
 ### No Active Sprint

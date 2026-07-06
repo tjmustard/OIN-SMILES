@@ -173,14 +173,14 @@ def main():
     parser.add_argument(
         "--optimizer",
         type=str,
-        default=None,
-        help="Post-FF optimizer for the MetalloGen engine (e.g. 'xtb'). Default: FF only.",
+        default="mace-omol-0-extra-large-1024",
+        help="Post-FF optimizer for the MetalloGen engine. Default: 'mace-omol-0-extra-large-1024'.",
     )
     parser.add_argument(
         "--ensemble-size",
         type=int,
-        default=None,
-        help="Number of conformers to generate and optimize. Default depends on the backend.",
+        default=1,
+        help="Number of conformers to generate and optimize. Default: 1.",
     )
     parser.add_argument(
         "--cpu",
