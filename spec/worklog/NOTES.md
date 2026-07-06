@@ -1615,3 +1615,35 @@ spec authoring only. Target node `atom_molassembler_adapter`.
   (`[cH]{0}` vs `c{0}` on fac/mer-Ir); TiCat2 eta aromaticity + TiCat1/2/3/4 RMSD-999
   eta coord-sphere extraction (geometry). See plan
   `~/.claude/plans/how-much-of-the-breezy-emerson.md` §C.
+
+### 2026-07-05 — Round-trip string fixes: stereo carry + Ir binding index (Opus)
+Full MACE round-trip **15/25 → 19/25**; **all clean string wins landed**; every
+remaining fail is now geometry-dominated (strings identical except one eta case).
+- **C1 stereo carry** (`56a543a`): `build_contract_mol` perceived sp3 stereo from 3D
+  only; the embed picks a random handedness at backbone stereocentres (coord-sphere
+  RMSD ~0.12 doesn't see backbone chirality), so `@/@@` was nondeterministic. Fix:
+  CIP-label the OIN fragment templates; map each sp3-C stereocentre template→contract
+  via the existing substruct match; **perceive-then-flip** on CIP mismatch (the pattern
+  `ChiralityRecoveryUtility` uses for Zone-A P — a bare `SetChiralTag` does NOT survive
+  `get_oin_string`'s fragment rebuild, a CIP-validated flip does; proven empirically).
+  Bounded 3-pass. No-op for the 23 non-chiral-C complexes. BDPP/BDNN 8/8 deterministic.
+- **C2 Ir binding-atom index** (`d415c16`, shared encoder): `get_oin_string` mapped a
+  fragment atom to its canonical-SMILES position via `GetSubstructMatch`, which returns
+  a WRONG automorphism on near-symmetric ligands — the two ortho carbons of a
+  cyclometalated aryl are identical to the matcher, so the binding LocalIdx landed on a
+  CH (atom 4) not the deprotonated `[c]` (atom 0) → inline handler tagged the CH →
+  `c{N}` drifted to `[cH]{N}` (fac-Ir 2/3 wrong, arbitrarily; input path was just lucky).
+  Fix: use RDKit `_smilesAtomOutputOrder` (symmetry-free); `GetSubstructMatch` kept as
+  guarded fallback. Deterministic all-`c{N}` now; **latent shared-encoder bug**.
+- Result: PASS gained VOacac2, BDPP, fac-Ir, mer-Ir (BDNN string now correct too).
+- **6 remaining fails, all geometry (not OIN/m-SMILES string):**
+  - TiCat1/TiCat3/TiCat4, TiCp2Me2: **strings byte-identical**, fail only on RMSD
+    (TiCat* RMSD-999 eta coord-sphere extraction; TiCp2Me2 1.45 rotamer phase).
+  - BDNN: **stereo string correct**; embed distorted the Pd square plane this run
+    (`[Pd_SPL]`→`[Pd_TPY]`, RMSD 1.57). Stochastic — its dedicated MACE run passed at
+    0.117/SPL. Geometry stability (try ensemble-size>1), not string.
+  - TiCat2: the ONE residual string mismatch — Cp ring re-encodes **kekulized**
+    (`C1[CH]=[CH]...` vs aromatic `c1[cH]...`); build_contract_mol eta rings not
+    aromatized. But TiCat2 is ALSO blocked by RMSD-999, so a string fix won't flip it.
+- Encoder unaffected: `verify_xyz_to_oin` still 25/25; unit suites green. Branch not
+  pushed. Commits since MACE: 66a2725, c3d0cff, 9004e32, 56a543a, d415c16.
