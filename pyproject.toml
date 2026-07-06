@@ -28,7 +28,12 @@ yaml = ["pyyaml>=6.0"]
 oin-smiles = "oinsmiles.cli:main"
 
 [[tool.uv.index]]
+name = "pytorch"
 url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/oinsmiles"]

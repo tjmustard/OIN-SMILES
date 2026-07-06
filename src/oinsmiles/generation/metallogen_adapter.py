@@ -390,6 +390,112 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         return None
 
 
+# Number of energy-ranked conformers to consider for geometry-aware selection.
+# Matches generator3d's default FF pool size, so with an optimizer set (which
+# already MACE-optimizes the whole pool) this adds no extra optimizer cost -- it
+# only changes *which* of the already-optimized conformers is returned.
+DEFAULT_SELECT_POOL = 5
+
+
+def _norm_geo_code(code):
+    """Fold equivalent square-planar codes together (``SQP`` == ``SPL``)."""
+    return "SPL" if code == "SQP" else code
+
+
+def _expected_coordination_number(geo_code):
+    """Donor count implied by an OIN geo code, from the MetalloGen name prefix
+    (e.g. ``SPL`` -> ``4_square_planar`` -> 4), or None if unknown."""
+    name = OIN_TO_METALLOGEN_GEO.get(geo_code)
+    if not name:
+        return None
+    try:
+        return int(name.split("_", 1)[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def _perceive_geo_code(contract_mol, expected_n=None):
+    """Best-matching OIN geometry code for a contract mol's coordination sphere.
+
+    Returns None when no metal is found, when the metal's donor count doesn't
+    match ``expected_n`` (the haptic/eta guard -- eta ligands bond the metal to
+    many ring atoms, which has no discrete geometry template), or when the
+    classifier can't decide.
+    """
+    from ..utils.oin_aligner import classify_coordination_geometry
+    from ..utils.xyz2mol import TRANSITION_METALS_NUM
+
+    metal_idx = next(
+        (
+            i
+            for i in range(contract_mol.GetNumAtoms())
+            if contract_mol.GetAtomWithIdx(i).GetAtomicNum() in TRANSITION_METALS_NUM
+        ),
+        None,
+    )
+    if metal_idx is None:
+        return None
+    donors = [
+        b.GetOtherAtomIdx(metal_idx)
+        for b in contract_mol.GetAtomWithIdx(metal_idx).GetBonds()
+    ]
+    if expected_n is not None and len(donors) != expected_n:
+        return None
+    conf = contract_mol.GetConformer()
+    m = conf.GetAtomPosition(metal_idx)
+    vecs = [
+        (
+            conf.GetAtomPosition(d).x - m.x,
+            conf.GetAtomPosition(d).y - m.y,
+            conf.GetAtomPosition(d).z - m.z,
+        )
+        for d in donors
+    ]
+    return classify_coordination_geometry(vecs)
+
+
+def _select_by_geometry(parsed, mols):
+    """Choose the energy-ranked conformer whose coordination geometry matches the
+    requested OIN code, falling back to the lowest-energy conformer.
+
+    ``mols`` is assumed sorted best (lowest energy) first. For floppy donors an
+    energetically-competitive distorted geometry (e.g. a trigonal-pyramidal Pd
+    where the OIN asks for square-planar) can outrank the correct one on energy
+    alone; this prefers the conformer that actually re-perceives to the target.
+
+    Returns ``(chosen_mol, chosen_contract_mol)``. Strictly non-regressive:
+    selection is skipped -- returning ``mols[0]`` -- when the target geometry has
+    no discrete template, when donor count doesn't match the expected
+    coordination number (haptic/eta), or on any perception failure.
+    """
+    target = _norm_geo_code(parsed.geo_code)
+    expected_n = _expected_coordination_number(parsed.geo_code)
+
+    if target and expected_n is not None:
+        for m in mols:
+            try:
+                cmol = build_contract_mol(parsed, m)
+                if cmol is None:
+                    continue
+                code = _perceive_geo_code(cmol, expected_n)
+                if code is not None and _norm_geo_code(code) == target:
+                    logger.debug(
+                        "geometry-aware selection: chose conformer perceived as %s "
+                        "(target %s)",
+                        code,
+                        target,
+                    )
+                    return m, cmol
+            except Exception:
+                logger.debug(
+                    "geometry perception failed for a conformer", exc_info=True
+                )
+                continue
+
+    # Fallback: lowest-energy conformer -- the pre-selection default behavior.
+    return mols[0], build_contract_mol(parsed, mols[0])
+
+
 class MetalloGenAdapter:
     """Generation backend mirroring ``MolassemblerAdapter.generate(parsed)``."""
 
@@ -421,13 +527,21 @@ class MetalloGenAdapter:
         msmiles = convert_parsed_to_msmiles(parsed)
         logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
 
+        # Build the full energy-ranked conformer pool so geometry-aware selection
+        # has candidates to choose among. pool_size widens the pool even in the
+        # FF-only path; num_conformers returns the whole ranked list (not just the
+        # top-1). With an optimizer set the pool is MACE-optimized regardless, so
+        # this adds no optimizer cost over the previous fixed pool of 5.
+        pool_n = max(self.ensemble_size, DEFAULT_SELECT_POOL)
+
         # The MetalloGen engine prints progress/geometry to stdout; redirect it to
         # stderr so the oin2xyz CLI's stdout (the XYZ block) stays clean.
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
                 msmiles,
-                num_conformers=self.ensemble_size,
+                num_conformers=pool_n,
                 optimizer=self.optimizer,
+                pool_size=pool_n,
                 ff_params=self.ff_params,
             )
         if not mols:
@@ -435,10 +549,14 @@ class MetalloGenAdapter:
                 f"MetalloGen failed to generate any conformers for m-SMILES {msmiles!r}"
             )
 
-        xyz_str = get_xyz_string(mols[0])
+        # Prefer the conformer whose re-perceived coordination geometry matches the
+        # requested OIN code (fixes floppy-donor cases where a distorted geometry is
+        # energetically competitive), falling back to the lowest-energy conformer.
+        chosen_mol, mol = _select_by_geometry(parsed, mols)
+
+        xyz_str = get_xyz_string(chosen_mol)
         # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.
         # None on failure -> callers fall back to coordinate re-perception.
-        mol = build_contract_mol(parsed, mols[0])
         return GeneratedStructure(xyz=xyz_str, mol=mol)
 
 

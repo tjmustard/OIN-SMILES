@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-05
+
+### Added
+- **`MetalloGenAdapter`**: Added support for MACE MLIP optimizer (`mace-omol-0-extra-large-1024`) to refine structures.
+- **Force Field configuration**: Surfaced FF convergence knobs via presets, environment variables, and CLI (`--ff-preset`).
+
+### Changed
+- **`rmsd_utils.py`**: Replaced generic `999.0` return codes with distinct descending error codes (`998.0`, `997.0`, etc.) for easier debugging.
+- **`MetalloGenAdapter`**: Mapped `FF` and `none` (case-insensitive) to `None` for the optimizer flag to default to FF-relaxed geometry.
+
+### Fixed
+- **OIN encoder**: Mapped binding atoms to SMILES index via canonical output order, fixing Ir `[cH]` drift.
+- **`MetalloGenAdapter`**: Carried encoded sp3-carbon stereo into contract mol, fixing BDPP/BDNN round-trip failures.
+- **`MetalloGenAdapter`**: Implemented manual bond-order transfer, fixing CO encoding for FeCO5/FeH2CO4.
+- **`MetalloGenAdapter`**: Completed classification audit for MACE geometries, specifically handling SPY pucker and TiCat3/4 TET goldens.
+
 ## [0.3.0] - 2026-07-04
 
 ### Fixed
