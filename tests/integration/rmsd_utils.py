@@ -78,18 +78,18 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
         )
 
         if not sphere1 or not sphere2:
-            return 999.0
+            return 998.0
 
         # Check element composition match
         if set(sphere1.keys()) != set(sphere2.keys()):
-            return 999.0
+            return 997.0
 
         for element in sphere1:
             if len(sphere1[element]) != len(sphere2[element]):
                 print(
                     f"[RMSD DEBUG] Count mismatch for {element}: {len(sphere1[element])} vs {len(sphere2[element])}"
                 )
-                return 999.0
+                return 996.0
 
         # Center both at the metal
         metal_pos1 = coords1[metal_idx1]
@@ -106,7 +106,7 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
         import traceback
 
         traceback.print_exc()
-        return 999.0
+        return 995.0
 
 
 def _find_metal_atoms(mol1, mol2):
@@ -319,7 +319,7 @@ def _compute_greedy_rmsd(sphere1_centered, sphere2_centered):
         rmsd = np.sqrt(np.mean(np.sum((coords1_all - coords2_rotated) ** 2, axis=1)))
         return rmsd
     except Exception:
-        return 999.0
+        return 994.0
 
 
 def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
@@ -335,11 +335,11 @@ def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
     """
     # Ensure both have the same element composition
     if set(sphere1_centered.keys()) != set(sphere2_centered.keys()):
-        return 999.0
+        return 993.0
 
     for element in sphere1_centered:
         if len(sphere1_centered[element]) != len(sphere2_centered[element]):
-            return 999.0
+            return 992.0
 
     # Generate all permutations within each element group
     # Cap at 6+ atoms per element to avoid combinatorial explosion (6! = 720; 7! = 5040)
@@ -385,4 +385,4 @@ def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
         except Exception:
             continue
 
-    return min_rmsd if min_rmsd != float("inf") else 999.0
+    return min_rmsd if min_rmsd != float("inf") else 991.0
