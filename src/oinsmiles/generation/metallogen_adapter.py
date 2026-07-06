@@ -405,6 +405,11 @@ class MetalloGenAdapter:
         self.timeout = timeout
         self.dg_strategy = dg_strategy
         self.ensemble_size = ensemble_size
+        
+        # Treat "FF" or "none" (case-insensitive) as None
+        if optimizer is not None and optimizer.lower() in ("ff", "none"):
+            optimizer = None
+            
         # optimizer=None -> FF-relaxed geometry only (default; always available).
         # optimizer="xtb" -> refine the FF pool with GFN2-xTB and energy-rank
         # (requires xtb-python + ase; degrades gracefully to FF if unavailable).
