@@ -514,8 +514,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCp2Me2 (XYZ -> OIN-SMILES)",
             xyz_content=ticp2me2_xyz,
             description="Titanocene dimethyl.",
-            expected_smiles="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
             fixed_orientation=True,
         )
         examples.append(ticp2me2_ex)
@@ -561,8 +561,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat1 (XYZ -> OIN-SMILES)",
             xyz_content=ticat1_xyz,
             description="Titanium Catalyst 1",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
             fixed_orientation=True,
         )
         examples.append(ticat1_ex)
@@ -577,8 +577,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat2 (XYZ -> OIN-SMILES)",
             xyz_content=ticat2_xyz,
             description="Titanium Catalyst 2",
-            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat2_ex)
     except FileNotFoundError:
@@ -592,8 +592,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat3 (XYZ -> OIN-SMILES)",
             xyz_content=ticat3_xyz,
             description="Titanium Catalyst 3",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat3_ex)
     except FileNotFoundError:
@@ -607,12 +607,42 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat4 (XYZ -> OIN-SMILES)",
             xyz_content=ticat4_xyz,
             description="Titanium Catalyst 4",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat4_ex)
     except FileNotFoundError:
         print("Skipping TiCat4 example: File not found.")
+
+    # TiCat5
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat5.xyz"), "r") as f:
+            ticat5_xyz = f.read()
+        ticat5_ex = Example(
+            name="TiCat5 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat5_xyz,
+            description="Titanium Catalyst 5 (TiCat3 Z-inverted)",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+        )
+        examples.append(ticat5_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat5 example: File not found.")
+
+    # TiCat6
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat6.xyz"), "r") as f:
+            ticat6_xyz = f.read()
+        ticat6_ex = Example(
+            name="TiCat6 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat6_xyz,
+            description="Titanium Catalyst 6 (TiCat4 Z-inverted)",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+        )
+        examples.append(ticat6_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat6 example: File not found.")
 
     # Example: PdCl2-R-BINAP (axial-chiral BINAP ligand)
     try:
@@ -698,10 +728,15 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
 
 def run_examples(
-    limit: Optional[int] = None, output_dir: Optional[str] = None, include_tmqm: bool = False
+    limit: Optional[int] = None, output_dir: Optional[str] = None, include_tmqm: bool = False, only: Optional[str] = None
 ) -> None:
     runner = ExampleRunner()
     examples = get_examples(include_tmqm=include_tmqm)
+
+    if only:
+        needles = [n.strip().lower() for n in only.split(',')]
+        examples = [e for e in examples if any(n in e.name.lower() for n in needles)]
+        print(f"Filtering to {len(examples)} example(s) matching '{only}'.")
 
     if limit:
         print(f"Limiting to first {limit} examples.")
@@ -719,8 +754,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit", type=int, help="Limit number of examples to run (for fast testing)"
     )
+    parser.add_argument(
+        "--only",
+        type=str,
+        help="Run only examples whose name contains this substring (comma-separated for multiple, case-insensitive).",
+    )
     parser.add_argument("--output-dir", type=str, help="Directory to save JSON summary artifact")
     parser.add_argument("--include-tmqm", action="store_true", help="Include tmQM examples (slow)")
     args = parser.parse_args()
 
-    run_examples(limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm)
+    run_examples(limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm, only=args.only)

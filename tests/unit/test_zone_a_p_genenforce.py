@@ -219,8 +219,8 @@ class TestZoneAPEnantiomerDiscrimination(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            struct_a = OIN3DGenerator().generate(oin1)
-            struct_b = OIN3DGenerator().generate(oin1_flipped)
+            struct_a = OIN3DGenerator(engine="legacy").generate(oin1)
+            struct_b = OIN3DGenerator(engine="legacy").generate(oin1_flipped)
 
         self.assertIsNotNone(struct_a.mol, "expected an assembled mol for struct_a")
         self.assertIsNotNone(struct_b.mol, "expected an assembled mol for struct_b")
@@ -262,7 +262,7 @@ class TestZoneAPSPLDummyEmbed(unittest.TestCase):
             oin = f"[Pt_SPL].c1ccccc1{tag}{{0}}(CC)C.[Cl]{{1}}.[Cl]{{2}}.[Cl]{{3}}"
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                structure = OIN3DGenerator().generate(oin)
+                structure = OIN3DGenerator(engine="legacy").generate(oin)
             self.assertIsNotNone(structure.mol, f"expected an assembled mol for {tag}")
 
             stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
@@ -315,7 +315,7 @@ class TestZoneAPSPLDummyEmbed(unittest.TestCase):
             with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    structure = OIN3DGenerator().generate(oin)
+                    structure = OIN3DGenerator(engine="legacy").generate(oin)
             self.assertIsNotNone(structure.mol)
             # Exactly one _stitch_fragment call for the single ligand
             # fragment (Cl atoms are single-atom fragments too, but the
@@ -339,7 +339,7 @@ class TestZoneAPSPLForcedMisEmbedCorrection(unittest.TestCase):
         oin1 = _MONO_P_CORESIDENT_SPL_OIN
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            baseline_structure = OIN3DGenerator().generate(oin1)
+            baseline_structure = OIN3DGenerator(engine="legacy").generate(oin1)
         self.assertIsNotNone(baseline_structure.mol)
         baseline_cip = _p_and_co_resident_c_cip_codes(baseline_structure.mol)
         self.assertTrue(any(k[0] == "P" for k in baseline_cip))
@@ -358,7 +358,7 @@ class TestZoneAPSPLForcedMisEmbedCorrection(unittest.TestCase):
         with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                structure = OIN3DGenerator().generate(oin1)
+                structure = OIN3DGenerator(engine="legacy").generate(oin1)
 
         self.assertIsNotNone(structure.mol, "expected an assembled mol after enforcement")
         stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
@@ -406,7 +406,7 @@ class TestZoneAPByteStableRoundTrip(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as caught2:
             warnings.simplefilter("always")
-            structure = OIN3DGenerator().generate(oin1)
+            structure = OIN3DGenerator(engine="legacy").generate(oin1)
 
         self.assertIsNotNone(structure.mol, "expected an assembled mol")
         stereo_warnings = [
@@ -466,7 +466,7 @@ class TestZoneAPLosslessRoundTrip(unittest.TestCase):
             Chem.SanitizeMol(original_mol)
             original_cip = sorted(_p_cip_codes_by_idx(original_mol).values())
 
-            structure = OIN3DGenerator().generate(oin1)
+            structure = OIN3DGenerator(engine="legacy").generate(oin1)
 
         self.assertIsNotNone(structure.mol, "expected an assembled mol")
         regenerated_cip = sorted(_p_cip_codes_by_idx(structure.mol).values())
@@ -502,7 +502,7 @@ class TestZoneAPForcedMisEmbedCorrection(unittest.TestCase):
         oin1 = _MONO_P_CORESIDENT_OIN
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            baseline_structure = OIN3DGenerator().generate(oin1)
+            baseline_structure = OIN3DGenerator(engine="legacy").generate(oin1)
         self.assertIsNotNone(baseline_structure.mol)
         baseline_cip = _p_and_co_resident_c_cip_codes(baseline_structure.mol)
         self.assertTrue(
@@ -530,7 +530,7 @@ class TestZoneAPForcedMisEmbedCorrection(unittest.TestCase):
         with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                structure = OIN3DGenerator().generate(oin1)
+                structure = OIN3DGenerator(engine="legacy").generate(oin1)
 
         self.assertIsNotNone(structure.mol, "expected an assembled mol after enforcement")
         stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
@@ -583,7 +583,7 @@ class TestZoneAPBoundedFailure(unittest.TestCase):
         with mock.patch.object(ma, "_stitch_fragment", side_effect=_wrapped):
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                structure = OIN3DGenerator().generate(oin1)
+                structure = OIN3DGenerator(engine="legacy").generate(oin1)
         elapsed = time.time() - start
 
         self.assertIsNotNone(
@@ -701,7 +701,7 @@ class TestZoneAPIncompatibleBiteDGEnforcement(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            structure = OIN3DGenerator().generate(oin)
+            structure = OIN3DGenerator(engine="legacy").generate(oin)
 
         self.assertTrue(len(structure.xyz) > 0)
         stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
@@ -739,7 +739,7 @@ class TestZoneAPNoRegression(unittest.TestCase):
     def _assert_generates_clean(self, oin_string):
         with warnings.catch_warnings():
             warnings.simplefilter("error", OINStereoWarning)
-            structure = OIN3DGenerator().generate(oin_string)
+            structure = OIN3DGenerator(engine="legacy").generate(oin_string)
         self.assertTrue(len(structure.xyz) > 0)
 
     def test_cisplatin_generation_is_clean(self):
@@ -826,7 +826,7 @@ class TestZoneAPNoRegression(unittest.TestCase):
             with mock.patch.object(ma, "_attach_dummy_metal", side_effect=_spy):
                 with warnings.catch_warnings(record=True) as caught:
                     warnings.simplefilter("always")
-                    structure = OIN3DGenerator().generate(oin)
+                    structure = OIN3DGenerator(engine="legacy").generate(oin)
             stereo_warnings = [w for w in caught if issubclass(w.category, OINStereoWarning)]
             self.assertEqual(stereo_warnings, [], f"{name}: unexpected stereo warning(s)")
             self.assertTrue(len(structure.xyz) > 0, f"{name}: expected non-empty XYZ")

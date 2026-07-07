@@ -140,7 +140,7 @@ def _generate_and_reencode(oin_string: str) -> str:
     raise; callers are expected to catch and self.fail() with the message
     so expectedFailure records the crash as the diagnostic result.
     """
-    generator = OIN3DGenerator()
+    generator = OIN3DGenerator(engine="legacy")
     structure = generator.generate(oin_string)
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as tmp_file:
@@ -343,8 +343,8 @@ class TestStereoRoundTripDiagnostics(unittest.TestCase):
         self.assertNotEqual(oin1, oin1_flipped, "Flip must actually change the input string")
 
         try:
-            struct_a = OIN3DGenerator().generate(oin1)
-            struct_b = OIN3DGenerator().generate(oin1_flipped)
+            struct_a = OIN3DGenerator(engine="legacy").generate(oin1)
+            struct_b = OIN3DGenerator(engine="legacy").generate(oin1_flipped)
         except Exception as exc:  # noqa: BLE001 - diagnostic capture
             self.fail(f"generation crashed: {exc!r}")
             return
@@ -595,7 +595,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         with open(_HALIDE_FACE_GOLDEN_PATH) as f:
             oin1 = f.read().strip()
 
-        structure = OIN3DGenerator().generate(oin1)
+        structure = OIN3DGenerator(engine="legacy").generate(oin1)
         statuses = sorted(d["status"] for d in structure.haptic_face_decisions)
 
         self.assertEqual(
@@ -639,7 +639,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         # correction on ring 0) must not raise the internal det assertion.
         with open(_HALIDE_FACE_GOLDEN_PATH) as f:
             oin1 = f.read().strip()
-        structure = OIN3DGenerator().generate(oin1)
+        structure = OIN3DGenerator(engine="legacy").generate(oin1)
         fired = [d for d in structure.haptic_face_decisions if d["status"] == "fired"]
         self.assertTrue(fired, "Expected the golden fixture to exercise the fired branch")
 
@@ -659,7 +659,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
 
         cips = {}
         for label, oin in (("A", oin_a), ("B", oin_b)):
-            structure = OIN3DGenerator().generate(oin)
+            structure = OIN3DGenerator(engine="legacy").generate(oin)
             decisions = {d["fragment_idx"]: d["status"] for d in structure.haptic_face_decisions}
             mol = structure.mol
             self.assertIsNotNone(mol, f"variant {label}: expected a bonded mol")
@@ -723,7 +723,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         """
         with open(_FERROCENE_OIN_PATH) as f:
             oin1 = f.read().strip()
-        structure = OIN3DGenerator().generate(oin1)
+        structure = OIN3DGenerator(engine="legacy").generate(oin1)
         self.assertTrue(structure.haptic_face_decisions)
         for d in structure.haptic_face_decisions:
             self.assertTrue(d["symmetric"], d)
@@ -740,7 +740,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         self.assertNotIn("<", oin_no_marker)
         self.assertNotIn(">", oin_no_marker)
 
-        structure = OIN3DGenerator().generate(oin_no_marker)
+        structure = OIN3DGenerator(engine="legacy").generate(oin_no_marker)
         self.assertTrue(structure.haptic_face_decisions)
         for d in structure.haptic_face_decisions:
             self.assertIsNone(d["target"])
@@ -759,7 +759,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         self.assertNotEqual(oin1, oin_multi_marker)
 
         with self.assertRaises(ValueError):
-            OIN3DGenerator().generate(oin_multi_marker)
+            OIN3DGenerator(engine="legacy").generate(oin_multi_marker)
 
     def test_haptic_face_bridged_ansa_conflict_no_regression(self):
         """US-004: bridged ansa-metallocene, conflict path.
@@ -774,7 +774,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         with open(_ANSA_BASELINE_XYZ_PATH) as f:
             baseline_xyz = f.read()
 
-        structure = OIN3DGenerator().generate(_ANSA_OIN_CONFLICT)
+        structure = OIN3DGenerator(engine="legacy").generate(_ANSA_OIN_CONFLICT)
         self.assertEqual(structure.xyz, baseline_xyz)
 
         statuses = {d["status"] for d in structure.haptic_face_decisions}
@@ -788,7 +788,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         with open(_ANSA_BASELINE_XYZ_PATH) as f:
             baseline_xyz = f.read()
 
-        structure = OIN3DGenerator().generate(_ANSA_OIN_NATURAL)
+        structure = OIN3DGenerator(engine="legacy").generate(_ANSA_OIN_NATURAL)
         self.assertEqual(structure.xyz, baseline_xyz)
         for d in structure.haptic_face_decisions:
             self.assertEqual(d["status"], "skipped", d)
@@ -803,7 +803,7 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
         not crash or clash (placement still passes the inter-fragment
         collision check inside `_template_generate`).
         """
-        structure = OIN3DGenerator().generate(_ANSA_OIN_COHERENT_FIRE)
+        structure = OIN3DGenerator(engine="legacy").generate(_ANSA_OIN_COHERENT_FIRE)
         statuses = {d["status"] for d in structure.haptic_face_decisions}
         self.assertEqual(statuses, {"fired"}, structure.haptic_face_decisions)
         self.assertEqual(len(structure.haptic_face_decisions), 2)
@@ -911,25 +911,23 @@ class TestEtaRingCanonicalization(unittest.TestCase):
         literal member of ``SYMMETRIC_LIGANDS`` (that set only contains bare,
         unsubstituted ring SMILES) -- it IS eligible for RC2, and its
         canonical-rank heading atom differs from the pre-fix geometric pick.
-        This is a deliberate, verified deviation from the MiniPRD's Test 3
-        wording (which assumed this fixture would be SYMMETRIC_LIGANDS-
-        protected): re-verified here as a pure winding-preserving relabel --
-        same ring content signature, same winding CHARACTER, only the
-        specific marked atom moves -- exactly the RC2 safety property, not a
-        regression. See spec/worklog/NOTES.md for the sign-off record.
+
+        Since 2026-07-06 the encoder marks winding PER eta ring (per haptic
+        slot), not once per fragment: a silane-bridged ansa-metallocene is a
+        single connected fragment occupying two eta slots, so BOTH rings must
+        now carry a winding marker (previously only the first ring did, leaving
+        rac/meso indistinguishable). The winding sign is measured against each
+        ring's actual metal->centroid axis, which stays correct under the ansa
+        bite-angle distortion that skews the idealized template slot axes.
+        Assert the full, complete two-marker encoding.
         """
         ticat1_xyz = os.path.join(_FIXTURES_DIR, "TiCat1.xyz")
         actual = XYZToSMILES().convert(ticat1_xyz)
-        pre_fix_golden = (
-            "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0}[cH]{0}[cH]{0<}1)"
-            "c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
+        expected = (
+            "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)"
+            "c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
         )
-        self.assertEqual(
-            _ring_winding_by_signature(actual),
-            _ring_winding_by_signature(pre_fix_golden),
-            "RC2 must preserve each ring's content signature -> winding "
-            "character mapping even though the marked atom moved",
-        )
+        self.assertEqual(actual, expected)
 
     def test_rc1_scoped_swap_never_touches_non_eta_ranks(self):
         """Test 4 (RT-5): RC1 permutes ONLY same-mass eta fragments among the

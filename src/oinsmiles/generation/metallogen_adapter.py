@@ -204,7 +204,15 @@ def _oin_fragment_templates(parsed: ParsedOIN) -> list:
         except Exception:
             t.UpdatePropertyCache(strict=False)
         try:
-            t = Chem.RemoveHs(t)
+            # sanitize=False: RemoveHs' internal sanitize KEKULIZES rings it cannot
+            # leave aromatic and strips their aromatic flags. For a neutral-radical
+            # Cp (e.g. TiCat2, whose SanitizeMol above already failed) that corrupts
+            # an aromatic c1cccc1 into an aliphatic C1=CC=CC1, so the re-encoded OIN
+            # string mismatches the aromatic input. Skipping the sanitize preserves
+            # the aromatic perception; it still removes the explicit H atoms, so the
+            # heavy-atom count the contract-mol match relies on is unchanged. No-op
+            # for fragments that sanitized cleanly above.
+            t = Chem.RemoveHs(t, sanitize=False)
         except Exception:
             pass
         # Label CIP so build_contract_mol can carry encoded sp3 stereo (the
@@ -396,6 +404,14 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
 # only changes *which* of the already-optimized conformers is returned.
 DEFAULT_SELECT_POOL = 5
 
+# Wider conformer pool when the OIN encodes eta-ring winding. A ring's
+# coordinated face (hence an ansa-metallocene's rac/meso diastereomer and its
+# enantiomer) is set stochastically by each embed, so more candidates are needed
+# to reliably sample the requested winding for winding-aware selection to pick.
+# Re-encoding is cheap (contract-mol fast path), so the extra candidates cost
+# mainly embedding, not perception.
+ETA_SELECT_POOL = 16
+
 
 def _norm_geo_code(code):
     """Fold equivalent square-planar codes together (``SQP`` == ``SPL``)."""
@@ -414,15 +430,61 @@ def _expected_coordination_number(geo_code):
         return None
 
 
-def _perceive_geo_code(contract_mol, expected_n=None):
-    """Best-matching OIN geometry code for a contract mol's coordination sphere.
+_HAPTIC_GROUP_CUTOFF = 1.6  # A -- same threshold as oin_aligner._reduce_hapticity
 
-    Returns None when no metal is found, when the metal's donor count doesn't
-    match ``expected_n`` (the haptic/eta guard -- eta ligands bond the metal to
-    many ring atoms, which has no discrete geometry template), or when the
-    classifier can't decide.
+
+def _reduce_haptic_positions(donor_positions, expected_n):
+    """Cluster raw donor positions into haptic groups and return one centroid per
+    group -- but only if the number of groups equals ``expected_n``.
+
+    Mirrors the XYZ->OIN encoder's hapticity reduction
+    (``oin_aligner.OINDiscreteAligner._reduce_hapticity``): binding atoms within
+    ``_HAPTIC_GROUP_CUTOFF`` of each other (transitively, so a whole Cp ring is one
+    group) collapse to a single coordination point at their centroid. This lets an
+    eta complex whose raw donor count (e.g. TiCat's 12 ring C + 2 methyl) would gate
+    it out of geometry-aware selection reduce to its true coordination number (4
+    here: 2 Cp centroids + 2 methyl) so it can be classified/ranked like a discrete
+    geometry. Returns ``None`` when the group count doesn't match ``expected_n`` --
+    keeping selection strictly non-regressive for genuinely non-matching spheres.
     """
-    from ..utils.oin_aligner import classify_coordination_geometry
+    n = len(donor_positions)
+    visited = set()
+    groups = []
+    for j in range(n):
+        if j in visited:
+            continue
+        stack = [j]
+        component = []
+        while stack:
+            curr = stack.pop()
+            if curr in visited:
+                continue
+            visited.add(curr)
+            component.append(curr)
+            for k in range(n):
+                if k in visited:
+                    continue
+                if (
+                    np.linalg.norm(donor_positions[curr] - donor_positions[k])
+                    < _HAPTIC_GROUP_CUTOFF
+                ):
+                    stack.append(k)
+        groups.append(component)
+    if len(groups) != expected_n:
+        return None
+    return [np.mean([donor_positions[k] for k in g], axis=0) for g in groups]
+
+
+def _coordination_vectors(contract_mol, expected_n=None):
+    """Metal-centered donor vectors (``donor_pos - metal_pos``) for a contract mol.
+
+    Returns None when no metal is found. When ``expected_n`` is given and the
+    metal's raw donor count doesn't match it, first attempt hapticity reduction
+    (``_reduce_haptic_positions``) -- an eta ligand bonds the metal to many ring
+    atoms that collapse to a single coordination point, so a bent metallocene's 14
+    raw donors reduce to 4 centroid donors. If reduction still can't reach
+    ``expected_n`` the sphere has no discrete template and None is returned.
+    """
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
 
     metal_idx = next(
@@ -439,58 +501,221 @@ def _perceive_geo_code(contract_mol, expected_n=None):
         b.GetOtherAtomIdx(metal_idx)
         for b in contract_mol.GetAtomWithIdx(metal_idx).GetBonds()
     ]
-    if expected_n is not None and len(donors) != expected_n:
-        return None
     conf = contract_mol.GetConformer()
     m = conf.GetAtomPosition(metal_idx)
-    vecs = [
-        (
-            conf.GetAtomPosition(d).x - m.x,
-            conf.GetAtomPosition(d).y - m.y,
-            conf.GetAtomPosition(d).z - m.z,
+    metal_pos = np.array([m.x, m.y, m.z])
+    donor_positions = [
+        np.array(
+            [
+                conf.GetAtomPosition(d).x,
+                conf.GetAtomPosition(d).y,
+                conf.GetAtomPosition(d).z,
+            ]
         )
         for d in donors
     ]
+    if expected_n is not None and len(donor_positions) != expected_n:
+        # More raw donors than sites => try collapsing eta groups to centroids.
+        if len(donor_positions) > expected_n:
+            reduced = _reduce_haptic_positions(donor_positions, expected_n)
+            if reduced is not None:
+                return [tuple(c - metal_pos) for c in reduced]
+        return None
+    return [tuple(dp - metal_pos) for dp in donor_positions]
+
+
+def _perceive_geo_code(contract_mol, expected_n=None):
+    """Best-matching OIN geometry code for a contract mol's coordination sphere,
+    or None (see ``_coordination_vectors`` for the guards)."""
+    from ..utils.oin_aligner import classify_coordination_geometry
+
+    vecs = _coordination_vectors(contract_mol, expected_n)
+    if vecs is None:
+        return None
     return classify_coordination_geometry(vecs)
 
 
-def _select_by_geometry(parsed, mols):
-    """Choose the energy-ranked conformer whose coordination geometry matches the
-    requested OIN code, falling back to the lowest-energy conformer.
+# Winding heading marker on an eta-ring atom: {n>} (clockwise) or {n<} (ccw).
+_ETA_WINDING_RE = re.compile(r"\{\d+([<>])\}")
 
-    ``mols`` is assumed sorted best (lowest energy) first. For floppy donors an
-    energetically-competitive distorted geometry (e.g. a trigonal-pyramidal Pd
-    where the OIN asks for square-planar) can outrank the correct one on energy
-    alone; this prefers the conformer that actually re-perceives to the target.
 
-    Returns ``(chosen_mol, chosen_contract_mol)``. Strictly non-regressive:
-    selection is skipped -- returning ``mols[0]`` -- when the target geometry has
-    no discrete template, when donor count doesn't match the expected
-    coordination number (haptic/eta), or on any perception failure.
+def _eta_winding_multiset(oin_string):
+    """Sorted list of eta-ring winding characters in an OIN string.
+
+    An ansa-metallocene's rac/meso (and a ring's coordinated face / enantiomer)
+    is captured by the multiset of per-ring winding markers -- e.g. a rac
+    bis-indenyl is ``['>', '>']`` while its meso diastereomer is ``['<', '>']``.
+    Using the multiset (not per-slot) makes the comparison robust to which
+    identical ring is assigned to which slot on re-encoding.
     """
+    if not oin_string:
+        return []
+    return sorted(_ETA_WINDING_RE.findall(oin_string))
+
+
+def _reencode_oin_fast(contract_mol):
+    """Fast XYZ->OIN re-encode of an already-perceived contract mol.
+
+    Skips the expensive bond perception in ``get_tmc_mol`` by feeding the
+    contract mol (metal + dative bonds + bond orders + 3D conformer, from
+    ``build_contract_mol``) straight into ``get_oin_string`` -- the same
+    aligner/serializer the full encoder uses downstream of perception. Verified
+    to yield the same eta winding as the full ``XYZToSMILES().convert`` path,
+    which makes a wide winding-selection pool affordable. Returns None on
+    failure (caller falls back to the full XYZ re-encode).
+    """
+    from ..utils.xyz2mol import get_oin_string
+
+    if contract_mol is None:
+        return None
+    try:
+        conf = contract_mol.GetConformer()
+        coords = np.array(
+            [
+                [
+                    conf.GetAtomPosition(a).x,
+                    conf.GetAtomPosition(a).y,
+                    conf.GetAtomPosition(a).z,
+                ]
+                for a in range(contract_mol.GetNumAtoms())
+            ]
+        )
+        return get_oin_string(contract_mol, coords)
+    except Exception:
+        logger.debug("fast winding re-encode failed for a conformer", exc_info=True)
+        return None
+
+
+def _reencode_oin(mol):
+    """Re-encode a generated conformer's 3D structure back to an OIN string.
+
+    Full-fidelity fallback for ``_reencode_oin_fast``: uses the same XYZ->OIN
+    path the round-trip verification uses (write XYZ -> ``XYZToSMILES().convert``),
+    so the winding it reports is exactly what the round trip will compare
+    against. Returns None on any failure.
+    """
+    import os
+    import tempfile
+
+    from ..core.translator import XYZToSMILES
+
+    tmp_path = None
+    try:
+        xyz = get_xyz_string(mol)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".xyz", delete=False
+        ) as tmp_file:
+            tmp_file.write(xyz)
+            tmp_path = tmp_file.name
+        return XYZToSMILES().convert(tmp_path)
+    except Exception:
+        logger.debug("winding re-encode failed for a conformer", exc_info=True)
+        return None
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _select_by_geometry(parsed, mols):
+    """Choose the conformer that best realizes the requested coordination geometry,
+    falling back to the lowest-energy conformer.
+
+    Three levels of preference over plain energy ranking:
+      1. Only conformers whose coordination sphere *classifies* as the target OIN
+         code are eligible (a distorted geometry that best matches a different
+         template is rejected).
+      2. When the OIN encodes eta-ring winding (an ansa-metallocene's rac/meso, a
+         ring's coordinated face/enantiomer), prefer -- among the geometry-
+         eligible conformers, best geometry first -- the one whose re-encoded
+         winding multiset matches the request. The embed produces the ring face
+         stochastically, so without this the diastereomer/enantiomer is left to
+         chance; matching it here is what makes the eta round trip reproducible.
+      3. Otherwise pick the tightest fit to the ideal target template -- not
+         merely the lowest-energy one. Classification is only a nearest-template
+         label, so an energetically-competitive but heavily puckered square-plane
+         can still read as ``SPL`` yet sit far from the input geometry; ranking by
+         template fit selects the cleanest realization.
+    Energy (pool order) breaks ties.
+
+    ``mols`` is assumed sorted best (lowest energy) first. Returns
+    ``(chosen_mol, chosen_contract_mol)``. Strictly non-regressive: selection is
+    skipped -- returning ``mols[0]`` -- when the target geometry has no discrete
+    template, when no pooled conformer classifies as the target, or on any
+    perception failure. The winding pass likewise falls back to the best-geometry
+    (then lowest-energy) conformer when no winding is requested or none matches.
+    """
+    from ..utils.oin_aligner import (
+        classify_coordination_geometry,
+        coordination_geometry_fit,
+    )
+
     target = _norm_geo_code(parsed.geo_code)
     expected_n = _expected_coordination_number(parsed.geo_code)
 
+    scored = []  # (fit_rmsd, energy_rank, mol, contract_mol)
     if target and expected_n is not None:
-        for m in mols:
+        for rank, m in enumerate(mols):
             try:
                 cmol = build_contract_mol(parsed, m)
                 if cmol is None:
                     continue
-                code = _perceive_geo_code(cmol, expected_n)
-                if code is not None and _norm_geo_code(code) == target:
-                    logger.debug(
-                        "geometry-aware selection: chose conformer perceived as %s "
-                        "(target %s)",
-                        code,
-                        target,
-                    )
-                    return m, cmol
+                vecs = _coordination_vectors(cmol, expected_n)
+                if vecs is None:
+                    continue
+                if _norm_geo_code(classify_coordination_geometry(vecs)) != target:
+                    continue
+                fit = coordination_geometry_fit(vecs, target)
+                scored.append((fit, rank, m, cmol))
             except Exception:
                 logger.debug(
                     "geometry perception failed for a conformer", exc_info=True
                 )
                 continue
+        scored.sort(key=lambda t: (t[0], t[1]))
+
+    # Winding-aware pick: prefer the conformer whose re-encoded eta-ring winding
+    # matches the requested OIN. Search geometry-eligible conformers first (best
+    # geometry first); if geometry perception found none, fall back to searching
+    # the whole energy-ranked pool so winding can still be honored.
+    target_windings = _eta_winding_multiset(getattr(parsed, "original_oin", None))
+    if target_windings:
+        if scored:
+            candidates = [(m, cmol) for (_fit, _rank, m, cmol) in scored]
+        else:
+            candidates = [(m, None) for m in mols]
+        for m, cmol in candidates:
+            if cmol is None:
+                cmol = build_contract_mol(parsed, m)
+            # Fast contract-mol re-encode; fall back to the full XYZ path.
+            oin = _reencode_oin_fast(cmol) or _reencode_oin(m)
+            if oin is None:
+                continue
+            if _eta_winding_multiset(oin) == target_windings:
+                logger.debug(
+                    "winding-aware selection: matched eta winding %s", target_windings
+                )
+                return m, cmol if cmol is not None else build_contract_mol(parsed, m)
+        logger.debug(
+            "winding-aware selection: no conformer matched eta winding %s; "
+            "falling back to geometry/energy",
+            target_windings,
+        )
+
+    if scored:
+        fit, rank, m, cmol = scored[0]
+        logger.debug(
+            "geometry-aware selection: chose energy-rank %d as %s "
+            "(template fit %.4f, target %s) from %d matching conformer(s)",
+            rank,
+            target,
+            fit,
+            target,
+            len(scored),
+        )
+        return m, cmol
 
     # Fallback: lowest-energy conformer -- the pre-selection default behavior.
     return mols[0], build_contract_mol(parsed, mols[0])
@@ -532,10 +757,26 @@ class MetalloGenAdapter:
         # FF-only path; num_conformers returns the whole ranked list (not just the
         # top-1). With an optimizer set the pool is MACE-optimized regardless, so
         # this adds no optimizer cost over the previous fixed pool of 5.
-        pool_n = max(self.ensemble_size, DEFAULT_SELECT_POOL)
+        #
+        # When the OIN encodes eta-ring winding, widen the pool (and the UFF
+        # pre-pool that feeds it) so the requested ring face / diastereomer is
+        # actually sampled -- winding-aware selection can only pick a winding that
+        # exists in the pool.
+        needs_winding = bool(_eta_winding_multiset(getattr(parsed, "original_oin", None)))
+        base_pool = ETA_SELECT_POOL if needs_winding else DEFAULT_SELECT_POOL
+        pool_n = max(self.ensemble_size, base_pool)
 
         # The MetalloGen engine prints progress/geometry to stdout; redirect it to
         # stderr so the oin2xyz CLI's stdout (the XYZ block) stays clean.
+        # Extract deduplication params from ff_params if provided, else use defaults
+        uff_pool_size = self.ff_params.get("uff_pool_size", 10) if self.ff_params else 10
+        if needs_winding:
+            # Diastereomer diversity comes from the UFF pre-pool; make sure it is
+            # at least as wide as the selection pool.
+            uff_pool_size = max(uff_pool_size, 2 * pool_n)
+        rmsd_threshold = self.ff_params.get("rmsd_threshold", 0.5) if self.ff_params else 0.5
+        energy_threshold = self.ff_params.get("energy_threshold", 2.0) if self.ff_params else 2.0
+
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
                 msmiles,
@@ -543,6 +784,9 @@ class MetalloGenAdapter:
                 optimizer=self.optimizer,
                 pool_size=pool_n,
                 ff_params=self.ff_params,
+                uff_pool_size=uff_pool_size,
+                rmsd_threshold=rmsd_threshold,
+                energy_threshold=energy_threshold,
             )
         if not mols:
             raise ValueError(

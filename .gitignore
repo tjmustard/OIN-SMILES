@@ -82,3 +82,10 @@ dmypy.json
 uv*
 # Local scratch / backup fixtures (not for VCS)
 tests/backup/
+/tmCAT-tmPHOTO_xyz_dataset
+/results
+
+# Generated spec output (contains dates/times)
+spec/handoff/
+spec/process/
+spec/worklog/

@@ -39,7 +39,9 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     )
 
     try:
-        result = OIN3DGenerator().generate(args.oin)
+        result = OIN3DGenerator(
+            engine=args.engine, optimizer=args.optimizer
+        ).generate(args.oin)
     except MolassemblerTimeoutError:
         print("Error: Molassembler timed out", file=sys.stderr)
         sys.exit(2)
@@ -77,6 +79,22 @@ def main() -> None:
         ),
     )
     p_oin2xyz.add_argument("oin", type=str, help="OIN-SMILES string.")
+    p_oin2xyz.add_argument(
+        "--engine",
+        choices=["metallogen", "legacy"],
+        default="metallogen",
+        help="Generation backend (default: metallogen).",
+    )
+    p_oin2xyz.add_argument(
+        "--optimizer",
+        type=str,
+        default="mace-omol-0-extra-large-1024",
+        help=(
+            "Geometry optimizer for the metallogen engine (default: "
+            "mace-omol-0-extra-large-1024, needs mace-torch + weights). Use 'ff' for the "
+            "fast FF-only path, or 'xtb' for GFN2-xTB. Ignored for --engine legacy."
+        ),
+    )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)
 
     args = parser.parse_args()

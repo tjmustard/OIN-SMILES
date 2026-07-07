@@ -80,6 +80,23 @@ def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
         if not sphere1 or not sphere2:
             return 998.0
 
+        # Reconcile the two coord-sphere definitions. sphere1 is distance-based and
+        # can pick up non-bonded second-sphere / ansa-bridge atoms (e.g. the silyl
+        # bridge Si in TiCat1-4 sits ~2.8 A from Ti, inside the ~3.4 A cutoff, but is
+        # not a Ti donor). sphere2 is bond-based (real connectivity) = the chemical
+        # ground truth for what coordinates. Drop input-only elements. Directional
+        # (input side only) is safe: a genuine *generated*-side missing donor changes
+        # connectivity -> OIN2 != OIN1 -> the string gate fails the complex anyway,
+        # so this can never silently pass a real coordination bug. The metal is in
+        # both spheres, so it is never dropped.
+        drop = [el for el in sphere1 if el not in sphere2]
+        for el in drop:
+            print(
+                f"[RMSD] dropped non-bonded input donor {el} ({len(sphere1[el])} atom(s)) "
+                "- absent from generated bond sphere"
+            )
+            del sphere1[el]
+
         # Check element composition match
         if set(sphere1.keys()) != set(sphere2.keys()):
             return 997.0
@@ -322,6 +339,101 @@ def _compute_greedy_rmsd(sphere1_centered, sphere2_centered):
         return 994.0
 
 
+def _compute_robust_rmsd(sphere1_centered, sphere2_centered):
+    """
+    Rotation-robust coordination-sphere RMSD for element groups too large for
+    exhaustive permutation (>5 atoms).
+
+    ``_compute_greedy_rmsd`` matches atoms in the *un-rotated* metal-centred frame,
+    so it mis-pairs symmetric multi-ring ligands whenever the generated complex is
+    rotated relative to the input (e.g. the tilted Cp rings of a bent ansa-
+    metallocene) and badly over-estimates the RMSD -- a ferrocene whose generated
+    orientation happens to match the input passes, but a tilted TiCat1 does not,
+    even when its coordination sphere is geometrically correct.
+
+    This finds the true minimum over both correspondence and rotation:
+      1. enumerate candidate rotations from element-compatible anchor-atom pairs,
+      2. Hungarian-assign every atom (per element) in each candidate frame,
+      3. Kabsch-refine and score, keep the global best,
+      4. ICP-polish the best frame to convergence.
+    A correct minimum is always <= the greedy estimate, so this can only *lower* a
+    complex's RMSD -- it never raises one, hence no regression risk for the
+    currently-passing complexes. Falls back to the greedy estimate on any failure.
+    """
+    try:
+        elements = sorted(sphere1_centered.keys())
+        P = np.vstack([np.array(sphere1_centered[el]) for el in elements])
+        Q = np.vstack([np.array(sphere2_centered[el]) for el in elements])
+        labP = np.array([el for el in elements for _ in sphere1_centered[el]])
+        labQ = np.array([el for el in elements for _ in sphere2_centered[el]])
+
+        def assign(rot):
+            qc = rot.apply(Q)
+            colmap = np.empty(len(Q), dtype=int)
+            for el in elements:
+                pi = np.where(labP == el)[0]
+                qi = np.where(labQ == el)[0]
+                dist = np.linalg.norm(P[pi][:, None, :] - qc[qi][None, :, :], axis=2)
+                r, c = linear_sum_assignment(dist)
+                colmap[pi[r]] = qi[c]
+            return colmap
+
+        def refine(colmap):
+            rot, _ = Rotation.align_vectors(P, Q[colmap])
+            qr = rot.apply(Q)
+            rmsd = np.sqrt(np.mean(np.sum((P - qr[colmap]) ** 2, axis=1)))
+            return rmsd, rot
+
+        def icp(seed, iters=50):
+            rot = seed
+            prev = None
+            rmsd, _ = refine(assign(rot))
+            for _ in range(iters):
+                colmap = assign(rot)
+                rmsd, rot = refine(colmap)
+                if prev is not None and np.array_equal(colmap, prev):
+                    break
+                prev = colmap
+            return rmsd
+
+        norms = np.linalg.norm(P, axis=1)
+        anchors = [i for i in np.argsort(-norms) if norms[i] > 1e-6]
+
+        best = float("inf")
+        best_seed = None
+        for ai in anchors[:3]:
+            for bi in anchors[:5]:
+                if bi == ai:
+                    continue
+                cosang = abs(np.dot(P[ai], P[bi]) / (norms[ai] * norms[bi] + 1e-12))
+                if cosang > 0.97:  # near-collinear anchors -> rotation underdetermined
+                    continue
+                qa = np.where(labQ == labP[ai])[0]
+                qb = np.where(labQ == labP[bi])[0]
+                for cj in qa:
+                    for dj in qb:
+                        if dj == cj:
+                            continue
+                        rot, _ = Rotation.align_vectors(
+                            np.array([P[ai], P[bi]]), np.array([Q[cj], Q[dj]])
+                        )
+                        rmsd, rref = refine(assign(rot))
+                        if rmsd < best:
+                            best, best_seed = rmsd, rref
+                break  # one non-collinear partner per anchor is sufficient
+
+        greedy = _compute_greedy_rmsd(sphere1_centered, sphere2_centered)
+        if best_seed is None:
+            return greedy
+        # Floor with the legacy greedy estimate: the anchor/ICP search covers a
+        # strict superset of correspondences, so min(...) can never exceed greedy
+        # and therefore cannot regress a currently-passing complex. (A greedy
+        # failure sentinel ~994 is large, so it never wins the min over a real value.)
+        return min(best, icp(best_seed), greedy)
+    except Exception:
+        return _compute_greedy_rmsd(sphere1_centered, sphere2_centered)
+
+
 def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
     """
     Compute minimum RMSD over all element-group permutations using Kabsch alignment.
@@ -348,8 +460,10 @@ def _compute_permutation_rmsd(sphere1_centered, sphere2_centered):
         coords1_list = sphere1_centered[element]
         n_atoms = len(coords1_list)
         if n_atoms > 5:
-            # Too many atoms for exhaustive permutation; use best-match assignment instead
-            return _compute_greedy_rmsd(sphere1_centered, sphere2_centered)
+            # Too many atoms for exhaustive permutation; use a rotation-robust
+            # anchor-pair search (greedy single-shot assignment mis-pairs tilted
+            # symmetric rings and over-estimates the RMSD).
+            return _compute_robust_rmsd(sphere1_centered, sphere2_centered)
         element_perms[element] = list(itertools.permutations(range(n_atoms)))
 
     # Cartesian product over all element groups

@@ -5,6 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-07-06
+
+### Changed
+- **Default generation engine → MetalloGen + MACE.** `OIN3DGenerator.__init__` now defaults to `engine="metallogen"` and `optimizer="mace-omol-0-extra-large-1024"` (was `engine="legacy"`, `optimizer=None`), and `cli.py oin2xyz` rides that default. The MetalloGen backend is the better-validated generator (full MACE round-trip 25/25; eta-winding rac/meso, BDNN square-plane, and TiCat eta TET/TPY all fixed). The legacy SCINE Molassembler backend remains available via `engine="legacy"` and stays the reference for Zone-A P stereo enforcement. The MACE default requires `mace-torch` + model weights and **fails loudly** if they are absent (deliberate — no silent FF fallback); use `optimizer="ff"` without them.
+
+### Added
+- **`oin-smiles oin2xyz --engine {metallogen,legacy}` and `--optimizer`** (default `mace-omol-0-extra-large-1024`; accepts `ff`/`none`/`xtb`), giving a fast/no-torch or legacy path from the CLI without changing the default.
+
+### Fixed
+- **Legacy-specific real-generation unit tests pinned to `engine="legacy"`** (`test_winding_inertness.py`, `test_zone_a_p_genenforce.py`, `test_stereo_roundtrip_diagnostics.py`) so the default flip keeps the fast unit suite deterministic and MACE-free while those Molassembler-only behaviors stay under test.
+
+## [0.3.2] - 2026-07-06
+
+### Added
+- **Eta-ligand winding (rac/meso) round-trip fidelity**: the encoder now emits a winding marker per haptic slot — not just the first ring — measured against each ring's *actual* metal→centroid axis (`oin_aligner.py` `_permute_and_serialize` / `_determine_winding`, was the idealized template slot axis that flipped the 2nd ring under a distorted ansa bite). The MetalloGen generator honors it via winding-**multiset** conformer selection over a widened eta pool (`metallogen_adapter.py` `_eta_winding_multiset` / `_reencode_oin_fast` / `ETA_SELECT_POOL`), fixing the TiCat3/TiCat4 rac↔meso diastereomer swap (both now round-trip to the correct isomer). Generalized to N eta ligands and variable hapticity (η³ definite / η² degenerate); `verify_roundtrip.py` compares via a winding-canonical key (winding-stripped string + sorted multiset). Adds `TiCat5`/`TiCat6` fixtures and `test_eta_winding_generalization.py` (8 tests).
+- **`oin_aligner.py`**: Added `classify_coordination_geometry()` (best-matching OIN geo code for a set of metal-centred donor vectors) and `coordination_geometry_fit()` (RMSD of the best donor-to-template assignment — the fit quality the classifier itself discards). Both wrap the existing discrete-geometry matcher.
+- **`MetalloGenAdapter`**: Added `_select_by_geometry()` geometry-code-aware conformer selection. From the energy-ranked pool it keeps only conformers whose coordination sphere classifies as the requested geometry, then returns the tightest template fit (energy breaks ties). Haptic/η donors are gated out (donor count ≠ coordination number), making selection a deliberate no-op there and strictly non-regressive versus lowest-energy.
+- **`generate_3d_structures`**: Added conformer deduplication over the FF pool via new `uff_pool_size`, `rmsd_threshold`, and `energy_threshold` parameters, plus a `calculate_heavy_atom_rmsd()` helper. `MetalloGenAdapter` surfaces these through `ff_params`.
+- **`rmsd_utils.py`**: Added `_compute_robust_rmsd()` (anchor-pair candidate rotations → Hungarian assignment → Kabsch refine → ICP polish, floored by the greedy estimate) for the >5-atoms-per-element branch, fixing bent ansa-metallocene mis-pairing.
+- **`test_geometry_selection.py`**: Added 18 unit tests covering the classifier, template-fit ranking, coordination perception, the haptic gate, and lowest-energy fallbacks.
+- **`run_verification.sh`**: Added a `--limit N` pass-through to `verify_xyz_to_oin.py` and `verify_roundtrip.py`.
+- **`tools/test_dataset_roundtrip.py`, `tools/test_uff_pool_size.py`**: Added dataset round-trip and UFF-pool-size sweep scripts.
+
+### Fixed
+- **`MetalloGenAdapter`**: Fixed the stochastic PdCl2-RR-BDNN failure where the generated Pd distorted from square-planar (`SPL`) toward trigonal-pyramidal, giving RMSD ~1.4 and a geo-code mismatch. Geometry-fit-ranked selection now returns the cleanest square-plane from the pool (BDNN: 5/5 round-trip PASS, RMSD 0.10–0.20; was intermittent). The prior `--ensemble-size` lever was a no-op under an optimizer — the pool is fixed at `pool_size` and only the lowest-energy conformer was used.
+- **`generator3d/__init__.py`**: Fixed a `TypeError: '<' not supported between instances of 'NoneType'` crash that intermittently aborted generation when pool energies were unset, by making the energy sort None-safe and computing a final FF energy for each conformer.
+- **`rmsd_utils.py`**: Fixed a `997` coordination-sphere false positive on ansa-metallocenes (TiCat1–4). The non-bonded ansa-bridge Si fell inside the distance cutoff and broke element-set equality; `calculate_tmc_rmsd` now drops from the distance-based input sphere any element absent from the bond-based generated sphere (bond sphere is donor ground truth).
+- **`MetalloGenAdapter`**: Fixed TiCat2 Cp radical aromaticity loss by calling `Chem.RemoveHs(t, sanitize=False)` on sanitize-failed fragments, so the re-encoded OIN keeps aromatic `c1[cH]…` instead of kekulized `C1[CH]=…`.
+- **`MetalloGenAdapter`**: Closed the stochastic TiCat1/3 `[Ti_TET]`↔`[Ti_TPY]` round-trip string drift by extending geometry-fit-ranked selection to haptic ligands. `_coordination_vectors` now reduces hapticity to centroid donors (new `_reduce_haptic_positions`: <1.6 Å transitive clustering, only when the group count equals the expected coordination number), so bent metallocenes (TiCat 14→4, ferrocene 10→2, η²-alkene 5→4) become eligible for selection instead of falling back to the lowest-energy conformer (which sometimes lands a TPY-ish embed). Strictly non-regressive (falls back to lowest-energy unless a conformer both classifies as the target *and* fits tighter); TiCat1/3 now hold `[Ti_TET]` deterministically (8/8 FF, RMSD 0.05–0.23; DEBUG confirms selection actively picks a non-lowest-energy rank), with Ferrocene/TiCp2Me2/Zeise non-regressive.
+
+### Changed
+- **`generate_3d_structures`**: Signature gained `uff_pool_size=50, rmsd_threshold=0.5, energy_threshold=2.0`; the conformer pool is now energy-sorted and deduplicated before selection.
+- **`TMCOptimizer` (`clean_geometry.py`)**: `clean_geometry()`/`ff_clean()` now return `(success, final_energy)` and stamp `.energy` on the molecule (propagated through `MetalComplex.get_molecule()`), so conformers carry a rankable energy.
+
 ## [0.3.1] - 2026-07-05
 
 ### Added

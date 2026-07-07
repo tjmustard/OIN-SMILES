@@ -2,8 +2,23 @@ from . import om
 from . import embed
 from . import clean_geometry
 
+def calculate_heavy_atom_rmsd(mol1, mol2):
+    import numpy as np
+    from scipy.spatial.transform import Rotation
+    c1 = np.array([a.get_coordinate() for a in mol1.atom_list if a.get_atomic_number() > 1])
+    c2 = np.array([a.get_coordinate() for a in mol2.atom_list if a.get_atomic_number() > 1])
+    if len(c1) == 0 or len(c1) != len(c2):
+        return float('inf')
+    c1 -= c1.mean(axis=0)
+    c2 -= c2.mean(axis=0)
+    try:
+        rot, rmsd = Rotation.align_vectors(c1, c2)
+        return rmsd
+    except:
+        return float('inf')
+
 def generate_3d_structures(
-    m_smiles, num_conformers=1, optimizer=None, pool_size=5, ff_params=None
+    m_smiles, num_conformers=1, optimizer=None, pool_size=5, ff_params=None, uff_pool_size=50, rmsd_threshold=0.5, energy_threshold=2.0
 ):
     """
     Generate 3D structures from an m-SMILES string.
@@ -23,39 +38,61 @@ def generate_3d_structures(
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
     
     # Target number of initial structures to generate
-    target_pool = pool_size if optimizer else num_conformers
+    target_pool = uff_pool_size
     successful_mols = []
     
-    for scale in scales:
-        for option in options:
-            if len(successful_mols) >= target_pool:
-                break
-
-            # A single scale/option combo can raise inside the embed (e.g. an
-            # RDKit valence exception on a dative donor); skip it rather than
-            # letting one bad combo abort the whole pool.
-            try:
-                positions = embed.get_embedding(
-                    metal_complex, scale, option, align=True, use_random=True
-                )
-            except Exception as e:
-                print(f"Embedding failed (scale={scale}, option={option}): {e}")
-                positions = None
-            if positions is not None:
-                tmp_complex = metal_complex.copy()
-                tmp_complex.set_position(positions)
-                
-                # cleaner.clean_geometry will print logs, could be silenced later
-                success = cleaner.clean_geometry(tmp_complex, scale)
-                
-                if success:
-                    successful_mols.append(tmp_complex.get_molecule())
-                    
+    import itertools
+    combinations = list(itertools.product(scales, options))
+    max_attempts = max(target_pool * 5, 250)
+    
+    for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
             break
+        scale, option = combinations[i % len(combinations)]
+
+        # A single scale/option combo can raise inside the embed (e.g. an
+        # RDKit valence exception on a dative donor); skip it rather than
+        # letting one bad combo abort the whole pool.
+        try:
+            positions = embed.get_embedding(
+                metal_complex, scale, option, align=True, use_random=True
+            )
+        except Exception as e:
+            print(f"Embedding failed (scale={scale}, option={option}): {e}")
+            positions = None
+        if positions is not None:
+            tmp_complex = metal_complex.copy()
+            tmp_complex.set_position(positions)
             
+            # cleaner.clean_geometry will print logs, could be silenced later
+            success = cleaner.clean_geometry(tmp_complex, scale)
+            
+            if success:
+                successful_mols.append(tmp_complex.get_molecule())
+                    
     if not successful_mols:
         return []
+
+    # Sort by UFF energy if available (handle None values safely)
+    successful_mols.sort(key=lambda m: getattr(m, 'energy', None) if getattr(m, 'energy', None) is not None else float('inf'))
+
+    # Deduplicate
+    dedup_mols = []
+    for mol in successful_mols:
+        is_unique = True
+        for acc_mol in dedup_mols:
+            rmsd = calculate_heavy_atom_rmsd(mol, acc_mol)
+            e1 = getattr(mol, 'energy', None)
+            e1 = e1 if e1 is not None else 0.0
+            e2 = getattr(acc_mol, 'energy', None)
+            e2 = e2 if e2 is not None else 0.0
+            if rmsd < rmsd_threshold and abs(e1 - e2) <= energy_threshold:
+                is_unique = False
+                break
+        if is_unique:
+            dedup_mols.append(mol)
+    
+    successful_mols = dedup_mols
 
     if optimizer:
         from .ml_optimizer import ASEOptimizer
@@ -67,7 +104,8 @@ def generate_3d_structures(
             
         if opt:
             optimized_mols = []
-            for mol in successful_mols:
+            mols_to_optimize = successful_mols[:num_conformers]
+            for mol in mols_to_optimize:
                 success, energy, new_mol = opt.optimize(mol)
                 if success:
                     optimized_mols.append((energy, new_mol))
