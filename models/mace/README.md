@@ -1,27 +1,60 @@
 # MACE Models Directory
 
-This directory is intended for storing pre-trained MACE model weights (e.g., MACE-OMol25) required by the `OIN3DGenerator(optimizer="mace-omol25")` backend. 
+This directory holds the pre-trained MACE foundation-model weights used by the
+**opt-in** MACE optimizer of the MetalloGen 3D backend
+(`OIN3DGenerator(optimizer="mace-omol-0-extra-large-1024")` or `"mace-omol25"`).
 
-All `.model`, `.pt`, and `.pth` files placed in this directory are intentionally ignored by git to prevent committing large binaries to the repository.
+All `.model`, `.pt`, and `.pth` files here are git-ignored so large binaries never
+land in the repository.
 
-## How to download MACE-OMol25
+> MACE is optional. The default engine uses the fast FF + g-xTB path and needs
+> neither `torch` nor these weights. Install the ML stack only if you want MACE:
+> `uv sync --extra mace`.
 
-The OMol25 checkpoints are hosted on Hugging Face under the FAIR Chemistry License. They cannot be downloaded anonymously via standard scripts.
+---
 
-1. **Request Access**: Go to the [facebook/OMol25 Hugging Face repository](https://huggingface.co/facebook/OMol25) and request access.
-2. **Download Model**: Once approved, download the specific `.model` checkpoint you require (e.g., `MACE-OMol25.model` or `MACE-omol-0-extra-large-1024.model`).
-3. **Place in this directory**: Move the downloaded file into this folder (`models/mace/`).
-4. **Set Environment Variable**: Export the path to the model so the generator can find it:
-   
-   For standard OMol25:
+## Recommended: MACE-omol-0 (extra large) — automated download
+
+This checkpoint is a **public** asset on the ACEsuit `mace-foundations` GitHub
+release, so it can be fetched with no login. From the repository root:
+
+```bash
+bash tools/install_mace_weights.sh
+```
+
+The script downloads `MACE-omol-0-extra-large-1024.model` (~400 MB) into this
+directory and sets `MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH` in a repo-root `.env`
+file (loaded automatically at runtime via `python-dotenv`). It is idempotent —
+re-running skips the download if the file is already present.
+
+Manual equivalent:
+
+```bash
+curl -fL -o models/mace/MACE-omol-0-extra-large-1024.model \
+  https://github.com/ACEsuit/mace-foundations/releases/download/mace_omol_0/MACE-omol-0-extra-large-1024.model
+export MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH="$(pwd)/models/mace/MACE-omol-0-extra-large-1024.model"
+```
+
+Then:
+
+```bash
+uv sync --extra mace
+oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024
+```
+
+---
+
+## Alternative: MACE-OMol25 (Hugging-Face-gated)
+
+The OMol25 checkpoints are hosted on Hugging Face under the FAIR Chemistry
+License and **cannot** be downloaded anonymously — they require an approved
+access request.
+
+1. **Request access** at the [facebook/OMol25](https://huggingface.co/facebook/OMol25) repository.
+2. **Download** the `.model` checkpoint once approved.
+3. **Place** it in this directory (`models/mace/`).
+4. **Register** the path:
    ```bash
    export MACE_OMOL25_MODEL_PATH="$(pwd)/models/mace/MACE-OMol25.model"
    ```
-   
-   For OMol-0 Extra Large:
-   ```bash
-   export MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH="$(pwd)/models/mace/MACE-omol-0-extra-large-1024.model"
-   ```
-
-You are now ready to run the OIN-SMILES generation tests with the MACE backend!
-To use the extra large model, simply pass `optimizer="mace-omol-0-extra-large-1024"` to the `OIN3DGenerator`.
+   then use `optimizer="mace-omol25"`.
