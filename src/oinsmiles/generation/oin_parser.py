@@ -437,6 +437,7 @@ class OINVector:
     vector: Tuple[float, float, float]
     fragment_idx: int
     atom_in_fragment_idx: int
+    slot: int = -1
     winding: Optional[str] = None
 
 
@@ -501,6 +502,7 @@ class OINParser:
                             vector=tuple(resolved_vec.tolist()),
                             fragment_idx=sa.lig_rank,
                             atom_in_fragment_idx=sa.atom_idx,
+                            slot=sa.slot,
                             winding=sa.winding,
                         )
                     )
@@ -572,6 +574,7 @@ class OINParser:
                                 vector=tuple(resolved_vec.tolist()),
                                 fragment_idx=frag_idx,
                                 atom_in_fragment_idx=atom_in_frag_idx,
+                                slot=slot_idx,
                             )
                         )
                     except ValueError:

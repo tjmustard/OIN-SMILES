@@ -9,7 +9,8 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.0"><img src="https://img.shields.io/badge/release-v0.3.0-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/release-v0.3.3-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
 </p>
@@ -35,17 +36,19 @@ Standard SMILES notation is lossy for transition metal complexes (TMCs): coordin
 
 ## ✨ Features
 
-- **Lossless Round-Tripping**: XYZ → OIN → XYZ with exact isomer preservation.
+- **Lossless Round-Tripping**: XYZ → OIN → XYZ → OIN with exact isomer preservation.
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
-- **Deterministic 3D Generation**: Uses **SCINE Molassembler** as backend — template-based placement for all ligand types, distance geometry (DG) for fallback conformer generation. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
+- **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
 - **P Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
 - **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
 ## ⚡ Installation
 
-This project uses `uv` for dependency management.
+This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management. The
+default install is lightweight — the fast FF + g-xTB path, with **no `torch`**. The
+machine-learning (MACE) optimizer is an opt-in extra.
 
 1. **Install `uv`** (if not already installed):
 
@@ -60,11 +63,35 @@ This project uses `uv` for dependency management.
     cd OIN-SMILES
     ```
 
-3. **Sync dependencies:**
+3. **Install dependencies:**
 
     ```bash
     uv sync
     ```
+
+4. **Install `g-xTB`** (recommended — the default 3D-generation optimizer):
+
+    OIN-SMILES defaults to Grimme Lab's `g-xTB` for fast, accurate structural refinement.
+    ```bash
+    bash tools/install_gxtb.sh
+    ```
+    *Detects your OS/architecture (Linux/macOS) and drops the static binary into
+    `.venv/bin` to keep your system clean. If `xtb` is absent, 3D generation falls
+    back to the force field automatically.*
+
+5. **(Optional) MACE machine-learning optimizer** — highest accuracy:
+
+    ```bash
+    uv sync --extra mace                  # pulls mace-torch + a pinned CUDA 11.8 torch
+    bash tools/install_mace_weights.sh    # downloads the weights + writes .env
+    ```
+    See [`docs/OPTIMIZERS.md`](docs/OPTIMIZERS.md) and
+    [`models/mace/README.md`](models/mace/README.md) for details.
+
+> [!NOTE]
+> The `mace` extra pulls PyTorch with CUDA 11.8 (configured via `tool.uv.index` in
+> `pyproject.toml`). For a CPU-only or different-CUDA build, adjust that index URL
+> before syncing. The default `uv sync` installs neither `torch` nor `mace-torch`.
 
 ## 🚀 Usage
 
@@ -72,10 +99,18 @@ This project uses `uv` for dependency management.
 
 ```bash
 # XYZ → OIN
-oin-smiles xyz2oin complex.xyz
+uv run oin-smiles xyz2oin complex.xyz
 
-# OIN → XYZ (prints XYZ block to stdout)
-oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
+# OIN → XYZ (prints XYZ block to stdout).
+# Default backend is the MetalloGen engine refined with standard g-xTB.
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
+
+# Higher accuracy MACE refinement (needs the `mace` extra + weights; note --extra mace):
+uv run --extra mace oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
+
+# Fast FF-only path (no torch/xtb), or the legacy Molassembler backend:
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --engine legacy
 ```
 
 ### 3D to 1D (XYZ to OIN)
@@ -92,6 +127,10 @@ print(oin)
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 
+# Default engine is "metallogen" refined with standard g-xTB (requires g-xTB binary).
+# Use optimizer="mace-omol-0-extra-large-1024" for higher accuracy MLIP refinement.
+# Use optimizer="ff" for the fast FF-only path, or engine="legacy"
+# for the Molassembler backend (the reference for Zone-A P stereo enforcement).
 generator = OIN3DGenerator()
 result = generator.generate("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
@@ -109,7 +148,25 @@ if result.mol is not None:
     writer.close()
 ```
 
-`generate()` accepts an optional `timeout` (seconds, default 60) passed to the `OIN3DGenerator` constructor.
+### 3D Optimization Workflow
+
+The MetalloGen engine implements a multi-stage optimization pipeline for 1D → 3D generation:
+
+1. **Force Field Relaxation (Default)**: Uses constrained MMFF/UFF to relax the generated conformers into the geometric template. Convergence criteria are controlled by `ff_preset` (`loose`, `default`, `tight`, `very_tight`).
+
+2. **MLIP / Semi-empirical Refinement (Optional)**: Refines the FF-relaxed geometry pool using an advanced optimizer like standard `g-xTB` (default) or MACE (e.g., `mace-omol-0-extra-large-1024`), then energy-ranks the ensemble. The returned conformer is chosen by **coordination-geometry match** to the requested template (e.g. square-planar), with energy breaking ties — so a floppy donor that admits an energetically competitive distorted geometry still yields the correct isomer. Haptic (η) ligands fall back to lowest-energy.
+
+```python
+# Generate an ensemble of 5, pre-optimize with tight FF, and refine with MACE
+generator = OIN3DGenerator(
+    ff_preset="tight",
+    optimizer="mace-omol-0-extra-large-1024",
+    ensemble_size=5,
+    timeout=120
+)
+```
+
+A `MolassemblerTimeoutError` is raised if generation exceeds the `timeout` limit (seconds).
 
 ### OIN v3.7 Inline Format
 
@@ -137,13 +194,7 @@ if result.mol is not None:
 
 **Geometry templates:** `LIN`, `TPL`, `TET`, `SPL`, `SPY`, `TBP`, `OCT`, `PBP`, `TPY`
 
-### Timeout Configuration
 
-```python
-generator = OIN3DGenerator(timeout=120)  # 120-second DG timeout
-```
-
-A `MolassemblerTimeoutError` is raised if generation exceeds the timeout.
 
 ## ✅ Verified Examples
 
@@ -196,7 +247,7 @@ uv run python tests/integration/verify_xyz_to_oin.py [--include-tmqm]
 
 # Full round-trip: XYZ → OIN → XYZ → OIN (RMSD + string identity)
 # Writes XYZ, MOL, SDF and OIN files to --output-dir when provided
-uv run python tests/integration/verify_roundtrip.py [--output-dir /tmp/results]
+uv run python tests/integration/verify_roundtrip.py [--output-dir /tmp/results] [--optimizer <opt>] [--ff-preset <preset>]
 
 # Compare DG strategies (single / ensemble / directed) side-by-side
 uv run python tests/integration/compare_dg_strategies.py [--output-dir /tmp/results]
@@ -212,9 +263,11 @@ All scripts write named output artifacts when `--output-dir` is specified:
 
 ## 🙏 Acknowledgements
 
-- **SCINE Molassembler** — 3D structure generation and distance geometry.
-- **xyz2mol** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
-- **OpenBabel & XTB** — Chemical file handling and geometry optimization.
+- **[SCINE Molassembler](https://github.com/qcscine/molassembler/)** — 3D structure generation and distance geometry.
+- **[MetalloGen](https://github.com/kyunghoonlee777/MetalloGen)** — 3D generation engine and optimization workflows for transition metal complexes.
+- **[MACE](https://github.com/acesuit/mace)** — Fast and accurate Machine Learning Interatomic Potentials (MLIP) for 3D geometry refinement.
+- **[xyz2mol](https://github.com/jensengroup/xyz2mol_tm)** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
+- **[OpenBabel](https://github.com/openbabel/openbabel) & [XTB](https://github.com/grimme-lab/xtb)** — Chemical file handling and semi-empirical geometry optimization.
 
 ## 📄 License
 

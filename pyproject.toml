@@ -1,9 +1,32 @@
 [project]
 name = "oin-smiles"
-version = "0.3.0"
-description = "OIN-SMILES: A Python library for generating OIN-SMILES from molecular structures"
+version = "0.3.4"
+description = "Lossless conversion between 3D transition-metal-complex structures and 1D Open Isomer Notation (OIN) SMILES."
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Thomas J. L. Mustard Ph.D.", email = "tjmustard@mustardfamily.com" }]
+keywords = [
+    "chemistry",
+    "cheminformatics",
+    "SMILES",
+    "transition metal complexes",
+    "coordination chemistry",
+    "3D structure generation",
+    "Open Isomer Notation",
+    "stereochemistry",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
 dependencies = [
     "ase>=3.26.0",
     "mendeleev>=1.1.0",
@@ -11,17 +34,43 @@ dependencies = [
     "numba>=0.62.1",
     "numpy>=2.2.6",
     "openbabel-wheel>=3.1.1.22",
+    "pulp>=3.3.2",
+    "python-dotenv>=1.2.2",
     "rdkit>=2025.9.3",
     "scine-molassembler>=2.0.0",
     "scipy>=1.15.3",
-    "xtb>=22.1",
 ]
 
 [project.optional-dependencies]
 yaml = ["pyyaml>=6.0"]
+# MACE machine-learning optimizer (opt-in). Pulls a pinned CUDA-11.8 torch; the
+# default install keeps the fast FF + g-xTB path with no torch/mace dependency.
+mace = ["mace-torch>=0.3.16", "torch==2.3.1"]
+
+[project.urls]
+Homepage = "https://github.com/tjmustard/OIN-SMILES"
+Repository = "https://github.com/tjmustard/OIN-SMILES"
+Changelog = "https://github.com/tjmustard/OIN-SMILES/blob/main/CHANGELOG.md"
+Issues = "https://github.com/tjmustard/OIN-SMILES/issues"
+
+[dependency-groups]
+# Development-only tooling (not shipped in the wheel). Pinned so local runs match CI.
+dev = [
+    "pytest>=9.0.3",
+    "pyyaml>=6.0.3",
+    "ruff==0.15.20",
+]
 
 [project.scripts]
 oin-smiles = "oinsmiles.cli:main"
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/oinsmiles"]
@@ -45,6 +94,10 @@ ignore = ["D100", "D104"]
 # tests/** above, plus version-guard imports (import sys; check sys.version_info)
 # that must run before other imports, which trips E402.
 ".agents/scripts/**" = ["D", "E402", "E501"]
+# Dev/diagnostic scripts (not part of the public API): same rationale as tests/**
+# -- standalone scripts, docstrings not required, long diagnostic/data lines.
+# Pyflakes (F) rules still apply, so real bugs are still caught.
+"tools/**" = ["D", "E402", "E501"]
 # Vendored xyz2mol algorithm (Jensen et al.); keep upstream docstring style.
 "src/oinsmiles/utils/xyz2mol_local.py" = ["D"]
 

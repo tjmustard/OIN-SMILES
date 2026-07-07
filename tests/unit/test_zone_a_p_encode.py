@@ -32,8 +32,8 @@ _DIPAMP_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Cl2.xyz")
 _BDPP_XYZ = os.path.join(_FIXTURES_DIR, "PdCl2-RR-BDPP.xyz")
 _BDNN_XYZ = os.path.join(_FIXTURES_DIR, "PdCl2-RR-BDNN.xyz")
 _BINAP_XYZ = os.path.join(_FIXTURES_DIR, "PdCl2-R-BINAP.xyz")
-_CISPLATIN_XYZ = os.path.join(_FIXTURES_DIR, "cisplatin.xyz")
-_FERROCENE_XYZ = os.path.join(_FIXTURES_DIR, "ferrocene.xyz")
+_CISPLATIN_XYZ = os.path.join(_FIXTURES_DIR, "CisPlatin.xyz")
+_FERROCENE_XYZ = os.path.join(_FIXTURES_DIR, "Ferrocene.xyz")
 
 _BDPP_EXPECTED_OIN = (
     "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
