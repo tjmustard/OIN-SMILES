@@ -12,11 +12,8 @@ class ASEOptimizer:
         self.max_steps = max_steps
         
         if self.method == "xtb":
-            try:
-                from xtb.ase.calculator import XTB
-                self._calc_cls = XTB
-            except ImportError:
-                raise ImportError("xtb-python is not installed. Please install it to use xTB.")
+            # We use a subprocess wrapper for g-xTB now, so no Python package imports are needed here.
+            pass
         elif self.method in ("mace-omol25", "mace-omol-0-extra-large-1024"):
             try:
                 from mace.calculators import MACECalculator
@@ -61,13 +58,73 @@ class ASEOptimizer:
         atoms.set_initial_magnetic_moments(magmoms)
         
         if self.method == "xtb":
+            import os
+            import subprocess
+            import tempfile
+            from ase.io import write, read
+            
+            # Check if xtb is in PATH
+            import shutil
+            xtb_path = shutil.which("xtb")
+            if not xtb_path:
+                print("Warning: 'xtb' binary not found in PATH. Please install g-xTB and add it to your PATH. Falling back to FF.")
+                return False, 0.0, mol
+            
             try:
-                calc = self._calc_cls(method="GFN2-xTB")
-                atoms.calc = calc
-                opt = LBFGS(atoms, logfile=None)
-                opt.run(fmax=self.fmax, steps=self.max_steps)
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    input_xyz = os.path.join(tmpdir, "struc.xyz")
+                    # Write the ASE atoms to XYZ
+                    write(input_xyz, atoms)
+                    
+                    # Create charge and uhf files if necessary
+                    if charge != 0:
+                        with open(os.path.join(tmpdir, ".CHRG"), "w") as f:
+                            f.write(str(charge) + "\n")
+                    if uhf > 0:
+                        with open(os.path.join(tmpdir, ".UHF"), "w") as f:
+                            f.write(str(uhf) + "\n")
+                    
+                    # Run g-xTB optimization
+                    # The binary supports --gxtb --opt
+                    cmd = ["xtb", "struc.xyz", "--gxtb", "--opt"]
+                    result = subprocess.run(
+                        cmd,
+                        cwd=tmpdir,
+                        capture_output=True,
+                        text=True,
+                        check=False
+                    )
+                    
+                    if result.returncode != 0:
+                        print(f"Warning: xTB failed with return code {result.returncode}.")
+                        print(f"Stdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+                        return False, 0.0, mol
+                        
+                    # Parse the optimized XYZ file
+                    opt_xyz = os.path.join(tmpdir, "xtbopt.xyz")
+                    if not os.path.exists(opt_xyz):
+                        print(f"Warning: xTB finished but '{opt_xyz}' was not generated.")
+                        return False, 0.0, mol
+                    
+                    opt_atoms = read(opt_xyz)
+                    atoms.set_positions(opt_atoms.get_positions())
+                    
+                    # Try to parse the final energy from xtbopt.log or stdout
+                    energy = 0.0
+                    for line in reversed(result.stdout.splitlines()):
+                        if "TOTAL ENERGY" in line:
+                            parts = line.split()
+                            try:
+                                # xtb outputs energy in Eh (Hartrees)
+                                energy_eh = float(parts[-3])
+                                # Convert Hartree to eV
+                                energy = energy_eh * 27.211386245988
+                                break
+                            except (ValueError, IndexError):
+                                pass
+                    
             except Exception as e:
-                print(f"Warning: Optimizer xTB failed. Falling back to FF. Details: {e}")
+                print(f"Warning: Optimizer xTB wrapper failed. Falling back to FF. Details: {e}")
                 return False, 0.0, mol
                 
         elif self.method in ("mace-omol25", "mace-omol-0-extra-large-1024"):

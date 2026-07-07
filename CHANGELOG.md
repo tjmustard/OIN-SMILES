@@ -8,13 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.3.3] - 2026-07-06
 
 ### Changed
-- **Default generation engine → MetalloGen + MACE.** `OIN3DGenerator.__init__` now defaults to `engine="metallogen"` and `optimizer="mace-omol-0-extra-large-1024"` (was `engine="legacy"`, `optimizer=None`), and `cli.py oin2xyz` rides that default. The MetalloGen backend is the better-validated generator (full MACE round-trip 25/25; eta-winding rac/meso, BDNN square-plane, and TiCat eta TET/TPY all fixed). The legacy SCINE Molassembler backend remains available via `engine="legacy"` and stays the reference for Zone-A P stereo enforcement. The MACE default requires `mace-torch` + model weights and **fails loudly** if they are absent (deliberate — no silent FF fallback); use `optimizer="ff"` without them.
+- **Default generation engine → MetalloGen; default optimizer → g-xTB.** `OIN3DGenerator.__init__` now defaults to `engine="metallogen"` and `optimizer="xtb"` (was `engine="legacy"`, `optimizer=None`), and `cli.py oin2xyz` rides that default. The MetalloGen backend is the better-validated generator (full MACE round-trip 25/25; eta-winding rac/meso, BDNN square-plane, and TiCat eta TET/TPY all fixed). g-xTB is fast and, unlike MACE, **degrades gracefully to FF** when the `xtb` binary is not on `PATH` (so the default never hard-fails). MACE (`mace-omol-0-extra-large-1024` / `mace-omol25`, higher accuracy, requires `mace-torch` + weights and fails loudly if absent) and the legacy SCINE Molassembler backend (via `engine="legacy"`, still the reference for Zone-A P stereo enforcement) remain opt-in.
+- **`verify_roundtrip.py --optimizer` default → `xtb`** (was MACE) for fast iteration; pass `mace-omol-0-extra-large-1024` for the accurate sign-off.
 
 ### Added
-- **`oin-smiles oin2xyz --engine {metallogen,legacy}` and `--optimizer`** (default `mace-omol-0-extra-large-1024`; accepts `ff`/`none`/`xtb`), giving a fast/no-torch or legacy path from the CLI without changing the default.
+- **g-xTB optimizer** (`generator3d/ml_optimizer.py`): a subprocess wrapper around the `xtb` binary (`xtb <struc> --gxtb --opt`) selected via `optimizer="xtb"`. Fast semi-empirical refinement of the FF pool; warns and falls back to FF if the binary is missing. Helper `tools/install_gxtb.sh` installs the binary; `tests/integration/run_optimization_grid.py` benchmarks FF/g-xTB/MACE across the fixtures.
+- **`oin-smiles oin2xyz --engine {metallogen,legacy}` and `--optimizer`** (default `xtb`; accepts `ff`/`none`/`mace-omol-*`), giving a fast, no-torch, or legacy path from the CLI.
 
 ### Fixed
-- **Legacy-specific real-generation unit tests pinned to `engine="legacy"`** (`test_winding_inertness.py`, `test_zone_a_p_genenforce.py`, `test_stereo_roundtrip_diagnostics.py`) so the default flip keeps the fast unit suite deterministic and MACE-free while those Molassembler-only behaviors stay under test.
+- **Legacy-specific real-generation unit tests pinned to `engine="legacy"`** (`test_winding_inertness.py`, `test_zone_a_p_genenforce.py`, `test_stereo_roundtrip_diagnostics.py`) so the default flip keeps the fast unit suite deterministic and heavy-optimizer-free while those Molassembler-only behaviors stay under test.
 
 ## [0.3.2] - 2026-07-06
 

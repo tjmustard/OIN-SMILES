@@ -38,7 +38,7 @@ Standard SMILES notation is lossy for transition metal complexes (TMCs): coordin
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ → OIN with exact isomer preservation.
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
-- **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, optional MACE/xTB refinement with coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
+- **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
 - **P Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
 - **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation.
 - **CLI**: `oin-smiles` command for one-line conversions.
@@ -60,11 +60,17 @@ This project uses `uv` for dependency management.
     cd OIN-SMILES
     ```
 
-3. **Sync dependencies:**
-
     ```bash
     uv sync
     ```
+
+4. **Install `g-xTB`** (Required for standard 3D generation):
+
+    OIN-SMILES defaults to using Grimme Lab's `g-xTB` for fast and accurate structural refinement.
+    ```bash
+    bash tools/install_gxtb.sh
+    ```
+    *This script automatically detects your OS/Architecture (Linux/macOS) and extracts the static binary directly into your `.venv/bin` folder to keep your system clean.*
 
 > [!NOTE]
 > `uv sync` is configured in `pyproject.toml` to automatically pull PyTorch with CUDA 11.8 support. If you require a CPU-only build or a different CUDA version, modify the `tool.uv.index` URL in `pyproject.toml` before syncing.
@@ -78,10 +84,13 @@ This project uses `uv` for dependency management.
 uv run oin-smiles xyz2oin complex.xyz
 
 # OIN → XYZ (prints XYZ block to stdout).
-# Default backend is the MetalloGen engine refined with MACE (needs mace-torch + weights).
+# Default backend is the MetalloGen engine refined with standard g-xTB.
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 
-# Fast FF-only path (no torch), or the legacy Molassembler backend:
+# Higher accuracy MACE refinement (needs mace-torch + weights):
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
+
+# Fast FF-only path (no torch/xtb), or the legacy Molassembler backend:
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --engine legacy
 ```
@@ -100,8 +109,9 @@ print(oin)
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 
-# Default engine is "metallogen" refined with MACE (needs mace-torch + weights and fails
-# loudly without them). Use optimizer="ff" for the fast FF-only path, or engine="legacy"
+# Default engine is "metallogen" refined with standard g-xTB (requires g-xTB binary).
+# Use optimizer="mace-omol-0-extra-large-1024" for higher accuracy MLIP refinement.
+# Use optimizer="ff" for the fast FF-only path, or engine="legacy"
 # for the Molassembler backend (the reference for Zone-A P stereo enforcement).
 generator = OIN3DGenerator()
 result = generator.generate("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
@@ -123,8 +133,10 @@ if result.mol is not None:
 ### 3D Optimization Workflow
 
 The MetalloGen engine implements a multi-stage optimization pipeline for 1D → 3D generation:
+
 1. **Force Field Relaxation (Default)**: Uses constrained MMFF/UFF to relax the generated conformers into the geometric template. Convergence criteria are controlled by `ff_preset` (`loose`, `default`, `tight`, `very_tight`).
-2. **MLIP / Semi-empirical Refinement (Optional)**: Refines the FF-relaxed geometry pool using an advanced optimizer like MACE (e.g., `mace-omol-0-extra-large-1024`) or GFN2-xTB, then energy-ranks the ensemble. The returned conformer is chosen by **coordination-geometry match** to the requested template (e.g. square-planar), with energy breaking ties — so a floppy donor that admits an energetically competitive distorted geometry still yields the correct isomer. Haptic (η) ligands fall back to lowest-energy.
+
+2. **MLIP / Semi-empirical Refinement (Optional)**: Refines the FF-relaxed geometry pool using an advanced optimizer like standard `g-xTB` (default) or MACE (e.g., `mace-omol-0-extra-large-1024`), then energy-ranks the ensemble. The returned conformer is chosen by **coordination-geometry match** to the requested template (e.g. square-planar), with energy breaking ties — so a floppy donor that admits an energetically competitive distorted geometry still yields the correct isomer. Haptic (η) ligands fall back to lowest-energy.
 
 ```python
 # Generate an ensemble of 5, pre-optimize with tight FF, and refine with MACE

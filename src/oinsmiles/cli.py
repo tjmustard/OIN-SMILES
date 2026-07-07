@@ -88,11 +88,12 @@ def main() -> None:
     p_oin2xyz.add_argument(
         "--optimizer",
         type=str,
-        default="mace-omol-0-extra-large-1024",
+        default="xtb",
         help=(
             "Geometry optimizer for the metallogen engine (default: "
-            "mace-omol-0-extra-large-1024, needs mace-torch + weights). Use 'ff' for the "
-            "fast FF-only path, or 'xtb' for GFN2-xTB. Ignored for --engine legacy."
+            "xtb, standard g-xTB). Use 'mace-omol-0-extra-large-1024' or "
+            "'mace-omol25' for higher accuracy, or 'ff' for the fast FF-only path. "
+            "Ignored for --engine legacy."
         ),
     )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)
