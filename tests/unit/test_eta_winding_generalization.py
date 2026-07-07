@@ -44,10 +44,7 @@ class TestSignedCirculationHapticity(unittest.TestCase):
     def test_eta5_ring_winding_is_order_sensitive(self):
         """An eta-5 ring has a definite, traversal-direction-dependent sign."""
         ring = np.array(
-            [
-                [np.cos(t), np.sin(t), 1.0]
-                for t in np.linspace(0.0, 2.0 * np.pi, 5, endpoint=False)
-            ]
+            [[np.cos(t), np.sin(t), 1.0] for t in np.linspace(0.0, 2.0 * np.pi, 5, endpoint=False)]
         )
         forward = signed_circulation(ring, 0, self.AXIS)
         reverse = signed_circulation(ring[::-1].copy(), 0, self.AXIS)
@@ -58,10 +55,7 @@ class TestSignedCirculationHapticity(unittest.TestCase):
         """Flipping the outward axis (which face points at the metal) flips the
         winding -- the property winding exists to encode."""
         ring = np.array(
-            [
-                [np.cos(t), np.sin(t), 1.0]
-                for t in np.linspace(0.0, 2.0 * np.pi, 5, endpoint=False)
-            ]
+            [[np.cos(t), np.sin(t), 1.0] for t in np.linspace(0.0, 2.0 * np.pi, 5, endpoint=False)]
         )
         up = signed_circulation(ring, 0, self.AXIS)
         down = signed_circulation(ring, 0, -self.AXIS)
@@ -77,9 +71,7 @@ class TestEtaWindingMultiset(unittest.TestCase):
         self.assertEqual(_eta_winding_multiset("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"), [])
 
     def test_scales_to_three_and_four_eta_rings(self):
-        self.assertEqual(
-            _eta_winding_multiset("[M_OCT].a{0>}.b{1<}.c{2>}.X{3}"), ["<", ">", ">"]
-        )
+        self.assertEqual(_eta_winding_multiset("[M_OCT].a{0>}.b{1<}.c{2>}.X{3}"), ["<", ">", ">"])
         self.assertEqual(
             _eta_winding_multiset("[M].a{0<}.b{1<}.c{2>}.d{3>}"),
             ["<", "<", ">", ">"],

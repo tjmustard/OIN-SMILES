@@ -932,11 +932,12 @@ def classify_coordination_geometry(donor_vectors):
 
 
 def coordination_geometry_fit(donor_vectors, geo_code):
-    """RMSD of the best assignment of ``donor_vectors`` to the ideal template for
-    ``geo_code`` (from ``TEMPLATES``), or ``float('inf')`` if the code is unknown
-    or the template has fewer slots than there are donors.
+    """RMSD of the best assignment of ``donor_vectors`` to a geometry's ideal template.
 
-    Lower is a tighter fit to the ideal geometry. Classification alone only tells
+    Uses the template for ``geo_code`` (from ``TEMPLATES``); returns
+    ``float('inf')`` if the code is unknown or the template has fewer slots than
+    there are donors. Lower is a tighter fit to the ideal geometry. Classification
+    alone only tells
     you which template a coordination sphere is *closest* to -- a heavily puckered
     square-plane can still be labelled ``"SPL"`` because it beats ``"TET"``/``"TPY"``
     -- so this score lets callers pick the *cleanest* conformer of a target

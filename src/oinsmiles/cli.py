@@ -39,9 +39,7 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     )
 
     try:
-        result = OIN3DGenerator(
-            engine=args.engine, optimizer=args.optimizer
-        ).generate(args.oin)
+        result = OIN3DGenerator(engine=args.engine, optimizer=args.optimizer).generate(args.oin)
     except MolassemblerTimeoutError:
         print("Error: Molassembler timed out", file=sys.stderr)
         sys.exit(2)

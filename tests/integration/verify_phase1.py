@@ -3,10 +3,10 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
+import argparse
+
 from oinsmiles.generation.engine import OIN3DGenerator
 
-
-import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="Verify Phase 1: Rigid MVP")
@@ -25,9 +25,7 @@ def main():
     oin = "[Pt].[Cl].[Cl].N.N |g:SPL|w:1.0:0;2.0:2;3.0:3;4.0:1|"
 
     generator = OIN3DGenerator(
-        optimizer=args.optimizer, 
-        ff_preset=args.ff_preset,
-        ensemble_size=args.ensemble_size
+        optimizer=args.optimizer, ff_preset=args.ff_preset, ensemble_size=args.ensemble_size
     )
     try:
         structure = generator.generate(oin)

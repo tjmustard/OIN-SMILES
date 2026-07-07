@@ -1,33 +1,47 @@
-import numpy as np
 import copy
 
-from . import embed
+import numpy as np
+
+from . import chem, embed, process
 from . import globalvars as gv
-from . import chem, process, ligand
+from . import ligand as ligand_module
+
 
 class Geometry:
-    
+    """Geometry."""
+
     def __init__(self, geometry_name):
-        
-        self.geometry_name = geometry_name # str
-        self.direction_vector = gv.known_geometries_vector_dict[geometry_name] if geometry_name in gv.known_geometries_vector_dict.keys() else []
-        self.permutations = gv.known_geometries_permutation_dict[geometry_name] if geometry_name in gv.known_geometries_permutation_dict.keys() else []
- 
+        """Initialize the Geometry."""
+        self.geometry_name = geometry_name  # str
+        self.direction_vector = (
+            gv.known_geometries_vector_dict[geometry_name]
+            if geometry_name in gv.known_geometries_vector_dict.keys()
+            else []
+        )
+        self.permutations = (
+            gv.known_geometries_permutation_dict[geometry_name]
+            if geometry_name in gv.known_geometries_permutation_dict.keys()
+            else []
+        )
+
     def get_steric_number(self):
+        """Return the steric number."""
         return len(self.direction_vector)
 
+
 class MetalComplex:
+    """Metal complex."""
 
     def __init__(self, geometry_name, center_atom, ligands, chg, multiplicity):
+        """Initialize the Metal complex."""
+        self.geometry_type = Geometry(geometry_name)  # Geometry Object
+        self.center_atom = center_atom  # chem.Atom
+        self.ligands = ligands  # [Ligand Object]
 
-        self.geometry_type = Geometry(geometry_name) # Geometry Object
-        self.center_atom = center_atom # chem.Atom
-        self.ligands = ligands # [Ligand Object]
-        
-        self.atom_indices_for_each_ligand = [] # [[int]]
-        self.metal_index = None # int
-        self.adj_matrix = None # np.array
-        self.bo_matrix = None # np.array
+        self.atom_indices_for_each_ligand = []  # [[int]]
+        self.metal_index = None  # int
+        self.adj_matrix = None  # np.array
+        self.bo_matrix = None  # np.array
         self.is_actinide = False
 
         num_atom = 0
@@ -42,6 +56,7 @@ class MetalComplex:
         self.name = None
 
     def get_atom_indices_for_each_ligand(self):
+        """Return the atom indices for each ligand."""
         if len(self.atom_indices_for_each_ligand) > 0:
             return self.atom_indices_for_each_ligand
         else:
@@ -50,13 +65,14 @@ class MetalComplex:
             n = 1
             for ligand in ligands:
                 m = len(ligand.molecule.atom_list)
-                atom_indices = [i for i in range(n,n+m)]
+                atom_indices = [i for i in range(n, n + m)]
                 atom_indices_for_each_ligand.append(atom_indices)
                 n += m
             self.atom_indices_for_each_ligand = atom_indices_for_each_ligand
             return atom_indices_for_each_ligand
-            
+
     def get_binding_groups(self):
+        """Return the binding groups."""
         ligands = self.ligands
         atom_indices_for_each_ligand = self.get_atom_indices_for_each_ligand()
         steric_number = self.geometry_type.get_steric_number()
@@ -69,13 +85,16 @@ class MetalComplex:
             for binding_info in binding_infos:
                 binding_indices, binding_site = binding_info
                 if binding_site is None:
-                    print ("Coordination Information is not determined !!!")
+                    print("Coordination Information is not determined !!!")
                     return []
-                binding_groups[binding_site-1] = [atom_indices[index] for index in binding_indices]
+                binding_groups[binding_site - 1] = [
+                    atom_indices[index] for index in binding_indices
+                ]
 
         return binding_groups
-            
+
     def get_adj_matrix(self):
+        """Return the adj matrix."""
         metal_index = self.metal_index
         ligands = self.ligands
         atom_indices_for_each_ligand = self.get_atom_indices_for_each_ligand()
@@ -84,9 +103,9 @@ class MetalComplex:
         n = 1
         for ligand in ligands:
             n += len(ligand.molecule.atom_list)
-        
-        adj_matrix = np.zeros((n,n))      
-        
+
+        adj_matrix = np.zeros((n, n))
+
         for i in range(m):
             ligand = ligands[i]
             atom_indices = atom_indices_for_each_ligand[i]
@@ -97,7 +116,7 @@ class MetalComplex:
                     end = atom_indices[k]
                     adj_matrix[start][end] = mol_adj[j][k]
                     adj_matrix[end][start] = mol_adj[k][j]
-        binding_groups = self.get_binding_groups()   
+        binding_groups = self.get_binding_groups()
         for group in binding_groups:
             for i in group:
                 adj_matrix[metal_index][i] = 1
@@ -105,88 +124,93 @@ class MetalComplex:
         return adj_matrix
 
     def get_atom_list(self):
+        """Return the atom list."""
         metal_index = self.metal_index
         ligands = self.ligands
         atom_indices_for_each_ligand = self.get_atom_indices_for_each_ligand()
-        
+
         n = 1
         for ligand in ligands:
             n += len(ligand.molecule.atom_list)
-        
+
         atom_list = [None] * n
         atom_list[metal_index] = self.center_atom.copy()
-        
+
         for i in range(len(ligands)):
             ligand = ligands[i]
             atom_indices = atom_indices_for_each_ligand[i]
             ligand_atom_list = ligand.molecule.atom_list
             for j in range(len(ligand_atom_list)):
                 atom_list[atom_indices[j]] = ligand_atom_list[j].copy()
-                
+
         return atom_list
 
     def get_molecule(self):
+        """Return the molecule."""
         molecule = chem.Molecule()
         chg = self.chg
         mult = self.multiplicity
-        
+
         atom_list = self.get_atom_list()
         adj_matrix = self.get_adj_matrix()
-                
+
         molecule.atom_list = atom_list
         molecule.atom_feature = dict()
         molecule.adj_matrix = adj_matrix
         molecule.chg = chg
         molecule.multiplicity = mult
-        if hasattr(self, 'energy'):
+        if hasattr(self, "energy"):
             molecule.energy = self.energy
-        
+
         return molecule
 
     def get_position(self):
+        """Return the position."""
         atom_list = self.get_atom_list()
         positions = [[atom.x, atom.y, atom.z] for atom in atom_list]
         return np.array(positions)
-    
-    def set_position(self,positions):
-        #CAUTION: positions should be in the order of atom_list
+
+    def set_position(self, positions):
+        # CAUTION: positions should be in the order of atom_list
+        """Set the position."""
         center_atom = self.center_atom
-        metal_index = self.metal_index
         ligands = self.ligands
         atom_indices_for_each_ligand = self.get_atom_indices_for_each_ligand()
         atom_list = self.get_atom_list()
         n = len(atom_list)
         if len(positions) != n:
-            print ("Number of atoms does not match ...")
+            print("Number of atoms does not match ...")
             return
-        
-        process.locate_atom(center_atom,positions[self.metal_index])
+
+        process.locate_atom(center_atom, positions[self.metal_index])
         for i, atom_indices in enumerate(atom_indices_for_each_ligand):
             ligand = ligands[i]
             for j in range(len(atom_indices)):
-                process.locate_atom(ligand.molecule.atom_list[j],positions[atom_indices[j]])
+                process.locate_atom(ligand.molecule.atom_list[j], positions[atom_indices[j]])
 
     def copy(self):
+        """Copy."""
         geometry_name = self.geometry_type.geometry_name
         center_atom = self.center_atom.copy()
         ligands = [ligand.copy() for ligand in self.ligands]
         chg = self.chg
         multiplicity = self.multiplicity
         atom_indices_for_each_ligand = copy.deepcopy(self.atom_indices_for_each_ligand)
-        
-        new_complex = MetalComplex(geometry_name,center_atom,ligands,chg,multiplicity)
+
+        new_complex = MetalComplex(geometry_name, center_atom, ligands, chg, multiplicity)
         new_complex.metal_index = self.metal_index
         new_complex.atom_indices_for_each_ligand = atom_indices_for_each_ligand
         new_complex.name = self.name
-        
+
         return new_complex
-        
-    def get_stereoisomers(self):  
+
+    def get_stereoisomers(self):
+        """Return the stereoisomers."""
         geometry_type = self.geometry_type
         permutations = geometry_type.permutations
         isomers = []
         if len(permutations) == 0:
-            print ("Not supported geometry type ...")
+            print("Not supported geometry type ...")
             return isomers
         else:
             for permutation in permutations:
@@ -198,26 +222,25 @@ class MetalComplex:
                         ligand.binding_infos[j] = (binding_info[0], permutation[i])
                 isomers.append(isomer)
         return isomers
-            
-    def get_embedding(self,num_conformer = 10, d_criteria = 0.5, align=True):
+
+    def get_embedding(self, num_conformer=10, d_criteria=0.5, align=True):
+        """Return the embedding."""
         options = [0, 1]
-        min_d = -0.1
-        max_d = 0.4
-        num_conf_per_option = int((num_conformer+1)/2)
+        num_conf_per_option = int((num_conformer + 1) / 2)
         if num_conf_per_option == 0:
             num_conf_per_option = 1
         if num_conf_per_option > 1:
-            scale_size = min(0.1,0.4/(num_conf_per_option-1))
-            start = max(0.8,1 - scale_size * (num_conf_per_option-1)/2)
-            end = min(1.2,1 + scale_size * (num_conf_per_option-1)/2)
-            scales = np.arange(start,end,scale_size)
+            scale_size = min(0.1, 0.4 / (num_conf_per_option - 1))
+            start = max(0.8, 1 - scale_size * (num_conf_per_option - 1) / 2)
+            end = min(1.2, 1 + scale_size * (num_conf_per_option - 1) / 2)
+            scales = np.arange(start, end, scale_size)
         else:
             scales = np.array([1.0])
         candidate_positions = []
         for option in options:
             for scale in scales:
                 if True:
-                    positions = embed.get_embedding(self,scale,option,align=align)
+                    positions = embed.get_embedding(self, scale, option, align=align)
                     if positions is not None:
                         candidate_positions.append(positions)
                 else:
@@ -226,13 +249,14 @@ class MetalComplex:
             if len(candidate_positions) == num_conformer:
                 break
         if len(candidate_positions) == 0:
-            print ("No valid embedding found ...")
+            print("No valid embedding found ...")
             exit()
         return candidate_positions
 
     def print_coordinate_list(self):
+        """Print the coordinate list."""
         atom_list = self.get_atom_list()
-        n = len(atom_list)
+        len(atom_list)
         for atom in atom_list:
             element = atom.get_element()
             coordinate = atom.get_coordinate()
@@ -243,17 +267,15 @@ class MetalComplex:
         print()
 
     def get_distances_from_center(self):
-        """
-        get the distances of all atoms from the center atom
-        """
+        """Get the distances of all atoms from the center atom."""
         metal_index = self.metal_index
         if metal_index is None:
-            print ("Metal index is not determined ...")
+            print("Metal index is not determined ...")
             return []
         adj_matrix = self.get_adj_matrix()
         neighbor_list = [-1] * len(adj_matrix)
         atom_set = set([metal_index])
-        neighbor_list[metal_index] = 0 
+        neighbor_list[metal_index] = 0
         distance = 1
         while len(atom_set) > 0:
             next_set = set()
@@ -266,7 +288,9 @@ class MetalComplex:
             distance += 1
         return neighbor_list
 
+
 def replace_actinide(metal_complex):
+    """Replace actinide."""
     metal_atom = metal_complex.center_atom
     metal_atom = metal_atom.get_element().lower().capitalize()
     if metal_atom in gv.actinide_metal:
@@ -275,7 +299,9 @@ def replace_actinide(metal_complex):
         corresponding_lanthanide = gv.lanthanide_metal[index]
         metal_complex.center_atom.set_element(corresponding_lanthanide)
 
-def group_binding_sites(binding_indices,adj_matrix):
+
+def group_binding_sites(binding_indices, adj_matrix):
+    """Group binding sites."""
     all_set = set(binding_indices)
     group_list = []
     index = binding_indices[0]
@@ -298,16 +324,18 @@ def group_binding_sites(binding_indices,adj_matrix):
             break
     return group_list
 
-def construct_metal_complex(z_list,adj_matrix,geometry_name=None):
+
+def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
+    """Construct metal complex."""
     metal_index = None
-    for i,atomic_num in enumerate(z_list):
+    for i, atomic_num in enumerate(z_list):
         if atomic_num in gv.metal_z_list:
             metal_index = i
             break
     if metal_index is None:
-        print('Metal was not found !!!')
+        print("Metal was not found !!!")
         exit()
-        
+
     broken_adj_matrix = np.copy(adj_matrix)
     ligands = []
     binding_sites = []
@@ -320,10 +348,10 @@ def construct_metal_complex(z_list,adj_matrix,geometry_name=None):
             binding_sites.append(i)
             broken_adj_matrix[metal_index][i] = broken_adj_matrix[i][metal_index] = 0.0
 
-    groups = process.group_molecules(broken_adj_matrix) 
+    groups = process.group_molecules(broken_adj_matrix)
     order = 0
     atom_indices_for_each_ligand = []
-    
+
     for group in groups:
         if metal_index in group:
             continue
@@ -332,21 +360,21 @@ def construct_metal_complex(z_list,adj_matrix,geometry_name=None):
         ligand_atom_list = [chem.Atom(z_list[i]) for i in group]
         chg = 0
         if len(group) > 1:
-            reduce_function = {group[i]:i for i in range(len(group))}
-            index_function = np.ix_(group,group)
+            reduce_function = {group[i]: i for i in range(len(group))}
+            index_function = np.ix_(group, group)
             ligand_adj_matrix = adj_matrix[index_function]
             # Find binding indices for given ligand
             binding_indices = [i for i in group if i in binding_sites]
-            index_function = np.ix_(binding_indices,binding_indices)
+            index_function = np.ix_(binding_indices, binding_indices)
             sub_adj_matrix = adj_matrix[index_function]
             ligand_binding_groups = process.group_molecules(sub_adj_matrix)
             chg = -len(ligand_binding_groups)
             order += len(ligand_binding_groups)
             binding_indices = [reduce_function[i] for i in binding_indices]
-            binding_indices = group_binding_sites(binding_indices,ligand_adj_matrix)
+            binding_indices = group_binding_sites(binding_indices, ligand_adj_matrix)
         else:
             # Single atom binding ligand ...
-            ligand_adj_matrix = np.zeros((1,1))
+            ligand_adj_matrix = np.zeros((1, 1))
             chg = -1
             binding_indices = [[0]]
             order += 1
@@ -358,63 +386,62 @@ def construct_metal_complex(z_list,adj_matrix,geometry_name=None):
         ligand_molecule.adj_matrix = ligand_adj_matrix
         ligand_molecule.chg = chg
         ligand_molecule.multiplicity = 1
-        
+
         chg_list, bo_matrix = process.get_chg_and_bo(ligand_molecule, ligand_molecule.chg)
-        
-        ligand_molecule.set_atom_feature(chg_list, 'chg')
+
+        ligand_molecule.set_atom_feature(chg_list, "chg")
         ligand_molecule.chg_list = chg_list
         ligand_molecule.bo_matrix = bo_matrix
-        
+
         binding_infos = [[i, None] for i in binding_indices]
 
-        ligands.append(ligand.Ligand(ligand_molecule,binding_infos))
+        ligands.append(ligand_module.Ligand(ligand_molecule, binding_infos))
 
     center_atom = chem.Atom(z_list[metal_index])
-    
+
     chg = None
     multiplicity = None
     metal_complex = None
-    
+
     if geometry_name is None:
-        print('Geometry not specified')
+        print("Geometry not specified")
         exit()
 
-    metal_complex = MetalComplex(geometry_name,center_atom,ligands,chg,multiplicity)
+    metal_complex = MetalComplex(geometry_name, center_atom, ligands, chg, multiplicity)
     metal_complex.metal_index = metal_index
     metal_complex.atom_indices_for_each_ligand = atom_indices_for_each_ligand
 
     return metal_complex
 
 
-    
 def get_om_from_modified_smiles(smiles):
+    """Return the om from modified smiles."""
     from rdkit import Chem
+
     from . import ligand
-    
-    smiles_list = smiles.split('|')
-    
+
+    smiles_list = smiles.split("|")
+
     n = len(smiles_list)
     metal_atom = Chem.MolFromSmiles(smiles_list[0])
     metal_chg = Chem.GetFormalCharge(metal_atom)
     metal_atom = chem.Atom(metal_atom.GetAtomWithIdx(0).GetSymbol())
     z_sum = metal_atom.get_atomic_number()
-    ligands = [ligand.get_ligand_from_smiles(smiles_list[i]) for i in range(1,n-1)]
-    
-    ligand_chg = sum([l.molecule.get_chg() for l in ligands])
-    z_sum += sum([np.sum(l.molecule.get_z_list()) for l in ligands])
-    
+    ligands = [ligand.get_ligand_from_smiles(smiles_list[i]) for i in range(1, n - 1)]
+
+    ligand_chg = sum([lig.molecule.get_chg() for lig in ligands])
+    z_sum += sum([np.sum(lig.molecule.get_z_list()) for lig in ligands])
+
     chg = ligand_chg + metal_chg
     geometry_name = smiles_list[-1]
     multiplicity = (z_sum - chg) % 2 + 1
-     
-    metal_complex = MetalComplex(geometry_name,metal_atom,ligands,chg,multiplicity)
+
+    metal_complex = MetalComplex(geometry_name, metal_atom, ligands, chg, multiplicity)
     metal_complex.metal_index = 0
     metal_complex.multiplicity = multiplicity
     replace_actinide(metal_complex)
 
     return metal_complex
-
-
 
 
 if __name__ == "__main__":

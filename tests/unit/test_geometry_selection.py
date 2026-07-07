@@ -66,10 +66,7 @@ class TestClassifyCoordinationGeometry(unittest.TestCase):
         # 10 coplanar donors: no discrete template of that coordination number.
         import numpy as np
 
-        many = [
-            [np.cos(t), np.sin(t), 0.0]
-            for t in np.linspace(0, 2 * np.pi, 10, endpoint=False)
-        ]
+        many = [[np.cos(t), np.sin(t), 0.0] for t in np.linspace(0, 2 * np.pi, 10, endpoint=False)]
         self.assertIsNone(classify_coordination_geometry(many))
 
 
