@@ -233,6 +233,32 @@ class TestASEOptimizer(unittest.TestCase):
             self.skipTest("mace-torch not installed (optional extra).")
         self.assertEqual(opt.method, "mace-omol-0-extra-large-1024")
 
+    def test_xtb_optimize_returns_energy_without_calculator(self):
+        # Regression: the g-xTB (subprocess) path must NOT call
+        # atoms.get_potential_energy() -- that raises "Atoms object has no
+        # calculator" because only the MACE path attaches an ASE calculator.
+        import shutil
+
+        from oinsmiles.generator3d.ml_optimizer import ASEOptimizer
+
+        if shutil.which("xtb") is None:
+            self.skipTest("xtb binary not on PATH.")
+        mol = chem.Molecule()
+        mol.atom_list = []
+        for el, xyz in [
+            ("O", [0.0, 0.0, 0.117]),
+            ("H", [0.0, 0.757, -0.467]),
+            ("H", [0.0, -0.757, -0.467]),
+        ]:
+            a = chem.Atom(el)
+            a.set_coordinate(xyz)
+            mol.atom_list.append(a)
+        mol.chg = 0
+        mol.multiplicity = 1
+        success, energy, opt_mol = ASEOptimizer(method="xtb").optimize(mol)
+        self.assertTrue(success)
+        self.assertEqual(len(opt_mol.atom_list), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

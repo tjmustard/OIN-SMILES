@@ -208,7 +208,12 @@ class ASEOptimizer:
             if not success:
                 return False, 0.0, mol
 
-        energy = atoms.get_potential_energy()
+            # MACE attaches an ASE calculator; read the relaxed energy from it.
+            # (The xtb path uses a subprocess and already parsed ``energy`` from
+            # xtb's stdout above -- calling get_potential_energy() there would
+            # raise "Atoms object has no calculator".)
+            energy = atoms.get_potential_energy()
+
         new_positions = atoms.get_positions()
 
         for i, atom in enumerate(opt_mol.atom_list):
