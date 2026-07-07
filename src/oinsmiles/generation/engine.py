@@ -234,17 +234,47 @@ class OIN3DGenerator:
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: int = 300,
         dg_strategy: str = "single",
         ensemble_size: int = 10,
+        engine: str = "metallogen",
+        optimizer: str | None = "xtb",
+        ff_preset: str | None = None,
+        ff_params: dict | None = None,
     ) -> None:
-        """Initialize the generator with parser and Molassembler adapter settings."""
+        """Initialize the generator with a parser and a generation backend.
+
+        ``engine="metallogen"`` (default) uses the MetalloGen dummy-metal + CoordMap
+        embed backend (``oinsmiles.generator3d``), refined by the ``optimizer`` (default
+        ``"xtb"`` standard g-xTB; pass ``"ff"``/``None`` for the FF-only path, or
+        ``"mace-omol-0-extra-large-1024"`` / ``"mace-omol25"`` for higher accuracy).
+        The MACE models require ``mace-torch`` + the model weights and fail loudly if
+        unavailable — use ``optimizer="ff"`` in environments without them.
+        ``engine="legacy"`` uses the Molassembler/stitch adapter (the
+        reference for Zone-A P stereo enforcement; ``optimizer`` is ignored there). Both
+        expose ``generate(parsed)``, so the ``generate()`` delegation below is identical.
+        """
         self.parser = OINParser()
-        self.adapter = MolassemblerAdapter(
-            timeout=timeout,
-            dg_strategy=dg_strategy,
-            ensemble_size=ensemble_size,
-        )
+        self.engine = engine
+        if engine == "metallogen":
+            from .metallogen_adapter import MetalloGenAdapter
+
+            self.adapter = MetalloGenAdapter(
+                timeout=timeout,
+                dg_strategy=dg_strategy,
+                ensemble_size=ensemble_size,
+                optimizer=optimizer,
+                ff_preset=ff_preset,
+                ff_params=ff_params,
+            )
+        elif engine == "legacy":
+            self.adapter = MolassemblerAdapter(
+                timeout=timeout,
+                dg_strategy=dg_strategy,
+                ensemble_size=ensemble_size,
+            )
+        else:
+            raise ValueError(f"Unknown engine {engine!r}; expected 'legacy' or 'metallogen'")
 
     def generate(self, oin_string: str) -> GeneratedStructure:
         """Convert an OIN-SMILES string to a 3D structure.

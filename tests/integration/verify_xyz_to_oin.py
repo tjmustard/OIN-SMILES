@@ -269,7 +269,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 1: CisPlatin (XYZ -> OIN-SMILES)
     try:
-        cisplatin_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "CisPlatin.xyz"))
+        cisplatin_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/CisPlatin.xyz")
+        )
 
         cisplatin_xyz_ex = Example(
             name="CisPlatin (XYZ -> OIN-SMILES)",
@@ -286,7 +288,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 2: TransPlatin (XYZ -> OIN-SMILES)
     try:
         transplatin_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "TransPlatin.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/TransPlatin.xyz")
         )
 
         transplatin_xyz_ex = Example(
@@ -304,7 +306,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 3: Cis-PtCl2(en) (XYZ -> OIN-SMILES)
     try:
         cisptcl2en_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "Cis-PtCl2(en).xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/Cis-PtCl2(en).xyz")
         )
 
         cisptcl2en_xyz_ex = Example(
@@ -321,7 +323,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 4: Ferrocene (XYZ -> OIN-SMILES)
     try:
-        ferrocene_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "Ferrocene.xyz"))
+        ferrocene_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/Ferrocene.xyz")
+        )
 
         ferrocene_ex = Example(
             name="Ferrocene (XYZ -> OIN-SMILES)",
@@ -338,7 +342,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 5: PdCl2PhenPhosMe (XYZ -> OIN-SMILES)
     try:
         pd_phenphos_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2PhenPhosMe.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2PhenPhosMe.xyz")
         )
 
         pd_phenphos_ex = Example(
@@ -354,7 +358,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 6: fac-Ir(ppy)3 (XYZ -> OIN-SMILES)
     try:
-        fac_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "fac-Ir(ppy)3.xyz"))
+        fac_ir_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/fac-Ir(ppy)3.xyz")
+        )
 
         fac_ir_ex = Example(
             name="fac-Ir(ppy)3 (XYZ -> OIN-SMILES)",
@@ -369,7 +375,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 7: mer-Ir(ppy)3 (XYZ -> OIN-SMILES)
     try:
-        mer_ir_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "mer-Ir(ppy)3.xyz"))
+        mer_ir_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/mer-Ir(ppy)3.xyz")
+        )
 
         mer_ir_ex = Example(
             name="mer-Ir(ppy)3 (XYZ -> OIN-SMILES)",
@@ -385,7 +393,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 8: PtMeNH3ClBr-Cis (XYZ -> OIN-SMILES)
     try:
         pt_cis_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PtMeNH3ClBr-Cis.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PtMeNH3ClBr-Cis.xyz")
         )
 
         pt_cis_ex = Example(
@@ -402,7 +410,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example 9: PtMeNH3ClBr-Trans (XYZ -> OIN-SMILES)
     try:
         pt_trans_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PtMeNH3ClBr-Trans.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PtMeNH3ClBr-Trans.xyz")
         )
 
         pt_trans_ex = Example(
@@ -418,7 +426,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 10: CuCN2 (XYZ -> OIN-SMILES)
     try:
-        cucn2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "CuCN2.xyz"))
+        cucn2_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/CuCN2.xyz")
+        )
 
         cucn2_ex = Example(
             name="CuCN2 (XYZ -> OIN-SMILES)",
@@ -433,7 +443,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: FeCO5 (XYZ -> OIN-SMILES)
     try:
-        feco5_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "FeCO5.xyz"))
+        feco5_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/FeCO5.xyz")
+        )
 
         feco5_ex = Example(
             name="FeCO5 (XYZ -> OIN-SMILES)",
@@ -448,7 +460,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: FeH2(CO)4 (XYZ -> OIN-SMILES)
     try:
-        feh2co4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "FeH2(CO)4.xyz"))
+        feh2co4_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/FeH2(CO)4.xyz")
+        )
 
         feh2co4_ex = Example(
             name="FeH2(CO)4 (XYZ -> OIN-SMILES)",
@@ -463,7 +477,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 11: HgI3 (XYZ -> OIN-SMILES)
     try:
-        hgi3_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "HgI3.xyz"))
+        hgi3_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/HgI3.xyz")
+        )
 
         hgi3_ex = Example(
             name="HgI3 (XYZ -> OIN-SMILES)",
@@ -478,7 +494,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 12: ReF7 (XYZ -> OIN-SMILES)
     try:
-        ref7_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "ReF7.xyz"))
+        ref7_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/ReF7.xyz")
+        )
 
         ref7_ex = Example(
             name="ReF7 (XYZ -> OIN-SMILES)",
@@ -493,7 +511,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 13: TiCl4 (XYZ -> OIN-SMILES)
     try:
-        ticl4_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "TiCl4.xyz"))
+        ticl4_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/TiCl4.xyz")
+        )
 
         ticl4_ex = Example(
             name="TiCl4 (XYZ -> OIN-SMILES)",
@@ -508,14 +528,16 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 14: TiCp2Me2 (XYZ -> OIN-SMILES)
     try:
-        ticp2me2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "TiCp2Me2.xyz"))
+        ticp2me2_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/TiCp2Me2.xyz")
+        )
 
         ticp2me2_ex = Example(
             name="TiCp2Me2 (XYZ -> OIN-SMILES)",
             xyz_content=ticp2me2_xyz,
             description="Titanocene dimethyl.",
-            expected_smiles="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1<}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
             fixed_orientation=True,
         )
         examples.append(ticp2me2_ex)
@@ -524,7 +546,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 15: VOacac2 (XYZ -> OIN-SMILES)
     try:
-        voacac2_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "VOacac2.xyz"))
+        voacac2_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/VOacac2.xyz")
+        )
 
         # Note: acac appears as anionic radical form in OIN due to sanitization
         voacac2_ex = Example(
@@ -540,7 +564,9 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # Example 16: Zeises_salt (XYZ -> OIN-SMILES)
     try:
-        zeises_xyz = read_file_content(os.path.join(os.path.dirname(__file__), "Zeises_salt.xyz"))
+        zeises_xyz = read_file_content(
+            os.path.join(os.path.dirname(__file__), "../fixtures/Zeises_salt.xyz")
+        )
 
         zeises_ex = Example(
             name="Zeises_salt (XYZ -> OIN-SMILES)",
@@ -555,14 +581,14 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat1
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat1.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat1.xyz"), "r") as f:
             ticat1_xyz = f.read()
         ticat1_ex = Example(  # Changed from XYZToOINExample to Example
             name="TiCat1 (XYZ -> OIN-SMILES)",
             xyz_content=ticat1_xyz,
             description="Titanium Catalyst 1",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
             fixed_orientation=True,
         )
         examples.append(ticat1_ex)
@@ -571,14 +597,14 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat2
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat2.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat2.xyz"), "r") as f:
             ticat2_xyz = f.read()
         ticat2_ex = Example(  # Changed from XYZToOINExample to Example
             name="TiCat2 (XYZ -> OIN-SMILES)",
             xyz_content=ticat2_xyz,
             description="Titanium Catalyst 2",
-            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat2_ex)
     except FileNotFoundError:
@@ -586,14 +612,14 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat3
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat3.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat3.xyz"), "r") as f:
             ticat3_xyz = f.read()
         ticat3_ex = Example(
             name="TiCat3 (XYZ -> OIN-SMILES)",
             xyz_content=ticat3_xyz,
             description="Titanium Catalyst 3",
-            expected_smiles="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2<}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
-            expected_oin_string="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2<}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat3_ex)
     except FileNotFoundError:
@@ -601,23 +627,53 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
     # TiCat4
     try:
-        with open(os.path.join(os.path.dirname(__file__), "TiCat4.xyz"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat4.xyz"), "r") as f:
             ticat4_xyz = f.read()
         ticat4_ex = Example(
             name="TiCat4 (XYZ -> OIN-SMILES)",
             xyz_content=ticat4_xyz,
             description="Titanium Catalyst 4",
-            expected_smiles="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2>}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
-            expected_oin_string="[Ti_TPY].[CH3]{0}.[CH3]{1}.C[Si](C)(c{2}1[cH]{2>}[cH]{2}c{2}2ccccc{2}12)c{3}1[cH]{3}[cH]{3}c{3}2ccccc{3}12",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat4_ex)
     except FileNotFoundError:
         print("Skipping TiCat4 example: File not found.")
 
+    # TiCat5
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat5.xyz"), "r") as f:
+            ticat5_xyz = f.read()
+        ticat5_ex = Example(
+            name="TiCat5 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat5_xyz,
+            description="Titanium Catalyst 5 (TiCat3 Z-inverted)",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+        )
+        examples.append(ticat5_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat5 example: File not found.")
+
+    # TiCat6
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat6.xyz"), "r") as f:
+            ticat6_xyz = f.read()
+        ticat6_ex = Example(
+            name="TiCat6 (XYZ -> OIN-SMILES)",
+            xyz_content=ticat6_xyz,
+            description="Titanium Catalyst 6 (TiCat4 Z-inverted)",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+        )
+        examples.append(ticat6_ex)
+    except FileNotFoundError:
+        print("Skipping TiCat6 example: File not found.")
+
     # Example: PdCl2-R-BINAP (axial-chiral BINAP ligand)
     try:
         pdcl2_binap_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-R-BINAP.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-R-BINAP.xyz")
         )
 
         pdcl2_binap_ex = Example(
@@ -635,7 +691,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example: PdCl2-RR-BDNN (N-chiral diphosphine ligand)
     try:
         pdcl2_bdnn_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-RR-BDNN.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-RR-BDNN.xyz")
         )
 
         pdcl2_bdnn_ex = Example(
@@ -653,7 +709,7 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
     # Example: PdCl2-RR-BDPP (P-chiral diphosphine ligand)
     try:
         pdcl2_bdpp_xyz = read_file_content(
-            os.path.join(os.path.dirname(__file__), "PdCl2-RR-BDPP.xyz")
+            os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-RR-BDPP.xyz")
         )
 
         pdcl2_bdpp_ex = Example(
@@ -698,10 +754,18 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
 
 
 def run_examples(
-    limit: Optional[int] = None, output_dir: Optional[str] = None, include_tmqm: bool = False
+    limit: Optional[int] = None,
+    output_dir: Optional[str] = None,
+    include_tmqm: bool = False,
+    only: Optional[str] = None,
 ) -> None:
     runner = ExampleRunner()
     examples = get_examples(include_tmqm=include_tmqm)
+
+    if only:
+        needles = [n.strip().lower() for n in only.split(",")]
+        examples = [e for e in examples if any(n in e.name.lower() for n in needles)]
+        print(f"Filtering to {len(examples)} example(s) matching '{only}'.")
 
     if limit:
         print(f"Limiting to first {limit} examples.")
@@ -719,8 +783,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit", type=int, help="Limit number of examples to run (for fast testing)"
     )
+    parser.add_argument(
+        "--only",
+        type=str,
+        help="Run only examples whose name contains this substring (comma-separated for multiple, case-insensitive).",
+    )
     parser.add_argument("--output-dir", type=str, help="Directory to save JSON summary artifact")
     parser.add_argument("--include-tmqm", action="store_true", help="Include tmQM examples (slow)")
     args = parser.parse_args()
 
-    run_examples(limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm)
+    run_examples(
+        limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm, only=args.only
+    )

@@ -39,7 +39,11 @@ class TestWindingPlumbingInertness(unittest.TestCase):
     """Emitted XYZ must be byte-identical to pre-Phase-1 output for every fixture."""
 
     def test_generation_output_unchanged_by_winding_plumbing(self):
-        generator = OIN3DGenerator()
+        # Pinned to the legacy Molassembler engine: these SHA-256 hashes are of the
+        # deterministic legacy output. The metallogen default (now engine="metallogen")
+        # is stochastic per FF embed and honors winding (it steers the eta face), so its
+        # output is neither hash-stable nor winding-inert -- this gate is legacy-specific.
+        generator = OIN3DGenerator(engine="legacy")
         mismatches = []
 
         for name, expected_hash in _PRE_PHASE1_XYZ_HASHES.items():

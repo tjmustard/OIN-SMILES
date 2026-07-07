@@ -7,12 +7,13 @@ import argparse
 import re as _re
 import shutil
 import tempfile
+import time
 
 from rdkit import Chem
 from rmsd_utils import calculate_tmc_rmsd
 
 from oinsmiles import XYZToSMILES
-from oinsmiles.generation.engine import OIN3DGenerator
+from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
 from oinsmiles.generation.molassembler_adapter import (
     _build_connected_smiles,
     _compute_expected_trans_sym_pairs,
@@ -54,10 +55,15 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     3. Normalize water notation: [OH2] and O are chemically equivalent as bound
        water ligands. The XYZ→OIN pipeline may write O while generated structures
        re-analyzed after H addition write [OH2].
-    4. Strip winding direction markers (> and <) from slot tags: {n>} and {n<}
-       are normalized to {n}.  The ring rotation phase of eta-ligands (Cp, arene)
-       cannot be deterministically reproduced from the OIN alone; the RMSD check
-       verifies geometric correctness instead.
+    4. Winding direction markers ({n>} / {n<}) are KEPT and compared verbatim.
+       (Historically they were stripped, on the assumption that an eta ligand's
+       ring rotation/face could not be reproduced from the OIN alone.) The
+       encoder now emits a winding marker per eta ring -- per haptic slot, using
+       each ring's actual metal->centroid axis -- so the OIN string losslessly
+       encodes eta stereochemistry (an ansa-metallocene's rac/meso, a ring's
+       coordinated face). Comparing winding is exactly what lets the round trip
+       catch a generated wrong-face / wrong-diastereomer eta ligand, which the
+       coordination-sphere RMSD (eta rings reduced to a centroid) cannot see.
     5. Canonicalize slot numbering: for OCT and other symmetric geometries where
        different rotations yield equivalent but numerically different slot assignments,
        renumber slots in order of first appearance. This makes equivalently-rotated
@@ -67,8 +73,8 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", oin_string)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")
-    # Normalize winding direction: {n>} → {n}, {n<} → {n}
-    s = _WINDING_RE.sub(r"{\1}", s)
+    # Winding markers ({n>} / {n<}) are intentionally NOT stripped -- they carry
+    # eta-ligand stereochemistry that the round trip must verify (see docstring).
     # Collapse multiple consecutive dots and strip trailing dots
     while ".." in s:
         s = s.replace("..", ".")
@@ -83,13 +89,36 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     def replace_slot(match):
         nonlocal next_slot
         old_slot = int(match.group(1))
+        winding = match.group(2) or ""  # preserve the {n>}/{n<} marker, if any
         if old_slot not in slot_map:
             slot_map[old_slot] = next_slot
             next_slot += 1
-        return "{" + str(slot_map[old_slot]) + "}"
+        return "{" + str(slot_map[old_slot]) + winding + "}"
 
-    s = _re_canon.sub(r"\{(\d+)\}", replace_slot, s)
+    s = _re_canon.sub(r"\{(\d+)([><^]?)\}", replace_slot, s)
     return s
+
+
+def winding_canonical_key(normalized_oin: str):
+    """Canonical comparison key that treats eta-ring winding as a MULTISET.
+
+    Returns ``(winding_stripped_string, sorted_winding_multiset)``.
+
+    Two OIN strings that describe the same molecule but differ only in which of
+    two EQUIVALENT eta rings is labeled the lower slot must compare equal. An
+    achiral *meso* ansa-metallocene can be written ``{0<}{1>}`` or ``{0>}{1<}``
+    -- the two rings are interchangeable, so both are the same structure; only
+    which one the encoder happened to call slot 0 differs (a canonicalization
+    ambiguity for symmetric rings). Comparing the winding as an order-independent
+    multiset makes those equal, while still catching a real error:
+      * a diastereomer flip: ``['<','>']`` (meso) vs ``['>','>']`` (rac)
+      * an enantiomer flip:  ``['>','>']``       vs ``['<','<']``
+    both change the multiset and still fail. The winding-stripped remainder must
+    still match exactly, so every non-winding difference is caught as before.
+    """
+    windings = sorted(_re.findall(r"\{\d+([<>])\}", normalized_oin))
+    stripped = _re.sub(r"\{(\d+)[<>]\}", r"{\1}", normalized_oin)
+    return stripped, windings
 
 
 def _log_step2_inputs(oin_string: str) -> None:
@@ -159,7 +188,49 @@ def main():
     parser.add_argument(
         "--limit", type=int, help="Limit number of examples to run (for fast testing)"
     )
+    parser.add_argument(
+        "--only",
+        type=str,
+        help="Run only examples whose name contains this substring (case-insensitive).",
+    )
+    parser.add_argument(
+        "--ff-preset",
+        type=str,
+        default=None,
+        help="FF convergence preset for the MetalloGen engine (loose/default/tight/very_tight).",
+    )
+    parser.add_argument(
+        "--optimizer",
+        type=str,
+        default="xtb",
+        help=(
+            "Post-FF optimizer for the MetalloGen engine. Default: 'xtb' (g-xTB, "
+            "subprocess wrapper with graceful FF fallback). Use "
+            "'mace-omol-0-extra-large-1024' for the accurate MACE sign-off, or 'ff' for "
+            "FF-only."
+        ),
+    )
+    parser.add_argument(
+        "--ensemble-size",
+        type=int,
+        default=1,
+        help="Number of conformers to generate and optimize. Default: 1.",
+    )
+    parser.add_argument(
+        "--cpu",
+        action="store_true",
+        help="Force CPU execution.",
+    )
+    parser.add_argument(
+        "--uff-pool-size",
+        type=int,
+        default=None,
+        help="Override the default UFF conformer pool size.",
+    )
     args = parser.parse_args()
+
+    if args.cpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     output_dir = args.output_dir
     if output_dir:
@@ -171,9 +242,26 @@ def main():
     reporter = VerificationReporter("Round-Trip Verification Report")
 
     xyz_to_smiles = XYZToSMILES()
-    generator = OIN3DGenerator()
+    ff_params = {}
+    if args.uff_pool_size is not None:
+        ff_params["uff_pool_size"] = args.uff_pool_size
+
+    generator = OIN3DGenerator(
+        ff_preset=args.ff_preset,
+        optimizer=args.optimizer,
+        ensemble_size=args.ensemble_size,
+        ff_params=ff_params if ff_params else None,
+    )
+    if args.ff_preset or args.optimizer or args.ensemble_size or args.uff_pool_size:
+        print(
+            f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size} uff_pool_size={args.uff_pool_size}"
+        )
 
     examples = get_examples()
+    if args.only:
+        needles = [n.strip().lower() for n in args.only.split(",")]
+        examples = [e for e in examples if any(n in e.name.lower() for n in needles)]
+        print(f"Filtering to {len(examples)} example(s) matching '{args.only}'.")
     if args.limit:
         print(f"Limiting to first {args.limit} examples.")
         examples = examples[: args.limit]
@@ -252,7 +340,11 @@ def main():
             # -------------------------------------------------------------
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
             _log_step2_inputs(oin1_string)
+            start_time = time.time()
             gen_result = generator.generate(oin1_string)
+            end_time = time.time()
+            generation_time = end_time - start_time
+            print(f"  Generation Time: {generation_time:.4f}s")
             with open(gen_xyz_path, "w") as f:
                 f.write(gen_result.xyz)
 
@@ -300,11 +392,11 @@ def main():
             # Normalize: strip atom-ordering-dependent @SP/@OH/@TB descriptors
             # from the metal fragment before comparing — the slot assignments
             # already encode the isomer; the @XY## label is xyz-order-dependent.
-            metrics: dict = {}
+            metrics: dict = {"time_seconds": round(generation_time, 4)}
             s1 = normalize_oin_for_comparison(oin1_string.strip())
             s2 = normalize_oin_for_comparison(oin2_string.strip())
 
-            if s1 == s2:
+            if winding_canonical_key(s1) == winding_canonical_key(s2):
                 msg = "[PASS] OIN Stability: Strings Identical (normalized)"
                 print(msg)
                 details.append(msg)
@@ -435,6 +527,18 @@ def main():
             import traceback
 
             traceback.print_exc()
+            if output_dir:
+                # Persist a forensic trail for crashed examples (e.g. TiCat3/4
+                # leave no step2.oin). Prefer base_name (computed at the top of
+                # the try with the correct outer index) over rebuilding from i,
+                # which the step-3 coordinate loops shadow.
+                try:
+                    stem = base_name if "base_name" in locals() else f"Ex{i}_{safe_name}"
+                    err_path = os.path.join(output_dir, f"{stem}_error.txt")
+                    with open(err_path, "w") as fh:
+                        fh.write(f"{type(e).__name__}: {e}\n\n{traceback.format_exc()}")
+                except Exception:
+                    pass
             reporter.log_failure(test_name, f"Exception: {str(e)}")
 
     # Final Summary
