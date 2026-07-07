@@ -74,4 +74,4 @@ echo "✓ Set ${ENV_VAR} in $ENV_FILE"
 echo
 echo "Done. Install the ML stack (if you haven't) and run with the MACE optimizer:"
 echo "  uv sync --extra mace"
-echo '  oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024'
+echo '  uv run --extra mace oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024'
