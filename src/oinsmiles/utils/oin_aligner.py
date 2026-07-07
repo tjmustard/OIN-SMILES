@@ -664,7 +664,16 @@ class OINDiscreteAligner:
         heading_local_indices = set()
 
         if geometry_name and alignment_rotation is not None and geometry_name in TEMPLATE_SPECS:
-            # Group by rank to handle full haptic fragments
+            # Group by rank, but assign a heading to EACH haptic group (slot)
+            # within a rank -- a single fragment can carry more than one eta
+            # ring. A silane-bridged bis-indenyl ansa-metallocene is one
+            # connected fragment (one rank) that occupies two eta slots; heading
+            # (hence winding) must be assigned per haptic SLOT, not once per
+            # rank, or the second ring loses its winding marker and rac/meso
+            # diastereomers become indistinguishable in the OIN string. The
+            # len(grp_coords) >= 2 guard below keeps this scoped to haptic
+            # groups -- monodentate/polydentate single-atom donors are skipped
+            # exactly as before, so non-eta ligands are unaffected.
             by_rank = defaultdict(list)
             for x in best_final_map:
                 by_rank[x["rank"]].append(x)
@@ -677,102 +686,105 @@ class OINDiscreteAligner:
             # property, invariant to 3D embedding orientation (US-002).
             # Falls back to the geometric best_idx loop below if the
             # canonical rank can't be computed/mapped (RT-2/RT-3 fail-safe).
-            content_canonical_ranks_handled = set()
+            content_canonical_slots_handled = set()
             for rank, items in by_rank.items():
-                first_item = items[0]
-                smiles = first_item["chem_id"][1]
-                grp_coords = first_item.get("group_coords")
-                constituent_indices = first_item.get("constituent_indices", [])
+                for item in items:
+                    smiles = item["chem_id"][1]
+                    grp_coords = item.get("group_coords")
+                    constituent_indices = item.get("constituent_indices", [])
 
-                if smiles in SYMMETRIC_LIGANDS:
-                    continue
-                if grp_coords is None or len(grp_coords) < 2:
-                    continue
+                    if smiles in SYMMETRIC_LIGANDS:
+                        continue
+                    if grp_coords is None or len(grp_coords) < 2:
+                        continue
 
-                canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
-                if canonical_idx is None:
-                    continue
+                    canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
+                    if canonical_idx is None:
+                        continue
 
-                heading_local_indices.add((rank, canonical_idx))
-                content_canonical_ranks_handled.add(rank)
+                    heading_local_indices.add((rank, canonical_idx))
+                    content_canonical_slots_handled.add(item["slot"])
 
             for rank, items in by_rank.items():
-                if rank in content_canonical_ranks_handled:
-                    continue
+                for item in items:
+                    if item["slot"] in content_canonical_slots_handled:
+                        continue
 
-                first_item = items[0]
-                slot_idx = first_item["slot"]
+                    slot_idx = item["slot"]
 
-                # Skip if slot not in specs or no ref vector
-                if slot_idx not in template_spec or "ref" not in template_spec[slot_idx]:
-                    continue
+                    # Skip if slot not in specs or no ref vector
+                    if slot_idx not in template_spec or "ref" not in template_spec[slot_idx]:
+                        continue
 
-                ref_vec = np.array(template_spec[slot_idx]["ref"])
+                    ref_vec = np.array(template_spec[slot_idx]["ref"])
 
-                # Get Group Coords
-                grp_coords = first_item.get("group_coords")
-                if grp_coords is None:
-                    continue
+                    # Get Group Coords
+                    grp_coords = item.get("group_coords")
+                    if grp_coords is None:
+                        continue
 
-                # Calculate Centroid
-                centroid = np.mean(grp_coords, axis=0)
+                    # Calculate Centroid
+                    centroid = np.mean(grp_coords, axis=0)
 
-                if len(grp_coords) < 2:
-                    continue
+                    if len(grp_coords) < 2:
+                        continue
 
-                best_dot = -float("inf")
-                best_idx = -1
+                    best_dot = -float("inf")
+                    best_idx = -1
 
-                ordered_indices = first_item["constituent_indices"]
+                    ordered_indices = item["constituent_indices"]
 
-                for k, coord in enumerate(grp_coords):
-                    # Vector from Centroid -> Atom (Molecular Frame)
-                    v_mol = coord - centroid
+                    for k, coord in enumerate(grp_coords):
+                        # Vector from Centroid -> Atom (Molecular Frame)
+                        v_mol = coord - centroid
 
-                    # Transform to Template Frame using Alignment Rotation R
-                    v_tmpl = alignment_rotation.apply(v_mol)
+                        # Transform to Template Frame using Alignment Rotation R
+                        v_tmpl = alignment_rotation.apply(v_mol)
 
-                    # Normalize
-                    norm = np.linalg.norm(v_tmpl)
-                    if norm > 1e-6:
-                        v_tmpl_n = v_tmpl / norm
-                        dot = np.dot(v_tmpl_n, ref_vec)
+                        # Normalize
+                        norm = np.linalg.norm(v_tmpl)
+                        if norm > 1e-6:
+                            v_tmpl_n = v_tmpl / norm
+                            dot = np.dot(v_tmpl_n, ref_vec)
 
-                        if dot > best_dot:
-                            best_dot = dot
-                            best_idx = ordered_indices[k]
+                            if dot > best_dot:
+                                best_dot = dot
+                                best_idx = ordered_indices[k]
 
-                if best_idx != -1:
-                    heading_local_indices.add((rank, best_idx))
+                    if best_idx != -1:
+                        heading_local_indices.add((rank, best_idx))
 
             # 4b. Symmetric Ligand Override
-            # For known symmetric ligands, we force the heading atom to be the
-            # first one (Index 0 in local SMILES)
-            # This ensures deterministic output (e.g. [CH2]{^}=[CH2] instead of arbitrary).
+            # For known symmetric ligands, force the heading atom to the lowest
+            # local SMILES index (deterministic output, e.g. [CH2]{^}=[CH2]).
+            # Applied per haptic group so an ansa-bis-Cp still marks both rings.
             for rank, items in by_rank.items():
-                first_item = items[0]
-                smiles = first_item["chem_id"][1]
+                for item in items:
+                    smiles = item["chem_id"][1]
 
-                if smiles in SYMMETRIC_LIGANDS:
-                    # Remove any existing heading assignment for this ligand
-                    # (from geometric step above). We want to replace it, not
-                    # add to it (though usually only one heading per ligand group)
-                    # But 'heading_local_indices' is a set of (rank, idx).
-                    # We should clear entries for this rank first to be safe?.
-                    # Actually, the geometric block above loop over ranks.
-                    # It's cleaner to check SYMMETRIC_LIGANDS *inside* the loop
-                    # above, but separating logic is also fine.
-                    # Let's just Enforce it here.
+                    if smiles not in SYMMETRIC_LIGANDS:
+                        continue
 
-                    # Find min index among constituent_indices
-                    ordered_indices = sorted(first_item["constituent_indices"])
+                    grp_coords = item.get("group_coords")
+                    if grp_coords is None or len(grp_coords) < 2:
+                        continue
+
+                    constituent = item["constituent_indices"]
+
+                    # Find min index among this group's constituent_indices
+                    ordered_indices = sorted(constituent)
                     forced_idx = ordered_indices[0]
 
-                    # Remove any other heading for this rank just in case
-                    # (e.g. if geometric picked another)
-                    to_remove = [idx for r, idx in heading_local_indices if r == rank]
-                    for idx in to_remove:
-                        heading_local_indices.remove((rank, idx))
+                    # Remove any other heading picked for THIS group (e.g. by the
+                    # geometric step above); match on the group's own constituent
+                    # set so a sibling eta ring in the same rank keeps its heading.
+                    to_remove = [
+                        (r, idx)
+                        for (r, idx) in heading_local_indices
+                        if r == rank and idx in constituent
+                    ]
+                    for entry in to_remove:
+                        heading_local_indices.discard(entry)
 
                     heading_local_indices.add((rank, forced_idx))
                     logger.debug(
@@ -839,25 +851,35 @@ class OINDiscreteAligner:
         except ValueError:
             return ">"
 
-        # 2. `slot_z` is the TEMPLATE-FRAME vector from the metal (template
-        # origin) outward to this slot -- already metal->centroid outward by
-        # construction in TEMPLATE_SPECS. Assert/normalize that convention
-        # here so a malformed template can't silently flip the helper's sign.
-        slot_z_norm = np.linalg.norm(slot_z)
-        if slot_z_norm < 1e-9:
-            raise ValueError("slot_z must be a nonzero, outward-facing (metal->centroid) vector")
-        axis_template = slot_z / slot_z_norm
+        # 2. Winding axis = this ring's ACTUAL metal->centroid direction, in the
+        # molecular frame. `grp_coords` is metal-centered (see `_reduce_hapticity`:
+        # 'group_coords': grp_coords - metal_origin), so the centroid of its atoms
+        # IS the metal->centroid (outward) vector. Using the real per-ring axis --
+        # rather than the idealized template slot position `slot_z` -- keeps the
+        # winding sign robust when the coordination sphere is distorted: an ansa-
+        # metallocene's bridged bite angle squeezes its two eta rings well inside
+        # the ideal tetrahedral slot directions, so a single global
+        # alignment_rotation of the template axis lands on the wrong side of the
+        # (second) ring plane and flips its sign. The actual centroid axis can't.
+        # It also matches the generation-side convention (molassembler_adapter's
+        # haptic-face correction measures winding against the actual ring centroid).
+        grp = np.asarray(grp_coords, dtype=float)
+        axis_mol = grp.mean(axis=0)
 
-        # 3. `grp_coords` is in the MOLECULAR frame (centered on the metal --
-        # see `_reduce_hapticity`: 'group_coords': grp_coords - metal_origin).
-        # Rather than rotate every coordinate into the template frame, rotate
-        # the axis into the molecular frame: rotations preserve dot products,
-        # so dot(R.a, b) == dot(a, R^-1.b).
-        axis_mol = (
-            alignment_rotation.inv().apply(axis_template)
-            if alignment_rotation is not None
-            else axis_template
-        )
+        if np.linalg.norm(axis_mol) < 1e-9:
+            # Degenerate (ring centroid coincident with metal): fall back to the
+            # template slot direction so the sign is still deterministic.
+            slot_z_norm = np.linalg.norm(slot_z)
+            if slot_z_norm < 1e-9:
+                raise ValueError(
+                    "slot_z must be a nonzero, outward-facing (metal->centroid) vector"
+                )
+            axis_template = slot_z / slot_z_norm
+            axis_mol = (
+                alignment_rotation.inv().apply(axis_template)
+                if alignment_rotation is not None
+                else axis_template
+            )
 
         return signed_circulation(grp_coords, star_local_idx, axis_mol)
 
@@ -907,3 +929,27 @@ def classify_coordination_geometry(donor_vectors):
     aligner = OINDiscreteAligner(0, [])  # ligands unused by the matcher
     result = aligner._find_best_geometry_match(len(virtual_atoms), virtual_atoms)
     return result[0] if result else None
+
+
+def coordination_geometry_fit(donor_vectors, geo_code):
+    """RMSD of the best assignment of ``donor_vectors`` to the ideal template for
+    ``geo_code`` (from ``TEMPLATES``), or ``float('inf')`` if the code is unknown
+    or the template has fewer slots than there are donors.
+
+    Lower is a tighter fit to the ideal geometry. Classification alone only tells
+    you which template a coordination sphere is *closest* to -- a heavily puckered
+    square-plane can still be labelled ``"SPL"`` because it beats ``"TET"``/``"TPY"``
+    -- so this score lets callers pick the *cleanest* conformer of a target
+    geometry, not merely the first one that classifies as it. Uses the same
+    rotation-invariant Kabsch/permutation matcher as the encoder, so scores are
+    comparable across conformers.
+    """
+    template = TEMPLATES.get(geo_code)
+    if template is None or len(donor_vectors) > len(template):
+        return float("inf")
+    virtual_atoms = [{"coords": np.asarray(v, dtype=float)} for v in donor_vectors]
+    aligner = OINDiscreteAligner(0, [])
+    mapping, rmsd, _ = aligner._map_to_template(virtual_atoms, template)
+    if mapping is None:
+        return float("inf")
+    return rmsd

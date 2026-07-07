@@ -138,6 +138,8 @@ class MetalComplex:
         molecule.adj_matrix = adj_matrix
         molecule.chg = chg
         molecule.multiplicity = mult
+        if hasattr(self, 'energy'):
+            molecule.energy = self.energy
         
         return molecule
 

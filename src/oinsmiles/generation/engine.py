@@ -237,17 +237,21 @@ class OIN3DGenerator:
         timeout: int = 60,
         dg_strategy: str = "single",
         ensemble_size: int = 10,
-        engine: str = "legacy",
-        optimizer: str | None = None,
+        engine: str = "metallogen",
+        optimizer: str | None = "mace-omol-0-extra-large-1024",
         ff_preset: str | None = None,
         ff_params: dict | None = None,
     ) -> None:
         """Initialize the generator with a parser and a generation backend.
 
-        ``engine="legacy"`` (default) uses the Molassembler/stitch adapter.
-        ``engine="metallogen"`` uses the MetalloGen dummy-metal + CoordMap embed
-        backend (``oinsmiles.generator3d``). Both expose ``generate(parsed)``, so
-        the ``generate()`` delegation below is identical for either.
+        ``engine="metallogen"`` (default) uses the MetalloGen dummy-metal + CoordMap
+        embed backend (``oinsmiles.generator3d``), refined by the ``optimizer`` (default
+        ``"mace-omol-0-extra-large-1024"`` MLIP; pass ``"ff"``/``None`` for the FF-only
+        path, ``"xtb"`` for GFN2-xTB). The MACE default requires ``mace-torch`` + the model
+        weights and fails loudly if unavailable — use ``optimizer="ff"`` in environments
+        without them. ``engine="legacy"`` uses the Molassembler/stitch adapter (the
+        reference for Zone-A P stereo enforcement; ``optimizer`` is ignored there). Both
+        expose ``generate(parsed)``, so the ``generate()`` delegation below is identical.
         """
         self.parser = OINParser()
         self.engine = engine

@@ -19,7 +19,10 @@ from rdkit.Geometry import Point3D
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
 from oinsmiles.generation import metallogen_adapter as MA
-from oinsmiles.utils.oin_aligner import classify_coordination_geometry
+from oinsmiles.utils.oin_aligner import (
+    classify_coordination_geometry,
+    coordination_geometry_fit,
+)
 
 # Ideal template donor directions (metal at origin), scaled off unit length to
 # confirm the matcher is scale-invariant.
@@ -27,6 +30,8 @@ _SPL = [[2, 0, 0], [0, 2, 0], [-2, 0, 0], [0, -2, 0]]
 _TPY = [[0, 0, 2], [0, 2, 0], [1.7320508, -1, 0], [-1.7320508, -1, 0]]
 _TET = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]
 _OCT = [[2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0], [0, 0, 2], [0, 0, -2]]
+# A mildly puckered square-plane: still classifies SPL, but a looser fit than _SPL.
+_SPL_PUCKERED = [[2, 0, 0.4], [0, 2, -0.4], [-2, 0, 0.4], [0, -2, -0.4]]
 
 
 def _make_complex(metal_sym, donor_positions, donor_sym="Cl"):
@@ -68,6 +73,23 @@ class TestClassifyCoordinationGeometry(unittest.TestCase):
         self.assertIsNone(classify_coordination_geometry(many))
 
 
+class TestCoordinationGeometryFit(unittest.TestCase):
+    def test_ideal_fit_is_near_zero(self):
+        self.assertLess(coordination_geometry_fit(_SPL, "SPL"), 1e-6)
+
+    def test_puckered_fits_worse_than_ideal(self):
+        # Both are SPL, but the puckered one is a looser fit -- the signal the
+        # selector ranks on.
+        self.assertEqual(classify_coordination_geometry(_SPL_PUCKERED), "SPL")
+        self.assertGreater(
+            coordination_geometry_fit(_SPL_PUCKERED, "SPL"),
+            coordination_geometry_fit(_SPL, "SPL"),
+        )
+
+    def test_unknown_code_is_infinite(self):
+        self.assertEqual(coordination_geometry_fit(_SPL, "ZZZ"), float("inf"))
+
+
 class TestPerceiveGeoCode(unittest.TestCase):
     def test_square_planar(self):
         self.assertEqual(MA._perceive_geo_code(_make_complex("Pd", _SPL), 4), "SPL")
@@ -100,6 +122,15 @@ class TestSelectByGeometry(unittest.TestCase):
             chosen, cmol = MA._select_by_geometry(self._parsed("SPL"), [tpy, spl])
         self.assertIs(chosen, spl)
         self.assertIs(cmol, spl)
+
+    def test_prefers_cleaner_geometry_over_lower_energy_same_code(self):
+        # Both classify as SPL; the lower-energy one (index 0) is puckered, the
+        # higher-energy one is a clean square-plane. Rank by template fit -> clean.
+        puckered = _make_complex("Pd", _SPL_PUCKERED)  # "lowest energy"
+        clean = _make_complex("Pd", _SPL)
+        with mock.patch.object(MA, "build_contract_mol", side_effect=lambda p, m: m):
+            chosen, _ = MA._select_by_geometry(self._parsed("SPL"), [puckered, clean])
+        self.assertIs(chosen, clean)
 
     def test_sqp_normalizes_to_spl(self):
         tpy = _make_complex("Pd", _TPY)

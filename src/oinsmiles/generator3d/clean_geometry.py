@@ -65,16 +65,18 @@ class TMCOptimizer:
         metal_complex.print_coordinate_list()
         
         print("FF cleaning ...")
+        final_energy = 0.0
         try:
-            ff_success = self.ff_clean(metal_complex,scale)
-        except:
-            print ('Internal failure for ff clean ...')
+            ff_success, final_energy = self.ff_clean(metal_complex,scale)
+        except Exception as e:
+            print (f'Internal failure for ff clean ... {e}')
             ff_success = False
 
         if ff_success:
             print("FF clean success!")
             print("FF cleaned geometry ...")
             metal_complex.print_coordinate_list()
+            metal_complex.energy = final_energy
             return True
         else:
             print("FF clean has failed ...")
@@ -398,6 +400,23 @@ class TMCOptimizer:
             final_positions[ligand_to_metal[i]] = [x,y,z]
         # Update ligand ...
         metal_complex.set_position(final_positions)
-        return final_success
+        final_energy = 0.0
+        if final_success:
+            try:
+                conformer = combined_rd_mol.GetConformer()
+                for i, position in enumerate(tmp_positions):
+                    x, y, z = position
+                    conformer.SetAtomPosition(i, Point3D(x,y,z))
+                if self.default_ff.lower() == "uff":
+                    final_ff = AllChem.UFFGetMoleculeForceField(combined_rd_mol)
+                else:
+                    final_ff = AllChem.MMFFGetMoleculeForceField(combined_rd_mol, AllChem.MMFFGetMoleculeProperties(combined_rd_mol))
+                if final_ff is not None:
+                    final_ff.Initialize()
+                    final_energy = final_ff.CalcEnergy()
+            except Exception as e:
+                print(f"Failed to calculate final FF energy: {e}")
+
+        return final_success, final_energy
 
 

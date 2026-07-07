@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--optimizer", type=str, default=None, help="Optimizer to use")
     parser.add_argument("--ff-preset", type=str, default=None, help="FF preset")
     parser.add_argument("--ensemble-size", type=int, default=None, help="Number of conformers")
+    parser.add_argument("--only", type=str, help="Ignored in phase1, added for bash compatibility")
     parser.add_argument("--cpu", action="store_true", help="Force CPU execution")
     args = parser.parse_args()
 
