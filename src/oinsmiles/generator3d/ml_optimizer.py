@@ -7,11 +7,12 @@ class ASEOptimizer:
     geometry optimization on a given molecule object.
     """
 
-    def __init__(self, method="xtb", fmax=0.05, max_steps=200):
+    def __init__(self, method="xtb", fmax=0.05, max_steps=200, timeout=None):
         """Initialize the Ase optimizer."""
         self.method = method.lower()
         self.fmax = fmax
         self.max_steps = max_steps
+        self.timeout = timeout
 
         if self.method == "xtb":
             # We use a subprocess wrapper for g-xTB now, so no Python package imports are needed
@@ -103,7 +104,12 @@ class ASEOptimizer:
                     # The binary supports --gxtb --opt
                     cmd = ["xtb", "struc.xyz", "--gxtb", "--opt"]
                     result = subprocess.run(
-                        cmd, cwd=tmpdir, capture_output=True, text=True, check=False
+                        cmd,
+                        cwd=tmpdir,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        timeout=self.timeout,
                     )
 
                     if result.returncode != 0:
@@ -134,6 +140,9 @@ class ASEOptimizer:
                             except (ValueError, IndexError):
                                 pass
 
+            except subprocess.TimeoutExpired:
+                print(f"Warning: xTB timed out after {self.timeout} seconds. Falling back to FF.")
+                return False, 0.0, mol
             except Exception as e:
                 print(f"Warning: Optimizer xTB wrapper failed. Falling back to FF. Details: {e}")
                 return False, 0.0, mol

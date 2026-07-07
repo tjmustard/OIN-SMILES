@@ -28,6 +28,7 @@ def generate_3d_structures(
     uff_pool_size=50,
     rmsd_threshold=0.5,
     energy_threshold=2.0,
+    timeout=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -115,7 +116,7 @@ def generate_3d_structures(
         # We explicitly do NOT catch initialization exceptions here.
         # If the user asks for an optimizer and it fails to load,
         # we want to fail loudly rather than silently falling back to FF.
-        opt = ASEOptimizer(method=optimizer)
+        opt = ASEOptimizer(method=optimizer, timeout=timeout)
 
         if opt:
             optimized_mols = []

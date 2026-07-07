@@ -55,7 +55,11 @@ Issues = "https://github.com/tjmustard/OIN-SMILES/issues"
 
 [dependency-groups]
 # Development-only tooling (not shipped in the wheel). Pinned so local runs match CI.
-dev = ["ruff==0.15.20"]
+dev = [
+    "pytest>=9.0.3",
+    "pyyaml>=6.0.3",
+    "ruff==0.15.20",
+]
 
 [project.scripts]
 oin-smiles = "oinsmiles.cli:main"

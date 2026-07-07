@@ -167,6 +167,22 @@ def main():
     )
     parser.add_argument("--limit", type=int, default=None, help="Limit number of molecules to test")
     parser.add_argument("--cpu", action="store_true", help="Force CPU execution")
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Run with a 60-second timeout for xTB and limited UFF pool size",
+    )
+    parser.add_argument(
+        "--continue",
+        dest="continue_run",
+        action="store_true",
+        help="Continue from previous run (skip already processed molecules in summary_roundtrip.json and append new results)",
+    )
+    parser.add_argument(
+        "--rerun-failed",
+        action="store_true",
+        help="Only run on molecules that previously failed (requires existing summary_roundtrip.json)",
+    )
     args = parser.parse_args()
 
     if args.cpu:
@@ -181,13 +197,47 @@ def main():
     os.makedirs(os.path.join(output_dir, "structures"), exist_ok=True)
 
     xyz_files = []
-    for root, _, files in os.walk(dataset_dir):
+    output_dir_abs = os.path.abspath(output_dir)
+    for root, dirs, files in os.walk(dataset_dir):
+        # Prevent recursing into the output directory if it's nested inside the dataset directory
+        dirs[:] = [
+            d for d in dirs if not os.path.abspath(os.path.join(root, d)).startswith(output_dir_abs)
+        ]
+
         for f in files:
-            if f.endswith(".xyz"):
+            if f.endswith(".xyz") and not f.endswith("_generated.xyz"):
                 xyz_files.append(os.path.join(root, f))
 
     # Sort for deterministic order
     xyz_files = sorted(xyz_files)
+
+    old_report = []
+    summary_path = os.path.join(output_dir, "summary_roundtrip.json")
+    if os.path.exists(summary_path) and (args.rerun_failed or args.continue_run):
+        with open(summary_path, "r") as f:
+            old_report = json.load(f)
+
+    # Filter if rerun-failed is set
+    if args.rerun_failed:
+        if old_report:
+            failed_mols = {r["molecule"] for r in old_report if r["status"] == "failed"}
+            xyz_files = [
+                f for f in xyz_files if os.path.splitext(os.path.basename(f))[0] in failed_mols
+            ]
+            print(f"Rerun-failed: filtered to {len(xyz_files)} previously failed molecules.")
+        else:
+            print(f"Warning: --rerun-failed specified but {summary_path} not found. Running all.")
+    elif args.continue_run:
+        if old_report:
+            processed_mols = {r["molecule"] for r in old_report}
+            xyz_files = [
+                f
+                for f in xyz_files
+                if os.path.splitext(os.path.basename(f))[0] not in processed_mols
+            ]
+            print(f"Continue mode: skipping {len(processed_mols)} already processed molecules.")
+        else:
+            print(f"Note: --continue specified but {summary_path} not found. Starting fresh.")
 
     if args.limit:
         xyz_files = xyz_files[: args.limit]
@@ -195,12 +245,18 @@ def main():
     print(f"Found {len(xyz_files)} XYZ files to process.")
 
     global_report = []
-    requires_mace = []
+    requires_xtb = []
 
     xyz_to_smiles = XYZToSMILES()
 
+    # Determine quick settings
+    timeout_val = 60 if args.quick else 300
+    ff_params_fast = {"uff_pool_size": 2} if args.quick else None
+
     print("\n--- PASS 1: UFF FAST-PASS ---")
-    gen_uff = OIN3DGenerator(optimizer=None, ensemble_size=1)
+    gen_uff = OIN3DGenerator(
+        optimizer=None, ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
+    )
 
     for i, xyz_path in enumerate(xyz_files, 1):
         basename = os.path.splitext(os.path.basename(xyz_path))[0]
@@ -228,24 +284,28 @@ def main():
             global_report.append(report)
             print("SUCCESS")
         else:
-            report["status"] = "pending_mace"
+            report["status"] = "pending_xtb"
             save_artifacts(report, last_xyz, output_dir, is_final=False)
-            requires_mace.append((xyz_path, oin1_string, report))
-            print("FAILED (queued for MACE)")
+            requires_xtb.append((xyz_path, oin1_string, report))
+            print("FAILED (queued for xTB)")
 
-    if requires_mace:
-        print(f"\n--- PASS 2: MACE HEAVY-PASS ({len(requires_mace)} files) ---")
-        gen_mace_1 = OIN3DGenerator(optimizer="mace-omol-0-extra-large-1024", ensemble_size=1)
-        gen_mace_5 = OIN3DGenerator(optimizer="mace-omol-0-extra-large-1024", ensemble_size=5)
+    if requires_xtb:
+        print(f"\n--- PASS 2: xTB PASS ({len(requires_xtb)} files) ---")
+        gen_xtb_1 = OIN3DGenerator(
+            optimizer="xtb", ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
+        )
+        gen_xtb_5 = OIN3DGenerator(
+            optimizer="xtb", ensemble_size=5, timeout=timeout_val, ff_params=ff_params_fast
+        )
 
-        for i, (xyz_path, oin1_string, report) in enumerate(requires_mace, 1):
+        for i, (xyz_path, oin1_string, report) in enumerate(requires_xtb, 1):
             basename = report["molecule"]
-            print(f"[{i}/{len(requires_mace)}] MACE Pass: {basename}...", flush=True)
+            print(f"[{i}/{len(requires_xtb)}] xTB Pass: {basename}...", flush=True)
 
-            # Attempt MACE_1
-            print("  -> Trying MACE_1...", end=" ", flush=True)
+            # Attempt xTB_1
+            print("  -> Trying xTB_1...", end=" ", flush=True)
             success, last_xyz = _attempt_generation(
-                "MACE_1", gen_mace_1, oin1_string, xyz_path, report
+                "xTB_1", gen_xtb_1, oin1_string, xyz_path, report
             )
             if success:
                 save_artifacts(report, last_xyz, output_dir, is_final=True)
@@ -254,10 +314,10 @@ def main():
                 continue
             print("FAILED")
 
-            # Attempt MACE_5
-            print("  -> Trying MACE_5...", end=" ", flush=True)
+            # Attempt xTB_5
+            print("  -> Trying xTB_5...", end=" ", flush=True)
             success, last_xyz = _attempt_generation(
-                "MACE_5", gen_mace_5, oin1_string, xyz_path, report
+                "xTB_5", gen_xtb_5, oin1_string, xyz_path, report
             )
             if success:
                 print("SUCCESS")
@@ -269,15 +329,16 @@ def main():
             global_report.append(report)
 
     # Save global report
+    final_report = old_report + global_report if args.continue_run else global_report
     global_path = os.path.join(output_dir, "summary_roundtrip.json")
     with open(global_path, "w") as f:
-        json.dump(global_report, f, indent=2)
+        json.dump(final_report, f, indent=2)
 
     # Print simple summary
-    successes = sum(1 for r in global_report if r["status"] == "success")
+    successes = sum(1 for r in final_report if r["status"] == "success")
     print(f"\nFinished processing {len(xyz_files)} files.")
     print(f"Successes: {successes}")
-    print(f"Failures: {len(xyz_files) - successes}")
+    print(f"Failures: {len(final_report) - successes}")
     print(f"Global report saved to {global_path}")
 
 
