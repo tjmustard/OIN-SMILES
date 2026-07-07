@@ -10,6 +10,7 @@
 
 <p align="center">
     <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/release-v0.3.3-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
 </p>
@@ -45,7 +46,9 @@ Standard SMILES notation is lossy for transition metal complexes (TMCs): coordin
 
 ## ⚡ Installation
 
-This project uses `uv` for dependency management.
+This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management. The
+default install is lightweight — the fast FF + g-xTB path, with **no `torch`**. The
+machine-learning (MACE) optimizer is an opt-in extra.
 
 1. **Install `uv`** (if not already installed):
 
@@ -60,20 +63,35 @@ This project uses `uv` for dependency management.
     cd OIN-SMILES
     ```
 
+3. **Install dependencies:**
+
     ```bash
     uv sync
     ```
 
-4. **Install `g-xTB`** (Required for standard 3D generation):
+4. **Install `g-xTB`** (recommended — the default 3D-generation optimizer):
 
-    OIN-SMILES defaults to using Grimme Lab's `g-xTB` for fast and accurate structural refinement.
+    OIN-SMILES defaults to Grimme Lab's `g-xTB` for fast, accurate structural refinement.
     ```bash
     bash tools/install_gxtb.sh
     ```
-    *This script automatically detects your OS/Architecture (Linux/macOS) and extracts the static binary directly into your `.venv/bin` folder to keep your system clean.*
+    *Detects your OS/architecture (Linux/macOS) and drops the static binary into
+    `.venv/bin` to keep your system clean. If `xtb` is absent, 3D generation falls
+    back to the force field automatically.*
+
+5. **(Optional) MACE machine-learning optimizer** — highest accuracy:
+
+    ```bash
+    uv sync --extra mace                  # pulls mace-torch + a pinned CUDA 11.8 torch
+    bash tools/install_mace_weights.sh    # downloads the weights + writes .env
+    ```
+    See [`docs/OPTIMIZERS.md`](docs/OPTIMIZERS.md) and
+    [`models/mace/README.md`](models/mace/README.md) for details.
 
 > [!NOTE]
-> `uv sync` is configured in `pyproject.toml` to automatically pull PyTorch with CUDA 11.8 support. If you require a CPU-only build or a different CUDA version, modify the `tool.uv.index` URL in `pyproject.toml` before syncing.
+> The `mace` extra pulls PyTorch with CUDA 11.8 (configured via `tool.uv.index` in
+> `pyproject.toml`). For a CPU-only or different-CUDA build, adjust that index URL
+> before syncing. The default `uv sync` installs neither `torch` nor `mace-torch`.
 
 ## 🚀 Usage
 
@@ -87,7 +105,7 @@ uv run oin-smiles xyz2oin complex.xyz
 # Default backend is the MetalloGen engine refined with standard g-xTB.
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 
-# Higher accuracy MACE refinement (needs mace-torch + weights):
+# Higher accuracy MACE refinement (needs `uv sync --extra mace` + weights):
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
 
 # Fast FF-only path (no torch/xtb), or the legacy Molassembler backend:

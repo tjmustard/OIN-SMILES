@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Default g-xTB optimizer crash.** `ASEOptimizer.optimize()` unconditionally called `atoms.get_potential_energy()` after refinement, but the g-xTB path (a subprocess, not an ASE calculator) never attaches one — so every *successful* g-xTB optimization raised `Atoms object has no calculator`. The energy is now read from the ASE calculator only on the MACE path; the g-xTB path uses the energy parsed from `xtb` stdout. Guarded by a new regression test. (`generator3d/ml_optimizer.py`)
+- **Non-functional charge/bond-order code paths.** `process.get_chg_and_bo` / `get_bo_matrix_from_adj_matrix` / `get_chg_list_from_bo_matrix` referenced a `frag`/`compute_scipy` module not vendored in this subset (would `NameError` if reached); they now route through the active PuLP solver (`compute_chg_and_bo_pulp`). Also fixed a missing `self` parameter on `Molecule.get_screening_result`, a `print_x` typo in the `Ligand` debug print, and a duplicate `get_electron_count` definition.
+
+### Changed
+- **MACE / PyTorch are now an opt-in extra.** `mace-torch` and the pinned CUDA-11.8 `torch` moved from hard dependencies to `pip install/uv sync --extra mace`. The default install is lightweight (FF + g-xTB, no `torch`), matching the documented "fast FF-only path". MACE optimizers (`mace-omol-*`) require the extra and still fail loudly if unavailable.
+- Removed dead, unreachable, partially-ported code from the vendored MetalloGen engine (fragment-based charge/BO heuristics, `get_kth_neighbor_atom_list`, `scatter_molecules`, and the `frag`-based `Detect_EZ`/`Detect_RS`/`Detect_stereocenter` stereo path — OIN-SMILES handles stereo upstream).
+
+### Added
+- **`tools/install_mace_weights.sh`**: idempotent downloader for the public `MACE-omol-0-extra-large-1024` checkpoint (ACEsuit GitHub release) that also registers `MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH` in `.env`. `models/mace/README.md` reworked accordingly (the extra-large model is freely downloadable; OMol25 remains Hugging-Face-gated).
+- **`tests/unit/test_generator3d_units.py`** (32 tests): unit coverage for the vendored `generator3d` engine — `chem.Atom`/`Molecule`, `process` helpers, the frag→PuLP reroute, package helpers, and `ASEOptimizer` (incl. the g-xTB regression test).
+- **Lint tooling & CI**: `ruff` added as a dev dependency (`[dependency-groups]`); the entire repo is now `ruff check`/`ruff format` clean (was 1817 findings). Added `.github/workflows/ci.yml` running lint + the unit and encoder suites on push/PR.
+- **Packaging metadata**: `pyproject.toml` gains a proper description, `authors`, `license`, `keywords`, `classifiers`, and `[project.urls]`.
+- **Docs**: `docs/OPTIMIZERS.md` (FF vs g-xTB vs MACE selection/install) and a `docs/README.md` index; README installation steps corrected (numbering + light-vs-MACE install).
+
+### Removed
+- Stray repository clutter: `os` (empty), `main.py` (hello-world stub), `REPORT.md`, `OpenSourceTMCBuilderReport.md`, a stray `verify_xyz_to_oin.py.fragment`, and four unrelated HACF-framework docs under `docs/`. The root HACF installer was renamed `install.sh` → `HACF-install.sh` to distinguish it from project installation (`uv sync`).
+
 ## [0.3.3] - 2026-07-06
 
 ### Changed

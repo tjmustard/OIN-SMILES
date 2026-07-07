@@ -6,15 +6,15 @@ title: "OIN-SMILES"
 abstract: >-
   A Python library for lossless conversion between 3D XYZ molecular structures and
   1D SMILES strings for Transition Metal Complexes (TMCs). Implements Open Isomer
-  Notation (OIN) v3.6 — encoding coordination geometry, slot assignments, hapticity,
+  Notation (OIN) v3.7 — encoding coordination geometry, slot assignments, hapticity,
   winding direction, and P/N stereochemistry for exact 3D reconstruction.
 authors:
   - given-names: Thomas
     family-names: Mustard
     alias: tjmustard
 license: MIT
-version: "0.2.0"
-date-released: "2026-03-07"
+version: "0.3.3"
+date-released: "2026-07-07"
 keywords:
   - transition metal complexes
   - SMILES
