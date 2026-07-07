@@ -26,7 +26,7 @@ def run_stress_test():
             print(f"OIN-SMILES: {oin_string}")
             
             # Generate 3D with MACE optimizer enabled
-            generator = OIN3DGenerator(optimizer="mace-omol-0-extra-large-1024")
+            generator = OIN3DGenerator()
             
             print(f"Attempting 3D generation + MLIP optimization...")
             result_xyzs = generator.generate(oin_string)

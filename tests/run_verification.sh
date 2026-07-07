@@ -19,7 +19,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  -h, --help            Show this help message and exit"
-    echo "  --optimizer NAME      Post-FF optimizer (e.g. mace-omol-0-extra-large-1024)"
+    echo "  --optimizer NAME      Post-FF optimizer (e.g. xtb)"
     echo "  --ff-preset PRESET    Force field preset (e.g. uff)"
     echo "  --ensemble-size N     Number of conformers to generate and optimize (default: 1)"
     echo "  --limit N             Limit the number of integration tests to run"

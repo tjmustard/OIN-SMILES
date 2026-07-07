@@ -7,6 +7,7 @@ import argparse
 import re as _re
 import shutil
 import tempfile
+import time
 
 from rdkit import Chem
 from rmsd_utils import calculate_tmc_rmsd
@@ -201,8 +202,13 @@ def main():
     parser.add_argument(
         "--optimizer",
         type=str,
-        default="mace-omol-0-extra-large-1024",
-        help="Post-FF optimizer for the MetalloGen engine. Default: 'mace-omol-0-extra-large-1024'.",
+        default="xtb",
+        help=(
+            "Post-FF optimizer for the MetalloGen engine. Default: 'xtb' (g-xTB, "
+            "subprocess wrapper with graceful FF fallback). Use "
+            "'mace-omol-0-extra-large-1024' for the accurate MACE sign-off, or 'ff' for "
+            "FF-only."
+        ),
     )
     parser.add_argument(
         "--ensemble-size",
@@ -214,6 +220,12 @@ def main():
         "--cpu",
         action="store_true",
         help="Force CPU execution.",
+    )
+    parser.add_argument(
+        "--uff-pool-size",
+        type=int,
+        default=None,
+        help="Override the default UFF conformer pool size.",
     )
     args = parser.parse_args()
 
@@ -230,13 +242,18 @@ def main():
     reporter = VerificationReporter("Round-Trip Verification Report")
 
     xyz_to_smiles = XYZToSMILES()
+    ff_params = {}
+    if args.uff_pool_size is not None:
+        ff_params["uff_pool_size"] = args.uff_pool_size
+
     generator = OIN3DGenerator(
         ff_preset=args.ff_preset, 
         optimizer=args.optimizer,
-        ensemble_size=args.ensemble_size
+        ensemble_size=args.ensemble_size,
+        ff_params=ff_params if ff_params else None
     )
-    if args.ff_preset or args.optimizer or args.ensemble_size:
-        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size}")
+    if args.ff_preset or args.optimizer or args.ensemble_size or args.uff_pool_size:
+        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size} uff_pool_size={args.uff_pool_size}")
 
     examples = get_examples()
     if args.only:
@@ -321,7 +338,11 @@ def main():
             # -------------------------------------------------------------
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
             _log_step2_inputs(oin1_string)
+            start_time = time.time()
             gen_result = generator.generate(oin1_string)
+            end_time = time.time()
+            generation_time = end_time - start_time
+            print(f"  Generation Time: {generation_time:.4f}s")
             with open(gen_xyz_path, "w") as f:
                 f.write(gen_result.xyz)
 
@@ -369,7 +390,7 @@ def main():
             # Normalize: strip atom-ordering-dependent @SP/@OH/@TB descriptors
             # from the metal fragment before comparing — the slot assignments
             # already encode the isomer; the @XY## label is xyz-order-dependent.
-            metrics: dict = {}
+            metrics: dict = {"time_seconds": round(generation_time, 4)}
             s1 = normalize_oin_for_comparison(oin1_string.strip())
             s2 = normalize_oin_for_comparison(oin2_string.strip())
 

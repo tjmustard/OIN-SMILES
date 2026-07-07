@@ -742,8 +742,8 @@ class MetalloGenAdapter:
             optimizer = None
             
         # optimizer=None -> FF-relaxed geometry only (default; always available).
-        # optimizer="xtb" -> refine the FF pool with GFN2-xTB and energy-rank
-        # (requires xtb-python + ase; degrades gracefully to FF if unavailable).
+        # optimizer="xtb" -> refine the FF pool with standard g-xTB and energy-rank
+        # (requires g-xTB binary + ase; degrades gracefully to FF if unavailable).
         self.optimizer = optimizer
         # FF convergence knobs (named preset + optional explicit overrides).
         self.ff_params = _resolve_ff_params(ff_preset, ff_params)
@@ -777,13 +777,14 @@ class MetalloGenAdapter:
         rmsd_threshold = self.ff_params.get("rmsd_threshold", 0.5) if self.ff_params else 0.5
         energy_threshold = self.ff_params.get("energy_threshold", 2.0) if self.ff_params else 2.0
 
+        clean_ff_params = {k: v for k, v in (self.ff_params or {}).items() if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold"]}
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
                 msmiles,
                 num_conformers=pool_n,
                 optimizer=self.optimizer,
                 pool_size=pool_n,
-                ff_params=self.ff_params,
+                ff_params=clean_ff_params,
                 uff_pool_size=uff_pool_size,
                 rmsd_threshold=rmsd_threshold,
                 energy_threshold=energy_threshold,
