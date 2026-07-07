@@ -39,8 +39,11 @@ Then:
 
 ```bash
 uv sync --extra mace
-oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024
+uv run --extra mace oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024
 ```
+
+(`uv run` re-syncs to the default light environment each call, so pass `--extra
+mace` to `uv run` too — or activate the venv and call `oin-smiles` directly.)
 
 ---
 

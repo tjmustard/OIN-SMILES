@@ -105,8 +105,8 @@ uv run oin-smiles xyz2oin complex.xyz
 # Default backend is the MetalloGen engine refined with standard g-xTB.
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 
-# Higher accuracy MACE refinement (needs `uv sync --extra mace` + weights):
-uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
+# Higher accuracy MACE refinement (needs the `mace` extra + weights; note --extra mace):
+uv run --extra mace oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
 
 # Fast FF-only path (no torch/xtb), or the legacy Molassembler backend:
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff

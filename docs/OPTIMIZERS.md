@@ -43,8 +43,14 @@ MACE gives the most accurate geometries but pulls a pinned CUDA-11.8 `torch`.
 ```bash
 uv sync --extra mace                 # installs mace-torch + torch
 bash tools/install_mace_weights.sh   # downloads the extra-large weights + sets .env
-oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024
+uv run --extra mace oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-extra-large-1024
 ```
+
+> **Note:** pass `--extra mace` to `uv run` as well, not just `uv sync`. `uv run`
+> re-syncs the environment to the default (light) dependency set on each call, so a
+> bare `uv run oin-smiles ... --optimizer mace-...` would report `mace-torch is not
+> installed`. Alternatively, activate the venv (`source .venv/bin/activate`) after
+> `uv sync --extra mace` and call `oin-smiles` directly.
 
 ### Weights & environment variables
 
