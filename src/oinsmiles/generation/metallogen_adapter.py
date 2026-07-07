@@ -2,8 +2,9 @@
 
 Bridges OIN-SMILES (``ParsedOIN``) to the vendored MetalloGen engine in
 ``oinsmiles.generator3d`` (dummy-metal + RDKit ``CoordMap`` embed + constrained
-MMFF/UFF cleanup). Selected via ``OIN3DGenerator(engine="metallogen")``; the
-legacy Molassembler/stitch backend remains the default.
+MMFF/UFF cleanup). This is the default backend as of v0.3.3, selected via
+``OIN3DGenerator(engine="metallogen")``; the legacy Molassembler/stitch backend
+is opt-in via ``engine="legacy"``.
 
 Slot mapping: OIN encodes an explicit per-fragment coordination vector, while
 MetalloGen assigns m-SMILES fragments to fixed ``globalvars`` coordinate slots by
@@ -35,7 +36,12 @@ logger = logging.getLogger(__name__)
 # OIN_FF_PRESET env var, or verify_roundtrip.py --ff-preset.
 FF_PRESETS = {
     "loose": {"ff_max_iters": 100, "ff_force_tol": 1e-3, "ff_energy_tol": 1e-4, "d_converge": 0.10},
-    "default": {"ff_max_iters": 200, "ff_force_tol": 1e-4, "ff_energy_tol": 1e-6, "d_converge": 0.05},
+    "default": {
+        "ff_max_iters": 200,
+        "ff_force_tol": 1e-4,
+        "ff_energy_tol": 1e-6,
+        "d_converge": 0.05,
+    },
     "tight": {
         "ff_max_iters": 2000,
         "ff_force_tol": 1e-5,
@@ -59,9 +65,7 @@ def _resolve_ff_params(ff_preset=None, ff_params=None):
     resolved = {}
     if preset:
         if preset not in FF_PRESETS:
-            raise ValueError(
-                f"Unknown ff_preset {preset!r}; choose from {sorted(FF_PRESETS)}"
-            )
+            raise ValueError(f"Unknown ff_preset {preset!r}; choose from {sorted(FF_PRESETS)}")
         resolved.update(FF_PRESETS[preset])
     if ff_params:
         resolved.update(ff_params)  # explicit kwargs win over the preset
@@ -90,9 +94,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
     """
     geo = OIN_TO_METALLOGEN_GEO.get(parsed.geo_code, "")
     if not geo:
-        raise ValueError(
-            f"Geometry code '{parsed.geo_code}' not supported by MetalloGen mapping."
-        )
+        raise ValueError(f"Geometry code '{parsed.geo_code}' not supported by MetalloGen mapping.")
 
     metallogen_vectors = globalvars.known_geometries_vector_dict[geo]
     num_slots = len(metallogen_vectors)
@@ -110,7 +112,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
         mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
         if mol is None:
             raise ValueError(f"Failed to parse fragment {i}: {frag_smiles}")
-            
+
         mol.UpdatePropertyCache(strict=False)
 
         # Fix kekulization for neutral radicals (like Cp)
@@ -126,7 +128,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             try:
                 Chem.Kekulize(mol)
             except Exception:
-                pass # If it still fails, let it be
+                pass  # If it still fails, let it be
 
         frag_vectors = [v for v in parsed.vectors if v.fragment_idx == i]
 
@@ -134,10 +136,10 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             target_vec = np.array(v.vector)
             dists = np.linalg.norm(metallogen_vectors - target_vec, axis=1)
             mg_slot_idx = int(np.argmin(dists))
-            
+
             # Heuristic to strip implicit Hs from C#N or C#O
             atom = mol.GetAtomWithIdx(v.atom_in_fragment_idx)
-            if atom.GetSymbol() == 'C':
+            if atom.GetSymbol() == "C":
                 if any(b.GetBondType() == Chem.BondType.TRIPLE for b in atom.GetBonds()):
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
@@ -149,7 +151,9 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                     for ring in ring_info.AtomRings():
                         if atom.GetIdx() in ring:
                             coord_in_ring = sum(1 for idx in ring if idx in coordinating_indices)
-                            if coord_in_ring > 2: # Cp has 5, benzene has 6. If >2 it's definitely haptic
+                            if (
+                                coord_in_ring > 2
+                            ):  # Cp has 5, benzene has 6. If >2 it's definitely haptic
                                 is_haptic = True
                                 break
                     if not is_haptic:
@@ -175,9 +179,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
         # Place the fragment at its first binding slot (monodentate = its only slot;
         # multidentate carries all its map numbers within this one fragment string).
         first_slot = int(
-            np.argmin(
-                np.linalg.norm(metallogen_vectors - np.array(frag_vectors[0].vector), axis=1)
-            )
+            np.argmin(np.linalg.norm(metallogen_vectors - np.array(frag_vectors[0].vector), axis=1))
         )
         ligand_parts[first_slot] = mapped_smiles
 
@@ -229,7 +231,8 @@ def _flatten_template(t):
     """Connectivity-only copy of a template (all single bonds, no aromatic/charge).
 
     Used only for substructure matching, so bond orders can be transferred even
-    from templates that never sanitize (e.g. C#O, O valence 3)."""
+    from templates that never sanitize (e.g. C#O, O valence 3).
+    """
     ft = Chem.RWMol(t)
     for b in ft.GetBonds():
         b.SetBondType(Chem.BondType.SINGLE)
@@ -419,8 +422,11 @@ def _norm_geo_code(code):
 
 
 def _expected_coordination_number(geo_code):
-    """Donor count implied by an OIN geo code, from the MetalloGen name prefix
-    (e.g. ``SPL`` -> ``4_square_planar`` -> 4), or None if unknown."""
+    """Donor count implied by an OIN geo code.
+
+    Taken from the MetalloGen name prefix (e.g. ``SPL`` -> ``4_square_planar``
+    -> 4), or None if unknown.
+    """
     name = OIN_TO_METALLOGEN_GEO.get(geo_code)
     if not name:
         return None
@@ -434,10 +440,10 @@ _HAPTIC_GROUP_CUTOFF = 1.6  # A -- same threshold as oin_aligner._reduce_haptici
 
 
 def _reduce_haptic_positions(donor_positions, expected_n):
-    """Cluster raw donor positions into haptic groups and return one centroid per
-    group -- but only if the number of groups equals ``expected_n``.
+    """Cluster raw donor positions into haptic groups (one centroid per group).
 
-    Mirrors the XYZ->OIN encoder's hapticity reduction
+    Returns one centroid per group only if the number of groups equals
+    ``expected_n``. Mirrors the XYZ->OIN encoder's hapticity reduction
     (``oin_aligner.OINDiscreteAligner._reduce_hapticity``): binding atoms within
     ``_HAPTIC_GROUP_CUTOFF`` of each other (transitively, so a whole Cp ring is one
     group) collapse to a single coordination point at their centroid. This lets an
@@ -498,8 +504,7 @@ def _coordination_vectors(contract_mol, expected_n=None):
     if metal_idx is None:
         return None
     donors = [
-        b.GetOtherAtomIdx(metal_idx)
-        for b in contract_mol.GetAtomWithIdx(metal_idx).GetBonds()
+        b.GetOtherAtomIdx(metal_idx) for b in contract_mol.GetAtomWithIdx(metal_idx).GetBonds()
     ]
     conf = contract_mol.GetConformer()
     m = conf.GetAtomPosition(metal_idx)
@@ -525,8 +530,11 @@ def _coordination_vectors(contract_mol, expected_n=None):
 
 
 def _perceive_geo_code(contract_mol, expected_n=None):
-    """Best-matching OIN geometry code for a contract mol's coordination sphere,
-    or None (see ``_coordination_vectors`` for the guards)."""
+    """Best-matching OIN geometry code for a contract mol's coordination sphere.
+
+    Returns None when perception is not possible (see ``_coordination_vectors``
+    for the guards).
+    """
     from ..utils.oin_aligner import classify_coordination_geometry
 
     vecs = _coordination_vectors(contract_mol, expected_n)
@@ -602,9 +610,7 @@ def _reencode_oin(mol):
     tmp_path = None
     try:
         xyz = get_xyz_string(mol)
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".xyz", delete=False
-        ) as tmp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as tmp_file:
             tmp_file.write(xyz)
             tmp_path = tmp_file.name
         return XYZToSMILES().convert(tmp_path)
@@ -620,10 +626,10 @@ def _reencode_oin(mol):
 
 
 def _select_by_geometry(parsed, mols):
-    """Choose the conformer that best realizes the requested coordination geometry,
-    falling back to the lowest-energy conformer.
+    """Choose the conformer that best realizes the requested coordination geometry.
 
-    Three levels of preference over plain energy ranking:
+    Falls back to the lowest-energy conformer. Three levels of preference over
+    plain energy ranking:
       1. Only conformers whose coordination sphere *classifies* as the target OIN
          code are eligible (a distorted geometry that best matches a different
          template is rejected).
@@ -670,9 +676,7 @@ def _select_by_geometry(parsed, mols):
                 fit = coordination_geometry_fit(vecs, target)
                 scored.append((fit, rank, m, cmol))
             except Exception:
-                logger.debug(
-                    "geometry perception failed for a conformer", exc_info=True
-                )
+                logger.debug("geometry perception failed for a conformer", exc_info=True)
                 continue
         scored.sort(key=lambda t: (t[0], t[1]))
 
@@ -694,9 +698,7 @@ def _select_by_geometry(parsed, mols):
             if oin is None:
                 continue
             if _eta_winding_multiset(oin) == target_windings:
-                logger.debug(
-                    "winding-aware selection: matched eta winding %s", target_windings
-                )
+                logger.debug("winding-aware selection: matched eta winding %s", target_windings)
                 return m, cmol if cmol is not None else build_contract_mol(parsed, m)
         logger.debug(
             "winding-aware selection: no conformer matched eta winding %s; "
@@ -733,14 +735,15 @@ class MetalloGenAdapter:
         ff_preset: str | None = None,
         ff_params: dict | None = None,
     ) -> None:
+        """Configure the backend (timeout, DG strategy, optimizer, FF knobs)."""
         self.timeout = timeout
         self.dg_strategy = dg_strategy
         self.ensemble_size = ensemble_size
-        
+
         # Treat "FF" or "none" (case-insensitive) as None
         if optimizer is not None and optimizer.lower() in ("ff", "none"):
             optimizer = None
-            
+
         # optimizer=None -> FF-relaxed geometry only (default; always available).
         # optimizer="xtb" -> refine the FF pool with standard g-xTB and energy-rank
         # (requires g-xTB binary + ase; degrades gracefully to FF if unavailable).
@@ -749,6 +752,7 @@ class MetalloGenAdapter:
         self.ff_params = _resolve_ff_params(ff_preset, ff_params)
 
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
+        """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
         msmiles = convert_parsed_to_msmiles(parsed)
         logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
 
@@ -777,7 +781,11 @@ class MetalloGenAdapter:
         rmsd_threshold = self.ff_params.get("rmsd_threshold", 0.5) if self.ff_params else 0.5
         energy_threshold = self.ff_params.get("energy_threshold", 2.0) if self.ff_params else 2.0
 
-        clean_ff_params = {k: v for k, v in (self.ff_params or {}).items() if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold"]}
+        clean_ff_params = {
+            k: v
+            for k, v in (self.ff_params or {}).items()
+            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold"]
+        }
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
                 msmiles,
@@ -821,6 +829,7 @@ class OIN3DGeneratorMetallogen:
         ff_preset: str | None = None,
         ff_params: dict | None = None,
     ) -> None:
+        """Build the OIN parser and the underlying ``MetalloGenAdapter``."""
         self.parser = OINParser()
         self.adapter = MetalloGenAdapter(
             timeout=timeout,
@@ -832,4 +841,5 @@ class OIN3DGeneratorMetallogen:
         )
 
     def generate(self, oin_string: str) -> GeneratedStructure:
+        """Parse an OIN string and generate its 3D structure."""
         return self.adapter.generate(self.parser.parse(oin_string))

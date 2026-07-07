@@ -1,43 +1,131 @@
-from typing import List, Dict, Tuple
-from itertools import combinations as comb
 import sys
 
-from rdkit import Chem
-
-import pulp as pl
 import numpy as np
+import pulp as pl
+from rdkit import Chem
 from scipy import spatial
 
-periodic_table = ['H','He','Li','Be','B','C','N','O','F','Ne',\
-    'Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn',\
-    'Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr',\
-    'Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba',\
-    'La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',\
-    'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn',\
-    'Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm']
+periodic_table = [
+    "H",
+    "He",
+    "Li",
+    "Be",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Ne",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Ar",
+    "K",
+    "Ca",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "As",
+    "Se",
+    "Br",
+    "Kr",
+    "Rb",
+    "Sr",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "Te",
+    "I",
+    "Xe",
+    "Cs",
+    "Ba",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Po",
+    "At",
+    "Rn",
+    "Fr",
+    "Ra",
+    "Ac",
+    "Th",
+    "Pa",
+    "U",
+    "Np",
+    "Pu",
+    "Am",
+    "Cm",
+]
 
 EN_TABLE = {
-    "H" : 2.300,
+    "H": 2.300,
     "Li": 0.912,
     "Be": 1.576,
-    "B" : 2.051,
-    "C" : 2.544,
-    "N" : 3.066,
-    "O" : 3.610,
-    "F" : 4.193,
+    "B": 2.051,
+    "C": 2.544,
+    "N": 3.066,
+    "O": 3.610,
+    "F": 4.193,
     "Ne": 4.787,
     "Na": 0.869,
     "Mg": 1.293,
     "Al": 1.613,
     "Si": 1.916,
-    "P" : 2.253,
+    "P": 2.253,
     # "P" : 3.053, # phosphorus, adjusted
     "S": 2.589,
     # "S" : 3.089, # sulfur, adjusted
     "Cl": 2.869,
     # "Cl" : 3.369, # Halogen, adjusted
     "Ar": 3.242,
-    "K" : 0.734,
+    "K": 0.734,
     "Ca": 1.034,
     "Ga": 1.756,
     "Ge": 1.994,
@@ -52,7 +140,7 @@ EN_TABLE = {
     "Sn": 1.824,
     "Sb": 1.984,
     "Te": 2.158,
-    "I" : 2.359 + 1,
+    "I": 2.359 + 1,
     # "I": 3.159, # Halogen, adjusted
     "Xe": 2.582,
     "Fe": 1.83,
@@ -60,7 +148,7 @@ EN_TABLE = {
 
 
 def moSolve(prob, objs, verbose: bool):
-    """multi-objective optimization. Simple modification of pulp.LpProblem.sequentialSolve"""
+    """multi-objective optimization. Simple modification of pulp.LpProblem.sequentialSolve."""
     statuses = []
     objvalues = []
     if not (prob.solver):
@@ -82,6 +170,7 @@ def moSolve(prob, objs, verbose: bool):
 
 
 def get_adj_matrix_from_distance3(molecule):
+    """Return the adj matrix from distance 3."""
     n = len(molecule.atom_list)
     radius_list = molecule.get_radius_list()
     radius_matrix = np.repeat(radius_list, n).reshape((n, n))
@@ -96,38 +185,38 @@ def get_adj_matrix_from_distance3(molecule):
 
 
 def get_adj_matrix_from_distance4(molecule, coeff=1.15):
+    """Return the adj matrix from distance 4."""
     n = len(molecule.atom_list)
     radius_list = molecule.get_radius_list()
     radius_matrix = np.repeat(radius_list, n).reshape((n, n))
     criteria_matrix = (radius_matrix + radius_matrix.T) * coeff
     coordinate_list = molecule.get_coordinate_list()
     distance_matrix = spatial.distance_matrix(coordinate_list, coordinate_list)
-    adj = np.where(
-        ((distance_matrix < criteria_matrix) | (distance_matrix < 0.80)), 1, 0
-    )
+    adj = np.where(((distance_matrix < criteria_matrix) | (distance_matrix < 0.80)), 1, 0)
     np.fill_diagonal(adj, 0)
     return adj
 
 
 def get_ring_info(z_list, adj_matrix):
-    chg_list = np.zeros(len(z_list))
-    #print("z_list", z_list)
+    """Return the ring info."""
+    np.zeros(len(z_list))
+    # print("z_list", z_list)
     new_z_list = adj_matrix.sum(axis=-1)
-    #print("new_z_list", new_z_list)
+    # print("new_z_list", new_z_list)
     new_z_list[new_z_list == 1] = 1  # H
     new_z_list[new_z_list == 2] = 8  # O
     new_z_list[new_z_list == 3] = 7  # N
     new_z_list[new_z_list == 4] = 6  # C
     new_z_list[new_z_list == 5] = 15  # P
     new_z_list[new_z_list == 6] = 16  # S
-    new_z_list[new_z_list >  6] = 26  # Fe
+    new_z_list[new_z_list > 6] = 26  # Fe
 
     new_rd = Chem.rdchem.RWMol()
     for z in new_z_list:
         new_rd.AddAtom(Chem.rdchem.Atom(int(z)))
     for b in np.vstack(np.triu(adj_matrix, k=1).nonzero()).T:
         new_rd.AddBond(int(b[0]), int(b[1]), Chem.rdchem.BondType.SINGLE)
-    #print(Chem.MolToSmiles(new_rd))
+    # print(Chem.MolToSmiles(new_rd))
     Chem.SanitizeMol(new_rd)
 
     sssrs = Chem.GetSymmSSSR(new_rd)
@@ -159,11 +248,11 @@ def get_ring_info(z_list, adj_matrix):
     # Example: Benzene
     >>> atoms_in_ring: [[0, 1, 2, 3, 4, 5]]
     >>> bonds_in_ring: [[(0,1),(1,2),(2,3),(3,4),(4,5),(5,0)]]
-    >>> ring_neighbors_info: {0: [[(0, 5), (0, 1)]], 
-                              1: [[(1, 2), (0, 1)]], 
-                              2: [[(1, 2), (2, 3)]], 
-                              3: [[(3, 4), (2, 3)]], 
-                              4: [[(3, 4), (4, 5)]], 
+    >>> ring_neighbors_info: {0: [[(0, 5), (0, 1)]],
+                              1: [[(1, 2), (0, 1)]],
+                              2: [[(1, 2), (2, 3)]],
+                              3: [[(3, 4), (2, 3)]],
+                              4: [[(3, 4), (4, 5)]],
                               5: [[(0, 5), (4, 5)]]}
     """
 
@@ -172,6 +261,7 @@ def get_ring_info(z_list, adj_matrix):
 
 def get_lists(molecule, strict=True):
     # period, group, adj
+    """Return the lists."""
     period_list, group_list = molecule.get_period_group_list()
     adj_matrix = np.copy(molecule.get_matrix("adj"))
     adj_list = np.sum(adj_matrix, axis=1)
@@ -227,6 +317,7 @@ def get_expanded_ve_list(period_list, group_list, ve_list, chg_list):
     # in_ring = in_ring.astype(bool)
 
     # expanded_idx = (period_list > 2) & ~in_ring
+    """Return the expanded ve list."""
     expanded_idx = period_list > 2
     eve_list = np.copy(ve_list)
     eve_list[expanded_idx] += (
@@ -236,9 +327,8 @@ def get_expanded_ve_list(period_list, group_list, ve_list, chg_list):
     return eve_list
 
 
-def get_modified_list(
-    period_list, eve_list, chg_list, bo_dict, ring_list, ring_bond_list
-):
+def get_modified_list(period_list, eve_list, chg_list, bo_dict, ring_list, ring_bond_list):
+    """Return the modified list."""
     mve_list = np.copy(eve_list)
     ring_members = np.unique(sum(ring_list, []))
     in_ring = np.zeros_like(period_list)
@@ -282,6 +372,7 @@ def maximize_bo(
     **kwargs,
 ):
     # early stop
+    """Maximize bo."""
     if atom_num == 1:
         return np.array([chg_mol]), {}, (None, None, None)
 
@@ -291,7 +382,7 @@ def maximize_bo(
     verbose = kwargs.get("printOptLog", False)
     Xsingle = kwargs.get("HalogenConstraint", False)
     cleanUp = kwargs.get("cleanUp", False) and (len(ring_neighbors_info) > 0)
-    M_list  = kwargs.get("MetalCenters", [])
+    M_list = kwargs.get("MetalCenters", [])
 
     db_starts = kwargs.get("db_starts", [0] * bond_num)
     tb_starts = kwargs.get("tb_starts", [0] * bond_num)
@@ -366,9 +457,7 @@ def maximize_bo(
             if a > b:
                 a, b = b, a
 
-            bo = pl.LpAffineExpression(
-                1 + db[bond_mapping[(a, b)]] + tb[bond_mapping[(a, b)]] * 2
-            )
+            bo = pl.LpAffineExpression(1 + db[bond_mapping[(a, b)]] + tb[bond_mapping[(a, b)]] * 2)
 
             lp_constr.addInPlace(bo)
             ve_constr.addInPlace(bo)
@@ -376,7 +465,8 @@ def maximize_bo(
             max_bo_obj.addInPlace(bo)
 
             # halogen atoms have only one single bond
-            # halogens might have any bond (halogen anions), and in such case, does not apply the constraint
+            # halogens might have any bond (halogen anions), and in such case, does not apply the
+            # constraint
             if Xsingle and group_list[i] == 7 and period_list[i] <= 4:
                 prob += bo == 1, f"XC_{i}"
 
@@ -415,7 +505,6 @@ def maximize_bo(
     od_priority = 1  # octet distance priority
     bo_priority = 2  # bond order maximization priority
     chg_priority = 3  # charge separation priority
-    en_priority = 4  # electronegativity priority
 
     if kwargs.get("mode", "") == "fc":
         bo_priority, chg_priority = chg_priority, bo_priority
@@ -429,7 +518,7 @@ def maximize_bo(
     objs = sorted(objs, key=lambda x: x[0])
 
     # Pulp optimization
-    #prob, statuses, objvalues = moSolve(prob, objs, True)
+    # prob, statuses, objvalues = moSolve(prob, objs, True)
     prob, statuses, objvalues = moSolve(prob, objs, False)
 
     # error handling
@@ -484,7 +573,7 @@ def resolve_chg(
     stepIdx=0,
     **kwargs,
 ):
-
+    """Resolve chg."""
     if atom_num == 1:
         return np.array([chg_mol]), {}
 
@@ -529,7 +618,6 @@ def resolve_chg(
     for i in range(atom_num):
         lp_constr = pl.LpAffineExpression(name=f"lp_{i}")
         ve_constr = pl.LpAffineExpression(name=f"ve_{i}")
-        X_flag = Xsingle and group_list[i] == 7 and period_list[i] <= 4
 
         ve_constr.addInPlace(group_list[i])
         prev_ve = group_list[i]  # previous valence electron
@@ -547,9 +635,7 @@ def resolve_chg(
             if a > b:
                 a, b = b, a
 
-            bo = pl.LpAffineExpression(
-                1 + db[bond_mapping[(a, b)]] + tb[bond_mapping[(a, b)]] * 2
-            )
+            bo = pl.LpAffineExpression(1 + db[bond_mapping[(a, b)]] + tb[bond_mapping[(a, b)]] * 2)
 
             lp_constr.addInPlace(bo)
             ve_constr.addInPlace(bo)
@@ -557,9 +643,7 @@ def resolve_chg(
             max_bo_obj.addInPlace(bo)
 
             prev_ve += (
-                1
-                + db_starts[bond_mapping[(a, b)]]
-                + 2 * tb_starts[bond_mapping[(a, b)]]
+                1 + db_starts[bond_mapping[(a, b)]] + 2 * tb_starts[bond_mapping[(a, b)]]
             )  # previous valence electron
             # Halogen Constraint
             # halogen atoms should obey the octet rule
@@ -570,7 +654,8 @@ def resolve_chg(
             # RDKit does not allow Cl and Br to have valence state greater than 1
 
             # halogen atoms have only one single bond
-            # halogens might not have any bond (halogen anions), and in such case, does not apply the constraint
+            # halogens might not have any bond (halogen anions), and in such case, does not apply
+            # the constraint
             if Xsingle and group_list[i] == 7 and period_list[i] <= 4:
                 prob += bo == 1, f"XC_{i}"
 
@@ -589,7 +674,8 @@ def resolve_chg(
                 ve_constr == prev_ve,
                 f"ve_freeze_{i}",
             )  # don't know why this is not working
-            # prob += ve_constr <= prev_ve, f"ve_freeze_{i}"  # this constraint goes wrong with azide moiety
+            # prob += ve_constr <= prev_ve, f"ve_freeze_{i}" # this constraint goes wrong with azide
+            # moiety
         else:
             prob += ve_constr >= prev_ve, f"ve_expanded_{i}"
 
@@ -610,7 +696,6 @@ def resolve_chg(
     prob += chg_constr == chg_mol, "chg_consv"
 
     ### optimization
-    bo_priority = 2  # bond order maximization priority
     chg_priority = 1  # charge separation priority
     en_priority = 3  # electronegativity priority
 
@@ -622,7 +707,7 @@ def resolve_chg(
     objs = sorted(objs, key=lambda x: x[0])
 
     # Pulp optimization
-    #prob, statuses, objvalues = moSolve(prob, objs, True)
+    # prob, statuses, objvalues = moSolve(prob, objs, True)
     prob, statuses, objvalues = moSolve(prob, objs, False)
 
     # error handling
@@ -641,9 +726,7 @@ def resolve_chg(
         output = prob.toDict()
         output["status"] = statuses
         output["obj_values"] = objvalues
-        json.dump(
-            output, open(f"output_resolve{stepIdx}.json", "w"), indent=4, default=str
-        )
+        json.dump(output, open(f"output_resolve{stepIdx}.json", "w"), indent=4, default=str)
 
     # retrieval
     bo_dict = {}
@@ -661,6 +744,7 @@ def resolve_chg(
 
 
 def compute_chg_and_bo_debug(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
+    """Compute the chg and bo debug."""
     (
         period_list,
         group_list,
@@ -755,24 +839,23 @@ def compute_chg_and_bo_debug(molecule, chg_mol, resolve=True, cleanUp=True, **kw
     return chg_list0, bo_matrix0, chg_list1, bo_matrix1
 
 
-def compute_chg_and_bo(
-    molecule, chg_mol, resolve=True, cleanUp=True, **kwargs
-):
-    """
-    Compute the charge and bond order for a given molecule.
+def compute_chg_and_bo(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
+    """Compute the charge and bond order for a given molecule.
 
     Args:
         molecule (Molecule): The molecule object containing atomic and bonding information.
         chg_mol (int): The total charge of the molecule.
-        resolve (bool, optional): Whether to go through charge resolution step if needed. Defaults to True.
-        cleanUp (bool, optional): Whether to apply heuristics that cleans up the resulting molecular graph. Defaults to True.
-        **kwargs: Additional keyword arguments to be passed to the maximize_bo and resolve_chg functions.
+        resolve (bool, optional): Whether to go through charge resolution step if needed. Defaults
+        to True.
+        cleanUp (bool, optional): Whether to apply heuristics that cleans up the resulting molecular
+        graph. Defaults to True.
+        **kwargs: Additional keyword arguments to be passed to the maximize_bo and resolve_chg
+        functions.
 
     Returns:
         tuple: A tuple containing the list of charges for each atom and the bond order matrix.::
 
     """
-
     (
         period_list,
         group_list,

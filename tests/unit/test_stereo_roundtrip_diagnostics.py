@@ -44,9 +44,7 @@ _FERROCENE_OIN_PATH = os.path.join(_CANDIDATES_DIR, "ferrocene_oin.txt")
 _DIPAMP_XYZ = os.path.join(_FIXTURES_DIR, "Rh-RR-DIPAMP-Cl2.xyz")
 
 # Stereo Phase 3 (Haptic Face Correction) fixtures.
-_HALIDE_FACE_XYZ = os.path.join(
-    _FIXTURES_DIR, "Ferrocene-halide-face.xyz"
-)
+_HALIDE_FACE_XYZ = os.path.join(_FIXTURES_DIR, "Ferrocene-halide-face.xyz")
 _HALIDE_FACE_GOLDEN_PATH = os.path.join(_CANDIDATES_DIR, "Ferrocene-halide-face_oin.txt")
 _CHIRALITY_WITNESS_OIN_PATH = os.path.join(_CANDIDATES_DIR, "ChiralityWitnessRing_oin.txt")
 _ANSA_BASELINE_XYZ_PATH = os.path.join(

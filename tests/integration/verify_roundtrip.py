@@ -247,17 +247,19 @@ def main():
         ff_params["uff_pool_size"] = args.uff_pool_size
 
     generator = OIN3DGenerator(
-        ff_preset=args.ff_preset, 
+        ff_preset=args.ff_preset,
         optimizer=args.optimizer,
         ensemble_size=args.ensemble_size,
-        ff_params=ff_params if ff_params else None
+        ff_params=ff_params if ff_params else None,
     )
     if args.ff_preset or args.optimizer or args.ensemble_size or args.uff_pool_size:
-        print(f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size} uff_pool_size={args.uff_pool_size}")
+        print(
+            f"MetalloGen engine: ff_preset={args.ff_preset!r} optimizer={args.optimizer!r} ensemble_size={args.ensemble_size} uff_pool_size={args.uff_pool_size}"
+        )
 
     examples = get_examples()
     if args.only:
-        needles = [n.strip().lower() for n in args.only.split(',')]
+        needles = [n.strip().lower() for n in args.only.split(",")]
         examples = [e for e in examples if any(n in e.name.lower() for n in needles)]
         print(f"Filtering to {len(examples)} example(s) matching '{args.only}'.")
     if args.limit:

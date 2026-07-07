@@ -1,28 +1,38 @@
-from . import om
-from . import embed
-from . import clean_geometry
+from . import clean_geometry, embed, om
+
 
 def calculate_heavy_atom_rmsd(mol1, mol2):
+    """Calculate the heavy atom rmsd."""
     import numpy as np
     from scipy.spatial.transform import Rotation
+
     c1 = np.array([a.get_coordinate() for a in mol1.atom_list if a.get_atomic_number() > 1])
     c2 = np.array([a.get_coordinate() for a in mol2.atom_list if a.get_atomic_number() > 1])
     if len(c1) == 0 or len(c1) != len(c2):
-        return float('inf')
+        return float("inf")
     c1 -= c1.mean(axis=0)
     c2 -= c2.mean(axis=0)
     try:
         rot, rmsd = Rotation.align_vectors(c1, c2)
         return rmsd
-    except:
-        return float('inf')
+    except Exception:
+        return float("inf")
+
 
 def generate_3d_structures(
-    m_smiles, num_conformers=1, optimizer=None, pool_size=5, ff_params=None, uff_pool_size=50, rmsd_threshold=0.5, energy_threshold=2.0
+    m_smiles,
+    num_conformers=1,
+    optimizer=None,
+    pool_size=5,
+    ff_params=None,
+    uff_pool_size=50,
+    rmsd_threshold=0.5,
+    energy_threshold=2.0,
 ):
-    """
-    Generate 3D structures from an m-SMILES string.
-    Returns a list of successful geometries as molecule objects, sorted by energy if an optimizer is used.
+    """Generate 3D structures from an m-SMILES string.
+
+    Returns a list of successful geometries as molecule objects, sorted by energy if an optimizer is
+    used.
 
     ff_params: optional dict of TMCOptimizer convergence knobs
     (ff_max_iters, ff_force_tol, ff_energy_tol, d_converge, num_relaxation).
@@ -34,17 +44,18 @@ def generate_3d_structures(
         return []
 
     cleaner = clean_geometry.TMCOptimizer(**(ff_params or {}))
-    options = [0, 1, 2] # Added one more option to increase pool variety
+    options = [0, 1, 2]  # Added one more option to increase pool variety
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
-    
+
     # Target number of initial structures to generate
     target_pool = uff_pool_size
     successful_mols = []
-    
+
     import itertools
+
     combinations = list(itertools.product(scales, options))
     max_attempts = max(target_pool * 5, 250)
-    
+
     for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
             break
@@ -63,18 +74,22 @@ def generate_3d_structures(
         if positions is not None:
             tmp_complex = metal_complex.copy()
             tmp_complex.set_position(positions)
-            
+
             # cleaner.clean_geometry will print logs, could be silenced later
             success = cleaner.clean_geometry(tmp_complex, scale)
-            
+
             if success:
                 successful_mols.append(tmp_complex.get_molecule())
-                    
+
     if not successful_mols:
         return []
 
     # Sort by UFF energy if available (handle None values safely)
-    successful_mols.sort(key=lambda m: getattr(m, 'energy', None) if getattr(m, 'energy', None) is not None else float('inf'))
+    successful_mols.sort(
+        key=lambda m: (
+            getattr(m, "energy", None) if getattr(m, "energy", None) is not None else float("inf")
+        )
+    )
 
     # Deduplicate
     dedup_mols = []
@@ -82,26 +97,26 @@ def generate_3d_structures(
         is_unique = True
         for acc_mol in dedup_mols:
             rmsd = calculate_heavy_atom_rmsd(mol, acc_mol)
-            e1 = getattr(mol, 'energy', None)
+            e1 = getattr(mol, "energy", None)
             e1 = e1 if e1 is not None else 0.0
-            e2 = getattr(acc_mol, 'energy', None)
+            e2 = getattr(acc_mol, "energy", None)
             e2 = e2 if e2 is not None else 0.0
             if rmsd < rmsd_threshold and abs(e1 - e2) <= energy_threshold:
                 is_unique = False
                 break
         if is_unique:
             dedup_mols.append(mol)
-    
+
     successful_mols = dedup_mols
 
     if optimizer:
         from .ml_optimizer import ASEOptimizer
-        
+
         # We explicitly do NOT catch initialization exceptions here.
         # If the user asks for an optimizer and it fails to load,
         # we want to fail loudly rather than silently falling back to FF.
         opt = ASEOptimizer(method=optimizer)
-            
+
         if opt:
             optimized_mols = []
             mols_to_optimize = successful_mols[:num_conformers]
@@ -111,20 +126,23 @@ def generate_3d_structures(
                     optimized_mols.append((energy, new_mol))
                 else:
                     # Keep the original if optimization fails but penalize its rank
-                    optimized_mols.append((float('inf'), mol))
-            
+                    optimized_mols.append((float("inf"), mol))
+
             # Sort by energy
             optimized_mols.sort(key=lambda x: x[0])
             successful_mols = [m[1] for m in optimized_mols]
-            
+
     return successful_mols[:num_conformers]
 
+
 def get_xyz_string(molecule):
-    """
-    Returns the XYZ string format for a given generated molecule.
-    """
+    """Returns the XYZ string format for a given generated molecule."""
     atom_list = molecule.atom_list
-    lines = [str(len(atom_list)), f"Generated by MetalloGen-3D, Charge: {molecule.chg}, Multiplicity: {molecule.multiplicity}"]
+    lines = [
+        str(len(atom_list)),
+        f"Generated by MetalloGen-3D, Charge: {molecule.chg}, "
+        f"Multiplicity: {molecule.multiplicity}",
+    ]
     for atom in atom_list:
         element = atom.get_element()
         coord = atom.get_coordinate()

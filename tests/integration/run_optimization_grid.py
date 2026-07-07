@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 import time
-from typing import Dict, List, Any
+from typing import Any, Dict
 
 
 def run_verify(
@@ -20,7 +20,7 @@ def run_verify(
 ) -> Dict[str, Any]:
     """Runs verify_roundtrip.py as a subprocess and parses its JSON output."""
     cmd = ["uv", "run", "python", "tests/integration/verify_roundtrip.py"]
-    
+
     cmd.extend(["--output-dir", output_dir])
     if limit:
         cmd.extend(["--limit", str(limit)])
@@ -41,7 +41,7 @@ def run_verify(
     start_time = time.time()
     result = subprocess.run(cmd, capture_output=True, text=True)
     end_time = time.time()
-    
+
     # Parse the summary
     summary_path = os.path.join(output_dir, "summary_roundtrip.json")
     if not os.path.exists(summary_path):
@@ -49,9 +49,14 @@ def run_verify(
         print(result.stdout)
         print(result.stderr)
         return {
-            "total": 0, "passed": 0, "failed": 0, "pass_rate": 0.0,
-            "avg_rmsd": 0.0, "avg_time_sec": 0.0, "total_time": end_time - start_time,
-            "error": "Summary not found"
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "pass_rate": 0.0,
+            "avg_rmsd": 0.0,
+            "avg_time_sec": 0.0,
+            "total_time": end_time - start_time,
+            "error": "Summary not found",
         }
 
     with open(summary_path, "r") as f:
@@ -86,8 +91,13 @@ def run_verify(
 
 def main():
     parser = argparse.ArgumentParser(description="Run Optimization Grid Search")
-    parser.add_argument("--phase", type=str, default="all", choices=["1", "2", "3", "all"],
-                        help="Which phase of the grid search to run.")
+    parser.add_argument(
+        "--phase",
+        type=str,
+        default="all",
+        choices=["1", "2", "3", "all"],
+        help="Which phase of the grid search to run.",
+    )
     args = parser.parse_args()
 
     base_out_dir = "verification_artifacts_opt"
@@ -100,18 +110,20 @@ def main():
         print("\n--- [Phase 1: UFF Optimization] ---")
         for uff_pool in [5, 10, 20]:
             for ff_preset in ["loose", "default", "tight"]:
-                experiments.append({
-                    "phase": "1",
-                    "name": f"P1_uff{uff_pool}_{ff_preset}",
-                    "kwargs": {
-                        "limit": 5, # Small subset
-                        "optimizer": "ff",
-                        "ff_preset": ff_preset,
-                        "uff_pool_size": uff_pool,
-                        "ensemble_size": 1,
-                        "cpu": True, # FF is purely CPU
+                experiments.append(
+                    {
+                        "phase": "1",
+                        "name": f"P1_uff{uff_pool}_{ff_preset}",
+                        "kwargs": {
+                            "limit": 5,  # Small subset
+                            "optimizer": "ff",
+                            "ff_preset": ff_preset,
+                            "uff_pool_size": uff_pool,
+                            "ensemble_size": 1,
+                            "cpu": True,  # FF is purely CPU
+                        },
                     }
-                })
+                )
 
     # Phase 2: MACE Grid Search (More difficult dimensions, small subset)
     if args.phase in ["2", "all"]:
@@ -119,48 +131,64 @@ def main():
         for ens_size in [1, 5, 10]:
             for cpu in [False, True]:
                 hw = "cpu" if cpu else "gpu"
-                experiments.append({
-                    "phase": "2",
-                    "name": f"P2_mace_ens{ens_size}_{hw}",
-                    "kwargs": {
-                        "limit": 5, # Small subset
-                        "optimizer": "xtb",
-                        "ff_preset": "default", # Assuming default is best, can adjust later
-                        "uff_pool_size": 10,
-                        "ensemble_size": ens_size,
-                        "cpu": cpu,
+                experiments.append(
+                    {
+                        "phase": "2",
+                        "name": f"P2_mace_ens{ens_size}_{hw}",
+                        "kwargs": {
+                            "limit": 5,  # Small subset
+                            "optimizer": "xtb",
+                            "ff_preset": "default",  # Assuming default is best, can adjust later
+                            "uff_pool_size": 10,
+                            "ensemble_size": ens_size,
+                            "cpu": cpu,
+                        },
                     }
-                })
+                )
 
     # Phase 3: Full suite verification at top combinations
     if args.phase in ["3", "all"]:
         print("\n--- [Phase 3: Full Suite] ---")
         # Example top combinations to test on full suite
         combos = [
-            {"optimizer": "ff", "ff_preset": "default", "uff_pool_size": 10, "ensemble_size": 1, "cpu": True},
-            {"optimizer": "xtb", "ff_preset": "default", "uff_pool_size": 10, "ensemble_size": 1, "cpu": False},
+            {
+                "optimizer": "ff",
+                "ff_preset": "default",
+                "uff_pool_size": 10,
+                "ensemble_size": 1,
+                "cpu": True,
+            },
+            {
+                "optimizer": "xtb",
+                "ff_preset": "default",
+                "uff_pool_size": 10,
+                "ensemble_size": 1,
+                "cpu": False,
+            },
         ]
         for i, combo in enumerate(combos, 1):
             hw = "cpu" if combo["cpu"] else "gpu"
             opt_short = "ff" if combo["optimizer"] == "ff" else "xtb"
-            experiments.append({
-                "phase": "3",
-                "name": f"P3_full_{opt_short}_ens{combo['ensemble_size']}_{hw}",
-                "kwargs": {
-                    "limit": None, # Full suite
-                    **combo
+            experiments.append(
+                {
+                    "phase": "3",
+                    "name": f"P3_full_{opt_short}_ens{combo['ensemble_size']}_{hw}",
+                    "kwargs": {
+                        "limit": None,  # Full suite
+                        **combo,
+                    },
                 }
-            })
+            )
 
     results = []
 
     for exp in experiments:
         out_dir = os.path.join(base_out_dir, exp["name"])
         os.makedirs(out_dir, exist_ok=True)
-        
+
         print(f"\n>> Starting Experiment: {exp['name']}")
         metrics = run_verify(output_dir=out_dir, **exp["kwargs"])
-        
+
         row = {
             "Phase": exp["phase"],
             "Experiment": exp["name"],
@@ -177,7 +205,9 @@ def main():
             "Total_Time_Sec": f"{metrics['total_time']:.1f}",
         }
         results.append(row)
-        print(f"Finished {exp['name']}: {row['Pass_Rate(%)']}% passed, Avg Time: {row['Avg_Time_Sec']}s")
+        print(
+            f"Finished {exp['name']}: {row['Pass_Rate(%)']}% passed, Avg Time: {row['Avg_Time_Sec']}s"
+        )
 
     # Write CSV
     csv_path = os.path.join(base_out_dir, "optimization_results.csv")
@@ -197,7 +227,7 @@ def main():
             headers = list(results[0].keys())
             f.write("| " + " | ".join(headers) + " |\n")
             f.write("|" + "|".join(["---" for _ in headers]) + "|\n")
-            
+
             # Create table rows (sort by Phase, then Pass Rate descending)
             sorted_results = sorted(results, key=lambda x: (x["Phase"], -float(x["Pass_Rate(%)"])))
             for row in sorted_results:

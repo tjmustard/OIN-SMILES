@@ -17,15 +17,15 @@ class TestMaceOptimizer(unittest.TestCase):
         try:
             # We expect a ValueError because the MACE_OMOL25_MODEL_PATH is not set
             optimizer = ASEOptimizer(method="mace-omol25")
-            
+
             # If initialization succeeds, the optimize method should catch the missing env var
-            # To test optimize, we would need a dummy molecule, which is slightly more complex, 
-            # but we can just check if the object is created properly. 
+            # To test optimize, we would need a dummy molecule, which is slightly more complex,
+            # but we can just check if the object is created properly.
             # In our implementation, the environment variable check happens during optimize(),
             # so we should ideally mock an optimization call or just verify initialization works.
             self.assertEqual(optimizer.method, "mace-omol25")
             self.assertTrue(optimizer._calc_cls is not None)
-            
+
         except ImportError:
             # If mace is not installed, it's fine to skip for this test
             self.skipTest("mace-torch not installed.")
@@ -43,7 +43,7 @@ class TestMaceOptimizer(unittest.TestCase):
             optimizer = ASEOptimizer(method="mace-omol-0-extra-large-1024")
             self.assertEqual(optimizer.method, "mace-omol-0-extra-large-1024")
             self.assertTrue(optimizer._calc_cls is not None)
-            
+
         except ImportError:
             self.skipTest("mace-torch not installed.")
         finally:
@@ -57,6 +57,7 @@ class TestMaceOptimizer(unittest.TestCase):
             self.assertEqual(optimizer.method, "xtb")
         except ImportError:
             self.skipTest("xtb-python not installed.")
+
 
 if __name__ == "__main__":
     unittest.main()

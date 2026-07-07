@@ -246,10 +246,11 @@ class OIN3DGenerator:
 
         ``engine="metallogen"`` (default) uses the MetalloGen dummy-metal + CoordMap
         embed backend (``oinsmiles.generator3d``), refined by the ``optimizer`` (default
-        ``"xtb"`` standard g-xTB; pass ``"ff"``/``None`` for the FF-only
-        path, or ``"mace-omol-0-extra-large-1024"`` / ``"mace-omol25"`` for higher accuracy). The MACE models require ``mace-torch`` + the model
-        weights and fail loudly if unavailable — use ``optimizer="ff"`` in environments
-        without them. ``engine="legacy"`` uses the Molassembler/stitch adapter (the
+        ``"xtb"`` standard g-xTB; pass ``"ff"``/``None`` for the FF-only path, or
+        ``"mace-omol-0-extra-large-1024"`` / ``"mace-omol25"`` for higher accuracy).
+        The MACE models require ``mace-torch`` + the model weights and fail loudly if
+        unavailable — use ``optimizer="ff"`` in environments without them.
+        ``engine="legacy"`` uses the Molassembler/stitch adapter (the
         reference for Zone-A P stereo enforcement; ``optimizer`` is ignored there). Both
         expose ``generate(parsed)``, so the ``generate()`` delegation below is identical.
         """
@@ -273,9 +274,7 @@ class OIN3DGenerator:
                 ensemble_size=ensemble_size,
             )
         else:
-            raise ValueError(
-                f"Unknown engine {engine!r}; expected 'legacy' or 'metallogen'"
-            )
+            raise ValueError(f"Unknown engine {engine!r}; expected 'legacy' or 'metallogen'")
 
     def generate(self, oin_string: str) -> GeneratedStructure:
         """Convert an OIN-SMILES string to a 3D structure.

@@ -971,9 +971,7 @@ def get_oin_string(tmc_mol, xyz_coords):
         if sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder"):
             try:
                 raw = sanitized_mol.GetProp("_smilesAtomOutputOrder")
-                output_order = [
-                    int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""
-                ]
+                output_order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
             except Exception:
                 output_order = None
 
