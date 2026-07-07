@@ -728,7 +728,7 @@ class MetalloGenAdapter:
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: int = 300,
         dg_strategy: str = "single",
         ensemble_size: int = 1,
         optimizer: str | None = None,
@@ -796,6 +796,7 @@ class MetalloGenAdapter:
                 uff_pool_size=uff_pool_size,
                 rmsd_threshold=rmsd_threshold,
                 energy_threshold=energy_threshold,
+                timeout=self.timeout,
             )
         if not mols:
             raise ValueError(
@@ -822,7 +823,7 @@ class OIN3DGeneratorMetallogen:
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: int = 300,
         ensemble_size: int = 1,
         dg_strategy: str = "single",
         optimizer: str | None = None,

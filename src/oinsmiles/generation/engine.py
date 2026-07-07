@@ -234,7 +234,7 @@ class OIN3DGenerator:
 
     def __init__(
         self,
-        timeout: int = 60,
+        timeout: int = 300,
         dg_strategy: str = "single",
         ensemble_size: int = 10,
         engine: str = "metallogen",
