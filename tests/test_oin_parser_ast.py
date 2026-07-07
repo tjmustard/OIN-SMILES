@@ -2,13 +2,23 @@
 
 import unittest
 
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 
 from oinsmiles.generation.oin_parser import tokenize_unsanitized_smiles
 
 
 class TestASTTokenization(unittest.TestCase):
     """Test suite for unsanitized SMILES tokenization."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Disable RDKit error logs for expected parse failures."""
+        RDLogger.DisableLog("rdApp.error")
+
+    @classmethod
+    def tearDownClass(cls):
+        """Re-enable RDKit error logs."""
+        RDLogger.EnableLog("rdApp.error")
 
     # ==================== DETERMINISTIC TESTS ====================
 
