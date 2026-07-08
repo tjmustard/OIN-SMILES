@@ -28,6 +28,19 @@ generated structure re-encoded with a different metal geometry code or
 fragment count; likely a ligand detached during generation → decide whether
 that's a real generation defect class for a future wave or a perception issue).
 
+## Also in scope: hard per-molecule watchdog (the `--mol-timeout` is not enough)
+
+`--mol-timeout` uses `signal.alarm` (SIGALRM) + a Python handler. That CANNOT
+interrupt a hang inside native C++ (MetalloGen/RDKit conformer search): the
+signal is queued until control returns to the Python interpreter, which never
+happens. Observed live: `UGUHAH_comp_0` (97-atom, `photo/`) wedged one Phase-0
+shard for 35+ min despite a 420 s cap; only an OS `kill` cleared it. Add a real
+watchdog — run each molecule in a subprocess and SIGKILL it on wall-clock
+timeout (or a `multiprocessing` worker with `.terminate()`), so a single
+pathological molecule can't stall a whole run. UGUHAH itself is also a generator
+robustness bug worth filing (which native call spins — needs `py-spy`/gdb with
+ptrace permission).
+
 ## Where the logic lives
 
 `tests/integration/rmsd_utils.py::calculate_tmc_rmsd` — coordination-sphere
