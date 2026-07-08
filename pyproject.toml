@@ -1,6 +1,6 @@
 [project]
 name = "oin-smiles"
-version = "0.3.4"
+version = "0.3.5"
 description = "Lossless conversion between 3D transition-metal-complex structures and 1D Open Isomer Notation (OIN) SMILES."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -39,6 +39,7 @@ dependencies = [
     "rdkit>=2025.9.3",
     "scine-molassembler>=2.0.0",
     "scipy>=1.15.3",
+    "seaborn>=0.13.2",
 ]
 
 [project.optional-dependencies]

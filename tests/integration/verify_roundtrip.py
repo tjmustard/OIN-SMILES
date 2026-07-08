@@ -4,7 +4,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
 import argparse
-import re as _re
 import shutil
 import tempfile
 import time
@@ -22,9 +21,15 @@ from oinsmiles.generation.molassembler_adapter import (
 )
 from oinsmiles.generation.oin_parser import OINParser as _OINParser
 
-_METAL_STEREO_RE = _re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
-
-_WINDING_RE = _re.compile(r"\{(\d+)[><]\}")
+# Comparison helpers live in the package (lightweight: rdkit + OINInlineHandler
+# only) so they can be reused without importing the 3D-generation stack. They are
+# re-exported here for backward compatibility with existing callers that do
+# `from verify_roundtrip import normalize_oin_for_comparison`.
+from oinsmiles.oin.compare import (  # noqa: F401
+    canonical_roundtrip_key,
+    normalize_oin_for_comparison,
+    winding_canonical_key,
+)
 
 
 def read_atom_count(xyz_path: str) -> int:
@@ -42,83 +47,6 @@ def read_atom_count(xyz_path: str) -> int:
     with open(xyz_path, "r") as f:
         first_line = f.readline().strip()
     return int(first_line)
-
-
-def normalize_oin_for_comparison(oin_string: str) -> str:
-    """Normalize an OIN string for round-trip comparison.
-
-    1. Strip atom-ordering-dependent @SP/@OH/@TB stereo descriptors from the
-       metal fragment — the slot assignments already encode the isomer geometry;
-       the @XY## label depends on XYZ atom ordering and is not reproducible.
-    2. Remove empty fragments (consecutive/trailing dots) caused by ligands that
-       are present in the XYZ but uncoordinated in the OIN (e.g. H2 in FeH2(CO)4).
-    3. Normalize water notation: [OH2] and O are chemically equivalent as bound
-       water ligands. The XYZ→OIN pipeline may write O while generated structures
-       re-analyzed after H addition write [OH2].
-    4. Winding direction markers ({n>} / {n<}) are KEPT and compared verbatim.
-       (Historically they were stripped, on the assumption that an eta ligand's
-       ring rotation/face could not be reproduced from the OIN alone.) The
-       encoder now emits a winding marker per eta ring -- per haptic slot, using
-       each ring's actual metal->centroid axis -- so the OIN string losslessly
-       encodes eta stereochemistry (an ansa-metallocene's rac/meso, a ring's
-       coordinated face). Comparing winding is exactly what lets the round trip
-       catch a generated wrong-face / wrong-diastereomer eta ligand, which the
-       coordination-sphere RMSD (eta rings reduced to a centroid) cannot see.
-    5. Canonicalize slot numbering: for OCT and other symmetric geometries where
-       different rotations yield equivalent but numerically different slot assignments,
-       renumber slots in order of first appearance. This makes equivalently-rotated
-       structures map to the same OIN after normalization (e.g., OCT with N atoms
-       at slots {3,5} vs {5,3} both normalize to {0,1} for the N atoms).
-    """
-    s = _METAL_STEREO_RE.sub(r"[\1_\2]", oin_string)
-    # Normalize [OH2] → O (bound water notation equivalence)
-    s = s.replace("[OH2]", "O")
-    # Winding markers ({n>} / {n<}) are intentionally NOT stripped -- they carry
-    # eta-ligand stereochemistry that the round trip must verify (see docstring).
-    # Collapse multiple consecutive dots and strip trailing dots
-    while ".." in s:
-        s = s.replace("..", ".")
-    s = s.rstrip(".")
-
-    # Canonicalize slot numbering: renumber slots in order of first appearance
-    import re as _re_canon
-
-    slot_map = {}
-    next_slot = 0
-
-    def replace_slot(match):
-        nonlocal next_slot
-        old_slot = int(match.group(1))
-        winding = match.group(2) or ""  # preserve the {n>}/{n<} marker, if any
-        if old_slot not in slot_map:
-            slot_map[old_slot] = next_slot
-            next_slot += 1
-        return "{" + str(slot_map[old_slot]) + winding + "}"
-
-    s = _re_canon.sub(r"\{(\d+)([><^]?)\}", replace_slot, s)
-    return s
-
-
-def winding_canonical_key(normalized_oin: str):
-    """Canonical comparison key that treats eta-ring winding as a MULTISET.
-
-    Returns ``(winding_stripped_string, sorted_winding_multiset)``.
-
-    Two OIN strings that describe the same molecule but differ only in which of
-    two EQUIVALENT eta rings is labeled the lower slot must compare equal. An
-    achiral *meso* ansa-metallocene can be written ``{0<}{1>}`` or ``{0>}{1<}``
-    -- the two rings are interchangeable, so both are the same structure; only
-    which one the encoder happened to call slot 0 differs (a canonicalization
-    ambiguity for symmetric rings). Comparing the winding as an order-independent
-    multiset makes those equal, while still catching a real error:
-      * a diastereomer flip: ``['<','>']`` (meso) vs ``['>','>']`` (rac)
-      * an enantiomer flip:  ``['>','>']``       vs ``['<','<']``
-    both change the multiset and still fail. The winding-stripped remainder must
-    still match exactly, so every non-winding difference is caught as before.
-    """
-    windings = sorted(_re.findall(r"\{\d+([<>])\}", normalized_oin))
-    stripped = _re.sub(r"\{(\d+)[<>]\}", r"{\1}", normalized_oin)
-    return stripped, windings
 
 
 def _log_step2_inputs(oin_string: str) -> None:

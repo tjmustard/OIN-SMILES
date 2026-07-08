@@ -83,6 +83,11 @@ OIN_TO_METALLOGEN_GEO = {
     "TBP": "5_trigonal_bipyramidal",
     "OCT": "6_octahedral",
     "PBP": "7_pentagonal_bipyramidal",
+    # Value MUST byte-match the vendored globalvars key, which is MISSPELLED
+    # "squre" (see generator3d/globalvars.known_geometries_vector_dict). Do not
+    # "fix" it -- the lookup KeyErrors otherwise. Sibling key "8_sqaure_prismatic"
+    # is likewise misspelled upstream.
+    "SQA": "8_squre_antiprismatic",
 }
 
 
@@ -137,38 +142,49 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             dists = np.linalg.norm(metallogen_vectors - target_vec, axis=1)
             mg_slot_idx = int(np.argmin(dists))
 
-            # Heuristic to strip implicit Hs from C#N or C#O
+            # Reconcile the binding atom's hydrogen count with its donor role.
+            #
+            # An EXPLICIT H count from the OIN (a bracket atom -- [NH], [OH2],
+            # [CH2] -- has NoImplicit set) is authoritative: the encoder already
+            # decided this is a neutral dative L-type donor that KEEPS its H
+            # (secondary amine, aqua, sigma-alkyl/benzyl). Only a BARE binding
+            # atom carries a phantom implicit H that the metal bond replaces, so
+            # only bare atoms are reinterpreted below.
             atom = mol.GetAtomWithIdx(v.atom_in_fragment_idx)
-            if atom.GetSymbol() == "C":
-                if any(b.GetBondType() == Chem.BondType.TRIPLE for b in atom.GetBonds()):
-                    atom.SetNoImplicit(True)
-                    atom.SetNumExplicitHs(0)
-                elif atom.GetIsAromatic():
-                    # Count how many coordinating atoms are in the same ring
-                    ring_info = mol.GetRingInfo()
-                    coordinating_indices = [vec.atom_in_fragment_idx for vec in frag_vectors]
-                    is_haptic = False
-                    for ring in ring_info.AtomRings():
-                        if atom.GetIdx() in ring:
-                            coord_in_ring = sum(1 for idx in ring if idx in coordinating_indices)
-                            if (
-                                coord_in_ring > 2
-                            ):  # Cp has 5, benzene has 6. If >2 it's definitely haptic
-                                is_haptic = True
-                                break
-                    if not is_haptic:
-                        atom.SetNoImplicit(True)
-                        atom.SetNumExplicitHs(0)
-            elif atom.GetSymbol() in ("O", "S"):
-                # Anionic / oxo chalcogen donor (enolate, alkoxide, oxo, thiolate):
-                # the covalent metal bond replaces what would be an implicit H.
-                atom.SetNoImplicit(True)
-                atom.SetNumExplicitHs(0)
-            elif atom.GetSymbol() == "N":
-                # Amide / imide N (>= 2 heavy neighbours) is an anionic X-type donor;
-                # strip its H. Dative amines (NH3, NHR2) have < 2 heavy neighbours -> keep.
+            if not atom.GetNoImplicit():
+                sym = atom.GetSymbol()
                 heavy = sum(1 for nb in atom.GetNeighbors() if nb.GetAtomicNum() > 1)
-                if heavy >= 2:
+                strip = False
+                if sym == "C":
+                    if any(b.GetBondType() == Chem.BondType.TRIPLE for b in atom.GetBonds()):
+                        strip = True  # C#O / C#N carbon has no H
+                    elif atom.GetIsAromatic():
+                        # sigma-aryl carbanion strips its H; a haptic ring carbon
+                        # (Cp/arene, >2 coordinating atoms in the ring) keeps it.
+                        ring_info = mol.GetRingInfo()
+                        coordinating_indices = [vec.atom_in_fragment_idx for vec in frag_vectors]
+                        is_haptic = any(
+                            atom.GetIdx() in ring
+                            and sum(1 for idx in ring if idx in coordinating_indices) > 2
+                            for ring in ring_info.AtomRings()
+                        )
+                        strip = not is_haptic
+                    elif heavy >= 2:
+                        # Non-aromatic sigma-carbon donor already bonded to >=2 heavy
+                        # atoms: an NHC carbene (C between two ring N) or a carbanion.
+                        # It cannot carry implicit H AND a metal bond without exceeding
+                        # valence, so it is a 0-H donor -- drop the phantom CH2 hydrogens.
+                        strip = True
+                elif sym in ("O", "S"):
+                    # Bare chalcogen donor = anionic alkoxide / thiolate / oxo -> 0 H.
+                    # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
+                    strip = True
+                elif sym == "N":
+                    # Bare N with >=2 heavy neighbours = anionic amido / imido X-type
+                    # donor. A neutral dative amine is written [NH] and kept above.
+                    if heavy >= 2:
+                        strip = True
+                if strip:
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
 
@@ -232,6 +248,17 @@ def _flatten_template(t):
 
     Used only for substructure matching, so bond orders can be transferred even
     from templates that never sanitize (e.g. C#O, O valence 3).
+
+    Radical electrons / explicit-H valence must also be cleared: an OIN ligand
+    atom that binds the (now-stripped) metal is under-valent, so its template
+    atom carries a radical (e.g. the three metal-bound carbons of an eta3-allyl,
+    ``[CH2][CH]=[CH]...``). RDKit's substructure matcher treats radical-electron
+    count as a match constraint, so a radical-bearing query never matches the
+    generated fragment (whose atoms are H-saturated with 0 radicals) -- the
+    match silently returns empty and no bond orders/aromaticity transfer, which
+    dearomatizes the ligand in the round trip. Normalizing to a plain
+    connectivity graph (0 radicals, implicit H) fixes the match without ever
+    loosening it (heavy-atom count + connectivity + element still gate it).
     """
     ft = Chem.RWMol(t)
     for b in ft.GetBonds():
@@ -240,12 +267,38 @@ def _flatten_template(t):
     for a in ft.GetAtoms():
         a.SetIsAromatic(False)
         a.SetFormalCharge(0)
+        a.SetNumRadicalElectrons(0)
+        a.SetNoImplicit(False)
+        a.SetNumExplicitHs(0)
     m = ft.GetMol()
     try:
         m.UpdatePropertyCache(strict=False)
     except Exception:
         pass
     return m
+
+
+def _template_lp_label(t, ai: int) -> "str | None":
+    """Return the lone-pair CIP ('R'/'S') for a Zone-A P donor template atom.
+
+    Deliberately uses ``rdCIPLabeler`` -- NOT the legacy ``Chem.AssignStereochemistry``
+    that ``_oin_fragment_templates`` stamps as ``_CIPCode`` for the backbone paths.
+    The two labelers disagree for a 3-coordinate P (ACUWUT: legacy 'R' vs
+    rdCIPLabeler 'S'), and ``ChiralityRecoveryUtility.recover``'s Zone-A lone-pair
+    branch recomputes with ``rdCIPLabeler`` on the metal-free fragment. The template
+    is likewise metal-absent and 3-coordinate -- the same configuration recover()
+    sees -- so an rdCIPLabeler label taken here round-trips against recover()'s own
+    recomputation. Returns None if the label can't be assigned.
+    """
+    from rdkit.Chem import rdCIPLabeler
+
+    try:
+        tt = Chem.Mol(t)
+        rdCIPLabeler.AssignCIPLabels(tt)
+        a = tt.GetAtomWithIdx(ai)
+        return a.GetProp("_CIPCode") if a.HasProp("_CIPCode") else None
+    except Exception:
+        return None
 
 
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
@@ -260,6 +313,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """
     from rdkit.Geometry import Point3D
 
+    from ..core.chirality import _LP_CIP_PROP
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
 
     try:
@@ -301,8 +355,19 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         templates = _oin_fragment_templates(parsed)
         flats = [_flatten_template(t) for t in templates]
         used = [False] * len(templates)
-        # global contract-atom idx -> encoded CIP code for sp3 carbon stereocentres
-        carbon_stereo_targets: dict[int, str] = {}
+        # global contract-atom idx -> encoded CIP code for sp3 stereocentres that
+        # recover() leaves untouched (carbon, silicon, sulfur); oriented by the
+        # perceive-then-flip loop below. Backbone phosphorus is handled separately
+        # via an _OIN_CIPCode stamp (see the template loop).
+        sp3_stereo_targets: dict[int, str] = {}
+        # global contract-atom idx -> rdCIPLabeler lone-pair CIP for a Zone-A P
+        # *donor* (metal-bonded, stereogenic lone pair). Stamped as _OIN_CIPCode_LP
+        # and tag-seeded AFTER 3D perception below so recover()'s lone-pair
+        # verify-and-flip keeps it -- the same end state a forward-pass CIPAssigner
+        # mol reaches. Kept separate from sp3_stereo_targets because the label is
+        # the rdCIPLabeler convention (recover() recomputes with rdCIPLabeler),
+        # not the legacy _CIPCode the backbone paths carry.
+        zone_a_lp_targets: dict[int, str] = {}
 
         for fi, fm in enumerate(frag_mols):
             orig = mapping[fi]
@@ -346,11 +411,33 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                     if ta.GetIsAromatic():
                         rwa.SetIsAromatic(True)
                     rwa.SetFormalCharge(ta.GetFormalCharge())
-                    # Record encoded CIP for sp3 carbon stereocentres so we can
-                    # override the (stochastic) embed handedness below. P/N Zone-A
-                    # donors are left to ChiralityRecoveryUtility.
-                    if ta.GetAtomicNum() == 6 and ta.HasProp("_CIPCode"):
-                        carbon_stereo_targets[q2g[match[ai]]] = ta.GetProp("_CIPCode")
+                    # Carry encoded sp3 stereo from the template. Backbone carbon
+                    # (and Si/S, which recover() leaves untouched) is oriented by
+                    # the perceive-then-flip loop below. A backbone phosphorus is an
+                    # exception: ChiralityRecoveryUtility.recover() would clear its
+                    # tag as a stray (its 4-neighbour, no-_OIN_CIPCode else-branch),
+                    # so instead stamp the encoded CIP as _OIN_CIPCode -- recover()
+                    # then keeps and orients it, exactly as for a forward-pass mol
+                    # that went through CIPAssigner.
+                    gidx = q2g[match[ai]]
+                    anum = ta.GetAtomicNum()
+                    if anum == 15 and gidx in donors:
+                        # Zone-A P donor: stereogenic lone pair. recover()'s
+                        # lone-pair branch needs _OIN_CIPCode_LP (rdCIPLabeler
+                        # convention) + a seeded tag, both applied after 3D
+                        # perception below. Gate on the parsed [P@] chiral tag --
+                        # reliable even when legacy AssignStereochemistry declines
+                        # to CIP-label a 3-coordinate P -- and take the label from
+                        # rdCIPLabeler, NOT the legacy _CIPCode (they disagree).
+                        if ta.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
+                            label = _template_lp_label(t, ai)
+                            if label is not None:
+                                zone_a_lp_targets[gidx] = label
+                    elif ta.HasProp("_CIPCode"):
+                        if anum in (6, 14, 16):
+                            sp3_stereo_targets[gidx] = ta.GetProp("_CIPCode")
+                        elif anum == 15 and gidx not in donors:
+                            rwa.SetProp("_OIN_CIPCode", ta.GetProp("_CIPCode"))
                 used[ti] = True
                 break
 
@@ -370,15 +457,16 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
             except Exception:
                 pass
 
-        # Carry ENCODED sp3-carbon stereo. The embed picks a random handedness
-        # at backbone stereocentres, so 3D-perceived stereo can be the enantiomer
-        # of what the OIN fragment SMILES encodes. Where the geometry-derived CIP
-        # disagrees with the template CIP, flip the tag -- the perceive-then-flip
-        # pattern ChiralityRecoveryUtility already uses for Zone-A P (a bare tag
-        # flip does not survive get_oin_string's fragment rebuild; a CIP-validated
-        # one does). Bounded fixed point: flipping one centre can change another's
-        # CIP priority ranking.
-        if carbon_stereo_targets:
+        # Carry ENCODED sp3 stereo (carbon, silicon, sulfur). The embed picks a
+        # random handedness at backbone stereocentres, so 3D-perceived stereo can
+        # be the enantiomer of what the OIN fragment SMILES encodes. Where the
+        # geometry-derived CIP disagrees with the template CIP, flip the tag -- the
+        # perceive-then-flip pattern ChiralityRecoveryUtility already uses for
+        # Zone-A P (a bare tag flip does not survive get_oin_string's fragment
+        # rebuild; a CIP-validated one does). Bounded fixed point: flipping one
+        # centre can change another's CIP priority ranking. (Backbone P is oriented
+        # downstream by recover() via its _OIN_CIPCode stamp, not here.)
+        if sp3_stereo_targets:
             _CW = Chem.ChiralType.CHI_TETRAHEDRAL_CW
             _CCW = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
             for _ in range(3):
@@ -387,7 +475,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                 except Exception:
                     break
                 changed = False
-                for gidx, want in carbon_stereo_targets.items():
+                for gidx, want in sp3_stereo_targets.items():
                     a = mol.GetAtomWithIdx(gidx)
                     cur = a.GetPropsAsDict().get("_CIPCode")
                     tag = a.GetChiralTag()
@@ -396,6 +484,21 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         changed = True
                 if not changed:
                     break
+
+        # Zone-A P donor lone-pair stereo. Make the generated donor arrive at
+        # get_oin_string in the same state a forward-pass CIPAssigner mol would:
+        # the rdCIPLabeler lone-pair label stamped as _OIN_CIPCode_LP plus a
+        # specified chiral tag. recover()'s lone-pair branch then verifies and
+        # flips to match the stored label on the metal-free fragment. Must run
+        # AFTER 3D perception and the sp3 flip loop above, both of which clear or
+        # overwrite chiral tags (the dative metal->P bond makes
+        # AssignStereochemistryFrom3D return CHI_UNSPECIFIED here anyway). The
+        # seeded handedness is arbitrary -- recover() recomputes and reorients --
+        # it only needs to be non-UNSPECIFIED for the flip to have a target.
+        for gidx, label in zone_a_lp_targets.items():
+            p = mol.GetAtomWithIdx(gidx)
+            p.SetProp(_LP_CIP_PROP, label)
+            p.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
         return mol
     except Exception:
         return None
