@@ -12,7 +12,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../test
 
 from rdkit import Chem
 from rmsd_utils import calculate_tmc_rmsd
-from verify_roundtrip import normalize_oin_for_comparison, read_atom_count
+from verify_roundtrip import (
+    canonical_roundtrip_key,
+    normalize_oin_for_comparison,
+    read_atom_count,
+)
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
@@ -58,11 +62,15 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
 
         report["smiles_2"] = oin2_string
 
-        # Verification
+        # Verification: compare by structure-level canonical key (collapses
+        # chemically-meaningless notation drift -- implicit-H, carbene, symmetric
+        # donor, fragment order -- while still catching genuinely different
+        # connectivity, metal/geometry, or eta winding). The normalized strings
+        # are kept only for the human-readable diagnostic message.
         s1 = normalize_oin_for_comparison(oin1_string.strip())
         s2 = normalize_oin_for_comparison(oin2_string.strip())
 
-        if s1 != s2:
+        if canonical_roundtrip_key(oin1_string) != canonical_roundtrip_key(oin2_string):
             report["error"] = f"String mismatch at {tier_name}. Exp: {s1}, Got: {s2}"
             return False, last_gen_xyz_content
 
