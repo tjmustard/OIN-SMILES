@@ -924,7 +924,55 @@ def get_oin_string(tmc_mol, xyz_coords):
                     if bond:
                         mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
 
+        # Second pass: carry double-bond (E/Z) stereo across the rebuild. The
+        # loop above copied bond TYPE only; STEREOE/Z plus the stereo-reference
+        # atoms are not, so cis/trans alkene geometry would be lost. Re-apply it
+        # now that every fragment bond exists (SetStereoAtoms requires the
+        # reference atoms to be bonded), remapping the reference atoms to the new
+        # fragment indices. SetDoubleBondNeighborDirections (before the final
+        # MolToSmiles) then emits the '/'\''\'' markers.
+        for bond in mol.GetBonds():
+            if bond.GetStereo() == Chem.BondStereo.STEREONONE:
+                continue
+            u, v = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+            stereo_atoms = list(bond.GetStereoAtoms())
+            if (
+                u in old_to_new
+                and v in old_to_new
+                and len(stereo_atoms) == 2
+                and all(a in old_to_new for a in stereo_atoms)
+            ):
+                new_bond = mw.GetBondBetweenAtoms(old_to_new[u], old_to_new[v])
+                if new_bond is not None:
+                    a0, a1 = old_to_new[stereo_atoms[0]], old_to_new[stereo_atoms[1]]
+                    new_bond.SetStereoAtoms(a0, a1)
+                    new_bond.SetStereo(bond.GetStereo())
+
         frag_mol = mw.GetMol()
+        # Materialize single-bond directions from the carried E/Z stereo *now*,
+        # before the downstream recover()/AssignStereochemistry(cleanIt=True):
+        # cleanIt drops any double-bond stereo it cannot corroborate from bond
+        # directions, so without this the cis/trans label would be stripped.
+        try:
+            frag_mol.UpdatePropertyCache(strict=False)
+            Chem.SetDoubleBondNeighborDirections(frag_mol)
+        except Exception:
+            pass
+
+        # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
+        # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).
+        # Remap BEFORE generate_robust_smiles so the force-bracket, the radical
+        # fill, and the {slot} marker all land on the same canonical rep, making
+        # the base SMILES itself byte-identical across the two round-trip
+        # directions. Monodentate-only (single binder) sidesteps every
+        # multi-binder hazard (bidentate chelates, eta rings and their
+        # winding/circulation code). Fail-safe: identity map on any failure.
+        binder_local_to_rep = {}
+        if not is_metal and len(frag_binding_atoms) == 1:
+            g_idx = frag_binding_atoms[0][0]
+            if g_idx in old_to_new:
+                bl = old_to_new[g_idx]
+                binder_local_to_rep[bl] = OINSanitizer.canonical_donor_representative(frag_mol, bl)
 
         # Identify binding atoms in new local indices
         frag_binding_indices_local = []
@@ -938,7 +986,8 @@ def get_oin_string(tmc_mol, xyz_coords):
         for binding_item in frag_binding_atoms:
             g_idx = binding_item[0]
             if g_idx in old_to_new:
-                frag_binding_indices_local.append(old_to_new[g_idx])
+                local = old_to_new[g_idx]
+                frag_binding_indices_local.append(binder_local_to_rep.get(local, local))
 
         sanitized_smiles = ""
         sanitized_mol = frag_mol  # Default fallback
@@ -948,6 +997,9 @@ def get_oin_string(tmc_mol, xyz_coords):
             )
             # Re-apply correct @/@@ on P/N atoms using pre-fragmentation _OIN_CIPCode.
             sanitized_mol = ChiralityRecoveryUtility().recover(sanitized_mol)
+            # Derive the single-bond directions from the carried E/Z stereo so the
+            # canonical SMILES writes the '/' and '\' cis/trans markers.
+            Chem.SetDoubleBondNeighborDirections(sanitized_mol)
             sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
@@ -1002,6 +1054,11 @@ def get_oin_string(tmc_mol, xyz_coords):
         for g_idx, m, coords in frag_binding_atoms:
             if g_idx in old_to_new:
                 l_idx_in_frag = old_to_new[g_idx]
+                # Route through the canonical-donor remap so the {slot} marker
+                # lands on the same rep the force-bracket used above. Keep
+                # g_idx/mass/coords untouched: coords still drive the geometry
+                # slot number from the real metal-facing atom.
+                l_idx_in_frag = binder_local_to_rep.get(l_idx_in_frag, l_idx_in_frag)
                 s_idx = frag_to_smiles_idx.get(l_idx_in_frag, 0)  # Default 0 if fail
                 final_binding_atoms.append((g_idx, m, coords, s_idx))
 

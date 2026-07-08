@@ -154,6 +154,10 @@ def get_alternative_molecule(metal_complex, option):
     )
     total_adj = np.zeros((total_atom_num, total_atom_num))
 
+    # Accumulate each ligand's carried C=C stereo, remapped from ligand-local to
+    # complex-global atom indices, so it can be enforced on the embed rd_mol.
+    total_stereo_bonds = []
+
     m = 0
 
     dummy_atom_cn_list = []
@@ -165,6 +169,17 @@ def get_alternative_molecule(metal_complex, option):
         binding_infos = ligand.binding_infos
         atom_list = ligand.molecule.atom_list
         mol_adj = ligand.molecule.adj_matrix
+
+        for si, sj, stereo, sra, srb in getattr(ligand.molecule, "stereo_bonds", []):
+            total_stereo_bonds.append(
+                (
+                    atom_indices[si],
+                    atom_indices[sj],
+                    stereo,
+                    atom_indices[sra],
+                    atom_indices[srb],
+                )
+            )
 
         for j in range(len(atom_list)):
             for k in range(len(atom_list)):
@@ -253,6 +268,8 @@ def get_alternative_molecule(metal_complex, option):
         valid_ace_mol.multiplicity = total_mult
 
         valid_ace_mol.atom_list[metal_index] = dummy_center
+
+        valid_ace_mol.stereo_bonds = list(total_stereo_bonds)
 
         ace_mol_list.append(valid_ace_mol)
 
@@ -350,6 +367,47 @@ def align_double_single_ligand(metal_complex, positions, d_criteria=1.7):
     return positions
 
 
+def _apply_double_bond_stereo(rd_mol, stereo_bonds):
+    """Set carried C=C (cis/trans) stereo on an embed-ready rd_mol.
+
+    ``stereo_bonds`` is a list of ``(i, j, BondStereo, refA, refB)`` in the mol's
+    own atom-index space (``get_rd_mol`` preserves atom order 1:1). Setting the
+    stereo plus its two reference atoms makes RDKit distance geometry reproduce
+    the requested E/Z; the ace_mol pipeline is otherwise stereo-blind, so the
+    double-bond dihedral would embed at random (cis-biased). Skips silently for a
+    bond that is absent or no longer double (e.g. a PuLP bond-order re-perception
+    relocated it), degrading to the previous behavior rather than raising.
+    """
+    if not stereo_bonds:
+        return
+    n = rd_mol.GetNumAtoms()
+    changed = False
+    for i, j, stereo, ref_a, ref_b in stereo_bonds:
+        if max(i, j, ref_a, ref_b) >= n:
+            continue
+        bond = rd_mol.GetBondBetweenAtoms(int(i), int(j))
+        if bond is None:
+            continue
+        # A carried stereo bond is always a genuine C=C from the input SMILES. The
+        # dummy-metal PuLP re-perception can drop it to SINGLE in the embed mol,
+        # which would leave nothing to constrain and let the dihedral (hence the
+        # scan target that seeds the FF cleanup) embed at random. Restore the
+        # double bond so distance geometry enforces the requested E/Z.
+        if bond.GetBondType() != Chem.BondType.DOUBLE:
+            bond.SetBondType(Chem.BondType.DOUBLE)
+            changed = True
+        try:
+            bond.SetStereoAtoms(int(ref_a), int(ref_b))
+            bond.SetStereo(stereo)
+        except Exception:
+            continue
+    if changed:
+        try:
+            rd_mol.UpdatePropertyCache(strict=False)
+        except Exception:
+            pass
+
+
 def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=True):
     """Return the embedding."""
     atom_d_criteria = 0.5
@@ -395,6 +453,10 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
     for alternative_ace_mol in alternative_ace_mol_list:
         alternative_ace_mol_list.index(alternative_ace_mol)
         rd_mol = alternative_ace_mol.get_rd_mol()
+        # Carried C=C stereo persists across the repeated EmbedMolecule calls below
+        # (it is a bond property, not cleared by embedding), so set it once here.
+        stereo_bonds = getattr(alternative_ace_mol, "stereo_bonds", [])
+        _apply_double_bond_stereo(rd_mol, stereo_bonds)
         print("Trying ", Chem.MolToSmiles(rd_mol))
 
         positions = None
@@ -448,6 +510,9 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
                     False, method="pulp", MetalCenters=[metal_index]
                 )
                 rd_mol = alternative_ace_mol.get_rd_mol()
+                # get_valid_molecule preserves atom order, so the captured indices
+                # still apply; re-set the stereo on the rebuilt rd_mol.
+                _apply_double_bond_stereo(rd_mol, stereo_bonds)
                 print("Trying ", Chem.MolToSmiles(rd_mol))
 
                 try:

@@ -32,6 +32,16 @@ class XYZToSMILES:
         # Assign 3D-derived CIP codes to P/N stereocenters before fragmentation.
         # tmc_mol from get_tmc_mol() is already sanitized and has a valid 3D conformer.
         Chem.SanitizeMol(tmc_mol)
+
+        # Perceive C=C (cis/trans) stereo from the 3D geometry so get_oin_string can
+        # carry it into the OIN string (its E/Z carry reads bond.GetStereo() on this
+        # mol). Deliberately scoped to double bonds only -- this does NOT run
+        # AssignAtomChiralTagsFromStructure, so it does not enforce sp3 handedness the
+        # generator does not reproduce (which would regress ~20% of complexes). This
+        # is what makes the OIN round trip lossless for, and able to verify, cis/trans.
+        Chem.DetectBondStereochemistry(tmc_mol, -1)
+        Chem.AssignStereochemistry(tmc_mol, force=True)
+
         CIPAssigner().assign_all(tmc_mol)
 
         # 2. Generate OIN (ChiralityRecoveryUtility is applied inside get_oin_string)

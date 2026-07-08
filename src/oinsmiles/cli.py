@@ -86,7 +86,7 @@ def main() -> None:
     p_oin2xyz.add_argument(
         "--optimizer",
         type=str,
-        default="xtb",
+        default="g-xtb",
         help=(
             "Geometry optimizer for the metallogen engine (default: "
             "xtb, standard g-xTB). Use 'mace-omol-0-extra-large-1024' or "

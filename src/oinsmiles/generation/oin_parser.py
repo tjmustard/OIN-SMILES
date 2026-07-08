@@ -426,6 +426,21 @@ TEMPLATES = {
             [0.30901699, -0.95105652, 0],  # Eq 5 (288 deg)
         ]
     ),
+    # CN 8 -- square antiprismatic. Same /sqrt(3) vectors as MetalloGen's
+    # `8_squre_antiprismatic` and the encoder's TEMPLATE_SPECS["SQA"], so
+    # slot s here maps to generator slot s (identity nearest-vector match).
+    "SQA": np.array(
+        [
+            [-0.5773503, 0.5773503, 0.5773503],
+            [0.5773503, 0.5773503, 0.5773503],
+            [-0.5773503, -0.5773503, 0.5773503],
+            [0.5773503, -0.5773503, 0.5773503],
+            [-0.8141210, 0.0, -0.5773503],
+            [0.0, -0.8141210, -0.5773503],
+            [0.8141210, 0.0, -0.5773503],
+            [0.0, 0.8141210, -0.5773503],
+        ]
+    ),
 }
 
 
