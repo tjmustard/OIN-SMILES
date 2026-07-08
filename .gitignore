@@ -89,3 +89,7 @@ tests/backup/
 spec/handoff/
 spec/process/
 spec/worklog/
+
+# Scientific manuscript workspace (not for VCS)
+/manuscript
+/spec/handoffs

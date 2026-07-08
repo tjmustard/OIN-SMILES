@@ -744,6 +744,11 @@ class Molecule:
         self.formula_id = None
         self.molecule_id = None
         self.atom_id_list = None
+        # Carried C=C (cis/trans) stereo the otherwise stereo-blind ace_mol cannot
+        # hold: list of (i, j, BondStereo, refAtomA, refAtomB) in this molecule's
+        # atom-index space, enforced on the embed rd_mol so distance geometry
+        # reproduces the requested E/Z (see ligand.get_ligand_from_smiles).
+        self.stereo_bonds = []
 
         if data is None:
             pass
@@ -1432,6 +1437,9 @@ class Molecule:
         if "chg" in self.atom_feature:
             new_molecule.atom_feature["chg"] = np.copy(self.atom_feature["chg"])
         # Copy molecular id
+
+        # Carry the C=C stereo list (indices are atom-order-stable across copy).
+        new_molecule.stereo_bonds = list(getattr(self, "stereo_bonds", []))
 
         # Above things are essential for copy
         if copy_all:

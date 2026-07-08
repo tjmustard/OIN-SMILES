@@ -95,6 +95,68 @@ class OINSanitizer:
         smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
         return smiles, kmol
 
+    @staticmethod
+    def canonical_donor_representative(ligand_mol, binder_idx):
+        """Return the canonical representative of a binder's symmetric donor set.
+
+        A monodentate carboxylate binds through one of two O's that are
+        equivalent by resonance; in any single Kekule structure they are
+        distinguishable (=O vs -O), so which O the 3D bond perception picked --
+        and thus which carries the {slot} marker -- drifts between the two
+        round-trip directions (ABAZIO: ``O{n}C(=O)`` vs ``OC(=O{n})``).
+        Canonicalize which atom carries the slot:
+
+        1. Find the binder's donor SET on a bond-order-*flattened* copy (every
+           bond -> SINGLE, aromatic flags cleared): the two carboxyl O's become
+           genuine graph automorphs and share a canonical-rank class. Nitro
+           ({O,O}) and sulfonate/phosphonate ({O,O,O}) sets fall out for free;
+           an ester's two inequivalent O's stay in separate classes (left
+           alone -- no over-collapse).
+        2. Pick the member with the lowest bond-order-*aware*
+           ``CanonicalRankAtoms(breakTies=True)`` rank. Both round-trip mols
+           carry the same fragment graph (only the binder *flag* differs, and
+           the flag is not part of the graph), so this returns the same graph
+           position in both -- a different physical atom, but the canonical one.
+
+        Returns ``binder_idx`` unchanged on any failure, or when the binder has
+        no symmetric partner (fail-safe: the emitted string is then
+        byte-identical to today). Operates in ``ligand_mol``'s own atom-index
+        space; call it before ``generate_robust_smiles`` so the force-bracket,
+        the radical fill, and the {slot} marker all land on the same rep.
+        """
+        try:
+            n_atoms = ligand_mol.GetNumAtoms()
+            if not (0 <= binder_idx < n_atoms):
+                return binder_idx
+
+            # Bond-order-AWARE view (real C=O), for the final tie-break rank.
+            # Mask KEKULIZE like _fragment_mol_for_canonicalization: forced
+            # explicit-H binders can defeat the kekulizer, but aromaticity
+            # perception (needed for a meaningful rank) does not require it.
+            work = Chem.RWMol(ligand_mol)
+            Chem.SanitizeMol(work, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+
+            # Bond-order-AGNOSTIC view, for donor-set membership: flatten every
+            # bond to SINGLE and drop aromatic flags so resonance-equivalent
+            # donors collapse into one symmetry class.
+            flat = Chem.RWMol(ligand_mol)
+            for bond in flat.GetBonds():
+                bond.SetBondType(Chem.BondType.SINGLE)
+                bond.SetIsAromatic(False)
+            for atom in flat.GetAtoms():
+                atom.SetIsAromatic(False)
+            Chem.SanitizeMol(flat, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+
+            classes = list(Chem.CanonicalRankAtoms(flat, breakTies=False))
+            donor_set = [i for i in range(n_atoms) if classes[i] == classes[binder_idx]]
+            if len(donor_set) <= 1:
+                return binder_idx
+
+            ranks = list(Chem.CanonicalRankAtoms(work, breakTies=True))
+            return min(donor_set, key=lambda idx: ranks[idx])
+        except Exception:
+            return binder_idx
+
 
 # ==========================================
 # PART 2: DISCRETE ALIGNER (V2.4 Logic)
@@ -178,6 +240,23 @@ TEMPLATE_SPECS = {
         4: {"pos": [-0.809017, 0.587785, 0], "ref": [0, 0, 1]},
         5: {"pos": [-0.809017, -0.587785, 0], "ref": [0, 0, 1]},
         6: {"pos": [0.309017, -0.951057, 0], "ref": [0, 0, 1]},
+    },
+    # CN 8 -- square antiprismatic. `pos` mirrors MetalloGen's
+    # `8_squre_antiprismatic` (globalvars.known_geometries_vector_dict), the same
+    # /sqrt(3) vectors the generator places donors on, so encoder slot i and
+    # generator slot i point the same direction (round-trip slot correspondence).
+    # Two staggered squares: slots 0-3 top (+z), slots 4-7 bottom (-z), rotated
+    # 45 deg. `ref` is vestigial for winding (only haptic groups use it, via the
+    # actual ring centroid) but the schema requires a non-parallel vector.
+    "SQA": {
+        0: {"pos": [-0.5773503, 0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        1: {"pos": [0.5773503, 0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        2: {"pos": [-0.5773503, -0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        3: {"pos": [0.5773503, -0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        4: {"pos": [-0.8141210, 0.0, -0.5773503], "ref": [0, 0, 1]},
+        5: {"pos": [0.0, -0.8141210, -0.5773503], "ref": [0, 0, 1]},
+        6: {"pos": [0.8141210, 0.0, -0.5773503], "ref": [0, 0, 1]},
+        7: {"pos": [0.0, 0.8141210, -0.5773503], "ref": [0, 0, 1]},
     },
 }
 
@@ -363,9 +442,11 @@ class OINDiscreteAligner:
             candidates = ["OCT"]
         elif n == 7:
             candidates = ["PBP"]
+        elif n == 8:
+            candidates = ["SQA"]
         else:
             # Fallback or robust handling
-            if n > 7:
+            if n > 8:
                 candidates = ["OCT"]  # Best effort
             else:
                 candidates = ["LIN"]
@@ -921,7 +1002,9 @@ def classify_coordination_geometry(donor_vectors):
     w.r.t. instance state (it reads only its arguments and the module-level
     ``TEMPLATES``), so a throwaway aligner with empty ligands is sufficient. Note
     the candidate set is chosen purely by coordination number (len of the input),
-    and for ``n > 7`` the matcher falls back to ``"OCT"`` as a best effort -- so
+    with ``n == 8`` mapping to ``"SQA"`` (square antiprismatic); for ``n > 8`` the
+    matcher falls back to ``"OCT"`` as a best effort (which then fails the
+    slot-count check, yielding ``None``) -- so
     callers that need an eta/haptic guard must gate on the expected coordination
     number themselves rather than relying on a ``None`` return.
     """
