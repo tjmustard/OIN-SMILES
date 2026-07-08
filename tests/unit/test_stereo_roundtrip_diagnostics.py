@@ -66,16 +66,23 @@ _ANSA_OIN_COHERENT_FIRE = _ANSA_OIN_NATURAL.replace("{0<}", "{0>}", 1).replace(
     "[cH]{1}1", "[cH]{1<}1", 1
 )
 
-# Stereo Phase 3 golden was blessed against these exact tool versions (the
-# entire diagnostic rests on ETKDG seed-42 embedding determinism, which is
-# not guaranteed stable across rdkit/numpy/scipy releases). pyproject.toml
-# only pins lower bounds (">="), matching this repo's existing convention,
-# so the exact blessed versions are recorded here instead, per the MiniPRD's
-# "record in the test/worklog if pinning in pyproject.toml isn't
-# appropriate" fallback.
-_BLESSED_RDKIT_VERSION = "2025.09.3"
-_BLESSED_NUMPY_VERSION = "2.2.6"
-_BLESSED_SCIPY_VERSION = "1.15.3"
+# Stereo Phase 3 golden was blessed against these tool versions (the entire
+# diagnostic rests on ETKDG seed-42 embedding determinism, which is not
+# guaranteed stable across rdkit/numpy/scipy releases). pyproject.toml only
+# pins lower bounds (">="), matching this repo's existing convention, so the
+# blessed versions are recorded here instead, per the MiniPRD's "record in the
+# test/worklog if pinning in pyproject.toml isn't appropriate" fallback.
+#
+# Each set holds the known-good versions the goldens were re-verified against.
+# The supported Python matrix (3.10 / 3.12) resolves different numpy/scipy
+# point releases, and rdkit has since advanced from 2025.09.3 to 2026.03.3;
+# all were confirmed to reproduce the goldens (CI run 28952900893, 2026-07-08,
+# both Python versions passed every golden). A future, untested version still
+# surfaces as a loud, attributable failure here rather than a silently wrong
+# golden.
+_BLESSED_RDKIT_VERSIONS = {"2025.09.3", "2026.03.3"}
+_BLESSED_NUMPY_VERSIONS = {"2.2.6", "2.4.6"}
+_BLESSED_SCIPY_VERSIONS = {"1.15.3", "1.18.0"}
 
 # Matches a bracketed P atom carrying an explicit chirality flag, e.g.
 # "[P@]" or "[P@@]". SMILES always requires brackets to carry @/@@, so
@@ -453,16 +460,16 @@ class TestHapticFaceCorrectionPhase3(unittest.TestCase):
     """
 
     def test_version_pins_match_blessed_golden_environment(self):
-        """NFR (SuperPRD Stereo Phase 3, §5.4): record the exact rdkit/numpy/
-        scipy versions the seed-42 golden was blessed against, since
-        pyproject.toml only pins lower bounds (repo convention). A future
+        """NFR (SuperPRD Stereo Phase 3, §5.4): record the rdkit/numpy/scipy
+        versions the seed-42 golden was blessed (and re-verified) against,
+        since pyproject.toml only pins lower bounds (repo convention). A future
         embedding-handedness change in any of these libraries should surface
         here as a loud, attributable failure rather than a silently wrong
         golden.
         """
-        self.assertEqual(rdkit.__version__, _BLESSED_RDKIT_VERSION)
-        self.assertEqual(np.__version__, _BLESSED_NUMPY_VERSION)
-        self.assertEqual(scipy.__version__, _BLESSED_SCIPY_VERSION)
+        self.assertIn(rdkit.__version__, _BLESSED_RDKIT_VERSIONS)
+        self.assertIn(np.__version__, _BLESSED_NUMPY_VERSIONS)
+        self.assertIn(scipy.__version__, _BLESSED_SCIPY_VERSIONS)
 
     def test_haptic_face_golden_match(self):
         """Test 1 (Deterministic — golden, US-001.3 / US-003).
