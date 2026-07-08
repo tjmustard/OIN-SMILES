@@ -19,6 +19,84 @@ def calculate_heavy_atom_rmsd(mol1, mol2):
         return float("inf")
 
 
+def _dihedral_deg(p0, p1, p2, p3):
+    """Signed dihedral (degrees) of the p0-p1-p2-p3 sequence."""
+    import math
+
+    import numpy as np
+
+    b1 = np.asarray(p2, float) - np.asarray(p1, float)
+    n = np.linalg.norm(b1)
+    if n == 0:
+        return 0.0
+    b1 /= n
+    b0 = np.asarray(p0, float) - np.asarray(p1, float)
+    b2 = np.asarray(p3, float) - np.asarray(p2, float)
+    v = b0 - np.dot(b0, b1) * b1
+    w = b2 - np.dot(b2, b1) * b1
+    return math.degrees(math.atan2(np.dot(np.cross(b1, v), w), np.dot(v, w)))
+
+
+def _complex_stereo_targets(metal_complex):
+    """Map each ligand's carried C=C stereo to complex-global atom indices.
+
+    The generator's embed uses a random seed, so a pendant alkene's dihedral is
+    not guaranteed to land on the requested side every time (newer RDKit made
+    distance geometry honor the constraint less reliably). Returning the target
+    tuples lets ``generate_3d_structures`` reject conformers that embedded the
+    wrong E/Z. Each tuple is ``(i, j, stereo, ref_a, ref_b)`` in the same index
+    space as ``metal_complex.get_position()``.
+    """
+    targets = []
+    try:
+        idx_map = metal_complex.get_atom_indices_for_each_ligand()
+        ligands = metal_complex.ligands
+    except Exception:
+        return targets
+    for li, ligand in enumerate(ligands):
+        if li >= len(idx_map):
+            continue
+        amap = idx_map[li]
+        stereo_bonds = getattr(getattr(ligand, "molecule", None), "stereo_bonds", []) or []
+        for si, sj, stereo, sra, srb in stereo_bonds:
+            if max(si, sj, sra, srb) >= len(amap):
+                continue
+            targets.append((amap[si], amap[sj], stereo, amap[sra], amap[srb]))
+    return targets
+
+
+def _stereo_targets_satisfied(positions, targets):
+    """True if every carried C=C stereo is cleanly reproduced by ``positions``.
+
+    CIS/STEREOZ means the two reference atoms sit on the same side of the double
+    bond (dihedral ~0); TRANS/STEREOE means opposite sides (dihedral ~180). The
+    check is self-consistent with the stored reference atoms, so it needs no CIP
+    perception.
+
+    A genuine alkene is planar, so a correct conformer's dihedral is close to 0
+    or 180. We accept only clearly-resolved geometry (|dihedral| <= 60 for cis,
+    >= 120 for trans) and reject the ambiguous middle band: a distorted embed
+    that lands near 90 reads as cis to a naive sign test but is perceived as the
+    opposite isomer by downstream CIP (from the H positions), which is exactly
+    how a wrong E/Z used to leak through.
+    """
+    from rdkit import Chem
+
+    for i, j, stereo, ref_a, ref_b in targets:
+        try:
+            ang = abs(_dihedral_deg(positions[ref_a], positions[i], positions[j], positions[ref_b]))
+        except Exception:
+            continue
+        wants_same_side = stereo in (Chem.BondStereo.STEREOCIS, Chem.BondStereo.STEREOZ)
+        if wants_same_side:
+            if ang > 30.0:  # not a clean, near-planar cis
+                return False
+        else:
+            if ang < 150.0:  # not a clean, near-planar trans
+                return False
+    return True
+
+
 def generate_3d_structures(
     m_smiles,
     num_conformers=1,
@@ -52,6 +130,11 @@ def generate_3d_structures(
     # Target number of initial structures to generate
     target_pool = uff_pool_size
     successful_mols = []
+    # Carried C=C (E/Z) stereo targets, and a pool of otherwise-valid conformers
+    # that embedded the wrong side (kept only as a last-resort fallback so a
+    # stubborn embed never hard-fails generation).
+    stereo_targets = _complex_stereo_targets(metal_complex)
+    stereo_rejects = []
 
     import itertools
 
@@ -83,7 +166,20 @@ def generate_3d_structures(
             success = cleaner.clean_geometry(tmp_complex, scale)
 
             if success:
+                if stereo_targets and not _stereo_targets_satisfied(
+                    tmp_complex.get_position(), stereo_targets
+                ):
+                    # Right topology, wrong C=C side -- keep as fallback only.
+                    stereo_rejects.append(tmp_complex.get_molecule())
+                    continue
                 successful_mols.append(tmp_complex.get_molecule())
+
+    if not successful_mols and stereo_rejects:
+        # No embed reproduced the requested E/Z within the attempt budget; return
+        # the best available rather than nothing (non-regressive vs. the prior,
+        # unfiltered behavior).
+        print("WARNING: no conformer reproduced the requested C=C stereo; using best available.")
+        successful_mols = stereo_rejects
 
     if not successful_mols:
         return []

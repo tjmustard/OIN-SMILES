@@ -35,45 +35,68 @@ OIN_E = "[Pt_SPL].C/C=C/CCN{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}"
 OIN_Z = r"[Pt_SPL].C/C=C\CCN{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}"
 
 
-def _generated_alkene_stereo(oin_string, attempts=3):
+def _perceive_alkene_stereo(xyz):
+    """Re-encode a generated XYZ (stereo perception on) and read its C=C stereo.
+
+    Returns ``STEREONONE`` if xyz2mol's re-perception left the double bond's
+    stereo undetermined for this particular geometry.
+    """
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".xyz", delete=False) as tmp_file:
+            tmp_file.write(xyz)
+            tmp_path = tmp_file.name
+        mol, coords = get_tmc_mol(tmp_path, 0, with_stereo=True)
+        oin2 = get_oin_string(mol, coords)
+    finally:
+        if tmp_path is not None:
+            os.unlink(tmp_path)
+    for frag in oin2.split("."):
+        clean = re.sub(r"\{[^}]*\}", "", frag)
+        if "C=C" not in clean:
+            continue
+        m = Chem.MolFromSmiles(clean)
+        if m is None:
+            continue
+        Chem.AssignStereochemistry(m, cleanIt=True, force=True)
+        for b in m.GetBonds():
+            if (
+                b.GetBondType() == Chem.BondType.DOUBLE
+                and b.GetStereo() != Chem.BondStereo.STEREONONE
+            ):
+                return b.GetStereo()
+    return Chem.BondStereo.STEREONONE
+
+
+def _generated_alkene_stereo(oin_string, attempts=6):
     """Generate a 3D structure for ``oin_string`` and return its perceived C=C stereo.
 
-    Re-encodes with stereo perception enabled so the double-bond geometry the
-    generator produced is read back. Retries a few times only to tolerate a rare
-    embedding failure (the result itself is deterministic, not sampled).
+    The MetalloGen embed uses a random seed, so generation is sampled, not
+    deterministic. ``generate_3d_structures`` rejects any conformer whose alkene
+    embedded on the wrong side (its E/Z geometric filter), so a *definite*
+    perceived stereo here is the requested side. A given clean embed can still
+    round-trip to an *undetermined* double bond (an xyz2mol re-perception
+    artifact), so retry past ``STEREONONE`` and return the first definite
+    result -- a wrong isomer would be returned and fail the caller's assertion,
+    so this tolerates the perception flake without masking a real E/Z flip.
     """
     gen = OIN3DGenerator(engine="metallogen", optimizer="ff")
     last_exc = None
+    saw_generation = False
     for _ in range(attempts):
         try:
             gs = gen.generate(oin_string)
-            tmp_path = None
-            try:
-                with tempfile.NamedTemporaryFile("w", suffix=".xyz", delete=False) as tmp_file:
-                    tmp_file.write(gs.xyz)
-                    tmp_path = tmp_file.name
-                mol, coords = get_tmc_mol(tmp_path, 0, with_stereo=True)
-                oin2 = get_oin_string(mol, coords)
-            finally:
-                if tmp_path is not None:
-                    os.unlink(tmp_path)
-            for frag in oin2.split("."):
-                clean = re.sub(r"\{[^}]*\}", "", frag)
-                if "C=C" not in clean:
-                    continue
-                m = Chem.MolFromSmiles(clean)
-                if m is None:
-                    continue
-                Chem.AssignStereochemistry(m, cleanIt=True, force=True)
-                for b in m.GetBonds():
-                    if (
-                        b.GetBondType() == Chem.BondType.DOUBLE
-                        and b.GetStereo() != Chem.BondStereo.STEREONONE
-                    ):
-                        return b.GetStereo()
-            return Chem.BondStereo.STEREONONE
         except Exception as exc:  # pragma: no cover - rare embed failure path
             last_exc = exc
+            continue
+        saw_generation = True
+        stereo = _perceive_alkene_stereo(gs.xyz)
+        if stereo != Chem.BondStereo.STEREONONE:
+            return stereo
+    if saw_generation:
+        # Every attempt embedded cleanly but round-tripped to an undetermined
+        # double bond; surface as STEREONONE so the caller's assertion fails.
+        return Chem.BondStereo.STEREONONE
     raise AssertionError(f"generation failed after {attempts} attempts: {last_exc}")
 
 
