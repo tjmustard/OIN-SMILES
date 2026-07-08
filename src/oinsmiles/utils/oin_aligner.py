@@ -179,6 +179,23 @@ TEMPLATE_SPECS = {
         5: {"pos": [-0.809017, -0.587785, 0], "ref": [0, 0, 1]},
         6: {"pos": [0.309017, -0.951057, 0], "ref": [0, 0, 1]},
     },
+    # CN 8 -- square antiprismatic. `pos` mirrors MetalloGen's
+    # `8_squre_antiprismatic` (globalvars.known_geometries_vector_dict), the same
+    # /sqrt(3) vectors the generator places donors on, so encoder slot i and
+    # generator slot i point the same direction (round-trip slot correspondence).
+    # Two staggered squares: slots 0-3 top (+z), slots 4-7 bottom (-z), rotated
+    # 45 deg. `ref` is vestigial for winding (only haptic groups use it, via the
+    # actual ring centroid) but the schema requires a non-parallel vector.
+    "SQA": {
+        0: {"pos": [-0.5773503, 0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        1: {"pos": [0.5773503, 0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        2: {"pos": [-0.5773503, -0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        3: {"pos": [0.5773503, -0.5773503, 0.5773503], "ref": [0, 0, 1]},
+        4: {"pos": [-0.8141210, 0.0, -0.5773503], "ref": [0, 0, 1]},
+        5: {"pos": [0.0, -0.8141210, -0.5773503], "ref": [0, 0, 1]},
+        6: {"pos": [0.8141210, 0.0, -0.5773503], "ref": [0, 0, 1]},
+        7: {"pos": [0.0, 0.8141210, -0.5773503], "ref": [0, 0, 1]},
+    },
 }
 
 # List of Symmetric Ligands that should have a fixed Heading Atom (The first binding atom in SMILES)
@@ -363,9 +380,11 @@ class OINDiscreteAligner:
             candidates = ["OCT"]
         elif n == 7:
             candidates = ["PBP"]
+        elif n == 8:
+            candidates = ["SQA"]
         else:
             # Fallback or robust handling
-            if n > 7:
+            if n > 8:
                 candidates = ["OCT"]  # Best effort
             else:
                 candidates = ["LIN"]
@@ -921,7 +940,9 @@ def classify_coordination_geometry(donor_vectors):
     w.r.t. instance state (it reads only its arguments and the module-level
     ``TEMPLATES``), so a throwaway aligner with empty ligands is sufficient. Note
     the candidate set is chosen purely by coordination number (len of the input),
-    and for ``n > 7`` the matcher falls back to ``"OCT"`` as a best effort -- so
+    with ``n == 8`` mapping to ``"SQA"`` (square antiprismatic); for ``n > 8`` the
+    matcher falls back to ``"OCT"`` as a best effort (which then fails the
+    slot-count check, yielding ``None``) -- so
     callers that need an eta/haptic guard must gate on the expected coordination
     number themselves rather than relying on a ``None`` return.
     """

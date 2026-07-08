@@ -83,6 +83,11 @@ OIN_TO_METALLOGEN_GEO = {
     "TBP": "5_trigonal_bipyramidal",
     "OCT": "6_octahedral",
     "PBP": "7_pentagonal_bipyramidal",
+    # Value MUST byte-match the vendored globalvars key, which is MISSPELLED
+    # "squre" (see generator3d/globalvars.known_geometries_vector_dict). Do not
+    # "fix" it -- the lookup KeyErrors otherwise. Sibling key "8_sqaure_prismatic"
+    # is likewise misspelled upstream.
+    "SQA": "8_squre_antiprismatic",
 }
 
 
