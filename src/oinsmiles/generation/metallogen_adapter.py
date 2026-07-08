@@ -248,6 +248,17 @@ def _flatten_template(t):
 
     Used only for substructure matching, so bond orders can be transferred even
     from templates that never sanitize (e.g. C#O, O valence 3).
+
+    Radical electrons / explicit-H valence must also be cleared: an OIN ligand
+    atom that binds the (now-stripped) metal is under-valent, so its template
+    atom carries a radical (e.g. the three metal-bound carbons of an eta3-allyl,
+    ``[CH2][CH]=[CH]...``). RDKit's substructure matcher treats radical-electron
+    count as a match constraint, so a radical-bearing query never matches the
+    generated fragment (whose atoms are H-saturated with 0 radicals) -- the
+    match silently returns empty and no bond orders/aromaticity transfer, which
+    dearomatizes the ligand in the round trip. Normalizing to a plain
+    connectivity graph (0 radicals, implicit H) fixes the match without ever
+    loosening it (heavy-atom count + connectivity + element still gate it).
     """
     ft = Chem.RWMol(t)
     for b in ft.GetBonds():
@@ -256,6 +267,9 @@ def _flatten_template(t):
     for a in ft.GetAtoms():
         a.SetIsAromatic(False)
         a.SetFormalCharge(0)
+        a.SetNumRadicalElectrons(0)
+        a.SetNoImplicit(False)
+        a.SetNumExplicitHs(0)
     m = ft.GetMol()
     try:
         m.UpdatePropertyCache(strict=False)
