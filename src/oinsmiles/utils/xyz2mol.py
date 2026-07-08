@@ -959,6 +959,21 @@ def get_oin_string(tmc_mol, xyz_coords):
         except Exception:
             pass
 
+        # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
+        # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).
+        # Remap BEFORE generate_robust_smiles so the force-bracket, the radical
+        # fill, and the {slot} marker all land on the same canonical rep, making
+        # the base SMILES itself byte-identical across the two round-trip
+        # directions. Monodentate-only (single binder) sidesteps every
+        # multi-binder hazard (bidentate chelates, eta rings and their
+        # winding/circulation code). Fail-safe: identity map on any failure.
+        binder_local_to_rep = {}
+        if not is_metal and len(frag_binding_atoms) == 1:
+            g_idx = frag_binding_atoms[0][0]
+            if g_idx in old_to_new:
+                bl = old_to_new[g_idx]
+                binder_local_to_rep[bl] = OINSanitizer.canonical_donor_representative(frag_mol, bl)
+
         # Identify binding atoms in new local indices
         frag_binding_indices_local = []
 
@@ -971,7 +986,8 @@ def get_oin_string(tmc_mol, xyz_coords):
         for binding_item in frag_binding_atoms:
             g_idx = binding_item[0]
             if g_idx in old_to_new:
-                frag_binding_indices_local.append(old_to_new[g_idx])
+                local = old_to_new[g_idx]
+                frag_binding_indices_local.append(binder_local_to_rep.get(local, local))
 
         sanitized_smiles = ""
         sanitized_mol = frag_mol  # Default fallback
@@ -1038,6 +1054,11 @@ def get_oin_string(tmc_mol, xyz_coords):
         for g_idx, m, coords in frag_binding_atoms:
             if g_idx in old_to_new:
                 l_idx_in_frag = old_to_new[g_idx]
+                # Route through the canonical-donor remap so the {slot} marker
+                # lands on the same rep the force-bracket used above. Keep
+                # g_idx/mass/coords untouched: coords still drive the geometry
+                # slot number from the real metal-facing atom.
+                l_idx_in_frag = binder_local_to_rep.get(l_idx_in_frag, l_idx_in_frag)
                 s_idx = frag_to_smiles_idx.get(l_idx_in_frag, 0)  # Default 0 if fail
                 final_binding_atoms.append((g_idx, m, coords, s_idx))
 
