@@ -2,9 +2,19 @@ import argparse
 import json
 import os
 import shutil
+import signal
 import sys
 import tempfile
 import traceback
+
+
+class TimeoutException(Exception):
+    pass
+
+
+def timeout_handler(signum, frame):
+    raise TimeoutException("Molecule processing timed out")
+
 
 # Add src and tests/integration to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
@@ -191,6 +201,17 @@ def main():
         action="store_true",
         help="Only run on molecules that previously failed (requires existing summary_roundtrip.json)",
     )
+    parser.add_argument(
+        "--random",
+        action="store_true",
+        help="Randomly shuffle the dataset before selecting molecules (useful with --limit)",
+    )
+    parser.add_argument(
+        "--mol-timeout",
+        type=int,
+        default=0,
+        help="Global timeout in seconds for processing a single molecule (0 to disable).",
+    )
     args = parser.parse_args()
 
     if args.cpu:
@@ -247,10 +268,20 @@ def main():
         else:
             print(f"Note: --continue specified but {summary_path} not found. Starting fresh.")
 
+    if args.random:
+        import random
+
+        random.seed()  # Use system time
+        random.shuffle(xyz_files)
+        print("Randomly shuffling the dataset order.")
+
     if args.limit:
         xyz_files = xyz_files[: args.limit]
 
     print(f"Found {len(xyz_files)} XYZ files to process.")
+
+    if args.mol_timeout > 0:
+        signal.signal(signal.SIGALRM, timeout_handler)
 
     global_report = []
     requires_xtb = []
@@ -259,7 +290,7 @@ def main():
 
     # Determine quick settings
     timeout_val = 60 if args.quick else 300
-    ff_params_fast = {"uff_pool_size": 2} if args.quick else None
+    ff_params_fast = {"uff_pool_size": 2, "max_attempts": 10} if args.quick else None
 
     print("\n--- PASS 1: UFF FAST-PASS ---")
     gen_uff = OIN3DGenerator(
@@ -285,7 +316,17 @@ def main():
             print("FAILED (1D conversion)")
             continue
 
-        success, last_xyz = _attempt_generation("UFF_1", gen_uff, oin1_string, xyz_path, report)
+        try:
+            if args.mol_timeout > 0:
+                signal.alarm(args.mol_timeout)
+            success, last_xyz = _attempt_generation("UFF_1", gen_uff, oin1_string, xyz_path, report)
+        except TimeoutException as e:
+            report["status"] = "failed"
+            report["error"] = f"TimeoutException: {e}"
+            success, last_xyz = False, None
+        finally:
+            if args.mol_timeout > 0:
+                signal.alarm(0)
 
         if success:
             save_artifacts(report, last_xyz, output_dir, is_final=True)
@@ -312,9 +353,20 @@ def main():
 
             # Attempt xTB_1
             print("  -> Trying xTB_1...", end=" ", flush=True)
-            success, last_xyz = _attempt_generation(
-                "xTB_1", gen_xtb_1, oin1_string, xyz_path, report
-            )
+            try:
+                if args.mol_timeout > 0:
+                    signal.alarm(args.mol_timeout)
+                success, last_xyz = _attempt_generation(
+                    "xTB_1", gen_xtb_1, oin1_string, xyz_path, report
+                )
+            except TimeoutException as e:
+                report["status"] = "failed"
+                report["error"] = f"TimeoutException at xTB_1: {e}"
+                success, last_xyz = False, None
+            finally:
+                if args.mol_timeout > 0:
+                    signal.alarm(0)
+
             if success:
                 save_artifacts(report, last_xyz, output_dir, is_final=True)
                 global_report.append(report)
@@ -324,9 +376,20 @@ def main():
 
             # Attempt xTB_5
             print("  -> Trying xTB_5...", end=" ", flush=True)
-            success, last_xyz = _attempt_generation(
-                "xTB_5", gen_xtb_5, oin1_string, xyz_path, report
-            )
+            try:
+                if args.mol_timeout > 0:
+                    signal.alarm(args.mol_timeout)
+                success, last_xyz = _attempt_generation(
+                    "xTB_5", gen_xtb_5, oin1_string, xyz_path, report
+                )
+            except TimeoutException as e:
+                report["status"] = "failed"
+                report["error"] = f"TimeoutException at xTB_5: {e}"
+                success, last_xyz = False, None
+            finally:
+                if args.mol_timeout > 0:
+                    signal.alarm(0)
+
             if success:
                 print("SUCCESS")
             else:

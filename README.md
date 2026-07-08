@@ -1,11 +1,11 @@
 <div align="center">
     <img src="./media/OIN-SMILES-logo-dark.webp" alt="OIN-SMILES Logo" width="600"/>
     <h1>OIN-SMILES</h1>
-    <h3><em>Lossless XYZ ↔ SMILES conversion for Transition Metal Complexes.</em></h3>
+    <h3><em>Canonical, lossless XYZ ↔ SMILES conversion for Transition Metal Complexes.</em></h3>
 </div>
 
 <p align="center">
-    <strong>An open-source Python library implementing Open Isomer Notation (OIN) — a 1D string format that captures coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry for perfect 3D reconstruction.</strong>
+    <strong>An open-source Python library implementing Open Isomer Notation (OIN) — a canonical 1D string format that captures coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry for perfect 3D reconstruction.</strong>
 </p>
 
 <p align="center">
@@ -20,6 +20,7 @@
 ## Table of Contents
 
 - [🔬 What is OIN-SMILES?](#-what-is-oin-smiles)
+- [🗂️ Canonical Form & Use Cases](#️-canonical-form--use-cases)
 - [✨ Features](#-features)
 - [⚡ Installation](#-installation)
 - [🚀 Usage](#-usage)
@@ -34,9 +35,26 @@ Standard SMILES notation is lossy for transition metal complexes (TMCs): coordin
 
 **OIN-SMILES** solves this by implementing **Open Isomer Notation (OIN)** — an extended SMILES format that encodes everything needed to reconstruct the original 3D geometry from the string alone. A cisplatin complex becomes `[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}`; that string unambiguously reconstructs the *cis* square planar geometry, not the *trans* isomer.
 
+## 🗂️ Canonical Form & Use Cases
+
+Beyond round-tripping, OIN aims to be a **canonical** representation: the same complex normalizes to the same string, independent of how the input XYZ was rotated, translated, or (for most complexes) atom-ordered. The encoder gets there by:
+
+- **Normalizing orientation** — the structure is aligned to its principal axes of inertia, so rotated/translated copies of the same geometry collapse to one form.
+- **Canonicalizing ligand fragments** — each fragment is emitted as RDKit-canonical SMILES (with binding-atom `c`↔`[cH]` drift fixed), and fragments are ordered by chemical identity rather than input order.
+- **Canonicalizing haptic (η) ligands by content** — same-mass rings are keyed on a heading-independent canonical ring SMILES, and the marker atom is the lowest-ranked `CanonicalRankAtoms` (see `CHANGELOG` `[0.3.0]`).
+
+> [!NOTE]
+> Canonicalization is exact for the common cases — normalized up to orientation and fragment identity. A few highly symmetric coordination spheres (symmetric slot numbering, symmetric η-ring winding labels, metal `@SP/@OH` descriptors) may still need light normalization before an exact string comparison; the round-trip verifier applies that normalization. Treat the format as canonical **within a format version**.
+
+**Why this matters:**
+
+- **Deduplication** — because each isomer maps to one canonical string, exact-match deduplication across a TMC dataset is a plain string comparison: no 3D alignment, no graph isomorphism.
+- **Isomer-aware similarity search** — OIN is the substrate that keeps *cis*/*trans*, *fac*/*mer*, and P/N stereoisomers distinct. Plain SMILES fingerprints collapse exactly the coordination isomers that matter for TMCs; building fingerprints or keys on top of OIN preserves those distinctions so similarity comparisons aren't fooled.
+
 ## ✨ Features
 
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ → OIN with exact isomer preservation.
+- **Canonical Form**: The same complex normalizes to one string — enabling exact-match deduplication and isomer-aware similarity search across TMC datasets. See [Canonical Form & Use Cases](#️-canonical-form--use-cases).
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
 - **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
@@ -251,6 +269,12 @@ uv run python tests/integration/verify_roundtrip.py [--output-dir /tmp/results] 
 
 # Compare DG strategies (single / ensemble / directed) side-by-side
 uv run python tests/integration/compare_dg_strategies.py [--output-dir /tmp/results]
+
+# Process and round-trip a large XYZ dataset
+uv run python tools/test_dataset_roundtrip.py --dataset-dir <dir> --output-dir <dir> [--quick] [--continue] [--mol-timeout 60] [--random]
+
+# Recalculate OIN SMILES for an existing dataset run after codebase changes
+uv run python tools/recalculate_oin_smiles.py --output-dir <results-dir>
 ```
 
 All scripts write named output artifacts when `--output-dir` is specified:

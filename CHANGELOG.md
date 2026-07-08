@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`tools/recalculate_oin_smiles.py`**: A utility to recalculate OIN SMILES strings from both the input XYZ and the generated XYZ structures for previously processed datasets. Updates the `summary_roundtrip.json` and `individual_reports` statuses if a codebase change causes a previously failed mismatch to now perfectly round-trip.
+- **Dataset Roundtrip Tools enhancements**: Added `--quick`, `--continue`, `--rerun-failed`, `--random`, and `--mol-timeout` options to `tools/test_dataset_roundtrip.py` to allow robust, resumed, and time-bounded background processing of large datasets without hanging on pathological UFF geometries.
+
+### Fixed
+- **UFF loop hang during 3D generation**: Fixed a bug in `generate_3d_structures` where an unrecognized UFF atom type (which immediately fails FF cleaning) caused the generator to blindly brute-force 250 random embeddings before giving up. Added support for a `max_attempts` override in `ff_params` and passed `max_attempts=10` when `--quick` is specified.
+
 ## [0.3.4] - 2026-07-07
 
 ### Fixed

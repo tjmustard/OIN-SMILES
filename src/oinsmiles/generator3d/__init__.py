@@ -55,7 +55,9 @@ def generate_3d_structures(
     import itertools
 
     combinations = list(itertools.product(scales, options))
-    max_attempts = max(target_pool * 5, 250)
+
+    default_max = max(target_pool * 5, 250)
+    max_attempts = ff_params.get("max_attempts", default_max) if ff_params else default_max
 
     for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
