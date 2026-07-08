@@ -137,38 +137,49 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             dists = np.linalg.norm(metallogen_vectors - target_vec, axis=1)
             mg_slot_idx = int(np.argmin(dists))
 
-            # Heuristic to strip implicit Hs from C#N or C#O
+            # Reconcile the binding atom's hydrogen count with its donor role.
+            #
+            # An EXPLICIT H count from the OIN (a bracket atom -- [NH], [OH2],
+            # [CH2] -- has NoImplicit set) is authoritative: the encoder already
+            # decided this is a neutral dative L-type donor that KEEPS its H
+            # (secondary amine, aqua, sigma-alkyl/benzyl). Only a BARE binding
+            # atom carries a phantom implicit H that the metal bond replaces, so
+            # only bare atoms are reinterpreted below.
             atom = mol.GetAtomWithIdx(v.atom_in_fragment_idx)
-            if atom.GetSymbol() == "C":
-                if any(b.GetBondType() == Chem.BondType.TRIPLE for b in atom.GetBonds()):
-                    atom.SetNoImplicit(True)
-                    atom.SetNumExplicitHs(0)
-                elif atom.GetIsAromatic():
-                    # Count how many coordinating atoms are in the same ring
-                    ring_info = mol.GetRingInfo()
-                    coordinating_indices = [vec.atom_in_fragment_idx for vec in frag_vectors]
-                    is_haptic = False
-                    for ring in ring_info.AtomRings():
-                        if atom.GetIdx() in ring:
-                            coord_in_ring = sum(1 for idx in ring if idx in coordinating_indices)
-                            if (
-                                coord_in_ring > 2
-                            ):  # Cp has 5, benzene has 6. If >2 it's definitely haptic
-                                is_haptic = True
-                                break
-                    if not is_haptic:
-                        atom.SetNoImplicit(True)
-                        atom.SetNumExplicitHs(0)
-            elif atom.GetSymbol() in ("O", "S"):
-                # Anionic / oxo chalcogen donor (enolate, alkoxide, oxo, thiolate):
-                # the covalent metal bond replaces what would be an implicit H.
-                atom.SetNoImplicit(True)
-                atom.SetNumExplicitHs(0)
-            elif atom.GetSymbol() == "N":
-                # Amide / imide N (>= 2 heavy neighbours) is an anionic X-type donor;
-                # strip its H. Dative amines (NH3, NHR2) have < 2 heavy neighbours -> keep.
+            if not atom.GetNoImplicit():
+                sym = atom.GetSymbol()
                 heavy = sum(1 for nb in atom.GetNeighbors() if nb.GetAtomicNum() > 1)
-                if heavy >= 2:
+                strip = False
+                if sym == "C":
+                    if any(b.GetBondType() == Chem.BondType.TRIPLE for b in atom.GetBonds()):
+                        strip = True  # C#O / C#N carbon has no H
+                    elif atom.GetIsAromatic():
+                        # sigma-aryl carbanion strips its H; a haptic ring carbon
+                        # (Cp/arene, >2 coordinating atoms in the ring) keeps it.
+                        ring_info = mol.GetRingInfo()
+                        coordinating_indices = [vec.atom_in_fragment_idx for vec in frag_vectors]
+                        is_haptic = any(
+                            atom.GetIdx() in ring
+                            and sum(1 for idx in ring if idx in coordinating_indices) > 2
+                            for ring in ring_info.AtomRings()
+                        )
+                        strip = not is_haptic
+                    elif heavy >= 2:
+                        # Non-aromatic sigma-carbon donor already bonded to >=2 heavy
+                        # atoms: an NHC carbene (C between two ring N) or a carbanion.
+                        # It cannot carry implicit H AND a metal bond without exceeding
+                        # valence, so it is a 0-H donor -- drop the phantom CH2 hydrogens.
+                        strip = True
+                elif sym in ("O", "S"):
+                    # Bare chalcogen donor = anionic alkoxide / thiolate / oxo -> 0 H.
+                    # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
+                    strip = True
+                elif sym == "N":
+                    # Bare N with >=2 heavy neighbours = anionic amido / imido X-type
+                    # donor. A neutral dative amine is written [NH] and kept above.
+                    if heavy >= 2:
+                        strip = True
+                if strip:
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
 
