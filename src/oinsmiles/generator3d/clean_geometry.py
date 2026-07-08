@@ -4,6 +4,8 @@ from rdkit.Chem import AllChem
 from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 
+from .embed import _apply_double_bond_stereo
+
 
 def print_rd_geometry(rd_mol, positions):
     """Print the rd geometry."""
@@ -121,6 +123,8 @@ class TMCOptimizer:
         ligand_atom_indices = []
         radius_list = [center_atom.get_radius()]
         ligand_adj_matrices = []
+        # Carried C=C stereo, offset into combined_rd_mol's index space.
+        combined_stereo_bonds = []
 
         # Gather ligand information for the scan ...
         for i in range(len(ligands)):
@@ -161,6 +165,17 @@ class TMCOptimizer:
                         valid_ace_mol.atom_feature["chg"][j] -= 8 - valence
 
             rd_mol = valid_ace_mol.get_rd_mol()
+            # Enforce carried C=C (cis/trans) stereo on the per-ligand FF mol.
+            # This is where the double bond genuinely exists: the dummy-metal embed
+            # mol drops it to a single bond (PuLP re-perception), so this per-ligand
+            # FF mol -- freshly embedded below with the double bond intact -- is the
+            # reliable place to make distance geometry reproduce the requested E/Z.
+            # Indices are ligand-local here; also record them offset into
+            # combined_rd_mol for a post-sanitize re-assert (SanitizeMol can drop
+            # double-bond stereo that lacks bond directions).
+            _apply_double_bond_stereo(rd_mol, ligand.molecule.stereo_bonds)
+            for si, sj, stereo, sra, srb in getattr(ligand.molecule, "stereo_bonds", []):
+                combined_stereo_bonds.append((cnt + si, cnt + sj, stereo, cnt + sra, cnt + srb))
             rd_mol_list.append(rd_mol)
             atom_indices = atom_indices_for_each_ligand[i]
             binding_infos = ligand.binding_infos  # [[indices, geometric_idx]]
@@ -208,6 +223,9 @@ class TMCOptimizer:
             combined_rd_mol = Chem.CombineMols(combined_rd_mol, rd_mol)
 
         Chem.SanitizeMol(combined_rd_mol)
+        # Re-assert C=C stereo after sanitize (which can strip double-bond stereo
+        # lacking bond directions) so the embed below reproduces the E/Z.
+        _apply_double_bond_stereo(combined_rd_mol, combined_stereo_bonds)
         AllChem.EmbedMolecule(
             combined_rd_mol,
             useRandomCoords=True,
