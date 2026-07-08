@@ -264,6 +264,29 @@ def _flatten_template(t):
     return m
 
 
+def _template_lp_label(t, ai: int) -> "str | None":
+    """Return the lone-pair CIP ('R'/'S') for a Zone-A P donor template atom.
+
+    Deliberately uses ``rdCIPLabeler`` -- NOT the legacy ``Chem.AssignStereochemistry``
+    that ``_oin_fragment_templates`` stamps as ``_CIPCode`` for the backbone paths.
+    The two labelers disagree for a 3-coordinate P (ACUWUT: legacy 'R' vs
+    rdCIPLabeler 'S'), and ``ChiralityRecoveryUtility.recover``'s Zone-A lone-pair
+    branch recomputes with ``rdCIPLabeler`` on the metal-free fragment. The template
+    is likewise metal-absent and 3-coordinate -- the same configuration recover()
+    sees -- so an rdCIPLabeler label taken here round-trips against recover()'s own
+    recomputation. Returns None if the label can't be assigned.
+    """
+    from rdkit.Chem import rdCIPLabeler
+
+    try:
+        tt = Chem.Mol(t)
+        rdCIPLabeler.AssignCIPLabels(tt)
+        a = tt.GetAtomWithIdx(ai)
+        return a.GetProp("_CIPCode") if a.HasProp("_CIPCode") else None
+    except Exception:
+        return None
+
+
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """Build a contract-compliant RDKit mol from a MetalloGen result.
 
@@ -276,6 +299,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """
     from rdkit.Geometry import Point3D
 
+    from ..core.chirality import _LP_CIP_PROP
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
 
     try:
@@ -322,6 +346,14 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         # perceive-then-flip loop below. Backbone phosphorus is handled separately
         # via an _OIN_CIPCode stamp (see the template loop).
         sp3_stereo_targets: dict[int, str] = {}
+        # global contract-atom idx -> rdCIPLabeler lone-pair CIP for a Zone-A P
+        # *donor* (metal-bonded, stereogenic lone pair). Stamped as _OIN_CIPCode_LP
+        # and tag-seeded AFTER 3D perception below so recover()'s lone-pair
+        # verify-and-flip keeps it -- the same end state a forward-pass CIPAssigner
+        # mol reaches. Kept separate from sp3_stereo_targets because the label is
+        # the rdCIPLabeler convention (recover() recomputes with rdCIPLabeler),
+        # not the legacy _CIPCode the backbone paths carry.
+        zone_a_lp_targets: dict[int, str] = {}
 
         for fi, fm in enumerate(frag_mols):
             orig = mapping[fi]
@@ -372,11 +404,22 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                     # tag as a stray (its 4-neighbour, no-_OIN_CIPCode else-branch),
                     # so instead stamp the encoded CIP as _OIN_CIPCode -- recover()
                     # then keeps and orients it, exactly as for a forward-pass mol
-                    # that went through CIPAssigner. A Zone-A P *donor* (bonded to
-                    # the metal) is excluded and left to recover()'s lone-pair path.
-                    if ta.HasProp("_CIPCode"):
-                        gidx = q2g[match[ai]]
-                        anum = ta.GetAtomicNum()
+                    # that went through CIPAssigner.
+                    gidx = q2g[match[ai]]
+                    anum = ta.GetAtomicNum()
+                    if anum == 15 and gidx in donors:
+                        # Zone-A P donor: stereogenic lone pair. recover()'s
+                        # lone-pair branch needs _OIN_CIPCode_LP (rdCIPLabeler
+                        # convention) + a seeded tag, both applied after 3D
+                        # perception below. Gate on the parsed [P@] chiral tag --
+                        # reliable even when legacy AssignStereochemistry declines
+                        # to CIP-label a 3-coordinate P -- and take the label from
+                        # rdCIPLabeler, NOT the legacy _CIPCode (they disagree).
+                        if ta.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
+                            label = _template_lp_label(t, ai)
+                            if label is not None:
+                                zone_a_lp_targets[gidx] = label
+                    elif ta.HasProp("_CIPCode"):
                         if anum in (6, 14, 16):
                             sp3_stereo_targets[gidx] = ta.GetProp("_CIPCode")
                         elif anum == 15 and gidx not in donors:
@@ -427,6 +470,21 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         changed = True
                 if not changed:
                     break
+
+        # Zone-A P donor lone-pair stereo. Make the generated donor arrive at
+        # get_oin_string in the same state a forward-pass CIPAssigner mol would:
+        # the rdCIPLabeler lone-pair label stamped as _OIN_CIPCode_LP plus a
+        # specified chiral tag. recover()'s lone-pair branch then verifies and
+        # flips to match the stored label on the metal-free fragment. Must run
+        # AFTER 3D perception and the sp3 flip loop above, both of which clear or
+        # overwrite chiral tags (the dative metal->P bond makes
+        # AssignStereochemistryFrom3D return CHI_UNSPECIFIED here anyway). The
+        # seeded handedness is arbitrary -- recover() recomputes and reorients --
+        # it only needs to be non-UNSPECIFIED for the flip to have a target.
+        for gidx, label in zone_a_lp_targets.items():
+            p = mol.GetAtomWithIdx(gidx)
+            p.SetProp(_LP_CIP_PROP, label)
+            p.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
         return mol
     except Exception:
         return None
