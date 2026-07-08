@@ -14,7 +14,7 @@ class ASEOptimizer:
         self.max_steps = max_steps
         self.timeout = timeout
 
-        if self.method == "xtb":
+        if self.method in ("xtb", "g-xtb"):
             # We use a subprocess wrapper for g-xTB now, so no Python package imports are needed
             # here.
             pass
@@ -68,7 +68,7 @@ class ASEOptimizer:
             magmoms[0] = uhf
         atoms.set_initial_magnetic_moments(magmoms)
 
-        if self.method == "xtb":
+        if self.method in ("xtb", "g-xtb"):
             import os
 
             # Check if xtb is in PATH

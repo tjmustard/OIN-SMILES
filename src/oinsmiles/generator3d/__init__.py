@@ -44,7 +44,8 @@ def generate_3d_structures(
         print(f"Failed to parse m-SMILES: {e}")
         return []
 
-    cleaner = clean_geometry.TMCOptimizer(**(ff_params or {}))
+    clean_ff_params = {k: v for k, v in (ff_params or {}).items() if k != "max_attempts"}
+    cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
     options = [0, 1, 2]  # Added one more option to increase pool variety
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
 

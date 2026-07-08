@@ -188,7 +188,7 @@ def main():
     parser.add_argument(
         "--quick",
         action="store_true",
-        help="Run with a 60-second timeout for xTB and limited UFF pool size",
+        help="Run with a 60-second timeout for g-xTB and limited UFF pool size",
     )
     parser.add_argument(
         "--continue",
@@ -284,7 +284,7 @@ def main():
         signal.signal(signal.SIGALRM, timeout_handler)
 
     global_report = []
-    requires_xtb = []
+    requires_g_xtb = []
 
     xyz_to_smiles = XYZToSMILES()
 
@@ -333,35 +333,45 @@ def main():
             global_report.append(report)
             print("SUCCESS")
         else:
-            report["status"] = "pending_xtb"
-            save_artifacts(report, last_xyz, output_dir, is_final=False)
-            requires_xtb.append((xyz_path, oin1_string, report))
-            print("FAILED (queued for xTB)")
+            err = report.get("error", "")
+            if err and (
+                err.startswith("Generation/Verification failed at")
+                or err.startswith("TimeoutException")
+            ):
+                report["status"] = "failed"
+                save_artifacts(report, last_xyz, output_dir, is_final=True)
+                global_report.append(report)
+                print("FAILED (Hard failure, skipping g-xTB)")
+            else:
+                report["status"] = "pending_g-xtb"
+                save_artifacts(report, last_xyz, output_dir, is_final=False)
+                requires_g_xtb.append((xyz_path, oin1_string, report))
+                print("FAILED (queued for g-xTB)")
 
-    if requires_xtb:
-        print(f"\n--- PASS 2: xTB PASS ({len(requires_xtb)} files) ---")
-        gen_xtb_1 = OIN3DGenerator(
-            optimizer="xtb", ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
+    if requires_g_xtb:
+        print(f"\n--- PASS 2: g-xTB PASS ({len(requires_g_xtb)} files) ---")
+        gen_g_xtb_1 = OIN3DGenerator(
+            optimizer="g-xtb", ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
         )
-        gen_xtb_5 = OIN3DGenerator(
-            optimizer="xtb", ensemble_size=5, timeout=timeout_val, ff_params=ff_params_fast
+        gen_g_xtb_5 = OIN3DGenerator(
+            optimizer="g-xtb", ensemble_size=5, timeout=timeout_val, ff_params=ff_params_fast
         )
 
-        for i, (xyz_path, oin1_string, report) in enumerate(requires_xtb, 1):
+        for i, (xyz_path, oin1_string, report) in enumerate(requires_g_xtb, 1):
             basename = report["molecule"]
-            print(f"[{i}/{len(requires_xtb)}] xTB Pass: {basename}...", flush=True)
+            print(f"[{i}/{len(requires_g_xtb)}] g-xTB Pass: {basename}...", flush=True)
 
-            # Attempt xTB_1
-            print("  -> Trying xTB_1...", end=" ", flush=True)
+            # Attempt g-xTB_1
+            print("  -> Trying g-xTB_1...", end=" ", flush=True)
             try:
                 if args.mol_timeout > 0:
                     signal.alarm(args.mol_timeout)
                 success, last_xyz = _attempt_generation(
-                    "xTB_1", gen_xtb_1, oin1_string, xyz_path, report
+                    "g-xTB_1", gen_g_xtb_1, oin1_string, xyz_path, report
                 )
             except TimeoutException as e:
                 report["status"] = "failed"
-                report["error"] = f"TimeoutException at xTB_1: {e}"
+                report["error"] = f"TimeoutException at g-xTB_1: {e}"
                 success, last_xyz = False, None
             finally:
                 if args.mol_timeout > 0:
@@ -372,19 +382,31 @@ def main():
                 global_report.append(report)
                 print("SUCCESS")
                 continue
-            print("FAILED")
 
-            # Attempt xTB_5
-            print("  -> Trying xTB_5...", end=" ", flush=True)
+            err = report.get("error", "")
+            if err and (
+                err.startswith("Generation/Verification failed at")
+                or err.startswith("TimeoutException")
+            ):
+                report["status"] = "failed"
+                save_artifacts(report, last_xyz, output_dir, is_final=True)
+                global_report.append(report)
+                print("FAILED (Hard failure, skipping g-xTB_5)")
+                continue
+
+            print("FAILED (Soft failure)")
+
+            # Attempt g-xTB_5
+            print("  -> Trying g-xTB_5...", end=" ", flush=True)
             try:
                 if args.mol_timeout > 0:
                     signal.alarm(args.mol_timeout)
                 success, last_xyz = _attempt_generation(
-                    "xTB_5", gen_xtb_5, oin1_string, xyz_path, report
+                    "g-xTB_5", gen_g_xtb_5, oin1_string, xyz_path, report
                 )
             except TimeoutException as e:
                 report["status"] = "failed"
-                report["error"] = f"TimeoutException at xTB_5: {e}"
+                report["error"] = f"TimeoutException at g-xTB_5: {e}"
                 success, last_xyz = False, None
             finally:
                 if args.mol_timeout > 0:
