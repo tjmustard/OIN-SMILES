@@ -3,14 +3,22 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.3.5] - 2026-07-08
 
 ### Added
+- **Canonical symmetric-donor binding slot** (`utils/oin_aligner.py`, `utils/xyz2mol.py`): a monodentate ligand that binds through one of two resonance-equivalent atoms (e.g. a carboxylate's two oxygens, which differ as `=O`/`-O` in any single Kekulé structure) now always carries the `{slot}` marker on a canonically-chosen atom. Structures that differ only in which atom 3D bond perception happened to pick now encode identically, fixing a spurious round-trip "String mismatch". Guarded by `tests/unit/test_canonical_donor_binding.py`.
 - **`tools/recalculate_oin_smiles.py`**: A utility to recalculate OIN SMILES strings from both the input XYZ and the generated XYZ structures for previously processed datasets. Updates the `summary_roundtrip.json` and `individual_reports` statuses if a codebase change causes a previously failed mismatch to now perfectly round-trip.
+- **`tools/rebuild_summary.py`**: Rebuilds `summary_roundtrip.json` from the per-molecule `individual_reports` already on disk.
 - **Dataset Roundtrip Tools enhancements**: Added `--quick`, `--continue`, `--rerun-failed`, `--random`, and `--mol-timeout` options to `tools/test_dataset_roundtrip.py` to allow robust, resumed, and time-bounded background processing of large datasets without hanging on pathological UFF geometries.
 
 ### Fixed
-- **UFF loop hang during 3D generation**: Fixed a bug in `generate_3d_structures` where an unrecognized UFF atom type (which immediately fails FF cleaning) caused the generator to blindly brute-force 250 random embeddings before giving up. Added support for a `max_attempts` override in `ff_params` and passed `max_attempts=10` when `--quick` is specified.
+- **η³-allyl double-bond loss on round-trip** (`generation/metallogen_adapter.py`): `_flatten_template` built the connectivity-only query for `build_contract_mol`'s per-fragment substructure match but cleared only aromaticity and charge — not radical electrons. A ligand atom that binds the (stripped) metal is under-valent, so its template atom carried a radical, and `GetSubstructMatch` treats radical count as a match constraint — so bond-order/aromaticity transfer silently failed and the ligand was emitted all-single and de-aromatized (the η³-allyl double-bond loss, e.g. ABAZEK). Now clears radicals and normalizes H valence so the match succeeds and the allyl `=` is preserved by transfer; five dataset allyl cases (ABAZEK/ABETIK/ABETOQ/ACALOI/AGOVOK) now key-match. Guarded by `tests/unit/test_contract_mol_allyl_transfer.py`.
+- **Zone-A chiral P donor stereo lost on round-trip** (`generation/metallogen_adapter.py`): a phosphorus binding the metal directly with a stereogenic lone pair encoded as `[P@]{0}` on XYZ→OIN but re-encoded achiral `P{0}` after OIN→3D→OIN (e.g. ACUWUT). `build_contract_mol` never populated the lone-pair path `recover()` needs for the donor, and the dative metal→P bond makes `AssignStereochemistryFrom3D` return `CHI_UNSPECIFIED`. The generated donor is now primed with `_OIN_CIPCode_LP` and a seeded chiral tag from `rdCIPLabeler` on the metal-free template (not the legacy `Chem.AssignStereochemistry` label, which disagrees for 3-coordinate P and would round-trip the wrong enantiomer), so `recover()`'s lone-pair verify-and-flip branch re-asserts the encoded handedness. Guarded by `tests/unit/test_zone_a_p_donor_stereo.py`.
+- **`--quick` roundtrip crash from unsupported `max_attempts`** (`generator3d/__init__.py`): `--quick` mode passes `ff_params={"max_attempts": 10}`, which `generate_3d_structures` forwarded verbatim to `TMCOptimizer(**ff_params)` — but `TMCOptimizer.__init__` has no such parameter, so every molecule raised `TypeError: unexpected keyword argument 'max_attempts'` and crashed before any geometry was produced. `max_attempts` is now filtered out before constructing the optimizer while still capping the embedding retry loop.
+- **UFF loop hang during 3D generation**: Fixed a bug in `generate_3d_structures` where an unrecognized UFF atom type (which immediately fails FF cleaning) caused the generator to blindly brute-force 250 random embeddings before giving up. Added support for a `max_attempts` override in `ff_params` (10 under `--quick`) that caps the embedding loop.
+
+### Changed
+- **g-xTB optimizer renamed `xtb` → `g-xtb`** across the user-facing surface: the `oin-smiles oin2xyz --optimizer` default, the `ASEOptimizer` method (which still accepts both spellings), and the dataset roundtrip harness tiers. The dataset harness now also short-circuits hard generation/verification failures and timeouts instead of escalating them to the slow g-xTB pass.
 
 ## [0.3.4] - 2026-07-07
 

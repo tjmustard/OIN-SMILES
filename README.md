@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/release-v0.3.3-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.5"><img src="https://img.shields.io/badge/release-v0.3.5-blue" alt="Latest Release"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
@@ -42,6 +42,7 @@ Beyond round-tripping, OIN aims to be a **canonical** representation: the same c
 - **Normalizing orientation** — the structure is aligned to its principal axes of inertia, so rotated/translated copies of the same geometry collapse to one form.
 - **Canonicalizing ligand fragments** — each fragment is emitted as RDKit-canonical SMILES (with binding-atom `c`↔`[cH]` drift fixed), and fragments are ordered by chemical identity rather than input order.
 - **Canonicalizing haptic (η) ligands by content** — same-mass rings are keyed on a heading-independent canonical ring SMILES, and the marker atom is the lowest-ranked `CanonicalRankAtoms` (see `CHANGELOG` `[0.3.0]`).
+- **Canonicalizing symmetric-donor binding slots** — when a monodentate ligand can bind through either of two resonance-equivalent atoms (e.g. a carboxylate's two oxygens), the `{slot}` marker is placed on a canonically-chosen atom, so structures that differ only in which Kekulé atom 3D bond perception picked collapse to one string (see `CHANGELOG` `[0.3.5]`).
 
 > [!NOTE]
 > Canonicalization is exact for the common cases — normalized up to orientation and fragment identity. A few highly symmetric coordination spheres (symmetric slot numbering, symmetric η-ring winding labels, metal `@SP/@OH` descriptors) may still need light normalization before an exact string comparison; the round-trip verifier applies that normalization. Treat the format as canonical **within a format version**.
@@ -54,12 +55,12 @@ Beyond round-tripping, OIN aims to be a **canonical** representation: the same c
 ## ✨ Features
 
 - **Lossless Round-Tripping**: XYZ → OIN → XYZ → OIN with exact isomer preservation.
-- **Canonical Form**: The same complex normalizes to one string — enabling exact-match deduplication and isomer-aware similarity search across TMC datasets. See [Canonical Form & Use Cases](#️-canonical-form--use-cases).
+- **Canonical Form**: The same complex normalizes to one string — enabling exact-match deduplication and isomer-aware similarity search across TMC datasets. Symmetric-donor binding slots (e.g. a carboxylate's two equivalent oxygens) are canonicalized so resonance-equivalent structures encode identically. See [Canonical Form & Use Cases](#️-canonical-form--use-cases).
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
 - **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
-- **P Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
-- **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation.
+- **P Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. A Zone-A P donor — one that binds the metal directly through a stereogenic lone pair — now also recovers its handedness across the full OIN → 3D → OIN round trip. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
+- **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation. Bond orders on metal-bound haptic ligands — e.g. the internal double bond of an η³-allyl — are preserved by template transfer rather than flattened to all-single on regeneration.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
 ## ⚡ Installation
