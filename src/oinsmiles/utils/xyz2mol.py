@@ -924,7 +924,40 @@ def get_oin_string(tmc_mol, xyz_coords):
                     if bond:
                         mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
 
+        # Second pass: carry double-bond (E/Z) stereo across the rebuild. The
+        # loop above copied bond TYPE only; STEREOE/Z plus the stereo-reference
+        # atoms are not, so cis/trans alkene geometry would be lost. Re-apply it
+        # now that every fragment bond exists (SetStereoAtoms requires the
+        # reference atoms to be bonded), remapping the reference atoms to the new
+        # fragment indices. SetDoubleBondNeighborDirections (before the final
+        # MolToSmiles) then emits the '/'\''\'' markers.
+        for bond in mol.GetBonds():
+            if bond.GetStereo() == Chem.BondStereo.STEREONONE:
+                continue
+            u, v = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+            stereo_atoms = list(bond.GetStereoAtoms())
+            if (
+                u in old_to_new
+                and v in old_to_new
+                and len(stereo_atoms) == 2
+                and all(a in old_to_new for a in stereo_atoms)
+            ):
+                new_bond = mw.GetBondBetweenAtoms(old_to_new[u], old_to_new[v])
+                if new_bond is not None:
+                    a0, a1 = old_to_new[stereo_atoms[0]], old_to_new[stereo_atoms[1]]
+                    new_bond.SetStereoAtoms(a0, a1)
+                    new_bond.SetStereo(bond.GetStereo())
+
         frag_mol = mw.GetMol()
+        # Materialize single-bond directions from the carried E/Z stereo *now*,
+        # before the downstream recover()/AssignStereochemistry(cleanIt=True):
+        # cleanIt drops any double-bond stereo it cannot corroborate from bond
+        # directions, so without this the cis/trans label would be stripped.
+        try:
+            frag_mol.UpdatePropertyCache(strict=False)
+            Chem.SetDoubleBondNeighborDirections(frag_mol)
+        except Exception:
+            pass
 
         # Identify binding atoms in new local indices
         frag_binding_indices_local = []
@@ -948,6 +981,9 @@ def get_oin_string(tmc_mol, xyz_coords):
             )
             # Re-apply correct @/@@ on P/N atoms using pre-fragmentation _OIN_CIPCode.
             sanitized_mol = ChiralityRecoveryUtility().recover(sanitized_mol)
+            # Derive the single-bond directions from the carried E/Z stereo so the
+            # canonical SMILES writes the '/' and '\' cis/trans markers.
+            Chem.SetDoubleBondNeighborDirections(sanitized_mol)
             sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
