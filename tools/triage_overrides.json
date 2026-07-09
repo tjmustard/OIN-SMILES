@@ -1,5 +1,6 @@
 {
   "_comment": "Manual triage overrides for round-trip failures the stdlib classifier in classify_failures.py cannot route by string patterns alone (they need RDKit canonicalization: @-stereo where atom order also changed, RAW-unparseable aromatics, eta-slot placement on automorphic rings). Molecule -> defect class (must exist in SESSION_OF). classify_failures.py applies these AFTER automatic classification, for failed rows only. Append new hand-triaged cases here.",
+  "_comment_winding": "A differing winding multiset is NOT automatically a notation bug. Since the encoder canonicalizes winding on eta rings that can be turned over onto themselves (v0.3.6), any winding difference that survives is a real coordinated-face difference. QOFTOU_comp_0 is such a case: MetalloGen builds its ansa-bis(indenyl) zirconocene as rac or meso non-deterministically across runs, so the classifier's winding_flip pattern misroutes it to S4. It is a generator stereochemistry defect.",
   "FENMIX_comp_0": "H_on_terminal_oxo_imido",
   "KENTEE_comp_0": "H_on_terminal_oxo_imido",
   "KUNWIB_comp_0": "H_on_terminal_oxo_imido",
@@ -22,5 +23,6 @@
   "KAPCEM_comp_0": "atom_stereo",
   "MEDHUB_comp_0": "atom_stereo",
   "XENNIO_comp_0": "atom_stereo",
-  "SOHRAK_comp_0": "atom_stereo"
+  "SOHRAK_comp_0": "atom_stereo",
+  "QOFTOU_comp_0": "atom_stereo"
 }
