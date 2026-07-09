@@ -16,7 +16,9 @@ Three round-trip failure classes traced to ``xyz2mol``'s input-side perception:
   an aromatic ring carbon (a PPN+ counter-cation, a phosphonium ylide). The ring
   is unkekulizable and the first full ``SanitizeMol`` raised. All 17 tracebacks
   pointed at ``fix_equivalent_Os``, which rewrites nothing on these molecules --
-  it is simply whichever sanitize ran first.
+  it is simply whichever sanitize ran first. The underlying cause is a wrong
+  ligand charge from extended Huckel, so an unusable perception is re-perceived
+  over a charge sweep.
 """
 
 import os
@@ -34,7 +36,7 @@ from oinsmiles.utils.aromaticity import (
     kekulize_safe_sanitize,
     stuck_ring_atoms,
 )
-from oinsmiles.utils.xyz2mol import get_tmc_mol, lig_checks
+from oinsmiles.utils.xyz2mol import _perception_is_usable, lig_checks
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -143,19 +145,42 @@ class TestKekulizeSafeSanitize(unittest.TestCase):
         oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "NAXDOI.xyz"))
         self.assertTrue(oin.startswith("[Mn_TET]"), oin)
 
-    def test_unrecoverable_perception_raises_a_specific_error(self):
-        # AGUFEN carries a PPN+ counter-cation. At the charge AC2mol settles on, the
-        # ipso carbon is pentavalent: relaxing the ring cannot rescue it, so the
-        # encoder must say so rather than emit a bare kekulize traceback.
-        with self.assertRaises(OINEncodeError) as ctx:
-            get_tmc_mol(os.path.join(_FIXTURES, "AGUFEN.xyz"), 0)
-        message = str(ctx.exception)
-        self.assertIn("de-aromatizing the quinoid ring(s)", message)
-        self.assertIn("atoms [", message)
-
     def test_oin_encode_error_is_a_value_error(self):
         # core.translator catches ValueError; the new type must not slip past it.
         self.assertTrue(issubclass(OINEncodeError, ValueError))
+
+
+class TestChargeRescue(unittest.TestCase):
+    """A ligand whose perceived bond orders are unusable is re-perceived."""
+
+    def test_ppn_cation_is_perceived_correctly(self):
+        # AGUFEN carries a PPN+ counter-cation, [Ph3P=N=PPh3]+. Extended Huckel
+        # proposes -1; AC2mol succeeds there and at -3, both times by drawing double
+        # bonds from phosphorus onto phenyl carbons -- leaving the ipso carbon
+        # pentavalent, which no ring relaxation can rescue. A charge sweep finds the
+        # chemically correct q=+1, where the ligand is stuck-ring- and radical-free.
+        oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "AGUFEN.xyz"))
+        self.assertTrue(oin.startswith("[Y_TPL]"), oin)
+        # The P-N-P backbone, with intact phenyls rather than P=c quinoid rings.
+        self.assertIn("P(N", oin)
+        self.assertIn("c1ccc(P", oin)
+
+    def test_rescue_does_not_fire_on_a_usable_perception(self):
+        # The rescue is additive: a ligand whose perception already sanitizes never
+        # enters it, which is what keeps the 1944 passing molecules still.
+        mol = Chem.MolFromSmiles("c1ccc(P(c2ccccc2)c2ccccc2)cc1")
+        self.assertTrue(_perception_is_usable(mol))
+
+    def test_genuine_quinoid_ligand_is_not_rescued_away(self):
+        # A 2-iminopyridine really is quinoid. Its stuck ring is chemically correct,
+        # kekulize_safe_sanitize relaxes it, and so it must stay usable -- otherwise
+        # the rescue would re-perceive ABERIK's ligand at some other charge.
+        quinoid = Chem.MolFromSmiles(
+            "Cc1cc(C)c(-c2cccc(=[N]c3c(C)cc(C)cc3C)[n]2)c(C)c1", sanitize=False
+        )
+        self.assertIsNotNone(quinoid)
+        quinoid.UpdatePropertyCache(strict=False)
+        self.assertTrue(_perception_is_usable(quinoid))
 
 
 if __name__ == "__main__":

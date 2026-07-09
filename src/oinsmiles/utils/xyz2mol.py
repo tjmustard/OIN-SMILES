@@ -14,7 +14,11 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
-from .aromaticity import OINEncodeError, kekulize_safe_sanitize  # noqa: F401
+from .aromaticity import (  # noqa: F401
+    OINEncodeError,
+    kekulize_safe_sanitize,
+    stuck_ring_atoms,
+)
 from .oin_aligner import OINDiscreteAligner, OINSanitizer
 from .xyz2mol_local import (
     AC2mol,
@@ -365,7 +369,74 @@ def lig_checks(lig_mol, coordinating_atoms):
     return possible_lig_mols
 
 
+def _perception_is_usable(candidate):
+    """Whether a perceived ligand mol can be made into a valid molecule.
+
+    A stuck ring on its own does not disqualify a ligand -- a 2-iminopyridine or an
+    amidinate really is quinoid, and ``kekulize_safe_sanitize`` relaxes it. What
+    disqualifies a perception is a structure no relaxation can rescue, e.g. the
+    pentavalent ipso carbon ``AC2mol`` produces when it satisfies a wrong ligand
+    charge by drawing ``P=c`` bonds onto phenyls.
+    """
+    try:
+        kekulize_safe_sanitize(Chem.Mol(candidate))
+        return True
+    except Exception:
+        return False
+
+
+def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinating_atoms):
+    """Re-perceive at another charge when the chosen bond orders are unusable.
+
+    ``get_proposed_ligand_charge`` runs extended Huckel and can be wrong by more
+    than the +-2 the ladder above explores: a PPN+ counter-cation is proposed at -1,
+    ``AC2mol`` succeeds there and at -3, and both solutions draw double bonds from
+    phosphorus onto aromatic carbons. Sweep the remaining charges and take the first
+    that yields a usable, stuck-ring-free, radical-free molecule, preferring the
+    charge closest to the Huckel proposal.
+
+    Deliberately additive: a ligand whose current perception is usable never enters
+    this path, so nothing that already round-trips can move.
+    """
+    if best_res_mol is not None and _perception_is_usable(best_res_mol):
+        return best_res_mol, charge
+
+    ordered = sorted(range(-4, 5), key=lambda q: (abs(q - charge), q))
+    for trial_charge in ordered:
+        if trial_charge == charge:
+            continue
+        candidate = AC2mol(
+            mol, AC, atoms, trial_charge, allow_charged_fragments=True, use_atom_maps=False
+        )
+        if not candidate:
+            continue
+        if any(a.GetNumRadicalElectrons() for a in candidate.GetAtoms()):
+            continue
+        if stuck_ring_atoms(candidate) or not _perception_is_usable(candidate):
+            continue
+        logger.debug("re-perceived ligand at charge %d (was %d)", trial_charge, charge)
+        resonance_forms = lig_checks(candidate, coordinating_atoms)
+        rescued, _, _, _ = max(resonance_forms, key=lambda item: item[3])
+        return rescued, trial_charge
+
+    return best_res_mol, charge
+
+
 def get_lig_mol(mol, charge, coordinating_atoms):
+    """Create a sanitizable mol object for the ligand.
+
+    Runs the charge/carbene ladder in ``_select_lig_mol``, then re-perceives at
+    another charge if the result is a molecule no sanitize can rescue.
+    """
+    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
+    if lig_mol is None:
+        return None, final_charge
+    atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
+    AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    return _rescue_unusable_perception(mol, AC, atoms, lig_mol, final_charge, coordinating_atoms)
+
+
+def _select_lig_mol(mol, charge, coordinating_atoms):
     """Create a sanitizable mol object for the ligand.
 
     The checks defined in lig_checks are taken into account.
