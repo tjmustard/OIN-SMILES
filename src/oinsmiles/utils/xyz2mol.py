@@ -14,6 +14,11 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
+from .aromaticity import (  # noqa: F401
+    OINEncodeError,
+    kekulize_safe_sanitize,
+    stuck_ring_atoms,
+)
 from .oin_aligner import OINDiscreteAligner, OINSanitizer
 from .xyz2mol_local import (
     AC2mol,
@@ -184,8 +189,7 @@ def fix_NO2(mol):
             emol.RemoveBond(a1, a2)
             emol.AddBond(a1, a2, rdchem.BondType.DOUBLE)
 
-    Chem.SanitizeMol(emol)
-    return emol
+    return kekulize_safe_sanitize(emol)
 
 
 def fix_equivalent_Os(mol):
@@ -223,8 +227,10 @@ def fix_equivalent_Os(mol):
                     emol.GetAtomWithIdx(a1).SetFormalCharge(0)
                     emol.GetAtomWithIdx(a3).SetFormalCharge(-1)
 
-    Chem.SanitizeMol(emol)
-    return emol
+    # This is usually the first full sanitize to touch the assembled TMC, so an
+    # unkekulizable ring perceived upstream by AC2mol surfaces here even when this
+    # function rewrote nothing.
+    return kekulize_safe_sanitize(emol)
 
 
 def get_proposed_ligand_charge(ligand_mol, cutoff=-10):
@@ -334,10 +340,20 @@ def lig_checks(lig_mol, coordinating_atoms):
     res_mols = rdchem.ResonanceMolSupplier(lig_mol)
     if len(res_mols) == 0:
         res_mols = rdchem.ResonanceMolSupplier(lig_mol, flags=Chem.ALLOW_INCOMPLETE_OCTETS)
+
+    # ResonanceMolSupplier is a stateful iterator: len() runs the enumeration and
+    # leaves the cursor at the end, so a subsequent `for res_mol in res_mols` can
+    # yield None instead of restarting (AttributeError on res_mol.GetAtoms(), the
+    # xyz2mol_none_crash bucket). Index instead of iterating, drop any None the
+    # enumeration hands back, and fall back to the un-resonated ligand so a
+    # supplier that yields nothing usable degrades instead of crashing.
+    candidates = [res_mols[i] for i in range(len(res_mols))]
+    candidates = [m for m in candidates if m is not None] or [lig_mol]
+
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []
 
-    for res_mol in res_mols:
+    for res_mol in candidates:
         positive_atoms = []
         negative_atoms = []
         N_aromatic = 0
@@ -353,7 +369,74 @@ def lig_checks(lig_mol, coordinating_atoms):
     return possible_lig_mols
 
 
+def _perception_is_usable(candidate):
+    """Whether a perceived ligand mol can be made into a valid molecule.
+
+    A stuck ring on its own does not disqualify a ligand -- a 2-iminopyridine or an
+    amidinate really is quinoid, and ``kekulize_safe_sanitize`` relaxes it. What
+    disqualifies a perception is a structure no relaxation can rescue, e.g. the
+    pentavalent ipso carbon ``AC2mol`` produces when it satisfies a wrong ligand
+    charge by drawing ``P=c`` bonds onto phenyls.
+    """
+    try:
+        kekulize_safe_sanitize(Chem.Mol(candidate))
+        return True
+    except Exception:
+        return False
+
+
+def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinating_atoms):
+    """Re-perceive at another charge when the chosen bond orders are unusable.
+
+    ``get_proposed_ligand_charge`` runs extended Huckel and can be wrong by more
+    than the +-2 the ladder above explores: a PPN+ counter-cation is proposed at -1,
+    ``AC2mol`` succeeds there and at -3, and both solutions draw double bonds from
+    phosphorus onto aromatic carbons. Sweep the remaining charges and take the first
+    that yields a usable, stuck-ring-free, radical-free molecule, preferring the
+    charge closest to the Huckel proposal.
+
+    Deliberately additive: a ligand whose current perception is usable never enters
+    this path, so nothing that already round-trips can move.
+    """
+    if best_res_mol is not None and _perception_is_usable(best_res_mol):
+        return best_res_mol, charge
+
+    ordered = sorted(range(-4, 5), key=lambda q: (abs(q - charge), q))
+    for trial_charge in ordered:
+        if trial_charge == charge:
+            continue
+        candidate = AC2mol(
+            mol, AC, atoms, trial_charge, allow_charged_fragments=True, use_atom_maps=False
+        )
+        if not candidate:
+            continue
+        if any(a.GetNumRadicalElectrons() for a in candidate.GetAtoms()):
+            continue
+        if stuck_ring_atoms(candidate) or not _perception_is_usable(candidate):
+            continue
+        logger.debug("re-perceived ligand at charge %d (was %d)", trial_charge, charge)
+        resonance_forms = lig_checks(candidate, coordinating_atoms)
+        rescued, _, _, _ = max(resonance_forms, key=lambda item: item[3])
+        return rescued, trial_charge
+
+    return best_res_mol, charge
+
+
 def get_lig_mol(mol, charge, coordinating_atoms):
+    """Create a sanitizable mol object for the ligand.
+
+    Runs the charge/carbene ladder in ``_select_lig_mol``, then re-perceives at
+    another charge if the result is a molecule no sanitize can rescue.
+    """
+    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
+    if lig_mol is None:
+        return None, final_charge
+    atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
+    AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    return _rescue_unusable_perception(mol, AC, atoms, lig_mol, final_charge, coordinating_atoms)
+
+
+def _select_lig_mol(mol, charge, coordinating_atoms):
     """Create a sanitizable mol object for the ligand.
 
     The checks defined in lig_checks are taken into account.
@@ -610,8 +693,7 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     emol = fix_equivalent_Os(emol)
     emol = fix_NO2(emol)
 
-    tmc_mol = emol.GetMol()
-    Chem.SanitizeMol(tmc_mol)
+    tmc_mol = kekulize_safe_sanitize(emol.GetMol())
     if with_stereo:
         chiral_stereo_check(tmc_mol)
     return tmc_mol, xyz_coords
@@ -748,6 +830,109 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     return canonical_coords.tolist()
 
 
+def _restore_impossible_neutrals(mol, original_charges, zone_a_indices):
+    """Put back the formal charges that a neutral atom cannot carry.
+
+    OIN drops formal charges: a donor's charge is implied by its bond to the metal,
+    and ``OINSanitizer`` re-derives the H count. But some groups have no neutral
+    Lewis structure. Zeroing a nitro group's ``[N+](=O)[O-]`` leaves a nitrogen with
+    four bonds, and the fragment serializes as ``N(O)=O``, which ``Chem.MolFromSmiles``
+    rejects -- so ``oin/compare.py`` degrades it to a ``RAW:`` token and the
+    round-trip key can never match, while the generator reads the broken string back
+    as ``N(O)=[OH]``.
+
+    Restore the charge on an atom left hypervalent by the neutralization, but only
+    together with the oppositely-charged bonded partner that balances it (the nitro
+    ``[O-]``) -- a charge-separated group is restored as a *pair* or not at all.
+    Restoring a lone ion would corrupt the fragment: a metal-bound carbonyl is
+    ``[C-]#[O+]``, whose oxygen is hypervalent when neutral, and reviving only the
+    ``[O+]`` turns the well-formed ``C{0}#O`` into ``C{0}#[O+]``.
+
+    Zone A binders are never touched: their H count is derived from the metal bond
+    downstream, and excluding them is what keeps bound CO intact (its carbanion is
+    the donor). Aromatic atoms are skipped -- RDKit's fractional aromatic valence
+    makes the hypervalence test unreliable there, and no aromatic atom has needed it.
+    """
+    periodic_table = Chem.GetPeriodicTable()
+    try:
+        mol.UpdatePropertyCache(strict=False)
+    except Exception:
+        return
+
+    hypervalent = set()
+    for atom in mol.GetAtoms():
+        idx = atom.GetIdx()
+        if original_charges.get(idx, 0) == 0 or idx in zone_a_indices or atom.GetIsAromatic():
+            continue
+        default_valence = periodic_table.GetDefaultValence(atom.GetAtomicNum())
+        if default_valence > 0 and atom.GetExplicitValence() > default_valence:
+            hypervalent.add(idx)
+
+    restore = set()
+    for idx in hypervalent:
+        partners = [
+            neighbor.GetIdx()
+            for neighbor in mol.GetAtomWithIdx(idx).GetNeighbors()
+            if neighbor.GetIdx() not in zone_a_indices
+            and original_charges.get(neighbor.GetIdx(), 0) * original_charges[idx] < 0
+        ]
+        if partners:
+            restore.add(idx)
+            restore.update(partners)
+
+    for idx in restore:
+        mol.GetAtomWithIdx(idx).SetFormalCharge(original_charges[idx])
+    if restore:
+        try:
+            mol.UpdatePropertyCache(strict=False)
+        except Exception:
+            pass
+
+
+def _repair_mixed_aromaticity(frag_mol):
+    """Re-perceive aromaticity when atom flags and bond orders disagree.
+
+    A fragment whose ring bonds are Kekule-typed and carry no aromatic flag, but
+    whose ring atoms are still flagged aromatic, serializes as ``c1c=cc=c1`` --
+    lowercase atoms with explicit double bonds -- which RDKit cannot re-parse.
+    Bonds copied from a mol that was kekulized in place keep their flag (see the
+    rebuild loop), so this only fires for producers that rebuild ring bonds from
+    scratch. Drop the stale flags and let RDKit re-perceive from the bond orders.
+
+    A ring that is aromatic-*typed*, or one the OIN->XYZ generator de-aromatized
+    to all-SINGLE (flags kept), is left alone: the first is already consistent and
+    the second is restored by ``OINSanitizer.generate_robust_smiles``. Returns the
+    input unchanged on any failure.
+    """
+    bonds = list(frag_mol.GetBonds())
+    if any(b.GetBondType() == Chem.BondType.AROMATIC for b in bonds):
+        return frag_mol
+    try:
+        Chem.GetSymmSSSR(frag_mol)
+        mixed = any(
+            b.GetBondType() == Chem.BondType.DOUBLE
+            and not b.GetIsAromatic()
+            and b.IsInRing()
+            and b.GetBeginAtom().GetIsAromatic()
+            and b.GetEndAtom().GetIsAromatic()
+            for b in bonds
+        )
+        if not mixed:
+            return frag_mol
+        rw = Chem.RWMol(frag_mol)
+        for atom in rw.GetAtoms():
+            atom.SetIsAromatic(False)
+        for bond in rw.GetBonds():
+            bond.SetIsAromatic(False)
+        out = rw.GetMol()
+        out.UpdatePropertyCache(strict=False)
+        Chem.GetSymmSSSR(out)
+        Chem.SetAromaticity(out, Chem.AROMATICITY_DEFAULT)
+        return out
+    except Exception:
+        return frag_mol
+
+
 def get_oin_string(tmc_mol, xyz_coords):
     """Generates the Open Isomer Notation (OIN) string for the molecule (V2.4).
 
@@ -796,9 +981,12 @@ def get_oin_string(tmc_mol, xyz_coords):
         mol.RemoveBond(u, v)
 
     # 3b. Neutralize Charges for OIN representation
+    original_charges = {atom.GetIdx(): atom.GetFormalCharge() for atom in mol.GetAtoms()}
     for atom in mol.GetAtoms():
         atom.SetFormalCharge(0)
         atom.SetNoImplicit(True)  # Start neutral, Sanitize will adjust Zone A
+
+    _restore_impossible_neutrals(mol, original_charges, set(_zone_a_indices))
 
     # 4. Fragment Identification
     frags_indices = Chem.GetMolFrags(mol, asMols=False)
@@ -922,7 +1110,21 @@ def get_oin_string(tmc_mol, xyz_coords):
                 if nbr_idx in heavy_indices and nbr_idx > old_idx:
                     bond = mol.GetBondBetweenAtoms(old_idx, nbr_idx)
                     if bond:
-                        mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
+                        # AddBond copies the bond TYPE but creates the bond with
+                        # IsAromatic=False, while AddAtom above DOES copy the atom's
+                        # aromatic flag. build_contract_mol hands us Kekule bond types
+                        # over an aromatic-flagged ring (Chem.Kekulize leaves the flags
+                        # on), which would serialize as the unparseable `c1c=cc=c1`.
+                        # Normalize an aromatic-flagged bond to the AROMATIC type so a
+                        # fragment is serialized identically however its producer chose
+                        # to represent the ring: the Kekule bond orders also perturb
+                        # CanonicalRankAtoms, which drives eta heading/winding.
+                        bond_type = bond.GetBondType()
+                        is_aromatic = bond.GetIsAromatic()
+                        if is_aromatic:
+                            bond_type = Chem.BondType.AROMATIC
+                        bi = mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond_type) - 1
+                        mw.GetBondWithIdx(bi).SetIsAromatic(is_aromatic)
 
         # Second pass: carry double-bond (E/Z) stereo across the rebuild. The
         # loop above copied bond TYPE only; STEREOE/Z plus the stereo-reference
@@ -958,6 +1160,8 @@ def get_oin_string(tmc_mol, xyz_coords):
             Chem.SetDoubleBondNeighborDirections(frag_mol)
         except Exception:
             pass
+
+        frag_mol = _repair_mixed_aromaticity(frag_mol)
 
         # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
         # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).

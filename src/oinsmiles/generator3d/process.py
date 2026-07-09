@@ -9,6 +9,7 @@ import numpy as np
 from rdkit import Chem
 from scipy import spatial
 
+from ..utils.aromaticity import dearomatize_stuck_rings
 from . import chem
 from .utils import compute_chg_and_bo_pulp as compute_pulp
 
@@ -148,58 +149,6 @@ def get_ace_mol_with_coordinate(smiles):
     return molecule
 
 
-def _dearomatize_stuck_rings(rd_molecule, add_hydrogen):
-    """Kekulize a molecule whose aromatic system has no global Kekule structure.
-
-    A quinoid ring -- an aromatic ring atom carrying an exocyclic double bond,
-    e.g. a 2-iminopyridine / amidinate donor (the Ti/Hf ``no_conformers`` cases)
-    -- makes ``Chem.Kekulize`` raise. The blanket fallback of treating EVERY
-    remaining aromatic bond as single also degrades the ligand's *other*,
-    well-behaved rings (a 2,6-dimethylphenyl bridge), so MetalloGen embeds those
-    arenes non-planar and they re-encode as quinoid -> a spurious string
-    mismatch. Instead, clear aromaticity on ONLY the stuck ring(s) and kekulize
-    the rest normally, preserving correct alternating bond orders on the good
-    rings. Returns a best-effort mol (the original on any failure); the
-    bond-order lookup below still guards against a stray AROMATIC bond.
-    """
-    try:
-        mol = Chem.AddHs(rd_molecule) if add_hydrogen else Chem.RWMol(rd_molecule).GetMol()
-        mol = Chem.RWMol(mol)
-        mol.UpdatePropertyCache(strict=False)
-        try:
-            Chem.SanitizeMol(mol, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
-        except Exception:
-            pass
-        stuck = set()
-        for ring in mol.GetRingInfo().AtomRings():
-            ring_set = set(ring)
-            for idx in ring:
-                atom = mol.GetAtomWithIdx(idx)
-                if not atom.GetIsAromatic():
-                    continue
-                for b in atom.GetBonds():
-                    if (
-                        b.GetOtherAtomIdx(idx) not in ring_set
-                        and b.GetBondType() == Chem.BondType.DOUBLE
-                    ):
-                        stuck.update(ring)
-        if not stuck:
-            return rd_molecule
-        for idx in stuck:
-            mol.GetAtomWithIdx(idx).SetIsAromatic(False)
-        for b in mol.GetBonds():
-            if b.GetBeginAtomIdx() in stuck and b.GetEndAtomIdx() in stuck:
-                b.SetIsAromatic(False)
-                if b.GetBondType() == Chem.BondType.AROMATIC:
-                    b.SetBondType(Chem.BondType.SINGLE)
-        out = mol.GetMol()
-        out.UpdatePropertyCache(strict=False)
-        Chem.Kekulize(out, clearAromaticFlags=True)
-        return out
-    except Exception:
-        return rd_molecule
-
-
 def get_ace_mol_from_rd_mol(rd_molecule, add_hydrogen=True, include_stereo=False):
     """It converts rd_molecule type info ace_molecule type."""
     # Kekulize molecule
@@ -215,7 +164,7 @@ def get_ace_mol_from_rd_mol(rd_molecule, add_hydrogen=True, include_stereo=False
         # reverting the whole ligand to aromatic (which then hits the AROMATIC
         # KeyError below and aborts generation with "failed to generate any
         # conformers").
-        rd_molecule = _dearomatize_stuck_rings(rd_molecule_copy, add_hydrogen)
+        rd_molecule = dearomatize_stuck_rings(rd_molecule_copy, add_hydrogen)
     bond_types = {Chem.BondType.SINGLE: 1, Chem.BondType.DOUBLE: 2, Chem.BondType.TRIPLE: 3}
     n = rd_molecule.GetNumAtoms()
     atom_list = []
@@ -242,7 +191,7 @@ def get_ace_mol_from_rd_mol(rd_molecule, add_hydrogen=True, include_stereo=False
     for bond in bonds:
         begin = bond.GetBeginAtomIdx()
         end = bond.GetEndAtomIdx()
-        # Safety net: _dearomatize_stuck_rings above normally leaves no AROMATIC
+        # Safety net: dearomatize_stuck_rings above normally leaves no AROMATIC
         # bonds, but if one survives (a ring that still would not kekulize),
         # approximate it as single order rather than KeyError-ing and aborting
         # generation with "failed to generate any conformers".
