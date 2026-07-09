@@ -31,6 +31,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../s
 
 from rdkit import Chem, RDLogger
 
+from oinsmiles.core.translator import XYZToSMILES
 from oinsmiles.oin.compare import canonical_roundtrip_key
 from oinsmiles.utils.xyz2mol import _repair_mixed_aromaticity, get_oin_string, get_tmc_mol
 
@@ -122,6 +123,35 @@ class TestNoGarbledAromaticNotation(unittest.TestCase):
             mol.UpdatePropertyCache(strict=False)
             Chem.SetAromaticity(mol, Chem.AROMATICITY_DEFAULT)
             Chem.Kekulize(Chem.RWMol(mol), clearAromaticFlags=True)
+
+
+class TestPorphyrinMacrocycle(unittest.TestCase):
+    """Pins the macrocycle_perception diagnosis (see docs/KNOWN_LIMITATIONS.md).
+
+    A metalloporphyrin's aromatic macrocycle is perceived only because get_tmc_mol
+    sanitizes with the metal attached AND two pyrrole nitrogens carry a -1 charge.
+    OIN carries no charges, so the generator builds all four nitrogens neutral and
+    the contract mol cannot sanitize -- which is why the re-encode localizes. The
+    fix belongs in the donor-charge layer, not in aromatic perception.
+    """
+
+    def test_encoder_perceives_the_aromatic_macrocycle(self):
+        oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "BEGLUU.xyz"))
+        self.assertIn("c1c2n{0}c(", oin)
+
+    def test_forward_encode_is_stable(self):
+        path = os.path.join(_FIXTURES, "BEGLUU.xyz")
+        first = XYZToSMILES().convert(path)
+        second = XYZToSMILES().convert(path)
+        self.assertEqual(first, second)
+
+    def test_two_pyrrole_nitrogens_are_anionic(self):
+        # The charge the OIN string cannot carry. If this ever becomes 0, the
+        # macrocycle will stop being perceived aromatic and smiles_1 will localize.
+        tmc_mol, _ = get_tmc_mol(os.path.join(_FIXTURES, "BEGLUU.xyz"), 0)
+        metal = next(a for a in tmc_mol.GetAtoms() if a.GetSymbol() == "Ni")
+        charges = sorted(n.GetFormalCharge() for n in metal.GetNeighbors())
+        self.assertEqual(charges, [-1, -1, 0, 0])
 
 
 class TestRepairMixedAromaticity(unittest.TestCase):
