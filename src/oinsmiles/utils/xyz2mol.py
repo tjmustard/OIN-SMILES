@@ -758,6 +758,65 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     return canonical_coords.tolist()
 
 
+def _restore_impossible_neutrals(mol, original_charges, zone_a_indices):
+    """Put back the formal charges that a neutral atom cannot carry.
+
+    OIN drops formal charges: a donor's charge is implied by its bond to the metal,
+    and ``OINSanitizer`` re-derives the H count. But some groups have no neutral
+    Lewis structure. Zeroing a nitro group's ``[N+](=O)[O-]`` leaves a nitrogen with
+    four bonds, and the fragment serializes as ``N(O)=O``, which ``Chem.MolFromSmiles``
+    rejects -- so ``oin/compare.py`` degrades it to a ``RAW:`` token and the
+    round-trip key can never match, while the generator reads the broken string back
+    as ``N(O)=[OH]``.
+
+    Restore the charge on an atom left hypervalent by the neutralization, but only
+    together with the oppositely-charged bonded partner that balances it (the nitro
+    ``[O-]``) -- a charge-separated group is restored as a *pair* or not at all.
+    Restoring a lone ion would corrupt the fragment: a metal-bound carbonyl is
+    ``[C-]#[O+]``, whose oxygen is hypervalent when neutral, and reviving only the
+    ``[O+]`` turns the well-formed ``C{0}#O`` into ``C{0}#[O+]``.
+
+    Zone A binders are never touched: their H count is derived from the metal bond
+    downstream, and excluding them is what keeps bound CO intact (its carbanion is
+    the donor). Aromatic atoms are skipped -- RDKit's fractional aromatic valence
+    makes the hypervalence test unreliable there, and no aromatic atom has needed it.
+    """
+    periodic_table = Chem.GetPeriodicTable()
+    try:
+        mol.UpdatePropertyCache(strict=False)
+    except Exception:
+        return
+
+    hypervalent = set()
+    for atom in mol.GetAtoms():
+        idx = atom.GetIdx()
+        if original_charges.get(idx, 0) == 0 or idx in zone_a_indices or atom.GetIsAromatic():
+            continue
+        default_valence = periodic_table.GetDefaultValence(atom.GetAtomicNum())
+        if default_valence > 0 and atom.GetExplicitValence() > default_valence:
+            hypervalent.add(idx)
+
+    restore = set()
+    for idx in hypervalent:
+        partners = [
+            neighbor.GetIdx()
+            for neighbor in mol.GetAtomWithIdx(idx).GetNeighbors()
+            if neighbor.GetIdx() not in zone_a_indices
+            and original_charges.get(neighbor.GetIdx(), 0) * original_charges[idx] < 0
+        ]
+        if partners:
+            restore.add(idx)
+            restore.update(partners)
+
+    for idx in restore:
+        mol.GetAtomWithIdx(idx).SetFormalCharge(original_charges[idx])
+    if restore:
+        try:
+            mol.UpdatePropertyCache(strict=False)
+        except Exception:
+            pass
+
+
 def _repair_mixed_aromaticity(frag_mol):
     """Re-perceive aromaticity when atom flags and bond orders disagree.
 
@@ -850,9 +909,12 @@ def get_oin_string(tmc_mol, xyz_coords):
         mol.RemoveBond(u, v)
 
     # 3b. Neutralize Charges for OIN representation
+    original_charges = {atom.GetIdx(): atom.GetFormalCharge() for atom in mol.GetAtoms()}
     for atom in mol.GetAtoms():
         atom.SetFormalCharge(0)
         atom.SetNoImplicit(True)  # Start neutral, Sanitize will adjust Zone A
+
+    _restore_impossible_neutrals(mol, original_charges, set(_zone_a_indices))
 
     # 4. Fragment Identification
     frags_indices = Chem.GetMolFrags(mol, asMols=False)
