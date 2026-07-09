@@ -11,6 +11,12 @@ Three round-trip failure classes traced to ``xyz2mol``'s input-side perception:
 * ``garbled_aromatic`` (the nitro sub-bucket) -- ``get_oin_string`` zeroed every
   formal charge, so a nitro group's ``[N+](=O)[O-]`` became a four-bonded neutral
   nitrogen and serialized as the unparseable ``N(O)=O``.
+
+* ``kekulize_encode_crash`` -- ``AC2mol`` draws a double bond from phosphorus onto
+  an aromatic ring carbon (a PPN+ counter-cation, a phosphonium ylide). The ring
+  is unkekulizable and the first full ``SanitizeMol`` raised. All 17 tracebacks
+  pointed at ``fix_equivalent_Os``, which rewrites nothing on these molecules --
+  it is simply whichever sanitize ran first.
 """
 
 import os
@@ -23,7 +29,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../s
 from rdkit import Chem, RDLogger
 
 from oinsmiles.core.translator import XYZToSMILES
-from oinsmiles.utils.xyz2mol import lig_checks
+from oinsmiles.utils.aromaticity import (
+    OINEncodeError,
+    kekulize_safe_sanitize,
+    stuck_ring_atoms,
+)
+from oinsmiles.utils.xyz2mol import get_tmc_mol, lig_checks
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -100,6 +111,51 @@ class TestChargeSeparatedGroups(unittest.TestCase):
         oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "FeCO5.xyz"))
         self.assertNotIn("#[O+]", oin)
         self.assertIn("#O", oin)
+
+
+class TestStuckRingDetection(unittest.TestCase):
+    def test_detects_exocyclic_double_bond_on_aromatic_ring(self):
+        # A quinoid ring: aromatic flags kept, exocyclic C=N hanging off the ring.
+        mol = Chem.MolFromSmiles("Cc1cccc(=[N]c2ccccc2)[n]1", sanitize=False)
+        self.assertIsNotNone(mol)
+        mol.UpdatePropertyCache(strict=False)
+        Chem.SanitizeMol(mol, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+        self.assertTrue(stuck_ring_atoms(mol))
+
+    def test_plain_benzene_is_not_stuck(self):
+        self.assertEqual(stuck_ring_atoms(Chem.MolFromSmiles("Cc1ccccc1")), set())
+
+    def test_pyridone_exocyclic_oxygen_is_reported(self):
+        # Pyridone genuinely has an exocyclic C=O on an aromatic ring; RDKit cannot
+        # kekulize it either, so reporting it as stuck is correct, not a false hit.
+        mol = Chem.MolFromSmiles("O=c1cccc[nH]1")
+        self.assertTrue(stuck_ring_atoms(mol))
+
+
+class TestKekulizeSafeSanitize(unittest.TestCase):
+    def test_noop_on_a_clean_molecule(self):
+        mol = Chem.MolFromSmiles("Cc1ccccc1")
+        self.assertIs(kekulize_safe_sanitize(mol), mol)
+
+    def test_quinoid_ylide_input_encodes(self):
+        # NAXDOI: a [P+]=c phosphonium ylide. Before the fix, XYZToSMILES raised
+        # "Can't kekulize mol. Unkekulized atoms: 14 26 34 42 46".
+        oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "NAXDOI.xyz"))
+        self.assertTrue(oin.startswith("[Mn_TET]"), oin)
+
+    def test_unrecoverable_perception_raises_a_specific_error(self):
+        # AGUFEN carries a PPN+ counter-cation. At the charge AC2mol settles on, the
+        # ipso carbon is pentavalent: relaxing the ring cannot rescue it, so the
+        # encoder must say so rather than emit a bare kekulize traceback.
+        with self.assertRaises(OINEncodeError) as ctx:
+            get_tmc_mol(os.path.join(_FIXTURES, "AGUFEN.xyz"), 0)
+        message = str(ctx.exception)
+        self.assertIn("de-aromatizing the quinoid ring(s)", message)
+        self.assertIn("atoms [", message)
+
+    def test_oin_encode_error_is_a_value_error(self):
+        # core.translator catches ValueError; the new type must not slip past it.
+        self.assertTrue(issubclass(OINEncodeError, ValueError))
 
 
 if __name__ == "__main__":

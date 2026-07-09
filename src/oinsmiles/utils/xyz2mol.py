@@ -14,6 +14,7 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
+from .aromaticity import OINEncodeError, kekulize_safe_sanitize  # noqa: F401
 from .oin_aligner import OINDiscreteAligner, OINSanitizer
 from .xyz2mol_local import (
     AC2mol,
@@ -184,8 +185,7 @@ def fix_NO2(mol):
             emol.RemoveBond(a1, a2)
             emol.AddBond(a1, a2, rdchem.BondType.DOUBLE)
 
-    Chem.SanitizeMol(emol)
-    return emol
+    return kekulize_safe_sanitize(emol)
 
 
 def fix_equivalent_Os(mol):
@@ -223,8 +223,10 @@ def fix_equivalent_Os(mol):
                     emol.GetAtomWithIdx(a1).SetFormalCharge(0)
                     emol.GetAtomWithIdx(a3).SetFormalCharge(-1)
 
-    Chem.SanitizeMol(emol)
-    return emol
+    # This is usually the first full sanitize to touch the assembled TMC, so an
+    # unkekulizable ring perceived upstream by AC2mol surfaces here even when this
+    # function rewrote nothing.
+    return kekulize_safe_sanitize(emol)
 
 
 def get_proposed_ligand_charge(ligand_mol, cutoff=-10):
@@ -620,8 +622,7 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     emol = fix_equivalent_Os(emol)
     emol = fix_NO2(emol)
 
-    tmc_mol = emol.GetMol()
-    Chem.SanitizeMol(tmc_mol)
+    tmc_mol = kekulize_safe_sanitize(emol.GetMol())
     if with_stereo:
         chiral_stereo_check(tmc_mol)
     return tmc_mol, xyz_coords
