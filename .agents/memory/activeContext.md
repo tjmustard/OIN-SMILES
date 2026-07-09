@@ -4,7 +4,7 @@
 ## Purpose
 Captures the current state of OIN-SMILES development. Updated after significant task completions. Read first to understand where to pick up.
 
-## Current State (as of 2026-07-08)
+## Current State (as of 2026-07-09)
 
 ### Release Status
 - **v0.2.0** — Released 2026-03-07: Molassembler backend, P/N stereocenter encoding, CLI, OIN v3.6
@@ -16,8 +16,29 @@ Captures the current state of OIN-SMILES development. Updated after significant 
 - **v0.3.5** — In `CHANGELOG.md [0.3.5] - 2026-07-08` (pyproject 0.3.4 → 0.3.5): the tmCAT/tmPHOTO round-trip effort. **Structure-level canonical comparator** `oin/compare.py::canonical_roundtrip_key` (metal+geo, sorted RDKit-canonical fragment multiset, winding multiset — collapses notation drift; harness now compares by key, `a333617`); **carbene/dative-amine m-SMILES H-count fix** (bare-C NHC + dative N–H, ACAWOR/ABESAD, `58913bb`); **backbone P/S/Si stereocentre recovery** (`build_contract_mol` stamps `_OIN_CIPCode` on backbone P; Si/S perceive-then-flip, ABOPOY, `494629c`); **C=C E/Z preserved end-to-end** (encoder carries stereo atoms + `/`\`\` dirs, generator enforces on embed for geometrically-free bonds, `fb8505f`/`0079ac7`); **CN-8 square-antiprismatic `SQA` template + quinoid `_dearomatize_stuck_rings`** (AFEPIM; `KeyError(BondType.AROMATIC)` fix, `6c50286`); **encoder Track A1 canonical symmetric-donor `{slot}`** (`3b9b6ae`); **η³-allyl double-bond-loss fix** (radical-clear in `_flatten_template`; ABAZEK/ABETIK/ABETOQ/ACALOI/AGOVOK, `86aec45`/`b2270f3`); **Zone-A chiral P donor lone-pair stereo recovery** (primes `_OIN_CIPCode_LP` from `rdCIPLabeler`, ACUWUT, `65255a1`); **`--quick` crash fix** (`max_attempts` filtered before `TMCOptimizer`) + **optimizer rename `xtb` → `g-xtb`** (both spellings accepted, `f3cab8f`); dataset harness enhancements + `recalculate_oin_smiles.py`/`rebuild_summary.py` (`1123423`). Merged to `main` via squash-PR (follow-on to PR #2 which brought MetalloGen + v0.3.4).
 - **v0.2.2 (Direct Parser bugfixes)** — still planned/deferred (5 P0/P1 blockers, see below); superseded numbering-wise by 0.3.0 but the work itself is untouched.
 
-### No Active Sprint
-The MetalloGen backend is now the **default** generation engine (v0.3.3 cutover, g-xTB default optimizer) and the stereo diagnostic backlog is fully closed — test suite green with **zero expected failures** (`discover tests/unit` 153 OK skip=3; `discover tests` 55 OK; `verify_xyz_to_oin.py` 27/27; full MACE round-trip 25/25). NOTE: the `spec/` tree (worklog/process/compiled) was **removed from the repo** in `0e264d7`, so prior session-persistent notes no longer live in-repo — rely on git history + this file + the auto-memory. Deferred, non-blocking follow-ups: Zone-A N encoding (needs Option-C out-of-band marker); a real compatible-bite bidentate 3D fixture; DG-path set-based enforcement limitation; extending Zone-A P stereo enforcement to the metallogen engine (currently legacy-Molassembler-only); and the Direct Parser bugfixes below. (The TiCat1/3 `[Ti_TET]`↔`[Ti_TPY]` eta string drift was **closed** in `118b82c`; the eta winding rac/meso diastereomer swap in `7f0e880`.)
+### Active Sprint — v0.3.6 tmCAT/tmPHOTO round-trip fix wave (S1–S6)
+Six parallel sessions, each in its own git worktree, each owning a **disjoint set of files** and one defect class from the tmCAT/tmPHOTO baseline. Handoffs live in `spec/handoffs/v0.3.6/S1-S6.md` (**gitignored**, main-checkout only; each has a `▶ START HERE` bootstrap that creates its own worktree). Shared protocol + file-ownership matrix: `spec/handoffs/v0.3.6/README.md`.
+
+| Session | Class | Owns | Status |
+|---|---|---|---|
+| S1 | donor-H | `metallogen_adapter.py` → `convert_parsed_to_msmiles` | **DONE** — `ac3a689` on `main` |
+| S2 | eta-diene | `metallogen_adapter.py` → `_flatten_template`, `build_contract_mol`, `_oin_fragment_templates` | **DONE** — `bbe567e` on `main` |
+| S3 | aromatic-perception | `utils/xyz2mol.py`, `generator3d/process.py` | in progress (worktree `../OIN-SMILES-aromatic-perception`) |
+| S4 | eta-winding | `utils/oin_aligner.py`, `oin/compare.py` | not started |
+| S5 | metrics | `tests/integration/rmsd_utils.py`, `tools/*` | not started |
+| S6 | stereo | `core/chirality.py`, `generator3d/ligand.py` | not started |
+
+**Suite after S1+S2:** `discover tests/unit` **253 OK** (skip=4 on rdkit 2025.09.3, skip=5 on 2026.03.3 — both blessed); `discover tests` **55 OK**; lint clean.
+
+**`main` is 2 commits ahead of `origin/main` and UNPUSHED** (standing instruction). Both landed by local fast-forward merge, not the usual squash-PR — reconcile before pushing. No CHANGELOG entry or pyproject bump for 0.3.6 yet (pyproject still `0.3.5`); treat that as a wave-end task.
+
+**Traps for the next session (learned the hard way in S2):**
+- **The shared `tmCAT-tmPHOTO_xyz_dataset/20260707-results/CASE_REGISTRY.md` is STALE** — its reports predate S1/S2, so it still lists 79 `eta_diene_localization` rows that now pass. Re-running `classify_failures.py` does **not** fix this (it re-derives from the same old reports); the dataset must be re-run on `bbe567e` first. Don't pick cases from it blindly. Also: `classify_failures.py --output-dir` **writes** to the dir you point it at — never aim it at the shared results.
+- **S3's worktree is branched from `ac3a689`** and must rebase onto `bbe567e`. Three of its cases (AYOVUH, SEJPEE, TESFIH) already re-encode byte-identically after S2.
+- **Never run two `tools/test_dataset_roundtrip.py` sweeps concurrently** (or alongside the unit suite) — it fabricates `MetalloGen failed to generate any conformers` errors. `status: pending_g-xtb` is *not* a failure. Conformer choice is stochastic (`TBP` vs `SPY`). Always A/B a suspected regression against pristine code before believing it.
+- Two zero-byte reports (`GAHKIK_comp_0.json`, `OVEQAI_comp_0.json`) sit in the shared reports dir, left by a killed continuous runner.
+
+NOTE: the `spec/` tree (worklog/process/compiled) was **removed from the repo** in `0e264d7` and `spec/process/` + `spec/handoffs/` are gitignored — session notes do not live in-repo; rely on git history + this file + the auto-memory. Deferred, non-blocking follow-ups: Zone-A N encoding (needs Option-C out-of-band marker); a real compatible-bite bidentate 3D fixture; DG-path set-based enforcement limitation; extending Zone-A P stereo enforcement to the metallogen engine (currently legacy-Molassembler-only); and the Direct Parser bugfixes below. (The TiCat1/3 `[Ti_TET]`↔`[Ti_TPY]` eta string drift was **closed** in `118b82c`; the eta winding rac/meso diastereomer swap in `7f0e880`.)
 
 ## Direct Parser — Deferred to v0.2.2
 **Audit doc**: `spec/audit/DirectParser_IntegrationAudit_20260506.md`
@@ -32,6 +53,19 @@ Integration is blocked by 5 issues in `src/oinsmiles/generation/oin_parser.py`:
 **Production pipeline (current)**: Uses legacy `OINParser.parse()` + `MolassemblerAdapter.generate()` — all integration tests pass.
 
 ## Recent Completions
+
+### S2 — η-alkene/diene bond-order localization (2026-07-08 → 07-09, `bbe567e`)
+`build_contract_mol` recovered a generated ligand's bond orders by substructure-matching `_flatten_template(t)` into the generated fragment. **Both sides are heavy-atom, all-single connectivity graphs of equal size, so that match is an automorphism search** and RDKit returns an arbitrary one; the template's bond orders were copied onto whatever edges it picked. COD's flattened 8-ring has |Aut| = 16 and only 4 maps keep the C=C on the metal-bound carbons — hence `[CH2]=[CH2]` on the backbone (GASBIN/PENGAT), a double bond on a methyl (ABIRIO `C{3<}(=[CH3])`), an alkyne migrated onto a para-ethyl (PIJCAO). Explains **78/78** rows of the class.
+
+> The S2 handoff's stated root cause (an allyl-style *match failure* where nothing transfers, à la v0.3.5) was **WRONG** — the match succeeds and lands wrong. Distinguishing evidence is free: nothing-transferred ⇒ no `=` at all; wrong-automorphism ⇒ the *right number* of double bonds in the *wrong places*. Two earlier handoffs also guessed wrong here.
+
+Fix (all inside `metallogen_adapter.py`):
+- `_flatten_template(t, donor_slots)` stamps `_oinSlot` on **every** atom (RDKit's `SubstructMatchParameters.atomProperties` treats an *absent* property as a non-match). Colour by **OIN coordination slot, not donor/non-donor** — a porphyrin's four N are all donors, so a binary colour leaves 8 macrocycle rotations legal and re-picking one shifts a slot label (BOQPIG regressed exactly this way, deterministically 3/3).
+- `_generated_donor_slots` assigns generated donors to slots **globally** (bitmask DP, each slot taking the template's donor count). A haptic ligand straddles its slot vector over a wide arc, so per-atom nearest-vector mis-groups an η³-allyl terminus on a chelate (FIKXIJ, an allyl-phosphine).
+- `_transfer_score` breaks intra-slot ties against the embedded 3D geometry (the true C=C is ~0.1 Å shorter; MetalloGen embedded from an m-SMILES that still had the true bond orders). The **legacy map is preferred** when slot-valid and within `SCORE_TOL` — formal charges and `_CIPCode` stereo ride along on the same map, so this is a *repair*, not a re-pick.
+- Fast path for templates with no non-aromatic multiple bond (bond-order-invariant, and exactly the tBu/phenyl ligands with |Aut| up to ~3e4); `MATCH_MAX = 512`; donor-count guard on fragment↔template pairing; unanchored fallback pass so the change can never do worse than what it replaced.
+
+Result: **`eta_diene_localization` 78 → 0**, 72/78 of the bucket pass. Residuals belong to other sessions (AYOVUH→S3/S4, BIKRIX→S6, FIKXIJ→S5, SEJPEE/TESFIH→S3/S5, CISDOZ `N(O)=O` vs `N(=O)O` is a **comparator** bug in `oin/compare.py`→S4 — RDKit canonicalizes both to the same molecule). No perf regression (porphyrin 46.4s vs 46.3s pristine). Guarded by `tests/unit/test_contract_mol_diene_transfer.py` (8 tests); regression floor `test_contract_mol_allyl_transfer.py` stays green.
 
 ### v0.3.2 Geometry-Aware Selection + Eta RMSD Recovery (2026-07-06)
 - **Geometry-fit-ranked conformer selection** — `classify_coordination_geometry()` / `coordination_geometry_fit()` (`utils/oin_aligner.py`) + `_select_by_geometry()` (`generation/metallogen_adapter.py`). Picks the pool conformer with the tightest fit to the requested geometry template (energy ties), fixing the stochastic BDNN `[Pd_SPL]`→`[Pd_TPY]` distortion. Haptic/η gated out (non-regressive). BDNN 5/5, full MACE round-trip 25/25.
