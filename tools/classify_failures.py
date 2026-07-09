@@ -31,7 +31,9 @@ SESSION_OF = {
     "kekulize_encode_crash": "S3-aromatic-perception",
     "xyz2mol_none_crash": "S3-aromatic-perception",
     "encode_crash_other": "S3-aromatic-perception",
+    "macrocycle_perception": "S3-aromatic-perception",
     "winding_flip": "S4-eta-winding",
+    "eta_slot_placement": "S4-eta-winding",
     "rmsd_sentinel": "S5-metrics",
     "high_rmsd": "S5-metrics",
     "geometry_or_fragment_change": "S5-metrics (triage)",
@@ -60,6 +62,21 @@ def _windings(s):
 
 def _strip_slots(s):
     return SLOT_RE.sub("", s or "")
+
+
+def _looks_macrocyclic(s):
+    """True if any ligand fragment is a porphyrinoid / large N4 macrocycle.
+
+    String-only heuristic (no RDKit): a big fragment with >=4 ring nitrogens and
+    a conjugated imine backbone. Porphyrins/corroles/phthalocyanines re-encode
+    with inconsistent macrocycle kekulization, which is an encoder-perception
+    issue (S3) even when the net string delta reduces to a few E/Z slashes.
+    """
+    for frag in _strip_slots(s).split("."):
+        n_ring_n = frag.count("n") + frag.count("=N") + frag.count("N=")
+        if len(frag) > 55 and (frag.count("N") + frag.count("n")) >= 4 and n_ring_n >= 3:
+            return True
+    return False
 
 
 def classify(rep):
@@ -104,13 +121,32 @@ def classify(rep):
 
     if err.startswith("String mismatch"):
         # smoking-gun patterns, most specific first
-        if re.search(r"\[CH2?\]=\[CH2?\]", s2) and not re.search(r"\[CH2?\]=\[CH2?\]", s1):
-            return "eta_diene_localization", "gen moved C=C onto ring backbone ([CH2]=[CH2])"
+        base1, base2 = _strip_slots(s1), _strip_slots(s2)
+        # exotic main-group cage (borazine, silole): notation limit, not a bug
+        if re.search(r"B\d?=N|=\[BH\]|\[si", s1 + s2):
+            return "carborane_unsupported", "exotic B/Si cage notation"
+        # generated mislocalized a multiple bond onto the ring backbone
+        # ([CH2]=[CH2]) or a substituent (=[CH3], [CH2]#) -- bond-order transfer
+        if re.search(r"\[CH2?\]=\[CH2?\]|=\[CH3\]|\[CH2\]#", s2) and not re.search(
+            r"\[CH2?\]=\[CH2?\]|=\[CH3\]|\[CH2\]#", s1
+        ):
+            return "eta_diene_localization", "gen mislocalized C=C/C#C (bond-order transfer)"
+        # over-valent neutral nitro/nitrite: N bonded to 3 O with no charge, so
+        # the fragment is unparseable and the =O position drifts on re-encode
+        if re.search(r"N\(O\)=O|N\(=O\)O", s1 + s2):
+            return "garbled_aromatic", "over-valent nitro (should be [N+](=O)[O-])"
         if re.search(r"c=|=c[0-9()]", s2) and not re.search(r"c=|=c[0-9()]", s1):
             return "garbled_aromatic", "gen emitted mixed aromatic/double bonds (c=)"
         if re.search(r"=\[[ON]H\d?\]", s2) and not re.search(r"=\[[ON]H\d?\]", s1):
             return "H_on_terminal_oxo_imido", "gen protonated =O / =N donor"
-        base1, base2 = _strip_slots(s1), _strip_slots(s2)
+        # porphyrinoid macrocycle: inconsistent kekulization on re-encode. Checked
+        # BEFORE atom_stereo/E-Z because the net delta often reduces to a few @/
+        # slashes that are symptoms of the localized form, not real stereocenters.
+        if _looks_macrocyclic(s1):
+            return (
+                "macrocycle_perception",
+                "porphyrinoid macrocycle re-encoded with inconsistent kekule",
+            )
         if base1.replace("@", "") == base2.replace("@", "") and base1 != base2:
             return "atom_stereo", "@ tags differ, skeleton identical"
         stripped1 = base1.replace("/", "").replace("\\", "")
@@ -149,6 +185,20 @@ def classify(rep):
     return "string_mismatch_other", err.split("\n")[0][:120]
 
 
+def _load_overrides():
+    """molecule -> hand-triaged class, for cases the stdlib classifier can't route.
+
+    Lives next to this script (tools/triage_overrides.json). Applied to failed
+    rows only, so a passing molecule is never forced to a defect class.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "triage_overrides.json")
+    try:
+        with open(path) as f:
+            return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    except FileNotFoundError:
+        return {}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--output-dir", required=True, help="Results dir with individual_reports/")
@@ -156,6 +206,7 @@ def main():
 
     output_dir = os.path.abspath(args.output_dir)
     indiv_dir = os.path.join(output_dir, "individual_reports")
+    overrides = _load_overrides()
 
     rows = []
     for fp in sorted(glob.glob(os.path.join(indiv_dir, "*.json"))):
@@ -165,6 +216,9 @@ def main():
         except Exception:
             continue
         cls, evidence = classify(rep)
+        if cls != "success" and rep.get("molecule") in overrides:
+            cls = overrides[rep["molecule"]]
+            evidence = f"{evidence} [manual triage override]".strip()
         rows.append(
             {
                 "molecule": rep.get("molecule"),
