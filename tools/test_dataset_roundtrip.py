@@ -1,11 +1,14 @@
 import argparse
 import json
+import logging
 import os
 import shutil
 import signal
+import subprocess
 import sys
 import tempfile
 import traceback
+from datetime import datetime
 
 
 class TimeoutException(Exception):
@@ -14,6 +17,41 @@ class TimeoutException(Exception):
 
 def timeout_handler(signum, frame):
     raise TimeoutException("Molecule processing timed out")
+
+
+logger = logging.getLogger(__name__)
+
+
+def _get_git_commit_id() -> str:
+    """Return the short git commit hash, with '-dirty' suffix if the working tree has changes.
+
+    Returns:
+        A string like 'a1b2c3d' or 'a1b2c3d-dirty'. Returns 'unknown' if git
+        is unavailable or the directory is not a git repository.
+    """
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    try:
+        commit = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=repo_root,
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
+        # Check for uncommitted changes
+        dirty = subprocess.call(
+            ["git", "diff", "--quiet", "HEAD"],
+            cwd=repo_root,
+            stderr=subprocess.DEVNULL,
+        )
+        if dirty != 0:
+            commit += "-dirty"
+        return commit
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        logger.warning("Could not determine git commit ID.")
+        return "unknown"
 
 
 # Add src and tests/integration to path
@@ -30,6 +68,21 @@ from verify_roundtrip import (
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
+
+# Environment fields stamped into every report alongside commit_id, so each row
+# in summary_roundtrip.json can be attributed to the code + env that produced it.
+# Populated once in main(); merged into reports by save_artifacts().
+RUN_ENV = {}
+
+
+def _build_run_env(args) -> dict:
+    from rdkit import rdBase
+
+    return {
+        "rdkit_version": rdBase.rdkitVersion,
+        "quick": bool(args.quick),
+        "xtb_available": shutil.which("xtb") is not None,
+    }
 
 
 def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
@@ -121,11 +174,21 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         shutil.rmtree(tmp_dir)
 
 
-def initialize_report(xyz_path):
+def initialize_report(xyz_path: str, commit_id: str = "unknown") -> dict:
+    """Create a fresh report dict for a molecule.
+
+    Args:
+        xyz_path: Absolute path to the input XYZ file.
+        commit_id: Git commit hash to stamp into the report.
+
+    Returns:
+        A dict with all standard report fields.
+    """
     basename = os.path.splitext(os.path.basename(xyz_path))[0]
     return {
         "molecule": basename,
         "input_xyz": xyz_path,
+        "commit_id": commit_id,
         "status": "pending",
         "tier_passed": None,
         "metrics": {},
@@ -138,10 +201,20 @@ def initialize_report(xyz_path):
 def save_artifacts(report, last_xyz, output_dir, is_final=False):
     basename = report["molecule"]
 
+    report.update(RUN_ENV)
+    report["saved_at"] = datetime.now().isoformat(timespec="seconds")
+
     # Save individual JSON
     indiv_path = os.path.join(output_dir, "individual_reports", f"{basename}.json")
     with open(indiv_path, "w") as f:
         json.dump(report, f, indent=2)
+
+    # A molecule that now passes must not keep stale failure forensics around
+    # (they read as current failures long after the underlying bug is fixed).
+    if report["status"] == "success":
+        stale_fail_dir = os.path.join(output_dir, "test_failures", basename)
+        if os.path.isdir(stale_fail_dir):
+            shutil.rmtree(stale_fail_dir, ignore_errors=True)
 
     # Save structures and OINs for inspection if successful or if it's the final pass
     if report["status"] == "success" or is_final:
@@ -202,6 +275,26 @@ def main():
         help="Only run on molecules that previously failed (requires existing summary_roundtrip.json)",
     )
     parser.add_argument(
+        "--only",
+        type=str,
+        default=None,
+        help="Comma-separated molecule names (e.g. ABAFOZ_comp_0) to process, bypassing "
+        "--continue/--rerun-failed filtering. For targeted repro of specific cases.",
+    )
+    parser.add_argument(
+        "--shard",
+        type=str,
+        default=None,
+        help="I:N — process only the I-th of N deterministic slices of the (filtered, "
+        "sorted) molecule list, e.g. --shard 2:5. For parallel workers.",
+    )
+    parser.add_argument(
+        "--no-summary",
+        action="store_true",
+        help="Write individual reports only; skip rewriting summary_roundtrip.json "
+        "(parallel workers use this, then tools/rebuild_summary.py merges).",
+    )
+    parser.add_argument(
         "--random",
         action="store_true",
         help="Randomly shuffle the dataset before selecting molecules (useful with --limit)",
@@ -242,12 +335,18 @@ def main():
 
     old_report = []
     summary_path = os.path.join(output_dir, "summary_roundtrip.json")
-    if os.path.exists(summary_path) and (args.rerun_failed or args.continue_run):
+    # Always load an existing summary: the final write merges old + new by
+    # molecule (newest wins), so a targeted run never clobbers other rows.
+    if os.path.exists(summary_path):
         with open(summary_path, "r") as f:
             old_report = json.load(f)
 
-    # Filter if rerun-failed is set
-    if args.rerun_failed:
+    # Filter the molecule list
+    if args.only:
+        wanted = {n.strip().removesuffix(".xyz") for n in args.only.split(",") if n.strip()}
+        xyz_files = [f for f in xyz_files if os.path.splitext(os.path.basename(f))[0] in wanted]
+        print(f"Only mode: matched {len(xyz_files)} of {len(wanted)} requested molecules.")
+    elif args.rerun_failed:
         if old_report:
             failed_mols = {r["molecule"] for r in old_report if r["status"] == "failed"}
             xyz_files = [
@@ -268,6 +367,16 @@ def main():
         else:
             print(f"Note: --continue specified but {summary_path} not found. Starting fresh.")
 
+    if args.shard:
+        try:
+            shard_i, shard_n = (int(x) for x in args.shard.split(":"))
+        except ValueError:
+            parser.error(f"--shard must be I:N (got {args.shard!r})")
+        if not (1 <= shard_i <= shard_n):
+            parser.error(f"--shard index out of range: {args.shard!r}")
+        xyz_files = xyz_files[shard_i - 1 :: shard_n]
+        print(f"Shard {shard_i}/{shard_n}: {len(xyz_files)} molecules in this slice.")
+
     if args.random:
         import random
 
@@ -286,6 +395,11 @@ def main():
     global_report = []
     requires_g_xtb = []
 
+    commit_id = _get_git_commit_id()
+    print(f"Git commit: {commit_id}")
+    RUN_ENV.update(_build_run_env(args))
+    print(f"Env: rdkit {RUN_ENV['rdkit_version']}, xtb_available={RUN_ENV['xtb_available']}")
+
     xyz_to_smiles = XYZToSMILES()
 
     # Determine quick settings
@@ -301,7 +415,7 @@ def main():
         basename = os.path.splitext(os.path.basename(xyz_path))[0]
         print(f"[{i}/{len(xyz_files)}] UFF Pass: {basename}...", end=" ", flush=True)
 
-        report = initialize_report(xyz_path)
+        report = initialize_report(xyz_path, commit_id=commit_id)
 
         try:
             oin1_string = xyz_to_smiles.convert(xyz_path)
@@ -421,17 +535,29 @@ def main():
             save_artifacts(report, last_xyz, output_dir, is_final=True)
             global_report.append(report)
 
-    # Save global report
-    final_report = old_report + global_report if args.continue_run else global_report
+    # Save global report: merge old + new by molecule, newest wins. This both
+    # fixes the old --rerun-failed duplicate-row bug (old failed row + new row
+    # for the same molecule) and stops a targeted run from clobbering the rows
+    # of molecules it did not process.
+    run_successes = sum(1 for r in global_report if r["status"] == "success")
+    print(f"\nFinished processing {len(xyz_files)} files.")
+    print(f"This run: {run_successes} successes / {len(global_report)} processed.")
+
+    if args.no_summary:
+        print("--no-summary: individual reports written; summary left untouched.")
+        print("Merge later with: uv run python tools/rebuild_summary.py --output-dir <dir>")
+        return
+
+    merged = {r["molecule"]: r for r in old_report}
+    merged.update({r["molecule"]: r for r in global_report})
+    final_report = sorted(merged.values(), key=lambda r: r.get("molecule", ""))
+
     global_path = os.path.join(output_dir, "summary_roundtrip.json")
     with open(global_path, "w") as f:
         json.dump(final_report, f, indent=2)
 
-    # Print simple summary
     successes = sum(1 for r in final_report if r["status"] == "success")
-    print(f"\nFinished processing {len(xyz_files)} files.")
-    print(f"Successes: {successes}")
-    print(f"Failures: {len(final_report) - successes}")
+    print(f"Summary totals: {successes} successes, {len(final_report) - successes} failures.")
     print(f"Global report saved to {global_path}")
 
 
