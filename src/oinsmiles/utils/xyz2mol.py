@@ -748,6 +748,50 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     return canonical_coords.tolist()
 
 
+def _repair_mixed_aromaticity(frag_mol):
+    """Re-perceive aromaticity when atom flags and bond orders disagree.
+
+    A fragment whose ring bonds are Kekule-typed and carry no aromatic flag, but
+    whose ring atoms are still flagged aromatic, serializes as ``c1c=cc=c1`` --
+    lowercase atoms with explicit double bonds -- which RDKit cannot re-parse.
+    Bonds copied from a mol that was kekulized in place keep their flag (see the
+    rebuild loop), so this only fires for producers that rebuild ring bonds from
+    scratch. Drop the stale flags and let RDKit re-perceive from the bond orders.
+
+    A ring that is aromatic-*typed*, or one the OIN->XYZ generator de-aromatized
+    to all-SINGLE (flags kept), is left alone: the first is already consistent and
+    the second is restored by ``OINSanitizer.generate_robust_smiles``. Returns the
+    input unchanged on any failure.
+    """
+    bonds = list(frag_mol.GetBonds())
+    if any(b.GetBondType() == Chem.BondType.AROMATIC for b in bonds):
+        return frag_mol
+    try:
+        Chem.GetSymmSSSR(frag_mol)
+        mixed = any(
+            b.GetBondType() == Chem.BondType.DOUBLE
+            and not b.GetIsAromatic()
+            and b.IsInRing()
+            and b.GetBeginAtom().GetIsAromatic()
+            and b.GetEndAtom().GetIsAromatic()
+            for b in bonds
+        )
+        if not mixed:
+            return frag_mol
+        rw = Chem.RWMol(frag_mol)
+        for atom in rw.GetAtoms():
+            atom.SetIsAromatic(False)
+        for bond in rw.GetBonds():
+            bond.SetIsAromatic(False)
+        out = rw.GetMol()
+        out.UpdatePropertyCache(strict=False)
+        Chem.GetSymmSSSR(out)
+        Chem.SetAromaticity(out, Chem.AROMATICITY_DEFAULT)
+        return out
+    except Exception:
+        return frag_mol
+
+
 def get_oin_string(tmc_mol, xyz_coords):
     """Generates the Open Isomer Notation (OIN) string for the molecule (V2.4).
 
@@ -922,7 +966,21 @@ def get_oin_string(tmc_mol, xyz_coords):
                 if nbr_idx in heavy_indices and nbr_idx > old_idx:
                     bond = mol.GetBondBetweenAtoms(old_idx, nbr_idx)
                     if bond:
-                        mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond.GetBondType())
+                        # AddBond copies the bond TYPE but creates the bond with
+                        # IsAromatic=False, while AddAtom above DOES copy the atom's
+                        # aromatic flag. build_contract_mol hands us Kekule bond types
+                        # over an aromatic-flagged ring (Chem.Kekulize leaves the flags
+                        # on), which would serialize as the unparseable `c1c=cc=c1`.
+                        # Normalize an aromatic-flagged bond to the AROMATIC type so a
+                        # fragment is serialized identically however its producer chose
+                        # to represent the ring: the Kekule bond orders also perturb
+                        # CanonicalRankAtoms, which drives eta heading/winding.
+                        bond_type = bond.GetBondType()
+                        is_aromatic = bond.GetIsAromatic()
+                        if is_aromatic:
+                            bond_type = Chem.BondType.AROMATIC
+                        bi = mw.AddBond(old_to_new[old_idx], old_to_new[nbr_idx], bond_type) - 1
+                        mw.GetBondWithIdx(bi).SetIsAromatic(is_aromatic)
 
         # Second pass: carry double-bond (E/Z) stereo across the rebuild. The
         # loop above copied bond TYPE only; STEREOE/Z plus the stereo-reference
@@ -958,6 +1016,8 @@ def get_oin_string(tmc_mol, xyz_coords):
             Chem.SetDoubleBondNeighborDirections(frag_mol)
         except Exception:
             pass
+
+        frag_mol = _repair_mixed_aromaticity(frag_mol)
 
         # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
         # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).
