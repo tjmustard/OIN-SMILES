@@ -334,10 +334,20 @@ def lig_checks(lig_mol, coordinating_atoms):
     res_mols = rdchem.ResonanceMolSupplier(lig_mol)
     if len(res_mols) == 0:
         res_mols = rdchem.ResonanceMolSupplier(lig_mol, flags=Chem.ALLOW_INCOMPLETE_OCTETS)
+
+    # ResonanceMolSupplier is a stateful iterator: len() runs the enumeration and
+    # leaves the cursor at the end, so a subsequent `for res_mol in res_mols` can
+    # yield None instead of restarting (AttributeError on res_mol.GetAtoms(), the
+    # xyz2mol_none_crash bucket). Index instead of iterating, drop any None the
+    # enumeration hands back, and fall back to the un-resonated ligand so a
+    # supplier that yields nothing usable degrades instead of crashing.
+    candidates = [res_mols[i] for i in range(len(res_mols))]
+    candidates = [m for m in candidates if m is not None] or [lig_mol]
+
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []
 
-    for res_mol in res_mols:
+    for res_mol in candidates:
         positive_atoms = []
         negative_atoms = []
         N_aromatic = 0
