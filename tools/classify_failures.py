@@ -2,8 +2,8 @@
 
 Reads ``individual_reports/*.json`` from a results directory, classifies every
 row by error class plus smoking-gun string patterns, maps each class to the
-worktree session that owns it (see ``docs/handoffs/``), and writes
-``CASE_REGISTRY.md`` + ``case_registry.json`` into the results directory.
+worktree session that owns it (the S1-S6 round-trip fix-wave handoffs), and
+writes ``CASE_REGISTRY.md`` + ``case_registry.json`` into the results directory.
 
 Stdlib-only on purpose: it must run anywhere without the chemistry stack.
 
@@ -21,7 +21,7 @@ from datetime import datetime
 
 SLOT_RE = re.compile(r"\{(\d+)([<>^]?)\}")
 
-# defect class -> owning handoff session (docs/handoffs/S*.md)
+# defect class -> owning handoff session (S1-S6 round-trip fix-wave handoffs)
 SESSION_OF = {
     "donor_H_atom_count": "S1-donor-h",
     "H_on_terminal_oxo_imido": "S1-donor-h",
