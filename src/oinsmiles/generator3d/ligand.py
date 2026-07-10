@@ -1,6 +1,34 @@
 from rdkit import Chem
 
 
+def _chelate_locked_atoms(rd_mol):
+    """Atoms lying on a ring closed through the metal.
+
+    The ligand is parsed metal-free, with donors marked by atom-map numbers, so
+    rejoin them through a virtual metal atom and read off the rings that contain
+    it. Returns an empty set when the ligand is monodentate (no chelate ring is
+    possible) or ring perception fails.
+    """
+    donors = [a.GetIdx() for a in rd_mol.GetAtoms() if a.GetAtomMapNum() > 0]
+    if len(donors) < 2:
+        return set()
+    try:
+        probe = Chem.RWMol(rd_mol)
+        metal = probe.AddAtom(Chem.Atom(0))
+        for d in donors:
+            probe.AddBond(d, metal, Chem.BondType.SINGLE)
+        probe = probe.GetMol()
+        Chem.FastFindRings(probe)
+        locked = set()
+        for ring in probe.GetRingInfo().AtomRings():
+            if metal in ring:
+                locked |= set(ring)
+        locked.discard(metal)
+        return locked
+    except Exception:
+        return set()
+
+
 def get_ligand_from_smiles(mapped_smiles):
     """Return the ligand from smiles."""
     from . import process
@@ -30,22 +58,23 @@ def get_ligand_from_smiles(mapped_smiles):
                     )
     except Exception:
         stereo_bonds = []
-    # Restrict enforcement to geometrically-free double bonds. A double bond whose
-    # atoms coordinate the metal (atom-map number > 0) or neighbour a coordinating
-    # atom is rigidly fixed by chelation/coordination -- its E/Z is already
-    # reproduced by the ligand topology, so a distance-geometry stereo constraint
-    # there is unnecessary AND over-constrains the metal embed (measured to cut the
-    # conformer yield of metal-bound imine chelates, e.g. AGULIX 9/9 -> 3/9). Keep
-    # only bonds clear of the coordination sphere; the target case -- a pendant,
-    # freely-rotatable alkene -- is unaffected.
+    # Restrict enforcement to geometrically-free double bonds. A double bond lying
+    # on a chelate ring -- a cycle closed through the metal -- is already held rigid
+    # by the coordination, so a distance-geometry stereo constraint there is
+    # unnecessary AND over-constrains the metal embed (measured to cut the conformer
+    # yield of metal-bound imine chelates, e.g. AGULIX 9/9 -> 3/9).
+    #
+    # Test it by rejoining the donors through a virtual metal and asking which
+    # atoms fall in a ring containing it. This is the same predicate the encoder
+    # applies in core/translator._clear_chelate_locked_bond_stereo, so the two
+    # halves of the round trip agree on exactly which bonds carry an E/Z. The
+    # previous proxy -- "the bond touches a donor or a donor's neighbour" -- also
+    # discarded genuinely free double bonds that merely hang off a donor, e.g. the
+    # dangling imine of a monodentate salicylaldiminate (AFECIZ) or the amidine of
+    # XIZXAG, whose E/Z the encoder does emit and the round trip must reproduce.
     if stereo_bonds:
-        near_donor = {a.GetIdx() for a in rd_mol.GetAtoms() if a.GetAtomMapNum() > 0}
-        for d in list(near_donor):
-            for nb in rd_mol.GetAtomWithIdx(d).GetNeighbors():
-                near_donor.add(nb.GetIdx())
-        stereo_bonds = [
-            sb for sb in stereo_bonds if sb[0] not in near_donor and sb[1] not in near_donor
-        ]
+        locked = _chelate_locked_atoms(rd_mol)
+        stereo_bonds = [sb for sb in stereo_bonds if not (sb[0] in locked and sb[1] in locked)]
     rd_mol = Chem.AddHs(rd_mol, explicitOnly=False, addCoords=False)
     # Recover sp3 atom chirality for the same reason as the C=C stereo above: the
     # '@'/'@@' survive MolFromSmiles(sanitize=False) as chiral tags, but the
