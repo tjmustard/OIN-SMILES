@@ -1,6 +1,7 @@
 import itertools
 import logging
 from collections import defaultdict
+from functools import lru_cache
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -13,6 +14,222 @@ try:
     from rdkit import Chem
 except ImportError:
     pass  # RDKit required for Sanitizer, but Aligner is pure numpy
+
+
+# ==========================================
+# PART 0: ETA-GROUP ORIENTATION SYMMETRY
+# ==========================================
+# A haptic group's winding character ({n>} / {n<}) says which way its SMILES
+# atom order circulates when you look at the ring from the metal -- i.e. which
+# FACE of the ring the metal sees. That is only a property of the *structure*
+# when the ring cannot be turned over onto itself.
+#
+# Turning an eta ring over is a 180 deg rotation about an in-plane axis through
+# its centroid: a PROPER rotation, which leaves the metal and every other ligand
+# where they are and maps the ring's atoms onto the ring's own positions in
+# reverse cyclic order. So:
+#
+#   winding is meaningless (``orientation-free``) for an eta group
+#   <=> some automorphism of its ligand fragment reverses the group's cyclic order.
+#
+# Cp*, benzene, mesitylene and a BPh4- phenyl all satisfy this, so their
+# geometric winding is an artifact of whichever face happened to point at the
+# metal in this particular embedding, and it flips at random between the input
+# structure and a regenerated one. An ansa-bis(indenyl) ring does not satisfy it,
+# and there its winding is exactly what tells rac from meso.
+#
+# Note this is strictly weaker than "every ring atom is in one symmetry class":
+# mesitylene's ring has two classes and an arm-substituted Cp* has four, yet both
+# are orientation-free. Testing symmetry classes would silently leave those broken.
+#
+# The test avoids enumerating the automorphism group. A canonical SMILES of a
+# vertex-labeled graph is a complete invariant of that labeled graph, so labeling
+# the eta cycle 1..n and canonicalizing answers "is the reversed labeling the same
+# labeled graph?" directly. Comparing canonical SMILES computed inside one
+# interpreter run also keeps this stable across RDKit versions, where a specific
+# CanonicalRankAtoms ordering would not be.
+
+
+def _orientation_symmetry_graph(mol):
+    """Rebuild `mol` as the bare graph the reversal test needs.
+
+    Built from scratch rather than edited in place: an inherited atom carries
+    aromaticity, chiral tags, radicals and implicit-H flags that leak into both
+    `CanonicalRankAtoms` and the SMILES writer, and the writer will silently
+    prefer its own implicit-valence guess over a `SetNumExplicitHs` we stored.
+    Two graph-identical phenyls then serialize differently and the whole test
+    quietly fails open. Only four things survive the rebuild:
+
+    * **Atomic number** and **formal charge** -- real chemical identity.
+    * **Bonds, all SINGLE** -- so a Kekule structure's alternating bonds cannot
+      fake an asymmetry that the delocalized ring does not have.
+    * **Total-H count, carried in the isotope field** as ``H + 1``. H count must
+      be part of the graph (else cyclopentadiene's sp3 CH2 is conflated with a
+      Cp- ring carbon), and the isotope is the one per-atom field that both the
+      canonical ranker and the SMILES writer are obliged to honor.
+
+    Aromatic flags, chiral tags and radicals are dropped: `generate_robust_smiles`
+    adds radicals to binding atoms only, which would make a coordinated ring look
+    unlike its own uncoordinated twin.
+
+    Valence is tolerated throughout (`UpdatePropertyCache(strict=False)` +
+    `FastFindRings`, never `SanitizeMol`): a BPh4- boron carries four bonds and no
+    charge in a fragment SMILES and trips RDKit's valence check -- the same failure
+    that makes `_fragment_mol_for_canonicalization` return None for borates.
+
+    Returns None on any failure -- callers must fall back to geometric winding.
+    """
+    try:
+        src = Chem.Mol(mol)
+        src.UpdatePropertyCache(strict=False)
+        Chem.FastFindRings(src)
+
+        out = Chem.RWMol()
+        for atom in src.GetAtoms():
+            fresh = Chem.Atom(atom.GetAtomicNum())
+            fresh.SetFormalCharge(atom.GetFormalCharge())
+            fresh.SetNoImplicit(True)
+            fresh.SetNumExplicitHs(0)
+            fresh.SetIsotope(atom.GetTotalNumHs() + 1)
+            out.AddAtom(fresh)
+        for bond in src.GetBonds():
+            out.AddBond(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), Chem.BondType.SINGLE)
+
+        graph = out.GetMol()
+        graph.UpdatePropertyCache(strict=False)
+        Chem.FastFindRings(graph)
+        return graph
+    except Exception:
+        return None
+
+
+def _eta_traversal_order(mol, constituent_indices):
+    """Order a haptic group's atoms along its own connectivity.
+
+    Returns ``("ring", cycle)`` for a closed cycle (Cp, arene), ``("path", chain)``
+    for an open chain (eta3-allyl, eta4-diene), or ``(None, None)`` when the atoms
+    are not a single cycle or chain -- e.g. a pincer's three mutually non-bonded
+    donors, or one fragment carrying two separate eta rings. Those must never be
+    treated as one orientable group.
+    """
+    atoms = sorted(constituent_indices)
+    if len(atoms) < 2:
+        return None, None
+    members = set(atoms)
+    try:
+        adj = {
+            a: [n.GetIdx() for n in mol.GetAtomWithIdx(a).GetNeighbors() if n.GetIdx() in members]
+            for a in atoms
+        }
+    except Exception:
+        return None, None
+
+    degrees = {a: len(neigh) for a, neigh in adj.items()}
+
+    if all(deg == 2 for deg in degrees.values()):
+        start = atoms[0]
+        cycle = [start]
+        prev, cur = None, start
+        while True:
+            nxt = [x for x in adj[cur] if x != prev]
+            if not nxt:
+                return None, None
+            step = nxt[0]
+            if step == start:
+                break
+            cycle.append(step)
+            prev, cur = cur, step
+            if len(cycle) > len(atoms):
+                return None, None
+        return ("ring", cycle) if len(cycle) == len(atoms) else (None, None)
+
+    ends = [a for a, deg in degrees.items() if deg == 1]
+    if len(ends) == 2 and all(deg <= 2 for deg in degrees.values()):
+        path = [ends[0]]
+        prev, cur = None, ends[0]
+        while True:
+            nxt = [x for x in adj[cur] if x != prev]
+            if not nxt:
+                break
+            path.append(nxt[0])
+            prev, cur = cur, nxt[0]
+            if len(path) > len(atoms):
+                return None, None
+        return ("path", path) if len(path) == len(atoms) else (None, None)
+
+    return None, None
+
+
+def _labeled_canonical_smiles(flat, order):
+    """Canonical SMILES of `flat` with `order` labeled 1..n via atom map numbers."""
+    try:
+        labeled = Chem.RWMol(flat)
+        for atom in labeled.GetAtoms():
+            atom.SetAtomMapNum(0)
+        for position, idx in enumerate(order):
+            labeled.GetAtomWithIdx(idx).SetAtomMapNum(position + 1)
+        return Chem.MolToSmiles(labeled.GetMol(), canonical=True)
+    except Exception:
+        return None
+
+
+def _labeled_forms(flat, order, kind):
+    """All canonical labelings of `order` that describe the same traversal sense.
+
+    For a ring every rotation is the same circulation, so the invariant is the SET
+    over the n rotations; for a path only the chain itself. Returns None if any
+    labeling fails to canonicalize.
+    """
+    if kind == "ring":
+        n = len(order)
+        forms = {_labeled_canonical_smiles(flat, order[k:] + order[:k]) for k in range(n)}
+    else:
+        forms = {_labeled_canonical_smiles(flat, order)}
+    return None if None in forms else forms
+
+
+def _orientation_free_from_mol(mol, constituent_indices):
+    """True if reversing this haptic group's cyclic order is a fragment automorphism.
+
+    True  -> winding is notation, not structure; emit a fixed character.
+    False -> winding is load-bearing (rac/meso, coordinated face); keep the geometry.
+    None  -> undecidable; caller keeps today's geometric behavior.
+    """
+    if len(constituent_indices) < 3:
+        # eta2 and below have no circulation; signed_circulation already returns '>'.
+        return True
+
+    flat = _orientation_symmetry_graph(mol)
+    if flat is None:
+        return None
+
+    kind, order = _eta_traversal_order(mol, constituent_indices)
+    if order is None:
+        return None
+
+    forward = _labeled_forms(flat, order, kind)
+    reverse = _labeled_forms(flat, order[::-1], kind)
+    if forward is None or reverse is None:
+        return None
+    return bool(forward & reverse)
+
+
+@lru_cache(maxsize=1024)
+def _winding_is_orientation_free(smiles, constituent_key):
+    """Memoized `_orientation_free_from_mol` keyed on a fragment SMILES.
+
+    `constituent_key` must be a tuple (hashable). Atom indices are the fragment's
+    own SMILES atom order, matching `local_idx` / `constituent_indices`.
+    """
+    if not smiles:
+        return None
+    try:
+        mol = Chem.MolFromSmiles(smiles, sanitize=False)
+    except Exception:
+        return None
+    if mol is None or mol.GetNumAtoms() <= max(constituent_key, default=-1):
+        return None
+    return _orientation_free_from_mol(mol, list(constituent_key))
 
 
 # ==========================================
@@ -156,6 +373,101 @@ class OINSanitizer:
             return min(donor_set, key=lambda idx: ranks[idx])
         except Exception:
             return binder_idx
+
+    @staticmethod
+    def canonical_eta_set_representative(ligand_mol, binder_indices):
+        """Canonicalize WHICH of several equivalent rings carries an eta slot.
+
+        The set-valued sibling of `canonical_donor_representative`. Tetraphenyl-
+        borate binds a metal through one of its four interchangeable phenyls; the
+        3D bond perception marks whichever phenyl physically faces the metal, so
+        an input structure and its regenerated twin mark *different* rings and the
+        OIN strings differ although the structure does not (SOJMIQ). Pick the
+        canonical member of the ring's automorphic family instead.
+
+        Returns ``{original_local_idx: canonical_local_idx}``, or ``{}`` when there
+        is nothing to canonicalize or anything at all goes wrong (fail-safe: the
+        emitted string is then byte-identical to today). Call it before
+        `generate_robust_smiles`, so the forced brackets, the radical fill and the
+        {slot} markers all land on the same ring -- otherwise brackets would mark
+        the physical ring while {slot} marks the canonical one.
+
+        Four guards, all required:
+
+        1. the binders form a single closed ring. A fragment carrying two eta
+           rings (ansa-metallocene) or a ring plus a pendant donor (a
+           Cp-tethered phosphine) is not one orientable group and is left alone.
+        2. the ring is orientation-free. Relabeling a ring whose winding is
+           load-bearing could hide a genuine coordinated-face difference.
+        3. at least one *other* ring is an automorphic image of it -- otherwise
+           the marker is already on the only ring it could be on.
+        4. no candidate overlaps the ring itself (fused systems).
+        """
+        try:
+            binders = sorted(binder_indices)
+            if len(binders) < 3 or len(set(binders)) != len(binders):
+                return {}
+            if max(binders) >= ligand_mol.GetNumAtoms():
+                return {}
+
+            kind, order = _eta_traversal_order(ligand_mol, binders)
+            if kind != "ring":
+                return {}  # guard 1
+            if _orientation_free_from_mol(ligand_mol, binders) is not True:
+                return {}  # guard 2
+
+            flat = _orientation_symmetry_graph(ligand_mol)
+            if flat is None:
+                return {}
+
+            def dihedral_signature(cycle):
+                """(min canonical SMILES, the labeling that achieves it)."""
+                n = len(cycle)
+                best = None
+                for base in (list(cycle), list(cycle)[::-1]):
+                    for k in range(n):
+                        labeling = base[k:] + base[:k]
+                        canon = _labeled_canonical_smiles(flat, labeling)
+                        if canon is None:
+                            return None, None
+                        if best is None or (canon, labeling) < best:
+                            best = (canon, labeling)
+                return best
+
+            actual_sig, actual_labeling = dihedral_signature(order)
+            if actual_sig is None:
+                return {}
+
+            actual_set = set(order)
+            candidates = [(order, actual_labeling)]
+            for ring in Chem.GetSymmSSSR(flat):
+                ring = list(ring)
+                if len(ring) != len(order) or set(ring) == actual_set:
+                    continue
+                if set(ring) & actual_set:
+                    continue  # guard 4: fused, not an independent image
+                ring_kind, ring_order = _eta_traversal_order(flat, ring)
+                if ring_kind != "ring":
+                    continue
+                sig, labeling = dihedral_signature(ring_order)
+                if sig == actual_sig:
+                    candidates.append((ring_order, labeling))
+
+            if len(candidates) < 2:
+                return {}  # guard 3
+
+            ranks = list(Chem.CanonicalRankAtoms(flat, breakTies=True))
+            chosen_order, chosen_labeling = min(
+                candidates, key=lambda entry: sorted(ranks[i] for i in entry[0])
+            )
+            if set(chosen_order) == actual_set:
+                return {}  # already canonical -- emit exactly what we emit today
+
+            # Both labelings realize the same canonical labeled graph, so mapping
+            # them position-wise carries each marked atom onto its automorphic image.
+            return dict(zip(actual_labeling, chosen_labeling))
+        except Exception:
+            return {}
 
 
 # ==========================================
@@ -570,6 +882,45 @@ class OINDiscreteAligner:
         except Exception:
             return None
 
+    @staticmethod
+    def _item_orientation_free(item):
+        """True if this haptic group's winding is notation rather than structure.
+
+        See the module header. False for anything that is not a haptic group, and
+        for any group where the test is undecidable -- both keep today's geometric
+        winding.
+        """
+        constituents = item.get("constituent_indices") or []
+        if len(constituents) < 2:
+            return False  # monodentate donor: no circulation to speak of
+        return bool(_winding_is_orientation_free(item["chem_id"][1], tuple(sorted(constituents))))
+
+    @classmethod
+    def _topological_heading_atom(cls, smiles, constituent_indices):
+        """Embedding-independent heading atom for an orientation-free eta group.
+
+        Prefers the strict RC2 rank. Falls back to the valence-tolerant symmetry
+        graph when strict sanitization fails -- a BPh4- borate is the case in
+        practice, and today it silently drops through to the *geometric* heading,
+        which is exactly what makes the marker wander between round-trip directions.
+        Last resort is the lowest constituent index, which is still derived from
+        canonical SMILES atom order and so is embedding-independent.
+        """
+        canonical_idx = cls._canonical_heading_atom(smiles, constituent_indices)
+        if canonical_idx is not None:
+            return canonical_idx
+
+        try:
+            mol = Chem.MolFromSmiles(smiles, sanitize=False)
+            flat = _orientation_symmetry_graph(mol) if mol is not None else None
+            if flat is not None and flat.GetNumAtoms() > max(constituent_indices, default=-1):
+                ranks = list(Chem.CanonicalRankAtoms(flat, breakTies=True))
+                return min(constituent_indices, key=lambda idx: ranks[idx])
+        except Exception:
+            pass
+
+        return min(constituent_indices, default=None)
+
     def _permute_and_serialize(
         self, slot_assignment, tmpl_vectors, geometry_name=None, alignment_rotation=None
     ):
@@ -710,6 +1061,12 @@ class OINDiscreteAligner:
                 # atom works as the provisional star -- the final heading
                 # atom need not be known yet.
                 item, _sig = entry
+                if self._item_orientation_free(item):
+                    # A free ring's geometric winding depends on which face the
+                    # embedding happened to present, so it is worthless as a
+                    # *canonical* sort key. Collapse it and let the lowest
+                    # constituent index below decide.
+                    return ">"
                 slot_def = TEMPLATE_SPECS.get(geometry_name, {}).get(item["slot"])
                 if slot_def is None or item.get("group_coords") is None:
                     return ""
@@ -779,7 +1136,15 @@ class OINDiscreteAligner:
                     if grp_coords is None or len(grp_coords) < 2:
                         continue
 
-                    canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
+                    if self._item_orientation_free(item):
+                        # The heading of a free ring must never come from geometry:
+                        # its constituent indices may have been remapped onto a
+                        # canonical automorphic ring (see
+                        # OINSanitizer.canonical_eta_set_representative), and even
+                        # when they have not, the geometric pick tracks the embedding.
+                        canonical_idx = self._topological_heading_atom(smiles, constituent_indices)
+                    else:
+                        canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
                     if canonical_idx is None:
                         continue
 
@@ -888,7 +1253,19 @@ class OINDiscreteAligner:
                     # Calculate Winding Direction using V3.6 Algorithm
                     direction_char = ">"  # Default
 
-                    if geometry_name in TEMPLATE_SPECS and slot in TEMPLATE_SPECS[geometry_name]:
+                    # An orientation-free ring (Cp*, an arene, a BPh4- phenyl) can
+                    # be turned over onto itself by a proper rotation, so its
+                    # geometric winding records only which face this particular
+                    # embedding presented to the metal -- it flips at random between
+                    # an input structure and a regenerated one. Emit the degenerate
+                    # '>' instead, and the OIN string becomes a function of the
+                    # structure alone. Rings that cannot be turned over (an
+                    # ansa-bis(indenyl)'s rac vs meso) keep the geometric sign.
+                    if (
+                        geometry_name in TEMPLATE_SPECS
+                        and slot in TEMPLATE_SPECS[geometry_name]
+                        and not self._item_orientation_free(x)
+                    ):
                         slot_def = TEMPLATE_SPECS[geometry_name][slot]
 
                         # Need constituent_indices (ordered) to find next atom

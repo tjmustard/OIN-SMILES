@@ -1177,6 +1177,17 @@ def get_oin_string(tmc_mol, xyz_coords):
             if g_idx in old_to_new:
                 bl = old_to_new[g_idx]
                 binder_local_to_rep[bl] = OINSanitizer.canonical_donor_representative(frag_mol, bl)
+        elif not is_metal and len(frag_binding_atoms) >= 3:
+            # Same idea one dimension up: canonicalize WHICH of several equivalent
+            # rings carries the eta slot (a BPh4- borate binds through any of its
+            # four interchangeable phenyls). Guarded inside to a single closed,
+            # orientation-free ring, so an ansa-metallocene's two eta groups and a
+            # Cp-tethered phosphine's ring-plus-donor are both left untouched.
+            eta_locals = [old_to_new[b[0]] for b in frag_binding_atoms if b[0] in old_to_new]
+            if len(eta_locals) == len(frag_binding_atoms):
+                binder_local_to_rep.update(
+                    OINSanitizer.canonical_eta_set_representative(frag_mol, eta_locals)
+                )
 
         # Identify binding atoms in new local indices
         frag_binding_indices_local = []
