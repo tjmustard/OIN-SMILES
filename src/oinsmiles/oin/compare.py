@@ -96,6 +96,9 @@ def winding_canonical_key(normalized_oin: str):
     return stripped, windings
 
 
+_SLOT_RE = re.compile(r"\{\d+[><^]?\}")
+
+
 def _canonical_fragment_smiles(smiles: str) -> str:
     """RDKit-canonical SMILES for one slot-stripped ligand fragment.
 
@@ -116,6 +119,85 @@ def _canonical_fragment_smiles(smiles: str) -> str:
         except Exception:
             return "RAW:" + smiles
     return Chem.MolToSmiles(mol)
+
+
+def _chelate_locked_fragment_key(frag: str) -> str:
+    """Canonical fragment key that clears E/Z on metal-chelate-locked bonds.
+
+    ``frag`` still carries its ``{n}`` binding-slot markers. A double bond held
+    rigid by a ring that closes *through the metal* (salicylaldiminate,
+    beta-diketiminate, bis-imine, an eta-bound alkene) has no free E/Z, but once
+    the metal is stripped the ring opens and RDKit hands the bond a directional
+    marker whose sign depends on SMILES traversal. The encoder
+    (``_clear_chelate_locked_bond_stereo``) drops that marker on the input, but a
+    generated structure whose donor is bonded differently can keep it, so the
+    round trip spuriously fails on a bond that was never freely E/Z.
+
+    This reconstructs the chelate rings (a dummy metal bonded to every slot atom)
+    and clears E/Z on the double bonds those rings lock, on BOTH the input and
+    the generated fragment, so they compare equal. A double bond in *no* metal
+    ring -- a pendant, genuinely flippable alkene/imine -- is untouched and still
+    distinguishes a real diastereomer. Any failure falls back to the plain
+    slot-stripped canonicalization, so behaviour is unchanged for every fragment
+    without a metal-locked double bond.
+    """
+    clean = _SLOT_RE.sub("", frag).strip()
+    slots = list(_SLOT_RE.finditer(frag))
+    if not clean or not slots or len(slots) > 10:
+        return _canonical_fragment_smiles(clean)
+
+    real = Chem.MolFromSmiles(clean)
+    if real is None:
+        return _canonical_fragment_smiles(clean)
+
+    try:
+        # Build a probe: [Fe] bonded to each slot atom via a ring-closure bond,
+        # so the chelate rings that close through the metal become perceivable.
+        labels = [f"%9{i}" for i in range(len(slots))]
+        out, last = [], 0
+        for lab, m in zip(labels, slots):
+            out.append(frag[last : m.start()])
+            out.append(lab)
+            last = m.end()
+        out.append(frag[last:])
+        probe_smiles = "[Fe]" + "".join(labels) + "." + "".join(out)
+
+        probe = Chem.MolFromSmiles(probe_smiles, sanitize=False)
+        if probe is None:
+            return Chem.MolToSmiles(real)
+        Chem.FastFindRings(probe)
+        rings = Chem.GetSymmSSSR(probe)
+
+        # The dummy metal is atom 0; ligand atoms follow in clean's order, so a
+        # probe atom index i maps to real atom i-1.
+        locked = set()
+        for ring in rings:
+            ring = set(ring)
+            if 0 in ring:
+                locked |= ring
+
+        cleared = False
+        for bond in probe.GetBonds():
+            if bond.GetBondType() != Chem.BondType.DOUBLE:
+                continue
+            a, b = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+            if a == 0 or b == 0 or a not in locked or b not in locked:
+                continue
+            rbond = real.GetBondBetweenAtoms(a - 1, b - 1)
+            if rbond is None or rbond.GetBondType() != Chem.BondType.DOUBLE:
+                continue
+            rbond.SetStereo(Chem.BondStereo.STEREONONE)
+            for end in (rbond.GetBeginAtom(), rbond.GetEndAtom()):
+                for nb in end.GetBonds():
+                    if nb.GetBondDir() != Chem.BondDir.NONE:
+                        nb.SetBondDir(Chem.BondDir.NONE)
+            cleared = True
+
+        if not cleared:
+            return Chem.MolToSmiles(real)
+        return Chem.MolToSmiles(real)
+    except Exception:
+        return _canonical_fragment_smiles(clean)
 
 
 def canonical_roundtrip_key(oin_string: str):
@@ -154,6 +236,6 @@ def canonical_roundtrip_key(oin_string: str):
         clean = OINInlineHandler.SLOT_REGEX.sub("", frag).strip()
         if not clean:
             continue
-        frag_keys.append(_canonical_fragment_smiles(clean))
+        frag_keys.append(_chelate_locked_fragment_key(frag))
 
     return (metal, tuple(sorted(frag_keys)), windings)
