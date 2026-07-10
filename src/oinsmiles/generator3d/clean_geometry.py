@@ -4,7 +4,7 @@ from rdkit.Chem import AllChem
 from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 
-from .embed import _apply_double_bond_stereo
+from .embed import _apply_atom_chirality, _apply_double_bond_stereo
 
 
 def print_rd_geometry(rd_mol, positions):
@@ -37,9 +37,13 @@ class TMCOptimizer:
         d_converge=0.05,
         num_relaxation=5,
         default_ff="uff",
+        embed_seed=42,
     ):
         """Initialize the Tmc optimizer."""
         self.step_size = step_size
+        # Seeds the FF-setup embed. Its coordinates are overwritten from the
+        # metal embed, but an unseeded call still made this stage irreproducible.
+        self.embed_seed = embed_seed
 
         self.num_relaxation = num_relaxation
         self.maximal_displacement = 0.5
@@ -125,6 +129,7 @@ class TMCOptimizer:
         ligand_adj_matrices = []
         # Carried C=C stereo, offset into combined_rd_mol's index space.
         combined_stereo_bonds = []
+        combined_chiral_centers = []
 
         # Gather ligand information for the scan ...
         for i in range(len(ligands)):
@@ -174,8 +179,11 @@ class TMCOptimizer:
             # combined_rd_mol for a post-sanitize re-assert (SanitizeMol can drop
             # double-bond stereo that lacks bond directions).
             _apply_double_bond_stereo(rd_mol, ligand.molecule.stereo_bonds)
+            _apply_atom_chirality(rd_mol, getattr(ligand.molecule, "chiral_centers", []))
             for si, sj, stereo, sra, srb in getattr(ligand.molecule, "stereo_bonds", []):
                 combined_stereo_bonds.append((cnt + si, cnt + sj, stereo, cnt + sra, cnt + srb))
+            for center, nbrs, tag in getattr(ligand.molecule, "chiral_centers", []):
+                combined_chiral_centers.append((cnt + center, tuple(cnt + k for k in nbrs), tag))
             rd_mol_list.append(rd_mol)
             atom_indices = atom_indices_for_each_ligand[i]
             binding_infos = ligand.binding_infos  # [[indices, geometric_idx]]
@@ -223,15 +231,18 @@ class TMCOptimizer:
             combined_rd_mol = Chem.CombineMols(combined_rd_mol, rd_mol)
 
         Chem.SanitizeMol(combined_rd_mol)
-        # Re-assert C=C stereo after sanitize (which can strip double-bond stereo
-        # lacking bond directions) so the embed below reproduces the E/Z.
+        # Re-assert stereo after sanitize (which can strip double-bond stereo
+        # lacking bond directions) so the embed below reproduces the E/Z and the
+        # sp3 handedness.
         _apply_double_bond_stereo(combined_rd_mol, combined_stereo_bonds)
+        _apply_atom_chirality(combined_rd_mol, combined_chiral_centers)
         AllChem.EmbedMolecule(
             combined_rd_mol,
             useRandomCoords=True,
             maxAttempts=100,
             useBasicKnowledge=False,
             ignoreSmoothingFailures=True,
+            randomSeed=self.embed_seed,
         )
 
         # Make force fields ...

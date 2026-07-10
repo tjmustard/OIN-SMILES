@@ -749,6 +749,12 @@ class Molecule:
         # atom-index space, enforced on the embed rd_mol so distance geometry
         # reproduces the requested E/Z (see ligand.get_ligand_from_smiles).
         self.stereo_bonds = []
+        # Carried sp3 atom chirality, likewise unrepresentable in the ace_mol
+        # (get_rd_mol copies only atomic number / charge / bond order): list of
+        # (centerIdx, (n0, n1, n2, n3), ChiralType) where the neighbour tuple is
+        # the bond order the tag was read against, so the tag can be re-derived
+        # under any later neighbour ordering (see ligand.get_ligand_from_smiles).
+        self.chiral_centers = []
 
         if data is None:
             pass
@@ -1438,8 +1444,9 @@ class Molecule:
             new_molecule.atom_feature["chg"] = np.copy(self.atom_feature["chg"])
         # Copy molecular id
 
-        # Carry the C=C stereo list (indices are atom-order-stable across copy).
+        # Carry the stereo lists (indices are atom-order-stable across copy).
         new_molecule.stereo_bonds = list(getattr(self, "stereo_bonds", []))
+        new_molecule.chiral_centers = list(getattr(self, "chiral_centers", []))
 
         # Above things are essential for copy
         if copy_all:
