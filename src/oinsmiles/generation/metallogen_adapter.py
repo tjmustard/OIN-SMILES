@@ -91,11 +91,27 @@ OIN_TO_METALLOGEN_GEO = {
 }
 
 
+class UncoordinatedFragmentError(ValueError):
+    """An OIN fragment carries no binding slot.
+
+    Outer-sphere counterions and uncoordinated solvent (a free water, a borate
+    anion) are emitted as fragments by the encoder but have no bond to the
+    metal. MetalloGen's ``metal|lig1|...|geo`` m-SMILES has no way to express
+    such a fragment, so the structure cannot be generated.
+
+    Subclasses ``ValueError`` so existing callers that catch ``ValueError``
+    keep working.
+    """
+
+
 def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
     """Convert a ``ParsedOIN`` into MetalloGen's ``metal|lig1|...|geo`` m-SMILES.
 
     Each ligand binding atom is tagged with the atom-map number of the nearest
     MetalloGen coordinate slot (isomerism-preserving nearest-vector match).
+
+    Raises:
+        UncoordinatedFragmentError: a ligand fragment has no binding slot.
     """
     geo = OIN_TO_METALLOGEN_GEO.get(parsed.geo_code, "")
     if not geo:
@@ -136,6 +152,11 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                 pass  # If it still fails, let it be
 
         frag_vectors = [v for v in parsed.vectors if v.fragment_idx == i]
+        if not frag_vectors:
+            raise UncoordinatedFragmentError(
+                f"Fragment {i} ({frag_smiles!r}) has no binding slot; uncoordinated "
+                "fragments are not representable in MetalloGen m-SMILES."
+            )
 
         for v in frag_vectors:
             target_vec = np.array(v.vector)
@@ -150,6 +171,12 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             # (secondary amine, aqua, sigma-alkyl/benzyl). Only a BARE binding
             # atom carries a phantom implicit H that the metal bond replaces, so
             # only bare atoms are reinterpreted below.
+            #
+            # The bracket/bare split is decided by ``replace_map`` in
+            # ``oin/inline.py``: it de-brackets a binding atom only when the
+            # bracket content is a bare organic-subset symbol (C, N, O, n, ...).
+            # An H-bearing donor therefore always serializes bracketed -- the
+            # sole exception is ammine NH3, force-de-bracketed to ``N{n}``.
             atom = mol.GetAtomWithIdx(v.atom_in_fragment_idx)
             if not atom.GetNoImplicit():
                 sym = atom.GetSymbol()
@@ -180,10 +207,18 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                     # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
                     strip = True
                 elif sym == "N":
-                    # Bare N with >=2 heavy neighbours = anionic amido / imido X-type
-                    # donor. A neutral dative amine is written [NH] and kept above.
-                    if heavy >= 2:
-                        strip = True
+                    # A bare N with any heavy neighbour is a 0-H anionic X-type
+                    # donor: amido, anilide, silylamide, azide, phosphinimide
+                    # (P=N). Every N donor that keeps a hydrogen serializes as
+                    # [NH2]/[NH] and took the explicit branch above; the only
+                    # bare H-bearing N is ammine NH3, which has no heavy
+                    # neighbour. Hence `heavy >= 1` -- exact, not a heuristic.
+                    #
+                    # A bare heavy==0 N is genuinely ambiguous: nitride [N] and
+                    # ammine [NH3] both serialize to `N{n}`. Resolving it needs
+                    # an OIN format change (oin/inline.py), so it is left alone
+                    # here and the ammine reading wins.
+                    strip = heavy >= 1
                 if strip:
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
