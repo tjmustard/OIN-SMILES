@@ -30,6 +30,8 @@ Six parallel sessions, each in its own git worktree, each owning a **disjoint se
 
 **Suite after S1+S2+S3+S4+S5:** `discover tests/unit` **332 OK** (skip=5 on rdkit 2026.03.3; skip=4 on 2025.09.3 — both blessed); `verify_xyz_to_oin.py` 26/27, the one failure being **VOacac2 E/Z (`/C=C(/C)`), pre-existing on `main` — not S4's**; lint clean. Note the handoffs' quoted baseline "233 OK / 4 skipped" is **stale** — pristine `main` in a fresh `uv sync` worktree was already 245 OK / 5 skipped before S1. Measure your own baseline before claiming a regression.
 
+**Before you delete your session branch, tag it** — `git tag -a archive/<slug> ... && git branch -D <branch>`. A squash-merge means your commits are never ancestors of `main`, so `-D` silently discards the granular history (S3 and S4 both lost theirs; S4's was recovered from a dangling commit before `gc` ran). Rescued as `archive/s3-aromatic-perception` and `archive/s4-eta-winding`. Rule now in `AGENTS.md` → **Version Control**, along with the "N commits not in main is expected after a squash" check and the `git stash push` trap.
+
 **`main` is 8 commits ahead of `origin/main` and UNPUSHED** (standing instruction). S1/S2 landed by local fast-forward, S3/S4/S5 by local squash-merge (`d96fd03`, `882cefb`, `2e6e8a2`) — reconcile before pushing. No CHANGELOG entry or pyproject bump for 0.3.6 yet (pyproject still `0.3.5`); treat that as a wave-end task, along with re-running the dataset on `2e6e8a2` and regenerating `CASE_REGISTRY.md`.
 
 **S4's result, and the corrections a later session would otherwise re-derive:**
