@@ -31,6 +31,18 @@ It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchai
 - **Architecture**: Keep parsing logic separated from file I/O.
 - **Domain**: Ensure chemical validity in SMILES strings where applicable.
 
+## Version Control
+- **Landing**: feature work lands on `main` by **squash-merge** (PR #2/#3 precedent). Never hand-merge a branch's granular history.
+- **Tag before you delete.** A squash-merge creates a *new* commit, so the branch's own commits are never ancestors of `main` — `git branch -d` will refuse and `git branch -D` throws the history away. Before deleting, tag the tip:
+  ```bash
+  git tag -a archive/<slug> -m "Granular history of <session>; content landed as <squash-sha>" <branch>
+  git branch -D <branch>
+  ```
+  Without the tag the commits are left dangling and `git gc` prunes them. Both S3 and S4 lost their history this way; S4's was recovered only because the dangling commit had not yet been collected (see `archive/s3-aromatic-perception`, `archive/s4-eta-winding`).
+- **"N commits not in main" after a squash is expected, not a lost merge.** Verify content, not commit ancestry, before deleting: `git diff --quiet main..<branch> -- <path>` per delivered file. Files identical on both sides do **not** appear in `git diff --stat`, so a large-looking stat almost always means `main` is *newer*, not that content is missing.
+- **`main` is intentionally ahead of `origin/main` and unpushed.** Do not push or open a PR without asking the maintainer.
+- **`git stash push <path>` on an already-committed (clean) path saves nothing and exits 0.** The following `git stash pop` then applies whatever stash *is* on top. To A/B a file against the previous commit use `git show HEAD~1:<path> > <path>` … `git checkout -- <path>`.
+
 ## Testing Discipline
 - **Unit Tests**: `uv run python -m unittest discover tests/unit`
 - **Integration Tests**: `uv run python -m unittest discover tests/integration`
