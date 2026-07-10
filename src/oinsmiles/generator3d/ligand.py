@@ -47,8 +47,29 @@ def get_ligand_from_smiles(mapped_smiles):
             sb for sb in stereo_bonds if sb[0] not in near_donor and sb[1] not in near_donor
         ]
     rd_mol = Chem.AddHs(rd_mol, explicitOnly=False, addCoords=False)
+    # Recover sp3 atom chirality for the same reason as the C=C stereo above: the
+    # '@'/'@@' survive MolFromSmiles(sanitize=False) as chiral tags, but the
+    # ace_mol drops them, and the embed then returns a random enantiomer for every
+    # stereocentre. Captured AFTER AddHs so the hydrogen is an explicit neighbour
+    # and the indices line up with the ace_mol atom order built below.
+    #
+    # Skip metal-binding centres (atom map > 0): the complex adds a metal bond, so
+    # their neighbour set -- and hence the meaning of the tag -- changes. Zone-A
+    # donor stereo is re-asserted from the template by build_contract_mol instead.
+    chiral_centers = []
+    for atom in rd_mol.GetAtoms():
+        tag = atom.GetChiralTag()
+        if tag not in (Chem.ChiralType.CHI_TETRAHEDRAL_CW, Chem.ChiralType.CHI_TETRAHEDRAL_CCW):
+            continue
+        if atom.GetAtomMapNum() > 0:
+            continue
+        nbrs = tuple(b.GetOtherAtomIdx(atom.GetIdx()) for b in atom.GetBonds())
+        if len(nbrs) != 4:
+            continue
+        chiral_centers.append((atom.GetIdx(), nbrs, tag))
     ace_mol = process.get_ace_mol_from_rd_mol(rd_mol)
     ace_mol.stereo_bonds = stereo_bonds
+    ace_mol.chiral_centers = chiral_centers
     n = len(ace_mol.atom_list)
     binding_infos = dict()
     for i in range(n):
