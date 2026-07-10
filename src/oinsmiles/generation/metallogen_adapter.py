@@ -243,6 +243,41 @@ def convert_oin_to_msmiles(oin_string: str) -> str:
     return convert_parsed_to_msmiles(OINParser().parse(oin_string))
 
 
+# Atom property carrying a binding atom's OIN coordination slot (-1 = does not bind the
+# metal) through the bond-order-transfer substructure match, and the mol property carrying
+# a template's OIN fragment index.
+_SLOT_PROP = "_oinSlot"
+_FRAG_IDX_PROP = "_oinFragIdx"
+_NON_DONOR = -1
+
+# Bond orders that a wrong automorphism can mislocalize, and how strongly a candidate
+# match is penalized for placing them on a long bond (a triple is shorter than a double).
+_ORDER_WEIGHT = {Chem.BondType.DOUBLE: 1.0, Chem.BondType.TRIPLE: 2.0}
+
+# Cap on candidate matches enumerated when disambiguating bond-order transfer. Across the
+# dataset's ligand templates the automorphism count has median 4 and p90 72, and the eta
+# ligands this exists for top out around 48 -- so the cap only ever bites on ligands whose
+# automorphisms come from freely-permuting substituents (a tBu/aryl-substituted porphyrin
+# reaches 3e4+). Truncating there is safe: every enumerated candidate already satisfies the
+# donor constraint, which is more than the old unconstrained single match did, and RDKit's
+# enumeration order is deterministic so the pick stays reproducible. Keep it small -- the
+# porphyrins are 85-atom graphs and enumeration, not scoring, is what costs (an 85-atom
+# template runs ~4.5 ms per call here against ~800 ms at MATCH_MAX = 2000).
+MATCH_MAX = 512
+
+# How much worse (in Angstrom, summed over a template's multiple bonds) the legacy
+# unconstrained match may score before it is treated as wrong and replaced. Misplacing one
+# C=C moves it from ~1.34 A onto a ~1.50 A single bond, so a genuine error costs >= 0.15
+# and COD's two double bonds cost >= 0.30. Anything under this is symmetry-equivalent maps
+# separated by force-field noise, where re-picking would churn the re-encoded OIN string.
+SCORE_TOL = 0.05
+
+# Above this many binding atoms in ONE fragment, skip the exact donor->slot assignment
+# (its cost is 2**n) and leave the fragment to the unanchored fallback. A fragment's donor
+# count is a coordination number, so this is never reached in practice.
+_ASSIGN_MAX_DONORS = 12
+
+
 def _oin_fragment_templates(parsed: ParsedOIN) -> list:
     """Heavy-atom RDKit templates (correct bond orders + stereo) per OIN ligand."""
     templates = []
@@ -274,11 +309,105 @@ def _oin_fragment_templates(parsed: ParsedOIN) -> list:
             Chem.AssignStereochemistry(t, cleanIt=True, force=True)
         except Exception:
             pass
+        # Unparseable fragments are skipped above, so a template's position in the
+        # returned list is NOT its OIN fragment index. build_contract_mol needs the
+        # real index to look up the fragment's coordination vectors.
+        t.SetIntProp(_FRAG_IDX_PROP, k)
         templates.append(t)
     return templates
 
 
-def _flatten_template(t):
+def _template_donor_slots(t, parsed: ParsedOIN):
+    """``(atom_idx -> slot colour, slot -> unit vector)`` for a template's binding atoms.
+
+    The colour is the OIN coordination slot, which is what separates a chelate's donors
+    from one another: a porphyrin's four N sit in four distinct slots, so colouring by
+    slot forbids the macrocycle rotations that a bare donor/non-donor colour allows.
+    Atoms of one haptic group (eta2-alkene, eta3-allyl, Cp) share a slot, hence a slot.
+
+    Degrades to a single colour 0 -- i.e. plain donor/non-donor -- when the OIN slots or
+    their vectors are unusable, so a fragment is never left unconstrained.
+    """
+    if not t.HasProp(_FRAG_IDX_PROP):
+        return {}, {}
+    fk = t.GetIntProp(_FRAG_IDX_PROP)
+    vecs = [v for v in parsed.vectors if v.fragment_idx == fk]
+    if not vecs:
+        return {}, {}
+    binary = ({v.atom_in_fragment_idx: 0 for v in vecs}, {})
+    if any(v.slot < 0 for v in vecs):
+        return binary
+    slots = {v.atom_in_fragment_idx: v.slot for v in vecs}
+    unit = {}
+    for v in vecs:
+        if v.slot not in unit:
+            a = np.asarray(v.vector, dtype=float)
+            n = float(np.linalg.norm(a))
+            if n > 0:
+                unit[v.slot] = a / n
+    # Every slot needs a direction, else a generated donor cannot be assigned to one.
+    return (slots, unit) if set(unit) == set(slots.values()) else binary
+
+
+def _generated_donor_slots(donors_local, tslots, slot_unit, carr, metal_idx):
+    """Assign each generated binding atom the OIN slot it occupies, as a whole.
+
+    Not a per-atom nearest-vector lookup: a haptic group straddles its slot vector over a
+    wide arc, so an eta3-allyl terminus can point nearer a *neighbouring* slot than its own
+    (FIKXIJ, whose allyl and phosphine chelate one metal). Solving it globally -- assign the
+    fragment's donors to its slots, with each slot taking exactly as many donors as the
+    template gives it, maximizing total alignment -- keeps every donor in the right group.
+
+    Exact via a bitmask DP; the donor count per fragment is a coordination number, so the
+    2**n stays tiny. Returns None if it cannot be assigned.
+    """
+    n = len(donors_local)
+    if not slot_unit:
+        return {qi: 0 for qi, _ in donors_local}  # degraded: donor/non-donor only
+    slots = sorted(tslots.values())
+    if n == 0 or len(slots) != n or n > _ASSIGN_MAX_DONORS:
+        return None
+
+    cost = []
+    for _, gidx in donors_local:
+        u = carr[gidx] - carr[metal_idx]
+        norm = float(np.linalg.norm(u))
+        if norm == 0.0:
+            return None
+        u = u / norm
+        cost.append([-float(np.dot(u, slot_unit[s])) for s in slots])
+
+    size = 1 << n
+    inf = float("inf")
+    dp = [inf] * size
+    pick = [-1] * size
+    dp[0] = 0.0
+    for mask in range(size):
+        if dp[mask] == inf:
+            continue
+        i = bin(mask).count("1")  # donors 0..i-1 are placed
+        if i == n:
+            continue
+        for j in range(n):
+            if mask >> j & 1:
+                continue
+            nxt = mask | (1 << j)
+            c = dp[mask] + cost[i][j]
+            if c < dp[nxt]:
+                dp[nxt] = c
+                pick[nxt] = j
+    out = {}
+    mask = size - 1
+    for i in range(n - 1, -1, -1):
+        j = pick[mask]
+        if j < 0:
+            return None
+        out[donors_local[i][0]] = slots[j]
+        mask ^= 1 << j
+    return out
+
+
+def _flatten_template(t, donor_slots=None):
     """Connectivity-only copy of a template (all single bonds, no aromatic/charge).
 
     Used only for substructure matching, so bond orders can be transferred even
@@ -294,6 +423,12 @@ def _flatten_template(t):
     dearomatizes the ligand in the round trip. Normalizing to a plain
     connectivity graph (0 radicals, implicit H) fixes the match without ever
     loosening it (heavy-atom count + connectivity + element still gate it).
+
+    ``donor_slots`` stamps ``_oinSlot`` on EVERY atom (the binding atom's OIN slot, or
+    -1), so the match can be restricted to maps that send a template atom binding slot
+    *s* onto a generated atom binding that same slot. RDKit's ``atomProperties`` treats
+    an ABSENT property as a non-match, so the stamp must cover every atom of query and
+    target alike, not just the donors.
     """
     ft = Chem.RWMol(t)
     for b in ft.GetBonds():
@@ -305,12 +440,104 @@ def _flatten_template(t):
         a.SetNumRadicalElectrons(0)
         a.SetNoImplicit(False)
         a.SetNumExplicitHs(0)
+        if donor_slots is not None:
+            a.SetIntProp(_SLOT_PROP, donor_slots.get(a.GetIdx(), _NON_DONOR))
     m = ft.GetMol()
     try:
         m.UpdatePropertyCache(strict=False)
     except Exception:
         pass
     return m
+
+
+def _localizable_bonds(t) -> list:
+    """``(begin, end, weight)`` for each non-aromatic double/triple bond of a template.
+
+    Only such bonds can be *mislocalized* by picking the wrong automorphism: an
+    all-single or purely aromatic template transfers identically under every map.
+    """
+    out = []
+    for b in t.GetBonds():
+        weight = _ORDER_WEIGHT.get(b.GetBondType())
+        if weight is not None and not b.GetIsAromatic():
+            out.append((b.GetBeginAtomIdx(), b.GetEndAtomIdx(), weight))
+    return out
+
+
+def _transfer_score(bonds, match, q2g, dmat) -> float:
+    """Total generated bond length lying under the template's multiple bonds.
+
+    Every candidate match is an isomorphism onto the same generated fragment, so a
+    given template bond's candidate images all join the same pair of elements --
+    the sums are directly comparable across matches. Minimizing puts double/triple
+    bonds on the SHORT edges, which is where MetalloGen actually embedded them
+    (it built the geometry from an m-SMILES that still had the true bond orders).
+    Aromatic bonds are excluded: they are ~1.39 A whichever way they map.
+    """
+    return sum(w * dmat[q2g[match[i]], q2g[match[j]]] for i, j, w in bonds)
+
+
+def _slot_valid(flat, qmol, match) -> bool:
+    """True if ``match`` sends every template atom onto one binding the same OIN slot."""
+    return all(
+        flat.GetAtomWithIdx(i).GetIntProp(_SLOT_PROP)
+        == qmol.GetAtomWithIdx(match[i]).GetIntProp(_SLOT_PROP)
+        for i in range(flat.GetNumAtoms())
+    )
+
+
+def _select_match(qmol, flat, t, q2g, dmat):
+    """Donor-anchored, geometry-scored substructure match of ``flat`` into ``qmol``.
+
+    ``qmol`` (the generated fragment) and ``flat`` are both heavy-atom, all-single
+    connectivity graphs with equal atom counts, so a plain ``GetSubstructMatch`` is an
+    automorphism search that returns an ARBITRARY map. For a symmetric eta ligand most
+    of those maps move the bond orders: 1,5-COD's flattened 8-ring has 16 automorphisms
+    and only 4 keep the C=C on the metal-bound carbons, which is why generated COD
+    re-encodes with its double bonds two positions around the ring.
+
+    Two constraints identify a good map. The ``_oinSlot`` colour forbids sending a
+    template atom that binds slot *s* onto a generated atom that does not. That kills the
+    COD ring rotations, the ring swap that moved PIJCAO's alkyne onto a para-ethyl, and
+    the macrocycle rotations of a porphyrin's four distinct N slots. It cannot separate
+    the two ends of a symmetric eta3-allyl -- all three carbons share one slot, and both
+    maps put the C=C on opposite sides -- so candidates are ranked by ``_transfer_score``
+    against the embedded 3D geometry, where the true C=C is ~0.1 A shorter.
+
+    The legacy unconstrained match is PREFERRED when it is slot-valid and scores within
+    ``SCORE_TOL`` of the best candidate. Bond orders are not the only thing the caller
+    transfers through this map -- formal charges and ``_CIPCode`` stereo ride along -- so
+    among equally-good maps the choice is arbitrary but observable downstream. Repairing
+    only demonstrably-wrong maps keeps this a strict repair rather than a re-pick.
+    """
+    params = Chem.SubstructMatchParameters()
+    params.uniquify = False
+    params.atomProperties = [_SLOT_PROP]
+    # An all-single/aromatic template transfers identically under every automorphism, so
+    # stop at the first slot-valid map. This is also what keeps the common case cheap:
+    # most big automorphism groups belong to tBu/phenyl-rich phosphines with no
+    # localizable bond, and they never reach the enumeration below.
+    bonds = _localizable_bonds(t)
+    params.maxMatches = MATCH_MAX if bonds else 1
+    candidates = qmol.GetSubstructMatches(flat, params)
+    if not candidates:
+        return ()
+    if len(candidates) == 1 or not bonds:
+        return candidates[0]
+
+    def score(m):
+        return _transfer_score(bonds, m, q2g, dmat)
+
+    best = min(candidates, key=score)
+    legacy = qmol.GetSubstructMatch(flat)
+    if (
+        legacy
+        and len(legacy) == flat.GetNumAtoms()
+        and _slot_valid(flat, qmol, legacy)
+        and score(legacy) <= score(best) + SCORE_TOL
+    ):
+        return legacy
+    return best
 
 
 def _template_lp_label(t, ai: int) -> "str | None":
@@ -387,8 +614,14 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
             frag_rw, asMols=True, sanitizeFrags=False, fragsMolAtomMapping=mapping
         )
 
+        donor_set = set(donors)
+        # Precomputed once: _select_match scores up to MATCH_MAX candidates per fragment
+        # and would otherwise recompute the same bond lengths for every one of them.
+        carr = np.asarray(coords, dtype=float)
+        dmat = np.linalg.norm(carr[:, None, :] - carr[None, :, :], axis=-1)
         templates = _oin_fragment_templates(parsed)
-        flats = [_flatten_template(t) for t in templates]
+        template_slots = [_template_donor_slots(t, parsed) for t in templates]
+        flats = [_flatten_template(t, s) for t, (s, _) in zip(templates, template_slots)]
         used = [False] * len(templates)
         # global contract-atom idx -> encoded CIP code for sp3 stereocentres that
         # recover() leaves untouched (carbon, silicon, sulfur); oriented by the
@@ -426,14 +659,48 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                 qmol.UpdatePropertyCache(strict=False)
             except Exception:
                 pass
-            for ti, t in enumerate(templates):
-                if used[ti] or t.GetNumAtoms() != qmol.GetNumAtoms():
-                    continue
-                # Connectivity-only match, then copy real bond orders / aromaticity /
-                # charge from the template (works even when the template can't sanitize).
-                match = qmol.GetSubstructMatch(flats[ti])
-                if not match or len(match) != t.GetNumAtoms():
-                    continue
+            donors_local = [(qi, g) for qi, g in enumerate(q2g) if g in donor_set]
+            for qi in range(qmol.GetNumAtoms()):
+                qmol.GetAtomWithIdx(qi).SetIntProp(_SLOT_PROP, _NON_DONOR)
+
+            # Pass 1 anchors the match on each binding atom's OIN slot and ranks the
+            # survivors against the 3D geometry. Pass 2 is the pre-existing unanchored
+            # match, reached only when no template survives pass 1 (e.g. MetalloGen bonded
+            # a haptic ring only partially, so the donor counts disagree) -- so this is
+            # never worse than the arbitrary-automorphism behaviour it replaces.
+            chosen = None
+            for anchored in (True, False):
+                for ti, t in enumerate(templates):
+                    if used[ti] or t.GetNumAtoms() != qmol.GetNumAtoms():
+                        continue
+                    if anchored:
+                        tslots, slot_unit = template_slots[ti]
+                        # Equal heavy-atom counts are not enough to pair two ligands: a
+                        # sigma-ethyl would otherwise consume an eta2-ethylene template.
+                        if len(tslots) != len(donors_local):
+                            continue
+                        gslots = _generated_donor_slots(
+                            donors_local, tslots, slot_unit, carr, metal_idx
+                        )
+                        if gslots is None:
+                            continue
+                        for qi, slot in gslots.items():
+                            qmol.GetAtomWithIdx(qi).SetIntProp(_SLOT_PROP, slot)
+                    # Connectivity-only match, then copy real bond orders / aromaticity /
+                    # charge from the template (works even when the template can't sanitize).
+                    match = (
+                        _select_match(qmol, flats[ti], t, q2g, dmat)
+                        if anchored
+                        else qmol.GetSubstructMatch(flats[ti])
+                    )
+                    if not match or len(match) != t.GetNumAtoms():
+                        continue
+                    chosen = (ti, t, match)
+                    break
+                if chosen:
+                    break
+            if chosen:
+                ti, t, match = chosen
                 for b in t.GetBonds():
                     rb = rw.GetBondBetweenAtoms(
                         q2g[match[b.GetBeginAtomIdx()]], q2g[match[b.GetEndAtomIdx()]]
@@ -474,7 +741,6 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         elif anum == 15 and gidx not in donors:
                             rwa.SetProp("_OIN_CIPCode", ta.GetProp("_CIPCode"))
                 used[ti] = True
-                break
 
         for d in donors:
             rw.GetBondBetweenAtoms(metal_idx, d).SetBondType(Chem.BondType.DATIVE)
