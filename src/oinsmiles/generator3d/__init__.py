@@ -65,6 +65,60 @@ def _complex_stereo_targets(metal_complex):
     return targets
 
 
+def _complex_chiral_targets(metal_complex):
+    """Map each ligand's carried sp3 chirality to complex-global atom indices.
+
+    ``enforceChirality`` makes the embed honor a chiral volume constraint, but a
+    distorted or fallback embed can still land on the wrong enantiomer. These
+    targets let ``generate_3d_structures`` reject such conformers. Each tuple is
+    ``(center, (n0, n1, n2, n3), ChiralType)`` in ``get_position()`` index space.
+    """
+    targets = []
+    try:
+        idx_map = metal_complex.get_atom_indices_for_each_ligand()
+        ligands = metal_complex.ligands
+    except Exception:
+        return targets
+    for li, ligand in enumerate(ligands):
+        if li >= len(idx_map):
+            continue
+        amap = idx_map[li]
+        centers = getattr(getattr(ligand, "molecule", None), "chiral_centers", []) or []
+        for center, nbrs, tag in centers:
+            if center >= len(amap) or max(nbrs) >= len(amap):
+                continue
+            targets.append((amap[center], tuple(amap[k] for k in nbrs), tag))
+    return targets
+
+
+def _chiral_targets_satisfied(positions, targets):
+    """True if every carried sp3 centre embedded with the requested handedness.
+
+    For neighbours in the order the tag was recorded against, the signed volume
+    ``(n1-n0) . ((n2-n0) x (n3-n0))`` is positive for CHI_TETRAHEDRAL_CW and
+    negative for CHI_TETRAHEDRAL_CCW (measured against RDKit; pinned by
+    ``test_generator_atom_chirality.test_signed_volume_sign_convention``). Like
+    the E/Z check this is self-consistent with the stored neighbour order, so it
+    needs no CIP perception. A near-planar centre (|volume| tiny) is treated as
+    unresolved and rejected rather than guessed.
+    """
+    import numpy as np
+    from rdkit import Chem
+
+    for center, nbrs, tag in targets:
+        try:
+            p0, p1, p2, p3 = (np.asarray(positions[i], dtype=float) for i in nbrs)
+        except Exception:
+            continue
+        volume = float(np.dot(p1 - p0, np.cross(p2 - p0, p3 - p0)))
+        if abs(volume) < 0.1:  # degenerate/planar embed -- not a resolved centre
+            return False
+        wants_positive = tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW
+        if wants_positive != (volume > 0):
+            return False
+    return True
+
+
 def _stereo_targets_satisfied(positions, targets):
     """True if every carried C=C stereo is cleanly reproduced by ``positions``.
 
@@ -107,6 +161,7 @@ def generate_3d_structures(
     rmsd_threshold=0.5,
     energy_threshold=2.0,
     timeout=None,
+    seed=42,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -115,6 +170,11 @@ def generate_3d_structures(
 
     ff_params: optional dict of TMCOptimizer convergence knobs
     (ff_max_iters, ff_force_tol, ff_energy_tol, d_converge, num_relaxation).
+
+    seed: base distance-geometry seed. The embed was previously seeded from an
+    unseeded ``random.randint``, so repeated runs of the same m-SMILES returned
+    different structures -- and every sp3 stereocentre landed on a random
+    enantiomer. Defaulting to 42 matches the rest of the project.
     """
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
@@ -130,10 +190,11 @@ def generate_3d_structures(
     # Target number of initial structures to generate
     target_pool = uff_pool_size
     successful_mols = []
-    # Carried C=C (E/Z) stereo targets, and a pool of otherwise-valid conformers
-    # that embedded the wrong side (kept only as a last-resort fallback so a
-    # stubborn embed never hard-fails generation).
+    # Carried C=C (E/Z) and sp3 chirality targets, and a pool of otherwise-valid
+    # conformers that embedded the wrong stereochemistry (kept only as a
+    # last-resort fallback so a stubborn embed never hard-fails generation).
     stereo_targets = _complex_stereo_targets(metal_complex)
+    chiral_targets = _complex_chiral_targets(metal_complex)
     stereo_rejects = []
 
     import itertools
@@ -143,8 +204,31 @@ def generate_3d_structures(
     default_max = max(target_pool * 5, 250)
     max_attempts = ff_params.get("max_attempts", default_max) if ff_params else default_max
 
+    # Bound the work the stereo filters can add, keyed on REJECTIONS rather than on
+    # attempts. A rejected conformer does not fill the pool, so without a cap a
+    # molecule whose embed rarely satisfies its constraints never reaches
+    # target_pool and runs the FULL attempt budget: AFECIZ (a chelate imine whose
+    # C=N the embed seldom lands planar, because useBasicKnowledge=False gives
+    # distance geometry no double-bond planarity term) went from 565s unconstrained
+    # to >27 min, all of it spent rejecting.
+    #
+    # Counting rejections, not attempts, leaves healthy molecules untouched -- they
+    # reject nothing, so the cap never fires -- and does not penalise a molecule
+    # that burns attempts for unrelated reasons (a valence exception, a haptic scale
+    # that will not embed). Once the cap is hit we keep whatever satisfied the
+    # constraints; if nothing did, the stereo_rejects fallback below returns the same
+    # conformer the unfiltered code would have returned, so this is never worse.
+    reject_budget = max(target_pool * 2, 25)
+
     for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
+            break
+        if len(stereo_rejects) >= reject_budget:
+            print(
+                f"Stereo reject budget ({reject_budget}) reached with "
+                f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
+                f"stopping rather than exhausting {max_attempts} attempts."
+            )
             break
         scale, option = combinations[i % len(combinations)]
 
@@ -152,8 +236,11 @@ def generate_3d_structures(
         # RDKit valence exception on a dative donor); skip it rather than
         # letting one bad combo abort the whole pool.
         try:
+            # Distinct-but-reproducible seed per attempt: the pool keeps its
+            # variety, but the same m-SMILES always yields the same conformers.
+            # (Stride idiom borrowed from molassembler_adapter's retry loop.)
             positions = embed.get_embedding(
-                metal_complex, scale, option, align=True, use_random=True
+                metal_complex, scale, option, align=True, seed=seed + i * 1009
             )
         except Exception as e:
             print(f"Embedding failed (scale={scale}, option={option}): {e}")
@@ -166,19 +253,24 @@ def generate_3d_structures(
             success = cleaner.clean_geometry(tmp_complex, scale)
 
             if success:
-                if stereo_targets and not _stereo_targets_satisfied(
-                    tmp_complex.get_position(), stereo_targets
-                ):
-                    # Right topology, wrong C=C side -- keep as fallback only.
+                position = tmp_complex.get_position()
+                wrong_ez = stereo_targets and not _stereo_targets_satisfied(
+                    position, stereo_targets
+                )
+                wrong_chirality = chiral_targets and not _chiral_targets_satisfied(
+                    position, chiral_targets
+                )
+                if wrong_ez or wrong_chirality:
+                    # Right topology, wrong stereochemistry -- keep as fallback only.
                     stereo_rejects.append(tmp_complex.get_molecule())
                     continue
                 successful_mols.append(tmp_complex.get_molecule())
 
     if not successful_mols and stereo_rejects:
-        # No embed reproduced the requested E/Z within the attempt budget; return
-        # the best available rather than nothing (non-regressive vs. the prior,
-        # unfiltered behavior).
-        print("WARNING: no conformer reproduced the requested C=C stereo; using best available.")
+        # No embed reproduced the requested stereochemistry within the attempt
+        # budget; return the best available rather than nothing (non-regressive
+        # vs. the prior, unfiltered behavior).
+        print("WARNING: no conformer reproduced the requested stereo; using best available.")
         successful_mols = stereo_rejects
 
     if not successful_mols:

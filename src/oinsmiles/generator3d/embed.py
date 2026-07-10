@@ -154,9 +154,11 @@ def get_alternative_molecule(metal_complex, option):
     )
     total_adj = np.zeros((total_atom_num, total_atom_num))
 
-    # Accumulate each ligand's carried C=C stereo, remapped from ligand-local to
-    # complex-global atom indices, so it can be enforced on the embed rd_mol.
+    # Accumulate each ligand's carried C=C stereo and sp3 chirality, remapped from
+    # ligand-local to complex-global atom indices, so both can be enforced on the
+    # embed rd_mol.
     total_stereo_bonds = []
+    total_chiral_centers = []
 
     m = 0
 
@@ -179,6 +181,11 @@ def get_alternative_molecule(metal_complex, option):
                     atom_indices[sra],
                     atom_indices[srb],
                 )
+            )
+
+        for center, nbrs, tag in getattr(ligand.molecule, "chiral_centers", []):
+            total_chiral_centers.append(
+                (atom_indices[center], tuple(atom_indices[k] for k in nbrs), tag)
             )
 
         for j in range(len(atom_list)):
@@ -270,6 +277,7 @@ def get_alternative_molecule(metal_complex, option):
         valid_ace_mol.atom_list[metal_index] = dummy_center
 
         valid_ace_mol.stereo_bonds = list(total_stereo_bonds)
+        valid_ace_mol.chiral_centers = list(total_chiral_centers)
 
         ace_mol_list.append(valid_ace_mol)
 
@@ -408,8 +416,56 @@ def _apply_double_bond_stereo(rd_mol, stereo_bonds):
             pass
 
 
-def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=True):
-    """Return the embedding."""
+def _permutation_is_odd(source, target):
+    """Parity of the permutation taking ``source`` order to ``target`` order."""
+    pos = {v: k for k, v in enumerate(source)}
+    perm = [pos[v] for v in target]
+    inversions = sum(
+        1 for a in range(len(perm)) for b in range(a + 1, len(perm)) if perm[a] > perm[b]
+    )
+    return inversions % 2 == 1
+
+
+def _apply_atom_chirality(rd_mol, chiral_centers):
+    """Set carried sp3 chirality on an embed-ready rd_mol.
+
+    ``chiral_centers`` is a list of ``(center, (n0, n1, n2, n3), ChiralType)``
+    where the neighbour tuple records the bond order the tag was read against.
+    A chiral tag is only meaningful relative to that ordering, and the mol is
+    torn down and rebuilt from the ace_mol (and again by PuLP re-perception), so
+    the bond order around the centre can differ. Re-derive the tag by comparing
+    the stored order with this mol's actual order: an odd permutation inverts
+    the apparent handedness, so flip the tag to keep the same 3D configuration.
+
+    ``EmbedParameters.enforceChirality`` already defaults to True, so the tags set
+    here are what the embed honors. Skips silently when the centre's neighbour set
+    changed (a re-perceived bond),
+    degrading to the previous unconstrained behavior rather than raising.
+    """
+    if not chiral_centers:
+        return
+    n = rd_mol.GetNumAtoms()
+    flip = {
+        Chem.ChiralType.CHI_TETRAHEDRAL_CW: Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+        Chem.ChiralType.CHI_TETRAHEDRAL_CCW: Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+    }
+    for center, nbrs, tag in chiral_centers:
+        if center >= n or max(nbrs) >= n:
+            continue
+        atom = rd_mol.GetAtomWithIdx(int(center))
+        current = [b.GetOtherAtomIdx(int(center)) for b in atom.GetBonds()]
+        if sorted(current) != sorted(int(x) for x in nbrs):
+            continue
+        atom.SetChiralTag(flip[tag] if _permutation_is_odd(nbrs, current) else tag)
+
+
+def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None):
+    """Return the embedding.
+
+    ``seed`` fixes the distance-geometry random seed. Pass an int for a
+    reproducible embed; pass None (with ``use_random``) to draw one, which
+    makes every sp3 stereocentre's handedness a fresh coin flip per call.
+    """
     atom_d_criteria = 0.5
     ratio_criteria = 0.65
     adj_ratio_criteria = 1.4
@@ -442,7 +498,9 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
 
     cmap = dict()
 
-    if use_random is True:
+    if seed is not None:
+        params.randomSeed = int(seed)
+    elif use_random is True:
         params.randomSeed = random.randint(0, 1000000)
 
     candidate_list = []
@@ -453,10 +511,15 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
     for alternative_ace_mol in alternative_ace_mol_list:
         alternative_ace_mol_list.index(alternative_ace_mol)
         rd_mol = alternative_ace_mol.get_rd_mol()
-        # Carried C=C stereo persists across the repeated EmbedMolecule calls below
-        # (it is a bond property, not cleared by embedding), so set it once here.
+        # Carried stereo persists across the repeated EmbedMolecule calls below
+        # (both are atom/bond properties, not cleared by embedding), so set once here.
         stereo_bonds = getattr(alternative_ace_mol, "stereo_bonds", [])
+        chiral_centers = getattr(alternative_ace_mol, "chiral_centers", [])
+        # No enforceChirality here: rdDistGeom.EmbedParameters() already defaults it
+        # to True. It had nothing to act on before, because the ace_mol carried no
+        # chiral tags -- _apply_atom_chirality is what gives it something to enforce.
         _apply_double_bond_stereo(rd_mol, stereo_bonds)
+        _apply_atom_chirality(rd_mol, chiral_centers)
         print("Trying ", Chem.MolToSmiles(rd_mol))
 
         positions = None
@@ -513,6 +576,7 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
                 # get_valid_molecule preserves atom order, so the captured indices
                 # still apply; re-set the stereo on the rebuilt rd_mol.
                 _apply_double_bond_stereo(rd_mol, stereo_bonds)
+                _apply_atom_chirality(rd_mol, chiral_centers)
                 print("Trying ", Chem.MolToSmiles(rd_mol))
 
                 try:
