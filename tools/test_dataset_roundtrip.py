@@ -1,25 +1,22 @@
 import argparse
 import json
 import logging
+import multiprocessing
 import os
+import queue as queue_mod
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
+import time
 import traceback
 from datetime import datetime
 
-
-class TimeoutException(Exception):
-    pass
-
-
-def timeout_handler(signum, frame):
-    raise TimeoutException("Molecule processing timed out")
-
-
 logger = logging.getLogger(__name__)
+
+# Progress marker a pass-1 child sends the moment the encode succeeds, so a later
+# SIGKILL during generation does not lose smiles_1.
+_ENCODED = "__encoded__"
 
 
 def _get_git_commit_id() -> str:
@@ -59,7 +56,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../tests/integration")))
 
 from rdkit import Chem
-from rmsd_utils import calculate_tmc_rmsd
+from rmsd_utils import calculate_tmc_rmsd_detailed
 from verify_roundtrip import (
     canonical_roundtrip_key,
     normalize_oin_for_comparison,
@@ -144,7 +141,17 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
             mol_gen_bonded = mol_gen_xyz
 
         if mol_orig and mol_gen_xyz:
-            rmsd = calculate_tmc_rmsd(mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded)
+            rmsd, reason = calculate_tmc_rmsd_detailed(
+                mol_orig, mol_gen_xyz, mol2_bonded=mol_gen_bonded
+            )
+            # A sphere the metric cannot map is not bad geometry. Reporting it as
+            # "High RMSD: 996.0" made 62 chemically-correct round-trips read as the
+            # worst structures in the dataset.
+            if rmsd is None:
+                report["metrics"]["rmsd"] = None
+                report["metrics"]["rmsd_mapping_reason"] = reason
+                report["error"] = f"RMSD mapping failed at {tier_name}: {reason}"
+                return False, last_gen_xyz_content
             report["metrics"]["rmsd"] = round(rmsd, 4)
             if rmsd >= 1.0:
                 report["error"] = f"High RMSD at {tier_name}: {rmsd:.4f}"
@@ -172,6 +179,184 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         return False, last_gen_xyz_content
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def _encode_and_attempt_in_child(result_queue, tier_name, gen_kwargs, xyz_path, report):
+    """Child entry point for pass 1: encode XYZ -> OIN, then run one tier.
+
+    The encode lives in here, not in the parent, because it is where UGUHAH_comp_0
+    actually wedges -- ``XYZToSMILES.convert`` on that 97-atom porphyrinoid runs for
+    minutes. A watchdog wrapped only around generation would never have caught it.
+    """
+    oin1_string = None
+    try:
+        oin1_string = XYZToSMILES().convert(xyz_path)
+        report["smiles_1"] = oin1_string
+    except BaseException as e:  # noqa: BLE001 - the parent must learn about anything fatal
+        report["status"] = "failed"
+        report["error"] = f"XYZToSMILES failed: {type(e).__name__}: {e}\n{traceback.format_exc()}"
+        result_queue.put((False, report, None, None))
+        return
+
+    # Hand the encode back immediately: if generation is later SIGKILLed, the parent
+    # still knows smiles_1, and can tell "hung while encoding" from "hung while
+    # generating".
+    result_queue.put((_ENCODED, oin1_string))
+
+    try:
+        generator = OIN3DGenerator(**gen_kwargs)
+        success, last_xyz = _attempt_generation(tier_name, generator, oin1_string, xyz_path, report)
+        result_queue.put((success, report, last_xyz, oin1_string))
+    except BaseException as e:  # noqa: BLE001
+        report["error"] = (
+            f"Generation/Verification failed at {tier_name}: {type(e).__name__}: {e}\n"
+            f"{traceback.format_exc()}"
+        )
+        result_queue.put((False, report, None, oin1_string))
+
+
+def _attempt_in_child(result_queue, tier_name, gen_kwargs, oin1_string, xyz_path, report):
+    """Child entry point for pass 2: build a generator, run one tier, ship the report back.
+
+    The generator is constructed here rather than passed in, because a spawned child
+    cannot inherit it.
+    """
+    try:
+        generator = OIN3DGenerator(**gen_kwargs)
+        success, last_xyz = _attempt_generation(tier_name, generator, oin1_string, xyz_path, report)
+        result_queue.put((success, report, last_xyz))
+    except BaseException as e:  # noqa: BLE001
+        report["error"] = (
+            f"Generation/Verification failed at {tier_name}: {type(e).__name__}: {e}\n"
+            f"{traceback.format_exc()}"
+        )
+        result_queue.put((False, report, None))
+
+
+def _supervise(proc, result_queue, timeout, tier_name, report, progress=None, stage="generating"):
+    """Run ``proc`` under a hard wall-clock cap, SIGKILLing it on expiry.
+
+    ``signal.alarm`` cannot interrupt a hang inside native C++ or a tight loop that
+    never yields to the interpreter: the signal is queued until control returns to
+    Python, which never happens. UGUHAH_comp_0 wedged a Phase-0 shard for 35+ minutes
+    despite a 420 s cap. Only an OS kill clears that.
+
+    Args:
+        progress: Optional dict; ``_ENCODED`` markers from the child are recorded here
+            rather than mistaken for the final result.
+        stage: What the child starts out doing, named in the timeout message.
+
+    Returns:
+        The child's payload tuple, or None if it timed out or died. On None, ``report``
+        carries the reason and ``progress`` whatever the child managed to send first.
+    """
+    proc.start()
+
+    # Drain the queue before joining: a child blocks on exit until its pipe is read.
+    payload = None
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            message = result_queue.get(timeout=0.5)
+        except queue_mod.Empty:
+            if not proc.is_alive():
+                break  # died without reporting -- segfault, OOM kill, ...
+            continue
+        if message and message[0] == _ENCODED:
+            if progress is not None:
+                progress["oin1"] = message[1]
+            stage = "generating"
+            continue
+        payload = message
+        break
+
+    if payload is not None:
+        proc.join(timeout=30)
+        if proc.is_alive():
+            proc.kill()
+            proc.join()
+        return payload
+
+    report["status"] = "failed"
+    if proc.is_alive():
+        proc.kill()
+        proc.join()
+        report["error"] = (
+            f"TimeoutException at {tier_name}: exceeded {timeout}s while {stage} (hard kill)"
+        )
+    else:
+        report["error"] = (
+            f"Generation/Verification failed at {tier_name}: "
+            f"child process died with exit code {proc.exitcode} and no result"
+        )
+    return None
+
+
+def _encode_and_attempt(tier_name, generator, gen_kwargs, xyz_path, report, timeout, converter):
+    """Pass 1 for one molecule: encode then generate, under the watchdog if asked.
+
+    Spawning costs a few seconds (rdkit + MetalloGen re-import), so an untimed run stays
+    in-process and pays nothing.
+
+    Returns:
+        tuple: (success_bool, last_gen_xyz_content, oin1_string_or_None)
+    """
+    if timeout <= 0:
+        try:
+            oin1_string = converter.convert(xyz_path)
+            report["smiles_1"] = oin1_string
+        except Exception as e:
+            report["status"] = "failed"
+            report["error"] = (
+                f"XYZToSMILES failed: {type(e).__name__}: {e}\n{traceback.format_exc()}"
+            )
+            return False, None, None
+        success, last_xyz = _attempt_generation(tier_name, generator, oin1_string, xyz_path, report)
+        return success, last_xyz, oin1_string
+
+    ctx = multiprocessing.get_context("spawn")
+    result_queue = ctx.Queue()
+    proc = ctx.Process(
+        target=_encode_and_attempt_in_child,
+        args=(result_queue, tier_name, gen_kwargs, xyz_path, report),
+    )
+    progress = {}
+    payload = _supervise(proc, result_queue, timeout, tier_name, report, progress, stage="encoding")
+    if payload is None:
+        # A kill during generation still leaves us the encode the child sent back.
+        oin1_string = progress.get("oin1")
+        report["smiles_1"] = oin1_string
+        return False, None, oin1_string
+
+    success, child_report, last_xyz, oin1_string = payload
+    report.clear()
+    report.update(child_report)
+    return success, last_xyz, oin1_string
+
+
+def _run_attempt(tier_name, generator, gen_kwargs, oin1_string, xyz_path, report, timeout):
+    """Pass 2 for one molecule: run one generator tier, under the watchdog if asked.
+
+    Returns:
+        tuple: (success_bool, last_gen_xyz_content)
+    """
+    if timeout <= 0:
+        return _attempt_generation(tier_name, generator, oin1_string, xyz_path, report)
+
+    ctx = multiprocessing.get_context("spawn")
+    result_queue = ctx.Queue()
+    proc = ctx.Process(
+        target=_attempt_in_child,
+        args=(result_queue, tier_name, gen_kwargs, oin1_string, xyz_path, report),
+    )
+    payload = _supervise(proc, result_queue, timeout, tier_name, report)
+    if payload is None:
+        return False, None
+
+    success, child_report, last_xyz = payload
+    report.clear()
+    report.update(child_report)
+    return success, last_xyz
 
 
 def initialize_report(xyz_path: str, commit_id: str = "unknown") -> dict:
@@ -303,7 +488,9 @@ def main():
         "--mol-timeout",
         type=int,
         default=0,
-        help="Global timeout in seconds for processing a single molecule (0 to disable).",
+        help="Hard wall-clock timeout in seconds per molecule per tier (0 to disable). "
+        "Non-zero runs each attempt in a subprocess that is SIGKILLed on expiry, so a "
+        "hang inside native code cannot wedge the run. Costs a few seconds per tier.",
     )
     args = parser.parse_args()
 
@@ -390,7 +577,10 @@ def main():
     print(f"Found {len(xyz_files)} XYZ files to process.")
 
     if args.mol_timeout > 0:
-        signal.signal(signal.SIGALRM, timeout_handler)
+        print(
+            f"Watchdog: each molecule runs in a killable subprocess, {args.mol_timeout}s cap "
+            "(costs a few seconds per tier to re-import rdkit + MetalloGen)."
+        )
 
     global_report = []
     requires_g_xtb = []
@@ -407,9 +597,13 @@ def main():
     ff_params_fast = {"uff_pool_size": 2, "max_attempts": 10} if args.quick else None
 
     print("\n--- PASS 1: UFF FAST-PASS ---")
-    gen_uff = OIN3DGenerator(
-        optimizer=None, ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
-    )
+    uff_kwargs = {
+        "optimizer": None,
+        "ensemble_size": 1,
+        "timeout": timeout_val,
+        "ff_params": ff_params_fast,
+    }
+    gen_uff = OIN3DGenerator(**uff_kwargs)
 
     for i, xyz_path in enumerate(xyz_files, 1):
         basename = os.path.splitext(os.path.basename(xyz_path))[0]
@@ -417,30 +611,18 @@ def main():
 
         report = initialize_report(xyz_path, commit_id=commit_id)
 
-        try:
-            oin1_string = xyz_to_smiles.convert(xyz_path)
-            report["smiles_1"] = oin1_string
-        except Exception as e:
-            report["status"] = "failed"
-            report["error"] = (
-                f"XYZToSMILES failed: {type(e).__name__}: {e}\n{traceback.format_exc()}"
-            )
+        # The encode runs inside the watchdog too: UGUHAH_comp_0 hangs in
+        # XYZToSMILES.convert(), not in the generator.
+        success, last_xyz, oin1_string = _encode_and_attempt(
+            "UFF_1", gen_uff, uff_kwargs, xyz_path, report, args.mol_timeout, xyz_to_smiles
+        )
+
+        if oin1_string is None and not success:
             save_artifacts(report, None, output_dir, is_final=True)
             global_report.append(report)
-            print("FAILED (1D conversion)")
+            err = report.get("error", "")
+            print("FAILED (1D conversion)" if err.startswith("XYZToSMILES") else "FAILED (hard)")
             continue
-
-        try:
-            if args.mol_timeout > 0:
-                signal.alarm(args.mol_timeout)
-            success, last_xyz = _attempt_generation("UFF_1", gen_uff, oin1_string, xyz_path, report)
-        except TimeoutException as e:
-            report["status"] = "failed"
-            report["error"] = f"TimeoutException: {e}"
-            success, last_xyz = False, None
-        finally:
-            if args.mol_timeout > 0:
-                signal.alarm(0)
 
         if success:
             save_artifacts(report, last_xyz, output_dir, is_final=True)
@@ -464,12 +646,15 @@ def main():
 
     if requires_g_xtb:
         print(f"\n--- PASS 2: g-xTB PASS ({len(requires_g_xtb)} files) ---")
-        gen_g_xtb_1 = OIN3DGenerator(
-            optimizer="g-xtb", ensemble_size=1, timeout=timeout_val, ff_params=ff_params_fast
-        )
-        gen_g_xtb_5 = OIN3DGenerator(
-            optimizer="g-xtb", ensemble_size=5, timeout=timeout_val, ff_params=ff_params_fast
-        )
+        gxtb1_kwargs = {
+            "optimizer": "g-xtb",
+            "ensemble_size": 1,
+            "timeout": timeout_val,
+            "ff_params": ff_params_fast,
+        }
+        gxtb5_kwargs = {**gxtb1_kwargs, "ensemble_size": 5}
+        gen_g_xtb_1 = OIN3DGenerator(**gxtb1_kwargs)
+        gen_g_xtb_5 = OIN3DGenerator(**gxtb5_kwargs)
 
         for i, (xyz_path, oin1_string, report) in enumerate(requires_g_xtb, 1):
             basename = report["molecule"]
@@ -477,19 +662,15 @@ def main():
 
             # Attempt g-xTB_1
             print("  -> Trying g-xTB_1...", end=" ", flush=True)
-            try:
-                if args.mol_timeout > 0:
-                    signal.alarm(args.mol_timeout)
-                success, last_xyz = _attempt_generation(
-                    "g-xTB_1", gen_g_xtb_1, oin1_string, xyz_path, report
-                )
-            except TimeoutException as e:
-                report["status"] = "failed"
-                report["error"] = f"TimeoutException at g-xTB_1: {e}"
-                success, last_xyz = False, None
-            finally:
-                if args.mol_timeout > 0:
-                    signal.alarm(0)
+            success, last_xyz = _run_attempt(
+                "g-xTB_1",
+                gen_g_xtb_1,
+                gxtb1_kwargs,
+                oin1_string,
+                xyz_path,
+                report,
+                args.mol_timeout,
+            )
 
             if success:
                 save_artifacts(report, last_xyz, output_dir, is_final=True)
@@ -512,19 +693,15 @@ def main():
 
             # Attempt g-xTB_5
             print("  -> Trying g-xTB_5...", end=" ", flush=True)
-            try:
-                if args.mol_timeout > 0:
-                    signal.alarm(args.mol_timeout)
-                success, last_xyz = _attempt_generation(
-                    "g-xTB_5", gen_g_xtb_5, oin1_string, xyz_path, report
-                )
-            except TimeoutException as e:
-                report["status"] = "failed"
-                report["error"] = f"TimeoutException at g-xTB_5: {e}"
-                success, last_xyz = False, None
-            finally:
-                if args.mol_timeout > 0:
-                    signal.alarm(0)
+            success, last_xyz = _run_attempt(
+                "g-xTB_5",
+                gen_g_xtb_5,
+                gxtb5_kwargs,
+                oin1_string,
+                xyz_path,
+                report,
+                args.mol_timeout,
+            )
 
             if success:
                 print("SUCCESS")

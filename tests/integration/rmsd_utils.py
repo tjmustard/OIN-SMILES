@@ -7,189 +7,273 @@ for geometric validation. Ligand backbone conformations may differ due to
 rotational flexibility and DG sampling, so full-molecule RMSD is not useful.
 
 Algorithm (coordination-sphere RMSD):
-1. Locate metal atom in both molecules by atomic number
-2. Extract atoms within dynamic cutoff (largest gap in metal-atom distances)
-3. Group donor atoms by element (C, N, Cl, etc.)
-4. Enumerate all permutations within each element group
-5. For each permutation, apply Kabsch rotation to mol2 and compute RMSD
-6. Return minimum RMSD across all permutations
+1. Locate the metal atom in both molecules (``TRANSITION_METALS_NUM``).
+2. Build the *generated* sphere from real bonds: the metal plus its heavy neighbours.
+   That connectivity is the chemical ground truth for what coordinates.
+3. Select the *input* sphere to match that composition: for each element with count
+   k, take the k heavy atoms of that element nearest the metal, rejecting the
+   selection when the k-th is beyond a covalent-radius ceiling.
+4. Enumerate permutations within each element group (Hungarian + ICP above 5 atoms).
+5. For each permutation, apply Kabsch rotation to mol2 and compute the MEAN RMSD.
+6. Return the minimum RMSD across all permutations.
 
-This handles ligand reordering (e.g., Ir(ppy)3 with 3 equivalent ppy ligands)
-and finds the rotation that optimally aligns the coordination frame.
+Why the input sphere is composition-matched rather than distance-thresholded: the
+input mol usually comes from ``Chem.MolFromXYZFile`` and carries no bonds, so a
+covalent-radius cutoff has to stand in for connectivity -- and it errs in both
+directions. A real long apical Pd-N bond at 2.57 A falls outside a 2.54 A cutoff
+(DAPZIF), while a non-donor ring carbon at 2.19 A falls inside one (ROJXIY). No
+single threshold fixes both. Matching to the bonded sphere's composition does.
+
+This cannot silently pass a real coordination bug: a genuinely absent donor lies far
+outside the ``CEILING_TOL`` ceiling and is reported as a mapping failure. (Callers
+such as ``verify_ir_complexes.py`` invoke this without a preceding OIN string gate,
+so the ceiling, not the gate, is what makes the selection safe.)
+
+Two entry points:
+- ``calculate_tmc_rmsd_detailed`` -> ``(rmsd, None)`` or ``(None, reason)``. Prefer it.
+- ``calculate_tmc_rmsd`` -> a bare float, using >=991 sentinel codes for failure.
+  Retained for callers that format the result directly.
 """
 
 import itertools
+import os
+import sys
 
 import numpy as np
+from rdkit import Chem
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.transform import Rotation
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
+
+from oinsmiles.core.constants import TRANSITION_METALS_NUM
+
+_PERIODIC_TABLE = Chem.GetPeriodicTable()
+
+# A donor may sit this far beyond r_cov(metal) + r_cov(donor) and still be accepted as
+# coordinating. Sized from real long bonds: DAPZIF's apical Pd-N overshoots by 0.47 A,
+# ABETIK's Zr-C(allyl) by 0.29 A. A genuinely absent donor overshoots by several A.
+CEILING_TOL = 1.0
+
+# Legacy sentinel codes returned by calculate_tmc_rmsd(). Any value >= 900 means
+# "the metric could not run", not "the geometry is bad" -- see the module docstring.
+_SENTINEL_NO_METAL = 999.0
+_SENTINEL_METAL_MISMATCH = 998.0
+_SENTINEL_ELEMENT_ABSENT = 997.0
+_SENTINEL_MAPPING_FAILED = 996.0
+_SENTINEL_EXCEPTION = 995.0
 
 
 def calculate_tmc_rmsd(mol1, mol2, mol2_bonded=None):
     """
     Calculate RMSD for transition metal complexes using coordination-sphere atoms only.
 
-    Uses bond information when available (mol2_bonded with connectivity), otherwise
-    falls back to dynamic cutoff detection on distances.
+    Thin wrapper over :func:`calculate_tmc_rmsd_detailed` for callers that consume the
+    result as a bare float. Prefer the detailed variant, which distinguishes "the
+    geometry is bad" from "the coordination spheres could not be mapped onto each
+    other" instead of collapsing both into a number.
 
     Args:
         mol1: RDKit mol object (input structure, usually from XYZ)
         mol2: RDKit mol object (generated structure, usually from XYZ)
-        mol2_bonded: Optional RDKit mol with bonds (from Molassembler). If provided,
-                     uses bonds to define coordination sphere for mol2.
+        mol2_bonded: Optional RDKit mol with bonds (from the generator). If provided,
+                     uses bonds to define the coordination sphere for mol2.
 
     Returns:
-        float: RMSD of coordination sphere atoms (Angstrom), or 999.0 on failure
+        float: mean RMSD of coordination-sphere atoms (Angstrom), or a sentinel
+        >= 991.0 when the spheres could not be mapped.
     """
+    rmsd, _reason, code = _calculate(mol1, mol2, mol2_bonded)
+    return rmsd if rmsd is not None else code
+
+
+def calculate_tmc_rmsd_detailed(mol1, mol2, mol2_bonded=None):
+    """
+    Coordination-sphere RMSD, distinguishing bad geometry from an unmappable sphere.
+
+    Args:
+        mol1: RDKit mol object (input structure, usually from XYZ)
+        mol2: RDKit mol object (generated structure, usually from XYZ)
+        mol2_bonded: Optional RDKit mol with bonds (from the generator).
+
+    Returns:
+        tuple: ``(rmsd, None)`` where rmsd is the mean coordination-sphere RMSD in
+        Angstrom, or ``(None, reason)`` when the two spheres cannot be mapped onto
+        each other. A ``reason`` is never a statement about geometric quality.
+    """
+    rmsd, reason, _code = _calculate(mol1, mol2, mol2_bonded)
+    return rmsd, reason
+
+
+def _calculate(mol1, mol2, mol2_bonded=None):
+    """Shared implementation. Returns ``(rmsd_or_None, reason_or_None, sentinel_code)``."""
     try:
-        # Extract coordinates
         conf1 = mol1.GetConformer()
         conf2 = mol2.GetConformer()
 
         coords1 = np.array(
             [conf1.GetAtomPosition(i) for i in range(mol1.GetNumAtoms())], dtype=float
         )
-        coords2 = np.array(
-            [conf2.GetAtomPosition(i) for i in range(mol2.GetNumAtoms())], dtype=float
-        )
 
-        # Find metal atom in both molecules (lookup by atomic number)
-        metal_idx1, metal_idx2 = _find_metal_atoms(mol1, mol2)
-        if metal_idx1 is None or metal_idx2 is None:
-            return 999.0
-
-        # Extract coordination spheres
-        sphere1 = _extract_coordination_sphere(mol1, coords1, metal_idx1, use_bonds=False)
-
-        # For mol2, try to use bonded information if available
+        # The bonded mol, when supplied, is the authority for both connectivity and
+        # coordinates -- reading the metal index out of one mol and the positions out
+        # of another only works while their atom orderings agree.
         mol2_for_sphere = mol2_bonded if mol2_bonded is not None else mol2
-        conf2_for_coords = mol2_bonded.GetConformer() if mol2_bonded is not None else conf2
-        coords2_for_sphere = (
-            np.array(
-                [conf2_for_coords.GetAtomPosition(i) for i in range(mol2_for_sphere.GetNumAtoms())],
-                dtype=float,
-            )
-            if mol2_bonded is not None
-            else coords2
+        conf2_for_coords = mol2_for_sphere.GetConformer() if mol2_bonded is not None else conf2
+        coords2 = np.array(
+            [conf2_for_coords.GetAtomPosition(i) for i in range(mol2_for_sphere.GetNumAtoms())],
+            dtype=float,
         )
 
-        sphere2 = _extract_coordination_sphere(
-            mol2_for_sphere, coords2_for_sphere, metal_idx2, use_bonds=True
-        )
+        metal_idx1 = _find_metal(mol1)
+        metal_idx2 = _find_metal(mol2_for_sphere)
+        if metal_idx1 is None:
+            return None, "no transition metal found in the input structure", _SENTINEL_NO_METAL
+        if metal_idx2 is None:
+            return None, "no transition metal found in the generated structure", _SENTINEL_NO_METAL
 
-        if not sphere1 or not sphere2:
-            return 998.0
-
-        # Reconcile the two coord-sphere definitions. sphere1 is distance-based and
-        # can pick up non-bonded second-sphere / ansa-bridge atoms (e.g. the silyl
-        # bridge Si in TiCat1-4 sits ~2.8 A from Ti, inside the ~3.4 A cutoff, but is
-        # not a Ti donor). sphere2 is bond-based (real connectivity) = the chemical
-        # ground truth for what coordinates. Drop input-only elements. Directional
-        # (input side only) is safe: a genuine *generated*-side missing donor changes
-        # connectivity -> OIN2 != OIN1 -> the string gate fails the complex anyway,
-        # so this can never silently pass a real coordination bug. The metal is in
-        # both spheres, so it is never dropped.
-        drop = [el for el in sphere1 if el not in sphere2]
-        for el in drop:
-            print(
-                f"[RMSD] dropped non-bonded input donor {el} ({len(sphere1[el])} atom(s)) "
-                "- absent from generated bond sphere"
+        sym1 = mol1.GetAtomWithIdx(metal_idx1).GetSymbol()
+        sym2 = mol2_for_sphere.GetAtomWithIdx(metal_idx2).GetSymbol()
+        if sym1 != sym2:
+            return (
+                None,
+                f"metal element differs: input {sym1}, generated {sym2}",
+                _SENTINEL_METAL_MISMATCH,
             )
-            del sphere1[el]
 
-        # Check element composition match
-        if set(sphere1.keys()) != set(sphere2.keys()):
-            return 997.0
+        # Generated side: real bonds when we have them, distance cutoff otherwise.
+        sphere2 = _extract_coordination_sphere(mol2_for_sphere, coords2, metal_idx2, use_bonds=True)
+        if not sphere2:
+            return None, "generated coordination sphere is empty", _SENTINEL_METAL_MISMATCH
 
-        for element in sphere1:
-            if len(sphere1[element]) != len(sphere2[element]):
-                print(
-                    f"[RMSD DEBUG] Count mismatch for {element}: {len(sphere1[element])} vs {len(sphere2[element])}"
-                )
-                return 996.0
+        # Input side: selected to match the generated sphere's composition.
+        composition = {el: len(pos) for el, pos in sphere2.items()}
+        sphere1, reason, code = _select_matched_sphere(mol1, coords1, metal_idx1, composition)
+        if sphere1 is None:
+            return None, reason, code
 
-        # Center both at the metal
         metal_pos1 = coords1[metal_idx1]
         metal_pos2 = coords2[metal_idx2]
 
-        sphere1_centered = {k: v - metal_pos1 for k, v in sphere1.items()}
-        sphere2_centered = {k: v - metal_pos2 for k, v in sphere2.items()}
+        sphere1_centered = {k: np.asarray(v) - metal_pos1 for k, v in sphere1.items()}
+        sphere2_centered = {k: np.asarray(v) - metal_pos2 for k, v in sphere2.items()}
 
-        # Find minimum RMSD over all permutations within element groups
-        return _compute_permutation_rmsd(sphere1_centered, sphere2_centered)
+        rmsd = _compute_permutation_rmsd(sphere1_centered, sphere2_centered)
+        if rmsd >= 900:
+            return None, f"RMSD kernel found no valid alignment (code {rmsd:.0f})", rmsd
+        return rmsd, None, 0.0
 
     except Exception as e:
         print(f"RMSD calculation failed: {e}")
         import traceback
 
         traceback.print_exc()
-        return 995.0
+        return None, f"exception in RMSD metric: {type(e).__name__}: {e}", _SENTINEL_EXCEPTION
+
+
+def _rcov(atomic_num):
+    """Covalent radius in Angstrom, from RDKit's periodic table."""
+    return _PERIODIC_TABLE.GetRcovalent(atomic_num)
+
+
+def _find_metal(mol):
+    """Index of the first transition-metal atom in ``mol``, or None.
+
+    The metal list is imported, never copied: a second copy is exactly how Sc and Y
+    went missing here and turned 32 correct round-trips into "RMSD 999" (TD-005).
+    """
+    for i in range(mol.GetNumAtoms()):
+        if mol.GetAtomWithIdx(i).GetAtomicNum() in TRANSITION_METALS_NUM:
+            return i
+    return None
 
 
 def _find_metal_atoms(mol1, mol2):
     """
     Find the metal atom in each molecule by atomic number.
-    Common metals: Fe=26, Pt=78, Pd=46, Ir=77, Ru=44, Rh=45, Co=27, Ni=28
 
     Returns:
-        tuple: (metal_idx_mol1, metal_idx_mol2) or (None, None) if not found
+        tuple: (metal_idx_mol1, metal_idx_mol2); either element is None if not found.
     """
-    METAL_ATOMIC_NUMBERS = {
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,  # Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn (3d)
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,  # Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd (4d)
-        72,
-        73,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,  # Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg (5d)
-        57,
-        58,
-        59,
-        60,  # La, Ce, Pr, Nd (lanthanides)
-    }
+    return _find_metal(mol1), _find_metal(mol2)
 
-    metal_idx1 = None
-    metal_idx2 = None
 
-    for i in range(mol1.GetNumAtoms()):
-        if mol1.GetAtomWithIdx(i).GetAtomicNum() in METAL_ATOMIC_NUMBERS:
-            metal_idx1 = i
-            break
+def _select_matched_sphere(mol, coords, metal_idx, composition):
+    """
+    Select an input-side coordination sphere matching ``composition`` element-for-element.
 
-    for i in range(mol2.GetNumAtoms()):
-        if mol2.GetAtomWithIdx(i).GetAtomicNum() in METAL_ATOMIC_NUMBERS:
-            metal_idx2 = i
-            break
+    For each element with count k, take the k heavy atoms of that element nearest the
+    metal. Reject when the k-th nearest lies beyond r_cov(metal) + r_cov(el) +
+    CEILING_TOL, which is what keeps a genuinely missing donor from being papered over
+    with some distant atom of the right element.
 
-    return metal_idx1, metal_idx2
+    Returns:
+        tuple: ``(sphere, None, 0.0)`` or ``(None, reason, sentinel_code)``.
+    """
+    metal_atom = mol.GetAtomWithIdx(metal_idx)
+    metal_sym = metal_atom.GetSymbol()
+    metal_pos = coords[metal_idx]
+    r_metal = _rcov(metal_atom.GetAtomicNum())
+
+    # Bucket every heavy non-metal atom by element, nearest the metal first.
+    candidates = {}
+    for i in range(mol.GetNumAtoms()):
+        if i == metal_idx:
+            continue
+        atom = mol.GetAtomWithIdx(i)
+        if atom.GetAtomicNum() == 1:
+            continue
+        dist = float(np.linalg.norm(coords[i] - metal_pos))
+        candidates.setdefault(atom.GetSymbol(), []).append((dist, i))
+    for bucket in candidates.values():
+        bucket.sort()
+
+    sphere = {}
+    for element, count in composition.items():
+        picked = []
+        needed = count
+
+        # The metal is in its own sphere; only extra atoms of the same element compete.
+        if element == metal_sym:
+            picked.append(metal_pos)
+            needed -= 1
+        if needed == 0:
+            sphere[element] = np.array(picked)
+            continue
+
+        available = candidates.get(element, [])
+        if len(available) < needed:
+            return (
+                None,
+                f"input has only {len(available)} {element} atom(s) but the generated "
+                f"coordination sphere needs {needed}",
+                _SENTINEL_ELEMENT_ABSENT,
+            )
+
+        ceiling = r_metal + _rcov(_PERIODIC_TABLE.GetAtomicNumber(element)) + CEILING_TOL
+        furthest = available[needed - 1][0]
+        if furthest > ceiling:
+            return (
+                None,
+                f"{element} donor #{needed} is {furthest:.2f} A from {metal_sym}, "
+                f"beyond the {ceiling:.2f} A ceiling",
+                _SENTINEL_MAPPING_FAILED,
+            )
+
+        picked.extend(coords[i] for _dist, i in available[:needed])
+        sphere[element] = np.array(picked)
+
+    return sphere, None, 0.0
 
 
 def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=None):
     """
     Extract metal + directly-bonded donor atoms.
 
-    If use_bonds=True and molecule has bonding info, uses direct metal neighbors.
-    Otherwise uses dynamic distance cutoff.
+    If use_bonds=True and the molecule has bonding info, uses direct metal neighbours --
+    this is the normal path for the generated structure. The distance fallback below is
+    reached only when the generator returned no bond topology (``gen_result.mol is
+    None``, e.g. some eta cases), where a cutoff is the only option available.
 
     Returns:
         dict: {atom_symbol: [pos1, pos2, ...]} grouped by element
@@ -262,11 +346,17 @@ def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=
         79: 1.44,
         80: 1.32,  # Ir Pt Au Hg
     }
-    DEFAULT_RADIUS = 1.50  # fallback for unlisted elements
     TOLERANCE = 0.55  # generous tolerance covers bond elongation in generated structures
 
+    # Unlisted elements (Sc, Y, La, Lu, B, Si, ...) previously fell back to a blanket
+    # 1.50 A, which is wildly wrong in both directions -- too small for Y (1.90), too
+    # large for B (0.84). Defer to RDKit rather than extend the table by hand. Listed
+    # values are left exactly as they were, so no complex that passes today can shift.
+    def radius(atomic_num):
+        return COVALENT_RADII.get(atomic_num) or _rcov(atomic_num)
+
     metal_atom = mol.GetAtomWithIdx(metal_idx)
-    r_metal = COVALENT_RADII.get(metal_atom.GetAtomicNum(), DEFAULT_RADIUS)
+    r_metal = radius(metal_atom.GetAtomicNum())
 
     # Extract atoms within per-element bonding cutoff (exclude H)
     sphere = {}
@@ -281,7 +371,7 @@ def _extract_coordination_sphere(mol, coords, metal_idx, use_bonds=True, cutoff=
         atom = mol.GetAtomWithIdx(i)
         if atom.GetSymbol() == "H":
             continue
-        r_ligand = COVALENT_RADII.get(atom.GetAtomicNum(), DEFAULT_RADIUS)
+        r_ligand = radius(atom.GetAtomicNum())
         bond_cutoff = cutoff if cutoff is not None else (r_metal + r_ligand + TOLERANCE)
         dist = np.linalg.norm(coords[i] - metal_pos)
         if dist <= bond_cutoff:
