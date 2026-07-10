@@ -3,6 +3,11 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.6.1] - 2026-07-10
+
+### Fixed
+- **Chelate-locked C=N/C=C E/Z regression in the round-trip comparator** (`oin/compare.py`): v0.3.6's S6 encoder drops E/Z on a double bond a metal ring holds rigid, but only where the *input* structure's donor bonds make that ring perceivable — a generated structure whose donor is bonded differently keeps the marker, so `smiles_1` (no slash) and `smiles_2` (slash) described the same chelate yet failed the string gate (a re-run flagged 62 salicylaldimine/hydrazone rows, `EZ_bond_stereo` 4→64). `canonical_roundtrip_key` now reconstructs the chelate rings (a dummy metal bonded to every slot atom) and clears E/Z on the double bonds those rings lock, on both sides, so they compare equal — while a pendant, freely-rotatable alkene/imine in no metal ring keeps its E/Z and still distinguishes a real diastereomer. Fixes 52 of the 62 (the other 10 are `RAW:`-fallback parse failures deferred to the v0.3.7 R3 session); genuine flips (AFECIZ, RIQFON) still fail correctly. Guarded by `tests/unit/test_chelate_ez_comparator.py`.
+
 ## [0.3.6] - 2026-07-10
 
 The tmCAT/tmPHOTO round-trip fidelity wave (parallel worktree sessions S1–S6). Each
