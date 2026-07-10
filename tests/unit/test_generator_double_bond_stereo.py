@@ -68,36 +68,18 @@ def _perceive_alkene_stereo(xyz):
     return Chem.BondStereo.STEREONONE
 
 
-def _generated_alkene_stereo(oin_string, attempts=6):
+def _generated_alkene_stereo(oin_string):
     """Generate a 3D structure for ``oin_string`` and return its perceived C=C stereo.
 
-    The MetalloGen embed uses a random seed, so generation is sampled, not
-    deterministic. ``generate_3d_structures`` rejects any conformer whose alkene
-    embedded on the wrong side (its E/Z geometric filter), so a *definite*
-    perceived stereo here is the requested side. A given clean embed can still
-    round-trip to an *undetermined* double bond (an xyz2mol re-perception
-    artifact), so retry past ``STEREONONE`` and return the first definite
-    result -- a wrong isomer would be returned and fail the caller's assertion,
-    so this tolerates the perception flake without masking a real E/Z flip.
+    This used to retry up to six times: the MetalloGen embed drew its seed from an
+    unseeded ``random.randint``, so generation was sampled rather than
+    deterministic and a run could round-trip to an undetermined double bond. That
+    made this test the flaky "task #8" case in the worklogs. The embed is now
+    seeded (``generate_3d_structures(seed=42)``), so one generation is the whole
+    story -- a retry would return the identical structure.
     """
     gen = OIN3DGenerator(engine="metallogen", optimizer="ff")
-    last_exc = None
-    saw_generation = False
-    for _ in range(attempts):
-        try:
-            gs = gen.generate(oin_string)
-        except Exception as exc:  # pragma: no cover - rare embed failure path
-            last_exc = exc
-            continue
-        saw_generation = True
-        stereo = _perceive_alkene_stereo(gs.xyz)
-        if stereo != Chem.BondStereo.STEREONONE:
-            return stereo
-    if saw_generation:
-        # Every attempt embedded cleanly but round-tripped to an undetermined
-        # double bond; surface as STEREONONE so the caller's assertion fails.
-        return Chem.BondStereo.STEREONONE
-    raise AssertionError(f"generation failed after {attempts} attempts: {last_exc}")
+    return _perceive_alkene_stereo(gen.generate(oin_string).xyz)
 
 
 class TestGeneratorDoubleBondStereo(unittest.TestCase):
@@ -115,15 +97,22 @@ class TestGeneratorDoubleBondStereo(unittest.TestCase):
         self.assertNotEqual(z, Chem.BondStereo.STEREONONE)
         self.assertNotEqual(e, z, "E and Z inputs generated the same C=C geometry")
 
+    def test_generation_is_reproducible(self):
+        """No retry is needed because the seeded embed returns the same structure."""
+        gen = OIN3DGenerator(engine="metallogen", optimizer="ff")
+        runs = {gen.generate(OIN_E).xyz for _ in range(3)}
+        self.assertEqual(len(runs), 1, "the seeded embed must be reproducible")
+
 
 class TestDoubleBondStereoDonorFilter(unittest.TestCase):
     """Only geometrically-free double bonds carry an enforced stereo constraint.
 
-    A double bond conjugated into the coordination sphere (an atom that binds the
-    metal, or neighbours one) is rigidly fixed by chelation; adding a
-    distance-geometry stereo constraint there is unnecessary and over-constrains
-    the metal embed (measured: AGULIX conformer yield 9/9 -> 3/9). The ligand
-    builder must drop those, while keeping a pendant, freely-rotatable alkene.
+    A double bond lying on a chelate ring -- a cycle closed through the metal --
+    is already held rigid by the coordination; adding a distance-geometry stereo
+    constraint there is unnecessary and over-constrains the metal embed
+    (measured: AGULIX conformer yield 9/9 -> 3/9). The ligand builder must drop
+    those, while keeping a pendant, freely-rotatable alkene. See
+    ``test_chelate_locked_ez.py`` for the predicate itself.
     """
 
     def test_pendant_alkene_is_enforced(self):
@@ -138,12 +127,12 @@ class TestDoubleBondStereoDonorFilter(unittest.TestCase):
     def test_metal_bound_imine_is_skipped(self):
         from oinsmiles.generator3d.ligand import get_ligand_from_smiles
 
-        # AGULIX ligand: the C=N sits next to the metal-binding N/S donors.
+        # AGULIX ligand: the C=N sits on the S->N chelate path.
         lig = get_ligand_from_smiles(r"CS/C(=N/[N:3]=Cc1ccccc1[O:6])[S:5]")
         self.assertEqual(
             lig.molecule.stereo_bonds,
             [],
-            "a C=N conjugated into the coordination sphere must not be enforced",
+            "a C=N on a chelate ring must not be enforced",
         )
 
 
