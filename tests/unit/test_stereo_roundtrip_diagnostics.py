@@ -921,15 +921,21 @@ class TestEtaRingCanonicalization(unittest.TestCase):
         slot), not once per fragment: a silane-bridged ansa-metallocene is a
         single connected fragment occupying two eta slots, so BOTH rings must
         now carry a winding marker (previously only the first ring did, leaving
-        rac/meso indistinguishable). The winding sign is measured against each
-        ring's actual metal->centroid axis, which stays correct under the ansa
-        bite-angle distortion that skews the idealized template slot axes.
-        Assert the full, complete two-marker encoding.
+        rac/meso indistinguishable). Assert the full, complete two-marker
+        encoding.
+
+        Both markers read '>': TiCat1's Cp rings carry no substituent other than
+        the bridge, so each is carried onto itself (in reverse cyclic order) by a
+        180 deg rotation about the in-plane axis through its bridgehead carbon.
+        That is a proper rotation which moves neither the metal nor the other
+        ring, so the two faces are the same structure and the sign is
+        orientation-free notation, not stereochemistry. The rac/meso guard lives
+        on TiCat3/TiCat4, whose indenyls admit no such rotation.
         """
         ticat1_xyz = os.path.join(_FIXTURES_DIR, "TiCat1.xyz")
         actual = XYZToSMILES().convert(ticat1_xyz)
         expected = (
-            "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)"
+            "[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0>}[cH]{0}[cH]{0}1)"
             "c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}"
         )
         self.assertEqual(actual, expected)
