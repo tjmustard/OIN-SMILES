@@ -23,14 +23,14 @@ Six parallel sessions, each in its own git worktree, each owning a **disjoint se
 |---|---|---|---|
 | S1 | donor-H | `metallogen_adapter.py` → `convert_parsed_to_msmiles` | **DONE** — `ac3a689` on `main` |
 | S2 | eta-diene | `metallogen_adapter.py` → `_flatten_template`, `build_contract_mol`, `_oin_fragment_templates` | **DONE** — `bbe567e` on `main` |
-| S3 | aromatic-perception | `utils/xyz2mol.py`, `generator3d/process.py` | in progress (worktree `../OIN-SMILES-aromatic-perception`) |
+| S3 | aromatic-perception | `utils/xyz2mol.py`, `generator3d/process.py` | **DONE** — `d96fd03` on `main` |
 | S4 | eta-winding | `utils/oin_aligner.py`, `oin/compare.py` | not started |
 | S5 | metrics | `tests/integration/rmsd_utils.py`, `tools/*` | not started |
 | S6 | stereo | `core/chirality.py`, `generator3d/ligand.py` | not started |
 
-**Suite after S1+S2:** `discover tests/unit` **253 OK** (skip=4 on rdkit 2025.09.3, skip=5 on 2026.03.3 — both blessed); `discover tests` **55 OK**; lint clean.
+**Suite after S1+S2+S3:** `discover tests/unit` **279 OK** (skip=5 on rdkit 2026.03.3; skip=4 on 2025.09.3 — both blessed); lint clean. Note the handoffs' quoted baseline "233 OK / 4 skipped" is **stale** — pristine `main` in a fresh `uv sync` worktree was already 245 OK / 5 skipped before S1. Measure your own baseline before claiming a regression.
 
-**`main` is 2 commits ahead of `origin/main` and UNPUSHED** (standing instruction). Both landed by local fast-forward merge, not the usual squash-PR — reconcile before pushing. No CHANGELOG entry or pyproject bump for 0.3.6 yet (pyproject still `0.3.5`); treat that as a wave-end task.
+**`main` is 4 commits ahead of `origin/main` and UNPUSHED** (standing instruction). S1/S2 landed by local fast-forward, S3 by local squash-merge (`d96fd03`) — reconcile before pushing. No CHANGELOG entry or pyproject bump for 0.3.6 yet (pyproject still `0.3.5`); treat that as a wave-end task, along with re-running the dataset on `d96fd03` and regenerating `CASE_REGISTRY.md`.
 
 **Traps for the next session (learned the hard way in S2):**
 - **The shared `tmCAT-tmPHOTO_xyz_dataset/20260707-results/CASE_REGISTRY.md` is STALE** — its reports predate S1/S2, so it still lists 79 `eta_diene_localization` rows that now pass. Re-running `classify_failures.py` does **not** fix this (it re-derives from the same old reports); the dataset must be re-run on `bbe567e` first. Don't pick cases from it blindly. Also: `classify_failures.py --output-dir` **writes** to the dir you point it at — never aim it at the shared results.
@@ -53,6 +53,19 @@ Integration is blocked by 5 issues in `src/oinsmiles/generation/oin_parser.py`:
 **Production pipeline (current)**: Uses legacy `OINParser.parse()` + `MolassemblerAdapter.generate()` — all integration tests pass.
 
 ## Recent Completions
+
+### S3 — aromatic/charge perception in the encoder (2026-07-09, `d96fd03`)
+**Three of the five handoff hypotheses were wrong.** The biggest bucket was not quinoid chemistry: `RWMol.AddBond(u,v,type)` copies the bond TYPE but creates the bond with `IsAromatic=False`, while `AddAtom` **does** copy the atom flag. `build_contract_mol` kekulizes in place (`Chem.Kekulize` keeps flags on), so the fragment rebuild in `get_oin_string` dropped the ring's only aromatic evidence; `OINSanitizer` then upgraded only the SINGLE ring bonds, emitting the unparseable `Cc1c=c(C)…=c(C)c=1` → `RAW:` token in `compare.py` → key never matches. Fix = normalize an aromatic-flagged bond to `BondType.AROMATIC`; copying the flag alone is **not** enough (Kekulé orders perturb `CanonicalRankAtoms` → Ferrocene/TiCat1 winding flipped).
+
+Other corrections: `fix_equivalent_Os` (where all 17 kekulize tracebacks point) rewrites **ZERO** matches — it is merely the first full sanitize; the real cause is `AC2mol` drawing `P=c` at a wrong ligand charge. `get_tmc_mol` **never returns None** (it raises) — the 8 `xyz2mol_none_crash` rows are `lig_checks` calling `len(res_mols)`, which spends the `ResonanceMolSupplier` cursor, then iterating it. Also: blanket `SetFormalCharge(0)` in `get_oin_string` destroyed nitro → unparseable `N(O)=O`; charges must be restored **in pairs** (a lone `[O+]` rewrites bound CO `C{0}#O` → `C{0}#[O+]`, seen on 3/12 controls).
+
+New shared `utils/aromaticity.py` (`stuck_ring_atoms`, `clear_ring_aromaticity`, `dearomatize_stuck_rings` moved out of `process.py`, `kekulize_safe_sanitize`, `OINEncodeError(ValueError)`).
+
+Results: garbled-`c=` 8/8 round-trip (clears the stale ABERIK 2-iminopyridine cohort); nitro 8/8; `none_crash` all 8 encode. All 17 kekulize crashers encode with zero bare tracebacks — **but do not round-trip**: failures move downstream to atom-count/string mismatches because MetalloGen cannot reproduce their `[CH]` radicals and `=P` ylides. Regression shard: 250 random previously-passing molecules, **248 byte-identical, 0 errors** (the 2 diffs are cross-rdkit E/Z canonicalization, reproducible on unmodified `main`).
+
+**`macrocycle_perception` is NOT aromatic perception** → `docs/KNOWN_LIMITATIONS.md`. A porphyrin is a dianion; `get_tmc_mol` sees two pyrrole N at −1 and, sanitizing with the metal attached, marks the 18-π macrocycle aromatic. OIN carries no formal charge, so MetalloGen builds all four N neutral and the contract mol fails to sanitize (`Explicit valence for atom # 7 N, 4`) — no valence model remains for aromaticity to run on. Two encoder-side fixes were written and reverted after proving both run *after* that point. It belongs to the donor-charge layer (S1-adjacent). Forward-encode stability holds (3 identical encodes).
+
+> Cross-session: S3's fix does **not** shrink S2's `eta_diene` or S4's `winding` buckets — sampled rows re-encode byte-identically before and after (they were never garbled). Their defects are genuinely separate.
 
 ### S2 — η-alkene/diene bond-order localization (2026-07-08 → 07-09, `bbe567e`)
 `build_contract_mol` recovered a generated ligand's bond orders by substructure-matching `_flatten_template(t)` into the generated fragment. **Both sides are heavy-atom, all-single connectivity graphs of equal size, so that match is an automorphism search** and RDKit returns an arbitrary one; the template's bond orders were copied onto whatever edges it picked. COD's flattened 8-ring has |Aut| = 16 and only 4 maps keep the C=C on the metal-bound carbons — hence `[CH2]=[CH2]` on the backbone (GASBIN/PENGAT), a double bond on a methyl (ABIRIO `C{3<}(=[CH3])`), an alkyne migrated onto a para-ethyl (PIJCAO). Explains **78/78** rows of the class.
