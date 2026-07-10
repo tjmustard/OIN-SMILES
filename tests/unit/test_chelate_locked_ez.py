@@ -18,7 +18,7 @@ from rdkit import Chem
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.core.translator import _clear_chelate_locked_bond_stereo
-from oinsmiles.generator3d.ligand import _chelate_locked_atoms, get_ligand_from_smiles
+from oinsmiles.generator3d.ligand import get_ligand_from_smiles
 
 _FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
@@ -59,49 +59,26 @@ class TestRDKitIgnoresDativeBondsForRings(unittest.TestCase):
         self.assertEqual(len(Chem.GetSymmSSSR(mol)), 1)
 
 
-class TestChelateLockedPredicate(unittest.TestCase):
-    """The generator's virtual-metal ring test, on the ligands that motivated it."""
+class TestGeneratorFilterIsBroaderThanTheEncoder(unittest.TestCase):
+    """The generator's near-donor proxy drops MORE than the encoder suppresses.
 
-    @staticmethod
-    def _locked_stereo_bonds(smiles):
-        mol = Chem.MolFromSmiles(smiles, sanitize=False)
-        mol.UpdatePropertyCache(strict=False)
-        Chem.SetBondStereoFromDirections(mol)
-        locked = _chelate_locked_atoms(mol)
-        return [
-            (b.GetBeginAtomIdx() in locked and b.GetEndAtomIdx() in locked)
-            for b in mol.GetBonds()
-            if b.GetBondType() == Chem.BondType.DOUBLE
-            and b.GetStereo() != Chem.BondStereo.STEREONONE
-        ]
+    The encoder's chelate-ring test is the physically correct predicate, and
+    narrowing ligand.py to match it is the obvious next step -- but it detonates a
+    latent bug. ``_apply_double_bond_stereo`` force-sets a carried bond back to
+    DOUBLE without touching formal charges; on AFECIZ the PuLP charge assignment
+    wants that C=N single with a charged N, so ``SanitizeMol`` then rejects a
+    4-valent N and *every* ff_clean raises. AFECIZ goes from 553s (clean succeeds on
+    attempt 1) to exhausting the whole attempt budget at 1.6s per failed clean.
 
-    def test_acac_alkene_is_locked(self):
-        self.assertEqual(self._locked_stereo_bonds(r"CC(=[O:1])/C=C(/C)[O:2]"), [True])
+    So the two halves deliberately disagree today: the encoder emits an E/Z on a
+    free C=N hanging off a monodentate donor, and the generator does not enforce it.
+    AFECIZ and XIZXAG still fail their round trip on that bond, exactly as before
+    this change. Fix _apply_double_bond_stereo's charge handling first, then narrow.
+    """
 
-    def test_agulix_chelate_imine_is_locked(self):
-        # The C=N sits on the S->N chelate path; constraining it cut AGULIX's
-        # conformer yield 9/9 -> 3/9, which is what the filter exists to prevent.
-        self.assertEqual(self._locked_stereo_bonds(r"CS/C(=N/[N:3]=Cc1ccccc1[O:6])[S:5]"), [True])
-
-    def test_pendant_alkene_is_free(self):
-        self.assertEqual(self._locked_stereo_bonds("C/C=C/CC[NH2:1]"), [False])
-
-    def test_dangling_imine_of_monodentate_arm_is_free(self):
-        # AFECIZ's third salicylaldiminate arm binds through O only; its imine N
-        # is a leaf, so the C=N lies on no chelate ring and its E/Z is genuine.
-        # The old "touches a donor or a donor's neighbour" proxy wrongly dropped it.
-        self.assertEqual(self._locked_stereo_bonds(r"Cc1cccc(C)c1/N=C(\[O:2])c1ccccc1"), [False])
-
-    def test_monodentate_ligand_has_no_locked_atoms(self):
-        mol = Chem.MolFromSmiles("C/C=C/CC[NH2:1]", sanitize=False)
-        mol.UpdatePropertyCache(strict=False)
-        self.assertEqual(_chelate_locked_atoms(mol), set())
-
-
-class TestGeneratorFilterAgrees(unittest.TestCase):
-    """ligand.py must enforce exactly the bonds the encoder still emits."""
-
-    def test_agulix_imine_is_not_enforced(self):
+    def test_agulix_chelate_imine_is_not_enforced(self):
+        # The C=N sits next to the metal-binding N/S donors; constraining it cut
+        # AGULIX's conformer yield 9/9 -> 3/9.
         lig = get_ligand_from_smiles(r"CS/C(=N/[N:3]=Cc1ccccc1[O:6])[S:5]")
         self.assertEqual(lig.molecule.stereo_bonds, [])
 
@@ -109,11 +86,15 @@ class TestGeneratorFilterAgrees(unittest.TestCase):
         lig = get_ligand_from_smiles("C/C=C/CC[NH2:1]")
         self.assertTrue(lig.molecule.stereo_bonds)
 
-    def test_dangling_imine_is_enforced(self):
+    def test_dangling_imine_is_not_enforced_pending_charge_fix(self):
+        # AFECIZ's monodentate salicylaldiminate arm. Its E/Z is genuine and the
+        # encoder emits it, but enforcing it here breaks ff_clean (see class doc).
         lig = get_ligand_from_smiles(r"Cc1cccc(C)c1/N=C(\[O:2])c1ccccc1")
-        self.assertTrue(
+        self.assertEqual(
             lig.molecule.stereo_bonds,
-            "a free C=N hanging off a monodentate donor must keep its constraint",
+            [],
+            "enforcing this bond breaks ff_clean until _apply_double_bond_stereo "
+            "adjusts formal charges when it restores the double bond",
         )
 
 

@@ -437,8 +437,9 @@ def _apply_atom_chirality(rd_mol, chiral_centers):
     the stored order with this mol's actual order: an odd permutation inverts
     the apparent handedness, so flip the tag to keep the same 3D configuration.
 
-    Needs ``EmbedParameters.enforceChirality`` to have any effect on the embed.
-    Skips silently when the centre's neighbour set changed (a re-perceived bond),
+    ``EmbedParameters.enforceChirality`` already defaults to True, so the tags set
+    here are what the embed honors. Skips silently when the centre's neighbour set
+    changed (a re-perceived bond),
     degrading to the previous unconstrained behavior rather than raising.
     """
     if not chiral_centers:
@@ -514,17 +515,11 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
         # (both are atom/bond properties, not cleared by embedding), so set once here.
         stereo_bonds = getattr(alternative_ace_mol, "stereo_bonds", [])
         chiral_centers = getattr(alternative_ace_mol, "chiral_centers", [])
+        # No enforceChirality here: rdDistGeom.EmbedParameters() already defaults it
+        # to True. It had nothing to act on before, because the ace_mol carried no
+        # chiral tags -- _apply_atom_chirality is what gives it something to enforce.
         _apply_double_bond_stereo(rd_mol, stereo_bonds)
         _apply_atom_chirality(rd_mol, chiral_centers)
-
-        # Chiral volume constraints are only honored when enforceChirality is set;
-        # without it the embed returns either enantiomer of a constrained centre,
-        # which is what made sp3 handedness a coin flip. Enable it ONLY when this
-        # complex actually carries a chiral centre. Setting it unconditionally makes
-        # RDKit's chirality check fight the dummy-metal embed on every molecule --
-        # AFECIZ (no stereocentres at all) went from 565s to >20 min, burning
-        # attempts on embeds that returned no conformer rather than on rejected ones.
-        params.enforceChirality = bool(chiral_centers)
         print("Trying ", Chem.MolToSmiles(rd_mol))
 
         positions = None
