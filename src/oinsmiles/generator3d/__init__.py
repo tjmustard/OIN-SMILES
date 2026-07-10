@@ -204,8 +204,31 @@ def generate_3d_structures(
     default_max = max(target_pool * 5, 250)
     max_attempts = ff_params.get("max_attempts", default_max) if ff_params else default_max
 
+    # Bound the work the stereo filters can add, keyed on REJECTIONS rather than on
+    # attempts. A rejected conformer does not fill the pool, so without a cap a
+    # molecule whose embed rarely satisfies its constraints never reaches
+    # target_pool and runs the FULL attempt budget: AFECIZ (a chelate imine whose
+    # C=N the embed seldom lands planar, because useBasicKnowledge=False gives
+    # distance geometry no double-bond planarity term) went from 565s unconstrained
+    # to >27 min, all of it spent rejecting.
+    #
+    # Counting rejections, not attempts, leaves healthy molecules untouched -- they
+    # reject nothing, so the cap never fires -- and does not penalise a molecule
+    # that burns attempts for unrelated reasons (a valence exception, a haptic scale
+    # that will not embed). Once the cap is hit we keep whatever satisfied the
+    # constraints; if nothing did, the stereo_rejects fallback below returns the same
+    # conformer the unfiltered code would have returned, so this is never worse.
+    reject_budget = max(target_pool * 2, 25)
+
     for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
+            break
+        if len(stereo_rejects) >= reject_budget:
+            print(
+                f"Stereo reject budget ({reject_budget}) reached with "
+                f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
+                f"stopping rather than exhausting {max_attempts} attempts."
+            )
             break
         scale, option = combinations[i % len(combinations)]
 

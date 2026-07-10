@@ -497,11 +497,6 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
 
     cmap = dict()
 
-    # Chiral volume constraints are only honored when enforceChirality is set;
-    # without it the embed is free to return either enantiomer of a constrained
-    # centre, which is what made sp3 handedness a coin flip.
-    params.enforceChirality = True
-
     if seed is not None:
         params.randomSeed = int(seed)
     elif use_random is True:
@@ -521,6 +516,15 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
         chiral_centers = getattr(alternative_ace_mol, "chiral_centers", [])
         _apply_double_bond_stereo(rd_mol, stereo_bonds)
         _apply_atom_chirality(rd_mol, chiral_centers)
+
+        # Chiral volume constraints are only honored when enforceChirality is set;
+        # without it the embed returns either enantiomer of a constrained centre,
+        # which is what made sp3 handedness a coin flip. Enable it ONLY when this
+        # complex actually carries a chiral centre. Setting it unconditionally makes
+        # RDKit's chirality check fight the dummy-metal embed on every molecule --
+        # AFECIZ (no stereocentres at all) went from 565s to >20 min, burning
+        # attempts on embeds that returned no conformer rather than on rejected ones.
+        params.enforceChirality = bool(chiral_centers)
         print("Trying ", Chem.MolToSmiles(rd_mol))
 
         positions = None
