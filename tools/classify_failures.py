@@ -34,9 +34,16 @@ SESSION_OF = {
     "macrocycle_perception": "S3-aromatic-perception",
     "winding_flip": "S4-eta-winding",
     "eta_slot_placement": "S4-eta-winding",
+    "rmsd_mapping_failed": "S5-metrics",
     "rmsd_sentinel": "S5-metrics",
     "high_rmsd": "S5-metrics",
-    "geometry_or_fragment_change": "S5-metrics (triage)",
+    # Not a metric defect: these rows fail the OIN string gate and never reach the RMSD
+    # code (their `rmsd` is null). Adjudicated 2026-07-09 on d96fd03 -- of the four,
+    # PUVVEJ now passes and FAKZAU flips between tiers, because TBP and SPY are
+    # near-degenerate for a 5-coordinate centre and conformer choice is stochastic.
+    # CUBCAE ([Ni_SPL]->[Ni_TET]) and NODLAW ([Ti_TPL]->[Ti_TPY]) are reproducible
+    # generator geometry-selection defects.
+    "geometry_or_fragment_change": "generator-geometry (unassigned)",
     "atom_stereo": "S6-stereo",
     "EZ_bond_stereo": "S6-stereo",
     "no_conformers": "S6-stereo (triage)",
@@ -108,11 +115,17 @@ def classify(rep):
             return "xyz2mol_none_crash", head[:120]
         return "encode_crash_other", head[:120]
 
+    if err.startswith("RMSD mapping failed"):
+        return "rmsd_mapping_failed", err.split(":", 1)[1].strip()[:120]
+
     if err.startswith("High RMSD"):
         m = re.search(r"High RMSD at \S+: ([\d.]+)", err)
         val = float(m.group(1)) if m else -1.0
+        # Reports written before the harness learned to say "RMSD mapping failed" encode
+        # a mapping failure as a sentinel float. Keep reading them, or every historical
+        # row silently reroutes to string_mismatch_other.
         if val >= 900:
-            return "rmsd_sentinel", f"rmsd={val:.0f} (mapping failure, not geometry)"
+            return "rmsd_sentinel", f"rmsd={val:.0f} (legacy mapping failure, not geometry)"
         return "high_rmsd", f"rmsd={val:.2f}"
 
     if err.startswith("Atom count mismatch"):
