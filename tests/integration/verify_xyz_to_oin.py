@@ -580,6 +580,10 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
         print("Skipping Zeises_salt example: File not found.")
 
     # TiCat1
+    # Both Cp rings are unsubstituted, so each can be turned over onto itself by a
+    # proper rotation about the in-plane axis through its bridgehead carbon: the
+    # winding is orientation-free and both rings read '>'. Contrast TiCat3/4/5,
+    # whose indenyls cannot be turned over -- there the winding carries rac/meso.
     try:
         with open(os.path.join(os.path.dirname(__file__), "../fixtures/TiCat1.xyz"), "r") as f:
             ticat1_xyz = f.read()
@@ -587,8 +591,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat1 (XYZ -> OIN-SMILES)",
             xyz_content=ticat1_xyz,
             description="Titanium Catalyst 1",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0<}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0>}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0}[cH]{0>}[cH]{0}[cH]{0}1)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
             fixed_orientation=True,
         )
         examples.append(ticat1_ex)
@@ -603,8 +607,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat2 (XYZ -> OIN-SMILES)",
             xyz_content=ticat2_xyz,
             description="Titanium Catalyst 2",
-            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1<}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat2_ex)
     except FileNotFoundError:
