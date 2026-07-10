@@ -26,7 +26,7 @@ Six parallel sessions, each in its own git worktree, each owning a **disjoint se
 | S3 | aromatic-perception | `utils/xyz2mol.py`, `generator3d/process.py` | **DONE** — `d96fd03` on `main` |
 | S4 | eta-winding | `utils/oin_aligner.py`, `oin/compare.py` | **DONE** — `882cefb` on `main` |
 | S5 | metrics | `tests/integration/rmsd_utils.py`, `tools/*` | **DONE** — `2e6e8a2` on `main` |
-| S6 | stereo | `generator3d/{ligand,embed,chem,clean_geometry,__init__}.py`, `core/translator.py` | **DONE** — `e317999` on `main` |
+| S6 | stereo | `generator3d/{ligand,embed,chem,clean_geometry,__init__}.py`, `core/translator.py` | **DONE** — `9d026e2` on `main` |
 
 **Suite after the full wave:** `discover tests/unit` **350 OK** (skip=5 on rdkit 2026.03.3 and 2025.09.3 — both blessed); `verify_xyz_to_oin.py` **27/27** (S6 fixed the VOacac2 E/Z); lint clean. Note the handoffs' quoted baseline "233 OK / 4 skipped" is **stale** — pristine `main` in a fresh `uv sync` worktree was already 245 OK / 5 skipped before S1. Measure your own baseline before claiming a regression.
 
@@ -42,7 +42,7 @@ Six parallel sessions, each in its own git worktree, each owning a **disjoint se
 
 **Before you delete your session branch, tag it** — `git tag -a archive/<slug> ... && git branch -D <branch>`. A squash-merge means your commits are never ancestors of `main`, so `-D` silently discards the granular history (S3 and S4 both lost theirs; S4's was recovered from a dangling commit before `gc` ran). Rescued as `archive/s3-aromatic-perception` and `archive/s4-eta-winding`. Rule now in `AGENTS.md` → **Version Control**, along with the "N commits not in main is expected after a squash" check and the `git stash push` trap.
 
-**`main` is 11 commits ahead of `origin/main` and UNPUSHED** (standing instruction). S1/S2 landed by local fast-forward, S3/S4/S5/S6 by local squash-merge (`d96fd03`, `882cefb`, `2e6e8a2`, `e317999`) — reconcile before pushing. No CHANGELOG entry or pyproject bump for 0.3.6 yet (pyproject still `0.3.5`); treat that as a wave-end task, along with re-running the dataset on `e317999` and regenerating `CASE_REGISTRY.md`. **The wave is complete (S1–S6).**
+**The wave is complete (S1–S6), cut as `v0.3.6`, and `main` is now PUSHED and level with `origin/main`.** A rebase after S6 landed **rewrote every SHA** — `e317999`, `9be2d08`, `d96fd03`, `882cefb`, `2e6e8a2` and friends no longer resolve. S6's code lives at `9d026e2`; its granular history is preserved as tag `archive/s6-stereo` (`694a38a`, on an orphaned line, kept alive only by the tag). Remaining wave-end task: **re-run the dataset on current `main` and regenerate `CASE_REGISTRY.md`** — the existing registry measures pre-S1 code and must not be quoted.
 
 **S4's result, and the corrections a later session would otherwise re-derive:**
 - **Winding is meaningless iff a fragment automorphism reverses the eta group's cyclic order** — because turning a ring over is a *proper* rotation that leaves the metal alone. Not "all ring atoms in one symmetry class", which the S4 handoff proposed: mesitylene (2 classes) and an arm-substituted Cp* (4 classes) are both orientation-free, and that weaker test would have left them broken.
