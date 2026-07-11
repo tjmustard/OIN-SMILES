@@ -39,7 +39,9 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     )
 
     try:
-        result = OIN3DGenerator(engine=args.engine, optimizer=args.optimizer).generate(args.oin)
+        result = OIN3DGenerator(
+            engine=args.engine, optimizer=args.optimizer, seed=args.seed
+        ).generate(args.oin)
     except MolassemblerTimeoutError:
         print("Error: Molassembler timed out", file=sys.stderr)
         sys.exit(2)
@@ -92,6 +94,16 @@ def main() -> None:
             "xtb, standard g-xTB). Use 'mace-omol-0-extra-large-1024' or "
             "'mace-omol25' for higher accuracy, or 'ff' for the fast FF-only path. "
             "Ignored for --engine legacy."
+        ),
+    )
+    p_oin2xyz.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help=(
+            "Random seed for the metallogen ETKDG embed (default: 42, "
+            "deterministic). Change it to sample a different reproducible "
+            "conformer. Ignored for --engine legacy."
         ),
     )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)

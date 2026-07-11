@@ -155,7 +155,6 @@ def generate_3d_structures(
     m_smiles,
     num_conformers=1,
     optimizer=None,
-    pool_size=5,
     ff_params=None,
     uff_pool_size=50,
     rmsd_threshold=0.5,
