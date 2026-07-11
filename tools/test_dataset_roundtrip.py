@@ -75,11 +75,28 @@ RUN_ENV = {}
 def _build_run_env(args) -> dict:
     from rdkit import rdBase
 
+    xtb_available = shutil.which("xtb") is not None
     return {
         "rdkit_version": rdBase.rdkitVersion,
         "quick": bool(args.quick),
-        "xtb_available": shutil.which("xtb") is not None,
+        "xtb_available": xtb_available,
+        # FF-only is the honest default when the g-xTB binary is absent; PASS 2
+        # then runs an FF re-roll rather than any semi-empirical optimization.
+        "optimizer_effective": "g-xtb" if xtb_available else "ff",
     }
+
+
+def _pass2_config(xtb_available: bool):
+    """Return (optimizer, tier1_name, tier5_name) for the PASS-2 recovery ladder.
+
+    PASS 2 recovers PASS-1 soft failures two ways that are independent of g-xTB:
+    a fresh stochastic re-embed and a wider ensemble (1 -> 5). When the 'xtb'
+    binary is absent the g-xTB optimizer is a no-op, so we run FF-only and name
+    the tiers for what actually happened rather than mislabeling them g-xTB.
+    """
+    if xtb_available:
+        return "g-xtb", "g-xTB_1", "g-xTB_5"
+    return None, "FF_reroll_1", "FF_reroll_5"
 
 
 def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
@@ -588,7 +605,10 @@ def main():
     commit_id = _get_git_commit_id()
     print(f"Git commit: {commit_id}")
     RUN_ENV.update(_build_run_env(args))
-    print(f"Env: rdkit {RUN_ENV['rdkit_version']}, xtb_available={RUN_ENV['xtb_available']}")
+    print(
+        f"Env: rdkit {RUN_ENV['rdkit_version']}, xtb_available={RUN_ENV['xtb_available']}, "
+        f"optimizer_effective={RUN_ENV['optimizer_effective']}"
+    )
 
     xyz_to_smiles = XYZToSMILES()
 
@@ -645,27 +665,31 @@ def main():
                 print("FAILED (queued for g-xTB)")
 
     if requires_g_xtb:
-        print(f"\n--- PASS 2: g-xTB PASS ({len(requires_g_xtb)} files) ---")
-        gxtb1_kwargs = {
-            "optimizer": "g-xtb",
+        # With no 'xtb' binary the g-xTB optimizer is a no-op, so PASS 2 runs an
+        # FF re-roll (fresh re-embed + ensemble 1 -> 5) and is named honestly.
+        xtb_available = RUN_ENV.get("xtb_available", shutil.which("xtb") is not None)
+        opt2, tier1, tier5 = _pass2_config(xtb_available)
+        print(f"\n--- PASS 2: {tier1}/{tier5} PASS ({len(requires_g_xtb)} files) ---")
+        pass2_1_kwargs = {
+            "optimizer": opt2,
             "ensemble_size": 1,
             "timeout": timeout_val,
             "ff_params": ff_params_fast,
         }
-        gxtb5_kwargs = {**gxtb1_kwargs, "ensemble_size": 5}
-        gen_g_xtb_1 = OIN3DGenerator(**gxtb1_kwargs)
-        gen_g_xtb_5 = OIN3DGenerator(**gxtb5_kwargs)
+        pass2_5_kwargs = {**pass2_1_kwargs, "ensemble_size": 5}
+        gen_pass2_1 = OIN3DGenerator(**pass2_1_kwargs)
+        gen_pass2_5 = OIN3DGenerator(**pass2_5_kwargs)
 
         for i, (xyz_path, oin1_string, report) in enumerate(requires_g_xtb, 1):
             basename = report["molecule"]
-            print(f"[{i}/{len(requires_g_xtb)}] g-xTB Pass: {basename}...", flush=True)
+            print(f"[{i}/{len(requires_g_xtb)}] PASS 2: {basename}...", flush=True)
 
-            # Attempt g-xTB_1
-            print("  -> Trying g-xTB_1...", end=" ", flush=True)
+            # Attempt tier 1 (ensemble_size=1)
+            print(f"  -> Trying {tier1}...", end=" ", flush=True)
             success, last_xyz = _run_attempt(
-                "g-xTB_1",
-                gen_g_xtb_1,
-                gxtb1_kwargs,
+                tier1,
+                gen_pass2_1,
+                pass2_1_kwargs,
                 oin1_string,
                 xyz_path,
                 report,
@@ -686,17 +710,17 @@ def main():
                 report["status"] = "failed"
                 save_artifacts(report, last_xyz, output_dir, is_final=True)
                 global_report.append(report)
-                print("FAILED (Hard failure, skipping g-xTB_5)")
+                print(f"FAILED (Hard failure, skipping {tier5})")
                 continue
 
             print("FAILED (Soft failure)")
 
-            # Attempt g-xTB_5
-            print("  -> Trying g-xTB_5...", end=" ", flush=True)
+            # Attempt tier 5 (ensemble_size=5)
+            print(f"  -> Trying {tier5}...", end=" ", flush=True)
             success, last_xyz = _run_attempt(
-                "g-xTB_5",
-                gen_g_xtb_5,
-                gxtb5_kwargs,
+                tier5,
+                gen_pass2_5,
+                pass2_5_kwargs,
                 oin1_string,
                 xyz_path,
                 report,
@@ -719,6 +743,7 @@ def main():
     run_successes = sum(1 for r in global_report if r["status"] == "success")
     print(f"\nFinished processing {len(xyz_files)} files.")
     print(f"This run: {run_successes} successes / {len(global_report)} processed.")
+    print(f"Optimizer effective: {RUN_ENV.get('optimizer_effective', 'unknown')}")
 
     if args.no_summary:
         print("--no-summary: individual reports written; summary left untouched.")

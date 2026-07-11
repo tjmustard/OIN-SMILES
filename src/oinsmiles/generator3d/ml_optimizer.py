@@ -1,4 +1,12 @@
 import copy
+import logging
+import shutil
+
+logger = logging.getLogger(__name__)
+
+# Warn only once per process when a g-xTB optimization is requested but the
+# 'xtb' binary is absent, instead of printing the fallback per conformer.
+_XTB_FALLBACK_WARNED = False
 
 
 class ASEOptimizer:
@@ -35,6 +43,21 @@ class ASEOptimizer:
 
         Returns a tuple of (success, energy_in_eV, optimized_mol).
         """
+        # g-xTB runs as an external subprocess. If the binary is missing, return
+        # the unoptimized geometry immediately -- before any deepcopy or ASE import --
+        # and warn exactly once per process rather than once per conformer. This is
+        # a deliberate, non-fatal degradation (contrast MACE, which raises).
+        if self.method in ("xtb", "g-xtb") and shutil.which("xtb") is None:
+            global _XTB_FALLBACK_WARNED
+            if not _XTB_FALLBACK_WARNED:
+                logger.warning(
+                    "g-xTB optimizer requested but the 'xtb' binary was not found in "
+                    "PATH; returning the force-field geometry with no semi-empirical "
+                    "refinement. Install g-xTB to enable it. (Shown once per process.)"
+                )
+                _XTB_FALLBACK_WARNED = True
+            return False, 0.0, mol
+
         try:
             from ase import Atoms
             from ase.optimize import LBFGS
@@ -70,22 +93,13 @@ class ASEOptimizer:
 
         if self.method in ("xtb", "g-xtb"):
             import os
-
-            # Check if xtb is in PATH
-            import shutil
             import subprocess
             import tempfile
 
             from ase.io import read, write
 
-            xtb_path = shutil.which("xtb")
-            if not xtb_path:
-                print(
-                    "Warning: 'xtb' binary not found in PATH. Please install "
-                    "g-xTB and add it to your PATH. Falling back to FF."
-                )
-                return False, 0.0, mol
-
+            # The missing-binary case is handled up front in optimize(); reaching
+            # here means shutil.which("xtb") succeeded.
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     input_xyz = os.path.join(tmpdir, "struc.xyz")
