@@ -1,4 +1,5 @@
 from . import clean_geometry, embed, om
+from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
 
 
 def calculate_heavy_atom_rmsd(mol1, mol2):
@@ -187,6 +188,13 @@ def generate_3d_structures(
     None (the default) preserves the prior unbounded behavior for direct callers.
     """
     import time
+
+    # The PuLP/CBC bond-order solve is re-run on the identical topology across
+    # every conformer attempt; a topology-keyed memo collapses those redundant
+    # CBC subprocesses. Scope it to this one generation so a long in-process
+    # sweep never accumulates stale topologies (the win is entirely within a
+    # single molecule's attempt loop).
+    clear_pulp_cache()
 
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
