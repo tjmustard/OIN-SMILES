@@ -46,6 +46,54 @@ class TestChelateLockedEZComparator(unittest.TestCase):
         b = "[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}"
         self.assertEqual(key(a), key(b))
 
+    # -- The chelate-lock clear must reach fragments that only PARTIALLY sanitize.
+    #    A slot-stripped eta-Cp/Cp* ring or a bare-`n` azole/pyridyl donor ring raises
+    #    KekulizeException on a full sanitize; before the fix the comparator bailed to
+    #    the `RAW:` fallback, which preserves the raw `/`\ verbatim, so exactly the
+    #    fragments carrying the ring-locked slash never got cleared (62-row v0.3.6
+    #    regression; these 10 were the residual after the first hotfix). --
+
+    def test_unkekulizable_dipyrrin_chelate_keys_equal(self):
+        """CUHSEE: the meso C=C of a dipyrrin sits in the N{0}...metal...n{1}
+        macrocycle. The fragment won't kekulize (bare-`n` azole ring), but the
+        ring-locked slash must still normalize away."""
+        cleared = (
+            "[Rh_TET].N#Cc1ccc(C(=C2C=CC=N{0}2)c2cccn{1}2)cc1."
+            "Cc{2}1c{2>}(C)c{2}(C)c{2}(C)c{2}1C.[Cl]{3}"
+        )
+        slashed = (
+            "[Rh_TET].N#Cc1ccc(/C(=C2\\C=CC=N{0}2)c2cccn{1}2)cc1."
+            "Cc{2}1c{2>}(C)c{2}(C)c{2}(C)c{2}1C.[Cl]{3}"
+        )
+        self.assertEqual(key(cleared), key(slashed))
+
+    def test_unkekulizable_azole_donor_ring_keys_equal(self):
+        """KAQLIZ: azomethine C=N in a Ti chelate whose pyridyl donor ring
+        (bare `n`) won't kekulize once the metal is stripped."""
+        cleared = (
+            "[Ti_OCT].C1CCO{0}C1.[Cl]{1}.CC(C)(C)c1cc(C2=N{2}C(=C(c3ccccc3)"
+            "c3ccc(-c4cc(C(C)(C)C)cc(C(C)(C)C)c4O{3})n{4}3)C=C2)c(O{5})c(C(C)(C)C)c1"
+        )
+        slashed = (
+            "[Ti_OCT].C1CCO{0}C1.[Cl]{1}.CC(C)(C)c1cc(C2=N{2}/C(=C(/c3ccccc3)"
+            "c3ccc(-c4cc(C(C)(C)C)cc(C(C)(C)C)c4O{3})n{4}3)C=C2)c(O{5})c(C(C)(C)C)c1"
+        )
+        self.assertEqual(key(cleared), key(slashed))
+
+    def test_genuine_ez_flip_direction_stays_distinct(self):
+        """RIQFON: a real diastereomer flip (same slash COUNT, opposite
+        DIRECTION `/N=C/` vs `/N=C\\`) on an EXOCYCLIC imine -- the ring-locked
+        predicate must leave it alone, so the two forms stay distinct."""
+        one = (
+            "[Ni_SPL].CC(=N{0}c1c(C(C)C)cccc1C(C)C)/C(O{1})=N/c1c(C(C)C)cccc1C(C)C."
+            "c1ccn{2}cc1.O=C{3}c1ccccc1"
+        )
+        two = (
+            "[Ni_SPL].CC(=N{0}c1c(C(C)C)cccc1C(C)C)/C(O{1})=N\\c1c(C(C)C)cccc1C(C)C."
+            "c1ccn{2}cc1.O=C{3}c1ccccc1"
+        )
+        self.assertNotEqual(key(one), key(two))
+
 
 if __name__ == "__main__":
     unittest.main()
