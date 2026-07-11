@@ -162,6 +162,7 @@ def generate_3d_structures(
     energy_threshold=2.0,
     timeout=None,
     seed=42,
+    embed_time_budget=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -175,7 +176,19 @@ def generate_3d_structures(
     unseeded ``random.randint``, so repeated runs of the same m-SMILES returned
     different structures -- and every sp3 stereocentre landed on a random
     enantiomer. Defaulting to 42 matches the rest of the project.
+
+    embed_time_budget: optional wall-clock cap (seconds) on the attempt loop. The
+    FF-only path had no bound at all -- ``timeout`` was consumed only by the ASE
+    optimizer -- so a molecule whose embed never satisfies the validity checks ran
+    the full ``max_attempts`` budget (ZIHGEE_comp_0: 250 attempts, ~1696 s) before
+    returning nothing. The deadline is checked between attempts (never mid-embed;
+    the in-flight attempt always finishes), so a molecule that DOES embed is
+    unaffected -- it fills the pool and breaks first. On exhaustion the pool built
+    so far is returned; an empty pool becomes the same ``[]`` as before, only fast.
+    None (the default) preserves the prior unbounded behavior for direct callers.
     """
+    import time
+
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
     except Exception as e:
@@ -220,8 +233,22 @@ def generate_3d_structures(
     # conformer the unfiltered code would have returned, so this is never worse.
     reject_budget = max(target_pool * 2, 25)
 
+    # Wall-clock deadline for the attempt loop (see docstring). Checked between
+    # attempts so a molecule that embeds cleanly is never interrupted; it exists
+    # only to keep a molecule whose embed never validates from running the full
+    # max_attempts budget (ZIHGEE ~1696 s) before giving up.
+    deadline = (time.monotonic() + embed_time_budget) if embed_time_budget else None
+
     for i in range(max_attempts):
         if len(successful_mols) >= target_pool:
+            break
+        if deadline is not None and time.monotonic() > deadline:
+            print(
+                f"Embed wall-clock budget ({embed_time_budget}s) reached after "
+                f"{i} attempt(s) with {len(successful_mols)} conformer(s) "
+                f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
+                f"than exhausting {max_attempts} attempts."
+            )
             break
         if len(stereo_rejects) >= reject_budget:
             print(
