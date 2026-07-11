@@ -295,6 +295,26 @@ class OINInlineHandler:
                         if content == "NH3":
                             return f"N{{{slot}{suffix}}}"
 
+                        # Terminal (heavy==0) nitride 0-H marker. A bare `N{n}` donor
+                        # with no heavy neighbour is undecidable between a nitride
+                        # `[N]` (0 H) and an ammine `[NH3]` (3 H) -- both otherwise
+                        # serialize identically. Ammine is emitted as bare `N{n}` by
+                        # the `content == "NH3"` branch above; for the 0-H nitride we
+                        # keep the bracket (`[N]{n}`) so the round trip stays 0-H: the
+                        # generator's `NoImplicit` guard treats a bracket atom as
+                        # authoritative and does not re-protonate it, and the
+                        # comparator keys `[N]` distinct from ammine. A bare `N` with a
+                        # heavy neighbour is 0-H amido/imido by S1's exact convention
+                        # and MUST stay de-bracketed (falls through below), so this is
+                        # gated strictly on GetDegree() == 0.
+                        if content == "N":
+                            n_atom = next(
+                                (a for a in mol.GetAtoms() if a.GetAtomMapNum() == map_num),
+                                None,
+                            )
+                            if n_atom is not None and n_atom.GetDegree() == 0:
+                                return f"[N]{{{slot}{suffix}}}"
+
                         # Use explicit list for pure organic atoms that can be unbracketed
                         # B, C, N, O, P, S and aromatic versions.
                         # Exclude Halogens (Cl, Br, I, F) so they remain bracketed [Cl].
