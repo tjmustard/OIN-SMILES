@@ -18,6 +18,37 @@ from rdkit import Chem
 
 from .inline import OINInlineHandler
 
+# Sanitize everything EXCEPT kekulization. A slot-stripped chelate fragment can be a
+# neutral all-carbon eta-Cp/Cp* ring or a bare-``n`` 5-membered azole/pyridyl donor
+# ring whose donor N just lost its metal bond -- both raise ``KekulizeException`` on a
+# full sanitize, yet RDKit can ring-perceive and canonicalize them fine without
+# kekulizing. Skipping only that step lets the chelate-lock E/Z clearing run on
+# exactly the fragments that carry the ring-locked slash (see _parse_fragment).
+_NO_KEKULIZE = Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
+
+
+def _parse_fragment(smiles: str):
+    """Parse one slot-stripped ligand fragment to an RDKit mol, or ``None``.
+
+    Full sanitize first (the fast, common path). On failure -- almost always a
+    ``KekulizeException`` on an aromatic ring that lost its metal-donor context --
+    retry with a partial sanitize that skips kekulization. Returns ``None`` only for
+    a genuinely unparseable fragment (borane cluster, over-valent ``C#O``), so the
+    ``RAW:`` fallback still guards those.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is not None:
+        return mol
+    mol = Chem.MolFromSmiles(smiles, sanitize=False)
+    if mol is None:
+        return None
+    try:
+        Chem.SanitizeMol(mol, sanitizeOps=_NO_KEKULIZE)
+    except Exception:
+        return None
+    return mol
+
+
 _METAL_STEREO_RE = re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
 
 
@@ -109,16 +140,13 @@ def _canonical_fragment_smiles(smiles: str) -> str:
     ``RAW:`` token if the fragment cannot be parsed, so exotic ligands (e.g.
     borane clusters) still compare by string.
     """
-    mol = Chem.MolFromSmiles(smiles)
+    mol = _parse_fragment(smiles)
     if mol is None:
-        mol = Chem.MolFromSmiles(smiles, sanitize=False)
-        if mol is None:
-            return "RAW:" + smiles
-        try:
-            Chem.SanitizeMol(mol)
-        except Exception:
-            return "RAW:" + smiles
-    return Chem.MolToSmiles(mol)
+        return "RAW:" + smiles
+    try:
+        return Chem.MolToSmiles(mol)
+    except Exception:
+        return "RAW:" + smiles
 
 
 def _chelate_locked_fragment_key(frag: str) -> str:
@@ -146,7 +174,7 @@ def _chelate_locked_fragment_key(frag: str) -> str:
     if not clean or not slots or len(slots) > 10:
         return _canonical_fragment_smiles(clean)
 
-    real = Chem.MolFromSmiles(clean)
+    real = _parse_fragment(clean)
     if real is None:
         return _canonical_fragment_smiles(clean)
 
@@ -176,7 +204,6 @@ def _chelate_locked_fragment_key(frag: str) -> str:
             if 0 in ring:
                 locked |= ring
 
-        cleared = False
         for bond in probe.GetBonds():
             if bond.GetBondType() != Chem.BondType.DOUBLE:
                 continue
@@ -191,10 +218,7 @@ def _chelate_locked_fragment_key(frag: str) -> str:
                 for nb in end.GetBonds():
                     if nb.GetBondDir() != Chem.BondDir.NONE:
                         nb.SetBondDir(Chem.BondDir.NONE)
-            cleared = True
 
-        if not cleared:
-            return Chem.MolToSmiles(real)
         return Chem.MolToSmiles(real)
     except Exception:
         return _canonical_fragment_smiles(clean)
