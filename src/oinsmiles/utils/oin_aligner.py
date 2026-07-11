@@ -306,6 +306,50 @@ class OINSanitizer:
                     deficit = default_val - current_val
                     atom.SetNumRadicalElectrons(deficit)
 
+        # 1b. Close the shell on NON-binding chalcogen donors that carry a
+        # valence deficit (a croconate/oxo ring O, a nitrito -O). The binding
+        # loop above leaves every non-binding atom with default implicit-H
+        # behaviour. When such an atom has a genuine deficit -- one bond where
+        # oxygen wants two, and no H, charge or radical -- MolToSmiles emits it
+        # BARE (`c(O)`, `ON=O`), because SetNoImplicit alone does not force a
+        # bracket. The MetalloGen adapter's MolFromSmiles then re-adds the
+        # implicit H, so the regenerated 3D structure gains a phantom hydrogen
+        # the input never had -> round-trip atom-count mismatch (COLWIK
+        # croconate 55->58, ACOXEX nitrito 75->77).
+        #
+        # Fix by charging the atom by its deficit: a valence-1 O becomes [O-]
+        # (phenolate/alkoxide) -- 0 H, closed-shell, unambiguous in the string
+        # AND embeddable. A neutral 0-H oxygen is a radical, which the adapter
+        # drops back to bare O (so it stays phantom) and which UFF cannot type;
+        # a formal charge survives the adapter and embeds. Restricted to O/S:
+        # an aqua/hydroxo/carbonyl/ether O sits at full valence (no deficit)
+        # and a real O-H shows a bonded H, so neither is ever touched. Binding
+        # atoms are skipped -- their {slot} marker restores the metal bond on
+        # parse. N is intentionally excluded: a bare non-binding N overlaps the
+        # nitride/ammine notation ambiguity owned by oin/inline.py.
+        binding_set = set(binding_indices_in_ligand)
+        pt = Chem.GetPeriodicTable()
+        try:
+            rw_mol.UpdatePropertyCache(strict=False)
+        except Exception:
+            pass
+        for atom in rw_mol.GetAtoms():
+            if atom.GetIdx() in binding_set:
+                continue
+            if atom.GetAtomicNum() not in (8, 16):  # O, S only
+                continue
+            if atom.GetFormalCharge() != 0 or atom.GetNumRadicalElectrons() != 0:
+                continue
+            if atom.GetTotalNumHs() != 0:
+                continue
+            if any(nb.GetAtomicNum() == 1 for nb in atom.GetNeighbors()):
+                continue  # a real O-H / S-H keeps its hydrogen
+            default_val = pt.GetValenceList(atom.GetAtomicNum())[0]
+            deficit = default_val - atom.GetTotalValence()
+            if deficit > 0:
+                atom.SetNoImplicit(True)
+                atom.SetFormalCharge(-deficit)
+
         # 2. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
         kmol = rw_mol.GetMol()
