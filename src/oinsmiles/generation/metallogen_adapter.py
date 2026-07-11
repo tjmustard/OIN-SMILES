@@ -800,6 +800,19 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
             p = mol.GetAtomWithIdx(gidx)
             p.SetProp(_LP_CIP_PROP, label)
             p.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
+
+        # Drop E/Z from double bonds a metal-containing ring holds rigid, exactly as
+        # the XYZ->OIN convert path does before its own get_oin_string call
+        # (translator.XYZToSMILES.convert). AssignStereochemistryFrom3D above stamps a
+        # directional marker on every localized ring double bond -- including a
+        # porphyrin's meso C=C/C=N bridges, which chelate the metal and are physically
+        # ring-locked. The forward encode strips those (they have no free E/Z), but the
+        # fast re-encode here feeds this mol straight to get_oin_string, so without the
+        # same clear the generated OIN carries slashes the input never had and the
+        # round trip fails on a bond that was never stereogenic.
+        from ..core.translator import _clear_chelate_locked_bond_stereo
+
+        _clear_chelate_locked_bond_stereo(mol)
         return mol
     except Exception:
         return None
