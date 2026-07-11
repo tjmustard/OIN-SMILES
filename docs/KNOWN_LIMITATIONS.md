@@ -76,6 +76,72 @@ donor-H atom count (S1), and conformer robustness (R2).
 
 ---
 
+## sp3 / heteroatom atom-stereo (`atom_stereo`)
+
+The forward encode (`XYZToSMILES.convert`) and the generator's contract-mol re-encode
+(`build_contract_mol` -> `get_oin_string`) perceive sp3/heteroatom chirality independently,
+and the `atom_stereo` registry rows are where the two `@`/`@@` sets disagree. The combined
+v0.3.7 R5 fix -- clearing stereo the encode never specified, plus re-orienting specified
+centres on the metal-free fragment with `rdCIPLabeler` -- takes this class from **0/25 to
+16/25 full round-trip successes**. Another 6 rows have their `@`/`@@` resolved and now fail on
+a *different* class (donor-H atom count, or geometry RMSD), i.e. they leave `atom_stereo`.
+Three residuals remain and are documented below.
+
+### Fixed: spurious stereo the forward encode never specified
+
+- **Invented sp3 tags (e.g. `KAPCEM`, 0 `@` in -> 4 out).** The OIN leaves a ligand's sp3
+  centres unspecified -- the fully-sanitised `get_tmc_mol` perceives them as non-stereogenic in
+  the metal-bound complex. `build_contract_mol` then ran `AssignStereochemistryFrom3D` on the
+  single embed conformer, which stamps a tag on *every* chiral-looking centre, inventing an `@`
+  the input never emitted. `build_contract_mol` now records which sp3 centres the **parsed OIN
+  template** specified and clears geometry-derived tags on any non-N/P centre the OIN left
+  unspecified. Specified centres (a superset of the `sp3_stereo_targets` perceive-then-flip
+  carry set) are untouched, so a genuine diastereomer is never masked. Guard:
+  `tests/unit/test_heteroatom_atom_chirality.py`.
+- **Spurious `-SF5` octahedral stereo (`MEDHUB`).** A pentafluorosulfanyl sulfur is octahedral
+  with five identical terminal fluorines, so it is achiral -- but `AssignAtomChiralTagsFromStructure`
+  stamps a `CHI_OCTAHEDRAL` tag from geometry and neither legacy nor modern RDKit perception
+  (`FindPotentialStereo` calls it `Specified`) reduces the equivalent F, so the forward encode
+  emitted a spurious `[S@OH..]` the generator correctly drops. `CIPAssigner` now clears
+  high-coordination (`CHI_OCTAHEDRAL`/`CHI_TRIGONALBIPYRAMIDAL`) tags on non-metal centres whose
+  stereochemistry rests on a set of identical terminal ligands.
+
+### Fixed: wrong handedness at a metal-/η-adjacent specified sp3 centre
+
+A specified sp3 centre bonded to a metal-bound ligand (e.g. `AHEBEV`'s benzylic carbon on an
+η6-arene, `DAXJUI`, `KEBBUO`'s seven spiro-siloxane Si) round-tripped with the **wrong
+handedness**: its CIP label *flips* between the metal-present contract mol (`R`) and the
+metal-free fragment the `@` is actually emitted from (`S`), so the generator's metal-present
+`sp3_stereo_targets` flip loop -- which compared the metal-free template label against the
+metal-**present** contract label -- mis-oriented it. `build_contract_mol` now stamps the
+metal-free template's `rdCIPLabeler` label (`_OIN_CIPCode_SP3`), and `ChiralityRecoveryUtility.recover`
+verifies-and-flips the centre against it on the metal-free fragment (mirroring the Zone-A P
+lone-pair branch; no-op on the forward-encode path, which never stamps the property). The label
+is taken **aromatic-preserving** (`_template_sp3_label`, `SANITIZE_ALL ^ SANITIZE_KEKULIZE`):
+rdCIPLabeler gives opposite R/S for a carbon bonded to an aromatic η-Cp depending on whether the
+ring is left aromatic vs kekulized, and the emitted fragment is aromatic, so the stamp must be
+labelled on the aromatic form (`BABWAD`). This carries the 16 successes above -- including cases
+previously mis-read as "wrong diastereomer," which the RMSD gate confirms are geometrically
+correct (`DAXJUI` rmsd 0.52).
+
+### Documented residuals
+
+- **Fused-ring η-indenyl / fluorenyl-adjacent sp3 (`KAGXUM`, `NOSGAD`).** The aromatic-form
+  stamp above fixes a carbon bonded to a simple η-Cp (`BABWAD`), but a carbon bonded to a
+  *fused* haptic ring (indenyl, fluorenyl) still mis-orients: the aromatic-form `rdCIPLabeler`
+  label is unchanged from the kekulized one there, so the stamp and the fragment recover()
+  reads still disagree. A representation the two consistently share (or a parity-based, label-free
+  carry) would extend the fix to these.
+- **Zone-A P donor lone-pair flip (`GUXPIA`).** One diphosphine P *donor* arrives at the
+  opposite lone-pair sense; this is the `zone_a_lp_targets` path, not the C/Si/S branch above.
+- **Stereo resolved, blocked by another class (leaves `atom_stereo`):** `KAPCEM`, `XENNIO`
+  (donor-H atom-count, S1 domain -- the `@`/`@@` now matches); `EJUKUQ`, `FADSAE` (High RMSD --
+  the generated geometry is genuinely distorted, a conformer-quality/R2 issue); `GAKZOK`,
+  `QOFTOU` (no conformer at all -- see the `no_conformers` entry; `QOFTOU` also builds rac/meso
+  non-deterministically).
+
+---
+
 ## Borane and carborane clusters
 
 `get_lig_mol` cannot perceive bond orders for electron-deficient cages (`OSENOR`,
