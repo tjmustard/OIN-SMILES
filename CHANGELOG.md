@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+The v0.3.7 residual round-trip fix wave (parallel sessions R1–R3). This entry is the
+**R2** session: the `no_conformers` failure class + a generation-internal time budget.
+
+### Fixed
+- **`_apply_double_bond_stereo` forced an over-valent double bond, so some molecules generated no conformer at all (R2)** (`generator3d/embed.py`): a carried C=C/C=N stereo bond was restored to `DOUBLE` unconditionally to enforce its E/Z. When the dummy-metal PuLP re-perception had relocated the double bond, that promotion made an endpoint over-valent (`FIXYER_comp_0`: a 5-valent carbon), and every downstream `SanitizeMol`/`MolToSmiles` — including a debug `print` inside the embed loop — raised, so **generation returned nothing**. The promotion is now guarded by a valence check (`_promotion_keeps_valence`, a throwaway `SANITIZE_PROPERTIES` copy) and only applied when it keeps the molecule valence-valid, degrading to the documented "leave it and skip the constraint" behavior otherwise. Recovers `FIXYER`, `EDOFUB`, `EDOGEM`, `ZIHGEE` (all carry a `/C=C/`/`/C=N/` whose forced promotion over-valenced a carbon) to **clean round-trips** (rmsd 0.10–0.58); `PILWUC` (same mechanism) now generates but reclassifies to `string_mismatch`. Attribution A/B'd against pristine `embed.py`: without the guard `FIXYER` exhausts the attempt budget and generates no conformer (273 s, `MetalloGen failed to generate any conformers`); with it, a clean round-trip in 132 s. Guarded by `tests/unit/test_embed_budget.py`; regression floor `tests/unit/test_generator_double_bond_stereo.py` (a valence-valid pendant alkene is still promoted and its E/Z enforced).
+
+### Added
+- **Generation-internal wall-clock budget for the embed loop (R2)** (`generator3d/__init__.py`, `generation/metallogen_adapter.py`): the FF-only attempt loop had no time bound — `timeout` was consumed only by the ASE optimizer — so a molecule whose embed never validated ran the full `max_attempts` (250) budget before returning nothing (`ZIHGEE_comp_0`: ~1696 s). `generate_3d_structures` takes a new `embed_time_budget` (wired to the existing per-molecule `timeout`, 300 s full / 60 s quick) and stops the loop at the deadline — checked *between* attempts, so a molecule that does embed is never interrupted, and the pool built so far is returned; an empty pool becomes the same `[]` as before, only fast. Turns a pathological non-terminating case into a fast, honest failure without changing the outcome of a molecule that embeds. `None` (the default) preserves the prior unbounded behavior for direct callers. Guarded by `tests/unit/test_embed_budget.py`.
+
+### Triage / documentation
+- **`no_conformers` class (R2):** all 36 rows the post-S6 registry filed under `no_conformers` were re-run serially (the registry over-counts the class — a concurrent sweep fabricates the error, so several rows are contention flakes that generate on a serial retry). After the two fixes above, **27 of 36 now generate a conformer**, and every row has a verdict: **16 round-trip cleanly** (net-new passes — `ABERUW CITGAO DURSOZ FIXYER EDOFUB EDOGEM ZIHGEE AGOGEJ RUBPAH ZUJNAT YEPXID IJAXIB IMELIW VEZYOQ TEZTAV YOMDAH`, rmsd 0.10–0.75); **11 generate but reclassify** into smaller-defect classes owned by other sessions (6 `atom_count`, 3 `string_mismatch`, 2 `high_rmsd`); and **9 are genuine and documented** in `docs/KNOWN_LIMITATIONS.md` (neutral L-donor over-valence `FUVNER`/`GEZKAZ`/`VIBRIK`; exotic bond orders the two-centre perception can't build `DAHXOB`/`MEDDUV`/`IREPAX`/`DOFCAE`/`HURGOS`; and one geometry-realization gap `BOBJIM`). The generation seed is fixed (42), so these verdicts are deterministic.
+
 ## [0.3.6.1] - 2026-07-10
 
 ### Fixed
