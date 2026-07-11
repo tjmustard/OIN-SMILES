@@ -241,6 +241,7 @@ class OIN3DGenerator:
         optimizer: str | None = "xtb",
         ff_preset: str | None = None,
         ff_params: dict | None = None,
+        seed: int = 42,
     ) -> None:
         """Initialize the generator with a parser and a generation backend.
 
@@ -253,6 +254,11 @@ class OIN3DGenerator:
         ``engine="legacy"`` uses the Molassembler/stitch adapter (the
         reference for Zone-A P stereo enforcement; ``optimizer`` is ignored there). Both
         expose ``generate(parsed)``, so the ``generate()`` delegation below is identical.
+
+        ``seed`` is the base ETKDG seed for the metallogen engine; a fixed value
+        (default 42) makes generation reproducible. It is honored by
+        ``engine="metallogen"`` only — the legacy adapter is already deterministic
+        and ignores it.
         """
         self.parser = OINParser()
         self.engine = engine
@@ -266,6 +272,7 @@ class OIN3DGenerator:
                 optimizer=optimizer,
                 ff_preset=ff_preset,
                 ff_params=ff_params,
+                seed=seed,
             )
         elif engine == "legacy":
             self.adapter = MolassemblerAdapter(
