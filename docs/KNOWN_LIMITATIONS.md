@@ -73,3 +73,67 @@ and the `carborane_unsupported` bucket). It already fails with a specific messag
 (`get_lig_mol failed for ligand fragment #4 (SMILES: 'B')`), and the charge sweep
 does not rescue it: the multi-centre bonding these cages need is outside the
 two-centre model `AC2mol` implements.
+
+---
+
+## Some complexes yield no conformer (`no_conformers`)
+
+The v0.3.7 R2 triage ran all 36 rows the post-S6 registry filed under `no_conformers`
+serially (the registry over-counts this class: a *concurrent* sweep fabricates the
+error, so several rows are contention flakes that generate on a serial retry). After
+the two R2 fixes below, **27 of the 36 generate a conformer**; the remaining **9 are
+genuine and unfixable in the generator's owned layers.** They fall into three groups,
+each of which surfaces where the vendored MetalloGen bond-order/valence model cannot
+build a sane molecule for distance geometry.
+
+**Group 1 -- neutral L-donor over-valence (the donor-charge gap above, at embed time).**
+`FUVNER`, `GEZKAZ`, `VIBRIK`. An OIN string carries no formal charges, so a neutral
+two-electron donor (amine N, aqua O, triflate O) bonded to the metal gains one bond
+beyond its neutral valence and the embed mol will not sanitize:
+
+```
+GEZKAZ_comp_1  [Zn_TET].[Cl]{0}.[Cl]{1}.[Cl]{2}.[OH2]{3}
+               Explicit valence for atom # 4 O, 3, is greater than permitted
+VIBRIK_comp_0  [Fe_TET].CN{0}(C)CC(C)(C)N{1}(C)C.[Cl]{2}.[Cl]{3}
+               Explicit valence for atom # 5 N, 4, is greater than permitted
+```
+
+This is the same root cause as the porphyrin entry -- the donor's charge/dative
+character has to survive the OIN round trip -- and would be fixed in the OIN ->
+m-SMILES donor-charge layer, not in the embed.
+
+**Group 2 -- exotic bond orders the two-centre model can't perceive.** `DAHXOB`
+(hypervalent-S ylide `C=C=S=C`), `MEDDUV` (cyclophosphazene `P=N` ring), `IREPAX`
+(diphosphene `P=P`), `DOFCAE` (aromatic boron `[b]`), and `HURGOS` (a fused aromatic
+that will not kekulize). PuLP / `get_valid_molecule` returns an invalid or `None`
+perception, so `ff_clean` raises deep in the FF setup (`cannot unpack non-iterable
+bool object`, `'NoneType' object is not subscriptable`, `Can't kekulize mol`). These
+are the same class as the ylide/radical and carborane limitations -- a perception
+gap, not an embed-parameter one.
+
+**Group 3 -- geometry the builder cannot realize.** `BOBJIM` (`Sc_OCT`): the embed
+succeeds but every FF-cleaned geometry fails the ligand-collision / adjacency
+validity checks, so no conformer survives cleanup. A genuine geometry-realization
+gap for that ligand set.
+
+### What R2 *did* fix
+
+* **`_apply_double_bond_stereo` no longer forces an over-valent double bond**
+  (`generator3d/embed.py`). A carried C=C/C=N stereo bond was restored to DOUBLE
+  unconditionally; when PuLP had relocated the double bond, that made an endpoint
+  over-valent and every downstream `SanitizeMol`/`MolToSmiles` raised, so generation
+  produced nothing. The promotion is now applied only when it keeps the molecule
+  valence-valid, degrading to the documented "leave it and skip the constraint"
+  behavior otherwise. Recovers `FIXYER`, `EDOFUB`, `EDOGEM`, `ZIHGEE` (all carry a
+  `/C=C/` or `/C=N/` whose forced promotion over-valenced a carbon) to clean
+  round-trips; `PILWUC` now generates too but reclassifies to `string_mismatch`.
+
+* **A generation-internal wall-clock budget** (`embed_time_budget`, wired to the
+  existing per-molecule `timeout`). The FF-only attempt loop had no time bound --
+  `timeout` was consumed only by the ASE optimizer -- so a molecule whose embed never
+  validated ran the full `max_attempts` (250) budget: `ZIHGEE_comp_0` took ~1696 s to
+  return nothing. The loop now stops at the budget (checked between attempts, so a
+  molecule that *does* embed is never interrupted) and returns whatever it has,
+  turning a pathological non-terminating case into a fast, honest failure. The bound
+  is `budget + one in-flight attempt`; a single pathological *attempt* is still
+  covered by the harness `--mol-timeout` SIGKILL.
