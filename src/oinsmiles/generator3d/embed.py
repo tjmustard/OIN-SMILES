@@ -375,6 +375,22 @@ def align_double_single_ligand(metal_complex, positions, d_criteria=1.7):
     return positions
 
 
+def _promotion_keeps_valence(rd_mol):
+    """True if ``rd_mol`` still passes RDKit's valence check.
+
+    ``SANITIZE_PROPERTIES`` runs the same ``UpdatePropertyCache(strict=True)``
+    valence check that a downstream ``SanitizeMol`` / ``MolToSmiles`` performs, on
+    a throwaway copy so the caller's mol is left untouched. Used to decide whether
+    promoting a bond to DOUBLE would over-valence an atom.
+    """
+    probe = Chem.Mol(rd_mol)
+    try:
+        Chem.SanitizeMol(probe, sanitizeOps=Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+        return True
+    except Exception:
+        return False
+
+
 def _apply_double_bond_stereo(rd_mol, stereo_bonds):
     """Set carried C=C (cis/trans) stereo on an embed-ready rd_mol.
 
@@ -400,10 +416,22 @@ def _apply_double_bond_stereo(rd_mol, stereo_bonds):
         # dummy-metal PuLP re-perception can drop it to SINGLE in the embed mol,
         # which would leave nothing to constrain and let the dihedral (hence the
         # scan target that seeds the FF cleanup) embed at random. Restore the
-        # double bond so distance geometry enforces the requested E/Z.
+        # double bond so distance geometry enforces the requested E/Z -- but only
+        # when doing so keeps the molecule valence-valid. PuLP can relocate the
+        # double bond so that restoring it here makes an endpoint over-valent
+        # (FIXYER: C#6 -> valence 5); forcing it anyway makes every downstream
+        # SanitizeMol/MolToSmiles raise, so generation yields NO conformer at all.
+        # In that case leave the bond as re-perceived and skip the constraint --
+        # the documented degrade-to-random behavior -- rather than emit an invalid
+        # mol that fails the whole embed.
         if bond.GetBondType() != Chem.BondType.DOUBLE:
+            original_type = bond.GetBondType()
             bond.SetBondType(Chem.BondType.DOUBLE)
-            changed = True
+            if _promotion_keeps_valence(rd_mol):
+                changed = True
+            else:
+                bond.SetBondType(original_type)
+                continue
         try:
             bond.SetStereoAtoms(int(ref_a), int(ref_b))
             bond.SetStereo(stereo)
