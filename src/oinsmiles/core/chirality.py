@@ -44,6 +44,38 @@ _LP_CIP_PROP: str = "_OIN_CIPCode_LP"
 _SP3_CIP_PROP: str = "_OIN_CIPCode_SP3"
 
 
+def _reparse_aromatic_cip_label(mol: Chem.Mol, idx: int) -> "str | None":
+    """Aromatic-preserving rdCIPLabeler label for atom *idx* on a fresh re-parse.
+
+    rdCIPLabeler gives OPPOSITE R/S for a stereocentre bonded to an aromatic haptic
+    ring (Cp, indenyl, fluorenyl) depending on the ring's aromatic/kekulized state,
+    and a processed mol object can carry a corrupted aromatic state. Re-parsing from
+    SMILES with kekulization skipped normalises that, so both the ``build_contract_mol``
+    stamp (``_template_sp3_label``) and this ``recover()`` comparison read the label in
+    ONE convention. An atom-map probe survives the SMILES atom re-ordering. Returns
+    None on any failure (caller degrades to leaving the tag as-is).
+    """
+    probe = 99
+    try:
+        tagged = Chem.Mol(mol)
+        tagged.GetAtomWithIdx(idx).SetAtomMapNum(probe)
+        m = Chem.MolFromSmiles(Chem.MolToSmiles(tagged), sanitize=False)
+        if m is None:
+            return None
+        try:
+            Chem.SanitizeMol(m, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+        except Exception:  # noqa: BLE001 - lenient perception
+            m.UpdatePropertyCache(strict=False)
+        Chem.AssignStereochemistry(m, cleanIt=True, force=True)
+        rdCIPLabeler.AssignCIPLabels(m)
+        target = next((a for a in m.GetAtoms() if a.GetAtomMapNum() == probe), None)
+        if target is not None and target.HasProp("_CIPCode"):
+            return target.GetProp("_CIPCode")
+        return None
+    except Exception:  # noqa: BLE001 - guarded
+        return None
+
+
 class OINStereoWarning(UserWarning):
     """All Phase-4 Zone-A P stereo diagnostics.
 
@@ -534,21 +566,18 @@ class ChiralityRecoveryUtility:
             for _pass in range(2):
                 any_changed = False
                 for p_idx in tagged_p_indices:
-                    Chem.AssignStereochemistry(rw, cleanIt=True, force=True)
-                    try:
-                        rdCIPLabeler.AssignCIPLabels(rw)
-                    except Exception:  # noqa: BLE001 - guarded recompute
-                        continue
-
                     atom = rw.GetAtomWithIdx(p_idx)
                     ctag = atom.GetChiralTag()
                     if ctag == Chem.ChiralType.CHI_UNSPECIFIED:
                         continue  # nothing to flip
 
                     stored_lp = atom.GetPropsAsDict().get(_LP_CIP_PROP)
-                    current_cip = atom.GetPropsAsDict().get("_CIPCode")
+                    # Read on the same aromatic-preserving re-parse the LP stamp uses,
+                    # so a P donor bonded to an aromatic ring is compared in one
+                    # convention (GUXPIA).
+                    current_cip = _reparse_aromatic_cip_label(rw, p_idx)
 
-                    if stored_lp and current_cip != stored_lp:
+                    if stored_lp and current_cip and current_cip != stored_lp:
                         if ctag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
                             atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
                         else:
@@ -577,17 +606,15 @@ class ChiralityRecoveryUtility:
             for _pass in range(2):
                 any_changed = False
                 for idx in tagged_sp3_indices:
-                    Chem.AssignStereochemistry(rw, cleanIt=True, force=True)
-                    try:
-                        rdCIPLabeler.AssignCIPLabels(rw)
-                    except Exception:  # noqa: BLE001 - guarded recompute
-                        continue
                     atom = rw.GetAtomWithIdx(idx)
                     ctag = atom.GetChiralTag()
                     if ctag == Chem.ChiralType.CHI_UNSPECIFIED:
                         continue
                     stored = atom.GetPropsAsDict().get(_SP3_CIP_PROP)
-                    current = atom.GetPropsAsDict().get("_CIPCode")
+                    # Read the label on the SAME aromatic-preserving re-parse the
+                    # stamp used, so a haptic-ring-adjacent centre is compared in one
+                    # convention (BEPXEA broke when the two sides diverged).
+                    current = _reparse_aromatic_cip_label(rw, idx)
                     if stored and current and current != stored:
                         atom.SetChiralTag(
                             Chem.ChiralType.CHI_TETRAHEDRAL_CCW
