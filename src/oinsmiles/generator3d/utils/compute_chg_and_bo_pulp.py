@@ -1,9 +1,106 @@
+import copy
 import sys
 
 import numpy as np
 import pulp as pl
 from rdkit import Chem
 from scipy import spatial
+
+# ---------------------------------------------------------------------------
+# Topology-keyed memo for the PuLP/CBC charge/bond-order solver.
+#
+# ``compute_chg_and_bo`` reads *only* the molecule's topology (atomic numbers +
+# adjacency; see ``get_lists``, which derives every downstream list from those
+# two) plus the scalar args, yet MetalloGen re-solves the identical topology on
+# every one of up to 250 conformer attempts (from ``clean_geometry`` and
+# ``embed``). Each solve spawns a CBC subprocess, so this dominates wall-clock
+# for small/medium complexes (cisplatin/ferrocene/BINAP are PuLP-bound). Because
+# the solve is a pure function of the key below, a memo returns exactly what the
+# solver would compute -- output is byte-identical; only the wall-clock changes.
+#
+# The cache is scoped per generation (``generate_3d_structures`` calls
+# ``clear_pulp_cache`` on entry) and hard-capped as a memory backstop for any
+# path that reaches the solver outside that entry. Entries are only ever handed
+# out as deep copies, so no caller can corrupt a cached value in place.
+# ---------------------------------------------------------------------------
+_PULP_CACHE = {}
+_PULP_CACHE_STATS = {"hits": 0, "misses": 0}
+_PULP_CACHE_ENABLED = True
+_PULP_CACHE_MAXSIZE = 4096
+_PULP_CACHE_MISS = object()  # sentinel so a cached ``(None, None)`` is a real hit
+
+
+def clear_pulp_cache():
+    """Empty the PuLP solver memo and reset its hit/miss counters.
+
+    Called at the top of ``generate_3d_structures`` so the cache never carries
+    topologies across molecules in a long in-process sweep.
+    """
+    _PULP_CACHE.clear()
+    _PULP_CACHE_STATS["hits"] = 0
+    _PULP_CACHE_STATS["misses"] = 0
+
+
+def set_pulp_cache_enabled(enabled):
+    """Enable/disable the memo (default enabled). Disabling also clears it.
+
+    Exists so a test can prove byte-identity by A/B-ing cache-on vs cache-off in
+    a single process.
+    """
+    global _PULP_CACHE_ENABLED
+    _PULP_CACHE_ENABLED = bool(enabled)
+    if not _PULP_CACHE_ENABLED:
+        clear_pulp_cache()
+
+
+def pulp_cache_stats():
+    """Return ``{'hits', 'misses', 'size'}`` for the PuLP solver memo."""
+    return {
+        "hits": _PULP_CACHE_STATS["hits"],
+        "misses": _PULP_CACHE_STATS["misses"],
+        "size": len(_PULP_CACHE),
+    }
+
+
+def _hashify(value):
+    """Coerce a kwarg value into a stable, hashable form for the cache key."""
+    if isinstance(value, np.ndarray):
+        arr = np.ascontiguousarray(value)
+        return ("__ndarray__", arr.dtype.str, arr.shape, arr.tobytes())
+    if isinstance(value, (list, tuple)):
+        return tuple(_hashify(v) for v in value)
+    if isinstance(value, dict):
+        return tuple(sorted((k, _hashify(v)) for k, v in value.items()))
+    if isinstance(value, set):
+        return tuple(sorted(_hashify(v) for v in value))
+    return value
+
+
+def _pulp_cache_key(molecule, chg_mol, resolve, cleanUp, kwargs):
+    """Build a complete, hashable key from the solver's actual inputs.
+
+    Returns ``None`` (meaning "do not cache, compute directly") when the
+    molecule has no adjacency matrix -- the same input on which ``get_lists``
+    would fail, so we never mask a pre-existing error.
+    """
+    adj = molecule.get_matrix("adj")
+    if adj is None:
+        return None
+    adj = np.ascontiguousarray(adj)
+    z = np.ascontiguousarray(np.asarray(molecule.get_z_list()))
+    return (
+        z.dtype.str,
+        z.shape,
+        z.tobytes(),
+        adj.dtype.str,
+        adj.shape,
+        adj.tobytes(),
+        None if chg_mol is None else int(chg_mol),
+        bool(resolve),
+        bool(cleanUp),
+        _hashify(kwargs),
+    )
+
 
 periodic_table = [
     "H",
@@ -839,8 +936,8 @@ def compute_chg_and_bo_debug(molecule, chg_mol, resolve=True, cleanUp=True, **kw
     return chg_list0, bo_matrix0, chg_list1, bo_matrix1
 
 
-def compute_chg_and_bo(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
-    """Compute the charge and bond order for a given molecule.
+def _compute_chg_and_bo_impl(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
+    """Uncached core of :func:`compute_chg_and_bo` -- the actual PuLP/CBC solve.
 
     Args:
         molecule (Molecule): The molecule object containing atomic and bonding information.
@@ -940,6 +1037,51 @@ def compute_chg_and_bo(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
         bo_matrix[q][p] = bo_dict[(p, q)]
 
     return chg_list, bo_matrix
+
+
+def compute_chg_and_bo(molecule, chg_mol, resolve=True, cleanUp=True, **kwargs):
+    """Compute the charge and bond order for a given molecule (topology-memoized).
+
+    Thin cache in front of :func:`_compute_chg_and_bo_impl`. The solve is a pure
+    function of the molecule's topology + the scalar args (see ``get_lists``), so
+    a cache hit returns exactly what a fresh solve would -- the output is
+    byte-identical, only the CBC subprocess is skipped. Cached values are handed
+    out as deep copies so the many in-place mutators downstream
+    (``clean_geometry``/``embed``) can never corrupt an entry.
+
+    Args:
+        molecule (Molecule): The molecule object containing atomic and bonding information.
+        chg_mol (int): The total charge of the molecule.
+        resolve (bool, optional): Whether to go through charge resolution step if needed. Defaults
+        to True.
+        cleanUp (bool, optional): Whether to apply heuristics that cleans up the resulting molecular
+        graph. Defaults to True.
+        **kwargs: Additional keyword arguments to be passed to the maximize_bo and resolve_chg
+        functions.
+
+    Returns:
+        tuple: A tuple containing the list of charges for each atom and the bond order matrix.
+    """
+    if not _PULP_CACHE_ENABLED:
+        return _compute_chg_and_bo_impl(molecule, chg_mol, resolve, cleanUp, **kwargs)
+
+    key = _pulp_cache_key(molecule, chg_mol, resolve, cleanUp, kwargs)
+    if key is None:  # no adjacency -> not cacheable; compute directly
+        return _compute_chg_and_bo_impl(molecule, chg_mol, resolve, cleanUp, **kwargs)
+
+    cached = _PULP_CACHE.get(key, _PULP_CACHE_MISS)
+    if cached is not _PULP_CACHE_MISS:
+        _PULP_CACHE_STATS["hits"] += 1
+        return copy.deepcopy(cached)
+
+    _PULP_CACHE_STATS["misses"] += 1
+    result = _compute_chg_and_bo_impl(molecule, chg_mol, resolve, cleanUp, **kwargs)
+    if len(_PULP_CACHE) >= _PULP_CACHE_MAXSIZE:
+        _PULP_CACHE.clear()  # bounded backstop for non-generation call paths
+    # ``result`` is freshly built and unaliased, so store it directly and hand
+    # the caller its own deep copy.
+    _PULP_CACHE[key] = result
+    return copy.deepcopy(result)
 
 
 if __name__ == "__main__":

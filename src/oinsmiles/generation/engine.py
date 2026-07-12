@@ -25,6 +25,7 @@ class OIN3DGenerator:
         optimizer: str | None = "xtb",
         ff_preset: str | None = None,
         ff_params: dict | None = None,
+        seed: int = 42,
     ) -> None:
         """Initialize the generator with a parser and the MetalloGen backend.
 
@@ -38,6 +39,9 @@ class OIN3DGenerator:
 
         ``engine`` is retained for backward compatibility and must be
         ``"metallogen"`` (the only supported backend).
+
+        ``seed`` is the base ETKDG seed for the metallogen engine; a fixed value
+        (default 42) makes generation reproducible.
         """
         if engine != "metallogen":
             raise ValueError(f"Unknown engine {engine!r}; expected 'metallogen'")
@@ -54,6 +58,7 @@ class OIN3DGenerator:
             optimizer=optimizer,
             ff_preset=ff_preset,
             ff_params=ff_params,
+            seed=seed,
         )
 
     def generate(self, oin_string: str) -> GeneratedStructure:

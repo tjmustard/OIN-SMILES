@@ -1,4 +1,5 @@
 from . import clean_geometry, embed, om
+from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
 
 
 def calculate_heavy_atom_rmsd(mol1, mol2):
@@ -155,7 +156,6 @@ def generate_3d_structures(
     m_smiles,
     num_conformers=1,
     optimizer=None,
-    pool_size=5,
     ff_params=None,
     uff_pool_size=50,
     rmsd_threshold=0.5,
@@ -189,13 +189,22 @@ def generate_3d_structures(
     """
     import time
 
+    # The PuLP/CBC bond-order solve is re-run on the identical topology across
+    # every conformer attempt; a topology-keyed memo collapses those redundant
+    # CBC subprocesses. Scope it to this one generation so a long in-process
+    # sweep never accumulates stale topologies (the win is entirely within a
+    # single molecule's attempt loop).
+    clear_pulp_cache()
+
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
     except Exception as e:
         print(f"Failed to parse m-SMILES: {e}")
         return []
 
-    clean_ff_params = {k: v for k, v in (ff_params or {}).items() if k != "max_attempts"}
+    clean_ff_params = {
+        k: v for k, v in (ff_params or {}).items() if k not in ("max_attempts", "embed_num_threads")
+    }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
     options = [0, 1, 2]  # Added one more option to increase pool variety
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
@@ -216,6 +225,15 @@ def generate_3d_structures(
 
     default_max = max(target_pool * 5, 250)
     max_attempts = ff_params.get("max_attempts", default_max) if ff_params else default_max
+
+    # Opt-in C++-parallel embed. num_threads == 1 (the default) keeps the serial
+    # attempt loop below, which is byte-identical to pristine. num_threads != 1
+    # (e.g. 0 = all cores) switches to the batched EmbedMultipleConfs path: RDKit
+    # embeds a whole wave of conformers per (scale, option) in parallel C++,
+    # releasing the GIL. That path is faster but NOT byte-identical (it samples
+    # conformers differently), so it is gated behind this explicit opt-in and
+    # validated by the accuracy gate rather than by byte-identity.
+    num_threads = int(ff_params.get("embed_num_threads", 1)) if ff_params else 1
 
     # Bound the work the stereo filters can add, keyed on REJECTIONS rather than on
     # attempts. A rejected conformer does not fill the pool, so without a cap a
@@ -239,58 +257,123 @@ def generate_3d_structures(
     # max_attempts budget (ZIHGEE ~1696 s) before giving up.
     deadline = (time.monotonic() + embed_time_budget) if embed_time_budget else None
 
-    for i in range(max_attempts):
-        if len(successful_mols) >= target_pool:
-            break
-        if deadline is not None and time.monotonic() > deadline:
-            print(
-                f"Embed wall-clock budget ({embed_time_budget}s) reached after "
-                f"{i} attempt(s) with {len(successful_mols)} conformer(s) "
-                f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
-                f"than exhausting {max_attempts} attempts."
-            )
-            break
-        if len(stereo_rejects) >= reject_budget:
-            print(
-                f"Stereo reject budget ({reject_budget}) reached with "
-                f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
-                f"stopping rather than exhausting {max_attempts} attempts."
-            )
-            break
-        scale, option = combinations[i % len(combinations)]
+    def _try_accept(positions, scale):
+        """Clean one embedded conformer, stereo-filter it, and file the result.
 
-        # A single scale/option combo can raise inside the embed (e.g. an
-        # RDKit valence exception on a dative donor); skip it rather than
-        # letting one bad combo abort the whole pool.
-        try:
-            # Distinct-but-reproducible seed per attempt: the pool keeps its
-            # variety, but the same m-SMILES always yields the same conformers.
-            positions = embed.get_embedding(
-                metal_complex, scale, option, align=True, seed=seed + i * 1009
+        Files into ``successful_mols`` or ``stereo_rejects``. Shared verbatim by the
+        serial and batched fill loops so both apply identical acceptance.
+        """
+        if positions is None:
+            return
+        tmp_complex = metal_complex.copy()
+        tmp_complex.set_position(positions)
+
+        # cleaner.clean_geometry will print logs, could be silenced later
+        success = cleaner.clean_geometry(tmp_complex, scale)
+
+        if success:
+            position = tmp_complex.get_position()
+            wrong_ez = stereo_targets and not _stereo_targets_satisfied(position, stereo_targets)
+            wrong_chirality = chiral_targets and not _chiral_targets_satisfied(
+                position, chiral_targets
             )
-        except Exception as e:
-            print(f"Embedding failed (scale={scale}, option={option}): {e}")
-            positions = None
-        if positions is not None:
-            tmp_complex = metal_complex.copy()
-            tmp_complex.set_position(positions)
+            if wrong_ez or wrong_chirality:
+                # Right topology, wrong stereochemistry -- keep as fallback only.
+                stereo_rejects.append(tmp_complex.get_molecule())
+                return
+            successful_mols.append(tmp_complex.get_molecule())
 
-            # cleaner.clean_geometry will print logs, could be silenced later
-            success = cleaner.clean_geometry(tmp_complex, scale)
-
-            if success:
-                position = tmp_complex.get_position()
-                wrong_ez = stereo_targets and not _stereo_targets_satisfied(
-                    position, stereo_targets
+    if num_threads == 1:
+        # Serial attempt loop -- byte-identical to pristine.
+        for i in range(max_attempts):
+            if len(successful_mols) >= target_pool:
+                break
+            if deadline is not None and time.monotonic() > deadline:
+                print(
+                    f"Embed wall-clock budget ({embed_time_budget}s) reached after "
+                    f"{i} attempt(s) with {len(successful_mols)} conformer(s) "
+                    f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
+                    f"than exhausting {max_attempts} attempts."
                 )
-                wrong_chirality = chiral_targets and not _chiral_targets_satisfied(
-                    position, chiral_targets
+                break
+            if len(stereo_rejects) >= reject_budget:
+                print(
+                    f"Stereo reject budget ({reject_budget}) reached with "
+                    f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
+                    f"stopping rather than exhausting {max_attempts} attempts."
                 )
-                if wrong_ez or wrong_chirality:
-                    # Right topology, wrong stereochemistry -- keep as fallback only.
-                    stereo_rejects.append(tmp_complex.get_molecule())
-                    continue
-                successful_mols.append(tmp_complex.get_molecule())
+                break
+            scale, option = combinations[i % len(combinations)]
+
+            # A single scale/option combo can raise inside the embed (e.g. an
+            # RDKit valence exception on a dative donor); skip it rather than
+            # letting one bad combo abort the whole pool.
+            try:
+                # Distinct-but-reproducible seed per attempt: the pool keeps its
+                # variety, but the same m-SMILES always yields the same conformers.
+                positions = embed.get_embedding(
+                    metal_complex, scale, option, align=True, seed=seed + i * 1009
+                )
+            except Exception as e:
+                print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                positions = None
+            _try_accept(positions, scale)
+    else:
+        # Batched, C++-parallel embed path (opt-in via embed_num_threads != 1).
+        # Each (scale, option) combo embeds a wave of conformers in one
+        # EmbedMultipleConfs call, parallelized across num_threads cores. Batch
+        # size is chosen so a few feasible combos fill the pool (which also skips
+        # the infeasible high-scale combos most of the time). Haptic complexes fall
+        # back to the serial embed per combo (their cmap needs the scales_for_haptic
+        # sweep).
+        batch_k = max(4, -(-target_pool // 3))  # ceil(target_pool / 3), >= 4
+        for i in range(max_attempts):
+            if len(successful_mols) >= target_pool:
+                break
+            if deadline is not None and time.monotonic() > deadline:
+                print(
+                    f"Embed wall-clock budget ({embed_time_budget}s) reached after "
+                    f"{i} batch(es) with {len(successful_mols)} conformer(s) "
+                    f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
+                    f"than exhausting {max_attempts} batches."
+                )
+                break
+            if len(stereo_rejects) >= reject_budget:
+                print(
+                    f"Stereo reject budget ({reject_budget}) reached with "
+                    f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
+                    f"stopping rather than exhausting {max_attempts} batches."
+                )
+                break
+            scale, option = combinations[i % len(combinations)]
+            try:
+                batch = embed.get_embeddings_batch(
+                    metal_complex,
+                    scale,
+                    option,
+                    num_confs=batch_k,
+                    num_threads=num_threads,
+                    align=True,
+                    seed=seed + i * 1009,
+                )
+            except Exception as e:
+                print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                batch = None
+            if batch is None:
+                # Haptic complex -- not batchable; fall back to the serial embed.
+                try:
+                    positions = embed.get_embedding(
+                        metal_complex, scale, option, align=True, seed=seed + i * 1009
+                    )
+                except Exception as e:
+                    print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                    positions = None
+                _try_accept(positions, scale)
+                continue
+            for positions in batch:
+                if len(successful_mols) >= target_pool:
+                    break
+                _try_accept(positions, scale)
 
     if not successful_mols and stereo_rejects:
         # No embed reproduced the requested stereochemistry within the attempt

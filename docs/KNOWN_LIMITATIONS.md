@@ -212,3 +212,36 @@ gap for that ligand set.
   turning a pathological non-terminating case into a fast, honest failure. The bound
   is `budget + one in-flight attempt`; a single pathological *attempt* is still
   covered by the harness `--mol-timeout` SIGKILL.
+
+---
+
+## Curated metal–ligand bond lengths cover a validated metal subset
+
+The default generator places each σ donor at its FF-clean scan target
+(`generator3d/clean_geometry.py::_binding_distance`). Historically this was a generic
+Cordero covalent-radius sum, which systematically *over*estimates dative metal–ligand
+bonds. A hand-curated per-`(metal, ligand)` table
+(`generator3d/bond_lengths.py::BOND_LENGTHS`) now supplies realistic σ-donor
+distances — but it is **applied only to `ENABLED_METALS`**, a dataset-validated subset
+(`Ni, Pd, Pt, Zn, Cd, Hg, Ag`), not to all 18 metals the table carries.
+
+- **Why a subset.** Validated against real input geometries (coordination-sphere mean
+  RMSD, ~6 molecules/metal × 3 seeds), the table strictly improves the late/post-TM
+  d⁸/d¹⁰ metals (median RMSD −0.015 to −0.084 Å) but *regresses* several
+  early/mid-transition-metal buckets. The regressions are chemical, not stochastic:
+  some entries encode a shorter bond mode than the dative bond present — `Ti–O 1.80`
+  and `V–O 1.60` are metal-**oxo** (M=O) distances, and the early-TM `M–C` values are
+  shorter than a real σ `M–C`. The generator cannot tell an oxo from an alkoxide, or a
+  carbene from an alkyl, at this seam, so those metals keep the covalent sum. A few
+  metals with a strong-but-inconsistent median (`Rh`, `Ir`) or a flat one (`Cu`, `Re`,
+  `Fe`) are also left off. For every non-enabled metal the output is **byte-identical**
+  to the pre-table generator — the change is strictly additive. Owned by
+  `generator3d/bond_lengths.py`; expand `ENABLED_METALS` only with the same per-metal
+  RMSD validation, never by hand.
+- **The table is duplicated.** `generator3d/bond_lengths.py::BOND_LENGTHS` is a
+  verbatim copy of `generation/molassembler_adapter.py::_BOND_LENGTHS` (the legacy
+  backend that owns the original). It is copied, not imported, because importing that
+  module pulls in Molassembler and the whole legacy generation backend. The copy is
+  drift-guarded — `tests/unit/test_bond_lengths.py` asserts the two stay byte-equal, so
+  an edit to either that is not mirrored fails CI (TD-005: a hand-copied constant is how
+  Sc/Y once went missing).
