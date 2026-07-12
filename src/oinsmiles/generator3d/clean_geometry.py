@@ -4,7 +4,33 @@ from rdkit.Chem import AllChem
 from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 
+from .bond_lengths import bond_length, sigma_table_applies
 from .embed import _apply_atom_chirality, _apply_double_bond_stereo
+
+
+def _binding_distance(metal_sym, ligand_sym, metal_r, atom_r, scale, is_sigma):
+    """Per-atom metal–donor scan target (Å) for ``ff_clean``.
+
+    σ donors (single-atom binding groups) for which
+    :func:`~oinsmiles.generator3d.bond_lengths.sigma_table_applies` is true consult
+    the curated :func:`~oinsmiles.generator3d.bond_lengths.bond_length` table,
+    falling back to the covalent-radius sum when the pair is unlisted (a flat
+    default would be worse than the covalent sum). Haptic groups (η-rings, >1 atom
+    per slot), non-enabled metals, and short-pin-exempt pairs (e.g. Pd–P, whose
+    short curated target over-strains ``ff_clean`` — see
+    ``bond_lengths.SHORT_PIN_EXEMPT_PAIRS``) stay entirely on the covalent path — a
+    table entry such as ``Fe: {C: 1.80}`` is a σ carbene/carbonyl distance, not an
+    η⁵-Cp centroid distance, and Fe is a metal where the table regresses fidelity
+    (see ``ENABLED_METALS``). ``scale`` (the swept pool-diversity factor) always
+    multiplies, so a per-pair correction cannot collapse the conformer pool the way
+    a global factor would.
+    """
+    if is_sigma and sigma_table_applies(metal_sym, ligand_sym):
+        tabulated = bond_length(metal_sym, ligand_sym)
+        base = tabulated if tabulated is not None else metal_r + atom_r
+    else:
+        base = metal_r + atom_r
+    return base * scale
 
 
 def print_rd_geometry(rd_mol, positions):
@@ -37,14 +63,9 @@ class TMCOptimizer:
         d_converge=0.05,
         num_relaxation=5,
         default_ff="uff",
-        embed_seed=42,
     ):
         """Initialize the Tmc optimizer."""
         self.step_size = step_size
-        # Seeds the FF-setup embed. Its coordinates are overwritten from the
-        # metal embed, but an unseeded call still made this stage irreproducible.
-        self.embed_seed = embed_seed
-
         self.num_relaxation = num_relaxation
         self.maximal_displacement = 0.5
         self.ratio_criteria = 0.6
@@ -199,11 +220,21 @@ class TMCOptimizer:
             for info in binding_infos:
                 sum_d = 0
                 binding_groups = []
+                # A single-atom binding group is a σ donor; >1 atom is an η/haptic
+                # group. Only σ donors take the curated per-pair bond-length table.
+                is_sigma = len(info[0]) == 1
                 for idx in info[0]:
                     binding_groups.append(cnt + idx)
                     final_positions[atom_indices[idx]].tolist()
                     atom_r = atom_list[idx].get_radius()
-                    sum_d += (metal_r + atom_r) * scale
+                    sum_d += _binding_distance(
+                        center_atom.get_element(),
+                        atom_list[idx].get_element(),
+                        metal_r,
+                        atom_r,
+                        scale,
+                        is_sigma,
+                    )
                 ref_d = sum_d / len(info[0])
                 if len(info[0]) < 10:
                     ref_d *= self.scale_factor[
@@ -236,14 +267,17 @@ class TMCOptimizer:
         # sp3 handedness.
         _apply_double_bond_stereo(combined_rd_mol, combined_stereo_bonds)
         _apply_atom_chirality(combined_rd_mol, combined_chiral_centers)
-        AllChem.EmbedMolecule(
-            combined_rd_mol,
-            useRandomCoords=True,
-            maxAttempts=100,
-            useBasicKnowledge=False,
-            ignoreSmoothingFailures=True,
-            randomSeed=self.embed_seed,
-        )
+        # The scan below overwrites every atom position from ``tmp_positions``
+        # before the first Minimize (see the GetConformer() loop), so this
+        # conformer's coordinates are never used — it exists only to attach the
+        # conformer object GetConformer() requires at :GetConformer sites. An
+        # explicit empty conformer is ~400× cheaper than ETKDG and, unlike
+        # EmbedMolecule (which returns -1 → no conformer → GetConformer() raises →
+        # the whole scale/option aborts), never fails on a ligand set that
+        # sanitizes but will not embed. Stereo asserted just above is untouched
+        # (AddConformer adds only coordinates).
+        combined_rd_mol.RemoveAllConformers()
+        combined_rd_mol.AddConformer(Chem.Conformer(combined_rd_mol.GetNumAtoms()), assignId=True)
 
         # Make force fields ...
         tmp_positions = np.array(tmp_positions)

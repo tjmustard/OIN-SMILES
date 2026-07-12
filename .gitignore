@@ -92,5 +92,6 @@ spec/worklog/
 
 # Scientific manuscript workspace (not for VCS)
 /manuscript
-/spec/handoffs
+/spec/handoffs/*
 /docs/handoffs
+.gitignore.swp

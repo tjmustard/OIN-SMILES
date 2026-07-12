@@ -487,6 +487,91 @@ def _apply_atom_chirality(rd_mol, chiral_centers):
         atom.SetChiralTag(flip[tag] if _permutation_is_odd(nbrs, current) else tag)
 
 
+def _finalize_positions(
+    positions,
+    metal_complex,
+    new_complex,
+    radius_list,
+    R,
+    metal_index,
+    align,
+    atom_d_criteria,
+    ratio_criteria,
+    adj_ratio_criteria,
+):
+    """Bond-length-correct one embedded conformer and run the three validity criteria.
+
+    Returns ``(good, candidate)`` with exactly one non-None:
+      - ``good`` = ``positions[:num_atom]`` when all three criteria pass;
+      - ``candidate`` = ``(positions, score)`` when a criterion fails, scored exactly
+        as the original inline code did, so the caller can keep it as a best-effort
+        fallback.
+    Extracted verbatim from ``get_embedding`` so the serial and batched
+    (``get_embeddings_batch``) paths share identical geometry acceptance. The serial
+    path's byte-identity to pristine is pinned by the golden A/B.
+    """
+    # Update bond distances that are too long ... (Because of atom replacement)
+    q_updates = dict()
+    bond_scale = 1.0
+    bond_list = np.stack(
+        np.where(new_complex.get_adj_matrix() > 0), axis=1
+    )  # Not for dummy atom ...
+    for bond in bond_list:
+        s, e = bond
+        if s > e:
+            continue
+        if s == 0 or e == 0:  # Not for metal ...
+            continue
+        d = ic.get_distance(positions[: metal_complex.num_atom], s, e)
+        # Check ratio ...
+        r_sum = radius_list[s] + radius_list[e]
+        ratio = d / r_sum
+        delta_ratio = ratio - bond_scale
+        if delta_ratio > 0.2:  # If too long ...
+            q_updates[(s, e)] = -delta_ratio * r_sum
+        else:
+            q_updates[(s, e)] = 0.0
+    ic.update_xyz(positions[: metal_complex.num_atom], q_updates)  # Others are the same ...
+
+    if align is True:
+        positions = align_double_single_ligand(new_complex, positions)
+
+    # Check the validity of initial embedding ...
+    # Check the distance matrix between different atoms ... (first criterion)
+    distance_matrix = cdist(
+        positions[: metal_complex.num_atom], positions[: metal_complex.num_atom]
+    )
+    np.fill_diagonal(distance_matrix, 1e6)
+    if np.any(distance_matrix < atom_d_criteria):
+        print("Atoms are too close ...")
+        return None, (positions, -100000)
+
+    # Check the collapse between ligands with ratio method (second criterion)
+    ratio_matrix = distance_matrix / R
+    min_ratio = np.min(ratio_matrix)
+    if min_ratio < ratio_criteria:
+        print("Atoms are too close ...")
+        return None, (positions, -50000)
+
+    # Finally, check the ratios that are ambiguous, between the ligands ...
+    adj_matrix = np.where(distance_matrix / R < adj_ratio_criteria, 1, 0)
+    original_adj_matrix = metal_complex.get_adj_matrix()
+    # Remove bonds between the metal ...
+    adj_matrix[metal_index, :] = 0.0
+    adj_matrix[:, metal_index] = 0.0
+    original_adj_matrix[metal_index, :] = 0.0
+    original_adj_matrix[:, metal_index] = 0.0
+
+    diff = np.sum(np.abs(adj_matrix - original_adj_matrix))
+
+    if diff > 0:
+        print("Undesired bond is detected ...")
+        return None, (positions, -diff)
+
+    print("Embedding success!\n")
+    return positions[: metal_complex.num_atom], None
+
+
 def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None):
     """Return the embedding.
 
@@ -519,6 +604,13 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
     # Make cmap/params ...
     direction_vector = new_complex.geometry_type.direction_vector
     params = rdDistGeom.EmbedParameters()
+    # useRandomCoords=True stays the PRIMARY start: it is byte-identical to pristine on
+    # every embed that already succeeds, and -- crucially -- flexible ligands (e.g. a
+    # Pt-SPL amino-alcohol arm) need the random exploration to fold the donor onto the
+    # metal; seeding those from the metric matrix instead lands the donor off-metal and
+    # silently drops its binding. The metric-matrix start is applied ONLY as a retry on
+    # a -1 return (see the `useRandomCoords=False` block after the primary embed below),
+    # so it rescues the OCT loose-scale failures without disturbing anything that works.
     params.useRandomCoords = True
     params.maxIterations = 100
     params.useBasicKnowledge = False
@@ -555,6 +647,7 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
         # Try many scale values for haptic (haptic embedding seems to work differently)
         for haptic_scale in scales_for_haptic:
             failed = False
+            embed_raised = False  # True only if the primary EmbedMolecule *raised*
             # Make cmap for embedding
             for metal_binding_info in metal_binding_infos:
                 binding_index, binding_site, is_multidentate, is_haptic = (
@@ -571,17 +664,54 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
             cmap[metal_index] = Point3D(0.0, 0.0, 0.0)
             params.SetCoordMap(cmap)
 
+            # EmbedMolecule returns -1 on failure; it does NOT raise. Capture the
+            # return code and treat -1 as failed directly, instead of waiting for
+            # GetConformer() to throw. This also lets us skip the rebuild retry
+            # below on a plain -1: that retry re-runs the identical seeded embed on
+            # the identical PuLP mol (same params.randomSeed, unchanged ace_mol), so
+            # it reproduces the same -1 deterministically -- measured 8/8 dead on
+            # fac-Ir(ppy)3, and via the `continue` it also suppressed the
+            # `if not haptic_exist: break` below, forcing 3 more redundant primary
+            # embeds per failing non-haptic combo. The rebuild is only meaningful
+            # when the embed RAISED, because the except-branch then swaps the metal
+            # to a real element and re-solves, giving the retry a genuinely
+            # different molecule.
             try:
-                AllChem.EmbedMolecule(rd_mol, params)
+                rc = AllChem.EmbedMolecule(rd_mol, params)
             except Exception:
+                embed_raised = True
+                rc = -1
                 try:
                     geometry_name = new_complex.geometry_type.geometry_name
                     temp_metal_num = get_transition_metal_center(geometry_name)
                     alternative_ace_mol.atom_list[metal_index].set_atomic_number(temp_metal_num)
-                    AllChem.EmbedMolecule(rd_mol, params)
+                    rc = AllChem.EmbedMolecule(rd_mol, params)
                 except Exception:
                     print("Embedding failed ...")
                     failed = True
+            if rc == -1 and not embed_raised:
+                # P9: a plain -1 (no exception) means the random-coords start left the
+                # distance-geometry first minimization infeasible. On the OCT
+                # tris-chelates the loose-scale (1.1/1.2) cmap over-stretches the
+                # fused-aromatic chelate bite, so every one of the 100 iterations fails
+                # FIRST_MINIMIZATION (params.GetFailureCounts()) and the embed returns
+                # -1 having built nothing. Retry ONCE from the metric-matrix eigen-
+                # decomposition (useRandomCoords=False, RDKit's default start), which
+                # begins near-feasible and flips these to a valid conformer. This is a
+                # MATERIALLY different embed (different initial-coord method) -- not the
+                # dead same-params re-run P3 removed, which reproduced the identical -1 --
+                # and it stays deterministic (same params.randomSeed). It fires only on a
+                # -1, so every embed that already succeeds keeps its exact pristine
+                # geometry, including flexible donors whose arm the random start folds
+                # onto the metal (a metric-matrix start would drop that binding).
+                params.useRandomCoords = False
+                try:
+                    rc = AllChem.EmbedMolecule(rd_mol, params)
+                except Exception:
+                    rc = -1
+                params.useRandomCoords = True  # restore for the next combo's primary
+            if rc == -1:
+                failed = True
             try:
                 conformer = rd_mol.GetConformer()
             except Exception:
@@ -595,8 +725,8 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
                     print("Position not obtained ...")
                     failed = True
 
-            if failed or positions is None:
-                # Try different molecule ...
+            if embed_raised and (failed or positions is None):
+                # Try different molecule ...  (raised-embed path only -- see above)
                 alternative_ace_mol = alternative_ace_mol.get_valid_molecule(
                     False, method="pulp", MetalCenters=[metal_index]
                 )
@@ -608,9 +738,11 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
                 print("Trying ", Chem.MolToSmiles(rd_mol))
 
                 try:
-                    AllChem.EmbedMolecule(rd_mol, params)
+                    rc = AllChem.EmbedMolecule(rd_mol, params)
                 except Exception:
                     print("Embedding failed ...")
+                    continue
+                if rc == -1:
                     continue
                 try:
                     conformer = rd_mol.GetConformer()
@@ -634,70 +766,22 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
         if positions is None:
             continue
 
-        # Update bond distances that are too long ... (Because of atom replacement)
-        q_updates = dict()
-        bond_scale = 1.0
-        bond_list = np.stack(
-            np.where(new_complex.get_adj_matrix() > 0), axis=1
-        )  # Not for dummy atom ...
-        for bond in bond_list:
-            s, e = bond
-            if s > e:
-                continue
-            if s == 0 or e == 0:  # Not for metal ...
-                continue
-            d = ic.get_distance(positions[: metal_complex.num_atom], s, e)
-            # Check ratio ...
-            r_sum = radius_list[s] + radius_list[e]
-            ratio = d / r_sum
-            delta_ratio = ratio - bond_scale
-            if delta_ratio > 0.2:  # If too long ...
-                q_updates[(s, e)] = -delta_ratio * r_sum
-            else:
-                q_updates[(s, e)] = 0.0
-        ic.update_xyz(positions[: metal_complex.num_atom], q_updates)  # Others are the same ...
-
-        if align is True:
-            positions = align_double_single_ligand(new_complex, positions)
-
-        # Check the validity of initial embedding ...
-        # Check the distance matrix between different atoms ... (first criterion)
-        distance_matrix = cdist(
-            positions[: metal_complex.num_atom], positions[: metal_complex.num_atom]
+        good, candidate = _finalize_positions(
+            positions,
+            metal_complex,
+            new_complex,
+            radius_list,
+            R,
+            metal_index,
+            align,
+            atom_d_criteria,
+            ratio_criteria,
+            adj_ratio_criteria,
         )
-        np.fill_diagonal(distance_matrix, 1e6)
-        if np.any(distance_matrix < atom_d_criteria):
-            print("Atoms are too close ...")
-            candidate_list.append((positions, -100000))
-            continue
-
-        # Check the collapse between ligands with ratio method (second criterion)
-        ratio_matrix = distance_matrix / R
-        min_ratio = np.min(ratio_matrix)
-        if min_ratio < ratio_criteria:
-            print("Atoms are too close ...")
-            candidate_list.append((positions, -50000))
-            continue
-
-        # Finally, check the ratios that are ambiguous, between the ligands ...
-        adj_matrix = np.where(distance_matrix / R < adj_ratio_criteria, 1, 0)
-        original_adj_matrix = metal_complex.get_adj_matrix()
-        # Remove bonds between the metal ...
-        adj_matrix[metal_index, :] = 0.0
-        adj_matrix[:, metal_index] = 0.0
-        original_adj_matrix[metal_index, :] = 0.0
-        original_adj_matrix[:, metal_index] = 0.0
-
-        diff = np.sum(np.abs(adj_matrix - original_adj_matrix))
-
-        if diff > 0:
-            print("Undesired bond is detected ...")
-            candidate_list.append((positions, -diff))
-            continue
-
-        print("Embedding success!\n")
-
-        return positions[: metal_complex.num_atom]
+        if good is not None:
+            return good
+        candidate_list.append(candidate)
+        continue
 
     print("Embedding failed ...")
 
@@ -714,3 +798,128 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
                 final_positions = candidate[0]
         print(f"Returning the best position ... maximum value {maximum_value}")
         return final_positions[: metal_complex.num_atom]
+
+
+def get_embeddings_batch(
+    metal_complex,
+    scale=1.0,
+    option=0,
+    num_confs=4,
+    num_threads=0,
+    align=False,
+    seed=None,
+):
+    """Batched, C++-parallel counterpart to :func:`get_embedding` for NON-haptic complexes.
+
+    Runs ``num_confs`` distance-geometry embeds in a single ``EmbedMultipleConfs``
+    call, which releases the GIL and parallelizes across ``num_threads`` cores
+    (``0`` = all). Every conformer is bond-corrected and criteria-checked by the
+    same :func:`_finalize_positions` the serial path uses, so geometry acceptance
+    is identical; only the *sampling* differs. Returns a list of accepted positions
+    (each ``positions[:num_atom]``), or a single best-effort candidate if no
+    conformer passed all criteria (mirrors ``get_embedding``'s fallback so the batch
+    is non-regressive).
+
+    Returns ``None`` to signal "not batchable -- fall back to serial
+    ``get_embedding``": a haptic complex, whose cmap must sweep ``scales_for_haptic``
+    the way the serial path does. The caller keeps that path serial.
+
+    NOT byte-identical to the serial path: ``EmbedMultipleConfs`` derives its own
+    per-conformer seed sequence from ``seed``, so the conformers differ from
+    ``num_confs`` serial ``EmbedMolecule`` calls. This is why the parallel path is
+    gated behind ``num_threads != 1`` (default 1 = serial, byte-identical) and
+    validated by the accuracy gate rather than byte-identity.
+    """
+    atom_d_criteria = 0.5
+    ratio_criteria = 0.65
+    adj_ratio_criteria = 1.4
+
+    new_complex = metal_complex.copy()
+    total_atom_list = new_complex.get_atom_list()
+
+    alternative_ace_mol_list, dummy_indices, metal_binding_infos = get_alternative_molecule(
+        new_complex, option
+    )
+
+    # Haptic binding needs the serial scales_for_haptic sweep; signal fallback.
+    if any(metal_binding_info[3] for metal_binding_info in metal_binding_infos):
+        return None
+
+    metal_index = new_complex.metal_index
+    metal_r = new_complex.center_atom.get_radius()
+
+    radius_list = [atom.get_radius() for atom in total_atom_list]
+    n = len(radius_list)
+    R = np.repeat(np.array(radius_list), n).reshape((n, n))
+    R = R + R.T
+
+    direction_vector = new_complex.geometry_type.direction_vector
+    params = rdDistGeom.EmbedParameters()
+    params.useRandomCoords = True
+    params.maxIterations = 100
+    params.useBasicKnowledge = False
+    params.ignoreSmoothingFailures = True
+    params.numThreads = int(num_threads)
+    if seed is not None:
+        params.randomSeed = int(seed)
+    else:
+        params.randomSeed = random.randint(0, 1000000)
+
+    accepted = []
+    candidates = []
+    for alternative_ace_mol in alternative_ace_mol_list:
+        rd_mol = alternative_ace_mol.get_rd_mol()
+        stereo_bonds = getattr(alternative_ace_mol, "stereo_bonds", [])
+        chiral_centers = getattr(alternative_ace_mol, "chiral_centers", [])
+        _apply_double_bond_stereo(rd_mol, stereo_bonds)
+        _apply_atom_chirality(rd_mol, chiral_centers)
+
+        cmap = dict()
+        for metal_binding_info in metal_binding_infos:
+            binding_index, binding_site, is_multidentate, is_haptic = metal_binding_info
+            atom_r = alternative_ace_mol_list[0].atom_list[binding_index].get_radius()
+            distance = (metal_r + atom_r) * scale
+            x, y, z = direction_vector[binding_site - 1] * distance
+            cmap[binding_index] = Point3D(x, y, z)
+        cmap[metal_index] = Point3D(0.0, 0.0, 0.0)
+        params.SetCoordMap(cmap)
+
+        try:
+            conformer_ids = list(AllChem.EmbedMultipleConfs(rd_mol, int(num_confs), params))
+        except Exception:
+            conformer_ids = []
+
+        for conformer_id in conformer_ids:
+            try:
+                positions = rd_mol.GetConformer(conformer_id).GetPositions()
+            except Exception:
+                continue
+            good, candidate = _finalize_positions(
+                positions,
+                metal_complex,
+                new_complex,
+                radius_list,
+                R,
+                metal_index,
+                align,
+                atom_d_criteria,
+                ratio_criteria,
+                adj_ratio_criteria,
+            )
+            if good is not None:
+                accepted.append(good)
+            elif candidate is not None:
+                candidates.append(candidate)
+
+        # Prefer the first alternative ace mol that yields any valid conformer,
+        # matching get_embedding's "return on first success" bias.
+        if accepted:
+            return accepted
+
+    if candidates:
+        # No fully-valid conformer from any alt mol: hand back the single best-effort
+        # position (least-bad score), exactly as get_embedding's candidate fallback.
+        best = max(candidates, key=lambda c: c[1])
+        return [best[0][: metal_complex.num_atom]]
+
+    return accepted

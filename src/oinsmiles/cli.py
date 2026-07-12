@@ -36,7 +36,7 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     from oinsmiles.generation.engine import OIN3DGenerator  # noqa: PLC0415
 
     try:
-        result = OIN3DGenerator(optimizer=args.optimizer).generate(args.oin)
+        result = OIN3DGenerator(optimizer=args.optimizer, seed=args.seed).generate(args.oin)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -79,6 +79,16 @@ def main() -> None:
             "Geometry optimizer (default: xtb, standard g-xTB). Use "
             "'mace-omol-0-extra-large-1024' or 'mace-omol25' for higher accuracy, "
             "or 'ff' for the fast FF-only path."
+        ),
+    )
+    p_oin2xyz.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help=(
+            "Random seed for the metallogen ETKDG embed (default: 42, "
+            "deterministic). Change it to sample a different reproducible "
+            "conformer."
         ),
     )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)

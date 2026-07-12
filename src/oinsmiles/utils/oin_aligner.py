@@ -642,6 +642,14 @@ for geo, specs in TEMPLATE_SPECS.items():
     TEMPLATES[geo] = pos_vecs
 
 
+# Slack for the geometry-matcher's batched-numpy prefilter (see
+# OINDiscreteAligner._candidate_permutations). The batched Kabsch rssd differs
+# from scipy's per-permutation result by <1e-7 even on the worst-conditioned
+# (ideal, symmetric) spheres, so 1e-6 keeps the candidate set a strict superset
+# of the true scipy argmin while staying tight (~symmetry-order, not n!).
+_MATCH_CANDIDATE_MARGIN = 1e-6
+
+
 class OINDiscreteAligner:
     """Assign ligand binding atoms to discrete coordination-geometry slots."""
 
@@ -780,6 +788,27 @@ class OINDiscreteAligner:
         return virtual_atoms
 
     def _find_best_geometry_match(self, n, virtual_atoms):
+        """Tightest-fitting template for ``n`` donors: ``(name, vectors, mapping, R)`` or None.
+
+        Thin wrapper over ``_match_geometry_candidates`` -- returns only the best
+        result, exactly as before the single-pass refactor.
+        """
+        best_result, _ = self._match_geometry_candidates(n, virtual_atoms)
+        return best_result
+
+    def _match_geometry_candidates(self, n, virtual_atoms):
+        """Match ``virtual_atoms`` against every CN-``n`` candidate template in ONE pass.
+
+        Returns ``(best_result, rmsds_by_name)`` where ``best_result`` is
+        ``(name, vectors, mapping, R_mat)`` for the tightest-fitting template (or
+        ``None``) -- byte-identical to what the pre-refactor ``_find_best_geometry_match``
+        produced -- and ``rmsds_by_name`` maps each *evaluated* candidate template
+        name to the RMSD its ``_map_to_template`` returned. Candidates skipped
+        because the template has fewer slots than there are donors are absent from
+        the map, mirroring ``coordination_geometry_fit``'s ``inf`` guard. This lets a
+        caller read a target template's fit straight from the map without a second
+        ``_map_to_template`` pass (the redundancy ``classify_and_fit`` removes).
+        """
         candidates = []
         # Exhaustive Candidate List based on Coordination Number (N)
         if n == 2:
@@ -809,6 +838,7 @@ class OINDiscreteAligner:
 
         min_rmsd = float("inf")
         best_result = None
+        rmsds_by_name = {}
 
         logger.debug(f"Geometry Selection (N={n})")
 
@@ -823,6 +853,7 @@ class OINDiscreteAligner:
                 continue
 
             mapping, rmsd, R_mat = self._map_to_template(virtual_atoms, vectors)
+            rmsds_by_name[name] = rmsd
             logger.debug(f"  Candidate: {name}, RMSD: {rmsd:.4f}")
 
             if mapping is not None and rmsd < min_rmsd:
@@ -832,7 +863,7 @@ class OINDiscreteAligner:
         if best_result:
             logger.debug(f"  Selected: {best_result[0]} (RMSD {min_rmsd:.4f})")
 
-        return best_result
+        return best_result, rmsds_by_name
 
     def _map_to_template(self, virtual_atoms, template_vectors):
         n_atoms = len(virtual_atoms)
@@ -848,11 +879,21 @@ class OINDiscreteAligner:
         best_mapping = None
         best_R = Rotation.from_matrix(np.eye(3))
 
-        import itertools
+        # Exhaustively assign donors to slots, but score only the permutations that
+        # can plausibly win. The per-permutation scipy Kabsch (Rotation.align_vectors)
+        # dominates cost ~45x over the SVD math itself, so a vectorised batched-numpy
+        # Kabsch first ranks every permutation and nominates the ones whose approximate
+        # rssd is within _MATCH_CANDIDATE_MARGIN of the best (_candidate_permutations).
+        # scipy then scores ONLY those, in lexicographic order, keeping the first strict
+        # minimum -- exactly as the full sweep did. Because the margin dwarfs the
+        # numpy-vs-scipy rssd gap, the true scipy argmin (and every permutation tied
+        # with it) is provably among the candidates, so best_mapping / best_rmsd /
+        # best_R are byte-identical to scoring all n! permutations.
+        perms = list(itertools.permutations(range(n_slots), n_atoms))
+        candidates = self._candidate_permutations(perms, template_vectors, input_norms)
 
-        perm_iterator = itertools.permutations(range(n_slots), n_atoms)
-
-        for slot_indices in perm_iterator:
+        for cand_idx in candidates:
+            slot_indices = perms[cand_idx]
             target_vecs = template_vectors[list(slot_indices)]
 
             try:
@@ -870,6 +911,36 @@ class OINDiscreteAligner:
                 best_R = R
 
         return best_mapping, best_rmsd, best_R
+
+    @staticmethod
+    def _candidate_permutations(perms, template_vectors, input_norms):
+        """Permutations worth scoring with scipy, via a batched-numpy Kabsch prefilter.
+
+        Returns the indices into ``perms`` (ascending, i.e. lexicographic order) of
+        every permutation whose approximate rssd is within ``_MATCH_CANDIDATE_MARGIN``
+        of the best. The approximate rssd comes from a single vectorised Kabsch over
+        all permutations at once; it differs from scipy's per-permutation result by
+        <1e-7 even on the worst-conditioned (ideal, symmetric) coordination spheres,
+        so a 1e-6 margin is a strict superset of the true scipy argmin and of any
+        permutation tied with it. The caller re-scores the returned candidates with
+        scipy for a byte-identical result -- this only prunes permutations that
+        provably cannot win.
+
+        ``template_vectors`` and ``input_norms`` are unit (or near-unit) vectors, so
+        ``||a - R b||^2 = 2 - 2 a . R b`` and the minimised residual reduces to the
+        singular values of the correlation matrix (the standard Kabsch identity).
+        """
+        idx = np.asarray(perms)  # (P, n_atoms)
+        targets = template_vectors[idx]  # (P, n_atoms, 3)
+        corr = np.einsum("pij,ik->pjk", targets, input_norms)
+        u, s, vt = np.linalg.svd(corr)
+        d = np.sign(np.linalg.det(u @ vt))
+        alignment = s[:, 0] + s[:, 1] + d * s[:, 2]
+        a2 = (targets**2).sum(axis=(1, 2))
+        b2 = (input_norms**2).sum()
+        approx = np.sqrt(np.maximum(a2 + b2 - 2.0 * alignment, 0.0))
+        threshold = approx.min() + _MATCH_CANDIDATE_MARGIN
+        return np.nonzero(approx <= threshold)[0]
 
     @staticmethod
     def _fragment_mol_for_canonicalization(smiles):
@@ -1458,3 +1529,34 @@ def coordination_geometry_fit(donor_vectors, geo_code):
     if mapping is None:
         return float("inf")
     return rmsd
+
+
+def classify_and_fit(donor_vectors, geo_code):
+    """Best-match OIN code and the fit RMSD of ``donor_vectors`` to ``geo_code``, in ONE pass.
+
+    Single-pass equivalent of ``classify_coordination_geometry(donor_vectors)``
+    followed by ``coordination_geometry_fit(donor_vectors, geo_code)``. A single
+    ``_match_geometry_candidates`` call yields both the classified label and, from
+    the same candidate loop, the RMSD of ``donor_vectors`` against ``geo_code``'s
+    template -- so when the two are consumed together (the geometry-aware conformer
+    selector), the identical permutation/Kabsch search runs once instead of twice.
+
+    Returns ``(label, fit)``:
+
+    * ``label`` -- the tightest-fitting template's OIN code (``None`` if none matched),
+      exactly ``classify_coordination_geometry(donor_vectors)``.
+    * ``fit`` -- the RMSD to ``geo_code``'s template. When ``geo_code`` is among the
+      coordination-number's candidates it comes free from the match; otherwise it
+      falls back to ``coordination_geometry_fit`` (``float('inf')`` for an unknown
+      code or a template with fewer slots than there are donors). Byte-identical to
+      the old two-call sequence -- it is the same computation.
+    """
+    virtual_atoms = [{"coords": np.asarray(v, dtype=float)} for v in donor_vectors]
+    aligner = OINDiscreteAligner(0, [])
+    best_result, rmsds_by_name = aligner._match_geometry_candidates(
+        len(virtual_atoms), virtual_atoms
+    )
+    label = best_result[0] if best_result else None
+    if geo_code in rmsds_by_name:
+        return label, rmsds_by_name[geo_code]
+    return label, coordination_geometry_fit(donor_vectors, geo_code)

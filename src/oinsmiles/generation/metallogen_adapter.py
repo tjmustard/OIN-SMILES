@@ -1146,10 +1146,7 @@ def _select_by_geometry(parsed, mols):
     perception failure. The winding pass likewise falls back to the best-geometry
     (then lowest-energy) conformer when no winding is requested or none matches.
     """
-    from ..utils.oin_aligner import (
-        classify_coordination_geometry,
-        coordination_geometry_fit,
-    )
+    from ..utils.oin_aligner import classify_and_fit
 
     target = _norm_geo_code(parsed.geo_code)
     expected_n = _expected_coordination_number(parsed.geo_code)
@@ -1164,9 +1161,9 @@ def _select_by_geometry(parsed, mols):
                 vecs = _coordination_vectors(cmol, expected_n)
                 if vecs is None:
                     continue
-                if _norm_geo_code(classify_coordination_geometry(vecs)) != target:
+                label, fit = classify_and_fit(vecs, target)
+                if _norm_geo_code(label) != target:
                     continue
-                fit = coordination_geometry_fit(vecs, target)
                 scored.append((fit, rank, m, cmol))
             except Exception:
                 logger.debug("geometry perception failed for a conformer", exc_info=True)
@@ -1227,11 +1224,15 @@ class MetalloGenAdapter:
         optimizer: str | None = None,
         ff_preset: str | None = None,
         ff_params: dict | None = None,
+        seed: int = 42,
     ) -> None:
-        """Configure the backend (timeout, DG strategy, optimizer, FF knobs)."""
+        """Configure the backend (timeout, DG strategy, optimizer, FF knobs, seed)."""
         self.timeout = timeout
         self.dg_strategy = dg_strategy
         self.ensemble_size = ensemble_size
+        # Base ETKDG seed threaded to generate_3d_structures (which offsets it
+        # per embed attempt). A fixed seed keeps generation reproducible.
+        self.seed = seed
 
         # Treat "FF" or "none" (case-insensitive) as None
         if optimizer is not None and optimizer.lower() in ("ff", "none"):
@@ -1250,10 +1251,11 @@ class MetalloGenAdapter:
         logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
 
         # Build the full energy-ranked conformer pool so geometry-aware selection
-        # has candidates to choose among. pool_size widens the pool even in the
-        # FF-only path; num_conformers returns the whole ranked list (not just the
-        # top-1). With an optimizer set the pool is MACE-optimized regardless, so
-        # this adds no optimizer cost over the previous fixed pool of 5.
+        # has candidates to choose among. The pool width is driven by
+        # ``uff_pool_size`` (the UFF pre-pool); ``num_conformers`` asks the callee
+        # to return the whole ranked list (not just the top-1). With an optimizer
+        # set the pool is MACE-optimized regardless, so this adds no optimizer
+        # cost over the previous fixed pool of 5.
         #
         # When the OIN encodes eta-ring winding, widen the pool (and the UFF
         # pre-pool that feeds it) so the requested ring face / diastereomer is
@@ -1284,7 +1286,6 @@ class MetalloGenAdapter:
                 msmiles,
                 num_conformers=pool_n,
                 optimizer=self.optimizer,
-                pool_size=pool_n,
                 ff_params=clean_ff_params,
                 uff_pool_size=uff_pool_size,
                 rmsd_threshold=rmsd_threshold,
@@ -1296,6 +1297,7 @@ class MetalloGenAdapter:
                 # fast instead of running all 250 attempts. Kept distinct from the ASE
                 # `timeout` semantics, which cap a single optimizer call.
                 embed_time_budget=self.timeout,
+                seed=self.seed,
             )
         if not mols:
             raise ValueError(
