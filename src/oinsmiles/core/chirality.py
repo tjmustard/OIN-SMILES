@@ -36,6 +36,13 @@ _P_ATOMIC_NUM: int = 15
 #: label, distinct from the existing metal-present '_OIN_CIPCode'.
 _LP_CIP_PROP: str = "_OIN_CIPCode_LP"
 
+#: Atom property name for the metal-free (fragment-convention) rdCIPLabeler CIP
+#: label of a specified sp3 C/Si/S stereocentre, stamped by ``build_contract_mol``
+#: so ``recover()`` can re-orient it on the metal-free fragment. A metal-/eta-adjacent
+#: centre's CIP label flips between the metal-present contract mol and the metal-free
+#: fragment, so the generator's metal-present flip loop mis-orients it.
+_SP3_CIP_PROP: str = "_OIN_CIPCode_SP3"
+
 
 class OINStereoWarning(UserWarning):
     """All Phase-4 Zone-A P stereo diagnostics.
@@ -293,6 +300,40 @@ def _attach_dummy_metal(mol: Chem.RWMol, p_idx: int) -> int:
     return dummy_idx
 
 
+def _clear_spurious_high_coordination_stereo(mol):
+    """Drop octahedral / trigonal-bipyramidal tags on non-stereogenic main-group centres.
+
+    ``AssignAtomChiralTagsFromStructure`` stamps a permutation tag on any atom whose
+    3D neighbourhood is asymmetric, but a pentafluorosulfanyl (-SF5) sulfur is
+    octahedral with **five identical terminal fluorines** and one substituent, so every
+    arrangement is superimposable -- it is achiral. RDKit's stereo perception (legacy
+    *and* modern ``FindPotentialStereo``) does not reduce the five equivalent F, so the
+    tag survives into the OIN as a spurious ``[S@OH..]`` the 3D generator cannot
+    reproduce (the embed places the F set symmetrically and the re-encode drops it),
+    breaking the round trip. Clear the tag wherever a non-metal centre's stereochemistry
+    rests on a set of identical terminal ligands. Transition metals are excluded -- their
+    octahedral / TBP handedness is the coordination geometry and is carried elsewhere.
+    """
+    from collections import Counter
+
+    from .constants import TRANSITION_METALS_NUM
+
+    high_coord = (
+        Chem.ChiralType.CHI_OCTAHEDRAL,
+        Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL,
+    )
+    for atom in mol.GetAtoms():
+        if atom.GetChiralTag() not in high_coord:
+            continue
+        if atom.GetAtomicNum() in TRANSITION_METALS_NUM:
+            continue
+        terminal = Counter(n.GetAtomicNum() for n in atom.GetNeighbors() if n.GetDegree() == 1)
+        # Non-stereogenic when only one ligand differs from a set of >=(degree-1)
+        # identical terminal atoms (SF5: five terminal F on a degree-6 sulfur).
+        if terminal and max(terminal.values()) >= atom.GetDegree() - 1:
+            atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+
+
 class CIPAssigner:
     """Assigns 3D-derived CIP codes and chiral tags to P/N stereocenters.
 
@@ -359,6 +400,10 @@ class CIPAssigner:
 
         # Compute _CIPCode from the chiral tags set above.
         Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+
+        # Drop spurious -SF5-style high-coordination stereo (achiral, but tagged from
+        # geometry) so the OIN does not carry an @ the generator cannot reproduce.
+        _clear_spurious_high_coordination_stereo(mol)
 
         for atom in mol.GetAtoms():
             if atom.GetAtomicNum() in _PN_ATOMIC_NUMS:
@@ -510,6 +555,46 @@ class ChiralityRecoveryUtility:
                             atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
                         any_changed = True
 
+                if not any_changed:
+                    break
+
+        # --- sp3 C/Si/S: verify-and-flip keyed on _OIN_CIPCode_SP3 ---
+        # The generator's metal-present flip loop (build_contract_mol) orients a
+        # backbone carbon correctly, but a metal-/eta-adjacent sp3 centre's CIP
+        # label FLIPS between the metal-present contract mol and the metal-free
+        # fragment (AHEBEV's benzylic C: R with the eta-arene bound to Cr, S once
+        # the metal is stripped), so that loop mis-orients it. Re-orient here on
+        # the metal-free fragment -- the same graph get_oin_string emits from --
+        # against the rdCIPLabeler label taken from the (also metal-free) OIN
+        # template. rdCIPLabeler, not legacy, for the same reason as Zone-A P.
+        # No-op on the forward-encode path: only build_contract_mol stamps the prop.
+        tagged_sp3_indices = [
+            atom.GetIdx()
+            for atom in rw.GetAtoms()
+            if atom.GetAtomicNum() in (6, 14, 16) and atom.HasProp(_SP3_CIP_PROP)
+        ]
+        if tagged_sp3_indices:
+            for _pass in range(2):
+                any_changed = False
+                for idx in tagged_sp3_indices:
+                    Chem.AssignStereochemistry(rw, cleanIt=True, force=True)
+                    try:
+                        rdCIPLabeler.AssignCIPLabels(rw)
+                    except Exception:  # noqa: BLE001 - guarded recompute
+                        continue
+                    atom = rw.GetAtomWithIdx(idx)
+                    ctag = atom.GetChiralTag()
+                    if ctag == Chem.ChiralType.CHI_UNSPECIFIED:
+                        continue
+                    stored = atom.GetPropsAsDict().get(_SP3_CIP_PROP)
+                    current = atom.GetPropsAsDict().get("_CIPCode")
+                    if stored and current and current != stored:
+                        atom.SetChiralTag(
+                            Chem.ChiralType.CHI_TETRAHEDRAL_CCW
+                            if ctag == Chem.ChiralType.CHI_TETRAHEDRAL_CW
+                            else Chem.ChiralType.CHI_TETRAHEDRAL_CW
+                        )
+                        any_changed = True
                 if not any_changed:
                     break
 
