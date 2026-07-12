@@ -9,8 +9,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 These are one-time installations required to test your changes locally as part of the pull request submission process.
 
 1. Install [Python 3.10+](https://www.python.org/downloads/)
-2. Install [uv](https://docs.astral.sh/uv/) for package management
-3. Install [SCINE Molassembler](https://scine.ethz.ch/download/molassembler) (required for 3D structure generation)
+2. Install [uv](https://docs.astral.sh/uv/) for package management (`uv sync` installs all dependencies)
 
 ## Submitting a pull request
 

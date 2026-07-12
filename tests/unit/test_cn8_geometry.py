@@ -43,7 +43,7 @@ _SQA = [
 
 # A real CN-8 OIN (AFEPIM: Hf with four salicylaldimine N,O bidentate ligands),
 # as emitted by the encoder after the SQA extension. Used as a fixture so the
-# parse -> m-SMILES path is exercised without the heavy XYZ encoder / scine stack.
+# parse -> m-SMILES path is exercised without the heavy XYZ encoder stack.
 _AFEPIM_OIN = (
     "[Hf_SQA]."
     "Cc1cccc(C)c1N{0}=C(O{1})c1ccccc1."

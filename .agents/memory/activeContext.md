@@ -71,7 +71,7 @@ Integration is blocked by 5 issues in `src/oinsmiles/generation/oin_parser.py`:
 4. **(P1)** Eta bond translation to atom indices broken
 5. **(P2)** Missing test coverage for direct parser
 
-**Production pipeline (current)**: Uses legacy `OINParser.parse()` + `MolassemblerAdapter.generate()` — all integration tests pass.
+**Production pipeline (current)**: Uses `OINParser.parse()` + `MetalloGenAdapter.generate()` — all integration tests pass. (The legacy Molassembler backend was removed once MetalloGen became the sole engine.)
 
 ## Recent Completions
 

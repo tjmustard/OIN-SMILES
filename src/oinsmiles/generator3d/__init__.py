@@ -265,7 +265,6 @@ def generate_3d_structures(
         try:
             # Distinct-but-reproducible seed per attempt: the pool keeps its
             # variety, but the same m-SMILES always yields the same conformers.
-            # (Stride idiom borrowed from molassembler_adapter's retry loop.)
             positions = embed.get_embedding(
                 metal_complex, scale, option, align=True, seed=seed + i * 1009
             )

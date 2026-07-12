@@ -1,7 +1,7 @@
 ---
 # Exclusions from verification and metal-first invariant checks
 # These fixtures are valid but do not conform to the metal-first atom ordering
-# expected in typical Molassembler outputs.
+# expected in typical generated outputs.
 
 excluded_fixtures:
   - filename: PdCl2-R-BINAP.xyz

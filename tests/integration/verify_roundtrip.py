@@ -13,13 +13,6 @@ from rmsd_utils import calculate_tmc_rmsd
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
-from oinsmiles.generation.molassembler_adapter import (
-    _build_connected_smiles,
-    _compute_expected_trans_sym_pairs,
-    _get_binding_sym,
-    _pick_masm_permutation,
-)
-from oinsmiles.generation.oin_parser import OINParser as _OINParser
 
 # Comparison helpers live in the package (lightweight: rdkit + OINInlineHandler
 # only) so they can be reused without importing the 3D-generation stack. They are
@@ -47,63 +40,6 @@ def read_atom_count(xyz_path: str) -> int:
     with open(xyz_path, "r") as f:
         first_line = f.readline().strip()
     return int(first_line)
-
-
-def _log_step2_inputs(oin_string: str) -> None:
-    """Log diagnostic information about what will be sent to Molassembler.
-
-    Parses the OIN string and displays the geometry, fragments, vectors,
-    and computed Molassembler inputs (connected SMILES, permutation, etc).
-    """
-    try:
-        parser = _OINParser()
-        parsed = parser.parse(oin_string)
-
-        print("  [Parsed OIN]")
-        print(f"  geo_code:  {parsed.geo_code or 'NON'}")
-        print(f"  fragments: {parsed.fragments}")
-        print(f"             metal → fragment[{parsed.metal_fragment_idx}]")
-
-        # Print vectors (slot assignments)
-        if parsed.vectors:
-            print("  vectors:")
-            for vec in parsed.vectors:
-                sym = (
-                    _get_binding_sym(parsed.fragments[vec.fragment_idx], vec.atom_in_fragment_idx)
-                    or "?"
-                )
-                print(
-                    f"    frag[{vec.fragment_idx}] {sym:<2}  "
-                    f"slot({vec.vector[0]:7.3f}, {vec.vector[1]:7.3f}, {vec.vector[2]:7.3f})"
-                )
-
-        print("\n  [Molassembler Inputs]")
-        connected_smiles = _build_connected_smiles(parsed)
-        print(f"  connected SMILES: {connected_smiles}")
-
-        perm_idx = _pick_masm_permutation(parsed)
-        perm_label = "TRANS" if perm_idx == 1 else "CIS/default"
-        print(f"  perm_idx:         {perm_idx}  ({perm_label})")
-
-        trans_pairs = _compute_expected_trans_sym_pairs(parsed)
-        print(f"  trans sym pairs:  {trans_pairs or 'None'}")
-
-        # Expected bindings
-        expected_bindings = []
-        for vec in parsed.vectors:
-            if vec.fragment_idx == parsed.metal_fragment_idx:
-                continue
-            sym = _get_binding_sym(parsed.fragments[vec.fragment_idx], vec.atom_in_fragment_idx)
-            if sym:
-                expected_bindings.append((sym, tuple(vec.vector)))
-
-        if expected_bindings:
-            print(f"  expected bindings: {len(expected_bindings)} atom(s)")
-            for sym, vec in expected_bindings:
-                print(f"    {sym:<2}  slot({vec[0]:7.3f}, {vec[1]:7.3f}, {vec[2]:7.3f})")
-
-    except Exception as e:
-        print(f"  [Parse diagnostic error (non-fatal): {e}]")
 
 
 from reporting import VerificationReporter
@@ -264,10 +200,9 @@ def main():
                 input_xyz_path = None
 
             # -------------------------------------------------------------
-            # Step 2: OIN(1) -> XYZ(Gen) (Molassembler)
+            # Step 2: OIN(1) -> XYZ(Gen)
             # -------------------------------------------------------------
             print("Step 2: Generate Structure OIN(1) -> XYZ(Gen)")
-            _log_step2_inputs(oin1_string)
             start_time = time.time()
             gen_result = generator.generate(oin1_string)
             end_time = time.time()

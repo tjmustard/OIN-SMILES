@@ -1,5 +1,10 @@
 # ETKDG Fix for Aromatic Ring SMILES Parsing in `_stitch_multi_eta_fragment`
 
+> **Historical note:** This document describes the legacy Molassembler/stitch
+> backend (`generation/molassembler_adapter.py`), which was **removed** when
+> MetalloGen became the sole 3D-generation engine. It is retained as a design
+> record; `_stitch_multi_eta_fragment` no longer exists in the codebase.
+
 **Date**: May 5, 2026  
 **Status**: ✅ COMPLETED — 3D generation now works for TiCat1/3/4  
 **Issue**: Standalone extraction of cyclopentadienyl (Cp) and indenyl rings from bridged-metallocene fragments caused RDKit kekulization failures, preventing 3D structure generation.

@@ -8,8 +8,8 @@ eta-winding labeling ambiguity for symmetric rings) while still distinguishing a
 genuinely different structure, metal, geometry, or eta winding multiset.
 
 The module depends only on ``re``, RDKit, and ``OINInlineHandler`` so it can be
-imported without pulling in the heavy 3D-generation stack (scine_molassembler,
-MACE, ...). The round-trip harness and the interactive verifier both use it.
+imported without pulling in the heavy 3D-generation stack (MetalloGen, MACE,
+...). The round-trip harness and the interactive verifier both use it.
 """
 
 import re

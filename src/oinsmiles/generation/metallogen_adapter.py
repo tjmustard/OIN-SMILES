@@ -2,9 +2,7 @@
 
 Bridges OIN-SMILES (``ParsedOIN``) to the vendored MetalloGen engine in
 ``oinsmiles.generator3d`` (dummy-metal + RDKit ``CoordMap`` embed + constrained
-MMFF/UFF cleanup). This is the default backend as of v0.3.3, selected via
-``OIN3DGenerator(engine="metallogen")``; the legacy Molassembler/stitch backend
-is opt-in via ``engine="legacy"``.
+MMFF/UFF cleanup). This is the 3D-generation backend used by ``OIN3DGenerator``.
 
 Slot mapping: OIN encodes an explicit per-fragment coordination vector, while
 MetalloGen assigns m-SMILES fragments to fixed ``globalvars`` coordinate slots by
@@ -22,8 +20,8 @@ import numpy as np
 from rdkit import Chem
 
 from ..generator3d import generate_3d_structures, get_xyz_string, globalvars
-from .molassembler_adapter import GeneratedStructure
 from .oin_parser import OINParser, ParsedOIN
+from .structure import GeneratedStructure
 
 logger = logging.getLogger(__name__)
 
@@ -1219,7 +1217,7 @@ def _select_by_geometry(parsed, mols):
 
 
 class MetalloGenAdapter:
-    """Generation backend mirroring ``MolassemblerAdapter.generate(parsed)``."""
+    """MetalloGen 3D-generation backend. Exposes ``generate(parsed)``."""
 
     def __init__(
         self,
