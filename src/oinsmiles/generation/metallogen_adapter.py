@@ -563,6 +563,35 @@ def _template_lp_label(t, ai: int) -> "str | None":
         return None
 
 
+def _template_sp3_label(t, ai: int) -> "str | None":
+    """Aromatic-preserving rdCIPLabeler label for a specified sp3 C/Si/S template atom.
+
+    Like ``_template_lp_label`` but sanitizes with kekulization SKIPPED
+    (``SANITIZE_ALL ^ SANITIZE_KEKULIZE``). rdCIPLabeler gives OPPOSITE R/S for a
+    stereocentre bonded to an aromatic haptic ring (Cp, indenyl, fluorenyl)
+    depending on whether that ring is left aromatic vs charged/kekulized -- and the
+    metal-free fragment ``recover()`` re-orients against emits the ring aromatic.
+    Taking the label on the aromatic form keeps the stamp in the same convention
+    ``recover()`` reads, so a Cp-adjacent centre orients correctly (BABWAD). Returns
+    None if the label can't be assigned.
+    """
+    from rdkit.Chem import rdCIPLabeler
+
+    try:
+        tt = Chem.Mol(t)
+        try:
+            Chem.SanitizeMol(tt, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
+        except Exception:
+            tt = Chem.Mol(t)
+            tt.UpdatePropertyCache(strict=False)
+        Chem.AssignStereochemistry(tt, cleanIt=True, force=True)
+        rdCIPLabeler.AssignCIPLabels(tt)
+        a = tt.GetAtomWithIdx(ai)
+        return a.GetProp("_CIPCode") if a.HasProp("_CIPCode") else None
+    except Exception:
+        return None
+
+
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """Build a contract-compliant RDKit mol from a MetalloGen result.
 
@@ -575,7 +604,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     """
     from rdkit.Geometry import Point3D
 
-    from ..core.chirality import _LP_CIP_PROP
+    from ..core.chirality import _LP_CIP_PROP, _SP3_CIP_PROP
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
 
     try:
@@ -636,6 +665,13 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         # the rdCIPLabeler convention (recover() recomputes with rdCIPLabeler),
         # not the legacy _CIPCode the backbone paths carry.
         zone_a_lp_targets: dict[int, str] = {}
+        # global contract-atom idx of every non-N/P sp3 centre the PARSED OIN
+        # specified with an @ (a specified template chiral tag). A superset of
+        # sp3_stereo_targets (which additionally requires a legacy _CIPCode).
+        # Used below to clear geometry-invented tags on centres the OIN left
+        # UNspecified, so AssignStereochemistryFrom3D cannot fabricate an @ the
+        # forward encoder never emitted.
+        oin_specified_sp3: set[int] = set()
 
         for fi, fm in enumerate(frag_mols):
             orig = mapping[fi]
@@ -723,6 +759,20 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                     # that went through CIPAssigner.
                     gidx = q2g[match[ai]]
                     anum = ta.GetAtomicNum()
+                    if anum in (6, 14, 16) and (
+                        ta.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
+                    ):
+                        oin_specified_sp3.add(gidx)
+                        # Stamp the metal-free template's rdCIPLabeler label so
+                        # recover() re-orients this centre on the metal-free
+                        # fragment (the metal-present flip loop below mis-orients
+                        # a metal-/eta-adjacent centre whose CIP label flips when
+                        # the metal is stripped). Aromatic-preserving so a centre
+                        # bonded to a haptic Cp/indenyl ring is labelled in the
+                        # same convention recover() reads.
+                        sp3_label = _template_sp3_label(t, ai)
+                        if sp3_label is not None:
+                            rwa.SetProp(_SP3_CIP_PROP, sp3_label)
                     if anum == 15 and gidx in donors:
                         # Zone-A P donor: stereogenic lone pair. recover()'s
                         # lone-pair branch needs _OIN_CIPCode_LP (rdCIPLabeler
@@ -785,6 +835,29 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         changed = True
                 if not changed:
                     break
+
+        # Honor the OIN as the source of truth for which sp3 centres are
+        # stereo-specified. AssignStereochemistryFrom3D above stamps a tag on
+        # every tetrahedral-looking centre in the embed geometry, including ones
+        # the OIN left UNspecified -- a non-stereogenic carbon frozen into a
+        # chiral-looking conformation, or a centre the fully-sanitised forward
+        # encoder (get_tmc_mol) drops where this lenient contract mol keeps it.
+        # That invents an @ the input never emitted (KAPCEM: 0 in -> 4 out), so
+        # the round trip fails on a centre that was never specified. Clear the
+        # geometry-derived tag on any non-N/P sp3 centre the parsed template did
+        # not specify. N/P are oriented by recover(); Zone-A P donors are seeded
+        # just below; specified centres (kept, and oriented by the flip loop) are
+        # a superset of sp3_stereo_targets so this never undoes the carry above.
+        for atom in mol.GetAtoms():
+            if atom.GetAtomicNum() in (7, 15):
+                continue
+            if atom.GetChiralTag() not in (
+                Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+                Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+            ):
+                continue
+            if atom.GetIdx() not in oin_specified_sp3:
+                atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
 
         # Zone-A P donor lone-pair stereo. Make the generated donor arrive at
         # get_oin_string in the same state a forward-pass CIPAssigner mol would:
