@@ -47,12 +47,15 @@ nodes:
     - atom_cip_assigner
     - atom_chirality_recovery
     - atom_tmc_graph
+    - atom_clear_chelate_locked_bond_stereo
 - id: mod_generation
   dimension: Module
   status: clean
   associated_file: src/oinsmiles/generation/
-  description: '3D structure generation from OIN: Molassembler backend, distance geometry,
-    template-based placement'
+  description: '3D structure generation from OIN via the MetalloGen engine (generator3d/
+    dummy-metal CoordMap embedding, PuLP bond-order/charge resolution, g-xTB/MACE
+    optimization, see mod_generator3d), wrapped by OIN3DGenerator. The legacy
+    Molassembler backend was removed once MetalloGen became the sole engine.'
   inputs:
   - data_type: oin_string
     source_id: mod_oin
@@ -64,10 +67,13 @@ nodes:
   edges:
     depends_on:
     - mod_oin
+    - mod_core
+    - mod_utils
+    - mod_generator3d
     implements:
     - atom_oin3d_generator
-    - atom_molassembler_adapter
     - atom_oin_parser_gen
+    - atom_metallogen_adapter
 - id: mod_oin
   dimension: Module
   status: clean
@@ -89,6 +95,7 @@ nodes:
     - atom_oin_inline_handler
     - atom_oin_parser_oin
     - atom_oin_writer
+    - atom_oin_compare
 - id: mod_utils
   dimension: Module
   status: clean
@@ -110,6 +117,7 @@ nodes:
     - atom_xyz2mol
     - atom_oin_aligner
     - atom_oin_sanitizer
+    - atom_aromaticity
 - id: mod_cli
   dimension: Module
   status: clean
@@ -129,10 +137,11 @@ nodes:
     - atom_cli_main
 - id: atom_api_exports
   dimension: Atomic
-  status: clean
+  status: needs_review
   associated_file: src/oinsmiles/__init__.py
-  description: Re-exports three public API items from core modules; XYZToSMILES and SMILESToXYZ
-    classes from core.translator, plus OINStereoWarning exception from core.chirality
+  description: Re-exports three public API items from core modules; XYZToSMILES and
+    SMILESToXYZ classes from core.translator, plus OINStereoWarning exception from
+    core.chirality
   inputs:
   - data_type: module_imports
     source_id: mod_core
@@ -147,7 +156,7 @@ nodes:
     implements: []
 - id: atom_xyz_to_smiles
   dimension: Atomic
-  status: clean
+  status: dirty
   associated_file: src/oinsmiles/core/translator.py
   description: 'XYZToSMILES.convert(): Reads XYZ file path, calls get_tmc_mol() to
     generate 3D conformer, sanitizes with RDKit, assigns CIP codes to P/N stereocenters,
@@ -167,6 +176,7 @@ nodes:
     - atom_oin_aligner
     - atom_oin_sanitizer
     - atom_oin_inline_handler
+    - atom_clear_chelate_locked_bond_stereo
     implements: []
 - id: atom_smiles_to_xyz
   dimension: Atomic
@@ -187,12 +197,18 @@ nodes:
     implements: []
 - id: atom_cip_assigner
   dimension: Atomic
-  status: clean
+  status: dirty
   associated_file: src/oinsmiles/core/chirality.py
   description: 'CIPAssigner: Assigns CIP (R/S) codes to chiral P/N atoms before fragmentation
     (metal-present convention, _OIN_CIPCode); Stereo Phase 4 additionally assigns
     the fragment-local (lone-pair convention) _OIN_CIPCode_LP on each Zone-A P bonded
-    to exactly one metal, via a dummy-metal copy computed while 3D is present'
+    to exactly one metal, via a dummy-metal copy computed while 3D is present. R5
+    (v0.3.7): _reparse_aromatic_cip_label(mol, idx) re-parses a mol from SMILES with
+    kekulization skipped and re-runs rdCIPLabeler.AssignCIPLabels to get a stable
+    R/S label for a stereocentre adjacent to an aromatic haptic ring (Cp/indenyl/fluorenyl),
+    since raw rdCIPLabeler flips sign depending on aromatic-vs-kekulized bond state;
+    the resulting label is stamped as _OIN_CIPCode_SP3 (by build_contract_mol/_template_sp3_label
+    in generation/metallogen_adapter.py) for sp3 stereocenters'
   inputs:
   - data_type: mol_with_conformer
     source_id: atom_xyz2mol
@@ -210,13 +226,10 @@ nodes:
     using stored CIP codes; Stereo Phase 4: a Zone-A P carrying _OIN_CIPCode_LP is
     kept and verify-and-flipped (never cleared), checked before the degree-keyed branches;
     Zone-A P/N without the property, and all N, keep the prior clearing behaviour
-    (PseudoAtomStrategy scaffolding removed, behaviour retained). Stereo Phase 4
-    MiniPRD-C also adds a standalone helper in this file, _attach_dummy_metal(mol,
-    p_idx) (called from molassembler_adapter._stitch_fragment, not part of
-    ChiralityRecoveryUtility): appends a Z=0 wildcard as a metal-free Zone-A P atom''s
-    4th substituent before ETKDG embedding so its [P@]/[P@@] tag controls a true
-    4-coordinate tetrahedron; mirrors, but never calls, _build_dummy_metal_copy''s
-    valence-bookkeeping fix'
+    (PseudoAtomStrategy scaffolding removed, behaviour retained).
+    R5 (v0.3.7): recover() also reads back the _OIN_CIPCode_SP3 property (stamped
+    by generation/metallogen_adapter.py''s build_contract_mol) to orient sp3 stereocenters
+    adjacent to aromatic haptic rings correctly on the MetalloGen decode path'
   inputs:
   - data_type: mol_with_cip_codes
     source_id: atom_oin_sanitizer
@@ -245,10 +258,14 @@ nodes:
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/generation/engine.py
-  description: "OIN3DGenerator.generate(): Converts OIN-SMILES string to 3D GeneratedStructure\
-    \ (xyz block + RDKit mol); instantiates OINParser (from generation/oin_parser.py\
-    \ with v3.6 inline format support) and MolassemblerAdapter for template-based/DG\
-    \ generation with Stereo Phase 4 Z-A P verification and timeout handling"
+  description: 'OIN3DGenerator.__init__(engine="metallogen", optimizer="xtb", ...):
+    lazily imports and instantiates MetalloGenAdapter (generator3d dummy-metal CoordMap
+    embed + PuLP bond-order resolution + g-xTB/MACE optimization, see mod_generator3d).
+    The ``engine`` parameter is retained for backward compatibility and must be
+    "metallogen" (the only supported backend); any other value raises ValueError.
+    generate() parses the OIN string via OINParser (generation/oin_parser.py, v3.6
+    inline format) then delegates to self.adapter.generate(parsed) to produce a
+    GeneratedStructure (xyz block + RDKit mol)'
   inputs:
   - data_type: oin_string
     source_id: user_code
@@ -260,202 +277,51 @@ nodes:
   edges:
     depends_on:
     - atom_oin_parser_gen
-    - atom_molassembler_adapter
-    implements: []
-- id: generation.molassembler_adapter.haptic_face_correction
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/molassembler_adapter.py
-  description: 'Stereo Phase 3: within _stitch_eta_fragment/_stitch_multi_eta_fragment,
-    measures placed eta-ring circulation via oin.winding.signed_circulation and applies
-    a proper (det+1) 180-degree in-plane rotation when it disagrees with the input
-    OINVector.winding marker; records a structured fired/skipped/conflict/no-op decision
-    per ring on GeneratedStructure.haptic_face_decisions instead of stderr prints.
-    Bridged multi-eta fragments get a coherent whole-fragment correction only when
-    both rings agree; disagreement is left unchanged and logged as conflict.'
-  inputs:
-  - data_type: oin_vector_winding
-    source_id: atom_oin_parser_gen
-  - data_type: placed_ring_coords
-    source_id: atom_molassembler_adapter
-  outputs:
-  - data_type: corrected_ring_coords
-    target_id: atom_molassembler_adapter
-  - data_type: decision_signal
-    target_id: atom_generated_structure
-  edges:
-    depends_on:
-    - oin.winding.signed_circulation
-    implements: []
-- id: atom_molassembler_adapter
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/molassembler_adapter.py
-  description: "MolassemblerAdapter: Template-based 3D placement for known geometries;\
-    \ DG + ETKDG fallback for aromatic \u03B7-ligands; Stereo Phase 3: eta-ring ETKDG\
-    \ embedding gained an anionic-ring fallback (Attempt 1b) for substituted rings\
-    \ that fail plain kekulization, and haptic-face correction (see generation.molassembler_adapter.haptic_face_correction)\
-    \ after placement; final post-optimisation collision threshold loosened 1.60->1.45\
-    \ \xC5 (monotonic, byte-identical for all previously-passing placements); Stereo\
-    \ Phase 4 MiniPRD-B: _verify_zone_a_p checks the assembled complex's Zone-A P labels\
-    \ (dummy-metal copy + rdCIPLabeler, reusing core/chirality.py helpers) against the\
-    \ input [P@]/[P@@] tag and re-embeds the offending fragment with a new seed (\u2264\
-    3 attempts, never a mirror/improper transform); persistent mismatch or a\
-    \ no-assembled-mol fallback path (eta/DG) emits the structure anyway with an\
-    \ OINStereoWarning. Stereo Phase 4 MiniPRD-C (dummy-metal embed, fixes the SPL\
-    \ one-sided-enforcement bug): _stitch_fragment attaches a Z=0 dummy (via\
-    \ core.chirality._attach_dummy_metal) as the 4th substituent on every Zone-A-P\
-    \ atom of any denticity before AddHs/ETKDG, asserts a pre-placement lone-pair-CIP\
-    \ parity guard against the mol's own live chiral tag, orients the fragment by the\
-    \ embedded P\u2192dummy vector(s) (monodentate: single-vector rotation plus a\
-    \ residual-DOF clash sweep via _sweep_rotation_for_clash_avoidance; bidentate:\
-    \ bite-axis angle sweep maximising P\u2192dummy/slot alignment via\
-    \ _dummy_alignment_score), then strips every dummy (_strip_dummy_atoms) before\
-    \ returning, with a hard postcondition assert (no Z=0 atom, stable atom count) at\
-    \ every _stitch_fragment return point. The assembled-complex re-embed loop also\
-    \ retries on post-placement inter-fragment clashes (_zone_a_p_clash_offending_frags),\
-    \ not just stereo mismatches. The Molassembler DG fallback path (incompatible-bite\
-    \ bidentates, routed here by the ee0b3f0 bite-distortion guard) gains Zone-A-P\
-    \ enforcement via a bounded 3-attempt reseed loop and a set-based label comparison\
-    \ (_zone_a_p_measured_labels_dg, since _build_connected_smiles canonicalises indices\
-    \ away), superseding the old unconditional _warn_zone_a_p_fallback call on that path."
-  inputs:
-  - data_type: parsed_oin
-    source_id: atom_oin_parser_gen
-  outputs:
-  - data_type: xyz_positions
-    target_id: atom_oin3d_generator
-  - data_type: rdkit_mol
-    target_id: atom_oin3d_generator
-  edges:
-    depends_on:
-    - generation.molassembler_adapter.haptic_face_correction
+    - atom_metallogen_adapter
     implements: []
 - id: atom_generated_structure
   dimension: Atomic
   status: clean
-  associated_file: src/oinsmiles/generation/molassembler_adapter.py
+  associated_file: src/oinsmiles/generation/structure.py
   description: 'GeneratedStructure dataclass: (xyz: str, mol: Optional[Chem.Mol])
-    return type for OIN3DGenerator; Stereo Phase 3 adds haptic_face_decisions field
-    carrying the per-ring fired/skipped/conflict/no-op correction signal'
+    return type for OIN3DGenerator, defined in the lightweight generation/structure.py
+    module (relocated from the removed molassembler_adapter.py)'
   inputs:
   - data_type: xyz_block
-    source_id: atom_molassembler_adapter
+    source_id: atom_metallogen_adapter
   - data_type: mol_object
-    source_id: atom_molassembler_adapter
+    source_id: atom_metallogen_adapter
   outputs:
   - data_type: structure_object
     target_id: user_code
   edges:
     depends_on: []
     implements: []
-- id: atom_direct_parser_regex
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: "Regex Preprocessor (v0.2.2): Extracts OIN v3.6 inline annotations\
-    \ (shape codes, chiral tags, vertex indices); returns clean SMILES with RDKit\
-    \ atom maps and fragment-to-atom mapping for downstream eta-bond and polydentate\
-    \ processing. Function: _extract_oin_constraints() \u2192 3-tuple (stripped_smiles,\
-    \ constraints_dict, fragment_to_atom_mapping)"
-  inputs:
-  - data_type: oin_string
-    source_id: atom_oin3d_generator
-  outputs:
-  - data_type: constraints_dict
-    target_id: atom_oin_parser_gen
-  - data_type: stripped_smiles
-    target_id: atom_direct_parser_ast
-  - data_type: fragment_to_atom_mapping
-    target_id: atom_direct_parser_integration
-  edges:
-    depends_on: []
-    implements: []
-- id: atom_direct_parser_ast
-  dimension: Atomic
-  status: dirty
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'AST Tokenization: Parses unsanitized SMILES (from regex stage) into
-    RDKit atom/bond lists; preserves aromatic flags and atom maps for Molassembler'
-  inputs:
-  - data_type: stripped_smiles
-    source_id: atom_direct_parser_regex
-  outputs:
-  - data_type: atom_list
-    target_id: atom_direct_parser_masm
-  - data_type: bond_list
-    target_id: atom_direct_parser_masm
-  edges:
-    depends_on:
-    - atom_direct_parser_regex
-    implements: []
-- id: atom_direct_parser_masm
-  dimension: Atomic
-  status: dirty
-  associated_file: src/oinsmiles/generation/oin_parser.py
-  description: 'Molassembler Instantiator: Constructs masm.Molecule from atoms, bonds,
-    and shape/eta constraints; all-or-nothing error handling'
-  inputs:
-  - data_type: atom_list
-    source_id: atom_direct_parser_ast
-  - data_type: bond_list
-    source_id: atom_direct_parser_ast
-  - data_type: constraints_dict
-    source_id: atom_direct_parser_regex
-  outputs:
-  - data_type: molassembler_mol
-    target_id: atom_oin_parser_gen
-  edges:
-    depends_on:
-    - atom_direct_parser_ast
-    - atom_direct_parser_regex
-    implements: []
-- id: atom_direct_parser_integration
-  dimension: Atomic
-  status: clean
-  associated_file: src/oinsmiles/generation/engine.py
-  description: "parse_oin_direct(): Standalone function implementing full OIN parser\
-    \ pipeline (regex \u2192 AST \u2192 Molassembler \u2192 DG); NOT currently integrated\
-    \ into OIN3DGenerator (which uses legacy parser); available as alternative for\
-    \ direct parsing"
-  inputs:
-  - data_type: oin_string
-    source_id: user_code
-  outputs:
-  - data_type: generated_structure
-    target_id: user_code
-  edges:
-    depends_on:
-    - atom_direct_parser_regex
-    - atom_direct_parser_ast
-    - atom_direct_parser_masm
-    implements: []
 - id: atom_oin_parser_gen
   dimension: Atomic
   status: clean
   associated_file: src/oinsmiles/generation/oin_parser.py
   description: "OINParser (generation): Parses OIN strings \u2192 ParsedOIN dataclass\
-    \ with geometry, slots, connectivity; uses regex preprocessor for v3.6 inline\
-    \ format"
+    \ with geometry, slots, connectivity; handles both v3.6 inline (via\
+    \ OINInlineHandler) and v2.4 sidecar formats, resolving slot vectors against the\
+    \ TEMPLATES geometry tables"
   inputs:
   - data_type: oin_string
     source_id: atom_oin3d_generator
-  - data_type: constraints_dict
-    source_id: atom_direct_parser_regex
-  - data_type: stripped_smiles
-    source_id: atom_direct_parser_regex
   outputs:
   - data_type: parsed_oin
-    target_id: atom_molassembler_adapter
+    target_id: atom_metallogen_adapter
   edges:
-    depends_on:
-    - atom_direct_parser_regex
+    depends_on: []
     implements: []
 - id: atom_oin_inline_handler
   dimension: Atomic
-  status: clean
+  status: dirty
   associated_file: src/oinsmiles/oin/inline.py
-  description: 'OINInlineHandler: Parses/generates OIN v3.6 inline format (e.g. [Pt@SP1_SPL].[Cl]{0}.[Cl]{1})'
+  description: 'OINInlineHandler: Parses/generates OIN v3.6 inline format (e.g. [Pt@SP1_SPL].[Cl]{0}.[Cl]{1}).
+    R3 (v0.3.7): a terminal-nitride 0-H bracket branch in the replace_map closure
+    emits [N]{slot} instead of bare N{slot} when the mapped atom has GetDegree() ==
+    0 (no heavy neighbour), disambiguating a 0-H nitride from a bare-N 3-H ammine'
   inputs:
   - data_type: mol_with_stereo
     source_id: atom_chirality_recovery
@@ -498,10 +364,12 @@ nodes:
     implements: []
 - id: atom_xyz2mol
   dimension: Atomic
-  status: clean
+  status: dirty
   associated_file: src/oinsmiles/utils/xyz2mol.py
   description: 'xyz2mol: Graph generation from 3D coordinates using Jensen Group algorithm;
-    produces RDKit mol with 3D conformer'
+    produces RDKit mol with 3D conformer. get_tmc_mol() and _repair_mixed_aromaticity()
+    call into the new utils/aromaticity.py (dearomatize_stuck_rings) to de-aromatize
+    rings stuck in a kekulization-hostile state before sanitization'
   inputs:
   - data_type: xyz_block
     source_id: user_code
@@ -509,7 +377,8 @@ nodes:
   - data_type: tmc_mol_with_3d
     target_id: atom_cip_assigner
   edges:
-    depends_on: []
+    depends_on:
+    - atom_aromaticity
     implements: []
 - id: oin.winding.signed_circulation
   dimension: Atomic
@@ -539,15 +408,14 @@ nodes:
     reduces hapticity to virtual atoms, assigns slots, applies maximization + homogeneous
     sorting + heading-atom selection for canonical geometry string, delegating winding
     sign to oin.winding.signed_circulation. Eta-ring canonicalization (2026-07-04,
-    MiniPRD_EtaRingCanonicalization): a scoped eta-only rank swap reorders only
-    same-mass, content-distinct haptic (eta) fragments among the rank slots they
-    already occupy, keyed on heading-independent canonical ring SMILES with winding
-    sense as a content-identical tiebreak only (RC1); the heading atom of a
-    substituted/asymmetric eta ring not in SYMMETRIC_LIGANDS is chosen by lowest
-    Chem.CanonicalRankAtoms rank instead of 3D geometric alignment, both with a
-    fail-safe fallback to the prior geometric behavior (RC2). Both fixes are
-    order-invariant, non-eta/metal ranks and the SYMMETRIC_LIGANDS path are
-    untouched by construction, and neither touches winding-sign computation.'
+    MiniPRD_EtaRingCanonicalization): a scoped eta-only rank swap reorders only same-mass,
+    content-distinct haptic (eta) fragments among the rank slots they already occupy,
+    keyed on heading-independent canonical ring SMILES with winding sense as a content-identical
+    tiebreak only (RC1); the heading atom of a substituted/asymmetric eta ring not
+    in SYMMETRIC_LIGANDS is chosen by lowest Chem.CanonicalRankAtoms rank instead
+    of 3D geometric alignment, both with a fail-safe fallback to the prior geometric
+    behavior (RC2). Both fixes are order-invariant, non-eta/metal ranks and the SYMMETRIC_LIGANDS
+    path are untouched by construction, and neither touches winding-sign computation.'
   inputs:
   - data_type: mol_with_cip_codes
     source_id: atom_cip_assigner
@@ -564,10 +432,14 @@ nodes:
     implements: []
 - id: atom_oin_sanitizer
   dimension: Atomic
-  status: clean
+  status: dirty
   associated_file: src/oinsmiles/utils/oin_aligner.py
   description: 'OINSanitizer: RDKit sanitization with property preservation; generates
-    robust SMILES from fragments'
+    robust SMILES from fragments. R4 (v0.3.7): generate_robust_smiles() charges the
+    shell on a NON-binding chalcogen donor (e.g. a croconate/oxo ring O, a nitrito
+    -O) that carries a genuine valence deficit -- a valence-1 O becomes [O-] via SetFormalCharge(-deficit)
+    rather than a radical -- disambiguating a true 0-H chalcogen from an aqua/hydroxo/carbonyl/ether
+    O sitting at full valence'
   inputs:
   - data_type: aligned_geometry
     source_id: atom_oin_aligner
@@ -586,7 +458,9 @@ nodes:
   description: 'main() entry point and subcommand dispatchers: Creates argparse parser
     for ''oin-smiles'' command; dispatches xyz2oin subcommand via _cmd_xyz2oin (calls
     XYZToSMILES().convert(), prints OIN string) or oin2xyz subcommand via _cmd_oin2xyz
-    (calls OIN3DGenerator().generate(), prints result.xyz); handles errors and exit codes'
+    (calls OIN3DGenerator(optimizer=args.optimizer).generate(args.oin), prints
+    result.xyz); oin2xyz exposes a single --optimizer flag (geometry optimizer for
+    the MetalloGen engine); handles errors and exit codes'
   inputs:
   - data_type: sys_argv
     source_id: user_code
@@ -598,53 +472,337 @@ nodes:
     - atom_xyz_to_smiles
     - atom_oin3d_generator
     implements: []
+- id: mod_generator3d
+  dimension: Module
+  status: clean
+  associated_file: src/oinsmiles/generator3d/
+  description: 'MetalloGen 3D structure generation engine (new package, added v0.3.4/v0.3.5):
+    dummy-metal + RDKit CoordMap distance-geometry embedding, PuLP/ILP bond-order
+    and formal-charge resolution, constrained MMFF/UFF geometry cleanup, and ASE-based
+    geometry refinement (g-xTB subprocess / MACE-omol25). Instantiated by generation/metallogen_adapter.py
+    as the default OIN3DGenerator backend'
+  inputs:
+  - data_type: msmiles_string
+    source_id: atom_metallogen_adapter
+  outputs:
+  - data_type: xyz_positions
+    target_id: atom_metallogen_adapter
+  - data_type: rdkit_mol
+    target_id: atom_metallogen_adapter
+  edges:
+    depends_on:
+    - mod_utils
+    implements:
+    - atom_metallogen_generate_3d
+    - atom_metallogen_om
+    - atom_metallogen_embed
+    - atom_metallogen_clean_geometry
+    - atom_metallogen_chem
+    - atom_metallogen_process
+    - atom_metallogen_ligand
+    - atom_compute_chg_and_bo_pulp
+    - atom_ml_optimizer
+- id: atom_metallogen_generate_3d
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/__init__.py
+  description: 'generate_3d_structures(): top-level MetalloGen orchestrator -- embed
+    candidate conformers, run TMCOptimizer force-field cleanup, filter/dedupe by stereo
+    and heavy-atom RMSD (calculate_heavy_atom_rmsd), then optionally hand off to ASEOptimizer
+    for g-xTB/MACE refinement; get_xyz_string() serializes the chosen Molecule to
+    an XYZ block'
+  inputs:
+  - data_type: metal_complex
+    source_id: atom_metallogen_om
+  outputs:
+  - data_type: xyz_string
+    target_id: atom_metallogen_adapter
+  edges:
+    depends_on:
+    - atom_metallogen_om
+    - atom_metallogen_embed
+    - atom_metallogen_clean_geometry
+    - atom_ml_optimizer
+    implements: []
+- id: atom_metallogen_om
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/om.py
+  description: Geometry and MetalComplex (center atom + ligand list + adjacency/bond-order
+    matrices) data classes; construct_metal_complex() builds a MetalComplex; get_om_from_modified_smiles()
+    parses an m-SMILES string into a MetalComplex
+  inputs:
+  - data_type: msmiles_string
+    source_id: atom_metallogen_adapter
+  outputs:
+  - data_type: metal_complex
+    target_id: atom_metallogen_generate_3d
+  edges:
+    depends_on:
+    - atom_metallogen_chem
+    - atom_metallogen_embed
+    - atom_metallogen_process
+    - atom_metallogen_ligand
+    implements: []
+- id: atom_metallogen_embed
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/embed.py
+  description: 'get_embedding(): main dummy-metal + RDKit CoordMap distance-geometry
+    embed entry point; _apply_double_bond_stereo() and _apply_atom_chirality() enforce
+    carried E/Z and sp3 chirality on the embed; align_double_single_ligand() and get_dummy_center*()
+    helpers position the dummy metal center'
+  inputs:
+  - data_type: metal_complex
+    source_id: atom_metallogen_om
+  outputs:
+  - data_type: embedded_conformer
+    target_id: atom_metallogen_generate_3d
+  edges:
+    depends_on:
+    - atom_metallogen_chem
+    implements: []
+- id: atom_metallogen_clean_geometry
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/clean_geometry.py
+  description: 'TMCOptimizer: constrained MMFF/UFF scan-based geometry cleanup for
+    embedded conformers (ff_max_iters/ff_force_tol/ff_energy_tol/d_converge/num_relaxation
+    knobs feed RDKit ForceField.Minimize())'
+  inputs:
+  - data_type: embedded_conformer
+    source_id: atom_metallogen_embed
+  outputs:
+  - data_type: cleaned_conformer
+    target_id: atom_metallogen_generate_3d
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_metallogen_chem
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/chem.py
+  description: 'Atom, Molecule, Intermediate(Molecule): core molecular-graph data
+    model (atoms, bonds, bond-order/adjacency matrices, charge, energy) shared across
+    generator3d'
+  inputs:
+  - data_type: parsed_atoms_bonds
+    source_id: atom_metallogen_process
+  outputs:
+  - data_type: molecule_object
+    target_id: atom_metallogen_om
+  edges:
+    depends_on:
+    - atom_metallogen_process
+    implements: []
+- id: atom_metallogen_process
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/process.py
+  description: 'Utility layer over chem.Molecule: RDKit<->ace_mol conversion (get_ace_mol_from_rd_mol),
+    adjacency/bond-order matrix helpers (get_adj_matrix_from_distance, get_bo_matrix_from_adj_matrix),
+    and charge/bond-order resolution dispatch (get_chg_and_bo -> utils.compute_chg_and_bo_pulp).
+    Also de-aromatizes kekulization-hostile rings via utils/aromaticity.dearomatize_stuck_rings'
+  inputs:
+  - data_type: rdkit_mol
+    source_id: atom_metallogen_adapter
+  outputs:
+  - data_type: parsed_atoms_bonds
+    target_id: atom_metallogen_chem
+  edges:
+    depends_on:
+    - atom_compute_chg_and_bo_pulp
+    - atom_aromaticity
+    implements: []
+- id: atom_metallogen_ligand
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/ligand.py
+  description: Ligand data class; get_ligand_from_smiles() builds a ligand object
+    from SMILES and recovers C=C stereo from SMILES bond directions for embed-time
+    enforcement
+  inputs:
+  - data_type: ligand_smiles
+    source_id: atom_metallogen_om
+  outputs:
+  - data_type: ligand_object
+    target_id: atom_metallogen_om
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_compute_chg_and_bo_pulp
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/utils/compute_chg_and_bo_pulp.py
+  description: 'compute_chg_and_bo()/maximize_bo()/resolve_chg(): ILP-based (PuLP/CBC)
+    bond-order and formal-charge assignment; the topology-keyed memo chokepoint for
+    the v0.4.0-perf P2 wave (3-4x speedup on repeated topologies)'
+  inputs:
+  - data_type: adjacency_matrix
+    source_id: atom_metallogen_process
+  outputs:
+  - data_type: bond_order_charge_assignment
+    target_id: atom_metallogen_process
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_ml_optimizer
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generator3d/ml_optimizer.py
+  description: 'ASEOptimizer: unified ASE-calculator wrapper for post-embed geometry
+    refinement; method="xtb"/"g-xtb" shells out to the xtb binary (--gxtb --opt),
+    method="mace-omol25"/"mace-omol-0-extra-large-1024" loads mace.calculators.MACECalculator
+    and runs ASE LBFGS; returns (success, energy_eV, optimized_mol), falling back
+    to the force-field mol on failure'
+  inputs:
+  - data_type: cleaned_conformer
+    source_id: atom_metallogen_clean_geometry
+  outputs:
+  - data_type: optimized_conformer
+    target_id: atom_metallogen_generate_3d
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_metallogen_adapter
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/generation/metallogen_adapter.py
+  description: 'MetalloGenAdapter.generate(parsed) -> GeneratedStructure (imported
+    from generation/structure.py): the OIN3DGenerator backend.
+    convert_parsed_to_msmiles()/convert_oin_to_msmiles() turn
+    a ParsedOIN into an m-SMILES string via nearest-slot-vector matching against generator3d.globalvars
+    geometry tables; generate_3d_structures() (generator3d) produces the embedded/optimized
+    conformer; build_contract_mol() builds the contract-compliant RDKit mol (OIN bond-orders/stereo
+    + generator3d geometry), stamping _OIN_CIPCode_SP3 via _template_sp3_label();
+    _select_by_geometry() picks a geometry/winding-aware conformer. Also exposes OIN3DGeneratorMetallogen
+    (standalone parser+adapter wrapper) and UncoordinatedFragmentError'
+  inputs:
+  - data_type: parsed_oin
+    source_id: atom_oin_parser_gen
+  outputs:
+  - data_type: generated_structure
+    target_id: atom_oin3d_generator
+  edges:
+    depends_on:
+    - atom_metallogen_generate_3d
+    - atom_oin_parser_gen
+    - atom_xyz2mol
+    - atom_cip_assigner
+    - atom_chirality_recovery
+    - atom_clear_chelate_locked_bond_stereo
+    - atom_oin_aligner
+    - atom_generated_structure
+    implements: []
+- id: atom_oin_compare
+  dimension: Atomic
+  status: needs_review
+  associated_file: src/oinsmiles/oin/compare.py
+  description: Canonical OIN round-trip comparator, added v0.3.5 for the v0.3.7 round-trip
+    test wave. canonical_roundtrip_key(oin_string) -> (metal, sorted fragment keys,
+    winding tuple); normalize_oin_for_comparison() strips non-reproducible @SP/@OH/@TB
+    metal-stereo labels and normalizes [OH2]<->O; winding_canonical_key() treats eta-ring
+    winding as an order-independent multiset; _chelate_locked_fragment_key() mirrors
+    _clear_chelate_locked_bond_stereo using a dummy [Fe] probe; _parse_fragment()/_canonical_fragment_smiles()
+    retry with kekulization skipped on KekulizeException. Test/verification-only --
+    no production src/ importers, consumed only by tests/
+  inputs:
+  - data_type: oin_string
+    source_id: user_code
+  outputs:
+  - data_type: canonical_key
+    target_id: user_code
+  edges:
+    depends_on:
+    - atom_oin_inline_handler
+    implements: []
+- id: atom_aromaticity
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/utils/aromaticity.py
+  description: De-aromatizes rings stuck in a kekulization-hostile state. dearomatize_stuck_rings(rd_molecule,
+    add_hydrogen) is the main entry point, built on stuck_ring_atoms() (detection)
+    and clear_ring_aromaticity() (mutation); kekulize_safe_sanitize() sanitizes while
+    tolerating kekulization failure; OINEncodeError is the module's exception type.
+    Used by atom_xyz2mol (encode path) and atom_metallogen_process (decode path)
+  inputs:
+  - data_type: rdkit_mol
+    source_id: atom_xyz2mol
+  outputs:
+  - data_type: dearomatized_mol
+    target_id: atom_xyz2mol
+  edges:
+    depends_on: []
+    implements: []
+- id: atom_clear_chelate_locked_bond_stereo
+  dimension: Atomic
+  status: clean
+  associated_file: src/oinsmiles/core/translator.py
+  description: '_clear_chelate_locked_bond_stereo(): drops E/Z stereo from double
+    bonds that sit inside a ring which only closes through the metal (acac, salicylaldiminate,
+    nacnac, bis-imine, eta-alkene chelates), since RDKit''s SSSR ignores dative bonds
+    and mis-treats these rings as acyclic/free. Called from both the encode path (XYZToSMILES.convert(),
+    core/translator.py) and the decode path (metallogen_adapter.build_contract_mol())'
+  inputs:
+  - data_type: mol_with_stereo
+    source_id: atom_xyz2mol
+  outputs:
+  - data_type: mol_with_stereo
+    target_id: atom_xyz_to_smiles
+  edges:
+    depends_on: []
+    implements: []
 metadata:
-  total_modules: 6
-  total_atomic_nodes: 23
+  total_modules: 7
+  total_atomic_nodes: 30
   status_distribution:
-    clean: 27
-    dirty: 2
-    needs_review: 0
+    clean: 30
+    dirty: 5
+    needs_review: 2
   dirty_nodes:
-  - atom_direct_parser_ast (deferred from v0.2.1)
-  - atom_direct_parser_masm (deferred from v0.2.1)
+  - atom_xyz_to_smiles (2026-07-11 /hyper-discover: now depends_on atom_clear_chelate_locked_bond_stereo)
+  - atom_xyz2mol (2026-07-11 /hyper-discover: now depends_on atom_aromaticity)
+  - atom_oin_sanitizer (2026-07-11 /hyper-discover: R4 non-binding 0-H chalcogen charge-deficit fix)
+  - atom_oin_inline_handler (2026-07-11 /hyper-discover: terminal-nitride 0-H bracket branch)
+  - atom_cip_assigner (2026-07-11 /hyper-discover: R5 _OIN_CIPCode_SP3/_reparse_aromatic_cip_label mechanism)
+  needs_review_nodes:
+  - atom_api_exports (blast radius from atom_xyz_to_smiles/atom_cip_assigner/atom_chirality_recovery)
+  - atom_oin_compare (blast radius from mod_oin gaining an implements edge)
   nodes_reviewed:
+  - 2026-07-12 MolAssembler-removal reconciliation (this pass) -- deleted the 6 nodes
+    for the removed legacy engine + deferred direct parser (atom_molassembler_adapter,
+    generation.molassembler_adapter.haptic_face_correction,
+    atom_direct_parser_regex/ast/masm/integration) and every edge referencing them;
+    relocated atom_generated_structure's associated_file to generation/structure.py;
+    reconciled mod_generation, atom_oin3d_generator, atom_oin_parser_gen, atom_cli_main,
+    atom_metallogen_adapter, and atom_chirality_recovery (dropped engine="legacy"/Molassembler
+    references, dropped the now-orphaned _attach_dummy_metal helper) and moved them to clean
   - atom_api_exports (added OINStereoWarning to exports; added atom_cip_assigner dependency)
   - atom_xyz_to_smiles (clarified get_oin_string() handles full fragmentation/geometry/serialization
-    pipeline; added atom_oin_aligner and atom_oin_sanitizer dependencies; changed target_id
-    from mod_oin to user_code)
-  - atom_oin3d_generator (clarified v3.6 inline format support and Stereo Phase 4 Zone-A
-    P verification)
+    pipeline; added atom_oin_aligner and atom_oin_sanitizer dependencies; changed
+    target_id from mod_oin to user_code)
   - atom_oin_aligner (expanded description to cover both OINSanitizer and OINDiscreteAligner;
     revised inputs/outputs to match actual data flow with ligand_data_dict and canonical_geometry_string)
-  - atom_cli_main (clarified subcommand handlers and error handling; changed output type to
-    stdout_oin_or_xyz)
-  - atom_chirality_recovery (MiniPRD-C /hyper-audit -- documented the new _attach_dummy_metal
-    helper; moved dirty -> clean)
-  - atom_molassembler_adapter (MiniPRD-C /hyper-audit -- documented the full dummy-metal-embed
-    Zone-A-P fix in _stitch_fragment plus the DG-path enforcement loop; moved dirty -> clean)
   - atom_oin_aligner (2026-07-04 /hyper-audit MiniPRD_EtaRingCanonicalization -- documented
     the RC1 scoped eta-only rank swap and RC2 canonical-rank heading atom selection;
     already clean, description expanded only)
   generated_by: /hyper-discover + /hyper-audit MiniPRD_DirectParser_RegexPreprocessor
     + /hyper-audit MiniPRD_DirectParser_MolassemblerInstantiation + manual cleanup
     + 2026-07-03 needs_review resolution + 2026-07-03 /hyper-audit MiniPRD_ZoneA_P_SPL_DummyEmbed
-    + 2026-07-04 /hyper-audit MiniPRD_EtaRingCanonicalization
+    + 2026-07-04 /hyper-audit MiniPRD_EtaRingCanonicalization + 2026-07-11 /hyper-discover
+    (MetalloGen/generator3d subsystem) + 2026-07-12 /hyper-audit MolAssembler-removal
+    reconciliation
   generation_date: '2026-05-06'
-  last_audit: '2026-07-03'
-  last_audit_notes: All 5 needs_review nodes (atom_api_exports, atom_xyz_to_smiles,
-    atom_oin3d_generator, atom_oin_aligner, atom_cli_main) audited against source code;
-    inputs/outputs/descriptions updated to match actual implementation; all moved to
-    clean status. Separately, /hyper-audit of MiniPRD_ZoneA_P_SPL_DummyEmbed reconciled
-    the 2 dirty nodes it directly touched (atom_chirality_recovery, atom_molassembler_adapter)
-    to clean. The 2 remaining dirty nodes (atom_direct_parser_ast, atom_direct_parser_masm)
-    are unrelated, pre-existing v0.2.1 direct-parser debt, intentionally left untouched
-    (out of scope for this audit).
-  description: "OIN-SMILES system consists of 6 core modules (API, Core, Generation,\
-    \ OIN, Utils, CLI) with 23 atomic components (classes/functions) distributed across\
-    \ two main pipelines. XYZ\u2192OIN pipeline (7 steps): xyz2mol graph generation \u2192 CIP\
-    \ assignment \u2192 sanitization \u2192 geometry alignment \u2192 winding detection \u2192 inline serialization.\
-    \ OIN\u2192XYZ pipeline (5 steps): OIN parsing with regex preprocessing \u2192 Molassembler\
-    \ instantiation \u2192 template-based/DG generation \u2192 Stereo Phase 4 Zone-A P verification.\
-    \ v0.2.1+ release with mature Molassembler integration, v3.6 inline format support,\
-    \ and optional direct parser."
+  last_audit: '2026-07-12'
+  last_discover: '2026-07-11'
+  last_discover_notes: "/hyper-discover added the entire MetalloGen 3D-generation subsystem, which had zero graph representation despite being the default OIN3DGenerator engine since v0.3.4/v0.3.5: new mod_generator3d module (9 atomic nodes covering generator3d/), plus atom_metallogen_adapter (generation/metallogen_adapter.py), atom_oin_compare (oin/compare.py, test/verification-only canonical round-trip comparator), atom_aromaticity (utils/aromaticity.py), and atom_clear_chelate_locked_bond_stereo (core/translator.py, shared encode/decode helper) -- 14 new nodes, all clean. Edges/descriptions on 10 pre-existing nodes were updated to reflect engine=\"metallogen\"|\"legacy\" selection, the new mod_core/mod_utils/mod_generator3d dependencies on mod_generation, and the R3/R4/R5 round-trip fixes (terminal-nitride 0-H bracket, non-binding chalcogen charge-deficit, _OIN_CIPCode_SP3 stamp/recover); those 10 were then marked dirty via hypergraph_updater.py's blast-radius propagator (per the skill's Final Action), cascading needs_review to atom_api_exports/atom_metallogen_adapter/atom_oin_compare/atom_oin_parser_gen. Semantic reconciliation of the 12 dirty + 4 needs_review nodes back to clean is deferred to a future /hyper-audit pass, consistent with this project's discover-then-audit workflow. The 2 pre-existing dirty nodes (atom_direct_parser_ast, atom_direct_parser_masm) remain untouched/out of scope."
+  description: "OIN-SMILES system consists of 7 core modules (API, Core, Generation,\
+    \ Generation3D/MetalloGen, OIN, Utils, CLI) with 30 atomic components (classes/functions)\
+    \ distributed across two main pipelines. XYZ\u2192OIN pipeline (7 steps): xyz2mol\
+    \ graph generation \u2192 CIP assignment \u2192 sanitization \u2192 geometry alignment\
+    \ \u2192 winding detection \u2192 inline serialization. OIN\u2192XYZ pipeline: OIN\
+    \ parsing (OINParser \u2192 ParsedOIN) \u2192 OIN3DGenerator \u2192 MetalloGen\
+    \ (dummy-metal CoordMap embedding in generator3d/, PuLP bond-order resolution,\
+    \ g-xTB/MACE optimization, via metallogen_adapter.py) \u2192 GeneratedStructure.\
+    \ MetalloGen is the sole 3D-generation engine; the legacy Molassembler backend\
+    \ and the deferred direct parser were removed in the 2026-07-12 cleanup."

@@ -20,9 +20,9 @@ XYZToSMILES.convert()
 ```
 OIN3DGenerator.generate()
   → generation/OINParser          # returns ParsedOIN dataclass
-  → MolassemblerAdapter
-      → template-based placement  # primary path for all ligand types
-      → DG fallback               # distance geometry for remaining conformers
+  → MetalloGenAdapter
+      → dummy-metal + RDKit CoordMap embed
+      → constrained MMFF/UFF cleanup + optimizer refinement (g-xTB / MACE / FF)
   → GeneratedStructure(xyz, mol)
 ```
 
@@ -38,7 +38,7 @@ The metal center is **always `fragments[0]`** in both pipelines. This is a load-
 ## Tech Stack
 - **Language**: Python ≥ 3.10
 - **Package manager**: `uv` (`uv sync`, `uv run`)
-- **3D generation**: SCINE Molassembler ≥ 2.0.0 (`import scine_molassembler as masm`)
+- **3D generation**: vendored MetalloGen engine (`oinsmiles.generator3d`); dummy-metal + RDKit `CoordMap` embed
 - **Graph operations**: RDKit (`Chem`, `AllChem`)
 - **Graph construction**: xyz2mol (Jensen Group algorithm, vendored)
 - **Build**: `uv build`, entry point `oin-smiles` registered in `pyproject.toml`
@@ -49,8 +49,7 @@ The metal center is **always `fragments[0]`** in both pipelines. This is a load-
 - `GeneratedStructure.xyz` always available; `.mol` is None for eta fallback cases
 
 ## Design Patterns
-- **Template-first 3D placement**: Molassembler template placement is preferred over DG for all ligand types
-- **ProcessPoolExecutor for timeout**: DG runs in subprocess (not thread) for picklability
+- **Dummy-metal CoordMap embed**: MetalloGen replaces the metal with a dummy centre, embeds ligands against coordination-geometry-matched slot vectors, then relaxes with a constrained force field + optimizer
 - **CIPAssigner before fragmentation**: 3D-derived CIP codes must be computed on the full TMC mol, then propagated via atom properties
 - **`AssignAtomChiralTagsFromStructure` precedes `AssignStereochemistry`** to get @/@@ tags in SMILES
 
@@ -77,8 +76,6 @@ The metal center is **always `fragments[0]`** in both pipelines. This is a load-
 ## Anti-Patterns
 - Do not reorder fragment lists — metal-first invariant is load-bearing
 - Do not call `Chem.SanitizeMol()` after `AssignAtomChiralTagsFromStructure` — it clears stereo tags
-- Do not use threading for DG timeout — Molassembler is not picklable via threads
-- Do not import molassembler as `scine.molassembler` — use `import scine_molassembler as masm`
 
 ## Conventions
 - Testing: `uv run python -m unittest discover tests`

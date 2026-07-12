@@ -33,16 +33,10 @@ def _cmd_xyz2oin(args: argparse.Namespace) -> None:
 
 
 def _cmd_oin2xyz(args: argparse.Namespace) -> None:
-    from oinsmiles.generation.engine import (  # noqa: PLC0415
-        MolassemblerTimeoutError,
-        OIN3DGenerator,
-    )
+    from oinsmiles.generation.engine import OIN3DGenerator  # noqa: PLC0415
 
     try:
-        result = OIN3DGenerator(engine=args.engine, optimizer=args.optimizer).generate(args.oin)
-    except MolassemblerTimeoutError:
-        print("Error: Molassembler timed out", file=sys.stderr)
-        sys.exit(2)
+        result = OIN3DGenerator(optimizer=args.optimizer).generate(args.oin)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -78,20 +72,13 @@ def main() -> None:
     )
     p_oin2xyz.add_argument("oin", type=str, help="OIN-SMILES string.")
     p_oin2xyz.add_argument(
-        "--engine",
-        choices=["metallogen", "legacy"],
-        default="metallogen",
-        help="Generation backend (default: metallogen).",
-    )
-    p_oin2xyz.add_argument(
         "--optimizer",
         type=str,
         default="g-xtb",
         help=(
-            "Geometry optimizer for the metallogen engine (default: "
-            "xtb, standard g-xTB). Use 'mace-omol-0-extra-large-1024' or "
-            "'mace-omol25' for higher accuracy, or 'ff' for the fast FF-only path. "
-            "Ignored for --engine legacy."
+            "Geometry optimizer (default: xtb, standard g-xTB). Use "
+            "'mace-omol-0-extra-large-1024' or 'mace-omol25' for higher accuracy, "
+            "or 'ff' for the fast FF-only path."
         ),
     )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)

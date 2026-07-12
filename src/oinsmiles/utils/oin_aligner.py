@@ -1363,8 +1363,8 @@ class OINDiscreteAligner:
         # the ideal tetrahedral slot directions, so a single global
         # alignment_rotation of the template axis lands on the wrong side of the
         # (second) ring plane and flips its sign. The actual centroid axis can't.
-        # It also matches the generation-side convention (molassembler_adapter's
-        # haptic-face correction measures winding against the actual ring centroid).
+        # It also matches the generation-side convention (haptic-face winding is
+        # measured against the actual ring centroid).
         grp = np.asarray(grp_coords, dtype=float)
         axis_mol = grp.mean(axis=0)
 

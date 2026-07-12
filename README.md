@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.5"><img src="https://img.shields.io/badge/release-v0.3.5-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.3.7"><img src="https://img.shields.io/badge/release-v0.3.7-blue" alt="Latest Release"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
@@ -58,7 +58,7 @@ Beyond round-tripping, OIN aims to be a **canonical** representation: the same c
 - **Canonical Form**: The same complex normalizes to one string — enabling exact-match deduplication and isomer-aware similarity search across TMC datasets. Symmetric-donor binding slots (e.g. a carboxylate's two equivalent oxygens) are canonicalized so resonance-equivalent structures encode identically. See [Canonical Form & Use Cases](#️-canonical-form--use-cases).
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
-- **3D Generation**: The vendored **MetalloGen** engine is the default backend (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection); **SCINE Molassembler** remains available as the `legacy` backend (template placement + distance-geometry fallback, and the reference for Zone-A P stereo enforcement). Coordination numbers up to 8 are supported (including square-antiprismatic, `SQA`), and tricky donors — NHC carbenes, dative amines, and quinoid (amidinate / 2-iminopyridine) ligands — keep their correct hydrogen count and generate without kekulization crashes. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
+- **3D Generation**: The vendored **MetalloGen** engine (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection). Coordination numbers up to 8 are supported (including square-antiprismatic, `SQA`), and tricky donors — NHC carbenes, dative amines, and quinoid (amidinate / 2-iminopyridine) ligands — keep their correct hydrogen count and generate without kekulization crashes. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures.
 - **P/S/Si Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. A Zone-A P donor — one that binds the metal directly through a stereogenic lone pair — recovers its handedness across the full OIN → 3D → OIN round trip, and backbone (non-metal-bound) P, S, and Si stereocentres are carried through generation and re-oriented to the encoded handedness. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
 - **Double-Bond (E/Z) Stereo**: C=C cis/trans geometry is captured in the OIN string (`/`, `\`) and reproduced deterministically through 3D generation, so an *E* alkene never regenerates as *Z*. Applies to geometrically free double bonds; those locked by chelation are left to the coordination sphere.
 - **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation. Bond orders on metal-bound haptic ligands — e.g. the internal double bond of an η³-allyl — are preserved by template transfer rather than flattened to all-single on regeneration.
@@ -128,9 +128,8 @@ uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 # Higher accuracy MACE refinement (needs the `mace` extra + weights; note --extra mace):
 uv run --extra mace oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
 
-# Fast FF-only path (no torch/xtb), or the legacy Molassembler backend:
+# Fast FF-only path (no torch/xtb):
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff
-uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --engine legacy
 ```
 
 ### 3D to 1D (XYZ to OIN)
@@ -147,10 +146,9 @@ print(oin)
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 
-# Default engine is "metallogen" refined with standard g-xTB (requires g-xTB binary).
-# Use optimizer="mace-omol-0-extra-large-1024" for higher accuracy MLIP refinement.
-# Use optimizer="ff" for the fast FF-only path, or engine="legacy"
-# for the Molassembler backend (the reference for Zone-A P stereo enforcement).
+# 3D generation uses the MetalloGen engine refined with standard g-xTB (requires g-xTB binary).
+# Use optimizer="mace-omol-0-extra-large-1024" for higher accuracy MLIP refinement,
+# or optimizer="ff" for the fast FF-only path.
 generator = OIN3DGenerator()
 result = generator.generate("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
@@ -186,7 +184,7 @@ generator = OIN3DGenerator(
 )
 ```
 
-A `MolassemblerTimeoutError` is raised if generation exceeds the `timeout` limit (seconds).
+Generation is bounded by the `timeout` limit (seconds); it stops and returns without a conformer once the limit is reached.
 
 ### OIN v3.7 Inline Format
 
@@ -236,6 +234,8 @@ The following complexes pass the full round-trip test (OIN string identity + RMS
 - **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
 - **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
 
+**Dataset-scale validation** — beyond these hand-checked fixtures, OIN-SMILES round-trips **≈89%** of the 2,608-complex tmCAT/tmPHOTO benchmark on the default FF path (XYZ → OIN → XYZ → OIN, canonical string identity + coordination-sphere RMSD), up from 85.4% before the v0.3.7 residual-fix wave. See `CHANGELOG.md` `[0.3.7]` for the per-failure-class breakdown.
+
 ## 🛠️ Development
 
 ### Running Tests
@@ -269,9 +269,6 @@ uv run python tests/integration/verify_xyz_to_oin.py [--include-tmqm]
 # Writes XYZ, MOL, SDF and OIN files to --output-dir when provided
 uv run python tests/integration/verify_roundtrip.py [--output-dir /tmp/results] [--optimizer <opt>] [--ff-preset <preset>]
 
-# Compare DG strategies (single / ensemble / directed) side-by-side
-uv run python tests/integration/compare_dg_strategies.py [--output-dir /tmp/results]
-
 # Process and round-trip a large XYZ dataset
 uv run python tools/test_dataset_roundtrip.py --dataset-dir <dir> --output-dir <dir> [--quick] [--continue] [--mol-timeout 60] [--random]
 
@@ -289,7 +286,6 @@ All scripts write named output artifacts when `--output-dir` is specified:
 
 ## 🙏 Acknowledgements
 
-- **[SCINE Molassembler](https://github.com/qcscine/molassembler/)** — 3D structure generation and distance geometry.
 - **[MetalloGen](https://github.com/kyunghoonlee777/MetalloGen)** — 3D generation engine and optimization workflows for transition metal complexes.
 - **[MACE](https://github.com/acesuit/mace)** — Fast and accurate Machine Learning Interatomic Potentials (MLIP) for 3D geometry refinement.
 - **[xyz2mol](https://github.com/jensengroup/xyz2mol_tm)** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
