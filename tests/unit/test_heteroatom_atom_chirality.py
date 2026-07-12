@@ -53,6 +53,25 @@ OIN_CP_ADJACENT = (
     "CC(C)[C@@H]1CC[C@@H](C)C[C@H]1c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[Cl]{2}.[Cl]{3}"
 )
 
+# KAGXUM_comp_0: a methine carbon bonded to a substituted Cp AND a FUSED fluorenyl.
+# For a fused haptic ring the _oin_fragment_templates object's RemoveHs corrupts the
+# aromatic state, flipping rdCIPLabeler even under the aromatic-preserving sanitize,
+# so the label must be taken on a FRESH re-parse of the template SMILES. Guards
+# _template_sp3_label's re-parse.
+OIN_FUSED_RING_ADJACENT = (
+    "[Zr_TET].Cc{0}1[cH]{0>}[cH]{0}c{0}(C)c{0}1[C@H](c1ccccc1)"
+    "c{1>}1c{1}2ccccc{1}2c{1}2ccccc{1}12.[Cl]{2}.[Cl]{3}"
+)
+
+# GUXPIA_comp_0: a Zone-A phosphorus DONOR whose lone-pair CIP label is
+# representation-sensitive (bonded to an aromatic phenyl + a Cp arm). The lone-pair
+# stamp (_template_lp_label) and recover()'s Zone-A P branch both read it on the same
+# aromatic-preserving re-parse, so the donor round-trips at the correct handedness.
+OIN_P_DONOR_AROMATIC = (
+    "[Ni_SPL].[CH]1[CH][CH]C([P@@]{0}(Cc2ccc(CP{2}(c3ccccc3)c3ccccc3)n{1}2)"
+    "c2ccccc2)[CH][CH]1.S{3}c1ccccc1"
+)
+
 
 def _reencode_via_contract(oin):
     """Generate 3D then re-encode through the contract mol, as the harness does."""
@@ -98,6 +117,24 @@ class TestContractMolHonorsOINSpecification(unittest.TestCase):
             canonical_roundtrip_key(OIN_CP_ADJACENT),
             canonical_roundtrip_key(oin2),
             f"Cp-adjacent sp3 stereo mis-oriented: {oin2}",
+        )
+
+    def test_fused_ring_adjacent_sp3_round_trips(self):
+        """A carbon bonded to a fused eta-fluorenyl must round-trip (re-parsed CIP)."""
+        oin2 = _reencode_via_contract(OIN_FUSED_RING_ADJACENT)
+        self.assertEqual(
+            canonical_roundtrip_key(OIN_FUSED_RING_ADJACENT),
+            canonical_roundtrip_key(oin2),
+            f"fused-ring-adjacent sp3 stereo mis-oriented: {oin2}",
+        )
+
+    def test_aromatic_p_donor_lone_pair_round_trips(self):
+        """A Zone-A P donor with an aromatic arm must round-trip (re-parsed LP CIP)."""
+        oin2 = _reencode_via_contract(OIN_P_DONOR_AROMATIC)
+        self.assertEqual(
+            canonical_roundtrip_key(OIN_P_DONOR_AROMATIC),
+            canonical_roundtrip_key(oin2),
+            f"P-donor lone-pair mis-oriented: {oin2}",
         )
 
 
