@@ -1,11 +1,6 @@
 {
   "_comment": "Manual triage overrides for round-trip failures the stdlib classifier in classify_failures.py cannot route by string patterns alone (they need RDKit canonicalization: @-stereo where atom order also changed, RAW-unparseable aromatics, eta-slot placement on automorphic rings). Molecule -> defect class (must exist in SESSION_OF). classify_failures.py applies these AFTER automatic classification, for failed rows only. Append new hand-triaged cases here.",
   "_comment_winding": "A differing winding multiset is NOT automatically a notation bug. Since the encoder canonicalizes winding on eta rings that can be turned over onto themselves (v0.3.6), any winding difference that survives is a real coordinated-face difference. QOFTOU_comp_0 is such a case: MetalloGen builds its ansa-bis(indenyl) zirconocene as rac or meso non-deterministically across runs, so the classifier's winding_flip pattern misroutes it to S4. It is a generator stereochemistry defect.",
-  "FENMIX_comp_0": "H_on_terminal_oxo_imido",
-  "KENTEE_comp_0": "H_on_terminal_oxo_imido",
-  "KUNWIB_comp_0": "H_on_terminal_oxo_imido",
-  "TIPCUR_comp_0": "H_on_terminal_oxo_imido",
-  "ZIRPEX_comp_1": "H_on_terminal_oxo_imido",
   "ABERIK_comp_0": "garbled_aromatic",
   "BEGLUU_comp_0": "macrocycle_perception",
   "DUKMED_comp_0": "garbled_aromatic",
@@ -24,5 +19,18 @@
   "MEDHUB_comp_0": "atom_stereo",
   "XENNIO_comp_0": "atom_stereo",
   "SOHRAK_comp_0": "atom_stereo",
-  "QOFTOU_comp_0": "atom_stereo"
+  "QOFTOU_comp_0": "atom_stereo",
+  "_comment_R4_stale_removed": "R4 (roundtrip-residual-tail) RE-MEASURED the previously-routed rows on branch 18198811 (origin/main c06495c + the R4 O/S charge fix), rdkit 2026.3.3, --quick FF, 2026-07-11, and REMOVED the routes that no longer fail: (a) the 5 H_on_terminal_oxo_imido rows FENMIX/KENTEE/KUNWIB/TIPCUR/ZIRPEX_comp_1 now round-trip byte-identical under R3's canonical comparator (success); (b) 11 of the 13 E/Z rows and 2 of the 13 @-rows (CILGEM, EJUBUH) now pass under R3, plus KAHZEB/KEDLUA. The 2 former E/Z rows ACOXOH (rmsd=1.09) and QEGJOE (rmsd=1.02) now fail only as borderline high_rmsd under FF -- a metrics/optimizer concern (S5), NOT an E/Z notation defect -- so they are LEFT UNROUTED to auto-classify as high_rmsd. See docs/roundtrip_residual_triage_R4.md.",
+  "_comment_R4_atom_stereo": "The 11 @-rows below still fail as atom_stereo (sp3/@ and P stereocenter inversions from the embed) and are handed to the active R5/S6-stereo session (core/chirality.py + the generator embed stereo path). They are the string_mismatch_other rows whose per-fragment RDKit canonicalization differs only in @ tags.",
+  "AJOKUH_comp_0": "atom_stereo",
+  "APACAW_comp_1": "atom_stereo",
+  "CUQVUF_comp_0": "atom_stereo",
+  "FAMFUV_comp_0": "atom_stereo",
+  "GUXPAS_comp_0": "atom_stereo",
+  "ICOLOD_comp_0": "atom_stereo",
+  "IROXAP_comp_0": "atom_stereo",
+  "NONHUU_comp_0": "atom_stereo",
+  "SUNROK_comp_0": "atom_stereo",
+  "XEMSAK_comp_0": "atom_stereo",
+  "YOSYEM_comp_0": "atom_stereo"
 }
