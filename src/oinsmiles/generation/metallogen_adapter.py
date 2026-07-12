@@ -552,42 +552,47 @@ def _template_lp_label(t, ai: int) -> "str | None":
     sees -- so an rdCIPLabeler label taken here round-trips against recover()'s own
     recomputation. Returns None if the label can't be assigned.
     """
-    from rdkit.Chem import rdCIPLabeler
-
-    try:
-        tt = Chem.Mol(t)
-        rdCIPLabeler.AssignCIPLabels(tt)
-        a = tt.GetAtomWithIdx(ai)
-        return a.GetProp("_CIPCode") if a.HasProp("_CIPCode") else None
-    except Exception:
-        return None
+    # Same aromatic-preserving fresh re-parse as _template_sp3_label: a P donor
+    # bonded to an aromatic ring (GUXPIA) has a representation-sensitive rdCIPLabeler
+    # label, and recover()'s lone-pair branch reads it on the same re-parse.
+    return _template_sp3_label(t, ai)
 
 
 def _template_sp3_label(t, ai: int) -> "str | None":
     """Aromatic-preserving rdCIPLabeler label for a specified sp3 C/Si/S template atom.
 
-    Like ``_template_lp_label`` but sanitizes with kekulization SKIPPED
-    (``SANITIZE_ALL ^ SANITIZE_KEKULIZE``). rdCIPLabeler gives OPPOSITE R/S for a
-    stereocentre bonded to an aromatic haptic ring (Cp, indenyl, fluorenyl)
-    depending on whether that ring is left aromatic vs charged/kekulized -- and the
-    metal-free fragment ``recover()`` re-orients against emits the ring aromatic.
-    Taking the label on the aromatic form keeps the stamp in the same convention
-    ``recover()`` reads, so a Cp-adjacent centre orients correctly (BABWAD). Returns
-    None if the label can't be assigned.
+    rdCIPLabeler gives OPPOSITE R/S for a stereocentre bonded to an aromatic haptic
+    ring (Cp, indenyl, fluorenyl) depending on whether that ring is left aromatic vs
+    charged/kekulized -- and the metal-free fragment ``recover()`` re-orients against
+    emits the ring aromatic. So the label is taken with kekulization SKIPPED
+    (``SANITIZE_ALL ^ SANITIZE_KEKULIZE``) to match the convention recover() reads.
+
+    The label is computed on a FRESH re-parse of the template's SMILES, not the
+    ``_oin_fragment_templates`` object directly: that object's aromatic state is
+    corrupted by its ``RemoveHs(sanitize=False)`` for a FUSED haptic ring (indenyl,
+    fluorenyl), which flips rdCIPLabeler for the adjacent centre (KAGXUM) even under
+    the aromatic-preserving sanitize. An atom-map probe survives the re-parse so the
+    target atom is found regardless of SMILES atom re-ordering. Returns None on failure.
     """
     from rdkit.Chem import rdCIPLabeler
 
+    _PROBE = 99
     try:
-        tt = Chem.Mol(t)
+        tagged = Chem.Mol(t)
+        tagged.GetAtomWithIdx(ai).SetAtomMapNum(_PROBE)
+        tt = Chem.MolFromSmiles(Chem.MolToSmiles(tagged), sanitize=False)
+        if tt is None:
+            return None
         try:
             Chem.SanitizeMol(tt, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
         except Exception:
-            tt = Chem.Mol(t)
             tt.UpdatePropertyCache(strict=False)
         Chem.AssignStereochemistry(tt, cleanIt=True, force=True)
         rdCIPLabeler.AssignCIPLabels(tt)
-        a = tt.GetAtomWithIdx(ai)
-        return a.GetProp("_CIPCode") if a.HasProp("_CIPCode") else None
+        target = next((a for a in tt.GetAtoms() if a.GetAtomMapNum() == _PROBE), None)
+        if target is not None and target.HasProp("_CIPCode"):
+            return target.GetProp("_CIPCode")
+        return None
     except Exception:
         return None
 

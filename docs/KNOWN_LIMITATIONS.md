@@ -83,9 +83,9 @@ The forward encode (`XYZToSMILES.convert`) and the generator's contract-mol re-e
 and the `atom_stereo` registry rows are where the two `@`/`@@` sets disagree. The combined
 v0.3.7 R5 fix -- clearing stereo the encode never specified, plus re-orienting specified
 centres on the metal-free fragment with `rdCIPLabeler` -- takes this class from **0/25 to
-16/25 full round-trip successes**. Another 6 rows have their `@`/`@@` resolved and now fail on
-a *different* class (donor-H atom count, or geometry RMSD), i.e. they leave `atom_stereo`.
-Three residuals remain and are documented below.
+18/25 full round-trip successes**, and there are **no `@`/`@@`-disagreement residuals left**:
+the remaining 7 rows all have their `@`/`@@` resolved and now fail on a *different* class
+(donor-H atom count, or geometry RMSD / no conformer), i.e. they leave `atom_stereo`.
 
 ### Fixed: spurious stereo the forward encode never specified
 
@@ -117,25 +117,24 @@ metal-**present** contract label -- mis-oriented it. `build_contract_mol` now st
 metal-free template's `rdCIPLabeler` label (`_OIN_CIPCode_SP3`), and `ChiralityRecoveryUtility.recover`
 verifies-and-flips the centre against it on the metal-free fragment (mirroring the Zone-A P
 lone-pair branch; no-op on the forward-encode path, which never stamps the property). The label
-is taken **aromatic-preserving** (`_template_sp3_label`, `SANITIZE_ALL ^ SANITIZE_KEKULIZE`):
-rdCIPLabeler gives opposite R/S for a carbon bonded to an aromatic η-Cp depending on whether the
-ring is left aromatic vs kekulized, and the emitted fragment is aromatic, so the stamp must be
-labelled on the aromatic form (`BABWAD`). This carries the 16 successes above -- including cases
-previously mis-read as "wrong diastereomer," which the RMSD gate confirms are geometrically
-correct (`DAXJUI` rmsd 0.52).
+is taken **aromatic-preserving on a fresh re-parse** of the template SMILES
+(`_template_sp3_label` / `_reparse_aromatic_cip_label`, `SANITIZE_ALL ^ SANITIZE_KEKULIZE` with
+an atom-map probe): rdCIPLabeler gives opposite R/S for a carbon bonded to an aromatic haptic
+ring (η-Cp, and *fused* indenyl/fluorenyl -- `BABWAD`, `KAGXUM`, `NOSGAD`) depending on whether
+the ring is aromatic vs kekulized, and the processed template object carries a corrupted
+aromatic state, so the label is taken on a clean re-parse in the aromatic convention the
+emitted fragment uses. **Both** the stamp and recover()'s comparison read the label this way --
+using the re-parse on only one side flips a P-and-arene-adjacent centre (`BEPXEA`). The same
+re-parse is applied to the **Zone-A P donor** lone-pair label (`_template_lp_label` +
+recover()'s lone-pair branch), fixing a diphosphine donor bonded to an aromatic arm (`GUXPIA`,
+whose `@` now matches -- it fails instead on a separate donor-H atom count). This carries the
+18 successes above -- including cases previously mis-read as "wrong diastereomer," which the
+RMSD gate confirms are geometrically correct (`DAXJUI` rmsd 0.52).
 
 ### Documented residuals
 
-- **Fused-ring η-indenyl / fluorenyl-adjacent sp3 (`KAGXUM`, `NOSGAD`).** The aromatic-form
-  stamp above fixes a carbon bonded to a simple η-Cp (`BABWAD`), but a carbon bonded to a
-  *fused* haptic ring (indenyl, fluorenyl) still mis-orients: the aromatic-form `rdCIPLabeler`
-  label is unchanged from the kekulized one there, so the stamp and the fragment recover()
-  reads still disagree. A representation the two consistently share (or a parity-based, label-free
-  carry) would extend the fix to these.
-- **Zone-A P donor lone-pair flip (`GUXPIA`).** One diphosphine P *donor* arrives at the
-  opposite lone-pair sense; this is the `zone_a_lp_targets` path, not the C/Si/S branch above.
-- **Stereo resolved, blocked by another class (leaves `atom_stereo`):** `KAPCEM`, `XENNIO`
-  (donor-H atom-count, S1 domain -- the `@`/`@@` now matches); `EJUKUQ`, `FADSAE` (High RMSD --
+- **Stereo resolved, blocked by another class (leaves `atom_stereo`):** `KAPCEM`, `XENNIO`,
+  `GUXPIA` (donor-H atom-count, S1 domain -- the `@`/`@@` now matches); `EJUKUQ`, `FADSAE` (High RMSD --
   the generated geometry is genuinely distorted, a conformer-quality/R2 issue); `GAKZOK`,
   `QOFTOU` (no conformer at all -- see the `no_conformers` entry; `QOFTOU` also builds rac/meso
   non-deterministically).
