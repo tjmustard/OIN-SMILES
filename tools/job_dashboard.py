@@ -7,22 +7,23 @@
 # ]
 # ///
 
+import argparse
 import asyncio
 import json
 import os
 import sys
-import argparse
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastapi.responses import StreamingResponse
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+
 import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, StreamingResponse
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 app = FastAPI()
 target_dir = ""
 clients = set()
+
 
 class ChangeHandler(FileSystemEventHandler):
     def on_any_event(self, event):
@@ -34,20 +35,15 @@ class ChangeHandler(FileSystemEventHandler):
             except asyncio.QueueFull:
                 pass
 
+
 def get_stats():
-    stats = {
-        "total": 0,
-        "success": 0,
-        "failed": 0,
-        "pending": 0,
-        "jobs": []
-    }
-    
+    stats = {"total": 0, "success": 0, "failed": 0, "pending": 0, "jobs": []}
+
     registry_path = Path(target_dir) / "case_registry.json"
     summary_path = Path(target_dir) / "summary_roundtrip.json"
-    
+
     all_jobs = []
-    
+
     try:
         if registry_path.exists():
             with open(registry_path, "r") as f:
@@ -62,7 +58,7 @@ def get_stats():
                 else:
                     stats["pending"] += 1
             all_jobs = data
-            
+
         elif summary_path.exists():
             with open(summary_path, "r") as f:
                 data = json.load(f)
@@ -76,9 +72,10 @@ def get_stats():
                 else:
                     stats["pending"] += 1
             all_jobs = data
-            
+
         # Add a derived timestamp to each job for robust sorting
         import datetime
+
         for job in all_jobs:
             if job.get("saved_at"):
                 job["_sort_time"] = job["saved_at"]
@@ -90,24 +87,26 @@ def get_stats():
                     job["_sort_time"] = datetime.datetime.fromtimestamp(mtime).isoformat()
                 else:
                     job["_sort_time"] = "1970-01-01T00:00:00"
-                    
+
         # Sort explicitly by timestamp, newest first
         all_jobs.sort(key=lambda x: x.get("_sort_time", ""), reverse=True)
         stats["jobs"] = all_jobs[:50]
-        
+
         # Clean up internal sort key before sending to frontend
         for job in stats["jobs"]:
             if "_sort_time" in job:
-                job["saved_at"] = job.pop("_sort_time") # Use as display timestamp
-                
+                job["saved_at"] = job.pop("_sort_time")  # Use as display timestamp
+
     except Exception as e:
         print(f"Error reading stats: {e}")
 
     return stats
 
+
 @app.get("/api/data")
 async def data_endpoint():
     return get_stats()
+
 
 @app.get("/api/events")
 async def events():
@@ -121,8 +120,9 @@ async def events():
                 yield f"data: {msg}\n\n"
         except asyncio.CancelledError:
             clients.remove(queue)
-            
+
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -192,7 +192,7 @@ async def index():
                 -webkit-text-fill-color: transparent;
                 letter-spacing: -0.02em;
             }
-            
+
             .status-indicator {
                 display: flex;
                 align-items: center;
@@ -204,7 +204,7 @@ async def index():
                 border-radius: 9999px;
                 border: 1px solid rgba(16, 185, 129, 0.2);
             }
-            
+
             .status-dot {
                 width: 8px;
                 height: 8px;
@@ -309,7 +309,7 @@ async def index():
             tr:hover {
                 background-color: rgba(255, 255, 255, 0.03);
             }
-            
+
             tr:last-child td {
                 border-bottom: none;
             }
@@ -321,7 +321,7 @@ async def index():
                 font-weight: 600;
                 text-transform: uppercase;
             }
-            
+
             .badge-success {
                 background: rgba(16, 185, 129, 0.2);
                 color: var(--success);
@@ -339,7 +339,7 @@ async def index():
                 color: var(--pending);
                 border: 1px solid rgba(245, 158, 11, 0.3);
             }
-            
+
             .fade-in {
                 animation: fadeIn 0.5s ease-out forwards;
             }
@@ -348,7 +348,7 @@ async def index():
                 from { opacity: 0; transform: translateY(10px); }
                 to { opacity: 1; transform: translateY(0); }
             }
-            
+
             .empty-state {
                 text-align: center;
                 padding: 3rem;
@@ -416,29 +416,29 @@ async def index():
                         document.getElementById('stat-success').textContent = data.success;
                         document.getElementById('stat-failed').textContent = data.failed;
                         document.getElementById('stat-pending').textContent = data.pending;
-                        
+
                         const tbody = document.getElementById('jobs-tbody');
                         tbody.innerHTML = '';
-                        
+
                         if (!data.jobs || data.jobs.length === 0) {
                             tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No jobs found in directory.</td></tr>`;
                             return;
                         }
-                        
+
                         data.jobs.forEach(job => {
                             const tr = document.createElement('tr');
-                            
+
                             // Determine status
                             let status = job.class || job.status || 'pending';
                             let badgeClass = 'badge-pending';
                             let statusText = status.toUpperCase();
-                            
+
                             if (status === 'success') badgeClass = 'badge-success';
                             else if (status === 'error' || status === 'failed') badgeClass = 'badge-failed';
-                            
+
                             // Info column
                             let info = job.saved_at || job.tier_passed || job.commit_id || '-';
-                            
+
                             tr.innerHTML = `
                                 <td style="font-weight: 600;">${job.molecule || 'Unknown'}</td>
                                 <td><span class="badge ${badgeClass}">${statusText}</span></td>
@@ -460,20 +460,20 @@ async def index():
 
             // Setup SSE
             const eventSource = new EventSource('/api/events');
-            
+
             eventSource.onmessage = function(event) {
                 if (event.data === 'update') {
                     console.log('Update received, refreshing dashboard...');
                     updateDashboard();
                 }
             };
-            
+
             eventSource.onerror = function() {
                 document.getElementById('connection-status').innerHTML = '<div style="width:8px;height:8px;background:red;border-radius:50%;"></div> Reconnecting...';
                 document.getElementById('connection-status').style.color = '#ef4444';
                 document.getElementById('connection-status').style.borderColor = 'rgba(239, 68, 68, 0.2)';
             };
-            
+
             eventSource.onopen = function() {
                 document.getElementById('connection-status').innerHTML = '<div class="status-dot"></div> Live Updates Active';
                 document.getElementById('connection-status').style.color = '#10b981';
@@ -484,20 +484,21 @@ async def index():
     </html>
     """
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Job Dashboard")
     parser.add_argument("folder", type=str, help="Folder to monitor")
     args = parser.parse_args()
-    
+
     target_dir = args.folder
     if not os.path.isdir(target_dir):
         print(f"Error: {target_dir} is not a directory.")
         sys.exit(1)
-        
+
     observer = Observer()
     observer.schedule(ChangeHandler(), target_dir, recursive=True)
     observer.start()
-    
+
     print(f"Monitoring {target_dir} for changes...")
-    print(f"Starting server at http://localhost:8000")
+    print("Starting server at http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)

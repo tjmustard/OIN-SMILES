@@ -3,6 +3,34 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-07-12
+
+The MetalloGen **performance** wave (parallel worktree phases P0–P11), landed on top of the
+v0.3.7 accuracy line. It makes 1D → OIN → 3D generation measurably faster **without changing
+the generated chemistry** — at a fixed `--seed`, every generated XYZ is byte-identical to
+v0.3.7. Golden-complex speedups (load-fair A/B, seed 42, FF-only): **cisplatin 12.0×,
+ferrocene 5.6×, fac-Ir(ppy)₃ 6.9×, PdCl₂-BINAP 1.9×**. The wave confirmed two cost regimes:
+small/medium complexes are bound by the PuLP/CBC bond-order solver (attacked by P2), large
+ones by RDKit's ETKDG embedding (attacked by P3/P9). No OIN format change (still v3.7).
+
+### Added
+- **Deterministic generation + `--seed` (P1)** (`generation/engine.py`, `cli.py`, `generator3d/__init__.py`, `generation/metallogen_adapter.py`): generation is seeded end-to-end (default `seed=42`, per-attempt `seed + i*1009`), so the same OIN yields byte-identical XYZ across runs. `oin-smiles oin2xyz --seed N` and `OIN3DGenerator(seed=N)` sample a different but reproducible conformer. The dead `pool_size` parameter was dropped.
+- **`tools/benchmark_generation.py` (P0)**: a serial, per-stage generation profiler for the four golden OINs and a CN-stratified sample, reporting median + IQR over N seeded runs. This is the ground-truth benchmark the wave's speed claims are measured against.
+- **Curated metal–ligand bond-length table (`generator3d/bond_lengths.py`, P4/P8)**: metal-gated σ-donor distances (`ENABLED_METALS = {Ni, Pd, Pt, Zn, Cd, Hg, Ag}`) used as the FF-clean scan target so σ donors are pinned at physically realistic separations instead of the covalent-radius sum; unlisted pairs fall back to the covalent sum. Pd–P is exempted (`SHORT_PIN_EXEMPT_PAIRS`) to avoid over-tightening BINAP.
+
+### Changed
+- **Topology-keyed PuLP/CBC memoization (P2)** (`generator3d/utils/compute_chg_and_bo_pulp.py`, `generator3d/__init__.py`): the bond-order/charge solver dominates wall time for small and medium complexes. A per-generation memo keyed on fragment topology collapses redundant CBC subprocess solves within a single generation (cisplatin **432 → 21** solves). Load-fair marginal gain: cisplatin **9.7×**, ferrocene **5.3×**, BINAP **1.74×**. The cache is cleared per generation, so the speedup is a genuine per-invocation win, not a warm-cache artifact.
+- **Removed the dead ETKDG rebuild-retry ladder (P3)** (`generator3d/embed.py`, `generator3d/__init__.py`): a redundant embed retry loop forced ~4× wasted ETKDG embeds per ligand on failure. Removing it cuts fac-Ir(ppy)₃'s ETKDG embed time from **38.6 s → 3.2 s** (~32.9 s of a 57 s baseline) with byte-identical output. An opt-in batched parallel embed (`embed_num_threads`) is available but off by default (it samples conformers differently, so it is validated by the accuracy gate rather than byte-identity).
+- **Geometry-matcher candidate prefilter (P11)** (`utils/oin_aligner.py`): the O(n!) coordination-geometry matcher is gated behind a batched-numpy candidate prefilter that discards non-viable donor↔template permutations before the expensive `Rotation.align_vectors` step. Byte-identical winning permutation, RMSD, and rotation matrix vs the exhaustive sweep; `_map_to_template` **1.30 s → 0.07 s (17.8×)** on a CN-6 complex.
+- **Deterministic embed rescue for octahedral loose-scale failures (P9)** (`generator3d/embed.py`): the primary ETKDG embed returns `-1` (not an exception) for some OCT loose-scale conformers; a deterministic `useRandomCoords=False` retry rescues each. fac-Ir(ppy)₃ ETKDG failures **16 → 1**; the success path is byte-identical.
+- **Single-pass coordination perception (P5)** (`generation/metallogen_adapter.py`, `utils/oin_aligner.py`): `_select_by_geometry` classified and fit each candidate's coordination geometry twice; a `classify_and_fit` dedup does it once (Ir perception calls 20 → 10). Byte-identical.
+- **Honest optimizer fallback + PASS-2 tier relabel (P6)** (`generator3d/ml_optimizer.py`, `tools/test_dataset_roundtrip.py`, `manuscript/figures/plot_timing.py`): when no `xtb`/g-xTB binary is present the optimizer now warns loudly and returns the FF geometry, and the round-trip harness relabels the FF-fallback tier (`g-xTB_N` → `FF_reroll_N`) so reports no longer silently claim g-xTB refinement that did not happen.
+
+### Notes
+- **P10 (in-process CBC/HiGHS solver) shipped no code** — an in-process solver was neither byte-identical to nor faster than the existing CBC subprocess call; recorded as a negative result.
+- **P4/P8 are net-neutral on accuracy.** The curated bond lengths did not move coordination-sphere mean RMSD beyond noise (median +0.016 Å) and every distance stays well under the `rmsd ≥ 1.0` fail gate, so no molecule flips pass/fail; P8 erases the FF-clean speed regression P4 introduced on BINAP. Kept as harmless; a v0.4.1 follow-up will decide whether the pair earns its complexity.
+- **Accuracy is unchanged from v0.3.7.** Because generation is byte-identical at a fixed seed (P2/P3/P5/P11) or only turns a failed embed into a success (P9), the ≈89% tmCAT/tmPHOTO round-trip pass rate carries over; this wave adds speed, not coverage.
+
 ## [0.3.7] - 2026-07-12
 
 The tmCAT/tmPHOTO round-trip **residual** fix wave (parallel worktree sessions R1–R5),
