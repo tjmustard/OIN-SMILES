@@ -35,8 +35,13 @@ def _cmd_xyz2oin(args: argparse.Namespace) -> None:
 def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     from oinsmiles.generation.engine import OIN3DGenerator  # noqa: PLC0415
 
+    # Opt-in parallel embed. Default (1) => serial, byte-identical path; anything
+    # else engages the batched EmbedMultipleConfs path (faster, not byte-identical).
+    ff_params = {"embed_num_threads": args.embed_threads} if args.embed_threads != 1 else None
     try:
-        result = OIN3DGenerator(optimizer=args.optimizer, seed=args.seed).generate(args.oin)
+        result = OIN3DGenerator(
+            optimizer=args.optimizer, seed=args.seed, ff_params=ff_params
+        ).generate(args.oin)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -89,6 +94,17 @@ def main() -> None:
             "Random seed for the metallogen ETKDG embed (default: 42, "
             "deterministic). Change it to sample a different reproducible "
             "conformer."
+        ),
+    )
+    p_oin2xyz.add_argument(
+        "--embed-threads",
+        type=int,
+        default=1,
+        help=(
+            "Opt-in parallel conformer embedding across N cores (0 = all cores). "
+            "Default 1 keeps the serial, byte-identical embed. Any other value uses "
+            "RDKit's batched EmbedMultipleConfs -- faster for large complexes but "
+            "NOT byte-identical (it samples conformers differently)."
         ),
     )
     p_oin2xyz.set_defaults(func=_cmd_oin2xyz)
