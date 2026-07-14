@@ -2,8 +2,8 @@
 """Serial, seed-aware, per-stage profiler for the MetalloGen OIN -> 3D generator.
 
 This is P0 of the v0.4.0-perf wave. It produces the measurement ground truth every
-other phase's acceptance gate ("N.Nx faster, non-overlapping IQR") cites. See
-``spec/handoffs/v0.4.0-perf/BASELINE.md`` (the committed output) and ``README.md``.
+other phase's acceptance gate ("N.Nx faster, non-overlapping IQR") cites; see the
+v0.4.0 entry in ``CHANGELOG.md`` for the headline numbers it measured.
 
 Why this exists / what it does differently from a naive timer:
 
@@ -47,7 +47,8 @@ import sys
 import time
 
 # --------------------------------------------------------------------------------------
-# The four golden OINs -- copied verbatim from spec/handoffs/v0.4.0-perf/README.md:101-106
+# The four golden OINs -- the perf-wave A/B set (cisplatin / ferrocene / fac-Ir(ppy)3 /
+# PdCl2-BINAP)
 # --------------------------------------------------------------------------------------
 GOLDENS: dict[str, str] = {
     "cisplatin": "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
