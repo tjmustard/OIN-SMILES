@@ -532,7 +532,7 @@ def normalize_cols(arr):
     return arr / np.linalg.norm(arr, axis=1)[:, None]
 
 
-TEMPLATE_SPECS = {
+TEMPLATE_SPECS: dict[str, dict[int, dict]] = {
     "LIN": {0: {"pos": [0, 0, 1], "ref": [1, 0, 0]}, 1: {"pos": [0, 0, -1], "ref": [1, 0, 0]}},
     "TPL": {
         0: {"pos": [0, 1, 0], "ref": [0, 0, 1]},

@@ -198,11 +198,11 @@ def _chelate_locked_fragment_key(frag: str) -> str:
 
         # The dummy metal is atom 0; ligand atoms follow in clean's order, so a
         # probe atom index i maps to real atom i-1.
-        locked = set()
+        locked: set[int] = set()
         for ring in rings:
-            ring = set(ring)
-            if 0 in ring:
-                locked |= ring
+            ring_set = set(ring)
+            if 0 in ring_set:
+                locked |= ring_set
 
         for bond in probe.GetBonds():
             if bond.GetBondType() != Chem.BondType.DOUBLE:

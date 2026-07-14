@@ -117,7 +117,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
 
     metallogen_vectors = globalvars.known_geometries_vector_dict[geo]
     num_slots = len(metallogen_vectors)
-    ligand_parts = [None] * num_slots
+    ligand_parts: list[str | None] = [None] * num_slots
 
     # Metal fragment: strip OIN annotations (e.g. ``[Pt_SPL]`` -> ``[Pt]``).
     metal_frag = parsed.fragments[parsed.metal_fragment_idx]
@@ -332,7 +332,7 @@ def _template_donor_slots(t, parsed: ParsedOIN):
     vecs = [v for v in parsed.vectors if v.fragment_idx == fk]
     if not vecs:
         return {}, {}
-    binary = ({v.atom_in_fragment_idx: 0 for v in vecs}, {})
+    binary: tuple[dict, dict] = ({v.atom_in_fragment_idx: 0 for v in vecs}, {})
     if any(v.slot < 0 for v in vecs):
         return binary
     slots = {v.atom_in_fragment_idx: v.slot for v in vecs}
@@ -641,7 +641,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
         frag_rw = Chem.RWMol(rw)
         for d in donors:
             frag_rw.RemoveBond(metal_idx, d)
-        mapping = []
+        mapping: list = []
         frag_mols = Chem.GetMolFrags(
             frag_rw, asMols=True, sanitizeFrags=False, fragsMolAtomMapping=mapping
         )
