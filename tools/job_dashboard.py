@@ -45,33 +45,36 @@ def get_stats():
     all_jobs = []
 
     try:
-        if registry_path.exists():
-            with open(registry_path, "r") as f:
-                data = json.load(f)
-            stats["total"] = len(data)
-            for item in data:
-                cls = item.get("class", "pending")
-                if cls == "success":
-                    stats["success"] += 1
-                elif cls in ("error", "failed"):
-                    stats["failed"] += 1
-                else:
-                    stats["pending"] += 1
-            all_jobs = data
-
-        elif summary_path.exists():
+        # summary_roundtrip.json is the live source the sweep appends to on every
+        # molecule, so it is authoritative for "processed so far". case_registry.json
+        # is a derived classification that lags behind it (and may be absent), so it
+        # is only a fallback. Either way, "total" is the count of processed cases.
+        if summary_path.exists():
             with open(summary_path, "r") as f:
                 data = json.load(f)
-            stats["total"] = len(data)
-            for item in data:
-                status = item.get("status", "pending")
-                if status == "success":
-                    stats["success"] += 1
-                elif status in ("error", "failed"):
-                    stats["failed"] += 1
-                else:
-                    stats["pending"] += 1
-            all_jobs = data
+            label_key = "status"
+        elif registry_path.exists():
+            with open(registry_path, "r") as f:
+                data = json.load(f)
+            label_key = "class"
+        else:
+            data = []
+            label_key = "status"
+
+        stats["total"] = len(data)
+        for item in data:
+            # A case is pending only while still in flight (label begins with
+            # "pending", e.g. "pending_g-xtb"). Every other non-success label --
+            # "failed", "error", and the registry's granular classes like
+            # "no_conformers" or "high_rmsd" -- is a real failure, not pending.
+            label = item.get(label_key, "pending")
+            if label == "success":
+                stats["success"] += 1
+            elif label.startswith("pending"):
+                stats["pending"] += 1
+            else:
+                stats["failed"] += 1
+        all_jobs = data
 
         # Add a derived timestamp to each job for robust sorting
         import datetime

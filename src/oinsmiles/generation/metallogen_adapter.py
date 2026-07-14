@@ -1293,7 +1293,7 @@ class MetalloGenAdapter:
                 timeout=self.timeout,
                 # Bound the FF-only attempt loop by wall-clock. self.timeout is the
                 # same per-molecule budget the harness already plumbs (300 s full /
-                # 60 s quick); reuse it so a pathological embed (ZIHGEE ~1696 s) fails
+                # 30 s quick); reuse it so a pathological embed (ZIHGEE ~1696 s) fails
                 # fast instead of running all 250 attempts. Kept distinct from the ASE
                 # `timeout` semantics, which cap a single optimizer call.
                 embed_time_budget=self.timeout,

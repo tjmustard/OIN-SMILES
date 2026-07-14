@@ -463,7 +463,7 @@ def main():
     parser.add_argument(
         "--quick",
         action="store_true",
-        help="Run with a 60-second timeout for g-xTB and limited UFF pool size",
+        help="Run with a 30-second timeout for g-xTB and limited UFF pool size",
     )
     parser.add_argument(
         "--continue",
@@ -613,7 +613,7 @@ def main():
     xyz_to_smiles = XYZToSMILES()
 
     # Determine quick settings
-    timeout_val = 60 if args.quick else 300
+    timeout_val = 30 if args.quick else 300
     ff_params_fast = {"uff_pool_size": 2, "max_attempts": 10} if args.quick else None
 
     print("\n--- PASS 1: UFF FAST-PASS ---")
@@ -633,9 +633,14 @@ def main():
 
         # The encode runs inside the watchdog too: UGUHAH_comp_0 hangs in
         # XYZToSMILES.convert(), not in the generator.
+        t0 = time.monotonic()
         success, last_xyz, oin1_string = _encode_and_attempt(
             "UFF_1", gen_uff, uff_kwargs, xyz_path, report, args.mol_timeout, xyz_to_smiles
         )
+        # Stamp wall-clock spent here. Set *after* the call so the subprocess path's
+        # report.clear()/update(child_report) cannot wipe it. PASS 2 (if reached) adds
+        # its own tier time to this figure.
+        report.setdefault("metrics", {})["elapsed_s"] = round(time.monotonic() - t0, 3)
 
         if oin1_string is None and not success:
             save_artifacts(report, None, output_dir, is_final=True)
@@ -684,8 +689,14 @@ def main():
             basename = report["molecule"]
             print(f"[{i}/{len(requires_g_xtb)}] PASS 2: {basename}...", flush=True)
 
+            # Carry PASS-1 wall-clock forward, then accumulate each tier's time onto it,
+            # so elapsed_s ends up as the molecule's total across both passes. Read now,
+            # before any _run_attempt subprocess-path report.clear() can drop it.
+            elapsed_s = report.get("metrics", {}).get("elapsed_s", 0.0)
+
             # Attempt tier 1 (ensemble_size=1)
             print(f"  -> Trying {tier1}...", end=" ", flush=True)
+            t0 = time.monotonic()
             success, last_xyz = _run_attempt(
                 tier1,
                 gen_pass2_1,
@@ -695,6 +706,8 @@ def main():
                 report,
                 args.mol_timeout,
             )
+            elapsed_s += time.monotonic() - t0
+            report.setdefault("metrics", {})["elapsed_s"] = round(elapsed_s, 3)
 
             if success:
                 save_artifacts(report, last_xyz, output_dir, is_final=True)
@@ -717,6 +730,7 @@ def main():
 
             # Attempt tier 5 (ensemble_size=5)
             print(f"  -> Trying {tier5}...", end=" ", flush=True)
+            t0 = time.monotonic()
             success, last_xyz = _run_attempt(
                 tier5,
                 gen_pass2_5,
@@ -726,6 +740,8 @@ def main():
                 report,
                 args.mol_timeout,
             )
+            elapsed_s += time.monotonic() - t0
+            report.setdefault("metrics", {})["elapsed_s"] = round(elapsed_s, 3)
 
             if success:
                 print("SUCCESS")
