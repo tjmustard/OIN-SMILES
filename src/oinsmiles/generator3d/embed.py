@@ -1,4 +1,5 @@
 import itertools
+import logging
 import random
 
 import numpy as np
@@ -10,6 +11,8 @@ from scipy.spatial.transform import Rotation as R
 
 from . import chem, process
 from .utils import ic
+
+logger = logging.getLogger(__name__)
 
 
 # get_alternative_molecule is a pure function of the (structurally fixed) complex
@@ -563,14 +566,14 @@ def _finalize_positions(
     )
     np.fill_diagonal(distance_matrix, 1e6)
     if np.any(distance_matrix < atom_d_criteria):
-        print("Atoms are too close ...")
+        logger.debug("Atoms are too close ...")
         return None, (positions, -100000)
 
     # Check the collapse between ligands with ratio method (second criterion)
     ratio_matrix = distance_matrix / R
     min_ratio = np.min(ratio_matrix)
     if min_ratio < ratio_criteria:
-        print("Atoms are too close ...")
+        logger.debug("Atoms are too close ...")
         return None, (positions, -50000)
 
     # Finally, check the ratios that are ambiguous, between the ligands ...
@@ -585,10 +588,10 @@ def _finalize_positions(
     diff = np.sum(np.abs(adj_matrix - original_adj_matrix))
 
     if diff > 0:
-        print("Undesired bond is detected ...")
+        logger.debug("Undesired bond is detected ...")
         return None, (positions, -diff)
 
-    print("Embedding success!\n")
+    logger.debug("Embedding success!\n")
     return positions[: metal_complex.num_atom], None
 
 
@@ -665,7 +668,7 @@ def get_embedding(
         # chiral tags -- _apply_atom_chirality is what gives it something to enforce.
         _apply_double_bond_stereo(rd_mol, stereo_bonds)
         _apply_atom_chirality(rd_mol, chiral_centers)
-        print("Trying ", Chem.MolToSmiles(rd_mol))
+        logger.debug("%s %s", "Trying ", Chem.MolToSmiles(rd_mol))
 
         positions = None
 
@@ -712,7 +715,7 @@ def get_embedding(
                     alternative_ace_mol.atom_list[metal_index].set_atomic_number(temp_metal_num)
                     rc = AllChem.EmbedMolecule(rd_mol, params)
                 except Exception:
-                    print("Embedding failed ...")
+                    logger.debug("Embedding failed ...")
                     failed = True
             if rc == -1 and not embed_raised:
                 # P9: a plain -1 (no exception) means the random-coords start left the
@@ -741,13 +744,13 @@ def get_embedding(
                 conformer = rd_mol.GetConformer()
             except Exception:
                 if not failed:
-                    print("Conformer not obtained ...")
+                    logger.debug("Conformer not obtained ...")
                     failed = True
             try:
                 positions = conformer.GetPositions()
             except Exception:
                 if not failed:
-                    print("Position not obtained ...")
+                    logger.debug("Position not obtained ...")
                     failed = True
 
             if embed_raised and (failed or positions is None):
@@ -760,24 +763,24 @@ def get_embedding(
                 # still apply; re-set the stereo on the rebuilt rd_mol.
                 _apply_double_bond_stereo(rd_mol, stereo_bonds)
                 _apply_atom_chirality(rd_mol, chiral_centers)
-                print("Trying ", Chem.MolToSmiles(rd_mol))
+                logger.debug("%s %s", "Trying ", Chem.MolToSmiles(rd_mol))
 
                 try:
                     rc = AllChem.EmbedMolecule(rd_mol, params)
                 except Exception:
-                    print("Embedding failed ...")
+                    logger.debug("Embedding failed ...")
                     continue
                 if rc == -1:
                     continue
                 try:
                     conformer = rd_mol.GetConformer()
                 except Exception:
-                    print("Conformer not obtained ...")
+                    logger.debug("Conformer not obtained ...")
                     continue
                 try:
                     positions = conformer.GetPositions()
                 except Exception:
-                    print("Position not obtained ...")
+                    logger.debug("Position not obtained ...")
                     continue
 
             if not failed:
@@ -808,7 +811,7 @@ def get_embedding(
         candidate_list.append(candidate)
         continue
 
-    print("Embedding failed ...")
+    logger.debug("Embedding failed ...")
 
     if len(candidate_list) == 0:
         return None
@@ -821,7 +824,7 @@ def get_embedding(
             if value > maximum_value:
                 maximum_value = value
                 final_positions = candidate[0]
-        print(f"Returning the best position ... maximum value {maximum_value}")
+        logger.debug(f"Returning the best position ... maximum value {maximum_value}")
         return final_positions[: metal_complex.num_atom]
 
 

@@ -17,12 +17,15 @@ implements.
 
 from __future__ import annotations
 
+import logging
 import warnings
 
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
 from .constants import TRANSITION_METALS_NUM
+
+logger = logging.getLogger(__name__)
 
 #: RDKit atomic numbers for nitrogen (N) and phosphorus (P).
 _PN_ATOMIC_NUMS: frozenset[int] = frozenset({7, 15})
@@ -466,7 +469,7 @@ class CIPAssigner:
                 metal_present_cip = mol.GetAtomWithIdx(p_idx).GetPropsAsDict().get("_OIN_CIPCode")
                 if metal_present_cip is None:
                     metal_present_cip = _metal_present_cip_label(mol, p_idx)
-                print(
+                logger.debug(
                     f"[Zone-A P diagnostic] atom {p_idx}: "
                     f"lone-pair convention={label!r}  "
                     f"metal-present convention={metal_present_cip!r} "
@@ -605,7 +608,7 @@ class ChiralityRecoveryUtility:
                 continue  # already handled by the Zone-A lone-pair branch above
 
             stored_cip: str | None = atom.GetPropsAsDict().get("_OIN_CIPCode")
-            current_cip: str | None = atom.GetPropsAsDict().get("_CIPCode")
+            current_cip = atom.GetPropsAsDict().get("_CIPCode")
             total_deg: int = atom.GetTotalDegree()
 
             if total_deg < 4:

@@ -130,38 +130,33 @@ class ExampleRunner:
         print(f"Input OIN: {example.oin_string}")
         test_name = f"{example.name} (OIN->XYZ)"
         try:
-            graph = self.smiles_to_xyz.convert(example.oin_string)
+            # SMILESToXYZ.convert now returns an XYZ block string (it delegates to
+            # the real OIN3DGenerator); count atoms from the XYZ header.
+            xyz = self.smiles_to_xyz.convert(example.oin_string)
+            lines = xyz.strip().splitlines()
+            atom_count = int(lines[0]) if lines else 0
             print(
-                f"Graph created with {len(graph.atoms)} atoms. (Expected: {example.expected_atom_count})"
+                f"XYZ generated with {atom_count} atoms. (Expected: {example.expected_atom_count})"
             )
 
             details = []
             failed = False
 
-            if example.expected_atom_count and len(graph.atoms) != example.expected_atom_count:
-                msg = f"Atom count mismatch! Expected {example.expected_atom_count}, got {len(graph.atoms)}"
+            if example.expected_atom_count and atom_count != example.expected_atom_count:
+                msg = (
+                    f"Atom count mismatch! Expected {example.expected_atom_count}, got {atom_count}"
+                )
                 print(f"WARNING: {msg}")
                 details.append(msg)
                 failed = True
 
-            dative_count = 0
-            for atom in graph.atoms:
-                for neighbor_idx, bond_type in atom.bonds.items():
-                    if str(bond_type) == "BondType.DATIVE":
-                        dative_count += 1
-                        print(f"  Dative Bond: {atom.index} -> {neighbor_idx}")
-
-            # Check dative bonds if specified? Logic missing in original but we can log success
-            print(
-                f"Total Dative Edges Found: {dative_count} (Expected ~{example.expected_dative_bonds * 2 if example.expected_dative_bonds else 'N/A'})"
-            )
             print(f"Example {index} Completed Successfully.")
 
             if failed:
                 reporter.log_failure(test_name, "Validation Failed", got="\n".join(details))
                 return False
             else:
-                reporter.log_success(test_name, f"Atoms: {len(graph.atoms)}")
+                reporter.log_success(test_name, f"Atoms: {atom_count}")
                 return True
 
         except Exception as e:

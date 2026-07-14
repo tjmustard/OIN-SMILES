@@ -70,9 +70,10 @@ ALLOWED_OXIDATION_STATES = {
 logger = logging.getLogger(__name__)
 
 params = Chem.MolStandardize.rdMolStandardize.MetalDisconnectorOptions()
-params.splitAromaticC = True
-params.splitGrignards = True
-params.adjustCharges = False
+# rdkit C-extension option attributes are untyped; mypy misreads the setter.
+params.splitAromaticC = True  # type: ignore[assignment]
+params.splitGrignards = True  # type: ignore[assignment]
+params.adjustCharges = False  # type: ignore[assignment]
 
 MetalNon_Hg = (
     "[#3,#11,#12,#19,#13,#21,#22,#23,#24,#25,#26,#27,#28,#29,#30,#39,#40,#41,"
@@ -1484,7 +1485,7 @@ if __name__ == "__main__":
     # Stop the function if it runs too long.
     def timeout_handler(num, stack):
         """Raise an exception when the SIGALRM watchdog fires."""
-        print("Received SIGALRM, terminating")
+        logger.debug("Received SIGALRM, terminating")
         raise Exception("Timeout")
 
     signal.signal(signal.SIGALRM, timeout_handler)
