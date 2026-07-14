@@ -21,7 +21,7 @@ from typing import List, Optional
 
 from reporting import VerificationReporter
 
-from oinsmiles import SMILESToXYZ, XYZToSMILES
+from oinsmiles import XYZToSMILES
 
 try:
     from tmqm_expected import EXPECTED_TMQM_RESULTS
@@ -97,7 +97,6 @@ def transform_xyz_content(xyz_content: str) -> str:
 
 class ExampleRunner:
     def __init__(self):
-        self.smiles_to_xyz = SMILESToXYZ()
         self.xyz_to_smiles = XYZToSMILES()
         self.examples: List[Example] = []
 

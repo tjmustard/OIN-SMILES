@@ -3,6 +3,42 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Removed
+- **`SMILESToXYZ` public API and its dead support cluster** (`core/translator.py`,
+  `oin/parser.py`, `oin/writer.py`, `core/graph.py` + their unit tests). The class never
+  functioned: `convert()` filled a `TMCGraph` with dummy `"X"` atoms and never parsed the
+  SMILES connectivity. The working OIN → 3D path is `OIN3DGenerator`
+  (`generation/engine.py`), which the `oin-smiles oin2xyz` CLI uses; `engine.py` docstrings
+  that pointed users at the broken `SMILESToXYZ` path were corrected. **Breaking** for any
+  external `from oinsmiles import SMILESToXYZ`, but the import was the only thing that worked.
+- **Orphaned one-off scripts** from completed waves: `tools/verify_metal_first.py`
+  (DirectParser gate spike; feature never shipped), `tools/test_uff_pool_size.py` (P0-era
+  UFF pool experiment), `tests/integration/{debug_welrow,reproduce_issue,
+  verify_prd_compliance,verify_ir_complexes}.py` and the committed regenerated output dir
+  `tests/integration/verification_artifacts_IR_TEST/`.
+- **Committed generated artifacts** in `tests/candidate_outputs/`: `molassembler_cisplatin.xyz`,
+  `spike_cisplatin.xyz`, `cli_cisplatin.xyz`, `AnsaMetallocene_TiCat1_before_baseline.xyz`.
+- **Inert dead code**: stray `pass` + dead string literal in `oin/inline.py`
+  (`generate_inline_string`), no-op `__main__` block in `generator3d/om.py`.
+- `docs/ETKDG_AROMATIC_FIX.md` (historical doc for the Molassembler backend removed in
+  v0.3.7; preserved in git history).
+
+### Fixed
+- **CI "Top-level tests" step was a silent no-op** — `unittest discover tests` collected
+  0 tests (the only module directly under `tests/` was pytest-style; subdirectories are not
+  packages). The step is removed; `tests/test_generator3d.py` was converted to
+  `unittest.TestCase` and moved to `tests/unit/` so it actually runs in CI.
+- `docs/KNOWN_LIMITATIONS.md` pointed at the removed `generation/molassembler_adapter.py`
+  for the bond-length table; now points at `generator3d/bond_lengths.py`.
+
+### Changed
+- HACF-toolchain framework tests (`test_autonomous_resolution`, `test_dynamic_orchestrator`,
+  `test_provenance_integration` + 7 manual-plan `.md` files) moved from `tests/integration/`
+  to `.agents/tests/` — they test `.agents/scripts/`, not the chemistry library. Deleted
+  25 empty `.claude/commands/*.md` stubs and the stale `.claude/backup.commands/` snapshot.
+
 ## [0.4.0] - 2026-07-12
 
 The MetalloGen **performance** wave (parallel worktree phases P0–P11), landed on top of the

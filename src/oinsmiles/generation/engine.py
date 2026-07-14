@@ -7,9 +7,7 @@ __all__ = ["OIN3DGenerator", "GeneratedStructure"]
 class OIN3DGenerator:
     """Generates 3D XYZ structures from OIN-SMILES strings.
 
-    **Warning:** This class is an internal implementation detail of OIN-SMILES.
-    Its API is subject to change without notice. Users should prefer
-    SMILESToXYZ.convert() instead.
+    This is the OIN->XYZ entry point (the ``oin-smiles oin2xyz`` CLI uses it).
 
     Parses the OIN string with :class:`OINParser` and generates a conformer via
     the MetalloGen backend (dummy-metal + RDKit ``CoordMap`` embed + constrained
@@ -63,9 +61,6 @@ class OIN3DGenerator:
 
     def generate(self, oin_string: str) -> GeneratedStructure:
         """Convert an OIN-SMILES string to a 3D structure.
-
-        **Internal implementation detail.** Not part of stable public API.
-        Use SMILESToXYZ.convert() instead.
 
         Parameters
         ----------
