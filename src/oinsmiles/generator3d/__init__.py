@@ -207,7 +207,9 @@ def generate_3d_structures(
         return []
 
     clean_ff_params = {
-        k: v for k, v in (ff_params or {}).items() if k not in ("max_attempts", "embed_num_threads")
+        k: v
+        for k, v in (ff_params or {}).items()
+        if k not in ("max_attempts", "embed_num_threads", "optimize_num_workers")
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
     options = [0, 1, 2]  # Added one more option to increase pool variety
@@ -434,10 +436,32 @@ def generate_3d_structures(
         opt = ASEOptimizer(method=optimizer, timeout=timeout)
 
         if opt:
-            optimized_mols = []
             mols_to_optimize = successful_mols[:num_conformers]
-            for mol in mols_to_optimize:
-                success, energy, new_mol = opt.optimize(mol)
+            # Optimize the pooled conformers concurrently. Each opt.optimize deep-copies
+            # its input and runs xtb in its own TemporaryDirectory subprocess pinned to a
+            # single OpenMP thread (see ml_optimizer), so the calls share no state and
+            # each xtb result is load-independent/deterministic. ThreadPoolExecutor.map
+            # preserves INPUT ORDER, so the stable sort-by-energy below is unchanged.
+            if len(mols_to_optimize) > 1:
+                import os  # noqa: PLC0415
+                from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+                # Worker cap: default to a safe count BELOW the core total (leave the
+                # machine headroom -- each worker runs a single-threaded xtb), overridable
+                # via ff_params["optimize_num_workers"]. Bounded by the number of
+                # conformers either way.
+                n_cpu = os.cpu_count() or 2
+                default_workers = max(1, n_cpu - 2)
+                requested = (ff_params or {}).get("optimize_num_workers")
+                workers = int(requested) if requested else default_workers
+                max_workers = max(1, min(len(mols_to_optimize), workers))
+                with ThreadPoolExecutor(max_workers=max_workers) as ex:
+                    opt_results = list(ex.map(opt.optimize, mols_to_optimize))
+            else:
+                opt_results = [opt.optimize(mol) for mol in mols_to_optimize]
+
+            optimized_mols = []
+            for (success, energy, new_mol), mol in zip(opt_results, mols_to_optimize):
                 if success:
                     optimized_mols.append((energy, new_mol))
                 else:

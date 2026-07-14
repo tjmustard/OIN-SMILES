@@ -122,6 +122,20 @@ class ASEOptimizer:
                     # Run g-xTB optimization
                     # The binary supports --gxtb --opt
                     cmd = ["xtb", "struc.xyz", "--gxtb", "--opt"]
+                    # Pin xtb to a single OpenMP thread. g-xTB (tblite) otherwise
+                    # spreads over all cores, and its FP reductions depend on the
+                    # runtime thread count -- so the result drifts with machine load
+                    # and cannot be safely parallelized across conformers. One thread
+                    # makes each optimization deterministic (load-independent) AND lets
+                    # the caller run N conformers concurrently for a real speedup. NOTE:
+                    # this changes the g-xTB reference geometry vs the all-core default
+                    # (a one-time re-baseline), so it is gated on a round-trip check.
+                    xtb_env = {
+                        **os.environ,
+                        "OMP_NUM_THREADS": "1",
+                        "MKL_NUM_THREADS": "1",
+                        "OPENBLAS_NUM_THREADS": "1",
+                    }
                     result = subprocess.run(
                         cmd,
                         cwd=tmpdir,
@@ -129,6 +143,7 @@ class ASEOptimizer:
                         text=True,
                         check=False,
                         timeout=self.timeout,
+                        env=xtb_env,
                     )
 
                     if result.returncode != 0:
