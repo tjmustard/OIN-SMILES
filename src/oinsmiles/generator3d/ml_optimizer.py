@@ -35,6 +35,11 @@ class ASEOptimizer:
                 raise ImportError(
                     "mace-torch is not installed. Please install it via 'uv add mace-torch'."
                 )
+            # Cache built calculators by (model_path, device) so the multi-hundred-MB
+            # MACE checkpoint is deserialized ONCE per optimizer instance instead of
+            # once per conformer. The calculator is stateless w.r.t. the molecule
+            # (calculate() is a pure function of the atoms), so reuse is byte-identical.
+            self._calc_cache = {}
         else:
             raise ValueError(f"Optimizer method {method} not supported yet.")
 
@@ -204,17 +209,21 @@ class ASEOptimizer:
                         # launch
                         _ = torch.matmul(torch.ones(10, 10).cuda(), torch.ones(10, 10).cuda())
 
-                    import warnings
+                    cache_key = (model_path, device)
+                    calc = self._calc_cache.get(cache_key)
+                    if calc is None:
+                        import warnings
 
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings(
-                            "ignore",
-                            message=".*TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD.*",
-                            category=UserWarning,
-                        )
-                        calc = self._calc_cls(
-                            model_paths=model_path, device=device, default_dtype="float64"
-                        )
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings(
+                                "ignore",
+                                message=".*TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD.*",
+                                category=UserWarning,
+                            )
+                            calc = self._calc_cls(
+                                model_paths=model_path, device=device, default_dtype="float64"
+                            )
+                        self._calc_cache[cache_key] = calc
 
                     atoms.calc = calc
                     opt = LBFGS(atoms, logfile=None)
