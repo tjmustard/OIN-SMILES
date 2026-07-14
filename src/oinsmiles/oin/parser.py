@@ -1,8 +1,19 @@
+"""Legacy OIN *sidecar/tag* parser.
+
+Parses the pipe-delimited V2.4 sidecar format
+(``[SMILES] |w:...|d:...|g:...|``) into ``(canonical_smiles, tags_dict)``.
+
+Named ``OINTagParser`` to avoid colliding with the modern, unrelated
+:class:`oinsmiles.generation.oin_parser.OINParser`, which parses the V3.x
+inline format into a rich :class:`ParsedOIN` for 3D generation. The two share
+neither a contract nor a return type; keep them distinct.
+"""
+
 from typing import Dict, List, Tuple
 
 
-class OINParser:
-    """Parse OIN strings into canonical SMILES plus tag/geometry data."""
+class OINTagParser:
+    """Parse OIN sidecar strings into canonical SMILES plus tag/geometry data."""
 
     def __init__(self):
         """Initialize the parser."""
