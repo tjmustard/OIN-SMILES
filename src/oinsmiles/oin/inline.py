@@ -57,17 +57,7 @@ class OINInlineHandler:
 
     @staticmethod
     def generate_inline_string(oin_v2_string: str) -> str:
-        """Convert a V2.4 sidecar OIN string into the V3.0 inline format."""
-        # ... (rest of method unchanged until loop)
-        # We need to preserve the surrounding code, so I will provide the chunks.
-        pass  # Placeholder for replace logic
-
-        # ... (skipping to parse_inline_string modification)
-
-        """
-        Converts a V2.4 string (|w:..|) to V3.0 Inline format.
-        Input: "[Pt].[Cl]... |g:SPL|w:1.0:0;2.0:1..."
-        """
+        """Convert a V2.4 sidecar OIN string (``|g:SPL|w:...|``) into the V3.0 inline format."""
         if "|" not in oin_v2_string:
             return oin_v2_string  # Not an OIN string
 

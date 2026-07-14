@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
-SCRIPTS_DIR = Path(__file__).parent.parent.parent / ".agents" / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import hyper_fix as hf  # noqa: E402

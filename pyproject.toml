@@ -94,6 +94,9 @@ ignore = ["D100", "D104"]
 # tests/** above, plus version-guard imports (import sys; check sys.version_info)
 # that must run before other imports, which trips E402.
 ".agents/scripts/**" = ["D", "E402", "E501"]
+# HACF framework tests (moved out of tests/integration/): same exemptions they had
+# under tests/**.
+".agents/tests/**" = ["D", "E402", "E501"]
 # Dev/diagnostic scripts (not part of the public API): same rationale as tests/**
 # -- standalone scripts, docstrings not required, long diagnostic/data lines.
 # Pyflakes (F) rules still apply, so real bugs are still caught.

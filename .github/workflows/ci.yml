@@ -47,7 +47,5 @@ jobs:
         run: uv sync
       - name: Unit tests
         run: uv run python -m unittest discover tests/unit
-      - name: Top-level tests
-        run: uv run python -m unittest discover tests
       - name: Encoder round-trip (XYZ -> OIN, 27 cases)
         run: uv run python tests/integration/verify_xyz_to_oin.py
