@@ -4,6 +4,13 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 # --- V2.3 Templates for Parser Resolution ---
+# INTENTIONALLY SEPARATE from the encoder's utils/oin_aligner.py::TEMPLATE_SPECS.
+# These are the *generation*-side slot vectors; TEMPLATE_SPECS is the *encoder*-side
+# set (positions + reference vectors). They agree on most geometries but NOT all:
+# SPY uses a different slot ordering here, and the aligner normalizes TET columns.
+# Do NOT "deduplicate" them into one table -- the two pipelines are deliberately
+# independent and each carries its own slot conventions; merging would silently
+# change one side's geometry. Keep any shared-geometry edits mirrored by hand.
 TEMPLATES = {
     "LIN": np.array([[0, 0, 1], [0, 0, -1]]),
     "TPL": np.array([[0, 1, 0], [0.8660254, -0.5, 0], [-0.8660254, -0.5, 0]]),

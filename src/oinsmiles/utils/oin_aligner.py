@@ -532,6 +532,12 @@ def normalize_cols(arr):
     return arr / np.linalg.norm(arr, axis=1)[:, None]
 
 
+# INTENTIONALLY SEPARATE from the generation-side generation/oin_parser.py::TEMPLATES.
+# This is the *encoder*-side geometry table (positions + reference vectors used for
+# alignment); the parser's TEMPLATES is positions-only and uses different slot
+# conventions on some geometries (notably SPY), plus TET here is column-normalized
+# below. Do NOT merge the two tables -- the encode and generate pipelines are
+# deliberately independent. See the matching note in generation/oin_parser.py.
 TEMPLATE_SPECS: dict[str, dict[int, dict]] = {
     "LIN": {0: {"pos": [0, 0, 1], "ref": [1, 0, 0]}, 1: {"pos": [0, 0, -1], "ref": [1, 0, 0]}},
     "TPL": {
