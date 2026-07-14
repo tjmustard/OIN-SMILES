@@ -280,13 +280,17 @@ class TMCOptimizer:
         combined_rd_mol.AddConformer(Chem.Conformer(combined_rd_mol.GetNumAtoms()), assignId=True)
 
         # Make force fields ...
+        # MMFF atom typing (``MMFFGetMoleculeProperties``) depends only on the fixed
+        # ligand graph, never on 3D coordinates, so compute it once here and reuse it
+        # for every per-iteration MMFF rebuild in the scan below (byte-identical: the
+        # same properties object yields the same force field).
         tmp_positions = np.array(tmp_positions)
         mmff = None
         uff = None
+        mmff_props = None
         try:
-            mmff = AllChem.MMFFGetMoleculeForceField(
-                combined_rd_mol, AllChem.MMFFGetMoleculeProperties(combined_rd_mol)
-            )
+            mmff_props = AllChem.MMFFGetMoleculeProperties(combined_rd_mol)
+            mmff = AllChem.MMFFGetMoleculeForceField(combined_rd_mol, mmff_props)
         except Exception:
             pass
         try:
@@ -310,6 +314,38 @@ class TMCOptimizer:
         )
 
         final_success = True
+
+        # Constant across the whole scan (fixed graph): O(1) donor lookup + atom count.
+        scanning_set = set(scanning_indices)
+        n_ff_atoms = combined_rd_mol.GetNumAtoms()
+
+        def _make_constrained_ff(ff_kind):
+            """Build one FF for the conformer's current coords, pinning atoms in place.
+
+            Every atom is constrained to its present position (scanning donors held
+            softer). The molecular graph is fixed across the scan, so building only the
+            FF actually Minimized -- and reusing the coordinate-independent
+            ``mmff_props`` -- is byte-identical to the old code that rebuilt BOTH force
+            fields every iteration.
+            """
+            if ff_kind == "mmff":
+                ff = AllChem.MMFFGetMoleculeForceField(combined_rd_mol, mmff_props)
+            else:
+                ff = AllChem.UFFGetMoleculeForceField(combined_rd_mol)
+            if ff is None:
+                return None
+            ff.Initialize()
+            for atom_idx in range(n_ff_atoms):
+                force_constant = binding_fix_value if atom_idx in scanning_set else fix_value
+                if ff_kind == "mmff":
+                    ff.MMFFAddPositionConstraint(
+                        atom_idx, maxDispl=0.00, forceConstant=force_constant
+                    )
+                else:
+                    ff.UFFAddPositionConstraint(
+                        atom_idx, maxDispl=0.00, forceConstant=force_constant
+                    )
+            return ff
 
         # Scan by each ligand ...
         for ligand_idx, ligand_binding_groups in enumerate(sorted_ligand_binding_groups_list):
@@ -359,38 +395,15 @@ class TMCOptimizer:
                         x, y, z = position
                         conformer.SetAtomPosition(i, Point3D(x, y, z))
 
-                    # Set force fields ...
-                    mmff = AllChem.MMFFGetMoleculeForceField(
-                        combined_rd_mol, AllChem.MMFFGetMoleculeProperties(combined_rd_mol)
+                    # Build+constrain each FF lazily -- only the one actually Minimized
+                    # is constructed (see _make_constrained_ff). In the common case
+                    # (default_ff="uff", UFF succeeds first) this skips the entire MMFF
+                    # rebuild -- atom typing included -- every iteration.
+                    ff_order = (
+                        ["uff", "mmff"] if self.default_ff.lower() == "uff" else ["mmff", "uff"]
                     )
-                    uff = AllChem.UFFGetMoleculeForceField(combined_rd_mol)
-
-                    # FF opt
-                    if mmff is not None:
-                        mmff.Initialize()
-                        for atom_idx in range(len(tmp_positions)):
-                            force_constant = fix_value
-                            if atom_idx in scanning_indices:
-                                force_constant = binding_fix_value
-                            mmff.MMFFAddPositionConstraint(
-                                atom_idx, maxDispl=0.00, forceConstant=force_constant
-                            )
-
-                    if uff is not None:
-                        uff.Initialize()
-                        for atom_idx in range(len(tmp_positions)):
-                            force_constant = fix_value
-                            if atom_idx in scanning_indices:
-                                force_constant = binding_fix_value
-                            uff.UFFAddPositionConstraint(
-                                atom_idx, maxDispl=0.00, forceConstant=force_constant
-                            )
-
-                    if self.default_ff.lower() == "uff":
-                        ffs = [uff, mmff]
-                    else:
-                        ffs = [mmff, uff]
-                    for ff in ffs:
+                    for ff_kind in ff_order:
+                        ff = _make_constrained_ff(ff_kind)
                         if ff is None:
                             continue
                         try:

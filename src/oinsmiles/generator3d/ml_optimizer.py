@@ -35,6 +35,11 @@ class ASEOptimizer:
                 raise ImportError(
                     "mace-torch is not installed. Please install it via 'uv add mace-torch'."
                 )
+            # Cache built calculators by (model_path, device) so the multi-hundred-MB
+            # MACE checkpoint is deserialized ONCE per optimizer instance instead of
+            # once per conformer. The calculator is stateless w.r.t. the molecule
+            # (calculate() is a pure function of the atoms), so reuse is byte-identical.
+            self._calc_cache = {}
         else:
             raise ValueError(f"Optimizer method {method} not supported yet.")
 
@@ -117,6 +122,20 @@ class ASEOptimizer:
                     # Run g-xTB optimization
                     # The binary supports --gxtb --opt
                     cmd = ["xtb", "struc.xyz", "--gxtb", "--opt"]
+                    # Pin xtb to a single OpenMP thread. g-xTB (tblite) otherwise
+                    # spreads over all cores, and its FP reductions depend on the
+                    # runtime thread count -- so the result drifts with machine load
+                    # and cannot be safely parallelized across conformers. One thread
+                    # makes each optimization deterministic (load-independent) AND lets
+                    # the caller run N conformers concurrently for a real speedup. NOTE:
+                    # this changes the g-xTB reference geometry vs the all-core default
+                    # (a one-time re-baseline), so it is gated on a round-trip check.
+                    xtb_env = {
+                        **os.environ,
+                        "OMP_NUM_THREADS": "1",
+                        "MKL_NUM_THREADS": "1",
+                        "OPENBLAS_NUM_THREADS": "1",
+                    }
                     result = subprocess.run(
                         cmd,
                         cwd=tmpdir,
@@ -124,6 +143,7 @@ class ASEOptimizer:
                         text=True,
                         check=False,
                         timeout=self.timeout,
+                        env=xtb_env,
                     )
 
                     if result.returncode != 0:
@@ -204,17 +224,21 @@ class ASEOptimizer:
                         # launch
                         _ = torch.matmul(torch.ones(10, 10).cuda(), torch.ones(10, 10).cuda())
 
-                    import warnings
+                    cache_key = (model_path, device)
+                    calc = self._calc_cache.get(cache_key)
+                    if calc is None:
+                        import warnings
 
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings(
-                            "ignore",
-                            message=".*TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD.*",
-                            category=UserWarning,
-                        )
-                        calc = self._calc_cls(
-                            model_paths=model_path, device=device, default_dtype="float64"
-                        )
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings(
+                                "ignore",
+                                message=".*TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD.*",
+                                category=UserWarning,
+                            )
+                            calc = self._calc_cls(
+                                model_paths=model_path, device=device, default_dtype="float64"
+                            )
+                        self._calc_cache[cache_key] = calc
 
                     atoms.calc = calc
                     opt = LBFGS(atoms, logfile=None)
