@@ -1,11 +1,11 @@
 import unittest
 
-from oinsmiles.oin.parser import OINParser
+from oinsmiles.oin.parser import OINTagParser
 
 
-class TestOINParser(unittest.TestCase):
+class TestOINTagParser(unittest.TestCase):
     def setUp(self):
-        self.parser = OINParser()
+        self.parser = OINTagParser()
 
     def test_parse_simple(self):
         oin_string = (
