@@ -5,11 +5,14 @@ __all__ = ["OIN3DGenerator", "GeneratedStructure"]
 
 
 class OIN3DGenerator:
-    """Generates 3D XYZ structures from OIN-SMILES strings.
+    """Generate 3D XYZ structures from OIN-SMILES strings (lower-level engine).
 
-    **Warning:** This class is an internal implementation detail of OIN-SMILES.
-    Its API is subject to change without notice. Users should prefer
-    SMILESToXYZ.convert() instead.
+    :class:`~oinsmiles.core.translator.SMILESToXYZ` is the simple, stable public
+    entry point and delegates here. Use ``OIN3DGenerator`` directly when you need
+    the richer :class:`GeneratedStructure` result (XYZ **and** the bonded RDKit
+    mol) or the full set of generation knobs (``optimizer``, ``ensemble_size``,
+    ``ff_preset``, ``seed``, ...); those lower-level knobs may evolve between
+    releases.
 
     Parses the OIN string with :class:`OINParser` and generates a conformer via
     the MetalloGen backend (dummy-metal + RDKit ``CoordMap`` embed + constrained
@@ -64,8 +67,9 @@ class OIN3DGenerator:
     def generate(self, oin_string: str) -> GeneratedStructure:
         """Convert an OIN-SMILES string to a 3D structure.
 
-        **Internal implementation detail.** Not part of stable public API.
-        Use SMILESToXYZ.convert() instead.
+        For just the XYZ string, prefer :meth:`SMILESToXYZ.convert`, which wraps
+        this. Call this method (or :meth:`SMILESToXYZ.generate`) when you also
+        need the bonded RDKit mol (``.mol``).
 
         Parameters
         ----------
