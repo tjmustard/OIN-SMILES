@@ -605,7 +605,7 @@ class ChiralityRecoveryUtility:
                 continue  # already handled by the Zone-A lone-pair branch above
 
             stored_cip: str | None = atom.GetPropsAsDict().get("_OIN_CIPCode")
-            current_cip: str | None = atom.GetPropsAsDict().get("_CIPCode")
+            current_cip = atom.GetPropsAsDict().get("_CIPCode")
             total_deg: int = atom.GetTotalDegree()
 
             if total_deg < 4:

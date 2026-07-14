@@ -27,6 +27,22 @@ jobs:
       - name: ruff format --check
         run: uv run ruff format --check .
 
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+      - name: Sync (includes dev tooling)
+        run: uv sync
+      # Scope + vendored-code carve-outs are configured in [tool.mypy] (pyproject).
+      - name: mypy
+        run: uv run mypy
+
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest

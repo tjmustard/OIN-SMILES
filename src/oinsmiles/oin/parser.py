@@ -73,7 +73,7 @@ class OINParser:
         Supports V1.4 (v:Metal.Ligand:x,y,z) and legacy V1.3 (w:Ligand:x,y,z).
         Returns list of (LigandIdx, x, y, z).
         """
-        coords = []
+        coords: list = []
         if not tag_content:
             return coords
 
@@ -103,7 +103,7 @@ class OINParser:
 
         Returns list of (LigandIdx, MetalIdx) tuples.
         """
-        bonds = []
+        bonds: list = []
         if not tag_content:
             return bonds
 

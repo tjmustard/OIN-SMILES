@@ -12,9 +12,9 @@ class OINWriter:
         self,
         smiles: str,
         coords: List[Tuple[int, float, float, float]],
-        dative_bonds: List[Tuple[int, int]] = None,
-        haptic_groups: List[str] = None,
-        geometry_label: str = None,
+        dative_bonds: List[Tuple[int, int]] | None = None,
+        haptic_groups: List[str] | None = None,
+        geometry_label: str | None = None,
     ) -> str:
         """Constructs the OIN string."""
         tags = []
