@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.4.0"><img src="https://img.shields.io/badge/release-v0.4.0-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.4.1"><img src="https://img.shields.io/badge/release-v0.4.1-blue" alt="Latest Release"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
@@ -63,7 +63,7 @@ Beyond round-tripping, OIN aims to be a **canonical** representation: the same c
 - **Double-Bond (E/Z) Stereo**: C=C cis/trans geometry is captured in the OIN string (`/`, `\`) and reproduced deterministically through 3D generation, so an *E* alkene never regenerates as *Z*. Applies to geometrically free double bonds; those locked by chelation are left to the coordination sphere.
 - **sp3 Atom Stereochemistry (`@`/`@@`)**: tetrahedral atom stereocentres on the ligand backbone — carbon, and heteroatoms such as sulfur and silicon — are encoded as `[C@H]`/`[C@@H]` and round-trip through 3D generation, including centres adjacent to the metal or an η-ligand (whose CIP label is resolved against the metal-free fragment). Stereo the OIN leaves unspecified is not invented on regeneration. See CHANGELOG `[0.3.7]`.
 - **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation. Bond orders on metal-bound haptic ligands — e.g. the internal double bond of an η³-allyl — are preserved by template transfer rather than flattened to all-single on regeneration.
-- **Deterministic, faster 3D generation**: generation is seeded (default `seed=42`), so the same OIN produces byte-identical XYZ across runs; pass `--seed`/`OIN3DGenerator(seed=…)` to sample a different reproducible conformer. The v0.4.0 performance wave made 1D → 3D generation markedly faster without changing the generated chemistry — roughly **12× for small complexes** (cisplatin) and **~5–7× for larger ones** (ferrocene, fac-Ir(ppy)₃), by memoizing the bond-order solver and removing redundant ETKDG embedding work. See CHANGELOG `[0.4.0]`.
+- **Deterministic, faster 3D generation**: generation is seeded (default `seed=42`), so the same OIN produces byte-identical XYZ across runs; pass `--seed`/`OIN3DGenerator(seed=…)` to sample a different reproducible conformer. The v0.4.0 performance wave made 1D → 3D generation markedly faster without changing the generated chemistry — roughly **12× for small complexes** (cisplatin) and **~5–7× for larger ones** (ferrocene, fac-Ir(ppy)₃), by memoizing the bond-order solver and removing redundant ETKDG embedding work. v0.4.1 continues this on the optimizer-refinement path — the g-xTB optimize loop is parallelized across conformers (deterministic) and the MACE calculator is reused across a run; pass `--embed-threads N` to opt into batched parallel embedding. See CHANGELOG `[0.4.0]` and `[0.4.1]`.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
 ## ⚡ Installation
@@ -136,6 +136,10 @@ uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff
 # Deterministic generation: the same seed always yields the same conformer.
 # Change --seed to sample a different (still reproducible) structure. Default is 42.
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --seed 7
+
+# Opt in to batched parallel conformer embedding (off by default; samples
+# conformers differently, so it is not byte-identical to the serial path).
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --embed-threads 4
 ```
 
 ### 3D to 1D (XYZ to OIN)
