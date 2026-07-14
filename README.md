@@ -149,6 +149,22 @@ print(oin)
 
 ### 1D to 3D (OIN to XYZ)
 
+The simple public API mirrors `XYZToSMILES` and returns the XYZ block:
+
+```python
+from oinsmiles import SMILESToXYZ
+
+xyz = SMILESToXYZ().convert("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
+with open("generated.xyz", "w") as f:
+    f.write(xyz)
+
+# Any generation knobs are forwarded to the engine, e.g. the FF-only path:
+xyz = SMILESToXYZ(optimizer="ff").convert("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
+```
+
+For the bonded RDKit mol as well — or the full set of generation knobs — use the
+lower-level `OIN3DGenerator` that `SMILESToXYZ` delegates to:
+
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 

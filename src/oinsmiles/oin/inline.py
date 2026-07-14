@@ -161,7 +161,7 @@ class OINInlineHandler:
 
         # Re-parse w-tag properly to handle atom indices
         # Map: Rank -> List of (AtomIdx, Slot)
-        detailed_map = {}
+        detailed_map: dict = {}
 
         for item in w_tag.split(";"):
             if not item:

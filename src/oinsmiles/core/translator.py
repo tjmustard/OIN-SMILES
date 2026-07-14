@@ -1,3 +1,14 @@
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..generation.structure import GeneratedStructure
+
+logger = logging.getLogger(__name__)
+
+
 def _clear_chelate_locked_bond_stereo(tmc_mol):
     """Drop E/Z from double bonds that a metal-containing ring holds rigid.
 
@@ -40,7 +51,11 @@ def _clear_chelate_locked_bond_stereo(tmc_mol):
         probe = probe.GetMol()
         Chem.FastFindRings(probe)
         rings = Chem.GetSymmSSSR(probe)
-    except Exception:
+    except Exception as e:
+        # Ring perception can legitimately fail on odd inputs; skip the E/Z clear
+        # rather than crash the encode -- but log it so the failure is observable
+        # instead of silently swallowed.
+        logger.debug("chelate ring perception failed; skipping E/Z clear: %s", e)
         return
 
     locked_atoms = set()
@@ -102,3 +117,47 @@ class XYZToSMILES:
         oin_string = get_oin_string(tmc_mol, xyz_coords)
 
         return oin_string
+
+
+class SMILESToXYZ:
+    """Convert an OIN-SMILES string into a 3D XYZ structure.
+
+    This is the public, stable reverse-direction entry point, symmetric with
+    :class:`XYZToSMILES`. It delegates to the MetalloGen-backed
+    :class:`~oinsmiles.generation.engine.OIN3DGenerator` and returns the
+    generated XYZ block.
+
+    Any keyword arguments are forwarded to :class:`OIN3DGenerator` (e.g.
+    ``optimizer``, ``seed``, ``ff_preset``, ``ensemble_size``, ``timeout``), so
+    ``SMILESToXYZ()`` behaves identically to ``OIN3DGenerator()`` — the default
+    is the fast FF + standard g-xTB path (``optimizer="xtb"``, which falls back
+    to FF when no g-xTB binary is present). Pass ``optimizer="ff"`` for the
+    dependency-free FF-only path.
+    """
+
+    def __init__(self, **generator_kwargs) -> None:
+        """Initialize with an ``OIN3DGenerator`` (kwargs forwarded to it)."""
+        # Imported lazily: the generation engine pulls in the heavy MetalloGen
+        # backend, and importing it at module load would make ``XYZToSMILES``
+        # (the forward direction) pay for machinery it never uses.
+        from ..generation.engine import OIN3DGenerator
+
+        self.generator = OIN3DGenerator(**generator_kwargs)
+
+    def convert(self, oin_string: str) -> str:
+        """Convert an OIN-SMILES string to a 3D XYZ block.
+
+        Returns the XYZ block as a string -- symmetric with
+        :meth:`XYZToSMILES.convert`, which returns the OIN string. For the
+        bonded RDKit mol as well, use :meth:`generate`.
+        """
+        return self.generator.generate(oin_string).xyz
+
+    def generate(self, oin_string: str) -> GeneratedStructure:
+        """Convert an OIN-SMILES string to a full :class:`GeneratedStructure`.
+
+        ``.xyz`` holds the XYZ block; ``.mol`` holds the bonded RDKit mol
+        (``None`` if bond connectivity could not be determined, e.g. for eta
+        fallbacks).
+        """
+        return self.generator.generate(oin_string)

@@ -1,4 +1,8 @@
+import logging
+
 from rdkit import Chem
+
+logger = logging.getLogger(__name__)
 
 
 def get_ligand_from_smiles(mapped_smiles):
@@ -132,15 +136,15 @@ class Ligand:
             coordinate_list = self.get_coordinate_list()
         n = len(coordinate_list)
 
-        print(n)
-        print()
+        logger.debug(n)
+        logger.debug("")
         for i in range(n):
             symbol, x, y, z = self.coordinate_list[i]
             print_x = f"{x:.6f}"
             print_y = f"{y:.6f}"
             print_z = f"{z:.6f}"
-            print(f"{symbol} {print_x} {print_y} {print_z}")
-        print()
+            logger.debug(f"{symbol} {print_x} {print_y} {print_z}")
+        logger.debug("")
 
     def copy(self):
         """Copy."""

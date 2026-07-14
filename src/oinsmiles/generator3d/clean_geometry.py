@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -6,6 +8,8 @@ from scipy.spatial.distance import cdist
 
 from .bond_lengths import bond_length, sigma_table_applies
 from .embed import _apply_atom_chirality, _apply_double_bond_stereo
+
+logger = logging.getLogger(__name__)
 
 
 def _binding_distance(metal_sym, ligand_sym, metal_r, atom_r, scale, is_sigma):
@@ -47,8 +51,8 @@ def print_rd_geometry(rd_mol, positions):
         print_x = f"{x:12.8f}"
         print_y = f"{y:12.8f}"
         print_z = f"{z:12.8f}"
-        print(f"{element:<3} {print_x} {print_y} {print_z}")
-    print()
+        logger.debug(f"{element:<3} {print_x} {print_y} {print_z}")
+    logger.debug("")
 
 
 class TMCOptimizer:
@@ -95,26 +99,26 @@ class TMCOptimizer:
 
     def clean_geometry(self, metal_complex, scale=1.0):
         """Clean geometry."""
-        print("Embedded geometry ...")
+        logger.debug("Embedded geometry ...")
         metal_complex.print_coordinate_list()
 
-        print("FF cleaning ...")
+        logger.debug("FF cleaning ...")
         final_energy = 0.0
         try:
             ff_success, final_energy = self.ff_clean(metal_complex, scale)
         except Exception as e:
-            print(f"Internal failure for ff clean ... {e}")
+            logger.debug(f"Internal failure for ff clean ... {e}")
             ff_success = False
 
         if ff_success:
-            print("FF clean success!")
-            print("FF cleaned geometry ...")
+            logger.debug("FF clean success!")
+            logger.debug("FF cleaned geometry ...")
             metal_complex.print_coordinate_list()
             metal_complex.energy = final_energy
             return True
         else:
-            print("FF clean has failed ...")
-            print("FF cleaned geometry ...")
+            logger.debug("FF clean has failed ...")
+            logger.debug("FF cleaned geometry ...")
             metal_complex.print_coordinate_list()
             return False
 
@@ -299,8 +303,8 @@ class TMCOptimizer:
             pass
 
         if mmff is None and uff is None:
-            print("Force field is not supported ...")
-            print(Chem.MolToSmiles(combined_rd_mol))
+            logger.debug("Force field is not supported ...")
+            logger.debug(Chem.MolToSmiles(combined_rd_mol))
             return False
 
         n = len(radius_list)
@@ -431,7 +435,7 @@ class TMCOptimizer:
                             min_ratio < ratio_criteria
                             or not np.all(distance_matrix) > atom_d_criteria
                         ):
-                            print(
+                            logger.debug(
                                 "[FF Scan] Atoms are too close ... "
                                 "Restoring to the original positions !"
                             )
@@ -452,7 +456,7 @@ class TMCOptimizer:
                                 min_ratio > total_min_ratio + 0.1
                                 or min_distance > total_min_distance + 0.2
                             ):  # May change ...
-                                print(
+                                logger.debug(
                                     "[FF scan] Other atoms are likely to bind to the metal "
                                     "... Using the previous positions !"
                                 )
@@ -483,7 +487,7 @@ class TMCOptimizer:
                                     break
 
                         if adj_change:
-                            print(
+                            logger.debug(
                                 "[FF Scan] Adjacent matrix has changed ... "
                                 "Restoring to the original positions !"
                             )
@@ -529,6 +533,6 @@ class TMCOptimizer:
                     final_ff.Initialize()
                     final_energy = final_ff.CalcEnergy()
             except Exception as e:
-                print(f"Failed to calculate final FF energy: {e}")
+                logger.debug(f"Failed to calculate final FF energy: {e}")
 
         return final_success, final_energy
