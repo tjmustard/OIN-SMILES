@@ -238,10 +238,9 @@ distances — but it is **applied only to `ENABLED_METALS`**, a dataset-validate
   to the pre-table generator — the change is strictly additive. Owned by
   `generator3d/bond_lengths.py`; expand `ENABLED_METALS` only with the same per-metal
   RMSD validation, never by hand.
-- **The table is duplicated.** `generator3d/bond_lengths.py::BOND_LENGTHS` is a
-  verbatim copy of `generation/molassembler_adapter.py::_BOND_LENGTHS` (the legacy
-  backend that owns the original). It is copied, not imported, because importing that
-  module pulls in Molassembler and the whole legacy generation backend. The copy is
-  drift-guarded — `tests/unit/test_bond_lengths.py` asserts the two stay byte-equal, so
-  an edit to either that is not mirrored fails CI (TD-005: a hand-copied constant is how
-  Sc/Y once went missing).
+- **Provenance of the table.** `generator3d/bond_lengths.py::BOND_LENGTHS` is the single
+  authoritative copy. It originated as a verbatim copy of the legacy Molassembler
+  backend's `_BOND_LENGTHS` (that backend was removed in v0.3.7). The values are
+  drift-guarded — `tests/unit/test_bond_lengths.py` asserts them against the frozen
+  legacy table, so an unmirrored hand edit fails CI (TD-005: a hand-copied constant is
+  how Sc/Y once went missing).

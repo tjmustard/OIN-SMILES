@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
-SCRIPTS_DIR = Path(__file__).parent.parent.parent / ".agents" / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import hyper_daemon as daemon  # noqa: E402

@@ -1,4 +1,4 @@
 from .core.chirality import OINStereoWarning
-from .core.translator import SMILESToXYZ, XYZToSMILES
+from .core.translator import XYZToSMILES
 
-__all__ = ["XYZToSMILES", "SMILESToXYZ", "OINStereoWarning"]
+__all__ = ["XYZToSMILES", "OINStereoWarning"]
