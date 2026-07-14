@@ -38,15 +38,14 @@ def _cmd_oin2xyz(args: argparse.Namespace) -> None:
     # Opt-in knobs -> ff_params. --embed-threads != 1 engages the batched (not
     # byte-identical) embed; --optimize-workers overrides the parallel g-xTB worker
     # count (default: a safe number below the core total).
-    ff_params = {}
+    ff_params: dict[str, int] = {}
     if args.embed_threads != 1:
         ff_params["embed_num_threads"] = args.embed_threads
     if args.optimize_workers > 0:
         ff_params["optimize_num_workers"] = args.optimize_workers
-    ff_params = ff_params or None
     try:
         result = OIN3DGenerator(
-            optimizer=args.optimizer, seed=args.seed, ff_params=ff_params
+            optimizer=args.optimizer, seed=args.seed, ff_params=ff_params or None
         ).generate(args.oin)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
