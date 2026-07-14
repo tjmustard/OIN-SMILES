@@ -195,6 +195,10 @@ def generate_3d_structures(
     # sweep never accumulates stale topologies (the win is entirely within a
     # single molecule's attempt loop).
     clear_pulp_cache()
+    # Per-generation memo for get_alternative_molecule, owned here (one fresh dict
+    # per generation) and threaded into the embed calls; direct embed callers pass
+    # None and recompute. Same rationale as the PuLP memo.
+    alt_cache = {}
 
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
@@ -312,7 +316,12 @@ def generate_3d_structures(
                 # Distinct-but-reproducible seed per attempt: the pool keeps its
                 # variety, but the same m-SMILES always yields the same conformers.
                 positions = embed.get_embedding(
-                    metal_complex, scale, option, align=True, seed=seed + i * 1009
+                    metal_complex,
+                    scale,
+                    option,
+                    align=True,
+                    seed=seed + i * 1009,
+                    alt_cache=alt_cache,
                 )
             except Exception as e:
                 print(f"Embedding failed (scale={scale}, option={option}): {e}")
@@ -355,6 +364,7 @@ def generate_3d_structures(
                     num_threads=num_threads,
                     align=True,
                     seed=seed + i * 1009,
+                    alt_cache=alt_cache,
                 )
             except Exception as e:
                 print(f"Embedding failed (scale={scale}, option={option}): {e}")
@@ -363,7 +373,12 @@ def generate_3d_structures(
                 # Haptic complex -- not batchable; fall back to the serial embed.
                 try:
                     positions = embed.get_embedding(
-                        metal_complex, scale, option, align=True, seed=seed + i * 1009
+                        metal_complex,
+                        scale,
+                        option,
+                        align=True,
+                        seed=seed + i * 1009,
+                        alt_cache=alt_cache,
                     )
                 except Exception as e:
                     print(f"Embedding failed (scale={scale}, option={option}): {e}")
