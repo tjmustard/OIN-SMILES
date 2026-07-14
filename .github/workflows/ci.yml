@@ -51,3 +51,5 @@ jobs:
         run: uv run python -m unittest discover tests
       - name: Encoder round-trip (XYZ -> OIN, 27 cases)
         run: uv run python tests/integration/verify_xyz_to_oin.py
+      - name: Round-trip smoke (goldens, OIN -> XYZ -> OIN, FF + seed)
+        run: uv run python tests/integration/test_roundtrip_smoke.py
