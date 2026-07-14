@@ -5,14 +5,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-14
+
+Consolidation release: three parallel worktrees — a code-quality remediation, a dead-code
+purge, and a second performance wave — merged onto the v0.4.0 line. The headline is a **real
+`SMILESToXYZ` public reverse API** (previously a dummy-atom stub), plus continued generator
+speedups, CI/type-check hardening, `print()` → `logging`, and removal of genuinely dead code.
+No OIN format change (still v3.7); FF-path golden geometry is byte-identical to v0.4.0, and a
+deterministic 100-molecule dataset A/B reproduced v0.4.0 round-trip outcomes with zero regressions.
+
+### Added
+- **Real `SMILESToXYZ` public reverse API** (`core/translator.py`): the exported `SMILESToXYZ`
+  — previously a stub that emitted dummy `"X"` atoms and never parsed the OIN — now delegates to
+  `OIN3DGenerator`. `convert(oin) -> str` returns the XYZ block (symmetric with
+  `XYZToSMILES.convert`); `generate(oin)` returns the full `GeneratedStructure` (XYZ + bonded mol).
+  The engine is imported lazily so the forward direction doesn't pay for the generation backend.
+  Guarded by a rewritten `tests/unit/test_translator.py` (mock delegation + a real FF end-to-end
+  test that fails if dummy `"X"` atoms ever return).
+- **CI round-trip smoke guard** (`tests/integration/test_roundtrip_smoke.py`,
+  `.github/workflows/ci.yml`): a deterministic OIN → XYZ → OIN guard over the canonical goldens
+  (+ transplatin) under `optimizer="ff"`, `seed=42`, so a generation/encoding regression fails CI
+  instead of only surfacing in the out-of-band dataset harness.
+- **mypy type-checking in CI** (`pyproject.toml`, `.github/workflows/ci.yml`): a first-party
+  `[tool.mypy]` scope with vendored-code carve-outs, run as a `Type check (mypy)` CI job.
+- **Opt-in embedding/optimization parallelism CLI flags** (`cli.py`): `--embed-threads N` engages
+  batched parallel conformer embedding (off by default — it samples conformers differently, so it
+  is not byte-identical), and `--optimize-workers N` sets the parallel g-xTB optimize-loop worker count.
+
 ### Removed
-- **`SMILESToXYZ` public API and its dead support cluster** (`core/translator.py`,
-  `oin/parser.py`, `oin/writer.py`, `core/graph.py` + their unit tests). The class never
-  functioned: `convert()` filled a `TMCGraph` with dummy `"X"` atoms and never parsed the
-  SMILES connectivity. The working OIN → 3D path is `OIN3DGenerator`
-  (`generation/engine.py`), which the `oin-smiles oin2xyz` CLI uses; `engine.py` docstrings
-  that pointed users at the broken `SMILESToXYZ` path were corrected. **Breaking** for any
-  external `from oinsmiles import SMILESToXYZ`, but the import was the only thing that worked.
+- **Dead `SMILESToXYZ` support cluster** — `oin/parser.py` (the incomplete `OINParser`),
+  `oin/writer.py` (`OINWriter`), `core/graph.py` (`TMCGraph`/`Atom`), and their unit tests. These
+  backed the old dummy-atom stub and were unreachable from any working path. The public
+  `SMILESToXYZ` name is **kept and now works** (see Added); `engine.py` docstrings that pointed
+  users at the old broken path were corrected.
 - **Orphaned one-off scripts** from completed waves: `tools/verify_metal_first.py`
   (DirectParser gate spike; feature never shipped), `tools/test_uff_pool_size.py` (P0-era
   UFF pool experiment), `tests/integration/{debug_welrow,reproduce_issue,
@@ -32,8 +57,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `unittest.TestCase` and moved to `tests/unit/` so it actually runs in CI.
 - `docs/KNOWN_LIMITATIONS.md` pointed at the removed `generation/molassembler_adapter.py`
   for the bond-length table; now points at `generator3d/bond_lengths.py`.
+- **`cli.py` `oin2xyz` `ff_params` typing** — the `--embed-threads`/`--optimize-workers` block
+  reassigned `ff_params` from `dict` to `dict | None`, which the new mypy job flagged once both
+  the perf CLI flags and the type-check landed together; `ff_params` stays a `dict` and `or None`
+  is inlined at the call site (runtime and generated geometry unchanged).
 
 ### Changed
+- **Second performance wave on the optimizer-refinement path**
+  (`generator3d/{clean_geometry,embed,ml_optimizer,__init__}.py`, `cli.py`): the g-xTB optimize
+  loop is single-threaded per call and parallelized across conformers (deterministic, ~8× on that
+  stage); the MACE calculator is reused across conformers instead of rebuilt per structure;
+  per-iteration FF construction in the `ff_clean` scan is now lazy; and `get_alternative_molecule`
+  is memoized per generation. FF-path golden geometry stays byte-identical to v0.4.0.
+- **Library `print()` routed to `logging`** (`core/translator.py`, `generation/metallogen_adapter.py`,
+  `generator3d/*`, `oin/*`, `utils/*`): diagnostics go through module loggers, and the package
+  attaches a `NullHandler` so importing `oinsmiles` never writes to the consumer's stderr on its own.
 - HACF-toolchain framework tests (`test_autonomous_resolution`, `test_dynamic_orchestrator`,
   `test_provenance_integration` + 7 manual-plan `.md` files) moved from `tests/integration/`
   to `.agents/tests/` — they test `.agents/scripts/`, not the chemistry library. Deleted
