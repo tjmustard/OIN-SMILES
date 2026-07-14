@@ -127,14 +127,14 @@ class ASEOptimizer:
                     )
 
                     if result.returncode != 0:
-                        print(f"Warning: xTB failed with return code {result.returncode}.")
-                        print(f"Stdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+                        logger.debug(f"Warning: xTB failed with return code {result.returncode}.")
+                        logger.debug(f"Stdout:\n{result.stdout}\nStderr:\n{result.stderr}")
                         return False, 0.0, mol
 
                     # Parse the optimized XYZ file
                     opt_xyz = os.path.join(tmpdir, "xtbopt.xyz")
                     if not os.path.exists(opt_xyz):
-                        print(f"Warning: xTB finished but '{opt_xyz}' was not generated.")
+                        logger.debug(f"Warning: xTB finished but '{opt_xyz}' was not generated.")
                         return False, 0.0, mol
 
                     opt_atoms = read(opt_xyz)
@@ -155,10 +155,14 @@ class ASEOptimizer:
                                 pass
 
             except subprocess.TimeoutExpired:
-                print(f"Warning: xTB timed out after {self.timeout} seconds. Falling back to FF.")
+                logger.debug(
+                    f"Warning: xTB timed out after {self.timeout} seconds. Falling back to FF."
+                )
                 return False, 0.0, mol
             except Exception as e:
-                print(f"Warning: Optimizer xTB wrapper failed. Falling back to FF. Details: {e}")
+                logger.debug(
+                    f"Warning: Optimizer xTB wrapper failed. Falling back to FF. Details: {e}"
+                )
                 return False, 0.0, mol
 
         elif self.method in ("mace-omol25", "mace-omol-0-extra-large-1024"):
@@ -222,11 +226,11 @@ class ASEOptimizer:
                     success = True
                     break
                 except Exception as e:
-                    print(f"Warning: MACE failed on device '{device}'. Details: {e}")
+                    logger.debug(f"Warning: MACE failed on device '{device}'. Details: {e}")
                     if device == "cuda":
-                        print("Falling back to CPU...")
+                        logger.debug("Falling back to CPU...")
                     else:
-                        print("Falling back to FF...")
+                        logger.debug("Falling back to FF...")
 
             if not success:
                 return False, 0.0, mol

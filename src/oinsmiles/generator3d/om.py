@@ -1,10 +1,13 @@
 import copy
+import logging
 
 import numpy as np
 
 from . import chem, embed, process
 from . import globalvars as gv
 from . import ligand as ligand_module
+
+logger = logging.getLogger(__name__)
 
 
 class Geometry:
@@ -85,7 +88,7 @@ class MetalComplex:
             for binding_info in binding_infos:
                 binding_indices, binding_site = binding_info
                 if binding_site is None:
-                    print("Coordination Information is not determined !!!")
+                    logger.debug("Coordination Information is not determined !!!")
                     return []
                 binding_groups[binding_site - 1] = [
                     atom_indices[index] for index in binding_indices
@@ -179,7 +182,7 @@ class MetalComplex:
         atom_list = self.get_atom_list()
         n = len(atom_list)
         if len(positions) != n:
-            print("Number of atoms does not match ...")
+            logger.debug("Number of atoms does not match ...")
             return
 
         process.locate_atom(center_atom, positions[self.metal_index])
@@ -210,7 +213,7 @@ class MetalComplex:
         permutations = geometry_type.permutations
         isomers = []
         if len(permutations) == 0:
-            print("Not supported geometry type ...")
+            logger.debug("Not supported geometry type ...")
             return isomers
         else:
             for permutation in permutations:
@@ -249,7 +252,7 @@ class MetalComplex:
             if len(candidate_positions) == num_conformer:
                 break
         if len(candidate_positions) == 0:
-            print("No valid embedding found ...")
+            logger.debug("No valid embedding found ...")
             exit()
         return candidate_positions
 
@@ -263,14 +266,14 @@ class MetalComplex:
             print_x = f"{coordinate[0]:>12.8f}"
             print_y = f"{coordinate[1]:>12.8f}"
             print_z = f"{coordinate[2]:>12.8f}"
-            print(f"{element:<3} {print_x} {print_y} {print_z}")
-        print()
+            logger.debug(f"{element:<3} {print_x} {print_y} {print_z}")
+        logger.debug("")
 
     def get_distances_from_center(self):
         """Get the distances of all atoms from the center atom."""
         metal_index = self.metal_index
         if metal_index is None:
-            print("Metal index is not determined ...")
+            logger.debug("Metal index is not determined ...")
             return []
         adj_matrix = self.get_adj_matrix()
         neighbor_list = [-1] * len(adj_matrix)
@@ -333,7 +336,7 @@ def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
             metal_index = i
             break
     if metal_index is None:
-        print("Metal was not found !!!")
+        logger.debug("Metal was not found !!!")
         exit()
 
     broken_adj_matrix = np.copy(adj_matrix)
@@ -404,7 +407,7 @@ def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
     metal_complex = None
 
     if geometry_name is None:
-        print("Geometry not specified")
+        logger.debug("Geometry not specified")
         exit()
 
     metal_complex = MetalComplex(geometry_name, center_atom, ligands, chg, multiplicity)

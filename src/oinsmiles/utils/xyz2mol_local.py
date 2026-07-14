@@ -19,12 +19,15 @@ try:
 except ImportError:
     rdEHTTools = None
 
+import logging
 import sys
 from collections import defaultdict
 
 import networkx as nx
 import numpy as np
 from rdkit import Chem
+
+logger = logging.getLogger(__name__)
 
 global __ATOM_LIST__
 __ATOM_LIST__ = [
@@ -282,7 +285,7 @@ def charge_is_OK(
             if atom == 6:
                 number_of_single_bonds_to_C = list(BO[i, :]).count(1)
                 if not allow_carbenes and number_of_single_bonds_to_C == 2 and BO_valences[i] == 2:
-                    print("found illegal carbene")
+                    logger.debug("found illegal carbene")
                     Q += 1
                     q = 2
                 if number_of_single_bonds_to_C == 3 and Q + 1 < charge:
@@ -607,7 +610,8 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
             possible_valence = [1, 2]
 
         if not possible_valence:
-            print(
+            logger.debug(
+                "%s %s %s %s %s %s %s",
                 "Valence of atom",
                 i,
                 "is",
@@ -1233,7 +1237,7 @@ if __name__ == "__main__":
     for mol in [mols]:
         if args.output_format == "sdf":
             txt = Chem.MolToMolBlock(mol)
-            print(txt)
+            logger.debug(txt)
 
         else:
             # Canonical hack

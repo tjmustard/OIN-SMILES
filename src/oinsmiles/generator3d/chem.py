@@ -6,6 +6,8 @@ Some parts can be replaced by ASE formats, but now we are using these settings f
 customization.
 """
 
+import logging
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -13,6 +15,8 @@ from scipy import spatial
 
 from . import process
 from .utils import ic, make_smiles
+
+logger = logging.getLogger(__name__)
 
 
 class Atom:
@@ -315,7 +319,7 @@ class Atom:
         if self.atomic_number is None:
             element = self.element
             if element is None:
-                print("atom is not specified!")
+                logger.debug("atom is not specified!")
             if len(element) > 1:
                 end_part = element[1:]
                 end_part = str.lower(end_part)
@@ -327,8 +331,8 @@ class Atom:
             elif element == "D":
                 return 1
             else:
-                print("element", element)
-                print("modify periodic table!!!")
+                logger.debug("%s %s", "element", element)
+                logger.debug("modify periodic table!!!")
         return self.atomic_number
 
     def get_element(self):
@@ -342,7 +346,7 @@ class Atom:
         if self.element is None:
             atomic_number = self.atomic_number
             if atomic_number is None:
-                print("atom is not specified!")
+                logger.debug("atom is not specified!")
             z = int(self.atomic_number) - 1
             self.element = periodic_table[z]
         return self.element
@@ -376,7 +380,7 @@ class Atom:
         try:
             return self.atom_type
         except Exception:
-            print("Set atom type!!!")
+            logger.debug("Set atom type!!!")
             return None
 
     def get_configuration(self):
@@ -384,7 +388,7 @@ class Atom:
         try:
             return self.configuration
         except Exception:
-            print("Set configuration!!!")
+            logger.debug("Set configuration!!!")
             return None
 
     def get_is_active(self):
@@ -392,7 +396,7 @@ class Atom:
         try:
             return self.is_active
         except Exception:
-            print("Set activity!!!")
+            logger.debug("Set activity!!!")
             return None
 
     # Process element information in advance
@@ -767,7 +771,7 @@ class Molecule:
                 try:
                     atom_num = int(f.readline())
                 except Exception:
-                    print("Wrong format! Should start with number of atoms!")
+                    logger.debug("Wrong format! Should start with number of atoms!")
                 try:
                     energy = float(f.readline())
                     self.energy = energy
@@ -787,8 +791,8 @@ class Molecule:
                         new_atom.z = z
                         atom_list.append(new_atom)
                     except Exception:
-                        print("Error found in:", content)
-                        print("Check the file again:", data)
+                        logger.debug("%s %s", "Error found in:", content)
+                        logger.debug("%s %s", "Check the file again:", data)
                 self.atom_list = atom_list
                 # At least make adjacency
                 self.adj_matrix = process.get_adj_matrix_from_distance(self)
@@ -802,7 +806,7 @@ class Molecule:
                     self.chg = chg
                     self.multiplicity = multiplicity
                 except Exception:
-                    print("Wrong format! Should start with number of atoms!")
+                    logger.debug("Wrong format! Should start with number of atoms!")
                 while True:
                     try:
                         content = f.readline().strip()
@@ -961,11 +965,11 @@ class Molecule:
         """Set the multiplicity."""
         chg = self.get_chg()
         if chg is None:
-            print("Cannot set multicplity since the total charge is not specified!")
+            logger.debug("Cannot set multicplity since the total charge is not specified!")
         else:
             num_electron = -chg + np.sum(self.get_z_list())
             if num_electron % 2 != (multiplicity + 1) % 2:
-                print(
+                logger.debug(
                     f"There are {num_electron} electrons, "
                     f"therefore spin with {multiplicity} is impossible!"
                 )
@@ -1101,7 +1105,7 @@ class Molecule:
             try:
                 chg = self.get_chg()
             except Exception:
-                print("Total charge is not provided! At least charge information!")
+                logger.debug("Total charge is not provided! At least charge information!")
                 return None
             try:  # If bo and chg is present ...
                 e_list = self.get_num_of_lone_pair_list()
@@ -1127,7 +1131,7 @@ class Molecule:
         adj_matrix = self.get_adj_matrix()
         chg = self.get_chg()
         if adj_matrix is None or chg is None:
-            print("Cannot initialize bo and chgs!")
+            logger.debug("Cannot initialize bo and chgs!")
         fc_list, bo_matrix = process.get_chg_and_bo(self, chg, method=method)
         self.bo_matrix = bo_matrix
         self.atom_feature["chg"] = fc_list
@@ -1155,7 +1159,7 @@ class Molecule:
             chg = self.get_chg()
             adj_matrix = self.get_adj_matrix()
             if chg is None or adj_matrix is None:
-                print("We need to know both adjacency and charge!!!")
+                logger.debug("We need to know both adjacency and charge!!!")
                 return None
             fc_list, bo_matrix = process.get_chg_and_bo(self, chg=chg, method=method)
         fc_list = fc_list.tolist()
@@ -1189,10 +1193,10 @@ class Molecule:
             #### Check symmetry of matrix
             check_sum = np.sum(np.abs(c_matrix - np.transpose(c_matrix)))
             if check_sum > 0.01:
-                print("something wrong")
+                logger.debug("something wrong")
             c_eig_list, vec = np.linalg.eig(c_matrix)
             if np.isnan(c_eig_list[0]):
-                print("nanvalue!!!")
+                logger.debug("nanvalue!!!")
                 import sys
 
                 sys.exit()
@@ -1241,7 +1245,7 @@ class Molecule:
         try:
             return self.associated_fragment_list
         except Exception:
-            print("Set fragment list!!!")
+            logger.debug("Set fragment list!!!")
             return None
 
     def get_center_of_mass(self):
@@ -1272,7 +1276,7 @@ class Molecule:
         try:
             return self.is_screened, self.screening_log
         except Exception:
-            print("Set screening result!!!")
+            logger.debug("Set screening result!!!")
             return None
 
     def getr(self):
@@ -1280,7 +1284,7 @@ class Molecule:
         try:
             return self.r
         except Exception:
-            print("Set r!!!")
+            logger.debug("Set r!!!")
             return None
 
     def gett(self):
@@ -1288,7 +1292,7 @@ class Molecule:
         try:
             return self.t
         except Exception:
-            print("Set t!!!")
+            logger.debug("Set t!!!")
             return None
 
     def getp(self):
@@ -1296,7 +1300,7 @@ class Molecule:
         try:
             return self.p
         except Exception:
-            print("Set p!!!")
+            logger.debug("Set p!!!")
             return None
 
     def getdr(self):
@@ -1304,7 +1308,7 @@ class Molecule:
         try:
             return self.dr
         except Exception:
-            print("Set dr!!!")
+            logger.debug("Set dr!!!")
             return None
 
     def get_matrix(self, type_of_matrix="bo"):
@@ -1363,7 +1367,7 @@ class Molecule:
             return True
         if type_of_matrix == "bo":
             if self.get_bo_matrix() is None:
-                print("bo matrix is not prepared!!! It is necessary to define bo matrix")
+                logger.debug("bo matrix is not prepared!!! It is necessary to define bo matrix")
                 return False
             return True
 
@@ -1436,7 +1440,7 @@ class Molecule:
             if adj_matrix is not None:
                 new_molecule.adj_matrix = np.copy(adj_matrix)
             else:
-                print("Warning: Connectivity information is not included in the molecule!!!")
+                logger.debug("Warning: Connectivity information is not included in the molecule!!!")
 
         # Finally, copy charge
         new_molecule.chg = self.get_chg()
@@ -1563,7 +1567,7 @@ class Molecule:
         """
         adj_matrix = self.get_adj_matrix()
         if adj_matrix is None:
-            print("You need to define adj matrix!!!")
+            logger.debug("You need to define adj matrix!!!")
             return None
         valency_list = np.sum(adj_matrix, axis=1)
         return valency_list
@@ -1587,7 +1591,9 @@ class Molecule:
         atom_list = self.atom_list
         bo_matrix = self.get_bo_matrix()
         if bo_matrix is None:
-            print("We cannot obtain bond order, since the bond order matrix is not prepared!!!")
+            logger.debug(
+                "We cannot obtain bond order, since the bond order matrix is not prepared!!!"
+            )
             return None
         len(atom_list)
         total_bond_order_list = np.sum(bo_matrix, axis=1)
@@ -1613,11 +1619,11 @@ class Molecule:
         chg_list = self.get_chg_list()
         group_list = self.get_period_group_list()[1]
         if chg_list is None:
-            print("chg is not prepared!!! It is necessary to obtain number of lone pairs!")
+            logger.debug("chg is not prepared!!! It is necessary to obtain number of lone pairs!")
             return None
         total_bond_order_list = self.get_total_bond_order_list()
         if total_bond_order_list is None:
-            print(
+            logger.debug(
                 "bo matrix is not prepared!!! It is necessary to define "
                 "bo matrix to obtain number of lone pairs!"
             )
@@ -1640,7 +1646,7 @@ class Molecule:
         """
         bo_matrix = self.get_bo_matrix()
         if bo_matrix is None:
-            print(
+            logger.debug(
                 "bo matrix is not prepared!!! It is necessary to define "
                 "bo matrix to obtain the number of pi bonds!"
             )
@@ -1729,7 +1735,7 @@ class Molecule:
         total_bond_order_list = self.get_total_bond_order_list()
         chg_list = self.get_chg_list()
         if total_bond_order_list is None or chg_list is None:
-            print("Bond information is required!!!")
+            logger.debug("Bond information is required!!!")
             return []
         total_valence_list = (group_list + total_bond_order_list - chg_list) / 2
         len(period_list)
@@ -1787,7 +1793,7 @@ class Molecule:
         atom_list = self.atom_list
         bo_matrix = self.bo_matrix
         if bo_matrix is None:
-            print("we need bond order matrix!!!")
+            logger.debug("we need bond order matrix!!!")
         bond_type = [1, 2, 3]
         neighbor_info_list = []
         n = len(atom_list)
@@ -1829,9 +1835,9 @@ class Molecule:
                 contain_bond_order = False
                 check_matrix = self.get_matrix("adj")
                 if check_matrix is None:
-                    print("matrix", self.atom_list)
-                    print("hahahahahaha", check_matrix)
-                    print("Give connectivity! We cannot find the bond!")
+                    logger.debug("%s %s", "matrix", self.atom_list)
+                    logger.debug("%s %s", "hahahahahaha", check_matrix)
+                    logger.debug("Give connectivity! We cannot find the bond!")
                     return None
         if contain_bond_order:
             bond_type = [1, 2, 3]
@@ -1895,7 +1901,7 @@ class Molecule:
         element_num = dict()
         atom_list = self.atom_list
         if atom_list is None:
-            print("No atoms!!! We cannot get formula!")
+            logger.debug("No atoms!!! We cannot get formula!")
         for atom in atom_list:
             element_type = atom.get_element()
             if element_type in element_num:
@@ -1935,7 +1941,7 @@ class Molecule:
         atom_list = self.atom_list
         element_idx_list = dict()
         if atom_list is None:
-            print("No atoms!!! We cannot get formula!")
+            logger.debug("No atoms!!! We cannot get formula!")
         for i in range(len(atom_list)):
             atom = atom_list[i]
             element_type = atom.get_element()
@@ -1961,7 +1967,7 @@ class Molecule:
 
             sssr = []
             skeleton_mol = self.get_skeleton()  # Note: return mol is RDMol
-            print(sssr)
+            logger.debug(sssr)
             sssr_vectors = Chem.GetSymmSSSR(skeleton_mol)
             for sssr_vector in sssr_vectors:
                 sssr.append(list(sssr_vector))
@@ -2056,8 +2062,8 @@ class Molecule:
             energy_to_id[energy] = conformer_id
 
         if len(conformer_energy_list) == 0:
-            print("No conformer is generated !!!")
-            print(self.get_smiles())
+            logger.debug("No conformer is generated !!!")
+            logger.debug(self.get_smiles())
             return None
 
         conformer_energy_list.sort()
@@ -2066,7 +2072,7 @@ class Molecule:
         try:
             conformers = rd_mol.GetConformers()
         except Exception:
-            print("No conformer for", self.get_smiles("ace"))
+            logger.debug("%s %s", "No conformer for", self.get_smiles("ace"))
             return None
         conformer = conformers[conformer_id]
         for i in range(rd_mol.GetNumAtoms()):
@@ -2141,17 +2147,17 @@ class Molecule:
             print_x = f"{coordinate[0]:>12.8f}"
             print_y = f"{coordinate[1]:>12.8f}"
             print_z = f"{coordinate[2]:>12.8f}"
-            print(f"{element:<3} {print_x} {print_y} {print_z}")
+            logger.debug(f"{element:<3} {print_x} {print_y} {print_z}")
 
     def sanitize(self):
         """Sanitize."""
         adj_matrix = self.get_adj_matrix()
         if adj_matrix is None:
-            print("Cannot sanitize molecule because there is no adj matrix information !!!")
+            logger.debug("Cannot sanitize molecule because there is no adj matrix information !!!")
         else:
             chg = self.get_chg()
             if chg is None:
-                print("Cannot sanitize molecule because there is no charge information !!!")
+                logger.debug("Cannot sanitize molecule because there is no charge information !!!")
             bo_matrix = process.get_bo_matrix_from_adj_matrix(self, chg)
             fc_list = process.get_chg_list_from_bo_matrix(self, chg, bo_matrix)
             self.bo_matrix = bo_matrix
@@ -2301,7 +2307,7 @@ class Molecule:
                 mol = Chem.AddHs(mol)
                 use_ic_update = True
             if mol is None:
-                print("Impossible embedding")
+                logger.debug("Impossible embedding")
                 return []
             conformer_id_list = AllChem.EmbedMultipleConfs(mol, num_sample, params)
             conformer_energy_list = []
@@ -2314,8 +2320,8 @@ class Molecule:
                 except Exception:
                     continue
             if len(conformer_energy_list) == 0:
-                print("No conformer is generated !!!")
-                print(self.get_smiles())
+                logger.debug("No conformer is generated !!!")
+                logger.debug(self.get_smiles())
                 return []
             conformer_energy_list.sort()
             conformers = mol.GetConformers()
@@ -2351,8 +2357,8 @@ class Molecule:
                 if len(coordinate_list) > 0:
                     coordinates.append(coordinate_list)
         else:
-            print("Give us algorithm for generating 3D!!!")
-            print("You can try your own algorithm here!!!")
+            logger.debug("Give us algorithm for generating 3D!!!")
+            logger.debug("You can try your own algorithm here!!!")
             ######### Your own algorithm here #########
             return None
         # (TODO): Need to come up with better algorithm, best one is to simply reoptimize with uff
@@ -2423,7 +2429,7 @@ class Molecule:
                 f.write(atom.get_content(option, criteria))
             f.close()
         else:
-            print("Wrong geometry!!!")
+            logger.debug("Wrong geometry!!!")
 
     def get_content(self, option="element", criteria=1e-4):
         """Return the content."""
@@ -2462,7 +2468,7 @@ class Molecule:
             return
         input_file = open(save_directory, "w")
         if template_directory is None:
-            print("Warning: Generated input is for running DFT calculation with Gaussian!!!")
+            logger.debug("Warning: Generated input is for running DFT calculation with Gaussian!!!")
             input_file.write("#N B3LYP/6-31G(d) SP\n\nTitle\n\n")
         else:
             f = open(template_directory)
@@ -2472,7 +2478,7 @@ class Molecule:
         if save_directory[-4:] != ".xyz":
             import os
 
-            print("Warning: Filename extension is not given!!! We used .com extension")
+            logger.debug("Warning: Filename extension is not given!!! We used .com extension")
             save_directory = os.path.join(save_directory, "tmp.com")
         if parameters["mult"] is None:
             mult = (-self.chg + int(np.sum(self.get_z_list()))) % 2
@@ -2486,7 +2492,7 @@ class Molecule:
         if coordinate_list is None:
             coordinate_list = self.make_3d_coordinate()
         if coordinate_list is None or len(coordinate_list) == 0:
-            print("No molecule is generated!!!!")
+            logger.debug("No molecule is generated!!!!")
             return
         for i, coordinate in enumerate(coordinate_list):
             x = str(coordinate[0])
@@ -2511,7 +2517,7 @@ class Molecule:
         atom_list = self.atom_list
         coordinate_list = self.make_3d_coordinate()
         if coordinate_list is None or len(coordinate_list) == 0:
-            print("No molecule is generated!!!!")
+            logger.debug("No molecule is generated!!!!")
             return
         for i, coordinate in enumerate(coordinate_list):
             x = str(coordinate[0])
@@ -2585,7 +2591,7 @@ class Molecule:
         if normalize:
             norm = np.linalg.norm(vector)
             if norm < 0.0001:
-                print("zero vector is found ...")
+                logger.debug("zero vector is found ...")
                 return vector
             else:
                 return vector / norm
@@ -2603,7 +2609,7 @@ class Molecule:
             idx1, idx2, idx3, idx4 = indices
             return self.get_dihedral_angle_between_atoms(idx1, idx2, idx3, idx4, unit)
         else:
-            print(f"Wrong coordinate (={indices}) given!")
+            logger.debug(f"Wrong coordinate (={indices}) given!")
             return None
 
     def get_distance_between_atoms(self, idx1, idx2):
@@ -2751,7 +2757,7 @@ class Intermediate(Molecule):
         elif data is None:
             super().__init__(None)
         else:
-            print("Unknown input type!!!")
+            logger.debug("Unknown input type!!!")
             pass
         self.number_list = []
         self.molecule_list = None
@@ -2796,7 +2802,7 @@ class Intermediate(Molecule):
                     # Check adj
                     adj_matrix = molecule.adj_matrix
                     if adj_matrix is None:
-                        print("Molecule connectivity is not given!!!!")
+                        logger.debug("Molecule connectivity is not given!!!!")
                         update_adj_matrix = False
                     else:
                         total_adj_matrix[cnt : cnt + m, cnt : cnt + m] = adj_matrix[:, :]
@@ -2915,7 +2921,7 @@ class Intermediate(Molecule):
         if bo_matrix is None:
             # Check adj matrix
             if adj_matrix is None:
-                print("We need connectivity to get information of desired molecule!!!")
+                logger.debug("We need connectivity to get information of desired molecule!!!")
             else:
                 reduced_adj_matrix = adj_matrix[:, indices]
                 reduced_adj_matrix = reduced_adj_matrix[indices, :]
@@ -2959,7 +2965,7 @@ class Intermediate(Molecule):
         molecule_list1 = self.get_molecule_list()
         molecule_list2 = intermediate.get_molecule_list()
         if molecule_list1 is None or molecule_list2 is None:
-            print("intermediate is not well prepared!")
+            logger.debug("intermediate is not well prepared!")
             return False
         elif len(molecule_list1) != len(molecule_list2):
             return False
@@ -3001,7 +3007,7 @@ class Intermediate(Molecule):
             if adj_matrix is not None:
                 new_intermediate.adj_matrix = np.copy(adj_matrix)
             else:
-                print("Warning: Connectivity information is not included in the molecule!!!")
+                logger.debug("Warning: Connectivity information is not included in the molecule!!!")
 
         # new_intermediate.atom_indices_for_each_molecule =
         # self.get_atom_indices_for_each_molecule()
@@ -3031,7 +3037,7 @@ class Intermediate(Molecule):
             molecule = self.get_molecule_from_indices(atom_indices)
             molecule_chg = molecule.get_chg()
             if molecule_chg is None:
-                print("Cannot initialize molecule !")
+                logger.debug("Cannot initialize molecule !")
                 return
             mol_chg_list, mol_bo_matrix = process.get_chg_and_bo(
                 molecule, molecule_chg, method=method
@@ -3084,16 +3090,16 @@ class Intermediate(Molecule):
         adj_matrix = self.get_adj_matrix()
         fc_list = self.get_chg_list()
         if adj_matrix is None or fc_list is None:
-            print("We need to know both adjacency and charge!!!")
+            logger.debug("We need to know both adjacency and charge!!!")
             return None
         molecule_list = self.get_molecule_list()
         if molecule_list is None:
-            print("Cannot make SMILES, as molecule list cannot be well created !!!")
+            logger.debug("Cannot make SMILES, as molecule list cannot be well created !!!")
         smiles_list = []
         for molecule in molecule_list:
             smiles_list.append(molecule.get_smiles(method, find_stereocenter))
         if smiles_list[0] is None:
-            print("SMILES is not well created !!!")
+            logger.debug("SMILES is not well created !!!")
             smiles = None
         else:
             smiles = ".".join(smiles_list)
