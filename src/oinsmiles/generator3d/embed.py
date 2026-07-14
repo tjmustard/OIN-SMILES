@@ -12,6 +12,26 @@ from . import chem, process
 from .utils import ic
 
 
+# get_alternative_molecule is a pure function of the (structurally fixed) complex
+# and ``option`` -- it ignores ``scale`` -- and its result is consumed read-only
+# (``get_rd_mol`` builds a fresh Mol per attempt). ``get_embedding`` rebuilds
+# ``new_complex = metal_complex.copy()`` and recomputes it every attempt, so a
+# per-generation memo removes those redundant rebuilds. The cache dict is OWNED by
+# ``generate_3d_structures`` (one fresh dict per generation) and threaded in via the
+# ``alt_cache`` parameter: direct callers pass None and always recompute, so there
+# is NO cross-molecule staleness (a module-global keyed by option is unsafe -- a
+# direct call would read another molecule's entry). Same spirit as the
+# ``compute_chg_and_bo`` topology memo.
+def _alt_mol_cached(new_complex, option, cache):
+    """Memoized get_alternative_molecule via a caller-supplied per-generation dict."""
+    if cache is not None and option in cache:
+        return cache[option]
+    val = get_alternative_molecule(new_complex, option)
+    if cache is not None:
+        cache[option] = val
+    return val
+
+
 def get_transition_metal_center(geometry_name):
     """Return the transition metal center."""
     tm_center = {
@@ -572,12 +592,17 @@ def _finalize_positions(
     return positions[: metal_complex.num_atom], None
 
 
-def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None):
+def get_embedding(
+    metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None, alt_cache=None
+):
     """Return the embedding.
 
     ``seed`` fixes the distance-geometry random seed. Pass an int for a
     reproducible embed; pass None (with ``use_random``) to draw one, which
     makes every sp3 stereocentre's handedness a fresh coin flip per call.
+
+    ``alt_cache`` is an optional per-generation dict (see ``_alt_mol_cached``);
+    None means recompute the alternative molecule every call.
     """
     atom_d_criteria = 0.5
     ratio_criteria = 0.65
@@ -589,8 +614,8 @@ def get_embedding(metal_complex, scale=1.0, option=0, align=False, use_random=Tr
 
     # new_complex gives the geometry ... (metal complex remains no change)
 
-    alternative_ace_mol_list, dummy_indices, metal_binding_infos = get_alternative_molecule(
-        new_complex, option
+    alternative_ace_mol_list, dummy_indices, metal_binding_infos = _alt_mol_cached(
+        new_complex, option, alt_cache
     )
 
     metal_index = new_complex.metal_index
@@ -808,6 +833,7 @@ def get_embeddings_batch(
     num_threads=0,
     align=False,
     seed=None,
+    alt_cache=None,
 ):
     """Batched, C++-parallel counterpart to :func:`get_embedding` for NON-haptic complexes.
 
@@ -837,8 +863,8 @@ def get_embeddings_batch(
     new_complex = metal_complex.copy()
     total_atom_list = new_complex.get_atom_list()
 
-    alternative_ace_mol_list, dummy_indices, metal_binding_infos = get_alternative_molecule(
-        new_complex, option
+    alternative_ace_mol_list, dummy_indices, metal_binding_infos = _alt_mol_cached(
+        new_complex, option, alt_cache
     )
 
     # Haptic binding needs the serial scales_for_haptic sweep; signal fallback.
