@@ -1485,7 +1485,7 @@ if __name__ == "__main__":
     # Stop the function if it runs too long.
     def timeout_handler(num, stack):
         """Raise an exception when the SIGALRM watchdog fires."""
-        print("Received SIGALRM, terminating")
+        logger.debug("Received SIGALRM, terminating")
         raise Exception("Timeout")
 
     signal.signal(signal.SIGALRM, timeout_handler)

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from ..oin.writer import OINWriter
 
 if TYPE_CHECKING:
     from ..generation.structure import GeneratedStructure
+
+logger = logging.getLogger(__name__)
 
 
 def _clear_chelate_locked_bond_stereo(tmc_mol):
@@ -50,7 +53,11 @@ def _clear_chelate_locked_bond_stereo(tmc_mol):
         probe = probe.GetMol()
         Chem.FastFindRings(probe)
         rings = Chem.GetSymmSSSR(probe)
-    except Exception:
+    except Exception as e:
+        # Ring perception can legitimately fail on odd inputs; skip the E/Z clear
+        # rather than crash the encode -- but log it so the failure is observable
+        # instead of silently swallowed.
+        logger.debug("chelate ring perception failed; skipping E/Z clear: %s", e)
         return
 
     locked_atoms = set()
