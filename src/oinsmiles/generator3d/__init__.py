@@ -434,10 +434,27 @@ def generate_3d_structures(
         opt = ASEOptimizer(method=optimizer, timeout=timeout)
 
         if opt:
-            optimized_mols = []
             mols_to_optimize = successful_mols[:num_conformers]
-            for mol in mols_to_optimize:
-                success, energy, new_mol = opt.optimize(mol)
+            # Optimize the pooled conformers concurrently. Each opt.optimize deep-copies
+            # its input and (for xtb/g-xTB) runs in its own TemporaryDirectory subprocess
+            # with the GIL released, so the calls share no state -- a thread pool just
+            # overlaps the otherwise-serial per-conformer optimizations. Results are
+            # gathered in INPUT ORDER (ThreadPoolExecutor.map preserves order), so the
+            # stable sort-by-energy below is byte-identical to the old serial loop. The
+            # subprocess environment (incl. OMP thread count) is untouched, so each xtb
+            # result is bit-for-bit what serial produced.
+            if len(mols_to_optimize) > 1:
+                import os  # noqa: PLC0415
+                from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+                max_workers = min(len(mols_to_optimize), os.cpu_count() or 1)
+                with ThreadPoolExecutor(max_workers=max_workers) as ex:
+                    opt_results = list(ex.map(opt.optimize, mols_to_optimize))
+            else:
+                opt_results = [opt.optimize(mol) for mol in mols_to_optimize]
+
+            optimized_mols = []
+            for (success, energy, new_mol), mol in zip(opt_results, mols_to_optimize):
                 if success:
                     optimized_mols.append((energy, new_mol))
                 else:
