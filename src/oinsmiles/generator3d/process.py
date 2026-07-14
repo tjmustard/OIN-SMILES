@@ -4,6 +4,7 @@ Generate 2D graph molecule in ACE-Reaction format from xyz files or SMILES.
 """
 
 import copy
+import logging
 
 import numpy as np
 from rdkit import Chem
@@ -12,6 +13,8 @@ from scipy import spatial
 from ..utils.aromaticity import dearomatize_stuck_rings
 from . import chem
 from .utils import compute_chg_and_bo_pulp as compute_pulp
+
+logger = logging.getLogger(__name__)
 
 
 def get_block_diagonal_adj_from_fragments(fragment_adj_list, total_num_atom=0):
@@ -75,12 +78,12 @@ def read_molecule(f, extension="xyz"):
             molecule.chg = chg
             molecule.multiplicity = multiplicity
         except Exception:
-            print("Wrong format ! Should start with molecular charge and multiplicity !!!")
+            logger.debug("Wrong format ! Should start with molecular charge and multiplicity !!!")
             return molecule, info
         while True:
             try:
                 atom_line = f.readline().strip().split()
-                print(atom_line)
+                logger.debug(atom_line)
                 element = atom_line[0]
                 x = float(atom_line[1])
                 y = float(atom_line[2])
@@ -213,7 +216,7 @@ def get_total_atom_list_from_molecule_list(molecule_list):
         for atom in adding_atom_list:
             neighbors_info = atom.neighbors_info
             if neighbors_info is None:
-                print("neighbors are not prepared!!! IM gneneration...")
+                logger.debug("neighbors are not prepared!!! IM gneneration...")
             else:
                 new_neighbors_info = dict()
                 for neighbor_atom_idx in neighbors_info:
@@ -267,7 +270,7 @@ def append_neighbor(atom,bonded_atom_idx,bond_order):
 def remove_neighbor(atom, bonded_atom_idx, bond_order):
     """Modifies add new neighbor of class atom."""
     if atom.neighbors_info is None:
-        print("Wrong input!")
+        logger.debug("Wrong input!")
     else:
         del atom.neighbors_info[bonded_atom_idx]
 
@@ -603,7 +606,7 @@ def get_bo_matrix_from_adj_matrix(
     if chg is None:
         chg = molecule.get_chg()
         if chg is None:
-            print("Total charge is not specified! Provide charge information!")
+            logger.debug("Total charge is not specified! Provide charge information!")
             return None
     # The legacy fragment-based perceiver (``frag.AdjtoBO``) is not vendored in this
     # subset; route through the PuLP charge/bond-order solver, which is the engine's
@@ -645,7 +648,7 @@ def get_chg_and_bo(molecule, chg=None, method="SumofFragments"):
     if chg is None:
         chg = molecule.get_chg()
         if chg is None:
-            print("Total charge is not specified! Provide charge information!")
+            logger.debug("Total charge is not specified! Provide charge information!")
             return None, None
     # Unified charge/bond-order perception via the PuLP solver (the legacy
     # ``frag``/``compute_scipy`` backends are not vendored in this subset).
@@ -692,7 +695,7 @@ def add_atoms(ace_mol, new_atom_list):
     if bo_matrix is None:
         adj_matrix = ace_mol.get_matrix("adj")
         if adj_matrix is None:
-            print("Cannot add atoms, since adjacency is not given")
+            logger.debug("Cannot add atoms, since adjacency is not given")
             exit()
         new_adj_matrix = np.zeros((n + m, n + m))
         new_adj_matrix[:n, :n] = adj_matrix
@@ -716,7 +719,7 @@ def add_bonds(ace_mol, bond_list):
     """Add the bonds."""
     bo_matrix = ace_mol.get_matrix("bo")
     if bo_matrix is None:
-        print("impossible to add bond, since bond order is not given!")
+        logger.debug("impossible to add bond, since bond order is not given!")
         exit()
     else:
         for bond in bond_list:
@@ -855,7 +858,7 @@ def get_rmsd(molecule1, molecule2):
     """Return the rmsd."""
     n = len(molecule1.atom_list)
     if len(molecule2.atom_list) != n:
-        print("Cannot calculate RMSD!!!")
+        logger.debug("Cannot calculate RMSD!!!")
         return None
     coordinate_list1 = np.array(molecule1.get_coordinate_list())
     coordinate_list2 = np.array(molecule2.get_coordinate_list())
@@ -928,7 +931,7 @@ def get_molecule_info_from_sdf(sdf_directory):
             s = tmp[:3].strip()
             e = tmp[3:].strip()
         if not s.isdigit() or not e.isdigit():
-            print("WRONG SDF; Error occurs during parsing bond block ...")
+            logger.debug("WRONG SDF; Error occurs during parsing bond block ...")
         s = int(s) - 1
         e = int(e) - 1
         adj_matrix[s][e] = 1

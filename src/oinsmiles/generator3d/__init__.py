@@ -1,5 +1,9 @@
+import logging
+
 from . import clean_geometry, embed, om
 from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_heavy_atom_rmsd(mol1, mol2):
@@ -199,7 +203,7 @@ def generate_3d_structures(
     try:
         metal_complex = om.get_om_from_modified_smiles(m_smiles)
     except Exception as e:
-        print(f"Failed to parse m-SMILES: {e}")
+        logger.debug(f"Failed to parse m-SMILES: {e}")
         return []
 
     clean_ff_params = {
@@ -289,7 +293,7 @@ def generate_3d_structures(
             if len(successful_mols) >= target_pool:
                 break
             if deadline is not None and time.monotonic() > deadline:
-                print(
+                logger.debug(
                     f"Embed wall-clock budget ({embed_time_budget}s) reached after "
                     f"{i} attempt(s) with {len(successful_mols)} conformer(s) "
                     f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
@@ -297,7 +301,7 @@ def generate_3d_structures(
                 )
                 break
             if len(stereo_rejects) >= reject_budget:
-                print(
+                logger.debug(
                     f"Stereo reject budget ({reject_budget}) reached with "
                     f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
                     f"stopping rather than exhausting {max_attempts} attempts."
@@ -315,7 +319,7 @@ def generate_3d_structures(
                     metal_complex, scale, option, align=True, seed=seed + i * 1009
                 )
             except Exception as e:
-                print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
                 positions = None
             _try_accept(positions, scale)
     else:
@@ -331,7 +335,7 @@ def generate_3d_structures(
             if len(successful_mols) >= target_pool:
                 break
             if deadline is not None and time.monotonic() > deadline:
-                print(
+                logger.debug(
                     f"Embed wall-clock budget ({embed_time_budget}s) reached after "
                     f"{i} batch(es) with {len(successful_mols)} conformer(s) "
                     f"({len(stereo_rejects)} stereo-reject fallback(s)); stopping rather "
@@ -339,7 +343,7 @@ def generate_3d_structures(
                 )
                 break
             if len(stereo_rejects) >= reject_budget:
-                print(
+                logger.debug(
                     f"Stereo reject budget ({reject_budget}) reached with "
                     f"{len(successful_mols)} conformer(s) satisfying the requested stereo; "
                     f"stopping rather than exhausting {max_attempts} batches."
@@ -357,7 +361,7 @@ def generate_3d_structures(
                     seed=seed + i * 1009,
                 )
             except Exception as e:
-                print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
                 batch = None
             if batch is None:
                 # Haptic complex -- not batchable; fall back to the serial embed.
@@ -366,7 +370,7 @@ def generate_3d_structures(
                         metal_complex, scale, option, align=True, seed=seed + i * 1009
                     )
                 except Exception as e:
-                    print(f"Embedding failed (scale={scale}, option={option}): {e}")
+                    logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
                     positions = None
                 _try_accept(positions, scale)
                 continue
@@ -379,7 +383,7 @@ def generate_3d_structures(
         # No embed reproduced the requested stereochemistry within the attempt
         # budget; return the best available rather than nothing (non-regressive
         # vs. the prior, unfiltered behavior).
-        print("WARNING: no conformer reproduced the requested stereo; using best available.")
+        logger.debug("WARNING: no conformer reproduced the requested stereo; using best available.")
         successful_mols = stereo_rejects
 
     if not successful_mols:
