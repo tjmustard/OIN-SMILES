@@ -442,7 +442,3 @@ def get_om_from_modified_smiles(smiles):
     replace_actinide(metal_complex)
 
     return metal_complex
-
-
-if __name__ == "__main__":
-    pass
