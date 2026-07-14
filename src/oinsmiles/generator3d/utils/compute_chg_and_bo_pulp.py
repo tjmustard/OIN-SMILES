@@ -1,10 +1,13 @@
 import copy
+import logging
 import sys
 
 import numpy as np
 import pulp as pl
 from rdkit import Chem
 from scipy import spatial
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Topology-keyed memo for the PuLP/CBC charge/bond-order solver.
@@ -621,9 +624,8 @@ def maximize_bo(
     # error handling
     for i, status in enumerate(statuses):
         if status != pl.LpStatusOptimal:
-            print(
-                f"maximize_bo: Obj{i} Optimization failed. (status: {pl.LpStatus[status]})",
-                file=sys.stderr,
+            logger.warning(
+                f"maximize_bo: Obj{i} Optimization failed. (status: {pl.LpStatus[status]})"
             )
             return None, None, (None, None, None)
 
@@ -810,9 +812,8 @@ def resolve_chg(
     # error handling
     for i, status in enumerate(statuses):
         if status != pl.LpStatusOptimal:
-            print(
-                f"resolve_chg: Obj{i} Optimization failed. (status: {pl.LpStatus[status]})",
-                file=sys.stderr,
+            logger.warning(
+                f"resolve_chg: Obj{i} Optimization failed. (status: {pl.LpStatus[status]})"
             )
             return None, None, (None, None, None)
 
@@ -891,7 +892,7 @@ def compute_chg_and_bo_debug(molecule, chg_mol, resolve=True, cleanUp=True, **kw
 
     # charge resolution
     if resolve and chg_sep:
-        print("Debug: resolution")
+        logger.debug("Debug: resolution")
         bo_sum = np.zeros(atom_num)
         for p, q in bo_dict0.keys():
             bo_sum[p] += bo_dict0[(p, q)]
@@ -901,7 +902,7 @@ def compute_chg_and_bo_debug(molecule, chg_mol, resolve=True, cleanUp=True, **kw
         # 1. period > 2
         # 2. non-zero charge on itself
         overcharged = (period_list > 2) & (np.abs(chg_list0) != 0)
-        print("Debug: overcharged", np.nonzero(overcharged))
+        logger.debug("%s %s", "Debug: overcharged", np.nonzero(overcharged))
 
         chg_list1, bo_dict1, raw_outputs1 = resolve_chg(
             atom_num,

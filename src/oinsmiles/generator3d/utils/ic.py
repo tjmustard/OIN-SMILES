@@ -1,9 +1,12 @@
 import itertools
+import logging
 
 import numpy as np
 from rdkit import Chem
 
 from .. import chem, process
+
+logger = logging.getLogger(__name__)
 
 
 def arccos(x):
@@ -476,8 +479,8 @@ def update_geometry(molecule, q_updates, criteria=1e-4, max_iteration=30):
     converged, trajectory = update_xyz(coordinate_list, q_updates, criteria, max_iteration)
     # process.locate_molecule(molecule,coordinate_list,False)
     if not converged:
-        print("IC iteration failed !!!")
-        print("update:", q_updates)
+        logger.debug("IC iteration failed !!!")
+        logger.debug("%s %s", "update:", q_updates)
         molecule.print_coordinate_list()
     else:
         process.locate_molecule(molecule, trajectory[-1], False)
@@ -591,6 +594,6 @@ if __name__ == "__main__":
     internal_coordinates = list(delta_qs.keys())
     # print (get_q(coordinate_list,internal_coordinates))
     update_geometry(molecule, delta_qs)
-    print("done")
+    logger.debug("done")
     # molecule.print_coordinate_list()
-    print(get_internal_coordinate_info(molecule, internal_coordinates))
+    logger.debug(get_internal_coordinate_info(molecule, internal_coordinates))
