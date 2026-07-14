@@ -19,7 +19,7 @@ import pytest
 import yaml
 
 # Ensure the scripts directory is importable
-SCRIPTS_DIR = Path(__file__).parent.parent.parent / ".agents" / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import semantic_graph_merger as sgm  # noqa: E402
