@@ -48,6 +48,23 @@ TEMPLATES = {
             [0.0, 0.8141210, -0.5773503],
         ]
     ),
+    # CN 9 -- tricapped trigonal prismatic. Same unit-normalized vectors and slot
+    # order as MetalloGen's `9_tricapped_trigonal_prismatic` and the encoder's
+    # TEMPLATE_SPECS["TCT"], so slot s here maps to generator slot s (identity
+    # nearest-vector match). Mirror kept by hand (see header note above).
+    "TCT": np.array(
+        [
+            [0.7555736, 0.0000000, 0.6550638],
+            [-0.3780710, 0.6546229, 0.6546229],
+            [-0.3780710, -0.6546229, 0.6546229],
+            [0.7555736, 0.0000000, -0.6550638],
+            [-0.3780710, 0.6546229, -0.6546229],
+            [-0.3780710, -0.6546229, -0.6546229],
+            [-1.0000000, 0.0000000, 0.0000000],
+            [0.5821873, -0.8130547, 0.0000000],
+            [0.5821873, 0.8130547, 0.0000000],
+        ]
+    ),
 }
 
 
