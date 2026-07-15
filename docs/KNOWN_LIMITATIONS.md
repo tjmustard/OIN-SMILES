@@ -141,13 +141,24 @@ RMSD gate confirms are geometrically correct (`DAXJUI` rmsd 0.52).
 
 ---
 
-## Borane and carborane clusters
+## Borane and carborane clusters (`carborane_unsupported`)
 
-`get_lig_mol` cannot perceive bond orders for electron-deficient cages (`OSENOR`,
-and the `carborane_unsupported` bucket). It already fails with a specific message
-(`get_lig_mol failed for ligand fragment #4 (SMILES: 'B')`), and the charge sweep
-does not rescue it: the multi-centre bonding these cages need is outside the
-two-centre model `AC2mol` implements.
+`get_lig_mol` (`utils/xyz2mol.py:426`, calling `AC2mol` at `:451-462`) cannot perceive
+bond orders for electron-deficient polyhedral cages (`OSENOR`, and the
+`carborane_unsupported` bucket). It fails in the **forward** encode with a specific
+message (`get_lig_mol failed for ligand fragment #... (SMILES: '[H]B1[B-]2...')`), and
+the charge sweep does not rescue it: the 3-center-2-electron bonding these cages need is
+outside the **two-centre** bond-order model `AC2mol` implements.
+
+**Layer that must change:** the OIN notation itself — a cluster convention (an eta-like
+multi-atom unit, or a pseudo-atom for the cage) — not the encoder. This is deferred until
+a design exists; it is a notation-design gap, not a bug.
+
+**Members (snapshot 2026-07-14):** 36 on the `c7edeeb6` floor, 92 in the current
+(mixed-provenance, growing) backlog. Full list and root-cause detail:
+`spec/handoffs/v0.4.2/wontfix-carboranes.md`. Regenerate with
+`tools/classify_failures.py` on a **copy** of `results-v0.4.0/` (class
+`carborane_unsupported`).
 
 ---
 
@@ -244,3 +255,109 @@ distances — but it is **applied only to `ENABLED_METALS`**, a dataset-validate
   drift-guarded — `tests/unit/test_bond_lengths.py` asserts them against the frozen
   legacy table, so an unmirrored hand edit fails CI (TD-005: a hand-copied constant is
   how Sc/Y once went missing).
+
+---
+
+## Donor hydrogen count -- the nitride/ammine notation ambiguity (`donor_H_atom_count`)
+
+An OIN string carries no explicit hydrogen on a de-bracketed organic-subset donor, so the
+generator re-materializes donor H with `Chem.AddHs` (`generator3d/ligand.py:63`) and the
+adapter's H-reconcile decides which bare donors are 0-H X-type
+(`generation/metallogen_adapter.py:164-222`). One case there is **genuinely undecidable at
+the notation layer** (documented in-code at `:207-219`): a **bare, heavy==0 nitrogen** donor
+-- a nitride `[N]` bound only to the metal and an ammine `[NH3]` -- can serialize to the same
+`N{n}` token, and the reconcile lets **the ammine reading win** (it keeps the three H). A
+nitride so written round-trips with +3 spurious H.
+
+**Layer that must change:** the OIN format (`oin/inline.py:265-317`). The encoder already
+disambiguates a 0-degree nitride to a bracketed `[N]{n}` (gated on `GetDegree()==0`,
+`inline.py:300-306`); closing the residual needs that marker extended to every bare-N case
+the generator would otherwise read as ammine, verified not to regress real ammine donors. It
+is a notation-design change, not a generator bug.
+
+**Members / current status (snapshot 2026-07-14).** `donor_H_atom_count` is 82 on the
+`c7edeeb6` floor / 202 in the current backlog, and **S1 (`feature/roundtrip-donor-h`) owns the
+fixable-vs-notation split** of that class -- the notation-limited subset it routes here is
+finalized when S1 lands; this phase then absorbs it. Two honest caveats on the accounting as
+it stands today, so a later reader is not misled:
+
+- A fresh `classify_failures.py` run isolates **no** `donor_H_atom_count` row by the
+  lone-`N{n}` nitride/ammine signature -- so this ambiguity is presently a **latent** format
+  limitation with no clean dataset trigger, not a populated bucket.
+- The `+3`-atom donor-H rows are **not** this class. They are dominated by
+  eta-arene / `[CH]`-radical ring-H re-materialization -- e.g. `AJIJUY_comp_0` re-encodes
+  **byte-identically** (`smiles_1 == smiles_2`) yet the generated 3D carries +3 H, and the
+  fragment contains no nitrogen at all. Those belong to S1's generator-fixable / eta H-count
+  work, not to the nitride/ammine notation limit.
+
+---
+
+## FF-floor high RMSD and `--quick` timeouts are harness artifacts, not accuracy failures
+
+Two of the largest "failure" buckets in the sweep are **not** round-trip accuracy defects; they
+are properties of the benchmark harness and the FF-only generation decision.
+
+- **`high_rmsd` (36 floor / 112 current).** The 1.0 Angstrom RMSD gate
+  (`tools/test_dataset_roundtrip.py:173`) runs **after** the OIN string round-trip has already
+  matched -- so every `high_rmsd` row is a **chemically-correct** round-trip that failed only on
+  geometric tightness. Under the wave's FF-only decision (no `xtb` binary -> the `g-xtb` optimizer
+  warns and returns the FF geometry unchanged), coordinate-sphere RMSD is systematically inflated
+  for any metal outside `generator3d/bond_lengths.py::ENABLED_METALS` (`{Ni,Pd,Pt,Zn,Cd,Hg,Ag}`),
+  which falls back to a covalent-radius sum that **over**estimates dative bonds (see the curated
+  bond-length section above). Do **not** loosen the gate to "fix" these; the real, bounded win is
+  extending `ENABLED_METALS` with per-metal-validated bond lengths (S7's `feature/roundtrip-metrics`).
+- **`timeout` (339 floor / 948 current).** Largely a `--quick` budget artifact: the accumulator
+  runs `ff_params_fast = {uff_pool_size: 2, max_attempts: 10}` with a 30 s hard-kill
+  (`test_dataset_roundtrip.py:616-617`, SIGKILL at `:253/:302`). A full-fidelity run
+  (~300 s / 250 attempts, and an `xtb` optimizer) recovers many of these. They are a benchmark
+  budget bound, not a chemistry bug, and must not be counted as accuracy failures.
+
+**Layer:** the harness thresholds / the FF-only decision -- not the encoder or the generator. S7
+owns the honest split (genuine vs artifact) and the harness relabeling; docs records that these
+buckets are, by construction, not accuracy regressions.
+
+---
+
+## Uncoordinated outer-sphere fragments (`UncoordinatedFragmentError`)
+
+Outer-sphere counterions and uncoordinated solvent -- a free water, a borate/fluoroborate anion,
+a perchlorate, a bare oxide -- are emitted as their own OIN fragments by the encoder but carry no
+bond to the metal, so they have **no binding slot**. MetalloGen's `metal|lig1|...|geo` m-SMILES
+has no way to express such a fragment, and generation raises `UncoordinatedFragmentError`
+(`generation/metallogen_adapter.py:92`, raised at `:154`). Examples: `ATAGUZ_comp_0`
+(`[O-]Cl` perchlorate + `[O-2]` oxide counterions on an `[Hg_LIN]`), `CAXZAD_comp_0` (a
+perfluoro-tetraarylborate counter-anion).
+
+**Layer:** representation. m-SMILES has no non-coordinating-fragment slot; round-tripping these
+would need an OIN/generator convention for outer-sphere species. A representation limit, not a bug.
+
+**Members (snapshot 2026-07-14):** at this snapshot **all** `gen_exception_other` rows are
+`UncoordinatedFragmentError` -- 24 on the `c7edeeb6` floor, 72 in the current backlog. Floor set:
+`ATAGUZ_comp_0, CAXZAD_comp_0, CEGBAU_comp_0, CUBDOT_comp_0, DEJHEF_comp_0, EJOPOJ_comp_0,
+FOQBEV_comp_0, FUPVOC_comp_0, GEYRUA_comp_0, KOFLAV_comp_0, LOJGEW_comp_0, MAHTOE_comp_0,
+NEBDAA_comp_0, OHAYIH_comp_0, SOLYEZ_comp_0, SOSJAM_comp_0, TIGDAO_comp_0, UHAMUM_comp_0,
+VIDVUA_comp_0, XAXYEC_comp_0, XAXZIH_comp_0, XIFVAM_comp_0, XIQKOY_comp_0, YUMBEP_comp_0`.
+Regenerate the full current set by grepping the report `error` for `UncoordinatedFragmentError`.
+
+---
+
+## Irreducible generator stereochemistry
+
+Some stereochemistry the input carries cannot be reproduced deterministically by the FF-only
+builder, so the round trip differs on stereo through no encoder fault.
+
+- **Non-deterministic rac/meso construction (`QOFTOU`-class).** `QOFTOU_comp_0` builds a
+  racemic/meso mixture non-deterministically at generation time -- the same seed can realize
+  either diastereomer -- so its `@`/`@@` cannot be pinned. It already appears under the
+  `atom_stereo` residuals above (its `@`/`@@` disagreement is resolved; it fails instead on
+  no-conformer + this non-determinism).
+- **Irreducible winding (`winding_flip` residual).** A subset of `winding_flip` rows (14 on the
+  `c7edeeb6` floor / 33 current) encode a ring-winding sign (`>`/`<`) the builder cannot
+  reproduce deterministically. **S5 (`feature/roundtrip-geometry`) owns the winding fix and
+  finalizes which rows remain irreducible**; that residual is absorbed here on S5's landing. (For
+  the fixed, geometry-inert cases -- Cp*/arene/BPh4- rings a proper rotation turns over -- see the
+  eta-winding note in the project history; those are *not* residuals.)
+
+**Layer:** generator geometry realization / builder stereo -- it cannot deterministically
+reproduce input handedness at a metal-adjacent centre or for a winding whose sign a proper
+rotation flips. Not an encoder or notation defect.
