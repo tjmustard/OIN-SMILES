@@ -138,6 +138,18 @@ def kekulize_safe_sanitize(mol):
 
     stuck = stuck_ring_atoms(work)
     if not stuck:
+        # No genuinely quinoid ring to relax, yet the first full sanitize could
+        # not kekulize. This is the stale-flag case: ``AC2mol`` left aromatic
+        # flags on a fused/charged ring system that DOES have a valid Kekule
+        # structure, so kekulization using those flags failed even though a fresh
+        # perception succeeds. ``work`` already re-ran ``SetAromaticity`` above
+        # (the partial sanitize), so a full sanitize now kekulizes the refreshed
+        # flags. Only a mol that still will not sanitize is an honest limitation.
+        try:
+            Chem.SanitizeMol(work)
+            return Chem.RWMol(work) if was_rw_mol else work.GetMol()
+        except Exception:
+            pass
         raise OINEncodeError(
             f"cannot kekulize molecule and found no quinoid ring to relax: {original_error}"
         ) from original_error
