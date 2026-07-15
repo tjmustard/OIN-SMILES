@@ -238,7 +238,10 @@ gap, not an embed-parameter one.
 **Group 3 -- geometry the builder cannot realize.** `BOBJIM` (`Sc_OCT`): the embed
 succeeds but every FF-cleaned geometry fails the ligand-collision / adjacency
 validity checks, so no conformer survives cleanup. A genuine geometry-realization
-gap for that ligand set.
+gap for that ligand set. (v0.4.2 note: adding the CN-9 `TCT` geometry code made
+`XERTUK_comp_3` *encodable* as `[Y_TCT]` -- previously `g:NON` -- but its 104-atom
+ligand still will not embed; a geometry code being supported does not guarantee the
+builder can realize a large, crowded ligand set.)
 
 ### What R2 *did* fix
 
@@ -287,6 +290,12 @@ distances — but it is **applied only to `ENABLED_METALS`**, a dataset-validate
   to the pre-table generator — the change is strictly additive. Owned by
   `generator3d/bond_lengths.py`; expand `ENABLED_METALS` only with the same per-metal
   RMSD validation, never by hand.
+- **Re-validated in v0.4.2 (S7): the subset stands.** A paired median-of-deltas coordination-sphere
+  RMSD A/B (≥10 seeds, **full** conformer pool — collapsing the pool fabricates results) with a Zn
+  positive control (−0.025 Å, reproducing the landed win, so the harness is trusted) confirmed no
+  candidate metal earns inclusion: Ru comes back **+0.009 Å** (no benefit — the swept scale factor
+  already compensates the covalent overestimate) and W/Mn/Co are flat. `bond_lengths.py` ships
+  **unchanged**; the `high_rmsd` bucket is the FF-only geometric floor, not a bond-length bug (below).
 - **Provenance of the table.** `generator3d/bond_lengths.py::BOND_LENGTHS` is the single
   authoritative copy. It originated as a verbatim copy of the legacy Molassembler
   backend's `_BOND_LENGTHS` (that backend was removed in v0.3.7). The values are
@@ -344,11 +353,14 @@ are properties of the benchmark harness and the FF-only generation decision.
   which falls back to a covalent-radius sum that **over**estimates dative bonds (see the curated
   bond-length section above). Do **not** loosen the gate to "fix" these; the real, bounded win is
   extending `ENABLED_METALS` with per-metal-validated bond lengths (S7's `feature/roundtrip-metrics`).
-- **`timeout` (339 floor / 948 current).** Largely a `--quick` budget artifact: the accumulator
-  runs `ff_params_fast = {uff_pool_size: 2, max_attempts: 10}` with a 30 s hard-kill
-  (`test_dataset_roundtrip.py:616-617`, SIGKILL at `:253/:302`). A full-fidelity run
-  (~300 s / 250 attempts, and an `xtb` optimizer) recovers many of these. They are a benchmark
-  budget bound, not a chemistry bug, and must not be counted as accuracy failures.
+- **`timeout` (339 floor / 948 current).** A `--quick` **labeling** artifact: the accumulator runs
+  `ff_params_fast = {uff_pool_size: 2, max_attempts: 10}` with a 30 s hard-kill
+  (`test_dataset_roundtrip.py:616-617`, SIGKILL at `:253/:302`), so a slow molecule is filed
+  `timeout` regardless of *why* it is slow. A v0.4.2 (S7) full-budget confirmatory sample found most
+  are **real valence `no_conformers`** the 30 s kill masks -- they still fail at full budget, with the
+  honest label -- not molecules a longer budget recovers. Either way they are not string-level
+  accuracy defects; the harness now stamps `mol_timeout`/`rmsd_gate` and prints a failure breakdown so
+  `timeout` / FF-floor rows are not counted as accuracy failures.
 
 **Layer:** the harness thresholds / the FF-only decision -- not the encoder or the generator. S7
 owns the honest split (genuine vs artifact) and the harness relabeling; docs records that these
@@ -389,12 +401,13 @@ builder, so the round trip differs on stereo through no encoder fault.
   either diastereomer -- so its `@`/`@@` cannot be pinned. It already appears under the
   `atom_stereo` residuals above (its `@`/`@@` disagreement is resolved; it fails instead on
   no-conformer + this non-determinism).
-- **Irreducible winding (`winding_flip` residual).** A subset of `winding_flip` rows (14 on the
-  `c7edeeb6` floor / 33 current) encode a ring-winding sign (`>`/`<`) the builder cannot
-  reproduce deterministically. **S5 (`feature/roundtrip-geometry`) owns the winding fix and
-  finalizes which rows remain irreducible**; that residual is absorbed here on S5's landing. (For
-  the fixed, geometry-inert cases -- Cp*/arene/BPh4- rings a proper rotation turns over -- see the
-  eta-winding note in the project history; those are *not* residuals.)
+- **Irreducible winding (`winding_flip` residual).** `winding_flip` (14 on the `c7edeeb6` floor /
+  33 current) is **largely a `--quick` conformer-pool artifact**, not a builder defect: under the
+  non-quick default generator (seed 42, pool 5) the correct coordinated face is realized for **12 of
+  14** floor rows. v0.4.2 (S5) confirmed this and shipped **no winding code** (its only change was
+  the CN-9 template); a small residual encodes a ring-winding sign the FF builder cannot reproduce
+  deterministically. (For the fixed, geometry-inert cases -- Cp*/arene/BPh4- rings a proper rotation
+  turns over -- see the eta-winding note in the project history; those are *not* residuals.)
 
 **Layer:** generator geometry realization / builder stereo -- it cannot deterministically
 reproduce input handedness at a metal-adjacent centre or for a winding whose sign a proper
