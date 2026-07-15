@@ -5,6 +5,46 @@ from rdkit import Chem
 logger = logging.getLogger(__name__)
 
 
+def _chelate_locked_atoms(rd_mol):
+    """Atoms held rigid by a chelate ring that closes through the metal.
+
+    The ligand fragment carries no metal -- its metal-binding donors are the
+    atom-map>0 atoms. Rebuild the coordination ring the encoder sees: attach one
+    virtual metal to every donor on a scratch copy, perceive rings, and return the
+    union of atoms in any ring that includes the virtual metal. A bond with BOTH
+    endpoints in that set is chelate-locked (its E/Z falls out of the SMILES
+    traversal order, not the chemistry) -- exactly the predicate
+    ``core/translator._clear_chelate_locked_bond_stereo`` applies to the full TMC
+    (there it upgrades DATIVE->SINGLE to reveal the ring; here the ligand has no
+    dative bonds, so the metal-donor ring is built directly). A free monodentate
+    arm touches the metal at a single donor, forms no ring, and is left free.
+
+    Returns an empty set when fewer than two donors exist (no ring is possible),
+    and ``None`` on any ring-perception failure so the caller can fall back to the
+    broad near-donor proxy rather than crash the ligand build.
+    """
+    try:
+        donors = [a.GetIdx() for a in rd_mol.GetAtoms() if a.GetAtomMapNum() > 0]
+        if len(donors) < 2:
+            return set()
+        probe = Chem.RWMol(rd_mol)
+        metal_idx = probe.AddAtom(Chem.Atom(0))  # topological placeholder metal
+        for d in donors:
+            probe.AddBond(d, metal_idx, Chem.BondType.SINGLE)
+        probe = probe.GetMol()
+        Chem.FastFindRings(probe)
+        rings = Chem.GetSymmSSSR(probe)
+    except Exception:
+        return None
+    locked = set()
+    for ring in rings:
+        ring = set(ring)
+        if metal_idx in ring:
+            locked |= ring
+    locked.discard(metal_idx)
+    return locked
+
+
 def get_ligand_from_smiles(mapped_smiles):
     """Return the ligand from smiles."""
     from . import process
@@ -34,32 +74,36 @@ def get_ligand_from_smiles(mapped_smiles):
                     )
     except Exception:
         stereo_bonds = []
-    # Restrict enforcement to geometrically-free double bonds. A double bond whose
-    # atoms coordinate the metal (atom-map number > 0) or neighbour a coordinating
-    # atom is rigidly fixed by chelation/coordination -- its E/Z is already
-    # reproduced by the ligand topology, so a distance-geometry stereo constraint
-    # there is unnecessary AND over-constrains the metal embed (measured to cut the
-    # conformer yield of metal-bound imine chelates, e.g. AGULIX 9/9 -> 3/9). Keep
-    # only bonds clear of the coordination sphere; the target case -- a pendant,
-    # freely-rotatable alkene -- is unaffected.
+    # Restrict enforcement to geometrically-free double bonds. A double bond a
+    # metal-containing ring holds rigid (a chelate closing through the metal: acac,
+    # salicylaldiminate, nacnac, bis-imine) has its E/Z reproduced by the ligand
+    # topology, so a distance-geometry stereo constraint there is unnecessary AND
+    # over-constrains the metal embed (measured to cut the conformer yield of
+    # metal-bound imine chelates, e.g. AGULIX 9/9 -> 3/9). Drop exactly those
+    # ring-locked bonds and enforce the rest -- crucially, a free C=N/C=C hanging
+    # off a MONODENTATE arm (AFECIZ, XIZXAG, the AHAZOZ nitrone class) is not in a
+    # metal ring, so it IS now enforced and round-trips.
     #
-    # This proxy is deliberately broader than the encoder's chelate-ring test in
-    # core/translator._clear_chelate_locked_bond_stereo, so the encoder can emit an
-    # E/Z the generator does not enforce (a free C=N hanging off a monodentate
-    # donor: AFECIZ, XIZXAG -- both still round-trip-fail on that bond). Narrowing
-    # it to the ring test is correct in principle but detonates a latent bug in
-    # _apply_double_bond_stereo, which force-sets the bond back to DOUBLE without
-    # touching formal charges: on AFECIZ the PuLP charge assignment wants that C=N
-    # single with a charged N, so SanitizeMol then rejects a 4-valent N and every
-    # ff_clean fails (565s -> full attempt budget). Fix that first, then narrow.
+    # This mirrors the encoder's predicate in
+    # core/translator._clear_chelate_locked_bond_stereo (encoder and generator must
+    # agree on which bonds are locked). Enforcing the free monodentate arms relies
+    # on _apply_double_bond_stereo being charge-aware when it restores the double
+    # bond -- promoting a PuLP-demoted C=N over-fills the N, so it bumps the formal
+    # charge (N+) instead of emitting a 4-valent neutral N that would crash every
+    # ff_clean. Falls back to the broad donor+neighbour proxy if ring perception
+    # fails, so a perception error can never crash the ligand build.
     if stereo_bonds:
-        near_donor = {a.GetIdx() for a in rd_mol.GetAtoms() if a.GetAtomMapNum() > 0}
-        for d in list(near_donor):
-            for nb in rd_mol.GetAtomWithIdx(d).GetNeighbors():
-                near_donor.add(nb.GetIdx())
-        stereo_bonds = [
-            sb for sb in stereo_bonds if sb[0] not in near_donor and sb[1] not in near_donor
-        ]
+        locked = _chelate_locked_atoms(rd_mol)
+        if locked is None:
+            near_donor = {a.GetIdx() for a in rd_mol.GetAtoms() if a.GetAtomMapNum() > 0}
+            for d in list(near_donor):
+                for nb in rd_mol.GetAtomWithIdx(d).GetNeighbors():
+                    near_donor.add(nb.GetIdx())
+            stereo_bonds = [
+                sb for sb in stereo_bonds if sb[0] not in near_donor and sb[1] not in near_donor
+            ]
+        else:
+            stereo_bonds = [sb for sb in stereo_bonds if not (sb[0] in locked and sb[1] in locked)]
     rd_mol = Chem.AddHs(rd_mol, explicitOnly=False, addCoords=False)
     # Recover sp3 atom chirality for the same reason as the C=C stereo above: the
     # '@'/'@@' survive MolFromSmiles(sanitize=False) as chiral tags, but the
