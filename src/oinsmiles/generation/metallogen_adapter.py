@@ -194,6 +194,20 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                             for ring in ring_info.AtomRings()
                         )
                         strip = not is_haptic
+                        # Lock a bare 0-H haptic carbon (ipso / ring-fusion /
+                        # substituted) so the anionic-aromatic re-parse in
+                        # get_ligand_from_smiles cannot re-derive a phantom
+                        # implicit H on it. The bare `c{n}` these fragments use
+                        # for an eta ipso/fusion carbon has no explicit H, so
+                        # AddHs(explicitOnly=False) protonates it to `[cH]`
+                        # (ARONEA +4, BOXJUU +6). Freezing it at its
+                        # correctly-perceived 0-H count reproduces the input.
+                        # A genuine C-H haptic carbon keeps H via its explicit
+                        # `[cH]` bracket (NoImplicit already set -> outer guard
+                        # skips it), so Cp/arene passers stay byte-identical.
+                        if is_haptic and atom.GetTotalNumHs() == 0:
+                            atom.SetNumExplicitHs(0)
+                            atom.SetNoImplicit(True)
                     elif heavy >= 2:
                         # Non-aromatic sigma-carbon donor already bonded to >=2 heavy
                         # atoms: an NHC carbene (C between two ring N) or a carbanion.
