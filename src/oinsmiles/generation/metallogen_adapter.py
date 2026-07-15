@@ -86,6 +86,9 @@ OIN_TO_METALLOGEN_GEO = {
     # "fix" it -- the lookup KeyErrors otherwise. Sibling key "8_sqaure_prismatic"
     # is likewise misspelled upstream.
     "SQA": "8_squre_antiprismatic",
+    # CN 9 -- tricapped trigonal prismatic (e.g. Y/Ln with 3 bidentate + 1
+    # tridentate donors). Value byte-matches the vendored globalvars key.
+    "TCT": "9_tricapped_trigonal_prismatic",
 }
 
 
