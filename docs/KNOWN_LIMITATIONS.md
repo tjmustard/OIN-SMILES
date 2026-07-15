@@ -131,13 +131,51 @@ whose `@` now matches -- it fails instead on a separate donor-H atom count). Thi
 18 successes above -- including cases previously mis-read as "wrong diastereomer," which the
 RMSD gate confirms are geometrically correct (`DAXJUI` rmsd 0.52).
 
+### Fixed in v0.4.2 (S6b): spurious donor-S, sulfonimidoyl S, quaternary N+, alkene/carbene-donor C
+
+The full-dataset sweep re-surfaced two `@`-disagreement subsets on the v0.4.1 (`c7edeeb6`) baseline;
+S6b closes them on the shared encode path (`ChiralityRecoveryUtility.recover`, which both
+`XYZToSMILES.convert` and the contract-mol re-encode funnel through, so a fix is symmetric):
+
+- **Spurious high-coordination donor-S (`[S@SP3]`/`[S@SP1]`/`[S@TB9H]`; `BAZMOH`, `HUGSEI`, `LUSKIV`,
+  `YUMPIH`, `CIDDAU`).** A metal-donor thioether/ring S gets a permutation chiral tag from
+  `build_contract_mol`'s `AssignStereochemistryFrom3D` (metal-present geometry) that survives
+  fragmentation because legacy `AssignStereochemistry(cleanIt=True)` does not scrub a pre-set
+  permutation tag -- the input crystal geometry never produced it. `recover()` now clears a chiral
+  tag on an S that is **not** a genuine stereocentre on the metal-free fragment
+  (`FindMolChiralCenters(useLegacyImplementation=False)` -- a divalent thioether S is absent; a genuine
+  sulfonimidoyl S(VI) is present and kept). `CIDDAU`'s `@` now matches; it fails instead on a separate
+  `[SH]` donor-H atom count (S1 domain).
+- **Genuine sulfonimidoyl S(VI) inverted (`JEKQAS`, `REPZUJ`, `ZORCOA`).** The centre's metal-donor
+  O becomes a radical `[O]` in the fragment, which `rdCIPLabeler` refuses to rank, so
+  `_reparse_aromatic_cip_label` returned no label and the `_OIN_CIPCode_SP3` re-orientation was
+  silently skipped. The reparse now **fills a metal-stripped donor's open valence with H** (skipping
+  aromatic atoms) so the CIP is computable, in the same convention `_template_sp3_label` reads.
+- **Genuine quaternary ammonium N+ dropped (`POYJIX`, `[N@@+]` -> `[N+]`).** `build_contract_mol` did
+  not stamp N, so `recover()`'s 4-neighbour no-`_OIN_CIPCode` fallback cleared it. A **degree-4** N+ is
+  now routed through the same metal-free `_OIN_CIPCode_SP3` re-orientation as C/Si/S (a trivalent
+  amine N stays unstamped -- see below).
+- **Genuine sp3 C bonded to a metal-bound alkene/carbene donor inverted (`ORIHUU`, `XILZID`).** The
+  donor carbon is valence-deficient in the fragment, so its template-vs-fragment CIP diverged and the
+  re-orientation mis-fired. `_template_sp3_label` and `_reparse_aromatic_cip_label` now read the label
+  through the **same fill-first reparse**, so the donor is normalised identically on both sides.
+
 ### Documented residuals
 
+- **Trivalent-N inversion is unrepresentable (`JUCCUH`, `[N@@H]` -> `[NH]`).** RDKit clears a
+  trivalent amine `[N@]` as a non-stereogenic nitrogen inversion, so the generated re-encode cannot
+  carry it. Zone-A / backbone trivalent N stereo remains **deferred** (needs an out-of-band marker);
+  this is the same limitation R5 documented for Zone-A N.
+- **Macrocyclic multi-Zone-A-P relative configuration (`WEDYOU`).** A 1,4,7-triphosphacyclononane on
+  Fe whose two stereogenic P donors round-trip with a swapped **relative** configuration
+  (`[P@H]…[P@@H]` vs `[P@@H]…[P@H]`; canonical keys genuinely differ). The embed builds one relative
+  diastereomer non-deterministically -- a generator stereo defect analogous to `QOFTOU`'s rac/meso,
+  not a per-centre carry gap the lone-pair re-orientation can fix; **deferred**.
 - **Stereo resolved, blocked by another class (leaves `atom_stereo`):** `KAPCEM`, `XENNIO`,
   `GUXPIA` (donor-H atom-count, S1 domain -- the `@`/`@@` now matches); `EJUKUQ`, `FADSAE` (High RMSD --
   the generated geometry is genuinely distorted, a conformer-quality/R2 issue); `GAKZOK`,
   `QOFTOU` (no conformer at all -- see the `no_conformers` entry; `QOFTOU` also builds rac/meso
-  non-deterministically).
+  non-deterministically); `CIDDAU` (`[SH]` donor-H atom count, S1 domain -- the `@` now matches).
 
 ---
 

@@ -570,29 +570,27 @@ def _template_sp3_label(t, ai: int) -> "str | None":
     corrupted by its ``RemoveHs(sanitize=False)`` for a FUSED haptic ring (indenyl,
     fluorenyl), which flips rdCIPLabeler for the adjacent centre (KAGXUM) even under
     the aromatic-preserving sanitize. An atom-map probe survives the re-parse so the
-    target atom is found regardless of SMILES atom re-ordering. Returns None on failure.
+    target atom is found regardless of SMILES atom re-ordering. The label is read
+    through the SAME shared reparse helper (``_reparse_cip_label_once``, fill-first)
+    that ``ChiralityRecoveryUtility.recover`` uses, so the stamp and the fragment
+    comparison agree on the donor-normalised convention (a metal-adjacent carbene/
+    alkene/oxo donor's open valence is H-filled identically on both sides -- ORIHUU/
+    XILZID/JEKQAS). Returns None on failure.
     """
-    from rdkit.Chem import rdCIPLabeler
+    from ..core.chirality import _reparse_cip_label_once
 
     _PROBE = 99
     try:
         tagged = Chem.Mol(t)
         tagged.GetAtomWithIdx(ai).SetAtomMapNum(_PROBE)
-        tt = Chem.MolFromSmiles(Chem.MolToSmiles(tagged), sanitize=False)
-        if tt is None:
-            return None
-        try:
-            Chem.SanitizeMol(tt, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
-        except Exception:
-            tt.UpdatePropertyCache(strict=False)
-        Chem.AssignStereochemistry(tt, cleanIt=True, force=True)
-        rdCIPLabeler.AssignCIPLabels(tt)
-        target = next((a for a in tt.GetAtoms() if a.GetAtomMapNum() == _PROBE), None)
-        if target is not None and target.HasProp("_CIPCode"):
-            return target.GetProp("_CIPCode")
-        return None
+        smiles = Chem.MolToSmiles(tagged)
     except Exception:
         return None
+    for fill_deficit in (True, False):
+        label = _reparse_cip_label_once(smiles, _PROBE, fill_deficit)
+        if label is not None:
+            return label
+    return None
 
 
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
@@ -776,6 +774,21 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         sp3_label = _template_sp3_label(t, ai)
                         if sp3_label is not None:
                             rwa.SetProp(_SP3_CIP_PROP, sp3_label)
+                    elif (
+                        anum == 7
+                        and ta.GetTotalDegree() == 4
+                        and ta.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
+                    ):
+                        # Genuine quaternary ammonium N+: a real tetrahedral
+                        # stereocentre. Route it through the same metal-free
+                        # _SP3_CIP_PROP re-orientation recover() applies to C/Si/S
+                        # (POYJIX). Without a stamp the generated N carries no CIP
+                        # prop, and recover()'s 4-neighbour no-_OIN_CIPCode fallback
+                        # clears it ([N@@+] -> [N+]). Degree-4 gate keeps a trivalent
+                        # amine N (RDKit-cleared inversion) unstamped and deferred.
+                        n_label = _template_sp3_label(t, ai)
+                        if n_label is not None:
+                            rwa.SetProp(_SP3_CIP_PROP, n_label)
                     if anum == 15 and gidx in donors:
                         # Zone-A P donor: stereogenic lone pair. recover()'s
                         # lone-pair branch needs _OIN_CIPCode_LP (rdCIPLabeler
