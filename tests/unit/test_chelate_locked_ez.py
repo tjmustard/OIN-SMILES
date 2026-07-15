@@ -59,26 +59,25 @@ class TestRDKitIgnoresDativeBondsForRings(unittest.TestCase):
         self.assertEqual(len(Chem.GetSymmSSSR(mol)), 1)
 
 
-class TestGeneratorFilterIsBroaderThanTheEncoder(unittest.TestCase):
-    """The generator's near-donor proxy drops MORE than the encoder suppresses.
+class TestGeneratorFilterMatchesEncoderChelateRing(unittest.TestCase):
+    """The generator's double-bond filter now uses the encoder's chelate-ring test.
 
-    The encoder's chelate-ring test is the physically correct predicate, and
-    narrowing ligand.py to match it is the obvious next step -- but it detonates a
-    latent bug. ``_apply_double_bond_stereo`` force-sets a carried bond back to
-    DOUBLE without touching formal charges; on AFECIZ the PuLP charge assignment
-    wants that C=N single with a charged N, so ``SanitizeMol`` then rejects a
-    4-valent N and *every* ff_clean raises. AFECIZ goes from 553s (clean succeeds on
-    attempt 1) to exhausting the whole attempt budget at 1.6s per failed clean.
-
-    So the two halves deliberately disagree today: the encoder emits an E/Z on a
-    free C=N hanging off a monodentate donor, and the generator does not enforce it.
-    AFECIZ and XIZXAG still fail their round trip on that bond, exactly as before
-    this change. Fix _apply_double_bond_stereo's charge handling first, then narrow.
+    ``ligand.py`` used to drop a broader set than the encoder (any bond touching a
+    donor or a donor's neighbour), so a free C=N hanging off a monodentate donor
+    was suppressed and its genuine E/Z never round-tripped. It now mirrors
+    ``core/translator._clear_chelate_locked_bond_stereo`` (S6a): only a bond both of
+    whose atoms lie in a ring closing through the metal is dropped. A metal-ring
+    imine (AGULIX) stays dropped; a free monodentate arm (AFECIZ) and a pendant
+    alkene are now enforced. Enforcing the free arm relies on the charge-aware
+    ``_apply_double_bond_stereo`` (see ``TestChargeAwareDoubleBondPromotion``): the
+    PuLP-demoted C=N is promoted back to DOUBLE with a +1 formal charge on the N,
+    not a 4-valent neutral N that would crash every ff_clean.
     """
 
     def test_agulix_chelate_imine_is_not_enforced(self):
-        # The C=N sits next to the metal-binding N/S donors; constraining it cut
-        # AGULIX's conformer yield 9/9 -> 3/9.
+        # The C=N is ring-locked through the metal (C-[S:5]...metal...[N:3]-N=C);
+        # constraining it cut AGULIX's conformer yield 9/9 -> 3/9, so it stays
+        # dropped by the chelate-ring test.
         lig = get_ligand_from_smiles(r"CS/C(=N/[N:3]=Cc1ccccc1[O:6])[S:5]")
         self.assertEqual(lig.molecule.stereo_bonds, [])
 
@@ -86,16 +85,69 @@ class TestGeneratorFilterIsBroaderThanTheEncoder(unittest.TestCase):
         lig = get_ligand_from_smiles("C/C=C/CC[NH2:1]")
         self.assertTrue(lig.molecule.stereo_bonds)
 
-    def test_dangling_imine_is_not_enforced_pending_charge_fix(self):
-        # AFECIZ's monodentate salicylaldiminate arm. Its E/Z is genuine and the
-        # encoder emits it, but enforcing it here breaks ff_clean (see class doc).
+    def test_dangling_imine_is_enforced(self):
+        # AFECIZ's monodentate salicylaldiminate arm: one donor ([O:2]) closes no
+        # metal ring, so the free C=N is now enforced and round-trips. This is the
+        # bond the "pending charge fix" guard used to hold back; the charge-aware
+        # promotion is what makes enforcing it safe.
         lig = get_ligand_from_smiles(r"Cc1cccc(C)c1/N=C(\[O:2])c1ccccc1")
-        self.assertEqual(
+        self.assertTrue(
             lig.molecule.stereo_bonds,
-            [],
-            "enforcing this bond breaks ff_clean until _apply_double_bond_stereo "
-            "adjusts formal charges when it restores the double bond",
+            "the free monodentate C=N must now be enforced (chelate-ring narrowing)",
         )
+
+
+class TestChargeAwareDoubleBondPromotion(unittest.TestCase):
+    """``_apply_double_bond_stereo`` promotes a demoted C=N with a +1 charge.
+
+    PuLP re-perception can hand the embed mol a carried C=N as a SINGLE bond with a
+    neutral 3-valent N (the electrons paid for elsewhere). Restoring the double bond
+    over-fills the N; the fix bumps its formal charge to +1 (the encoder's charged
+    Lewis form) so the mol stays valence-valid instead of raising in every ff_clean.
+    Pre-fix the promotion was declined and the bond left SINGLE, so this fails.
+    """
+
+    @staticmethod
+    def _demoted_nitrone():
+        # C0=N1 written as SINGLE (PuLP's demotion); N1 also bonded to O2 and a
+        # methyl C4, so promoting C0-N1 to DOUBLE makes N1 4-valent. C3 / C4 are
+        # the stereo reference neighbours.
+        rw = Chem.RWMol()
+        for symbol in "CNOCC":
+            rw.AddAtom(Chem.Atom(symbol))
+        rw.AddBond(0, 1, Chem.BondType.SINGLE)  # C=N carried as single
+        rw.AddBond(1, 2, Chem.BondType.SINGLE)  # N-O
+        rw.AddBond(0, 3, Chem.BondType.SINGLE)  # C-CH3 (ref for C0)
+        rw.AddBond(1, 4, Chem.BondType.SINGLE)  # N-CH3 (ref for N1)
+        mol = rw.GetMol()
+        mol.UpdatePropertyCache(strict=False)
+        return mol
+
+    def test_promotion_bumps_nitrogen_charge_and_stays_valid(self):
+        from oinsmiles.generator3d.embed import _apply_double_bond_stereo
+
+        mol = self._demoted_nitrone()
+        stereo_bonds = [(0, 1, Chem.BondStereo.STEREOCIS, 3, 4)]
+        _apply_double_bond_stereo(mol, stereo_bonds)
+
+        bond = mol.GetBondBetweenAtoms(0, 1)
+        self.assertEqual(bond.GetBondType(), Chem.BondType.DOUBLE)
+        self.assertEqual(mol.GetAtomWithIdx(1).GetFormalCharge(), 1)
+        # The whole mol now passes a full sanitize (the 4-valent N is now N+).
+        Chem.SanitizeMol(Chem.Mol(mol))
+
+    def test_doubly_overfull_bond_is_declined(self):
+        # A bond whose promotion over-fills BOTH endpoints (no single +1 bump
+        # helps, e.g. FIXYER's C#6 -> valence 5) must degrade to random: the bond
+        # stays as re-perceived and no charge is invented.
+        from oinsmiles.generator3d.embed import _apply_double_bond_stereo
+
+        mol = Chem.RWMol(Chem.MolFromSmiles("C(C)(C)(C)C"))  # neopentane, C0 valence 4
+        mol = mol.GetMol()
+        stereo_bonds = [(0, 1, Chem.BondStereo.STEREOCIS, 2, 3)]
+        _apply_double_bond_stereo(mol, stereo_bonds)
+        self.assertEqual(mol.GetBondBetweenAtoms(0, 1).GetBondType(), Chem.BondType.SINGLE)
+        self.assertEqual(mol.GetAtomWithIdx(0).GetFormalCharge(), 0)
 
 
 class TestEncoderSuppression(unittest.TestCase):
