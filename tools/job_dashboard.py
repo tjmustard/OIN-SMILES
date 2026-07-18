@@ -3,12 +3,10 @@
 # dependencies = [
 #     "fastapi",
 #     "uvicorn",
-#     "watchdog",
 # ]
 # ///
 
 import argparse
-import asyncio
 import json
 import os
 import sys
@@ -16,31 +14,41 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, StreamingResponse
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
+from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 target_dir = ""
-clients = set()
-
-
-class ChangeHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
-        if event.is_directory:
-            return
-        for queue in list(clients):
-            try:
-                queue.put_nowait("update")
-            except asyncio.QueueFull:
-                pass
+cached_total_target_cases = None
 
 
 def get_stats():
-    stats = {"total": 0, "success": 0, "failed": 0, "pending": 0, "jobs": []}
+    global cached_total_target_cases
+    stats = {
+        "total": 0,
+        "success": 0,
+        "failed": 0,
+        "pending": 0,
+        "remaining": 0,
+        "accuracy": 0.0,
+        "percent_complete": 0.0,
+        "jobs": [],
+    }
 
     registry_path = Path(target_dir) / "case_registry.json"
     summary_path = Path(target_dir) / "summary_roundtrip.json"
+
+    if cached_total_target_cases is None:
+        total_target_cases = 0
+        if registry_path.exists():
+            try:
+                with open(registry_path, "r") as f:
+                    registry_data = json.load(f)
+                    total_target_cases = len(registry_data)
+            except Exception:
+                pass
+        cached_total_target_cases = total_target_cases
+    else:
+        total_target_cases = cached_total_target_cases
 
     all_jobs = []
 
@@ -49,19 +57,47 @@ def get_stats():
         # molecule, so it is authoritative for "processed so far". case_registry.json
         # is a derived classification that lags behind it (and may be absent), so it
         # is only a fallback. Either way, "total" is the count of processed cases.
+        data = None
         if summary_path.exists():
-            with open(summary_path, "r") as f:
-                data = json.load(f)
-            label_key = "status"
-        elif registry_path.exists():
-            with open(registry_path, "r") as f:
-                data = json.load(f)
-            label_key = "class"
-        else:
+            try:
+                with open(summary_path, "r") as f:
+                    data = json.load(f)
+                label_key = "status"
+            except json.JSONDecodeError:
+                try:
+                    with open(summary_path, "r") as f:
+                        raw = f.read()
+                    last_brace = raw.rfind("}")
+                    if last_brace != -1:
+                        data = json.loads(raw[: last_brace + 1] + "]")
+                        label_key = "status"
+                except Exception:
+                    pass
+
+        if data is None and registry_path.exists():
+            try:
+                with open(registry_path, "r") as f:
+                    data = json.load(f)
+                label_key = "class"
+            except json.JSONDecodeError:
+                pass
+
+        if data is None:
             data = []
             label_key = "status"
 
+        # Deduplicate by molecule name, keeping the latest attempt
+        unique_jobs = {}
+        for item in data:
+            mol = item.get("molecule")
+            if mol:
+                unique_jobs[mol] = item
+            else:
+                unique_jobs[id(item)] = item
+        data = list(unique_jobs.values())
+
         stats["total"] = len(data)
+        stats["remaining"] = max(0, total_target_cases - stats["total"])
         for item in data:
             # A case is pending only while still in flight (label begins with
             # "pending", e.g. "pending_g-xtb"). Every other non-success label --
@@ -74,6 +110,16 @@ def get_stats():
                 stats["pending"] += 1
             else:
                 stats["failed"] += 1
+        if stats["total"] > 0:
+            stats["accuracy"] = (stats["success"] / stats["total"]) * 100
+        else:
+            stats["accuracy"] = 0.0
+
+        if total_target_cases > 0:
+            stats["percent_complete"] = min(100.0, (stats["total"] / total_target_cases) * 100)
+        else:
+            stats["percent_complete"] = 100.0 if stats["total"] > 0 else 0.0
+
         all_jobs = data
 
         # Add a derived timestamp to each job for robust sorting
@@ -111,22 +157,6 @@ async def data_endpoint():
     return get_stats()
 
 
-@app.get("/api/events")
-async def events():
-    queue = asyncio.Queue(maxsize=100)
-    clients.add(queue)
-
-    async def event_generator():
-        try:
-            while True:
-                msg = await queue.get()
-                yield f"data: {msg}\n\n"
-        except asyncio.CancelledError:
-            clients.remove(queue)
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
-
-
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return """
@@ -135,7 +165,7 @@ async def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Job Dashboard</title>
+        <title>OIN-SMILES Roundtrip Sweep Dashboard</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -259,12 +289,22 @@ async def index():
                 font-size: 3rem;
                 font-weight: 700;
                 line-height: 1;
+                white-space: nowrap;
+            }
+
+            .percent-complete {
+                font-size: 1.25rem;
+                font-weight: 500;
+                color: var(--text-muted);
+                vertical-align: bottom;
+                margin-left: 4px;
             }
 
             .val-total { color: #fff; }
             .val-success { color: var(--success); text-shadow: 0 0 20px rgba(16,185,129,0.3); }
             .val-failed { color: var(--failed); text-shadow: 0 0 20px rgba(239,68,68,0.3); }
             .val-pending { color: var(--pending); text-shadow: 0 0 20px rgba(245,158,11,0.3); }
+            .val-accuracy { color: #38bdf8; text-shadow: 0 0 20px rgba(56,189,248,0.3); }
 
             .jobs-section {
                 background: var(--glass-bg);
@@ -358,15 +398,40 @@ async def index():
                 color: var(--text-muted);
                 font-style: italic;
             }
+
+            .refresh-select {
+                background: var(--glass-bg);
+                color: var(--text-main);
+                border: 1px solid var(--glass-border);
+                padding: 0.5rem 1rem;
+                border-radius: 9999px;
+                outline: none;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 0.875rem;
+            }
+            .refresh-select option {
+                background: var(--bg-gradient-start);
+                color: var(--text-main);
+            }
         </style>
     </head>
     <body>
         <div class="container fade-in">
             <header>
-                <h1>Job Dashboard</h1>
-                <div class="status-indicator" id="connection-status">
-                    <div class="status-dot"></div>
-                    Live Updates Active
+                <h1>OIN-SMILES Roundtrip Sweep Dashboard</h1>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <select id="refresh-rate" class="refresh-select">
+                        <option value="1000" selected>Refresh: 1 sec</option>
+                        <option value="30000">Refresh: 30 sec</option>
+                        <option value="60000">Refresh: 1 min</option>
+                        <option value="300000">Refresh: 5 min</option>
+                        <option value="600000">Refresh: 10 min</option>
+                    </select>
+                    <div class="status-indicator" id="connection-status">
+                        <div class="status-dot"></div>
+                        Live Updates Active
+                    </div>
                 </div>
             </header>
 
@@ -384,8 +449,8 @@ async def index():
                     <div class="stat-value val-failed" id="stat-failed">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-title">Pending</div>
-                    <div class="stat-value val-pending" id="stat-pending">0</div>
+                    <div class="stat-title">% Accuracy</div>
+                    <div class="stat-value val-accuracy" id="stat-accuracy">0.0%</div>
                 </div>
             </div>
 
@@ -415,10 +480,11 @@ async def index():
                 fetch('/api/data')
                     .then(res => res.json())
                     .then(data => {
-                        document.getElementById('stat-total').textContent = data.total;
+                        document.getElementById('stat-total').innerHTML = `${data.total} <span class="percent-complete">(${data.percent_complete.toFixed(1)}%)</span>`;
                         document.getElementById('stat-success').textContent = data.success;
                         document.getElementById('stat-failed').textContent = data.failed;
-                        document.getElementById('stat-pending').textContent = data.pending;
+
+                        document.getElementById('stat-accuracy').textContent = data.accuracy.toFixed(1) + '%';
 
                         const tbody = document.getElementById('jobs-tbody');
                         tbody.innerHTML = '';
@@ -461,27 +527,13 @@ async def index():
             // Initial fetch
             updateDashboard();
 
-            // Setup SSE
-            const eventSource = new EventSource('/api/events');
-
-            eventSource.onmessage = function(event) {
-                if (event.data === 'update') {
-                    console.log('Update received, refreshing dashboard...');
-                    updateDashboard();
-                }
-            };
-
-            eventSource.onerror = function() {
-                document.getElementById('connection-status').innerHTML = '<div style="width:8px;height:8px;background:red;border-radius:50%;"></div> Reconnecting...';
-                document.getElementById('connection-status').style.color = '#ef4444';
-                document.getElementById('connection-status').style.borderColor = 'rgba(239, 68, 68, 0.2)';
-            };
-
-            eventSource.onopen = function() {
-                document.getElementById('connection-status').innerHTML = '<div class="status-dot"></div> Live Updates Active';
-                document.getElementById('connection-status').style.color = '#10b981';
-                document.getElementById('connection-status').style.borderColor = 'rgba(16, 185, 129, 0.2)';
-            };
+            // Setup Polling
+            let pollInterval = setInterval(updateDashboard, 1000);
+            document.getElementById('refresh-rate').addEventListener('change', function(e) {
+                clearInterval(pollInterval);
+                const rate = parseInt(e.target.value, 10);
+                pollInterval = setInterval(updateDashboard, rate);
+            });
         </script>
     </body>
     </html>
@@ -497,10 +549,6 @@ if __name__ == "__main__":
     if not os.path.isdir(target_dir):
         print(f"Error: {target_dir} is not a directory.")
         sys.exit(1)
-
-    observer = Observer()
-    observer.schedule(ChangeHandler(), target_dir, recursive=True)
-    observer.start()
 
     print(f"Monitoring {target_dir} for changes...")
     print("Starting server at http://localhost:8000")

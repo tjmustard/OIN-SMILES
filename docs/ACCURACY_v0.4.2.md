@@ -83,6 +83,52 @@ of which v0.4.2 closes the tractable subset and routes the rest — with a named
 future notation change. This is why the wave shipped **so little code** (8 source files, +346/−70) for
 the size of the backlog: most of the backlog was never an accuracy bug.
 
+## Quick-mode A/B confirmation (vs a matched v0.4.1 control)
+
+The per-class table above is the single-commit `c7edeeb6` floor. This section is the **population-level
+confirmation**: v0.4.2 re-run against a *matched control* over the **entire 2,917-molecule v0.4.1
+`--quick` failure set** (every failure in the completed `results-v0.4.0/` accumulator).
+
+**Method.** Both arms run the identical harness/flags (`--only <2,917 fails> --quick --mol-timeout 30`),
+differing *only* in the generator: candidate = v0.4.2 (`main`/`e6febd16`), control = v0.4.1
+(`c7edeeb6` worktree). Isolation is non-trivial — the harness pulls `tests/integration` helpers that
+`sys.path.append` their own `src`, and its `multiprocessing spawn` workers re-derive `oinsmiles` from
+the venv `.pth`, so **neither `PYTHONPATH` nor a venv swap alone works**; each arm must run its own
+checkout's harness *and* its own venv (worktree venv `.pth` repointed to the worktree `src`). Verified
+with a discriminator before the run: `IROXET_comp_0` raises `xyz2mol failed: get_lig_mol` on v0.4.1 but
+encodes `[Rh_OCT]...` on v0.4.2. Scoring is A/B-safe: `verify_roundtrip.py`/`rmsd_utils.py` are
+byte-identical across the two commits and the RMSD gate is `1.0` in both. (This supersedes the earlier
+`triage`/`fixconfirm`/`quickab` attempts, which swapped only the venv and so ran v0.4.2 in *both* arms —
+the reason they reported `[]`.)
+
+**Result — 120 fail→pass, 3 pass→fail (of 2,917).** The matched control passes only 26 of the 2,917 on
+a fresh v0.4.1 `--quick` run, 23 of which also pass on v0.4.2 — so the flips below are v0.4.2 genuinely
+converting v0.4.1 failures. Splitting by whether the class is deterministic (where encoder/generator
+fixes live) or stochastic (`--quick` conformer/timeout noise):
+
+| tier | flips | classes |
+|---|---:|---|
+| **Deterministic accuracy fixes** | **107** | EZ_bond_stereo 33 · string_mismatch_other 25 · atom_stereo 22 · donor_H_atom_count 14 · encode_crash_other 8 · macrocycle_perception 2 · winding_flip 2 · geometry_or_fragment_change 1 |
+| Stochastic/quick-artifact flips (not attributed) | 13 | no_conformers 6 · timeout 5 · high_rmsd 1 · carborane_unsupported 1 |
+| **Regressions** | **3** | timeout 3 (`SASMOP`, `SILMAD`, `YAPZOE`) — all in the stochastic 30 s-kill class; **zero deterministic-class regressions** |
+
+The headline is **107 code-attributable round-trip fixes with zero deterministic regressions.** This
+confirms and extends the single-commit floor table (e.g. 33 E/Z flips here vs the 5 named on the smaller
+`c7edeeb6` floor, because the accumulator failure set is larger than the floor set). The 13 stochastic
+flips and 3 timeout "regressions" are conformer-luck, not code, and are excluded from the claim.
+
+Named deterministic fixes (fail on v0.4.1-quick, pass on v0.4.2-quick):
+
+- **EZ_bond_stereo (33):** AHAZIT, AHAZOZ, AHAZUF, BOCGEH, BOXPAG, CAQSEU, DERLEU, FIQPEC, FOJHES, GASNIA, HIGZUV, HUPHAD, HUPJAF, KIMWOV, KIQYAM, LEXMAD, LUGQUB, PEDNAO, PEDNES, QOXXAD, QUHKAG, QUQWII, RARFAR, RARPOQ, SIYPEY, SOTDAI, TAJXOS, UFUDIJ, WATMAI, YANCIB, YANCOH, YEGTOU, ZEYCOY (`_comp_0`).
+- **string_mismatch_other (25):** BAZMEX, BAZMOH, BOPCOZ, CAHZAP, CILGEM, CORCUJ, DAPZIF, EGIXIB, FIFYAX_comp_1, HOHXIM, HUGSEI, LUSKIV, NARQAA, OMIFIA, PEWWOF, POFQOT, POFQUZ, POFRAG, WUVBEU, XUPHOG, YOQBUD, YOSXOV, YUMPIH, ZEZZAI, ZILVUO_comp_1.
+- **atom_stereo (22):** FAQHOX, JEKQAS, JUCCIV, JUCCUH, KIHDOV, LADFIF, LADFUR, MURTUP, ORIHUU, POYJIX, QOFTOU, REPZUJ, SOHRAK, SOTHAM, TIWHAJ, TIWHEN, TIWHIR, XEMSAK, XILZID, XIMBAY, YAPVES, ZORCOA.
+- **donor_H_atom_count (14):** AJIJUY, ALIMEO, ARONEA, BOXJUU, CAHZIX, COTXAM, GIPBOX, HINNIB, HINNOH, NORTAP, XIYCUF, YAQSAK, YOQJOE, ZELDUR.
+- **encode_crash_other (8):** CASHOW, DEGTAK, IROWIW, IROXET, ONAGUG, WEDYIO, XEVMAN, YEXNIB.
+- **macrocycle_perception (2):** IZIFED, XIZXAG. **winding_flip (2):** USEKAF, USEKIN. **geometry_or_fragment_change (1):** GAGGIE.
+
+Reproduce: `~/capstone-v042/run_quick_ab_v042.sh` (resume-safe: `resume_quick_ab_v042.sh`) →
+`tools/ab_compare.py --base results-v041-quick-control --cand results-v042-quick-rerun --classes …/v041_fail_classes.json`.
+
 ## Reproducing / verifying
 
 - Always evaluate conformer-yield-sensitive rows **non-`--quick`** (`--mol-timeout 1800`); `--quick`

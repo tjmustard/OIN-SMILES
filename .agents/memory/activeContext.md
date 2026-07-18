@@ -4,6 +4,26 @@
 ## Purpose
 Captures the current state of OIN-SMILES development. Updated after significant task completions. Read first to understand where to pick up.
 
+## Current State (as of 2026-07-18)
+
+**Release lineage now runs through v0.4.2** — see `CHANGELOG.md` for the authoritative per-version
+detail (the block below is retained as history; it predates v0.3.6 and is superseded).
+
+- **v0.3.6 / v0.3.7** — tmCAT/tmPHOTO round-trip fix waves; v0.3.7 pushed to `origin/main`
+  (`a0a8b513`), FF-path pass ≈89% (`--quick` sampled).
+- **v0.4.0** — performance wave (P0–P11), byte-identical geometry; pushed (`5538b722`, tag `v0.4.0`).
+- **v0.4.1** — round-trip tooling, real `SMILESToXYZ`, CI/mypy hardening; pushed (`c7edeeb6`, tag `v0.4.1`).
+- **v0.4.2 — round-trip ACCURACY wave. MERGED to LOCAL `main` (`e6febd16`), UNPUSHED.** `pyproject`
+  bumped to 0.4.2; `v0.4.2` tag deferred to push. Phases S1/S3/S5/S6a/S6b/S7 (+docs).
+  - Full tmCAT/tmPHOTO sweep **complete: 25,197 molecules** — 88.4% `--quick` round-trip pass /
+    95.8% accuracy-clean (`docs/ACCURACY_v0.4.1.md`, a screening floor, not a headline).
+  - Quick-mode A/B vs a matched v0.4.1 control over all 2,917 failures: **+107 code-attributable
+    fixes, 0 deterministic regressions** (`docs/ACCURACY_v0.4.2.md`; tool `tools/ab_compare.py`).
+  - New tooling: `tools/ab_compare.py` (two-dir A/B), `tools/milestone_report.py` (backlog snapshots).
+
+**Not yet pushed** (user directive: additional docs/testing first). `README.md` is owned by a concurrent
+session and intentionally left untouched here.
+
 ## Current State (as of 2026-07-09)
 
 ### Release Status
