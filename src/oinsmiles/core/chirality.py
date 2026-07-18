@@ -47,28 +47,51 @@ _LP_CIP_PROP: str = "_OIN_CIPCode_LP"
 _SP3_CIP_PROP: str = "_OIN_CIPCode_SP3"
 
 
-def _reparse_aromatic_cip_label(mol: Chem.Mol, idx: int) -> "str | None":
-    """Aromatic-preserving rdCIPLabeler label for atom *idx* on a fresh re-parse.
+#: Periodic table handle for valence-deficit capping (see _fill_open_valence_with_h).
+_PERIODIC_TABLE = Chem.GetPeriodicTable()
 
-    rdCIPLabeler gives OPPOSITE R/S for a stereocentre bonded to an aromatic haptic
-    ring (Cp, indenyl, fluorenyl) depending on the ring's aromatic/kekulized state,
-    and a processed mol object can carry a corrupted aromatic state. Re-parsing from
-    SMILES with kekulization skipped normalises that, so both the ``build_contract_mol``
-    stamp (``_template_sp3_label``) and this ``recover()`` comparison read the label in
-    ONE convention. An atom-map probe survives the SMILES atom re-ordering. Returns
-    None on any failure (caller degrades to leaving the tag as-is).
+
+def _fill_open_valence_with_h(mol: Chem.Mol) -> None:
+    """Cap valence-deficient (metal-stripped donor) atoms with explicit H, in place.
+
+    A donor atom in the fragment ``recover()`` sees has lost its dative metal bond, so
+    it reads as an open-valence atom (donor ``O{0}`` -> bare ``[O]``). ``rdCIPLabeler``
+    declines to assign CIP to a stereocentre bearing such a substituent, so a genuine
+    sulfonimidoyl S(VI) (``JEKQAS``/``REPZUJ``/``ZORCOA``) gets no label and its
+    re-orientation is skipped. Filling the deficit with H makes the neighbourhood
+    labelable in the SAME convention ``_template_sp3_label`` reads. This runs only on a
+    throwaway CIP-probe copy -- it is never emitted, and never alters the final SMILES
+    (which caps donors with a formal charge, per ``OINDiscreteAligner``). Aromatic atoms
+    are left untouched (an aromatic pyridine-N donor must not become ``[nH]``).
     """
-    probe = 99
+    for a in mol.GetAtoms():
+        if a.GetIsAromatic():
+            continue
+        default_val = _PERIODIC_TABLE.GetDefaultValence(a.GetAtomicNum())
+        if default_val <= 0:
+            continue
+        deficit = default_val - a.GetTotalValence()
+        if deficit > 0 and a.GetFormalCharge() == 0 and a.GetNumExplicitHs() == 0:
+            a.SetNoImplicit(False)
+            a.SetNumExplicitHs(deficit)
     try:
-        tagged = Chem.Mol(mol)
-        tagged.GetAtomWithIdx(idx).SetAtomMapNum(probe)
-        m = Chem.MolFromSmiles(Chem.MolToSmiles(tagged), sanitize=False)
+        mol.UpdatePropertyCache(strict=False)
+    except Exception:  # noqa: BLE001 - guarded
+        pass
+
+
+def _reparse_cip_label_once(smiles: str, probe: int, fill_deficit: bool) -> "str | None":
+    """One rdCIPLabeler pass over *smiles*, optionally H-filling open valences first."""
+    try:
+        m = Chem.MolFromSmiles(smiles, sanitize=False)
         if m is None:
             return None
         try:
             Chem.SanitizeMol(m, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
         except Exception:  # noqa: BLE001 - lenient perception
             m.UpdatePropertyCache(strict=False)
+        if fill_deficit:
+            _fill_open_valence_with_h(m)
         Chem.AssignStereochemistry(m, cleanIt=True, force=True)
         rdCIPLabeler.AssignCIPLabels(m)
         target = next((a for a in m.GetAtoms() if a.GetAtomMapNum() == probe), None)
@@ -77,6 +100,39 @@ def _reparse_aromatic_cip_label(mol: Chem.Mol, idx: int) -> "str | None":
         return None
     except Exception:  # noqa: BLE001 - guarded
         return None
+
+
+def _reparse_aromatic_cip_label(mol: Chem.Mol, idx: int) -> "str | None":
+    """Aromatic-preserving rdCIPLabeler label for atom *idx* on a fresh re-parse.
+
+    rdCIPLabeler gives OPPOSITE R/S for a stereocentre bonded to an aromatic haptic
+    ring (Cp, indenyl, fluorenyl) depending on the ring's aromatic/kekulized state,
+    and a processed mol object can carry a corrupted aromatic state. Re-parsing from
+    SMILES with kekulization skipped normalises that, so both the ``build_contract_mol``
+    stamp (``_template_sp3_label``) and this ``recover()`` comparison read the label in
+    ONE convention. An atom-map probe survives the SMILES atom re-ordering.
+
+    Two passes: the first fills metal-stripped donor atoms' open valences with H so
+    ``rdCIPLabeler`` can rank a centre bearing a radical donor substituent
+    (sulfonimidoyl S ``JEKQAS``; carbene-/alkene-donor-adjacent carbon ``ORIHUU``/
+    ``XILZID``) in the SAME convention ``_template_sp3_label`` reads. H-fill skips
+    aromatic atoms, so an eta-Cp/arene-adjacent centre (``AHEBEV``/``BABWAD``/
+    ``KAGXUM``) is unaffected. The second pass (no fill) is a fallback for the rare
+    case where filling breaks perception. Returns None on any failure (caller degrades
+    to leaving the tag as-is).
+    """
+    probe = 99
+    try:
+        tagged = Chem.Mol(mol)
+        tagged.GetAtomWithIdx(idx).SetAtomMapNum(probe)
+        smiles = Chem.MolToSmiles(tagged)
+    except Exception:  # noqa: BLE001 - guarded
+        return None
+    for fill_deficit in (True, False):
+        label = _reparse_cip_label_once(smiles, probe, fill_deficit)
+        if label is not None:
+            return label
+    return None
 
 
 class OINStereoWarning(UserWarning):
@@ -338,6 +394,27 @@ def _clear_spurious_high_coordination_stereo(mol):
             atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
 
 
+def _genuine_stereocentre_indices(mol) -> "frozenset[int] | None":
+    """Atom indices RDKit's *modern* stereo perception treats as (potential) stereocentres.
+
+    Computed on a sanitised copy (lenient property cache + ring perception) so a
+    non-standard-valence fragment (C#O, charge-less Cp) does not break perception.
+    ``includeUnassigned=True`` keeps a genuine centre whose handedness is not yet
+    assigned. Returns ``None`` on any failure so the caller can degrade to leaving
+    tags untouched rather than mistake a perception error for "no stereocentres".
+    """
+    try:
+        probe = Chem.Mol(mol)
+        probe.UpdatePropertyCache(strict=False)
+        Chem.FastFindRings(probe)
+        centres = Chem.FindMolChiralCenters(
+            probe, force=True, includeUnassigned=True, useLegacyImplementation=False
+        )
+        return frozenset(idx for idx, _ in centres)
+    except Exception:  # noqa: BLE001 - guarded; None => leave tags as-is
+        return None
+
+
 class CIPAssigner:
     """Assigns 3D-derived CIP codes and chiral tags to P/N stereocenters.
 
@@ -569,10 +646,14 @@ class ChiralityRecoveryUtility:
         # against the rdCIPLabeler label taken from the (also metal-free) OIN
         # template. rdCIPLabeler, not legacy, for the same reason as Zone-A P.
         # No-op on the forward-encode path: only build_contract_mol stamps the prop.
+        # N(7) is included for a genuine quaternary ammonium N+, which
+        # build_contract_mol stamps with _SP3_CIP_PROP only when total_degree == 4
+        # (POYJIX). A trivalent amine N never carries the prop, so it is untouched
+        # here and still deferred by the degree-keyed branch / RDKit inversion clear.
         tagged_sp3_indices = [
             atom.GetIdx()
             for atom in rw.GetAtoms()
-            if atom.GetAtomicNum() in (6, 14, 16) and atom.HasProp(_SP3_CIP_PROP)
+            if atom.GetAtomicNum() in (6, 7, 14, 16) and atom.HasProp(_SP3_CIP_PROP)
         ]
         if tagged_sp3_indices:
             for _pass in range(2):
@@ -597,6 +678,31 @@ class ChiralityRecoveryUtility:
                 if not any_changed:
                     break
 
+        # --- Spurious donor-S: clear a geometry-derived tag on a sulfur that is
+        # NOT a genuine stereocentre once the metal is gone. build_contract_mol's
+        # AssignStereochemistryFrom3D stamps a permutation tag ([S@SP3]/[S@SP1]/
+        # [S@TB9H]) on a metal-donor thioether S from the metal-present geometry;
+        # the tag survives fragmentation because legacy AssignStereochemistry(
+        # cleanIt=True) does not scrub a pre-set permutation tag, so get_oin_string
+        # emits an [S@..] the input crystal geometry never produced (BAZMOH, HUGSEI,
+        # LUSKIV, YUMPIH, CIDDAU). recover() is on BOTH encode paths, so clearing
+        # here makes the two sides symmetric. Gate on modern stereo perception so a
+        # genuine chiral sulfonimidoyl S(VI) (degree 4) -- re-oriented by the
+        # _SP3_CIP_PROP branch above, which also excludes it below -- is never masked.
+        s_tagged = [
+            atom.GetIdx()
+            for atom in rw.GetAtoms()
+            if atom.GetAtomicNum() == 16
+            and atom.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
+            and not atom.HasProp(_SP3_CIP_PROP)
+        ]
+        if s_tagged:
+            genuine = _genuine_stereocentre_indices(rw)
+            if genuine is not None:
+                for idx in s_tagged:
+                    if idx not in genuine:
+                        rw.GetAtomWithIdx(idx).SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+
         # --- Existing degree-keyed branches (unchanged behaviour) ---
         # Compute CIP codes from existing chiral tags (no 3D conformer needed).
         Chem.AssignStereochemistry(rw, cleanIt=True, force=True)
@@ -606,6 +712,8 @@ class ChiralityRecoveryUtility:
                 continue
             if atom.GetIdx() in tagged_p_indices:
                 continue  # already handled by the Zone-A lone-pair branch above
+            if atom.GetIdx() in tagged_sp3_indices:
+                continue  # quaternary N+ handled by the sp3 branch above; do not clear
 
             stored_cip: str | None = atom.GetPropsAsDict().get("_OIN_CIPCode")
             current_cip = atom.GetPropsAsDict().get("_CIPCode")

@@ -86,6 +86,9 @@ OIN_TO_METALLOGEN_GEO = {
     # "fix" it -- the lookup KeyErrors otherwise. Sibling key "8_sqaure_prismatic"
     # is likewise misspelled upstream.
     "SQA": "8_squre_antiprismatic",
+    # CN 9 -- tricapped trigonal prismatic (e.g. Y/Ln with 3 bidentate + 1
+    # tridentate donors). Value byte-matches the vendored globalvars key.
+    "TCT": "9_tricapped_trigonal_prismatic",
 }
 
 
@@ -194,6 +197,20 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
                             for ring in ring_info.AtomRings()
                         )
                         strip = not is_haptic
+                        # Lock a bare 0-H haptic carbon (ipso / ring-fusion /
+                        # substituted) so the anionic-aromatic re-parse in
+                        # get_ligand_from_smiles cannot re-derive a phantom
+                        # implicit H on it. The bare `c{n}` these fragments use
+                        # for an eta ipso/fusion carbon has no explicit H, so
+                        # AddHs(explicitOnly=False) protonates it to `[cH]`
+                        # (ARONEA +4, BOXJUU +6). Freezing it at its
+                        # correctly-perceived 0-H count reproduces the input.
+                        # A genuine C-H haptic carbon keeps H via its explicit
+                        # `[cH]` bracket (NoImplicit already set -> outer guard
+                        # skips it), so Cp/arene passers stay byte-identical.
+                        if is_haptic and atom.GetTotalNumHs() == 0:
+                            atom.SetNumExplicitHs(0)
+                            atom.SetNoImplicit(True)
                     elif heavy >= 2:
                         # Non-aromatic sigma-carbon donor already bonded to >=2 heavy
                         # atoms: an NHC carbene (C between two ring N) or a carbanion.
@@ -570,29 +587,27 @@ def _template_sp3_label(t, ai: int) -> "str | None":
     corrupted by its ``RemoveHs(sanitize=False)`` for a FUSED haptic ring (indenyl,
     fluorenyl), which flips rdCIPLabeler for the adjacent centre (KAGXUM) even under
     the aromatic-preserving sanitize. An atom-map probe survives the re-parse so the
-    target atom is found regardless of SMILES atom re-ordering. Returns None on failure.
+    target atom is found regardless of SMILES atom re-ordering. The label is read
+    through the SAME shared reparse helper (``_reparse_cip_label_once``, fill-first)
+    that ``ChiralityRecoveryUtility.recover`` uses, so the stamp and the fragment
+    comparison agree on the donor-normalised convention (a metal-adjacent carbene/
+    alkene/oxo donor's open valence is H-filled identically on both sides -- ORIHUU/
+    XILZID/JEKQAS). Returns None on failure.
     """
-    from rdkit.Chem import rdCIPLabeler
+    from ..core.chirality import _reparse_cip_label_once
 
     _PROBE = 99
     try:
         tagged = Chem.Mol(t)
         tagged.GetAtomWithIdx(ai).SetAtomMapNum(_PROBE)
-        tt = Chem.MolFromSmiles(Chem.MolToSmiles(tagged), sanitize=False)
-        if tt is None:
-            return None
-        try:
-            Chem.SanitizeMol(tt, Chem.SANITIZE_ALL ^ Chem.SANITIZE_KEKULIZE)
-        except Exception:
-            tt.UpdatePropertyCache(strict=False)
-        Chem.AssignStereochemistry(tt, cleanIt=True, force=True)
-        rdCIPLabeler.AssignCIPLabels(tt)
-        target = next((a for a in tt.GetAtoms() if a.GetAtomMapNum() == _PROBE), None)
-        if target is not None and target.HasProp("_CIPCode"):
-            return target.GetProp("_CIPCode")
-        return None
+        smiles = Chem.MolToSmiles(tagged)
     except Exception:
         return None
+    for fill_deficit in (True, False):
+        label = _reparse_cip_label_once(smiles, _PROBE, fill_deficit)
+        if label is not None:
+            return label
+    return None
 
 
 def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
@@ -776,6 +791,21 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
                         sp3_label = _template_sp3_label(t, ai)
                         if sp3_label is not None:
                             rwa.SetProp(_SP3_CIP_PROP, sp3_label)
+                    elif (
+                        anum == 7
+                        and ta.GetTotalDegree() == 4
+                        and ta.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
+                    ):
+                        # Genuine quaternary ammonium N+: a real tetrahedral
+                        # stereocentre. Route it through the same metal-free
+                        # _SP3_CIP_PROP re-orientation recover() applies to C/Si/S
+                        # (POYJIX). Without a stamp the generated N carries no CIP
+                        # prop, and recover()'s 4-neighbour no-_OIN_CIPCode fallback
+                        # clears it ([N@@+] -> [N+]). Degree-4 gate keeps a trivalent
+                        # amine N (RDKit-cleared inversion) unstamped and deferred.
+                        n_label = _template_sp3_label(t, ai)
+                        if n_label is not None:
+                            rwa.SetProp(_SP3_CIP_PROP, n_label)
                     if anum == 15 and gidx in donors:
                         # Zone-A P donor: stereogenic lone pair. recover()'s
                         # lone-pair branch needs _OIN_CIPCode_LP (rdCIPLabeler
