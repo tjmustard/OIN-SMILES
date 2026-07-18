@@ -236,7 +236,7 @@ Generation is bounded by the `timeout` limit (seconds); it stops and returns wit
 | `[P@]` / `[P@@]` | Metal-bound phosphorus stereocenter (lone-pair CIP convention) |
 | `.` | Fragment separator (metal + each ligand) |
 
-**Geometry templates:** `LIN`, `TPL`, `TET`, `SPL`, `SPY`, `TBP`, `OCT`, `PBP`, `TPY`
+**Geometry templates:** `LIN`, `TPL`, `TET`, `SPL`, `SPY`, `TBP`, `OCT`, `PBP`, `TPY`, `SQA` (CN-8, square antiprismatic), `TCT` (CN-9, tricapped trigonal prismatic)
 
 
 
@@ -260,7 +260,7 @@ The following complexes pass the full round-trip test (OIN string identity + RMS
 - **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
 - **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
 
-**Dataset-scale validation** — beyond these hand-checked fixtures, OIN-SMILES round-trips **≈89%** of the 2,608-complex tmCAT/tmPHOTO benchmark on the default FF path (XYZ → OIN → XYZ → OIN, canonical string identity + coordination-sphere RMSD), up from 85.4% before the v0.3.7 residual-fix wave. See `CHANGELOG.md` `[0.3.7]` for the per-failure-class breakdown.
+**Dataset-scale validation** — beyond these hand-checked fixtures, OIN-SMILES is exercised against the tmCAT/tmPHOTO benchmark (**>17,000** transition-metal complexes) by a continuous XYZ → OIN → XYZ → OIN round-trip harness (canonical string identity + coordination-sphere RMSD). Accuracy is tracked **per-molecule against a clean single-commit floor** (~5,960 passing IDs), not as a single headline percentage — the mixed-provenance, `--quick` accumulator cannot support one. The v0.4.2 accuracy wave established that most of the largest remaining "failure" buckets are FF-only / `--quick` **harness artifacts** or misfiled classes rather than encoder/generator defects, and closed the tractable real-defect subset. See **`docs/ACCURACY_v0.4.2.md`** for the per-class before→after, **`CHANGELOG.md`** for the release notes, and **`docs/KNOWN_LIMITATIONS.md`** for what remains out of scope.
 
 ## 🛠️ Development
 

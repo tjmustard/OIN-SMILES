@@ -430,10 +430,17 @@ def get_lig_mol(mol, charge, coordinating_atoms):
     another charge if the result is a molecule no sanitize can rescue.
     """
     lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
-    if lig_mol is None:
-        return None, final_charge
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    # A None here means the ladder never reached a perceivable charge. For a large
+    # saturated polyamine/phosphine cage the extended-Huckel proposal can be off by
+    # several electrons (e.g. -4/-5/-6 for a ligand whose real charge is 0), and the
+    # ladder only probes +-2/+-4 in one direction, so it walks away from the true
+    # charge and returns nothing. Fall through to the wider charge sweep instead of
+    # failing: it re-perceives across the whole -4..4 window and returns the first
+    # usable, radical-free mol. Passing best_res_mol=None makes the sweep the sole
+    # source of truth; it degrades back to (None, charge) if nothing is perceivable,
+    # so a genuinely unsupported cage still raises the honest error downstream.
     return _rescue_unusable_perception(mol, AC, atoms, lig_mol, final_charge, coordinating_atoms)
 
 

@@ -72,6 +72,43 @@ OIN_P_DONOR_AROMATIC = (
     "c2ccccc2)[CH][CH]1.S{3}c1ccccc1"
 )
 
+# HUGSEI_comp_0: a Mo carbonyl with two thioether S DONORS carrying no stereo. The
+# generator's AssignStereochemistryFrom3D stamps a spurious high-coordination
+# permutation tag ([S@SP3]/[S@SP1]/[S@TB9H]) on each donor S from the metal-present
+# geometry -- a tag the input crystal geometry never produced. recover() must clear it:
+# a thioether S is not a genuine stereocentre once the metal is removed. (Fix A.)
+OIN_DONOR_S_THIOETHER = "[Mo_OCT].CCS{2}CC[NH]{4}CCS{0}CC.C{1}#O.C{3}#O.C{5}#O"
+
+# REPZUJ_comp_0: a GENUINE sulfonimidoyl S(VI) stereocentre (S bonded to aryl, =O, a
+# metal-donor O, and =N). The donor O becomes a radical [O] in the metal-free fragment,
+# which rdCIPLabeler refuses to rank -- so recover()'s _SP3_CIP_PROP re-orientation
+# returned no label and was silently skipped, leaving the arbitrary embed handedness.
+# H-filling the open valence makes the CIP computable, in the same convention the
+# template stamp reads, so the centre round-trips at the correct handedness. (Fix B.)
+OIN_SULFONIMIDOYL_S = (
+    "[Rh_TPY].Cc1ccc([S@](O{0})(=O)=N{2}C[C@H](c2ccccc2)c2ccccc2-c2ccccn{3}2)cc1."
+    "Cc{1}1c{1>}(C)c{1}(C)c{1}(C)c{1}1C"
+)
+
+# POYJIX_comp_0: a GENUINE quaternary ammonium N+ (bridged bicyclic) is a real
+# tetrahedral stereocentre. The forward encoder keeps it (CIPAssigner stores
+# _OIN_CIPCode), but build_contract_mol did not stamp N, so recover()'s 4-neighbour
+# no-CIP fallback cleared it ([N@@+] -> [N+]). build_contract_mol now routes a degree-4
+# N+ through the same metal-free _SP3_CIP_PROP re-orientation as C/Si/S. (Fix B.)
+OIN_QUATERNARY_N = (
+    "[Ni_SPL].COc1ccccc1N{0}C(=O)CN1C{1}N(C)C=C1.COc1ccccc1N{3}C(=O)C[N@@+]12C{2}=N(C)C1[CH-]2"
+)
+
+# XILZID_comp_0: an sp3 lactone carbon bonded to a metal-bound alkene DONOR (a
+# valence-deficient carbon in the fragment). Its template CIP and fragment CIP diverged
+# unless the donor's open valence is normalised identically on both sides, so the
+# _SP3_CIP_PROP re-orientation mis-fired and inverted the centre. Both the stamp and the
+# recover() comparison now read the label through the same fill-first reparse. (Fix B.)
+OIN_ALKENE_DONOR_C = (
+    "[Au_LIN].CC(C)c1cc(C(C)C)c(-c2ccccc2P{0}(C2CCCCC2)C2CCCCC2)c(C(C)C)c1."
+    "CC1=C{1}[C@H](C(C)C)OC1=O"
+)
+
 
 def _reencode_via_contract(oin):
     """Generate 3D then re-encode through the contract mol, as the harness does."""
@@ -135,6 +172,38 @@ class TestContractMolHonorsOINSpecification(unittest.TestCase):
             canonical_roundtrip_key(OIN_P_DONOR_AROMATIC),
             canonical_roundtrip_key(oin2),
             f"P-donor lone-pair mis-oriented: {oin2}",
+        )
+
+    def test_donor_thioether_s_stereo_is_not_invented(self):
+        """A metal-donor thioether S must not gain a spurious high-coordination tag."""
+        oin2 = _reencode_via_contract(OIN_DONOR_S_THIOETHER)
+        self.assertNotIn("[S@", oin2, f"contract re-encode invented donor-S stereo: {oin2}")
+
+    def test_sulfonimidoyl_s_round_trips(self):
+        """A genuine sulfonimidoyl S(VI) stereocentre must round-trip (correct @)."""
+        oin2 = _reencode_via_contract(OIN_SULFONIMIDOYL_S)
+        self.assertEqual(
+            canonical_roundtrip_key(OIN_SULFONIMIDOYL_S),
+            canonical_roundtrip_key(oin2),
+            f"sulfonimidoyl S mis-oriented: {oin2}",
+        )
+
+    def test_quaternary_ammonium_n_round_trips(self):
+        """A genuine quaternary ammonium N+ stereocentre must round-trip (not cleared)."""
+        oin2 = _reencode_via_contract(OIN_QUATERNARY_N)
+        self.assertEqual(
+            canonical_roundtrip_key(OIN_QUATERNARY_N),
+            canonical_roundtrip_key(oin2),
+            f"quaternary N+ dropped or mis-oriented: {oin2}",
+        )
+
+    def test_alkene_donor_carbon_round_trips(self):
+        """An sp3 C bonded to a metal-bound alkene donor must round-trip (fill-first CIP)."""
+        oin2 = _reencode_via_contract(OIN_ALKENE_DONOR_C)
+        self.assertEqual(
+            canonical_roundtrip_key(OIN_ALKENE_DONOR_C),
+            canonical_roundtrip_key(oin2),
+            f"alkene-donor-adjacent sp3 carbon mis-oriented: {oin2}",
         )
 
 

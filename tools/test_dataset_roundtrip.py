@@ -71,6 +71,12 @@ from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as 
 # Populated once in main(); merged into reports by save_artifacts().
 RUN_ENV = {}
 
+# Coordination-sphere mean-RMSD pass threshold (Angstrom). A single named constant
+# so the gate value is legible in both the gate check and the per-report run-env
+# provenance -- the value is unchanged (this is not a threshold change), it is just
+# no longer a bare literal buried at the gate. See the FF-floor note at the gate.
+RMSD_GATE = 1.0
+
 
 def _build_run_env(args) -> dict:
     from rdkit import rdBase
@@ -79,6 +85,13 @@ def _build_run_env(args) -> dict:
     return {
         "rdkit_version": rdBase.rdkitVersion,
         "quick": bool(args.quick),
+        # The per-molecule wall-clock cap and the RMSD gate the row was judged
+        # against. Stamped so a failed row is self-describing: a high_rmsd under
+        # optimizer_effective="ff" is an FF-floor row (string already matched,
+        # geometry only just over the gate), and a timeout under quick=True with a
+        # small mol_timeout is a budget artifact -- neither is a chemistry defect.
+        "mol_timeout": args.mol_timeout,
+        "rmsd_gate": RMSD_GATE,
         "xtb_available": xtb_available,
         # FF-only is the honest default when the g-xTB binary is absent; PASS 2
         # then runs an FF re-roll rather than any semi-empirical optimization.
@@ -97,6 +110,42 @@ def _pass2_config(xtb_available: bool):
     if xtb_available:
         return "g-xtb", "g-xTB_1", "g-xTB_5"
     return None, "FF_reroll_1", "FF_reroll_5"
+
+
+def _honesty_breakdown(reports):
+    """Split failed reports into honest buckets so artifacts stop reading as defects.
+
+    Returns a dict of counts. The two artifact buckets are the ones S7 makes legible:
+
+    * ``ff_floor_high_rmsd`` -- the string round-trip matched and only the geometric
+      tightness gate failed, under FF-only (no ``xtb``). A chemically-correct
+      round-trip, not an accuracy defect.
+    * ``quick_timeout`` -- a ``TimeoutException`` under ``--quick`` (the 30 s
+      ``--mol-timeout`` budget), i.e. a budget artifact, not a chemistry hang.
+
+    Everything else failed is a ``real_failure`` (string mismatch, atom-count,
+    encode crash, generation exception) plus non-quick ``timeout`` kept separate.
+    Purely descriptive: it changes no status and no gate.
+    """
+    counts = {
+        "ff_floor_high_rmsd": 0,
+        "quick_timeout": 0,
+        "timeout_full_budget": 0,
+        "real_failure": 0,
+    }
+    for r in reports:
+        if r.get("status") != "failed":
+            continue
+        err = r.get("error") or ""
+        if err.startswith("High RMSD") and (
+            r.get("ff_floor") or r.get("optimizer_effective") == "ff"
+        ):
+            counts["ff_floor_high_rmsd"] += 1
+        elif "TimeoutException" in err:
+            counts["quick_timeout" if r.get("quick") else "timeout_full_budget"] += 1
+        else:
+            counts["real_failure"] += 1
+    return counts
 
 
 def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
@@ -170,8 +219,14 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
                 report["error"] = f"RMSD mapping failed at {tier_name}: {reason}"
                 return False, last_gen_xyz_content
             report["metrics"]["rmsd"] = round(rmsd, 4)
-            if rmsd >= 1.0:
+            if rmsd >= RMSD_GATE:
                 report["error"] = f"High RMSD at {tier_name}: {rmsd:.4f}"
+                # The string round-trip already matched above, so this is a
+                # chemically-correct round-trip that only missed the geometric
+                # tightness gate. Under FF-only that is the FF floor, not a defect;
+                # flag it so triage/backlog stop conflating it with real failures.
+                if RUN_ENV.get("optimizer_effective") == "ff":
+                    report["ff_floor"] = True
                 return False, last_gen_xyz_content
 
         # Atom count
@@ -776,6 +831,17 @@ def main():
 
     successes = sum(1 for r in final_report if r["status"] == "success")
     print(f"Summary totals: {successes} successes, {len(final_report) - successes} failures.")
+    # Honest failure split: FF-floor high_rmsd and quick-timeouts are budget/FF
+    # artifacts, not accuracy defects -- surfaced here so the backlog stops
+    # conflating them with real failures.
+    bd = _honesty_breakdown(final_report)
+    print(
+        "Failure breakdown: "
+        f"{bd['real_failure']} real, "
+        f"{bd['ff_floor_high_rmsd']} FF-floor high_rmsd (string matched, geometry-only), "
+        f"{bd['quick_timeout']} quick-timeout, "
+        f"{bd['timeout_full_budget']} full-budget timeout."
+    )
     print(f"Global report saved to {global_path}")
 
 

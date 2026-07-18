@@ -5,6 +5,126 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-07-15
+
+The tmCAT/tmPHOTO round-trip **accuracy** wave (parallel worktree phases S1/S3/S5/S6a/S6b/S7 plus a
+docs phase), staged on the `release/v0.4.2` integration branch off v0.4.1. Where v0.3.7 closed the
+residual failure classes on a ~2,600-complex sample, the continuous accumulator has since swept
+**>17,000** complexes; this wave attacks what that larger sweep re-surfaced. It delivers three
+things: a handful of **real encoder/generator accuracy fixes**; a **measurement re-framing** — most
+of the largest "failure" buckets (`geometry_or_fragment_change`, `winding_flip`, `timeout`,
+`high_rmsd`) turn out to be `--quick`/FF-only **harness artifacts or misfiled classes**, not accuracy
+defects; and **honesty tooling + documentation** that stops the backlog conflating the two.
+
+No single headline pass-% is quoted, deliberately: the accumulator is mixed-provenance (multiple
+commits) and runs `--quick` (a different, pool-of-2 generator), so a global percentage is not a valid
+floor. Accuracy is stated as **named per-molecule round-trip flips** against the single-commit
+`c7edeeb6` floor (a set of ~5,960 molecule IDs that pass on the baseline, `spec/handoffs/v0.4.2/`).
+No OIN format-version change (still v3.7 inline); one new CN-9 geometry code is added. Full unit
+suite **409 → 435 OK**; FF-path geometry is byte-identical to v0.4.1 for every non-targeted molecule.
+See `docs/ACCURACY_v0.4.2.md` for the per-class before→after and `docs/KNOWN_LIMITATIONS.md` for what
+remains out of scope.
+
+### Fixed
+- **Bare 0-H haptic ring carbons re-protonated on generation (S1)** (`generation/metallogen_adapter.py`):
+  a bare η ipso / ring-fusion aromatic carbon (`c{n}`, 0 H) was over-protonated because
+  `get_ligand_from_smiles`'s `Chem.AddHs(explicitOnly=False)` adds a phantom H to a carbon already
+  bonded to three heavy neighbours — the H count is lost crossing into MetalloGen (`get_ace_mol_from_rd_mol`
+  copies atomic number / charge / bond order, **not** H counts or `NoImplicit`). `convert_parsed_to_msmiles`
+  now locks a haptic ring carbon whose perceived H count is 0 (`SetNumExplicitHs(0)` + `SetNoImplicit(True)`),
+  H==0-only so genuine `[cH]` haptic carbons and correctly-perceived substituted carbons are byte-identical.
+  Flips `ARONEA`, `BOXJUU`, `CAHZIX`, `COTXAM`, `HINNOH`, `NORTAP`; Cp*/bis-indenyl/ferrocene passers
+  unchanged. Guarded by `tests/unit/test_haptic_carbon_hcount.py`.
+- **Two XYZ→OIN encoder crash paths recovered (S3)** (`utils/xyz2mol.py`, `utils/aromaticity.py`):
+  (a) `get_lig_mol` early-returned `None` for large saturated polyamine/phosphine cages whose extended
+  Hückel charge is several electrons off — it now falls through to the existing `_rescue_unusable_perception`
+  charge sweep, so `IROXET`, `SUNXAB`, `XEVMAN` encode and round-trip. (b) `kekulize_safe_sanitize`'s
+  "no quinoid ring" branch now retries a fresh aromaticity re-perception before raising, clearing the
+  stale-aromatic-flag kekulize crash on `JOTJEK`, `TIYWUV`, `ZENZAW` (their canonical key now matches;
+  a residual `[CH]`-radical H-fill count is S1's domain). Both changes are additive — they only alter
+  a code path that is *already* crashing, so no passer can regress. Guarded by
+  `tests/unit/test_encode_crash_recovery.py`.
+- **Free monodentate-arm C=N/C=C E/Z dropped by the generator (S6a)** (`generator3d/embed.py`,
+  `generator3d/ligand.py`): a documented latent bug blocked the fix — `_apply_double_bond_stereo`
+  restored a PuLP-demoted bond to `DOUBLE` to enforce its E/Z but never adjusted formal charge, so
+  enforcing a free arm (e.g. `AFECIZ`'s C=N, which PuLP wants single-with-charged-N) produced a
+  4-valent neutral N, `SanitizeMol` rejected it, and *every* `ff_clean` raised. A new
+  `_charge_fix_promotion` bumps an over-filled endpoint's formal charge, gated by the existing valence
+  probe (safe because the round trip re-encodes from geometry — the generator's internal charges never
+  reach the output). With the crash gone, `near_donor` is narrowed from the broad donor-neighbour proxy
+  to the encoder's chelate-ring predicate (a new `_chelate_locked_atoms` virtual-metal ring test), so
+  free-arm E/Z is enforced while ring-locked bonds stay suppressed. Flips `AHAZOZ` (nitrone
+  `/C=[N+](\[O-])`), `AFECIZ`, `XIZXAG`, `AYUYIE`, `BOCGEH`; `AFECIZ`'s `ff_clean` no longer exhausts
+  the 250-attempt budget. Guarded by `tests/unit/test_chelate_locked_ez.py` (the pending-charge-fix
+  guard is flipped to assert enforcement; +2 charge-aware promotion tests).
+- **sp3 / heteroatom atom-stereo `@`/`@@` disagreements (S6b)** (`core/chirality.py`,
+  `generation/metallogen_adapter.py`): both encode paths funnel through
+  `ChiralityRecoveryUtility.recover`, so the fixes are symmetric. (a) A spurious high-coordination
+  donor-S tag (`[S@SP3]`/`[S@SP1]`/`[S@TB9H]`) from `AssignStereochemistryFrom3D` is now cleared when
+  the S is not a genuine stereocentre on the metal-free fragment (`FindMolChiralCenters(useLegacyImplementation=False)`
+  — a divalent thioether S is absent, a genuine sulfonimidoyl S(VI) is kept): `BAZMOH`, `HUGSEI`,
+  `LUSKIV`, `YUMPIH` round-trip and `CIDDAU`'s `@` is resolved. (b) A metal-stripped donor becomes a
+  radical (`[O]`, carbene/alkene C) that `rdCIPLabeler` refuses to rank; the reparse now **fills the
+  open valence with H** (skipping aromatic atoms, so η-Cp/arene donors are untouched), and both the
+  `_OIN_CIPCode_SP3` stamp and the comparison read the label through this one fill-first convention —
+  re-orienting sulfonimidoyl S (`JEKQAS`, `REPZUJ`, `ZORCOA`), quaternary N⁺ (`POYJIX`, routed through
+  the same degree-4 machinery), and donor-adjacent C (`ORIHUU`, `XILZID`). Guarded by
+  `tests/unit/test_heteroatom_atom_chirality.py` (+4). Re-triaged out: `KEBBUO` → S7 (a `--quick`
+  timeout), `SEMTOV`/`VEJXOZ` → S5 (borane winding).
+
+### Added
+- **CN-9 tricapped-trigonal-prism geometry (`TCT`) (S5)** (`utils/oin_aligner.py`,
+  `generation/oin_parser.py`, `generation/metallogen_adapter.py`): a 9-coordinate metal previously had
+  no template, so the encoder emitted `g:NON` and generation raised. A `TCT` template added across the
+  same 5-site lockstep as v0.3.5's CN-8 `SQA` (encoder `TEMPLATE_SPECS` + candidate branch, the
+  load-bearing `oin_parser.py::TEMPLATES` mirror, the generator geo map, and `tests/unit/test_cn9_geometry.py`)
+  now classifies it as `[Y_TCT]`. `XERTUK_comp_3` encodes `[Y_TCT]` (was `[Y_NON]`); it still cannot
+  embed its 104-atom ligand — a generation-embedding limit, documented, not a geometry gap.
+- **Round-trip harness honesty (S7)** (`tools/test_dataset_roundtrip.py`): a `RMSD_GATE` constant;
+  every report now stamps `mol_timeout` and `rmsd_gate`, and marks `ff_floor=True` on a `high_rmsd`
+  gate reached under FF-only; the run summary prints a `_honesty_breakdown` that separates real defects
+  from FF-floor `high_rmsd` and `--quick` timeouts. So the backlog can no longer silently conflate an
+  FF/quick artifact with an accuracy failure. Guarded by `tests/unit/test_harness_honesty.py`.
+
+### Changed
+- `.gitignore` now ignores `/scratchpad/` — throwaway analysis state should never be linted or
+  committed (S7).
+
+### Notes — the measurement re-framing (the load-bearing finding of this wave)
+- **`geometry_or_fragment_change` (29 on the floor) and `winding_flip` (14) are overwhelmingly
+  `--quick` conformer-pool artifacts, not classifier or generator defects (S5).** Re-run under the
+  non-quick default generator (seed 42, pool 5): CN4 geometry **15/15**, CN5 **8/11**, winding-face
+  **12/14** correct — with the CN4/CN5 code path byte-identical to pristine. A calibrated TET/TPY
+  encoder hysteresis was designed and then **dropped**: the feasible margin interval is empty (a 0.05 Å
+  margin flips 13 passing molecules; the passer-gap floor is 0.0022 Å). **No classifier, pool, or
+  winding code shipped** — the CN-9 template is S5's only code change.
+- **The curated bond-length `ENABLED_METALS` expansion is a validated-negative;
+  `generator3d/bond_lengths.py` ships pristine (S7).** A paired median-of-deltas coordination-sphere
+  RMSD A/B (≥10 seeds, **full** conformer pool — collapsing it fabricates results) with a Zn positive
+  control (−0.025 Å, reproducing P4's landed win, so the harness is trusted) showed **Ru +0.009 Å**
+  (confirming P4's deliberate exclusion) and W/Mn/Co flat — the swept scale factor already compensates
+  the covalent-sum overestimate. No candidate metal cleared the per-metal gate.
+- **`--quick`'s 30 s hard-kill mislabels real chemistry (S7).** A full-budget confirmatory sample found
+  `timeout` is mostly real valence `no_conformers` masked by the kill (not a pure budget artifact),
+  `no_conformers` is essentially all genuine, and `high_rmsd` is the FF-only geometric floor on an
+  already-string-correct round-trip.
+- **Many class labels were symptoms, not root causes.** S3 re-triaged its 22 goldens and refuted all
+  four of its class labels (the `macrocycle_perception`/`garbled_aromatic` rows were boron atom-stereo,
+  geometry, E/Z, and generator H-fill); the docs phase refuted the S1 handoff's `AJIJUY` nitride/ammine
+  example (it contains no nitrogen and re-encodes byte-identically), found the nitride/ammine notation
+  ambiguity currently **latent** (no clean dataset trigger), and found every `gen_exception_other` row
+  is an `UncoordinatedFragmentError` (outer-sphere counterions/solvent).
+
+### Triage / documentation
+- `docs/KNOWN_LIMITATIONS.md` reconciled and extended: the nitride/ammine notation ambiguity (latent),
+  FF-floor `high_rmsd` + `--quick` timeouts, `UncoordinatedFragmentError` outer-sphere fragments,
+  irreducible generator stereochemistry (`QOFTOU` rac/meso, `winding_flip` residual), the S6b
+  atom-stereo fixes, and the deferred residuals `JUCCUH` (trivalent-N inversion RDKit clears) and
+  `WEDYOU` (macrocyclic multi-P relative configuration). `spec/handoffs/v0.4.2/wontfix-carboranes.md`
+  records the carborane class (3-centre-2-electron bonding outside the two-centre `AC2mol` model).
+- New `docs/ACCURACY_v0.4.2.md`: the per-class before→after table and the measurement-integrity
+  rationale. Version bump to 0.4.2 and the `v0.4.2` tag are applied at the merge to `main`.
+
 ## [0.4.1] - 2026-07-14
 
 Consolidation release: three parallel worktrees — a code-quality remediation, a dead-code

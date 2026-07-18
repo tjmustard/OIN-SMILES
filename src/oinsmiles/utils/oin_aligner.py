@@ -620,6 +620,26 @@ TEMPLATE_SPECS: dict[str, dict[int, dict]] = {
         6: {"pos": [0.8141210, 0.0, -0.5773503], "ref": [0, 0, 1]},
         7: {"pos": [0.0, 0.8141210, -0.5773503], "ref": [0, 0, 1]},
     },
+    # CN 9 -- tricapped trigonal prismatic. `pos` is MetalloGen's
+    # `9_tricapped_trigonal_prismatic` (globalvars.known_geometries_vector_dict)
+    # unit-normalized, in the same slot order, so encoder slot i and generator
+    # slot i point the same direction (round-trip slot correspondence, like SQA).
+    # Slots 0-5 are the trigonal-prism vertices (two triangles on +z/-z), slots
+    # 6-8 the three equatorial caps. `ref` is vestigial for winding (CN9 donors
+    # are monodentate here; only haptic groups use ref, via the actual ring
+    # centroid) but the schema requires a vector non-parallel to `pos` -- [0,0,1]
+    # is non-parallel to every slot (max |z-component| 0.655).
+    "TCT": {
+        0: {"pos": [0.7555736, 0.0000000, 0.6550638], "ref": [0, 0, 1]},
+        1: {"pos": [-0.3780710, 0.6546229, 0.6546229], "ref": [0, 0, 1]},
+        2: {"pos": [-0.3780710, -0.6546229, 0.6546229], "ref": [0, 0, 1]},
+        3: {"pos": [0.7555736, 0.0000000, -0.6550638], "ref": [0, 0, 1]},
+        4: {"pos": [-0.3780710, 0.6546229, -0.6546229], "ref": [0, 0, 1]},
+        5: {"pos": [-0.3780710, -0.6546229, -0.6546229], "ref": [0, 0, 1]},
+        6: {"pos": [-1.0000000, 0.0000000, 0.0000000], "ref": [0, 0, 1]},
+        7: {"pos": [0.5821873, -0.8130547, 0.0000000], "ref": [0, 0, 1]},
+        8: {"pos": [0.5821873, 0.8130547, 0.0000000], "ref": [0, 0, 1]},
+    },
 }
 
 # List of Symmetric Ligands that should have a fixed Heading Atom (The first binding atom in SMILES)
@@ -835,9 +855,11 @@ class OINDiscreteAligner:
             candidates = ["PBP"]
         elif n == 8:
             candidates = ["SQA"]
+        elif n == 9:
+            candidates = ["TCT"]
         else:
             # Fallback or robust handling
-            if n > 8:
+            if n > 9:
                 candidates = ["OCT"]  # Best effort
             else:
                 candidates = ["LIN"]
@@ -1500,9 +1522,10 @@ def classify_coordination_geometry(donor_vectors):
     w.r.t. instance state (it reads only its arguments and the module-level
     ``TEMPLATES``), so a throwaway aligner with empty ligands is sufficient. Note
     the candidate set is chosen purely by coordination number (len of the input),
-    with ``n == 8`` mapping to ``"SQA"`` (square antiprismatic); for ``n > 8`` the
-    matcher falls back to ``"OCT"`` as a best effort (which then fails the
-    slot-count check, yielding ``None``) -- so
+    with ``n == 8`` mapping to ``"SQA"`` (square antiprismatic) and ``n == 9`` to
+    ``"TCT"`` (tricapped trigonal prismatic); for ``n > 9`` the matcher falls back
+    to ``"OCT"`` as a best effort (which then fails the slot-count check, yielding
+    ``None``) -- so
     callers that need an eta/haptic guard must gate on the expected coordination
     number themselves rather than relying on a ``None`` return.
     """

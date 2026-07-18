@@ -95,3 +95,6 @@ spec/worklog/
 /spec/handoffs/*
 /docs/handoffs
 .gitignore.swp
+
+# Throwaway per-phase analysis scripts / working state (not linted, not committed)
+/scratchpad/

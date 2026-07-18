@@ -414,6 +414,38 @@ def _promotion_keeps_valence(rd_mol):
         return False
 
 
+def _charge_fix_promotion(rd_mol, i, j):
+    r"""Restore valence validity after bond ``i``-``j`` was force-set to DOUBLE.
+
+    Promoting a carried bond back to DOUBLE adds one to the bond order of exactly
+    its two endpoints, so only ``i`` or ``j`` can become over-valent. PuLP demoted
+    the bond to a lower order and put the electrons elsewhere; the encoder's
+    charged Lewis form (e.g. a nitrone/N-oxide ``C=[N+]([O-])``, an aldiminate
+    ``/N=C(\\[O-])``) instead carries a positive formal charge on the atom that
+    gains the bond. Mirror that: bump an endpoint's formal charge by +1 (N 3->4 ->
+    N+, O 2->3 -> O+, ...) and accept the first combination that sanitizes. A wrong
+    bump (e.g. +1 on a 4-bond carbon -> C+ valence 5) fails the valence probe and
+    is rejected, so trying each endpoint then both is self-correcting.
+
+    The generator's internal formal charges never reach the output OIN -- the round
+    trip re-encodes the final XYZ from geometry -- so the bump only has to keep the
+    mol valence-valid for the embed and the FF cleanup; net charge need not be
+    conserved. Returns True with the charge left in place on success; otherwise
+    restores the original charges and returns False so the caller can decline.
+    """
+    a = rd_mol.GetAtomWithIdx(int(i))
+    b = rd_mol.GetAtomWithIdx(int(j))
+    saved = [(a.GetIdx(), a.GetFormalCharge()), (b.GetIdx(), b.GetFormalCharge())]
+    for combo in ([a], [b], [a, b]):
+        for atom in combo:
+            atom.SetFormalCharge(atom.GetFormalCharge() + 1)
+        if _promotion_keeps_valence(rd_mol):
+            return True
+        for idx, chg in saved:
+            rd_mol.GetAtomWithIdx(idx).SetFormalCharge(chg)
+    return False
+
+
 def _apply_double_bond_stereo(rd_mol, stereo_bonds):
     """Set carried C=C (cis/trans) stereo on an embed-ready rd_mol.
 
@@ -435,22 +467,25 @@ def _apply_double_bond_stereo(rd_mol, stereo_bonds):
         bond = rd_mol.GetBondBetweenAtoms(int(i), int(j))
         if bond is None:
             continue
-        # A carried stereo bond is always a genuine C=C from the input SMILES. The
-        # dummy-metal PuLP re-perception can drop it to SINGLE in the embed mol,
+        # A carried stereo bond is always a genuine C=C/C=N from the input SMILES.
+        # The dummy-metal PuLP re-perception can drop it to SINGLE in the embed mol,
         # which would leave nothing to constrain and let the dihedral (hence the
         # scan target that seeds the FF cleanup) embed at random. Restore the
-        # double bond so distance geometry enforces the requested E/Z -- but only
-        # when doing so keeps the molecule valence-valid. PuLP can relocate the
-        # double bond so that restoring it here makes an endpoint over-valent
-        # (FIXYER: C#6 -> valence 5); forcing it anyway makes every downstream
-        # SanitizeMol/MolToSmiles raise, so generation yields NO conformer at all.
-        # In that case leave the bond as re-perceived and skip the constraint --
-        # the documented degrade-to-random behavior -- rather than emit an invalid
-        # mol that fails the whole embed.
+        # double bond so distance geometry enforces the requested E/Z. Promoting it
+        # can over-valence an endpoint, because PuLP paid for the lower bond order
+        # with a formal charge the encoder instead put on that atom:
+        #   * a nitrone/N-oxide or aldiminate C=N (AHAZOZ, AFECIZ, XIZXAG) -- the N
+        #     is +1 in the correct Lewis form, so bumping its charge (via
+        #     _charge_fix_promotion) restores validity and the E/Z is enforced;
+        #   * FIXYER's C#6 -> valence 5 -- no single +1 bump fixes a doubly-overfull
+        #     bond, so the promotion is declined and the bond degrades to random
+        #     (the documented fallback) rather than emit an invalid mol.
         if bond.GetBondType() != Chem.BondType.DOUBLE:
             original_type = bond.GetBondType()
             bond.SetBondType(Chem.BondType.DOUBLE)
             if _promotion_keeps_valence(rd_mol):
+                changed = True
+            elif _charge_fix_promotion(rd_mol, i, j):
                 changed = True
             else:
                 bond.SetBondType(original_type)
