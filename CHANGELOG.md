@@ -9,9 +9,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The tmCAT/tmPHOTO round-trip **accuracy** wave (parallel worktree phases S1/S3/S5/S6a/S6b/S7 plus a
 docs phase), staged on the `release/v0.4.2` integration branch off v0.4.1. Where v0.3.7 closed the
-residual failure classes on a ~2,600-complex sample, the continuous accumulator has since swept
-**>17,000** complexes; this wave attacks what that larger sweep re-surfaced. It delivers three
-things: a handful of **real encoder/generator accuracy fixes**; a **measurement re-framing** — most
+residual failure classes on a ~2,600-complex sample, the continuous accumulator has since swept the
+**full 25,197-complex** corpus (the sweep is now complete); this wave attacks what that larger sweep
+re-surfaced. It delivers three things: **107 real encoder/generator accuracy fixes** (confirmed
+against a matched v0.4.1 `--quick` control — see the quick-mode A/B below); a **measurement
+re-framing** — most
 of the largest "failure" buckets (`geometry_or_fragment_change`, `winding_flip`, `timeout`,
 `high_rmsd`) turn out to be `--quick`/FF-only **harness artifacts or misfiled classes**, not accuracy
 defects; and **honesty tooling + documentation** that stops the backlog conflating the two.
@@ -85,10 +87,22 @@ remains out of scope.
   gate reached under FF-only; the run summary prints a `_honesty_breakdown` that separates real defects
   from FF-floor `high_rmsd` and `--quick` timeouts. So the backlog can no longer silently conflate an
   FF/quick artifact with an accuracy failure. Guarded by `tests/unit/test_harness_honesty.py`.
+- **Two-result-set A/B comparator (`tools/ab_compare.py`)**: joins a control and a candidate
+  round-trip result set on `molecule` and reports per-class `fail→pass` / `pass→fail` / `fail→fail` /
+  `pass→pass` transitions with a `fixes = N, regressions = R` headline and explicit ID lists — the
+  two-directory comparator the harness lacked. Accepts a results dir or a `summary_roundtrip.json`,
+  groups by an optional `molecule→class` map, stdlib-only. Produced the quick-mode A/B below.
+- **Milestone backlog snapshots (`tools/milestone_report.py`)**: freezes a full tiered backlog
+  (`reports/REPORT_<M>.md` + `case_registry_<M>.json`) each time the accumulator crosses a clean
+  1,000-molecule multiple; idempotent via `.v041_milestones.json`, read-only on the harness outputs,
+  safe to run alongside a live `--continue` sweep.
 
 ### Changed
 - `.gitignore` now ignores `/scratchpad/` — throwaway analysis state should never be linted or
   committed (S7).
+- **`tools/job_dashboard.py`**: the live FastAPI results dashboard's `get_stats` now deduplicates by
+  molecule (keeping the latest attempt) so re-runs no longer double-count, keeping the served totals in
+  step with `case_registry.json`.
 
 ### Notes — the measurement re-framing (the load-bearing finding of this wave)
 - **`geometry_or_fragment_change` (29 on the floor) and `winding_flip` (14) are overwhelmingly
@@ -122,8 +136,18 @@ remains out of scope.
   atom-stereo fixes, and the deferred residuals `JUCCUH` (trivalent-N inversion RDKit clears) and
   `WEDYOU` (macrocyclic multi-P relative configuration). `spec/handoffs/v0.4.2/wontfix-carboranes.md`
   records the carborane class (3-centre-2-electron bonding outside the two-centre `AC2mol` model).
-- New `docs/ACCURACY_v0.4.2.md`: the per-class before→after table and the measurement-integrity
-  rationale. Version bump to 0.4.2 and the `v0.4.2` tag are applied at the merge to `main`.
+- New `docs/ACCURACY_v0.4.2.md`: the per-class before→after table, the measurement-integrity
+  rationale, and a **quick-mode A/B confirmation** — re-running all **2,917** v0.4.1 `--quick`
+  failures against a matched v0.4.1 control (via `tools/ab_compare.py`, each arm on its own
+  checkout's harness+venv) shows v0.4.2 delivers **107 code-attributable round-trip fixes** across the
+  deterministic accuracy classes (E/Z 33, string-mismatch 25, atom-stereo 22, donor-H 14, encode-crash
+  8, macrocycle 2, winding 2, geometry 1) with **zero deterministic regressions** (the 3 raw
+  `pass→fail` are all stochastic `--quick` timeouts).
+- New `docs/ACCURACY_v0.4.1.md`: the full-corpus failure-mode distribution over the now-complete
+  25,197-molecule sweep (88.4% `--quick` round-trip pass / 95.8% accuracy-clean, stated as a screening
+  floor).
+- Version bumped to 0.4.2 in `pyproject.toml`; the `v0.4.2` git tag is applied when the wave is pushed
+  to `origin` (not yet pushed).
 
 ## [0.4.1] - 2026-07-14
 
