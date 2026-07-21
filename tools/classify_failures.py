@@ -47,6 +47,7 @@ SESSION_OF = {
     "atom_stereo": "S6-stereo",
     "EZ_bond_stereo": "S6-stereo",
     "no_conformers": "S6-stereo (triage)",
+    "structural_assembly": "A2-no-conformers",
     "geometry_NON": "S1-donor-h",
     "carborane_unsupported": "wontfix-docs",
     "timeout": "unassigned-triage",
@@ -184,6 +185,11 @@ def classify(rep):
 
     if err.startswith("Generation/Verification failed"):
         head = err.split("\n")[0]
+        # Checked first: a chained IndexError cause carries "list index out of
+        # range", which would otherwise match the frag_vector_IndexError rule
+        # below -- this typed error must win over it (and over no_conformers).
+        if "StructuralAssemblyError" in head:
+            return "structural_assembly", head[:120]
         if "IndexError" in head and ("frag_vectors" in err or "list index out of range" in head):
             return "frag_vector_IndexError", "metallogen_adapter convert_parsed_to_msmiles"
         if "failed to generate any conformers" in err:
