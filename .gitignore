@@ -85,6 +85,10 @@ tests/backup/
 /tmCAT-tmPHOTO_xyz_dataset
 /results
 
+# Conformer-invariance CREST sweep output (generated artifacts, not for VCS)
+/conformer_invariance_results/
+/conformer_crest_sweep*/
+
 # Generated spec output (contains dates/times)
 spec/handoff/
 spec/process/
