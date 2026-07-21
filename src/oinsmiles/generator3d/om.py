@@ -417,6 +417,69 @@ def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
     return metal_complex
 
 
+# High-spin ground-state assignment for weak-field first-row transition-metal
+# complexes (see _spin_multiplicity). ``_HS_GROUP`` is the neutral-atom valence-
+# electron count (group number); with an oxidation state ``ox`` the d-electron count
+# is ``group - ox``, and ``_HS_UNPAIRED`` indexes the Hund's-rule high-spin unpaired
+# count by d (d0..d10). ``_HS_COMMON_OX`` lists the metal's common oxidation states;
+# the drawn electron-count parity selects a unique one (see _spin_multiplicity).
+_HS_GROUP = {"V": 5, "Cr": 6, "Mn": 7, "Fe": 8, "Co": 9, "Ni": 10, "Cu": 11}
+_HS_COMMON_OX = {
+    "V": (3, 2),
+    "Cr": (3, 2),
+    "Mn": (2, 3),
+    "Fe": (3, 2),
+    "Co": (2, 3),
+    "Ni": (2,),
+    "Cu": (2,),
+}
+_HS_UNPAIRED = (0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0)  # unpaired e- for high-spin d0..d10
+_WEAK_FIELD_DONORS = frozenset({"F", "Cl", "Br", "I", "O"})
+
+
+def _spin_multiplicity(metal_element, z_sum, chg, ligands):
+    """Return the ground-state spin multiplicity for the (neutral-drawn) complex.
+
+    Defaults to the minimum multiplicity consistent with the drawn electron-count
+    parity -- the long-standing low-spin assumption, correct for closed-shell and
+    strong-field complexes. For a first-row transition metal whose donor set is
+    unambiguously weak-field (only halide/oxygen donors), assign the Hund's-rule
+    high-spin ground state instead: the common oxidation state whose d-electron
+    count is parity-consistent with the drawn electron count fixes the number of
+    unpaired electrons.
+
+    The generation m-SMILES is drawn all-neutral, so oxidation state / d-count are
+    not directly recoverable. The parity constraint -- which the assigned unpaired
+    count must satisfy for the ``.UHF`` an optimizer consumes -- selects a unique
+    oxidation state among the consecutive common ones. Anything ambiguous (mixed or
+    strong-field donors, a non-cohort metal, or no parity-consistent d-count) keeps
+    the low-spin default, so this never lowers spin and leaves every strong-field /
+    photocatalyst / organometallic complex unchanged.
+    """
+    parity = (z_sum - chg) % 2
+    low_spin = parity + 1
+
+    group = _HS_GROUP.get(metal_element)
+    if group is None:
+        return low_spin
+
+    donors = [
+        lig.molecule.atom_list[idx].get_element()
+        for lig in ligands
+        for binding_indices, _site in lig.binding_infos
+        for idx in binding_indices
+    ]
+    if not donors or any(d not in _WEAK_FIELD_DONORS for d in donors):
+        return low_spin
+
+    for ox in _HS_COMMON_OX[metal_element]:
+        d = group - ox
+        if 0 <= d <= 10 and _HS_UNPAIRED[d] % 2 == parity:
+            return _HS_UNPAIRED[d] + 1
+
+    return low_spin
+
+
 def get_om_from_modified_smiles(smiles):
     """Return the om from modified smiles."""
     from rdkit import Chem
@@ -437,7 +500,7 @@ def get_om_from_modified_smiles(smiles):
 
     chg = ligand_chg + metal_chg
     geometry_name = smiles_list[-1]
-    multiplicity = (z_sum - chg) % 2 + 1
+    multiplicity = _spin_multiplicity(metal_atom.get_element(), z_sum, chg, ligands)
 
     metal_complex = MetalComplex(geometry_name, metal_atom, ligands, chg, multiplicity)
     metal_complex.metal_index = 0

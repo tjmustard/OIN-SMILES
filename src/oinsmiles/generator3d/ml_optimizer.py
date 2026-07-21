@@ -1,12 +1,46 @@
 import copy
 import logging
+import os
 import shutil
+import sys
 
 logger = logging.getLogger(__name__)
 
 # Warn only once per process when a g-xTB optimization is requested but the
 # 'xtb' binary is absent, instead of printing the fallback per conformer.
 _XTB_FALLBACK_WARNED = False
+
+
+def resolve_xtb_binary():
+    """Return an absolute path to the ``xtb`` binary, or ``None`` if unavailable.
+
+    Resolution order (first hit wins):
+
+    1. ``OIN_XTB_BIN`` -- an explicit override (must be an executable file).
+    2. ``shutil.which("xtb")`` -- an ``xtb`` already on ``PATH`` (activated venv).
+    3. Interpreter-adjacent ``<dirname(sys.executable)>/xtb`` -- covers the common
+       case where the project venv that holds ``xtb`` is invoked by its own python
+       without that venv's ``bin/`` being on ``PATH``.
+
+    The third rule fixes the observed "FF floor": ``xtb`` sits in the project venv's
+    ``bin/`` next to the interpreter, but ``shutil.which("xtb")`` returns ``None``
+    because that directory is not on ``PATH``. The fail-soft contract is preserved --
+    a genuinely absent ``xtb`` still returns ``None`` so callers degrade to the
+    force-field geometry.
+    """
+    override = os.environ.get("OIN_XTB_BIN")
+    if override and os.path.isfile(override) and os.access(override, os.X_OK):
+        return override
+
+    found = shutil.which("xtb")
+    if found:
+        return found
+
+    adjacent = os.path.join(os.path.dirname(sys.executable), "xtb")
+    if os.path.isfile(adjacent) and os.access(adjacent, os.X_OK):
+        return adjacent
+
+    return None
 
 
 class ASEOptimizer:
@@ -52,7 +86,7 @@ class ASEOptimizer:
         # the unoptimized geometry immediately -- before any deepcopy or ASE import --
         # and warn exactly once per process rather than once per conformer. This is
         # a deliberate, non-fatal degradation (contrast MACE, which raises).
-        if self.method in ("xtb", "g-xtb") and shutil.which("xtb") is None:
+        if self.method in ("xtb", "g-xtb") and resolve_xtb_binary() is None:
             global _XTB_FALLBACK_WARNED
             if not _XTB_FALLBACK_WARNED:
                 logger.warning(
@@ -104,7 +138,10 @@ class ASEOptimizer:
             from ase.io import read, write
 
             # The missing-binary case is handled up front in optimize(); reaching
-            # here means shutil.which("xtb") succeeded.
+            # here means resolve_xtb_binary() succeeded. Invoke that resolved path
+            # directly rather than a bare "xtb" so the child does not depend on the
+            # binary being on PATH.
+            xtb_bin = resolve_xtb_binary()
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     input_xyz = os.path.join(tmpdir, "struc.xyz")
@@ -121,7 +158,7 @@ class ASEOptimizer:
 
                     # Run g-xTB optimization
                     # The binary supports --gxtb --opt
-                    cmd = ["xtb", "struc.xyz", "--gxtb", "--opt"]
+                    cmd = [xtb_bin, "struc.xyz", "--gxtb", "--opt"]
                     # Pin xtb to a single OpenMP thread. g-xTB (tblite) otherwise
                     # spreads over all cores, and its FP reductions depend on the
                     # runtime thread count -- so the result drifts with machine load
