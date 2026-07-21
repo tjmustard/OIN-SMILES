@@ -244,10 +244,25 @@ def generate_3d_structures(
     clean_ff_params = {
         k: v
         for k, v in (ff_params or {}).items()
-        if k not in ("max_attempts", "embed_num_threads", "optimize_num_workers")
+        if k
+        not in (
+            "max_attempts",
+            "embed_num_threads",
+            "optimize_num_workers",
+            "use_kabsch",
+            "kabsch_only",
+        )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
+    # option 3 is the A4 rigid-placement (kabsch) embed. It is OPT-IN so the default
+    # pool stays byte-identical to pristine: unset -> [0,1,2] exactly as before;
+    # use_kabsch -> add 3 to the pool; kabsch_only -> isolate 3 for a clean A/B.
     options = [0, 1, 2]  # Added one more option to increase pool variety
+    if ff_params:
+        if ff_params.get("kabsch_only"):
+            options = [3]
+        elif ff_params.get("use_kabsch"):
+            options = [0, 1, 2, 3]
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
 
     # Target number of initial structures to generate
