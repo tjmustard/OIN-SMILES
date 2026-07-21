@@ -36,13 +36,13 @@ class TestRunEnvProvenance(unittest.TestCase):
         self.assertIn("optimizer_effective", env)
 
     def test_optimizer_effective_ff_without_xtb(self):
-        with mock.patch("test_dataset_roundtrip.shutil.which", return_value=None):
+        with mock.patch("test_dataset_roundtrip.resolve_xtb_binary", return_value=None):
             env = _build_run_env(_args())
         self.assertFalse(env["xtb_available"])
         self.assertEqual(env["optimizer_effective"], "ff")
 
     def test_optimizer_effective_gxtb_with_xtb(self):
-        with mock.patch("test_dataset_roundtrip.shutil.which", return_value="/usr/bin/xtb"):
+        with mock.patch("test_dataset_roundtrip.resolve_xtb_binary", return_value="/usr/bin/xtb"):
             env = _build_run_env(_args())
         self.assertTrue(env["xtb_available"])
         self.assertEqual(env["optimizer_effective"], "g-xtb")

@@ -36,8 +36,8 @@ class TestLoudXtbFallback(unittest.TestCase):
         # observes the first-warning behavior independently.
         ml_optimizer._XTB_FALLBACK_WARNED = False
 
-    @mock.patch.object(ml_optimizer.shutil, "which", return_value=None)
-    def test_returns_input_mol_unchanged_before_any_work(self, _which):
+    @mock.patch.object(ml_optimizer, "resolve_xtb_binary", return_value=None)
+    def test_returns_input_mol_unchanged_before_any_work(self, _resolve):
         # A bare object has no .atom_list / .get_coordinate: if optimize() touched
         # it (deepcopy, ASE Atoms, subprocess) this would raise. A clean return of
         # the same object proves the early bail happened before any of that work.
@@ -47,8 +47,8 @@ class TestLoudXtbFallback(unittest.TestCase):
         self.assertEqual(energy, 0.0)
         self.assertIs(out, sentinel)
 
-    @mock.patch.object(ml_optimizer.shutil, "which", return_value=None)
-    def test_warns_exactly_once_per_process(self, _which):
+    @mock.patch.object(ml_optimizer, "resolve_xtb_binary", return_value=None)
+    def test_warns_exactly_once_per_process(self, _resolve):
         opt = ASEOptimizer(method="g-xtb")
         with self.assertLogs(ml_optimizer.logger, level="WARNING") as cm:
             opt.optimize(object())
@@ -56,8 +56,8 @@ class TestLoudXtbFallback(unittest.TestCase):
         self.assertEqual(len(cm.records), 1, cm.output)
         self.assertIn("xtb", cm.output[0].lower())
 
-    @mock.patch.object(ml_optimizer.shutil, "which", return_value=None)
-    def test_xtb_alias_also_falls_back(self, _which):
+    @mock.patch.object(ml_optimizer, "resolve_xtb_binary", return_value=None)
+    def test_xtb_alias_also_falls_back(self, _resolve):
         # OIN3DGenerator's public default is optimizer="xtb"; it must hit the same
         # fallback as the explicit "g-xtb".
         sentinel = object()
