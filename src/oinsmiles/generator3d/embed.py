@@ -9,6 +9,7 @@ from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation as R
 
+from ..generation import _telemetry
 from . import chem, process
 from .utils import ic
 
@@ -290,6 +291,7 @@ def get_alternative_molecule(metal_complex, option):
                 pass
 
         if valid_ace_mol is None:
+            _telemetry.record("embed.pulp_and_xyz2mol_both_failed", n_atoms=len(ace_mol.atom_list))
             valid_ace_mol = ace_mol
             valid_ace_mol.bo_matrix = ace_mol.adj_matrix.copy()
             valid_ace_mol.chg_list = np.zeros(len(ace_mol.atom_list))
@@ -860,6 +862,11 @@ def get_embedding(
                 maximum_value = value
                 final_positions = candidate[0]
         logger.debug(f"Returning the best position ... maximum value {maximum_value}")
+        _telemetry.record(
+            "embed.best_rejected_returned",
+            score=maximum_value,
+            n_candidates=len(candidate_list),
+        )
         return final_positions[: metal_complex.num_atom]
 
 
