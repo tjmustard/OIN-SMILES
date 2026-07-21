@@ -1,10 +1,40 @@
 import logging
 
+from rdkit.Chem.rdchem import MolSanitizeException
+
 from ..generation import _telemetry
 from . import clean_geometry, embed, om
 from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
 
 logger = logging.getLogger(__name__)
+
+# Structural, non-transient embed failures: the assembled complex is chemically
+# invalid or its geometry cannot be built, so *every* attempt fails identically
+# regardless of seed or scale. Distinct from a transient per-attempt failure
+# (a single bad embed), which is retried. Confirmed dominant case on real
+# bucket-B molecules: a dative donor drawn covalently over-valences its atom
+# (e.g. a tertiary amine N -> metal makes N 4-valent), raising RDKit's
+# AtomValenceException (a MolSanitizeException). TypeError/IndexError cover the
+# originally-hypothesised under-coordination path (a None binding_site or an
+# empty direction_vector in embed's cmap construction).
+_STRUCTURAL_EMBED_ERRORS = (MolSanitizeException, TypeError, IndexError)
+
+
+class StructuralAssemblyError(ValueError):
+    """Every embed attempt failed with the same structural (non-transient) error.
+
+    Raised when the attempt pool exhausted and no conformer was produced because
+    the complex could not be assembled at all -- most often an over-valent dative
+    donor (an ``AtomValenceException`` from RDKit sanitization), or the
+    originally-hypothesised under-coordination (a ``TypeError``/``IndexError``
+    while filling the coordination geometry). These repeat for every seed and
+    scale, so retrying cannot help; surfacing them by *reason* (with the
+    underlying cause chained) lets the harness report *why* instead of a generic
+    ``no_conformers``.
+
+    Subclasses ``ValueError`` so existing callers that catch ``ValueError`` keep
+    working (mirrors ``UncoordinatedFragmentError`` in ``metallogen_adapter``).
+    """
 
 
 def calculate_heavy_atom_rmsd(mol1, mol2):
@@ -294,6 +324,15 @@ def generate_3d_structures(
                 return
             successful_mols.append(tmp_complex.get_molecule())
 
+    # Surface *why* an exhausted pool failed (see StructuralAssemblyError) only
+    # when the complex is *uniformly* unassemblable -- i.e. EVERY attempt raised a
+    # structural error. `had_nonstructural_embed` records that at least one attempt
+    # got past sanitization (an embed returned, or failed only transiently); when
+    # it is True the emptiness is not purely structural (some option assembled but
+    # its embed did not validate), so we degrade to a generic no_conformers.
+    last_structural_error = None
+    had_nonstructural_embed = False
+
     if num_threads == 1:
         # Serial attempt loop -- byte-identical to pristine.
         for i in range(max_attempts):
@@ -330,9 +369,21 @@ def generate_3d_structures(
                     seed=seed + i * 1009,
                     alt_cache=alt_cache,
                 )
+                had_nonstructural_embed = True  # got past sanitization (positions or None)
+            except _STRUCTURAL_EMBED_ERRORS as e:
+                # Structural / non-transient (an over-valent dative donor or an
+                # unfilled geometry -- see _STRUCTURAL_EMBED_ERRORS). Repeats for
+                # every seed/scale, so retrying cannot help -- remember it, keep
+                # trying the remaining (scale, option) combos in case another
+                # assembles, and let a *uniformly* structural pool surface WHY
+                # (StructuralAssemblyError below).
+                logger.debug(f"Structural embed failure (scale={scale}, option={option}): {e}")
+                last_structural_error = e
+                positions = None
             except Exception as e:
                 logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
                 _telemetry.record("pool.blanket_exception", exc=type(e).__name__)
+                had_nonstructural_embed = True
                 positions = None
             _try_accept(positions, scale)
     else:
@@ -374,8 +425,18 @@ def generate_3d_structures(
                     seed=seed + i * 1009,
                     alt_cache=alt_cache,
                 )
+                had_nonstructural_embed = True  # got past sanitization (positions or haptic None)
+            except _STRUCTURAL_EMBED_ERRORS as e:
+                # Structural (see the serial path). get_embeddings_batch returns
+                # None -- it does not raise -- to signal a non-batchable haptic
+                # complex, so an exception here is a genuine failure, not the
+                # haptic fallback.
+                logger.debug(f"Structural embed failure (scale={scale}, option={option}): {e}")
+                last_structural_error = e
+                batch = None
             except Exception as e:
                 logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
+                had_nonstructural_embed = True
                 batch = None
             if batch is None:
                 # Haptic complex -- not batchable; fall back to the serial embed.
@@ -388,8 +449,15 @@ def generate_3d_structures(
                         seed=seed + i * 1009,
                         alt_cache=alt_cache,
                     )
+                    had_nonstructural_embed = True  # got past sanitization
+                except _STRUCTURAL_EMBED_ERRORS as e:
+                    # Structural (see the serial path) -- record and continue.
+                    logger.debug(f"Structural embed failure (scale={scale}, option={option}): {e}")
+                    last_structural_error = e
+                    positions = None
                 except Exception as e:
                     logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
+                    had_nonstructural_embed = True
                     positions = None
                 _try_accept(positions, scale)
                 continue
@@ -407,6 +475,16 @@ def generate_3d_structures(
         successful_mols = stereo_rejects
 
     if not successful_mols:
+        if last_structural_error is not None and not had_nonstructural_embed:
+            # EVERY attempt failed structurally (no option ever got past
+            # sanitization) and nothing filled the pool: the complex is uniformly
+            # unassemblable, so surface WHY instead of a generic no_conformers.
+            # Chain the underlying error for the full traceback.
+            raise StructuralAssemblyError(
+                "Could not assemble a valid 3D complex: every embed attempt failed "
+                f"with the same structural error ({type(last_structural_error).__name__}: "
+                f"{last_structural_error})"
+            ) from last_structural_error
         return []
 
     # Sort by UFF energy if available (handle None values safely)
