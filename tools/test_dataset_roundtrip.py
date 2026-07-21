@@ -65,6 +65,7 @@ from verify_roundtrip import (
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
+from oinsmiles.generator3d.ml_optimizer import resolve_xtb_binary
 
 # Environment fields stamped into every report alongside commit_id, so each row
 # in summary_roundtrip.json can be attributed to the code + env that produced it.
@@ -81,7 +82,7 @@ RMSD_GATE = 1.0
 def _build_run_env(args) -> dict:
     from rdkit import rdBase
 
-    xtb_available = shutil.which("xtb") is not None
+    xtb_available = resolve_xtb_binary() is not None
     return {
         "rdkit_version": rdBase.rdkitVersion,
         "quick": bool(args.quick),
@@ -727,7 +728,7 @@ def main():
     if requires_g_xtb:
         # With no 'xtb' binary the g-xTB optimizer is a no-op, so PASS 2 runs an
         # FF re-roll (fresh re-embed + ensemble 1 -> 5) and is named honestly.
-        xtb_available = RUN_ENV.get("xtb_available", shutil.which("xtb") is not None)
+        xtb_available = RUN_ENV.get("xtb_available", resolve_xtb_binary() is not None)
         opt2, tier1, tier5 = _pass2_config(xtb_available)
         print(f"\n--- PASS 2: {tier1}/{tier5} PASS ({len(requires_g_xtb)} files) ---")
         pass2_1_kwargs = {
