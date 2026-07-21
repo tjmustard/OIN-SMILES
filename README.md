@@ -310,12 +310,33 @@ All scripts write named output artifacts when `--output-dir` is specified:
 > [!NOTE]
 > Generated MOL/SDF files use **V3000 format** when dative bonds are present (M–L bonds), which is standard for organometallic structures.
 
+### Optional: CREST conformer cross-check
+
+For a stronger check across **genuinely different geometries**, an opt-in workflow runs
+[CREST](https://github.com/crest-lab/crest) to generate a conformer ensemble per structure,
+encodes every conformer, and reports whether they collapse to one OIN string (distinguishing
+benign notation drift and CREST-induced connectivity changes from real divergences).
+
+> [!NOTE]
+> CREST is an **optional external binary, not a dependency** of OIN-SMILES. The workflow
+> gates on `shutil.which("crest")` and exits cleanly with a notice if CREST is not on PATH —
+> nothing else in the project requires it. Install it separately, e.g.
+> `conda install -c conda-forge crest`, or grab a prebuilt binary from the
+> [CREST releases](https://github.com/crest-lab/crest/releases).
+
+```bash
+uv run python tools/conformer_invariance_crest.py --only CisPlatin,TransPlatin   # quick try
+uv run python tools/conformer_invariance_crest.py                                # whole set
+# writes conformer_invariance_results/conformer_invariance_report.{json,md}
+```
+
 ## 🙏 Acknowledgements
 
 - **[MetalloGen](https://github.com/kyunghoonlee777/MetalloGen)** — 3D generation engine and optimization workflows for transition metal complexes.
 - **[MACE](https://github.com/acesuit/mace)** — Fast and accurate Machine Learning Interatomic Potentials (MLIP) for 3D geometry refinement.
 - **[xyz2mol](https://github.com/jensengroup/xyz2mol_tm)** — Jensen Group's algorithm for robust graph generation from 3D coordinates.
 - **[OpenBabel](https://github.com/openbabel/openbabel) & [XTB](https://github.com/grimme-lab/xtb)** — Chemical file handling and semi-empirical geometry optimization.
+- **[CREST](https://github.com/crest-lab/crest)** — Conformer–rotamer ensemble sampling, used as an optional cross-check for conformer invariance.
 
 ## 📄 License
 

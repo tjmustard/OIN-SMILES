@@ -46,6 +46,11 @@ yaml = ["pyyaml>=6.0"]
 # MACE machine-learning optimizer (opt-in). Pulls a pinned CUDA-11.8 torch; the
 # default install keeps the fast FF + g-xTB path with no torch/mace dependency.
 mace = ["mace-torch>=0.3.16", "torch==2.3.1"]
+# CREST (https://github.com/crest-lab/crest) is an OPTIONAL external binary used only for
+# the conformer-invariance cross-check (tools/conformer_invariance_crest.py). It is a
+# compiled tool, not a pip package, so it is not listed as an extra here -- install it
+# separately (e.g. `conda install -c conda-forge crest`). The workflow skips gracefully if
+# it is absent. See the README "Optional: CREST conformer cross-check" section.
 
 [project.urls]
 Homepage = "https://github.com/tjmustard/OIN-SMILES"
