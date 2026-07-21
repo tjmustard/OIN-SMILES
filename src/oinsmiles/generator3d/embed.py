@@ -316,6 +316,38 @@ def get_repulsive_potential(coordinate_list, d_criteria=0.5, p=6):
     return np.sum(potential_matrix)
 
 
+def kabsch(P, Q):
+    """Least-squares rigid transform mapping points ``P`` onto reference ``Q``.
+
+    Returns ``(rot, trans)`` -- a proper rotation matrix (``det == +1``) and a
+    translation vector minimizing ``sum_i || rot @ P[i] + trans - Q[i] ||**2`` over
+    the correspondence ``P[i] <-> Q[i]``. Scale is fixed to 1: bond lengths placed by
+    this transform must stay physical, so the fit may only rotate/translate, never
+    stretch.
+
+    The ``d`` sign term below is the Umeyama reflection guard. ``svd`` alone would
+    return the improper transform (a reflection, ``det == -1``) whenever that fits a
+    mirrored correspondence better -- which would silently flip a chiral ligand's
+    handedness and, with it, metal-centered stereochemistry (Delta/Lambda, cis/trans).
+    Forcing ``det == +1`` means a mirror image is fitted with a large residual instead
+    of being accepted as the same structure.
+
+    ``P`` and ``Q`` are ``(n, 3)`` array-likes with ``n >= 1`` rows in correspondence.
+    Both orthogonal factors have ``det == +-1``, so ``d`` is always exactly ``+-1``
+    (never 0); a single point (``n == 1``) yields identity rotation + pure translation.
+    """
+    P = np.asarray(P, dtype=float)
+    Q = np.asarray(Q, dtype=float)
+    p_bar = P.mean(axis=0)
+    q_bar = Q.mean(axis=0)
+    H = (P - p_bar).T @ (Q - q_bar)
+    U, _S, Vt = np.linalg.svd(H)
+    d = np.sign(np.linalg.det(Vt.T @ U.T))
+    rot = Vt.T @ np.diag([1.0, 1.0, d]) @ U.T
+    trans = q_bar - rot @ p_bar
+    return rot, trans
+
+
 def align_double_single_ligand(metal_complex, positions, d_criteria=1.7):
     """Align double single ligand."""
     ligands = metal_complex.ligands
@@ -652,6 +684,319 @@ def _finalize_positions(
     return positions[: metal_complex.num_atom], None
 
 
+# ---------------------------------------------------------------------------
+# Rigid-placement embed (opt-in ``option=3``) -- v0.4.3 A4.
+#
+# Instead of the single dummy-metal distance-geometry embed (which disguises the
+# metal and stretches ligand interiors to satisfy one global CoordMap), build each
+# ligand independently with a clean ETKDG conformer, then RIGIDLY place it onto the
+# ideal coordination vectors with the reflection-guarded ``kabsch`` fit above. The
+# metal is fixed at the origin; the assembled guess is then relaxed by the SAME
+# ``_finalize_positions`` criteria + downstream FF the DG path uses. This is gated
+# off by default (``ff_params["use_kabsch"]``) so the default pool stays byte-
+# identical until A5 decides whether to promote it.
+# ---------------------------------------------------------------------------
+
+
+def _unit(v):
+    """Return ``v`` normalized; a zero vector is returned unchanged."""
+    v = np.asarray(v, dtype=float)
+    n = np.linalg.norm(v)
+    return v / n if n > 1e-12 else v
+
+
+def _rotation_align(a, b):
+    """Proper rotation mapping unit vector ``a`` onto unit vector ``b``.
+
+    Handles the parallel (identity) and antiparallel (180 deg about any
+    perpendicular axis) degeneracies that a bare cross-product axis-angle misses.
+    """
+    a = _unit(a)
+    b = _unit(b)
+    c = float(np.dot(a, b))
+    if c > 1 - 1e-9:
+        return np.eye(3)
+    if c < -1 + 1e-9:
+        # 180 deg: rotate about any axis perpendicular to ``a``.
+        perp = np.cross(a, [1.0, 0.0, 0.0])
+        if np.linalg.norm(perp) < 1e-6:
+            perp = np.cross(a, [0.0, 1.0, 0.0])
+        return R.from_rotvec(np.pi * _unit(perp)).as_matrix()
+    axis = _unit(np.cross(a, b))
+    angle = np.arccos(np.clip(c, -1.0, 1.0))
+    return R.from_rotvec(angle * axis).as_matrix()
+
+
+def _embed_free_ligand(ligand, seed):
+    """Return clean ligand-local coordinates ``(n, 3)`` from a lone ETKDG embed.
+
+    Builds the ligand fragment ALONE (no dummy metal, no CoordMap), so its interior
+    is undistorted -- the direct fix for the dummy-metal bond-length patch the DG
+    path needs. Atom order matches ``ligand.molecule.atom_list`` (``get_rd_mol``
+    preserves it), so local atom ``j`` maps to global slot ``atom_indices[j]``.
+    Single-atom donors (a lone halide) skip the embed. Returns ``None`` if the
+    fragment will not embed, so the caller falls through to the next attempt.
+    """
+    atom_list = ligand.molecule.atom_list
+    n = len(atom_list)
+    if n == 1:
+        return np.zeros((1, 3))
+    try:
+        rd_mol = ligand.molecule.get_rd_mol()
+    except Exception:
+        return None
+    rd_mol = Chem.Mol(rd_mol)
+    params = rdDistGeom.srETKDGv3()
+    params.randomSeed = int(seed)
+    cid = AllChem.EmbedMolecule(rd_mol, params)
+    if cid < 0:
+        params.useRandomCoords = True
+        cid = AllChem.EmbedMolecule(rd_mol, params)
+    if cid < 0:
+        return None
+    try:
+        return rd_mol.GetConformer(cid).GetPositions()
+    except Exception:
+        return None
+
+
+def _place_monodentate(P, donor_local, neighbor_locals, v_slot, bond_len):
+    """Place a single-donor ligand: donor exactly on ``v_slot*bond_len``, body out.
+
+    Orients the donor->neighbor-centroid axis along ``+v_slot`` (substituents point
+    AWAY from the metal at the origin) via the shared ``kabsch`` fit, then pins the
+    donor exactly on the ideal vector. The remaining spin about the M-donor axis is
+    left free here and resolved later by the packing pass.
+    """
+    target_donor = v_slot * bond_len
+    if len(neighbor_locals) == 0:
+        return P - P[donor_local] + target_donor
+    nbr_centroid = P[neighbor_locals].mean(axis=0)
+    src = np.vstack([P[donor_local], nbr_centroid])
+    axis_len = np.linalg.norm(nbr_centroid - P[donor_local])
+    tgt = np.vstack([target_donor, target_donor + v_slot * axis_len])
+    rot, _ = kabsch(src, tgt)
+    placed = (rot @ P.T).T
+    return placed - placed[donor_local] + target_donor
+
+
+def _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale):
+    """Place a haptic (eta) face: ring plane normal along ``v_slot``, centroid on it.
+
+    Rotation only (the ring's own geometry is preserved, never distorted). The
+    centroid height is chosen so the metal-to-face-atom distance is ~physical for
+    the requested ``scale``; a planar aromatic ring has a mirror plane, so which
+    face points at the metal introduces no handedness ambiguity.
+    """
+    face = P[face_locals]
+    centroid = face.mean(axis=0)
+    centered = face - centroid
+    # Ring normal = smallest-variance singular direction of the face points.
+    _u, _s, vt = np.linalg.svd(centered)
+    normal = vt[2]
+    r_ring = float(np.mean(np.linalg.norm(centered, axis=1)))
+    target_atom_dist = (metal_r + atom_r) * scale
+    h2 = target_atom_dist**2 - r_ring**2
+    h = np.sqrt(h2) if h2 > 1e-6 else 0.1
+    rot = _rotation_align(normal, v_slot)
+    placed = (rot @ (P - centroid).T).T
+    return placed + v_slot * h
+
+
+def _place_chelate(P, donor_locals, slot_vectors, bond_lens):
+    """Place a polydentate chelate: least-squares fit its donors onto their slots.
+
+    ``kabsch`` (reflection-guarded, so Delta/Lambda handedness is preserved) fits the
+    ``m`` donor atoms onto their ``m`` ideal slot targets. The donor-donor spacing of
+    a free ligand rarely equals the polyhedron's inter-vertex spacing, so a nonzero
+    **bite residual** remains by construction -- the downstream constrained FF closes
+    it. For a bidentate (2 donors, which underdetermine the spin about the donor-donor
+    axis) the ligand centroid is added as a third correspondence pointing AWAY from
+    the metal, so the body is never folded back over the metal.
+    """
+    donor_src = P[donor_locals]
+    donor_tgt = np.array(
+        [slot_vectors[k] * bond_lens[k] for k in range(len(donor_locals))], dtype=float
+    )
+    src, tgt = donor_src, donor_tgt
+    if len(donor_locals) == 2:
+        lig_centroid = P.mean(axis=0)
+        donor_mid = donor_tgt.mean(axis=0)
+        outward = _unit(donor_mid)
+        body_len = np.linalg.norm(lig_centroid - donor_src.mean(axis=0))
+        src = np.vstack([donor_src, lig_centroid])
+        tgt = np.vstack([donor_tgt, donor_mid + outward * body_len])
+    rot, trans = kabsch(src, tgt)
+    return (rot @ P.T).T + trans
+
+
+def _bite_residual(placed, donor_locals, slot_vectors, bond_lens):
+    """RMS distance of placed donors from their ideal slot targets (chelate strain)."""
+    tgt = np.array(
+        [slot_vectors[k] * bond_lens[k] for k in range(len(donor_locals))], dtype=float
+    )
+    got = placed[list(donor_locals)]
+    return float(np.sqrt(np.mean(np.sum((got - tgt) ** 2, axis=1))))
+
+
+def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3):
+    """Phase-3 packing: torsionally de-clash monodentate bodies about their M-donor axes.
+
+    Independent placement can interpenetrate bulky ligands on adjacent vertices.
+    For each ligand with a well-defined M-donor axis (monodentate), sweep a grid of
+    rotations of its atoms about that axis and keep the angle that lowers the total
+    repulsive potential. This is STRICTLY guarded -- a rotation is accepted only when
+    it reduces ``get_repulsive_potential`` -- so packing can never ship a worse
+    (more clashing) structure than plain placement.
+
+    ``ligand_axes`` maps each ligand's global atom indices to its ``(pivot, axis)``
+    (or ``None`` to skip that ligand). A monodentate rotates about its M-donor axis;
+    a bidentate rotates about its donor-donor axis -- both keep every donor on its
+    slot. Returns the (possibly improved) positions.
+
+    ``n_passes`` sequential sweeps let a ligand react to neighbours moved earlier in
+    the same pass (mutually-clashing tris-chelates need more than one look).
+    """
+    positions = positions.copy()
+    angles = [2 * np.pi * k / n_steps for k in range(1, n_steps)]
+    for _pass in range(n_passes):
+        improved_any = False
+        for atom_indices, axis_info in ligand_axes:
+            if axis_info is None:
+                continue
+            pivot, axis = axis_info
+            axis = _unit(axis)
+            if np.linalg.norm(axis) < 1e-9:
+                continue
+            best_potential = get_repulsive_potential(positions)
+            best_positions = None
+            block = positions[atom_indices] - pivot
+            for angle in angles:
+                rot = R.from_rotvec(angle * axis).as_matrix()
+                trial = positions.copy()
+                trial[atom_indices] = (rot @ block.T).T + pivot
+                pot = get_repulsive_potential(trial)
+                if pot < best_potential:
+                    best_potential = pot
+                    best_positions = trial
+            if best_positions is not None:
+                positions = best_positions
+                improved_any = True
+        if not improved_any:
+            break
+    return positions
+
+
+def _kabsch_embedding(
+    metal_complex,
+    new_complex,
+    scale,
+    align,
+    seed,
+    atom_d_criteria,
+    ratio_criteria,
+    adj_ratio_criteria,
+):
+    """Independent-build + rigid-placement embed for ``option=3`` (see module note).
+
+    Returns accepted ``positions[:num_atom]`` (metal-first ordering, the downstream
+    contract) or a best-effort fallback via the shared ``_finalize_positions`` -- the
+    exact same return contract as ``get_embedding`` -- or ``None`` if a ligand will
+    not build.
+    """
+    total_atom_list = new_complex.get_atom_list()
+    radius_list = [atom.get_radius() for atom in total_atom_list]
+    n = len(radius_list)
+    R_sum = np.repeat(np.array(radius_list), n).reshape((n, n))
+    R_sum = R_sum + R_sum.T
+
+    direction_vector = np.asarray(new_complex.geometry_type.direction_vector, dtype=float)
+    metal_index = new_complex.metal_index
+    metal_r = new_complex.center_atom.get_radius()
+    num_atom = new_complex.num_atom
+    atom_indices_for_each_ligand = new_complex.get_atom_indices_for_each_ligand()
+
+    positions = np.zeros((num_atom, 3))
+    ligand_axes = []
+
+    if seed is None:
+        seed = random.randint(0, 1000000)
+
+    for i, ligand in enumerate(new_complex.ligands):
+        P = _embed_free_ligand(ligand, seed + i)
+        if P is None:
+            return None
+        global_indices = atom_indices_for_each_ligand[i]
+        atom_list = ligand.molecule.atom_list
+        binding_infos = ligand.binding_infos
+        axis_info = None
+
+        if len(binding_infos) == 1 and len(binding_infos[0][0]) == 1:
+            # Monodentate single donor.
+            donor_local = binding_infos[0][0][0]
+            slot = binding_infos[0][1]
+            v_slot = _unit(direction_vector[slot - 1])
+            bond_len = (metal_r + atom_list[donor_local].get_radius()) * scale
+            adj_matrix = ligand.get_adj_matrix()
+            neighbor_locals = np.where(adj_matrix[donor_local, :] == 1)[0]
+            placed = _place_monodentate(P, donor_local, neighbor_locals, v_slot, bond_len)
+            axis_info = (v_slot * bond_len, v_slot)
+        elif len(binding_infos) == 1 and len(binding_infos[0][0]) > 1:
+            # Haptic (eta) face.
+            face_locals = binding_infos[0][0]
+            slot = binding_infos[0][1]
+            v_slot = _unit(direction_vector[slot - 1])
+            atom_r = atom_list[face_locals[0]].get_radius()
+            placed = _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale)
+        else:
+            # Polydentate chelate: one donor per binding_info (first face atom if a
+            # haptic arm ever appears inside a chelate).
+            donor_locals = [bi[0][0] for bi in binding_infos]
+            slots = [bi[1] for bi in binding_infos]
+            slot_vectors = [_unit(direction_vector[s - 1]) for s in slots]
+            bond_lens = [
+                (metal_r + atom_list[dl].get_radius()) * scale for dl in donor_locals
+            ]
+            placed = _place_chelate(P, donor_locals, slot_vectors, bond_lens)
+            logger.debug(
+                "kabsch chelate bite residual: %.3f",
+                _bite_residual(placed, donor_locals, slot_vectors, bond_lens),
+            )
+            # A bidentate can be de-clashed by rotating its body about the line
+            # through its two donors -- that keeps BOTH donors on their slots (they
+            # lie on the axis) while swinging the ligand out of a neighbour. Denticity
+            # >2 has no such donor-preserving axis, so it is left to the FF.
+            if len(donor_locals) == 2:
+                d1 = placed[donor_locals[0]]
+                d2 = placed[donor_locals[1]]
+                axis_info = (d1, d2 - d1)
+
+        for j, g in enumerate(global_indices):
+            positions[g] = placed[j]
+        ligand_axes.append((list(global_indices), axis_info))
+
+    positions[metal_index] = np.array([0.0, 0.0, 0.0])
+
+    # Phase 3 -- guarded torsional packing (only kept if it lowers clash).
+    positions = _pack_ligands(positions, ligand_axes, metal_index)
+
+    good, candidate = _finalize_positions(
+        positions,
+        metal_complex,
+        new_complex,
+        radius_list,
+        R_sum,
+        metal_index,
+        False,  # already rigidly placed; do NOT re-run the monodentate axis-orient
+        atom_d_criteria,
+        ratio_criteria,
+        adj_ratio_criteria,
+    )
+    if good is not None:
+        return good
+    return candidate[0][:num_atom]
+
+
 def get_embedding(
     metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None, alt_cache=None
 ):
@@ -671,6 +1016,22 @@ def get_embedding(
     # Make a conformer based on the representation
     new_complex = metal_complex.copy()
     total_atom_list = new_complex.get_atom_list()
+
+    # Opt-in rigid-placement embed (A4). option=3 bypasses the whole dummy-metal
+    # distance-geometry mechanism below -- it builds each ligand independently and
+    # places it with kabsch -- so it is dispatched here, before the alternative-mol
+    # machinery. Never reached unless the caller opts in via the options list.
+    if option == 3:
+        return _kabsch_embedding(
+            metal_complex,
+            new_complex,
+            scale,
+            align,
+            seed,
+            atom_d_criteria,
+            ratio_criteria,
+            adj_ratio_criteria,
+        )
 
     # new_complex gives the geometry ... (metal complex remains no change)
 
