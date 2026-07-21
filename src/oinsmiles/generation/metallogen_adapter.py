@@ -20,6 +20,7 @@ import numpy as np
 from rdkit import Chem
 
 from ..generator3d import generate_3d_structures, get_xyz_string, globalvars
+from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
 
@@ -1225,6 +1226,11 @@ def _select_by_geometry(parsed, mols):
             "falling back to geometry/energy",
             target_windings,
         )
+        _telemetry.record(
+            "adapter.winding_fallthrough",
+            n_targets=len(target_windings),
+            n_candidates=len(candidates),
+        )
 
     if scored:
         fit, rank, m, cmol = scored[0]
@@ -1240,6 +1246,7 @@ def _select_by_geometry(parsed, mols):
         return m, cmol
 
     # Fallback: lowest-energy conformer -- the pre-selection default behavior.
+    _telemetry.record("adapter.geometry_select_fallthrough", target=target, n_mols=len(mols))
     return mols[0], build_contract_mol(parsed, mols[0])
 
 

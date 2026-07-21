@@ -1,5 +1,6 @@
 import logging
 
+from ..generation import _telemetry
 from . import clean_geometry, embed, om
 from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
 
@@ -331,6 +332,7 @@ def generate_3d_structures(
                 )
             except Exception as e:
                 logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
+                _telemetry.record("pool.blanket_exception", exc=type(e).__name__)
                 positions = None
             _try_accept(positions, scale)
     else:
@@ -401,6 +403,7 @@ def generate_3d_structures(
         # budget; return the best available rather than nothing (non-regressive
         # vs. the prior, unfiltered behavior).
         logger.debug("WARNING: no conformer reproduced the requested stereo; using best available.")
+        _telemetry.record("pool.stereo_fallback_wrong_isomer", n_rejects=len(stereo_rejects))
         successful_mols = stereo_rejects
 
     if not successful_mols:
