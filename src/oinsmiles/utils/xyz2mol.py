@@ -19,7 +19,7 @@ from .aromaticity import (  # noqa: F401
     kekulize_safe_sanitize,
     stuck_ring_atoms,
 )
-from .oin_aligner import OINDiscreteAligner, OINSanitizer
+from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
 from .xyz2mol_local import (
     AC2mol,
     chiral_stereo_check,
@@ -1328,7 +1328,7 @@ def get_oin_string(tmc_mol, xyz_coords):
 
     # 6. Run Aligner (On Input-Ordered Fragments)
     # We pass ALL fragments. Metal is Rank 0.
-    aligner = OINDiscreteAligner(0, fragments_data)
+    aligner = OINDiscreteAligner(0, fragments_data, metal_dn=metal_d_electron_count(tmc_mol))
     geometry_string_raw = aligner.generate_canonical_vectors()
 
     # geometry_string_raw looks like: "g:SPL|w:1.0:0;2.0:1"
