@@ -19,7 +19,7 @@ import sys
 import numpy as np
 from rdkit import Chem
 
-from ..generator3d import generate_3d_structures, get_xyz_string, globalvars
+from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -1182,7 +1182,7 @@ def _select_by_geometry(parsed, mols):
     target = _norm_geo_code(parsed.geo_code)
     expected_n = _expected_coordination_number(parsed.geo_code)
 
-    scored = []  # (fit_rmsd, energy_rank, mol, contract_mol)
+    scored = []  # (clash_vdw, fit_rmsd, energy_rank, mol, contract_mol)
     if target and expected_n is not None:
         for rank, m in enumerate(mols):
             try:
@@ -1195,11 +1195,20 @@ def _select_by_geometry(parsed, mols):
                 label, fit = classify_and_fit(vecs, target)
                 if _norm_geo_code(label) != target:
                     continue
-                scored.append((fit, rank, m, cmol))
+                # Whole-complex vdW clash as the primary sort key -- gated OFF by default
+                # (clash.VDW_ACCEPTANCE_ENABLED). The elimination study found coordination-
+                # sphere template fit uncorrelated with real distortion (rho=0.22), so when
+                # enabled we pick the least-clashing realization first (fit/energy break
+                # ties). Off by default because even among conformers that classify as the
+                # target, the least-clashing one has donors splayed to the edge of the gate
+                # and re-perceives as detached -> round-trip regression (see clash.py). When
+                # disabled, clash=0 for all -> (0, fit, rank) == the pre-A3 (fit, rank) order.
+                clash_vdw = clash.mol_clash_count(m) if clash.VDW_ACCEPTANCE_ENABLED else 0
+                scored.append((clash_vdw, fit, rank, m, cmol))
             except Exception:
                 logger.debug("geometry perception failed for a conformer", exc_info=True)
                 continue
-        scored.sort(key=lambda t: (t[0], t[1]))
+        scored.sort(key=lambda t: (t[0], t[1], t[2]))
 
     # Winding-aware pick: prefer the conformer whose re-encoded eta-ring winding
     # matches the requested OIN. Search geometry-eligible conformers first (best
@@ -1208,7 +1217,7 @@ def _select_by_geometry(parsed, mols):
     target_windings = _eta_winding_multiset(getattr(parsed, "original_oin", None))
     if target_windings:
         if scored:
-            candidates = [(m, cmol) for (_fit, _rank, m, cmol) in scored]
+            candidates = [(m, cmol) for (_clash, _fit, _rank, m, cmol) in scored]
         else:
             candidates = [(m, None) for m in mols]
         for m, cmol in candidates:
@@ -1233,12 +1242,13 @@ def _select_by_geometry(parsed, mols):
         )
 
     if scored:
-        fit, rank, m, cmol = scored[0]
+        clash_vdw, fit, rank, m, cmol = scored[0]
         logger.debug(
             "geometry-aware selection: chose energy-rank %d as %s "
-            "(template fit %.4f, target %s) from %d matching conformer(s)",
+            "(vdW clashes %d, template fit %.4f, target %s) from %d matching conformer(s)",
             rank,
             target,
+            clash_vdw,
             fit,
             target,
             len(scored),

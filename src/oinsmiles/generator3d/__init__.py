@@ -3,7 +3,7 @@ import logging
 from rdkit.Chem.rdchem import MolSanitizeException
 
 from ..generation import _telemetry
-from . import clean_geometry, embed, om
+from . import clash, clean_geometry, embed, om
 from .utils.compute_chg_and_bo_pulp import clear_pulp_cache
 
 logger = logging.getLogger(__name__)
@@ -511,6 +511,15 @@ def generate_3d_structures(
             dedup_mols.append(mol)
 
     successful_mols = dedup_mols
+
+    # Re-rank the deduplicated pool by whole-complex vdW clash -- gated OFF by default
+    # (clash.VDW_ACCEPTANCE_ENABLED). Stable, so UFF energy still orders conformers within
+    # equal clash. Keeps the least-clashing conformers inside the ``num_conformers`` slice
+    # that feeds the optimizer/selection. Off by default because on the current pool the
+    # least-clashing conformer has loosened coordination (see clash.py); disabled -> the
+    # pool keeps its pre-A3 energy order (byte-identical).
+    if clash.VDW_ACCEPTANCE_ENABLED:
+        successful_mols.sort(key=clash.mol_clash_count)
 
     if optimizer:
         from .ml_optimizer import ASEOptimizer

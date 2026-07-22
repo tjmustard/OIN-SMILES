@@ -10,7 +10,7 @@ from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation as R
 
 from ..generation import _telemetry
-from . import chem, process
+from . import chem, clash, process
 from .utils import ic
 
 logger = logging.getLogger(__name__)
@@ -627,6 +627,26 @@ def _finalize_positions(
     if diff > 0:
         logger.debug("Undesired bond is detected ...")
         return None, (positions, -diff)
+
+    # Fourth criterion (vdW steric clash) -- gated OFF by default (clash.VDW_ACCEPTANCE_ENABLED).
+    # The three checks above forbid only atomic *fusion* (covalent overlap); a conformer can
+    # clear them yet carry real inter-fragment vdW clashes -- the release's 53%-vs-5% finding,
+    # from a gate blind to steric overlap. When enabled, reject a clashing conformer so the loop
+    # keeps searching for a vdW-clean one; score it into (-1, 0) -- above any topology-broken
+    # (-diff <= -2) candidate, least-clashing nearest 0 -- so the caller's unchanged best-rejected
+    # fallback surfaces the least-clashing candidate when none is clean. Off by default because on
+    # the current placement it loosens coordination (see clash.py); A4/A5 evaluate it on the
+    # tight Kabsch pool. Disabled -> this returns success exactly as pre-A3 (byte-identical).
+    if clash.VDW_ACCEPTANCE_ENABLED:
+        atomic_numbers = [atom.get_atomic_number() for atom in new_complex.get_atom_list()]
+        clash_vdw, _clash_severe, worst_overlap = clash.vdw_clash_count(
+            positions[: metal_complex.num_atom], atomic_numbers
+        )
+        if clash_vdw > 0:
+            logger.debug(f"vdW steric clash detected ... ({clash_vdw} pair(s))")
+            penalty = clash_vdw + (1.0 - worst_overlap)
+            score = -1.0 + 1.0 / (1.0 + penalty)
+            return None, (positions, score)
 
     logger.debug("Embedding success!\n")
     return positions[: metal_complex.num_atom], None

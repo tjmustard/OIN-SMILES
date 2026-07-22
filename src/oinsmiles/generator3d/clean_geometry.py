@@ -6,6 +6,7 @@ from rdkit.Chem import AllChem
 from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 
+from . import clash
 from .bond_lengths import bond_length, sigma_table_applies
 from .embed import _apply_atom_chirality, _apply_double_bond_stereo
 
@@ -311,6 +312,16 @@ class TMCOptimizer:
         R = np.repeat(np.array(radius_list), n).reshape((n, n))
         R = R + R.T
 
+        # Atomic numbers aligned index-for-index with radius_list / positions_with_metal
+        # (metal at 0, then each ligand atom in ``ligands`` order), for the vdW-clash guard
+        # in the scan. Built only when the guard is enabled so the default path does zero
+        # extra work and stays byte-identical to pre-A3.
+        atomic_number_list = None
+        if clash.VDW_ACCEPTANCE_ENABLED:
+            atomic_number_list = [center_atom.get_atomic_number()] + [
+                atom.get_atomic_number() for lig in ligands for atom in lig.molecule.atom_list
+            ]
+
         # Sort binding_groups by number of atoms ... (Small to large)
         list(ligand_binding_group_infos.keys())
         sorted_ligand_binding_groups_list = sorted(
@@ -393,6 +404,7 @@ class TMCOptimizer:
                     break
 
                 ff_success = False
+                vdw_converged = False
                 if len(scanning_indices) < len(tmp_positions):
                     conformer = combined_rd_mol.GetConformer()
                     for i, position in enumerate(tmp_positions):
@@ -499,10 +511,40 @@ class TMCOptimizer:
                                     continue
                             continue
                         else:
+                            # Fourth guard (monotone vdW) -- gated OFF by default
+                            # (clash.VDW_ACCEPTANCE_ENABLED). FF energy carries no
+                            # inter-ligand steric term, so a minimize step can crush two
+                            # ligands into van-der-Waals contact with no restoring force
+                            # (the release's 53%-clash finding). When enabled, if this step
+                            # ADDS whole-complex clash, undo it and stop refining this
+                            # ligand. Off by default because stopping donor approach can
+                            # leave a donor short of the metal -> re-perceived as detached
+                            # -> round-trip regression (see clash.py). Disabled -> this is
+                            # the pre-A3 ``ff_success = True; break`` (byte-identical).
+                            if clash.VDW_ACCEPTANCE_ENABLED:
+                                clash_new, _cs_new, _cw_new = clash.vdw_clash_count(
+                                    positions_with_metal, atomic_number_list
+                                )
+                                clash_old, _cs_old, _cw_old = clash.vdw_clash_count(
+                                    np.vstack((metal_xyz, old_positions)), atomic_number_list
+                                )
+                                if clash_new > clash_old:
+                                    logger.debug(
+                                        "[FF Scan] Step increases vdW clash "
+                                        f"({clash_old} -> {clash_new}) ... reverting."
+                                    )
+                                    tmp_positions = old_positions
+                                    vdw_converged = True
                             ff_success = True
                             break
                 else:
                     ff_success = True
+
+                if vdw_converged:
+                    # A further refinement step would add vdW clash; stop scanning this
+                    # ligand and keep the clash-free geometry (ff_success stays True, so
+                    # the conformer is not discarded).
+                    break
 
                 if not ff_success:
                     final_success = False
