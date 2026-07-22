@@ -102,3 +102,5 @@ spec/worklog/
 
 # Throwaway per-phase analysis scripts / working state (not linted, not committed)
 /scratchpad/
+/crest_sweep
+tools/schedule.py

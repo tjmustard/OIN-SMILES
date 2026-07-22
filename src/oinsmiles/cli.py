@@ -84,11 +84,12 @@ def main() -> None:
     p_oin2xyz.add_argument(
         "--optimizer",
         type=str,
-        default="g-xtb",
+        default="ff",
         help=(
-            "Geometry optimizer (default: xtb, standard g-xTB). Use "
-            "'mace-omol-0-extra-large-1024' or 'mace-omol25' for higher accuracy, "
-            "or 'ff' for the fast FF-only path."
+            "Geometry optimizer (default: ff, the fast FF-only path plus the "
+            "on-by-default vdW acceptance term). Use 'xtb' for standard g-xTB "
+            "(most geometry-accurate, slower), or 'mace-omol-0-extra-large-1024' / "
+            "'mace-omol25' for MLIP refinement."
         ),
     )
     p_oin2xyz.add_argument(

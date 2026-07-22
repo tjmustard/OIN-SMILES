@@ -5,6 +5,74 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-21
+
+A **structure-quality + conformer-invariance** release, developed as nine parallel worktree
+sessions (A0–A5, B1, B2, C1), each squash-merged to `main`. Where v0.4.2 attacked round-trip
+*string* accuracy, v0.4.3 attacks the *geometry the round-trip gate cannot see*: the elimination
+study (`docs/FALSIFICATION_v0.4.3_ELIMINATION.md`) found the round-trip gate is geometry-blind
+(`ρ(coord_rmsd, full_divergence)=0.22`) and the generator was routinely shipping
+validation-failing structures — **53% of generated structures carried a van der Waals clash vs
+5% for real crystals**. The headline fix is a whole-complex vdW clash acceptance term, now on by
+default. On a pinned worst-cohort A/B the generated clash fraction dropped **92.5% → 5.1%** (near
+the 2.5% real-crystal reference) with round-trip fidelity held (92.5% → 90.0%, zero donor
+ejections). An early 100-molecule validation sample (80:20 split) gained **31+ round-trip
+successes over v0.4.2 with zero regressions**; a full ~2,900-molecule sweep is in progress and
+will be reported when complete. No OIN format-version change (still v3.7 inline). Full unit suite
+**435 → 488 OK**; FF-path goldens still round-trip under the new defaults.
+
+### Added
+- **Whole-complex vdW clash acceptance term** (`generator3d/clash.py`, `generator3d/embed.py`,
+  `generator3d/clean_geometry.py`, `generator3d/__init__.py`): a van der Waals steric-overlap
+  gate and candidate score applied at the embed acceptance gate, the UFF pool ranking, geometry
+  selection, and the FF-clean scan (previously only atomic *fusion* was rejected). **On by
+  default** (`clash.VDW_ACCEPTANCE_ENABLED`; opt out per run with `OIN_VDW_ACCEPTANCE=0`). Drops
+  the generated clash fraction 92.5% → 5.1% on the worst-cohort sample with no donor ejections.
+  (Sessions A3 + A5.)
+- **Kabsch/Umeyama rigid-placement embed (`option=3`)** (`generator3d/embed.py`): builds each
+  ligand independently and rigidly places it onto the ideal coordination vectors, reflection-
+  guarded so chelate handedness never flips. Opt-in via `ff_params={"use_kabsch": True}` (or
+  `{"kabsch_only": True}` to isolate it for A/B). Kept opt-in — it gave no clash benefit over the
+  vdW term alone. (Session A4.)
+- **Electronic (ligand-field) geometry prior** (`utils/oin_aligner.py`, `utils/xyz2mol.py`):
+  resolves ambiguous low-coordination spheres (square-planar vs tetrahedral vs square-pyramidal)
+  using the metal d-electron count when the geometric RMSD is a near-tie (e.g. d8 Ni), so
+  distinct conformers of one isomer converge to a single OIN string. (Session B1.)
+- **Conformer-invariance integration tests** (`tests/integration/test_conformer_convergence.py`,
+  `test_isomer_divergence.py`, `test_conformer_invariance.py`) and a 30-molecule stratified
+  conformer test set (`tests/fixtures/conformer_set/`): assert that all conformers of one isomer
+  encode to the same canonical OIN string, and that a *different* isomer (SPL↔TET, `{n>}`↔`{n<}`,
+  E/Z, cis↔trans slot order) encodes to a *different* string. (Sessions B1 + B2.)
+- **Optional CREST conformer cross-check** (`tools/conformer_invariance_crest.py`,
+  `tools/install_crest.sh`, `tools/run_conformer_crest_sweep.sh`): builds a real conformer
+  ensemble per structure (g-xTB pre-opt + per-conformer re-opt) and reports whether they collapse
+  to one OIN string. CREST is an optional external binary; the workflow skips gracefully when it
+  is absent. (Session C1.)
+- **Structure-distortion tooling** (`tools/structure_distortion_report.py`,
+  `tools/compare_failures.py`): scores generated structures on a geometry/graph/reference MPO with
+  a vdW-clash headline — the primary quality metric for this release, since round-trip pass is
+  geometry-blind. (Session A0.)
+
+### Changed
+- **Default 3D-generation optimizer is now `ff` (fast FF-only + vdW acceptance), not g-xTB.** The
+  A5 A/B found FF + the vdW term gives the lowest clash fraction and the best round-trip fidelity,
+  deterministically and fast; g-xTB (`optimizer="xtb"`, most geometry-accurate but slower) and
+  MACE remain opt-in for callers who want physical refinement. Applies to `OIN3DGenerator`,
+  `SMILESToXYZ`, and the `oin-smiles oin2xyz` CLI (`--optimizer` default `g-xtb` → `ff`).
+  (Session A5.)
+- **Weak-field high-spin multiplicity** (`generation/om.py`): the generator no longer forces
+  every complex to singlet/doublet — the correct spin state is assigned for high-spin-capable
+  metals (inert on the FF path, consumed by the opt-in g-xTB/MACE relax). (Session A1.)
+- **Project `xtb` binary now reachable under the run environment** (`generator3d/ml_optimizer.py`):
+  the `.venv/bin/xtb` build is honored via `OIN_XTB_BIN` / path resolution, so opt-in
+  `optimizer="xtb"` invokes g-xTB instead of silently falling back to FF. (Session A1.)
+
+### Fixed
+- **Silent "no conformers" on structurally-impossible complexes** (`generator3d/__init__.py`): a
+  blanket `except Exception` that swallowed structural embed failures (e.g. over-valent dative
+  donors) now surfaces a typed `StructuralAssemblyError`, so the failure is diagnosable instead of
+  reported as a generic conformer miss. (Session A2.)
+
 ## [0.4.2] - 2026-07-15
 
 The tmCAT/tmPHOTO round-trip **accuracy** wave (parallel worktree phases S1/S3/S5/S6a/S6b/S7 plus a

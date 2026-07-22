@@ -13,8 +13,8 @@ authors:
     family-names: Mustard
     alias: tjmustard
 license: MIT
-version: "0.3.4"
-date-released: "2026-07-07"
+version: "0.4.3"
+date-released: "2026-07-21"
 keywords:
   - transition metal complexes
   - SMILES

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.4.1"><img src="https://img.shields.io/badge/release-v0.4.1-blue" alt="Latest Release"/></a>
+    <a href="https://github.com/tjmustard/OIN-SMILES/releases/tag/v0.4.3"><img src="https://img.shields.io/badge/release-v0.4.3-blue" alt="Latest Release"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml"><img src="https://github.com/tjmustard/OIN-SMILES/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/stargazers"><img src="https://img.shields.io/github/stars/tjmustard/OIN-SMILES?style=social" alt="GitHub Stars"/></a>
     <a href="https://github.com/tjmustard/OIN-SMILES/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tjmustard/OIN-SMILES" alt="License"/></a>
@@ -58,19 +58,20 @@ Beyond round-tripping, OIN aims to be a **canonical** representation: the same c
 - **Canonical Form**: The same complex normalizes to one string — enabling exact-match deduplication and isomer-aware similarity search across TMC datasets. Symmetric-donor binding slots (e.g. a carboxylate's two equivalent oxygens) are canonicalized so resonance-equivalent structures encode identically. See [Canonical Form & Use Cases](#️-canonical-form--use-cases).
 - **Open Isomer Notation (OIN) v3.7**: Compact inline format encoding coordination geometry, slot assignments, hapticity, winding direction, and P/N stereochemistry. The metal token is descriptor-free (`[Pt_SPL]`); cis/trans and fac/mer isomerism is carried entirely by slot order. Parsers still accept legacy `@desc` tokens.
 - **Robust Graph Generation**: Powered by the Jensen Group's `xyz2mol` algorithm for TMCs.
-- **3D Generation**: The vendored **MetalloGen** engine (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup, standard `g-xTB` refinement with optional MACE accuracy enhancement; uses coordination-geometry-matched conformer selection). Coordination numbers up to 8 are supported (including square-antiprismatic, `SQA`), and tricky donors — NHC carbenes, dative amines, and quinoid (amidinate / 2-iminopyridine) ligands — keep their correct hydrogen count and generate without kekulization crashes. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures. Terminal anionic donors (silylamide, anilide, phosphinimide, terminal nitride) and non-binding anionic chalcogen donors (croconate / oxo ring O, nitrito –O) keep their exact hydrogen count and formal charge, and a terminal nitride (`[N]{n}`) is distinguished from an ammine (`N{n}`) in the notation (see CHANGELOG `[0.3.7]`).
+- **3D Generation**: The vendored **MetalloGen** engine (dummy-metal + RDKit `CoordMap` embed, constrained MMFF/UFF cleanup with an on-by-default whole-complex van der Waals clash-acceptance gate, optional `g-xTB` or MACE refinement; uses coordination-geometry-matched conformer selection). An opt-in Kabsch/Umeyama rigid-placement embed (`ff_params={"use_kabsch": True}`) builds each ligand independently and places it onto the ideal coordination vectors. Coordination numbers up to 8 are supported (including square-antiprismatic, `SQA`), and tricky donors — NHC carbenes, dative amines, and quinoid (amidinate / 2-iminopyridine) ligands — keep their correct hydrogen count and generate without kekulization crashes. Special handling for aromatic η-ligands (Cp, indenyl) via ETKDG embedding with de-aromatization to avoid RDKit kekulization failures. Terminal anionic donors (silylamide, anilide, phosphinimide, terminal nitride) and non-binding anionic chalcogen donors (croconate / oxo ring O, nitrito –O) keep their exact hydrogen count and formal charge, and a terminal nitride (`[N]{n}`) is distinguished from an ammine (`N{n}`) in the notation (see CHANGELOG `[0.3.7]`).
 - **P/S/Si Stereocenter Encoding & Enforcement**: metal-bound chiral phosphorus centers are encoded as `[P@]`/`[P@@]` from the 3D structure and generate the correct enantiomer on both tetrahedral and square-planar complexes. A Zone-A P donor — one that binds the metal directly through a stereogenic lone pair — recovers its handedness across the full OIN → 3D → OIN round trip, and backbone (non-metal-bound) P, S, and Si stereocentres are carried through generation and re-oriented to the encoded handedness. (Nitrogen stereocenters are carried on backbone atoms; direct `[N@]` encoding is deferred — see CHANGELOG.)
 - **Double-Bond (E/Z) Stereo**: C=C cis/trans geometry is captured in the OIN string (`/`, `\`) and reproduced deterministically through 3D generation, so an *E* alkene never regenerates as *Z*. Applies to geometrically free double bonds; those locked by chelation are left to the coordination sphere.
 - **sp3 Atom Stereochemistry (`@`/`@@`)**: tetrahedral atom stereocentres on the ligand backbone — carbon, and heteroatoms such as sulfur and silicon — are encoded as `[C@H]`/`[C@@H]` and round-trip through 3D generation, including centres adjacent to the metal or an η-ligand (whose CIP label is resolved against the metal-free fragment). Stereo the OIN leaves unspecified is not invented on regeneration. See CHANGELOG `[0.3.7]`.
 - **Haptic-Face Round-Tripping**: η-ligand winding markers (`{n>}`/`{n<}`) survive the round trip and control which ring face the metal binds during 3D generation. Bond orders on metal-bound haptic ligands — e.g. the internal double bond of an η³-allyl — are preserved by template transfer rather than flattened to all-single on regeneration.
 - **Deterministic, faster 3D generation**: generation is seeded (default `seed=42`), so the same OIN produces byte-identical XYZ across runs; pass `--seed`/`OIN3DGenerator(seed=…)` to sample a different reproducible conformer. The v0.4.0 performance wave made 1D → 3D generation markedly faster without changing the generated chemistry — roughly **12× for small complexes** (cisplatin) and **~5–7× for larger ones** (ferrocene, fac-Ir(ppy)₃), by memoizing the bond-order solver and removing redundant ETKDG embedding work. v0.4.1 continues this on the optimizer-refinement path — the g-xTB optimize loop is parallelized across conformers (deterministic) and the MACE calculator is reused across a run; pass `--embed-threads N` to opt into batched parallel embedding. See CHANGELOG `[0.4.0]` and `[0.4.1]`.
+- **Low-distortion structures & conformer invariance (v0.4.3)**: 3D generation now applies a whole-complex van der Waals clash-acceptance term **by default** (opt out with `OIN_VDW_ACCEPTANCE=0`), cutting sterically-clashing generated structures from ~53% toward the ~5% seen in real crystals — without ejecting donors off the metal. An electronic (ligand-field) geometry prior makes distinct conformers of one isomer converge to a single OIN string, and integration tests assert both that convergence and that a *different* isomer (SPL↔TET, winding `{n>}`/`{n<}`, E/Z, cis/trans) does **not** collapse to the same string. The default optimizer is now the fast FF path (+ vdW gate); `g-xTB` and MACE remain opt-in for physical refinement. See CHANGELOG `[0.4.3]`.
 - **CLI**: `oin-smiles` command for one-line conversions.
 
 ## ⚡ Installation
 
 This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management. The
-default install is lightweight — the fast FF + g-xTB path, with **no `torch`**. The
-machine-learning (MACE) optimizer is an opt-in extra.
+default install is lightweight — the fast FF path (g-xTB optional), with **no `torch`**.
+The `g-xTB` and machine-learning (MACE) optimizers are opt-in.
 
 1. **Install `uv`** (if not already installed):
 
@@ -91,15 +92,17 @@ machine-learning (MACE) optimizer is an opt-in extra.
     uv sync
     ```
 
-4. **Install `g-xTB`** (recommended — the default 3D-generation optimizer):
+4. **(Optional) Install `g-xTB`** — opt-in semi-empirical refinement (`--optimizer xtb`):
 
-    OIN-SMILES defaults to Grimme Lab's `g-xTB` for fast, accurate structural refinement.
+    The default 3D-generation path is FF-only (fast, deterministic) plus the on-by-default
+    vdW clash-acceptance gate. Grimme Lab's `g-xTB` is an opt-in, most-geometry-accurate
+    refinement:
     ```bash
     bash tools/install_gxtb.sh
     ```
     *Detects your OS/architecture (Linux/macOS) and drops the static binary into
-    `.venv/bin` to keep your system clean. If `xtb` is absent, 3D generation falls
-    back to the force field automatically.*
+    `.venv/bin` to keep your system clean. If `xtb` is absent, generation stays on the
+    force-field path automatically.*
 
 5. **(Optional) MACE machine-learning optimizer** — highest accuracy:
 
@@ -124,14 +127,17 @@ machine-learning (MACE) optimizer is an opt-in extra.
 uv run oin-smiles xyz2oin complex.xyz
 
 # OIN → XYZ (prints XYZ block to stdout).
-# Default backend is the MetalloGen engine refined with standard g-xTB.
+# Default backend is the MetalloGen engine on the fast FF path (+ vdW clash gate).
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 
 # Higher accuracy MACE refinement (needs the `mace` extra + weights; note --extra mace):
 uv run --extra mace oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer mace-omol-0-extra-large-1024
 
-# Fast FF-only path (no torch/xtb):
+# Fast FF-only path — now the default; shown here explicitly (no torch/xtb):
 uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer ff
+
+# Opt in to standard g-xTB for the most geometry-accurate (slower) refinement:
+uv run oin-smiles oin2xyz "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}" --optimizer xtb
 
 # Deterministic generation: the same seed always yields the same conformer.
 # Change --seed to sample a different (still reproducible) structure. Default is 42.
@@ -172,9 +178,9 @@ lower-level `OIN3DGenerator` that `SMILESToXYZ` delegates to:
 ```python
 from oinsmiles.generation.engine import OIN3DGenerator
 
-# 3D generation uses the MetalloGen engine refined with standard g-xTB (requires g-xTB binary).
-# Use optimizer="mace-omol-0-extra-large-1024" for higher accuracy MLIP refinement,
-# or optimizer="ff" for the fast FF-only path.
+# 3D generation defaults to the fast FF path (+ on-by-default vdW clash gate).
+# Use optimizer="xtb" for standard g-xTB (most geometry-accurate, requires the g-xTB binary),
+# or optimizer="mace-omol-0-extra-large-1024" for MLIP refinement.
 generator = OIN3DGenerator()
 result = generator.generate("[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}")
 
@@ -196,9 +202,9 @@ if result.mol is not None:
 
 The MetalloGen engine implements a multi-stage optimization pipeline for 1D → 3D generation:
 
-1. **Force Field Relaxation (Default)**: Uses constrained MMFF/UFF to relax the generated conformers into the geometric template. Convergence criteria are controlled by `ff_preset` (`loose`, `default`, `tight`, `very_tight`).
+1. **Force Field Relaxation (Default)**: Uses constrained MMFF/UFF to relax the generated conformers into the geometric template. Convergence criteria are controlled by `ff_preset` (`loose`, `default`, `tight`, `very_tight`). A whole-complex van der Waals clash-acceptance term (on by default; opt out with `OIN_VDW_ACCEPTANCE=0`) rejects and down-ranks sterically-overlapping conformers.
 
-2. **MLIP / Semi-empirical Refinement (Optional)**: Refines the FF-relaxed geometry pool using an advanced optimizer like standard `g-xTB` (default) or MACE (e.g., `mace-omol-0-extra-large-1024`), then energy-ranks the ensemble. The returned conformer is chosen by **coordination-geometry match** to the requested template (e.g. square-planar), with energy breaking ties — so a floppy donor that admits an energetically competitive distorted geometry still yields the correct isomer. Haptic (η) ligands fall back to lowest-energy.
+2. **MLIP / Semi-empirical Refinement (Optional)**: Optionally refines the FF-relaxed geometry pool using standard `g-xTB` (`optimizer="xtb"`) or MACE (e.g., `mace-omol-0-extra-large-1024`), then energy-ranks the ensemble. The returned conformer is chosen by **coordination-geometry match** to the requested template (e.g. square-planar), with energy breaking ties — so a floppy donor that admits an energetically competitive distorted geometry still yields the correct isomer. Haptic (η) ligands fall back to lowest-energy.
 
 ```python
 # Generate an ensemble of 5, pre-optimize with tight FF, and refine with MACE
@@ -260,7 +266,7 @@ The following complexes pass the full round-trip test (OIN string identity + RMS
 - **TiCat3** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand (3D generation fixed)
 - **TiCat4** — tetrahedral Ti with bridged indenyl–Si(Me)₂–indenyl ligand variant (3D generation fixed)
 
-**Dataset-scale validation** — beyond these hand-checked fixtures, OIN-SMILES is exercised against the full tmCAT/tmPHOTO benchmark (**25,197** unique transition-metal complexes) by a continuous XYZ → OIN → XYZ → OIN round-trip harness (canonical string identity + coordination-sphere RMSD < 1.0 Å). On the fast `--quick` FF screening path it round-trips **88.4%** of the corpus — a conservative *floor* (small conformer pool, 30 s kill), rising to **95.8%** once stochastic timeouts, conformer misses, and wontfix carborane cages are excluded. Because a `--quick` percentage measures the harness as much as the library, accuracy is also tracked **per-molecule against a clean single-commit floor** (~5,960 passing IDs), not by headline alone; the v0.4.2 wave established that most of the largest remaining "failure" buckets are FF-only / `--quick` **harness artifacts** or misfiled classes rather than encoder/generator defects. Against a matched v0.4.1 `--quick` control over the full 2,917-molecule failure set, **v0.4.2 converts 107 v0.4.1 round-trip failures into passes with zero deterministic regressions**. See **`docs/ACCURACY_v0.4.1.md`** for the full-corpus failure-mode distribution, **`docs/ACCURACY_v0.4.2.md`** for the per-class before→after and the quick-mode A/B, **`CHANGELOG.md`** for the release notes, and **`docs/KNOWN_LIMITATIONS.md`** for what remains out of scope.
+**Dataset-scale validation** — beyond these hand-checked fixtures, OIN-SMILES is exercised against the full tmCAT/tmPHOTO benchmark (**25,197** unique transition-metal complexes) by a continuous XYZ → OIN → XYZ → OIN round-trip harness (canonical string identity + coordination-sphere RMSD < 1.0 Å). On the fast `--quick` FF screening path it round-trips **88.4%** of the corpus — a conservative *floor* (small conformer pool, 30 s kill), rising to **95.8%** once stochastic timeouts, conformer misses, and wontfix carborane cages are excluded. Because a `--quick` percentage measures the harness as much as the library, accuracy is also tracked **per-molecule against a clean single-commit floor** (~5,960 passing IDs), not by headline alone; the v0.4.2 wave established that most of the largest remaining "failure" buckets are FF-only / `--quick` **harness artifacts** or misfiled classes rather than encoder/generator defects. Against a matched v0.4.1 `--quick` control over the full 2,917-molecule failure set, **v0.4.2 converts 107 v0.4.1 round-trip failures into passes with zero deterministic regressions**. In **v0.4.3** the focus shifts from string accuracy to **structure quality**: a whole-complex vdW clash-acceptance term (on by default) cuts sterically-clashing generated structures from ~53% toward the ~5% of real crystals without ejecting donors, and an early 100-molecule validation sample (80:20 split) gained **31+ round-trip successes over v0.4.2 with zero regressions** — a full ~2,900-molecule sweep is in progress and will be reported when complete. See **`docs/ACCURACY_v0.4.1.md`** for the full-corpus failure-mode distribution, **`docs/ACCURACY_v0.4.2.md`** for the per-class before→after and the quick-mode A/B, **`docs/DISTORTION_v0.4.3_RESEARCH.md`** and **`docs/FALSIFICATION_v0.4.3_ELIMINATION.md`** for the v0.4.3 structure-quality analysis, **`CHANGELOG.md`** for the release notes, and **`docs/KNOWN_LIMITATIONS.md`** for what remains out of scope.
 
 ## 🛠️ Development
 
