@@ -1,0 +1,117 @@
+{
+  "generated_with": "scratchpad/build_ensemble_fixtures.py: frame-capped copies (cap=6, ascending energy) of crest_conformers.xyz from the CREST sweep; CETDAI frames chosen to span >=2 distinct raw OIN encodings",
+  "source_sweep": "oin-conformer-invariance/conformer_crest_sweep_gxtb_reopt (crest --noreftopo --mquick, gfnff, gxtb preopt/reopt)",
+  "frame_cap": 6,
+  "ensembles": [
+    {
+      "molecule": "CisPlatin",
+      "path": "tests/fixtures/conformer_ensembles/CisPlatin/crest_conformers.xyz",
+      "metal": "Pt",
+      "n_atoms_total": 11,
+      "n_frames": 4,
+      "verdict": "invariant",
+      "tier": "fast",
+      "notes": ""
+    },
+    {
+      "molecule": "OPAGES_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/OPAGES_comp_0/crest_conformers.xyz",
+      "metal": "Hg",
+      "n_atoms_total": 28,
+      "n_frames": 5,
+      "verdict": "invariant",
+      "tier": "fast",
+      "notes": ""
+    },
+    {
+      "molecule": "QEXRAP_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/QEXRAP_comp_0/crest_conformers.xyz",
+      "metal": "Pd",
+      "n_atoms_total": 29,
+      "n_frames": 6,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "XIXPEB_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/XIXPEB_comp_0/crest_conformers.xyz",
+      "metal": "Os",
+      "n_atoms_total": 38,
+      "n_frames": 6,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "MAZJED_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/MAZJED_comp_0/crest_conformers.xyz",
+      "metal": "Ti",
+      "n_atoms_total": 55,
+      "n_frames": 2,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "COKGAN_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/COKGAN_comp_0/crest_conformers.xyz",
+      "metal": "Ir",
+      "n_atoms_total": 57,
+      "n_frames": 2,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "NODNOL_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/NODNOL_comp_0/crest_conformers.xyz",
+      "metal": "Cr",
+      "n_atoms_total": 67,
+      "n_frames": 5,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "KARQUQ_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/KARQUQ_comp_0/crest_conformers.xyz",
+      "metal": "V",
+      "n_atoms_total": 71,
+      "n_frames": 6,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "QUSJAQ_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/QUSJAQ_comp_0/crest_conformers.xyz",
+      "metal": "Fe",
+      "n_atoms_total": 53,
+      "n_frames": 3,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": ""
+    },
+    {
+      "molecule": "BEPCAC_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/BEPCAC_comp_0/crest_conformers.xyz",
+      "metal": "Ni",
+      "n_atoms_total": 57,
+      "n_frames": 6,
+      "verdict": "invariant",
+      "tier": "full",
+      "notes": "B1 regression guard: without the electronic prior this Ni d8 splits SPL/TET across conformers"
+    },
+    {
+      "molecule": "CETDAI_comp_0",
+      "path": "tests/fixtures/conformer_ensembles/CETDAI_comp_0/crest_conformers.xyz",
+      "metal": "Hf",
+      "n_atoms_total": 112,
+      "n_frames": 6,
+      "verdict": "notation-drift",
+      "tier": "full",
+      "notes": "committed frames span 2 distinct raw OIN encodings (symmetric guanidinate donor slot order) that share one canonical key"
+    }
+  ]
+}
