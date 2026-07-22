@@ -24,17 +24,18 @@ from scipy.spatial.distance import cdist
 
 _PT = Chem.GetPeriodicTable()
 
-# vdW acceptance/selection term -- OFF by default. On the current (pre-A4) conformer pool
-# the term reduces clash by loosening coordination: the least-clashing conformer is the one
-# whose bulky/weak ligands have splayed away from the metal, which re-perceives as a
-# detached ligand and regresses the round trip (measured: clash 62.5%->2.5% but round-trip
-# 70%->42.5% on a worst-cohort sample; the drop is real ligand ejection, not a canonical-key
-# artifact -- e.g. [Ru_TBP] -> [Ru_TPL] with the eta-diene fallen off). The pool lacks
-# tight-AND-clean conformers to pick; A4's Kabsch placement supplies them, so the term is the
-# bar A4's structures are judged against (data-coupled, per the release protocol). A5 measures
-# A3+A4 combined and flips this default only if clash drops without round-trip regression.
-# Enable per run via OIN_VDW_ACCEPTANCE=1, or by setting clash.VDW_ACCEPTANCE_ENABLED = True.
-VDW_ACCEPTANCE_ENABLED = os.environ.get("OIN_VDW_ACCEPTANCE", "") == "1"
+# vdW acceptance/selection term -- ON by default (promoted in A5, v0.4.3). When A3 first
+# added it, the term reduced clash only by loosening coordination on the then-current pool
+# (clash 62.5%->2.5% but round-trip 70%->42.5% -- real ligand ejection, e.g.
+# [Ru_TBP] -> [Ru_TPL]), so it shipped gated OFF. A5 re-ran the four-arm A/B on the improved
+# v0.4.3 pool (B1's electronic geometry prior supplies the tight-AND-clean conformers A3's
+# pool lacked) over a 40-molecule worst-cohort sample: the term now drops the vdW-clash
+# fraction 92.5%->5.1% with ZERO coordination-number regressions (0 ejections across all 39
+# generatable molecules) and round-trip 92.5%->90.0% (the single delta is a TBP<->SPY label
+# flip with all donors bound, not a loss). Goldens still round-trip under the gate. So the
+# ejection mechanism is gone and the term is promoted to default.
+# Disable per run via OIN_VDW_ACCEPTANCE=0, or by setting clash.VDW_ACCEPTANCE_ENABLED = False.
+VDW_ACCEPTANCE_ENABLED = os.environ.get("OIN_VDW_ACCEPTANCE", "1") != "0"
 
 
 def _rcov(z):
