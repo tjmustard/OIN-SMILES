@@ -26,7 +26,7 @@ class OIN3DGenerator:
         dg_strategy: str = "single",
         ensemble_size: int = 10,
         engine: str = "metallogen",
-        optimizer: str | None = "xtb",
+        optimizer: str | None = "ff",
         ff_preset: str | None = None,
         ff_params: dict | None = None,
         seed: int = 42,
@@ -34,12 +34,16 @@ class OIN3DGenerator:
         """Initialize the generator with a parser and the MetalloGen backend.
 
         The MetalloGen backend (``oinsmiles.generator3d``) uses a dummy-metal +
-        CoordMap embed refined by the ``optimizer`` (default ``"xtb"`` standard
-        g-xTB; pass ``"ff"``/``None`` for the FF-only path, or
-        ``"mace-omol-0-extra-large-1024"`` / ``"mace-omol25"`` for higher
-        accuracy). The MACE models require ``mace-torch`` + the model weights and
-        fail loudly if unavailable -- use ``optimizer="ff"`` in environments
-        without them.
+        CoordMap embed with a constrained-FF cleanup, optionally refined by the
+        ``optimizer``. The default is ``"ff"`` (FF-only): the A5 v0.4.3 A/B found
+        the FF path plus the whole-complex vdW acceptance term (now on by default,
+        see :mod:`oinsmiles.generator3d.clash`) gives the lowest vdW-clash fraction
+        and the best round-trip fidelity, deterministically and fast. Pass
+        ``"xtb"`` for a g-xTB semi-empirical relax (most geometry-accurate but
+        slower, and it moves atoms enough to lower round-trip fidelity), or
+        ``"mace-omol-0-extra-large-1024"`` / ``"mace-omol25"`` for MLIP refinement.
+        The MACE models require ``mace-torch`` + the model weights and fail loudly
+        if unavailable.
 
         ``engine`` is retained for backward compatibility and must be
         ``"metallogen"`` (the only supported backend).
