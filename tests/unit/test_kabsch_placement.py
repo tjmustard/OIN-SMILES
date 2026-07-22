@@ -140,8 +140,7 @@ class TestOptionThreePlacement(unittest.TestCase):
 
     CISPLATIN = "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
     FERROCENE = (
-        "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1."
-        "[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
     )
 
     def _place(self, oin):

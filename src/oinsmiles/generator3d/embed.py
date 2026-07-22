@@ -832,9 +832,7 @@ def _place_chelate(P, donor_locals, slot_vectors, bond_lens):
 
 def _bite_residual(placed, donor_locals, slot_vectors, bond_lens):
     """RMS distance of placed donors from their ideal slot targets (chelate strain)."""
-    tgt = np.array(
-        [slot_vectors[k] * bond_lens[k] for k in range(len(donor_locals))], dtype=float
-    )
+    tgt = np.array([slot_vectors[k] * bond_lens[k] for k in range(len(donor_locals))], dtype=float)
     got = placed[list(donor_locals)]
     return float(np.sqrt(np.mean(np.sum((got - tgt) ** 2, axis=1))))
 
@@ -954,9 +952,7 @@ def _kabsch_embedding(
             donor_locals = [bi[0][0] for bi in binding_infos]
             slots = [bi[1] for bi in binding_infos]
             slot_vectors = [_unit(direction_vector[s - 1]) for s in slots]
-            bond_lens = [
-                (metal_r + atom_list[dl].get_radius()) * scale for dl in donor_locals
-            ]
+            bond_lens = [(metal_r + atom_list[dl].get_radius()) * scale for dl in donor_locals]
             placed = _place_chelate(P, donor_locals, slot_vectors, bond_lens)
             logger.debug(
                 "kabsch chelate bite residual: %.3f",
