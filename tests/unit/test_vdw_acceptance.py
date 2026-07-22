@@ -94,8 +94,8 @@ class TestClashHelperMatchesMetric(unittest.TestCase):
 
 class TestFinalizeVdwAcceptance(unittest.TestCase):
     """_finalize_positions accepts a clean conformer and rejects a topologically-valid
-    but vdW-clashing one, scoring it into (-1, 0). The term is gated OFF by default (it
-    loosens coordination on the current pool -- see clash.py), so these tests enable it."""
+    but vdW-clashing one, scoring it into (-1, 0). The term is ON by default (promoted in
+    A5, v0.4.3 -- see clash.py); setUp sets the flag explicitly so intent is local."""
 
     def setUp(self):
         self._flag = clash.VDW_ACCEPTANCE_ENABLED
@@ -112,10 +112,10 @@ class TestFinalizeVdwAcceptance(unittest.TestCase):
     def tearDown(self):
         clash.VDW_ACCEPTANCE_ENABLED = self._flag
 
-    def test_disabled_by_default_accepts_clashing(self):
-        # With the gate OFF (the shipped default), a vdW-clashing conformer that clears the
-        # three covalent criteria is accepted exactly as pre-A3 -- proving the default path
-        # is unchanged. (setUp turned it on; flip it off for this one assertion.)
+    def test_gate_off_accepts_clashing(self):
+        # With the gate OFF (opt-out via OIN_VDW_ACCEPTANCE=0), a vdW-clashing conformer that
+        # clears the three covalent criteria is accepted exactly as pre-A3 -- proving the
+        # opt-out path restores prior behavior. (setUp turned it on; flip it off here.)
         clash.VDW_ACCEPTANCE_ENABLED = False
         pos, _cl, _h = self._make_clash(2.0)
         self.assertGreater(
