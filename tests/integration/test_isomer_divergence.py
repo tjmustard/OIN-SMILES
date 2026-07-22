@@ -7,9 +7,10 @@ the wrong one silently passes. Two surfaces exist (see ``src/oinsmiles/oin/compa
 * **Raw canonical string** -- the encoder's output (``XYZToSMILES().convert`` /
   ``get_oin_string``). ``tests/unit/test_regression_stability.py`` pins these byte-identical.
 * **Round-trip equivalence key** -- ``winding_canonical_key(normalize_oin_for_comparison(oin))``
-  (``_key`` below). Deliberately lossy: it strips the metal ``@SPn`` descriptor, renumbers slots
-  by first appearance, and treats winding as a multiset. It exists so conformers of one isomer
-  compare equal.
+  (``_key`` below). Deliberately lossy: it strips the metal ``@SPn`` descriptor (deferred; see
+  geometry-canonical-slot-key.md §4) and folds the benign slot-relabeling drift between true
+  conformers via a symmetry-canonical vertex signature. As of v0.4.4 it is fac/mer-aware -- the
+  signature keeps positional isomers distinct while still collapsing conformers of one isomer.
 
 Which layer carries which axis (verified against ``compare.py`` and by ``convert()``):
 
@@ -19,14 +20,15 @@ axis                 distinguished by                                 divergence
 geometry SPL/TET     geometry tag ``_XXX`` (kept)                     ``_key`` differs
 ring winding {n>/<}  winding multiset                                 ``_key`` differs
 E/Z ``/`` vs ``\\``   bond-direction tokens (kept)                     raw AND ``_key`` differ
-cis<->trans slot     ligand-type sequence (survives renumber)         ``_key`` differs
-fac<->mer slot       absolute slots only (erased by ``_key``)         **raw differs; _key EQUAL**
-metal @SPn           deleted by the normalizer                        **raw differs; _key EQUAL**
+cis<->trans slot     donor arrangement over the polyhedron            ``_key`` differs
+fac<->mer slot       donor arrangement over the polyhedron (v0.4.4)   raw AND ``_key`` differ
+metal @SPn           deleted by the normalizer (deferred)             **raw differs; _key EQUAL**
 ===================  ===============================================  ==========================
 
-The last two rows are the load-bearing ones: fac/mer and metal-@ isomerism survive only in the
-raw canonical string, so they MUST be compared raw -- the equivalence key is blind to them (for
-fac/mer that blindness is why the round-trip harness leans on RMSD, not the string key).
+The last row is the load-bearing one: metal-@ isomerism survives only in the raw canonical
+string, so it MUST be compared raw -- the equivalence key is still blind to it (deferred until
+the encoder has a reproducible metal stereo descriptor). fac/mer used to share that blindness;
+as of v0.4.4 the symmetry-canonical vertex signature catches it at the key layer too.
 
 ``TestGenerativeDivergence`` additionally drives OIN -> 3D -> OIN under the deterministic
 ``optimizer="ff"`` + ``seed=42`` path (mirrors ``test_roundtrip_smoke.py``): a mutated isomer,
@@ -118,19 +120,24 @@ class TestIsomerComparisonLayer(unittest.TestCase):
 
         Proves the layer choice: comparing metal chirality with the canonical key would
         WRONGLY call these equal, so it must be compared raw.
+
+        Metal ``@SPn`` in the key is DEFERRED (unlike fac/mer, which v0.4.4's vertex
+        signature now catches) -- it needs a reproducible encoder-side metal stereo
+        descriptor first. See spec/handoffs/v0.4.4/geometry-canonical-slot-key.md §4.
         """
         p1 = "[Pt@SP1_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
         p2 = "[Pt@SP2_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
         self.assertNotEqual(p1, p2)  # raw: distinct isomers
-        self.assertEqual(_key(p1), _key(p2))  # key: blind (would falsely converge)
+        self.assertEqual(_key(p1), _key(p2))  # key: blind (would falsely converge) -- deferred
 
     def test_fac_mer_divergence(self):
-        """fac vs mer Ir(ppy)3 diverge in the raw canonical string (matches existing goldens).
+        """fac vs mer Ir(ppy)3 diverge in BOTH the raw string and the canonical key (v0.4.4).
 
-        Both are three identical ppy fragments differing only in absolute slot numbers, which
-        the equivalence key renumbers away -- so, like metal-@, this axis MUST be compared raw.
-        The raw ``convert()`` output distinguishes them (and equals the byte-identical
-        test_regression_stability goldens).
+        Both are three identical ppy fragments differing only in absolute slot numbers. Before
+        v0.4.4 the equivalence key renumbered those away, so it was fac/mer-blind (like metal-@
+        still is). v0.4.4 replaced the renumber with a symmetry-canonical vertex signature, so
+        the key now diverges too. The raw ``convert()`` output also distinguishes them (and
+        equals the byte-identical test_regression_stability goldens).
         """
         conv = XYZToSMILES()
         with _silence_fds():
@@ -141,8 +148,8 @@ class TestIsomerComparisonLayer(unittest.TestCase):
         self.assertEqual(mer, MER_IRPPY3, "mer encoding drifted from the pinned golden")
         # the divergence guarantee: distinct canonical strings
         self.assertNotEqual(fac, mer)
-        # and the proof that raw is the required layer: the lossy key is fac/mer-blind
-        self.assertEqual(_key(fac), _key(mer))
+        # v0.4.4: the fac/mer-aware vertex signature diverges at the key layer too
+        self.assertNotEqual(_key(fac), _key(mer))
 
 
 class TestGenerativeDivergence(unittest.TestCase):
