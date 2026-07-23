@@ -149,10 +149,18 @@ def get_ligand_from_smiles(mapped_smiles):
 class Ligand:
     """Ligand."""
 
-    def __init__(self, molecule, binding_infos):
+    def __init__(self, molecule, binding_infos, winding=None):
         """Initialize the Ligand."""
         self.molecule = molecule  # chem.Molecule
         self.binding_infos = binding_infos  # [[[int],int]]
+        # Optional deterministic eta-ring winding target for the rigid haptic
+        # placer (SL2 oin-direct-winding). None on the default m-SMILES path;
+        # set by ``om.get_om_from_parsed`` to ``(face_order, star_rank, char)``
+        # where ``face_order`` lists the ring atoms' local indices in the
+        # encoder's SMILES/fragment (ascending-original-index) order, ``star_rank``
+        # is the heading atom's position within that order, and ``char`` is the
+        # requested ``'>'``/``'<'`` winding. Consumed by ``embed._place_haptic``.
+        self.winding = winding
 
     def get_smiles(self):
         """Return the smiles."""
@@ -197,7 +205,7 @@ class Ligand:
         molecule = self.molecule.copy()
         molecule.adj_matrix = self.molecule.get_adj_matrix()
         binding_infos = copy.deepcopy(self.binding_infos)
-        new_ligand = Ligand(molecule, binding_infos)
+        new_ligand = Ligand(molecule, binding_infos, winding=self.winding)
         return new_ligand
 
     def __str__(self):

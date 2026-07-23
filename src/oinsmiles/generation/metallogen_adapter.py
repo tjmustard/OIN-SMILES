@@ -19,7 +19,7 @@ import sys
 import numpy as np
 from rdkit import Chem
 
-from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars
+from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -106,11 +106,24 @@ class UncoordinatedFragmentError(ValueError):
     """
 
 
-def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
-    """Convert a ``ParsedOIN`` into MetalloGen's ``metal|lig1|...|geo`` m-SMILES.
+def _prepare_ligand_fragments(parsed: ParsedOIN):
+    """Shared per-fragment preparation for the m-SMILES and OIN-direct paths (SL2).
 
-    Each ligand binding atom is tagged with the atom-map number of the nearest
-    MetalloGen coordinate slot (isomerism-preserving nearest-vector match).
+    Returns ``(metal_frag, ligand_specs, geo)`` where ``ligand_specs`` is a list of
+    ``(mapped_smiles, winding)`` ordered exactly as the m-SMILES join (ascending
+    first coordination slot). Each ``mapped_smiles`` is the canonical per-fragment
+    string the m-SMILES path emits: kekulized (Cp), bare-donor hydrogen reconciled,
+    each binding atom tagged with the atom-map number of the nearest MetalloGen
+    coordinate slot (isomerism-preserving nearest-vector match).
+
+    ``winding`` is ``None`` unless the fragment is an eta ring whose heading atom
+    carries a ``>``/``<`` marker, in which case it is
+    ``(output_order, star_frag_idx, char)``: ``output_order`` is RDKit's
+    ``_smilesAtomOutputOrder`` from the canonicalizing ``MolToSmiles``
+    (``output_order[canonical_pos] = original_fragment_index``), ``star_frag_idx``
+    is the heading atom's original fragment index, and ``char`` is the requested
+    winding. This lets ``om.get_om_from_parsed`` recover the encoder's ring order
+    and star atom after canonicalization.
 
     Raises:
         UncoordinatedFragmentError: a ligand fragment has no binding slot.
@@ -121,7 +134,7 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
 
     metallogen_vectors = globalvars.known_geometries_vector_dict[geo]
     num_slots = len(metallogen_vectors)
-    ligand_parts: list[str | None] = [None] * num_slots
+    specs_by_slot: list = [None] * num_slots
 
     # Metal fragment: strip OIN annotations (e.g. ``[Pt_SPL]`` -> ``[Pt]``).
     metal_frag = parsed.fragments[parsed.metal_fragment_idx]
@@ -243,14 +256,45 @@ def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
             atom.SetAtomMapNum(mg_slot_idx + 1)
 
         mapped_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+        # RDKit records the canonical output ordering as a side effect of
+        # MolToSmiles: output_order[canonical_pos] = original fragment atom index.
+        # Needed to map the heading (star) atom and ring order back through
+        # canonicalization for deterministic winding construction.
+        output_order = list(
+            mol.GetPropsAsDict(includePrivate=True, includeComputed=True)["_smilesAtomOutputOrder"]
+        )
         # Place the fragment at its first binding slot (monodentate = its only slot;
         # multidentate carries all its map numbers within this one fragment string).
         first_slot = int(
             np.argmin(np.linalg.norm(metallogen_vectors - np.array(frag_vectors[0].vector), axis=1))
         )
-        ligand_parts[first_slot] = mapped_smiles
 
-    msmiles_parts = [metal_frag] + [p for p in ligand_parts if p is not None]
+        # Eta-ring winding target: the heading atom is the sole ring atom carrying a
+        # >/< marker (OINVector.winding); its absence means no winding to construct.
+        winding = None
+        heading = next((v for v in frag_vectors if v.winding is not None), None)
+        if heading is not None:
+            winding = (output_order, heading.atom_in_fragment_idx, heading.winding)
+
+        specs_by_slot[first_slot] = (mapped_smiles, winding)
+
+    ligand_specs = [s for s in specs_by_slot if s is not None]
+    return metal_frag, ligand_specs, geo
+
+
+def convert_parsed_to_msmiles(parsed: ParsedOIN) -> str:
+    """Convert a ``ParsedOIN`` into MetalloGen's ``metal|lig1|...|geo`` m-SMILES.
+
+    Each ligand binding atom is tagged with the atom-map number of the nearest
+    MetalloGen coordinate slot (isomerism-preserving nearest-vector match). Thin
+    wrapper over ``_prepare_ligand_fragments`` -- byte-identical to the pre-SL2
+    output (winding metadata is discarded here; the OIN-direct path consumes it).
+
+    Raises:
+        UncoordinatedFragmentError: a ligand fragment has no binding slot.
+    """
+    metal_frag, ligand_specs, geo = _prepare_ligand_fragments(parsed)
+    msmiles_parts = [metal_frag] + [mapped_smiles for mapped_smiles, _ in ligand_specs]
     return "|".join(msmiles_parts) + f"|{geo}"
 
 
@@ -1149,7 +1193,7 @@ def _reencode_oin(mol):
                 pass
 
 
-def _select_by_geometry(parsed, mols):
+def _select_by_geometry(parsed, mols, honor_winding=True):
     """Choose the conformer that best realizes the requested coordination geometry.
 
     Falls back to the lowest-energy conformer. Three levels of preference over
@@ -1214,8 +1258,10 @@ def _select_by_geometry(parsed, mols):
     # matches the requested OIN. Search geometry-eligible conformers first (best
     # geometry first); if geometry perception found none, fall back to searching
     # the whole energy-ranked pool so winding can still be honored.
+    # The OIN-direct path constructs eta winding deterministically at placement
+    # time, so the (expensive) re-encode-and-filter pass is unnecessary there.
     target_windings = _eta_winding_multiset(getattr(parsed, "original_oin", None))
-    if target_windings:
+    if honor_winding and target_windings:
         if scored:
             candidates = [(m, cmol) for (_clash, _fit, _rank, m, cmol) in scored]
         else:
@@ -1292,8 +1338,26 @@ class MetalloGenAdapter:
         # FF convergence knobs (named preset + optional explicit overrides).
         self.ff_params = _resolve_ff_params(ff_preset, ff_params)
 
+    def _oin_direct_enabled(self) -> bool:
+        """Whether the OIN-direct assembly + winding path is active (SL2, default off).
+
+        ``ff_params["oin_direct"]`` wins; otherwise the ``OIN_DIRECT_ASSEMBLY`` env
+        var (``"1"`` to enable). Unset -> the byte-identical m-SMILES path.
+        """
+        if self.ff_params and self.ff_params.get("oin_direct"):
+            return True
+        return os.environ.get("OIN_DIRECT_ASSEMBLY", "0") == "1"
+
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
+        if self._oin_direct_enabled():
+            direct = self._maybe_generate_oin_direct(parsed)
+            if direct is not None:
+                return direct
+            # A haptic face whose winding could not be constructed (a rare
+            # mixed-denticity eta arm, or a non-inline OIN) fell through -- honor it
+            # via the searched m-SMILES path below rather than ship an arbitrary face.
+
         msmiles = convert_parsed_to_msmiles(parsed)
         logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
 
@@ -1326,7 +1390,7 @@ class MetalloGenAdapter:
         clean_ff_params = {
             k: v
             for k, v in (self.ff_params or {}).items()
-            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold"]
+            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold", "oin_direct"]
         }
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
@@ -1359,6 +1423,79 @@ class MetalloGenAdapter:
         xyz_str = get_xyz_string(chosen_mol)
         # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.
         # None on failure -> callers fall back to coordinate re-perception.
+        return GeneratedStructure(xyz=xyz_str, mol=mol)
+
+    def _maybe_generate_oin_direct(self, parsed: ParsedOIN):
+        """OIN-direct assembly with deterministic eta-ring winding (SL2).
+
+        Builds the ``MetalComplex`` straight from ``ParsedOIN`` (bypassing the
+        winding-lossy m-SMILES bridge) with the winding target attached to each
+        haptic ligand. Haptic complexes are placed rigidly (option 3) so the ring
+        face -- and thus the winding -- is *constructed* by ``_place_haptic`` rather
+        than sampled, which retires the wide winding-search pool: the ``ETA_SELECT_POOL``
+        widening and its UFF doubling are dropped, and the re-encode winding filter in
+        ``_select_by_geometry`` is skipped. Non-haptic complexes take the same DG
+        embed as the m-SMILES path (equivalent geometry; the only difference is the
+        assembly plumbing).
+
+        Returns ``None`` (so the caller uses the searched m-SMILES path) when a haptic
+        face has no constructed winding -- a mixed-denticity eta arm that takes the
+        chelate branch, or a non-inline OIN -- so such rings are never shipped with an
+        arbitrary face and no fallback search.
+        """
+        metal_frag, ligand_specs, geo = _prepare_ligand_fragments(parsed)
+        metal_complex = om.get_om_from_parsed(metal_frag, ligand_specs, geo)
+
+        haptic_ligs = [
+            lig
+            for lig in metal_complex.ligands
+            if any(len(bi[0]) > 1 for bi in lig.binding_infos)
+        ]
+        if haptic_ligs and not all(lig.winding is not None for lig in haptic_ligs):
+            return None
+        is_haptic = bool(haptic_ligs)
+        logger.debug("OIN %r -> direct MetalComplex (%s)", parsed.original_oin, geo)
+
+        # Winding is constructed, not searched -> the default (narrow) pool suffices;
+        # no ETA_SELECT_POOL widening, no UFF pre-pool doubling.
+        pool_n = max(self.ensemble_size, DEFAULT_SELECT_POOL)
+        uff_pool_size = self.ff_params.get("uff_pool_size", 10) if self.ff_params else 10
+        rmsd_threshold = self.ff_params.get("rmsd_threshold", 0.5) if self.ff_params else 0.5
+        energy_threshold = self.ff_params.get("energy_threshold", 2.0) if self.ff_params else 2.0
+
+        clean_ff_params = {
+            k: v
+            for k, v in (self.ff_params or {}).items()
+            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold", "oin_direct"]
+        }
+        if is_haptic:
+            # Route haptic complexes through the rigid placer (option 3), where
+            # _place_haptic constructs the winding from ligand.winding.
+            clean_ff_params["kabsch_only"] = True
+
+        with contextlib.redirect_stdout(sys.stderr):
+            mols = generate_3d_structures(
+                None,
+                num_conformers=pool_n,
+                optimizer=self.optimizer,
+                ff_params=clean_ff_params,
+                uff_pool_size=uff_pool_size,
+                rmsd_threshold=rmsd_threshold,
+                energy_threshold=energy_threshold,
+                timeout=self.timeout,
+                embed_time_budget=self.timeout,
+                seed=self.seed,
+                metal_complex=metal_complex,
+            )
+        if not mols:
+            raise ValueError(
+                f"MetalloGen (OIN-direct) failed to generate any conformers for OIN "
+                f"{parsed.original_oin!r}"
+            )
+
+        # Winding is already constructed -> skip the re-encode winding filter.
+        chosen_mol, mol = _select_by_geometry(parsed, mols, honor_winding=False)
+        xyz_str = get_xyz_string(chosen_mol)
         return GeneratedStructure(xyz=xyz_str, mol=mol)
 
 

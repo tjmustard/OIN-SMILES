@@ -121,6 +121,13 @@ class MetalComplex:
                     adj_matrix[end][start] = mol_adj[k][j]
         binding_groups = self.get_binding_groups()
         for group in binding_groups:
+            if group is None:
+                # Unfilled coordination slot (fewer ligands than the geometry has
+                # vertices) -- no metal-donor bond to add. Skipping keeps every
+                # fully-coordinated complex byte-identical while letting an
+                # under-coordinated one (e.g. a lone eta-arene in a 4-slot shell)
+                # build instead of crashing on ``for i in None``.
+                continue
             for i in group:
                 adj_matrix[metal_index][i] = 1
                 adj_matrix[i][metal_index] = 1
@@ -500,6 +507,69 @@ def get_om_from_modified_smiles(smiles):
 
     chg = ligand_chg + metal_chg
     geometry_name = smiles_list[-1]
+    multiplicity = _spin_multiplicity(metal_atom.get_element(), z_sum, chg, ligands)
+
+    metal_complex = MetalComplex(geometry_name, metal_atom, ligands, chg, multiplicity)
+    metal_complex.metal_index = 0
+    metal_complex.multiplicity = multiplicity
+    replace_actinide(metal_complex)
+
+    return metal_complex
+
+
+def get_om_from_parsed(metal_smiles, ligand_specs, geometry_name):
+    """Build a ``MetalComplex`` directly from ``ParsedOIN``-derived fragments (SL2).
+
+    The default generation path round-trips through the ``metal|lig|...|geo``
+    m-SMILES string, which cannot express eta-ring winding (the sign is recovered
+    stochastically by a wide embed pool). This direct constructor takes the same
+    per-fragment ``mapped_smiles`` the m-SMILES path builds -- so the load-bearing
+    ligand chemistry (``get_ligand_from_smiles``: stereo recovery, AddHs, bare-donor
+    H-stripping, Cp kekulization) is byte-identical -- but additionally attaches the
+    OIN winding target to each haptic ligand for deterministic winding construction
+    in the rigid placer.
+
+    ``ligand_specs`` is a list (ordered exactly as the m-SMILES join) of
+    ``(mapped_smiles, winding)`` where ``winding`` is ``None`` or
+    ``(output_order, star_frag_idx, char)``: ``output_order[canonical_pos]`` is the
+    atom's original fragment index (RDKit ``_smilesAtomOutputOrder`` from the
+    canonicalizing ``MolToSmiles``), ``star_frag_idx`` is the heading atom's original
+    fragment index, and ``char`` is the requested ``'>'``/``'<'``. Metal ``@SPn``
+    chirality stays deferred (as on the m-SMILES path); the encoder can't reproduce
+    it yet.
+    """
+    from rdkit import Chem
+
+    from . import ligand as ligand_mod
+
+    metal_atom = Chem.MolFromSmiles(metal_smiles)
+    metal_chg = Chem.GetFormalCharge(metal_atom)
+    metal_atom = chem.Atom(metal_atom.GetAtomWithIdx(0).GetSymbol())
+    z_sum = metal_atom.get_atomic_number()
+
+    ligands = []
+    for mapped_smiles, winding in ligand_specs:
+        lig = ligand_mod.get_ligand_from_smiles(mapped_smiles)
+        # Attach the deterministic winding target only for a PURE haptic ligand --
+        # a single binding_info whose face has >1 atom -- which is exactly the case
+        # the rigid placer routes through _place_haptic. (A haptic arm inside a
+        # chelate takes the chelate branch and keeps the stochastic behaviour.)
+        if winding is not None and len(lig.binding_infos) == 1 and len(lig.binding_infos[0][0]) > 1:
+            output_order, star_frag_idx, char = winding
+            face_locals = lig.binding_infos[0][0]
+            # Re-order the ring atoms into the encoder's SMILES/fragment order
+            # (ascending ORIGINAL fragment index) so signed_circulation's "next
+            # after star" is the same physical atom the encoder used.
+            ordered = sorted(face_locals, key=lambda p: output_order[p])
+            star_canon = next((p for p in face_locals if output_order[p] == star_frag_idx), None)
+            if star_canon is not None:
+                lig.winding = (ordered, ordered.index(star_canon), char)
+        ligands.append(lig)
+
+    ligand_chg = sum([lig.molecule.get_chg() for lig in ligands])
+    z_sum += sum([np.sum(lig.molecule.get_z_list()) for lig in ligands])
+
+    chg = ligand_chg + metal_chg
     multiplicity = _spin_multiplicity(metal_atom.get_element(), z_sum, chg, ligands)
 
     metal_complex = MetalComplex(geometry_name, metal_atom, ligands, chg, multiplicity)

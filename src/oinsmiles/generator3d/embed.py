@@ -10,6 +10,7 @@ from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation as R
 
 from ..generation import _telemetry
+from ..oin.winding import signed_circulation
 from . import chem, clash, process
 from .utils import ic
 
@@ -780,13 +781,28 @@ def _place_monodentate(P, donor_local, neighbor_locals, v_slot, bond_len):
     return placed - placed[donor_local] + target_donor
 
 
-def _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale):
+def _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale, winding=None):
     """Place a haptic (eta) face: ring plane normal along ``v_slot``, centroid on it.
 
     Rotation only (the ring's own geometry is preserved, never distorted). The
     centroid height is chosen so the metal-to-face-atom distance is ~physical for
-    the requested ``scale``; a planar aromatic ring has a mirror plane, so which
-    face points at the metal introduces no handedness ambiguity.
+    the requested ``scale``. The SVD ring normal has an undetermined sign, so the
+    initial placement presents an arbitrary face to the metal.
+
+    ``winding`` (SL2 oin-direct-winding, ``None`` on the default kabsch path ->
+    byte-identical) is ``(face_order, star_rank, char)`` from ``Ligand.winding``:
+    the requested OIN winding for a *load-bearing* ring (indenyl, ansa, substituted
+    Cp whose rac/meso must be reproduced). When given, measure the placed ring's
+    winding with the encoder's shared ``signed_circulation`` -- SAME star atom and
+    SAME ascending-fragment-order the encoder uses, so the sign convention cannot
+    diverge -- and if it disagrees, turn the ring over with ONE 180 deg PROPER
+    rotation about an in-plane axis through the ring centroid. That flip reverses
+    the winding sign (``cross(v_star, v_next) || ring normal``, and the rotation
+    sends normal -> -normal), preserves every metal-ring distance (the centroid
+    lies on the axis; in-plane radii keep their length), and -- being a proper
+    rotation, never a reflection -- leaves substituent / rac-vs-meso chirality
+    intact. An orientation-free ring (Cp/arene) also passes through here harmlessly:
+    the flip realizes a graph automorphism, giving an equivalent conformer.
     """
     face = P[face_locals]
     centroid = face.mean(axis=0)
@@ -799,8 +815,25 @@ def _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale):
     h2 = target_atom_dist**2 - r_ring**2
     h = np.sqrt(h2) if h2 > 1e-6 else 0.1
     rot = _rotation_align(normal, v_slot)
-    placed = (rot @ (P - centroid).T).T
-    return placed + v_slot * h
+    placed = (rot @ (P - centroid).T).T + v_slot * h
+
+    if winding is not None:
+        face_order, star_rank, target_char = winding
+        ring_coords = placed[face_order]
+        # Metal is at the origin, so the ring centroid IS the outward
+        # metal->centroid axis -- exactly the encoder's convention
+        # (oin_aligner._determine_winding uses the actual ring centroid).
+        face_c = ring_coords.mean(axis=0)
+        if signed_circulation(ring_coords, star_rank, face_c) != target_char:
+            # In-plane flip axis: any unit vector perpendicular to the ring
+            # normal (== v_slot after alignment). Deterministic choice.
+            u = np.cross(v_slot, [1.0, 0.0, 0.0])
+            if np.linalg.norm(u) < 1e-6:
+                u = np.cross(v_slot, [0.0, 1.0, 0.0])
+            flip = R.from_rotvec(np.pi * _unit(u)).as_matrix()
+            placed = (flip @ (placed - face_c).T).T + face_c
+
+    return placed
 
 
 def _place_chelate(P, donor_locals, slot_vectors, bond_lens):
@@ -945,7 +978,11 @@ def _kabsch_embedding(
             slot = binding_infos[0][1]
             v_slot = _unit(direction_vector[slot - 1])
             atom_r = atom_list[face_locals[0]].get_radius()
-            placed = _place_haptic(P, face_locals, v_slot, metal_r, atom_r, scale)
+            # ligand.winding (SL2) drives deterministic winding construction; None
+            # on the default path keeps _place_haptic byte-identical.
+            placed = _place_haptic(
+                P, face_locals, v_slot, metal_r, atom_r, scale, winding=ligand.winding
+            )
         else:
             # Polydentate chelate: one donor per binding_info (first face atom if a
             # haptic arm ever appears inside a chelate).

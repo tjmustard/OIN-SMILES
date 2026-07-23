@@ -199,6 +199,7 @@ def generate_3d_structures(
     timeout=None,
     seed=42,
     embed_time_budget=None,
+    metal_complex=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -236,11 +237,15 @@ def generate_3d_structures(
     # None and recompute. Same rationale as the PuLP memo.
     alt_cache = {}
 
-    try:
-        metal_complex = om.get_om_from_modified_smiles(m_smiles)
-    except Exception as e:
-        logger.debug(f"Failed to parse m-SMILES: {e}")
-        return []
+    # ``metal_complex`` may be supplied pre-built (SL2 oin-direct-winding path,
+    # which constructs the complex directly from ParsedOIN with winding attached);
+    # otherwise parse it from the m-SMILES string as before.
+    if metal_complex is None:
+        try:
+            metal_complex = om.get_om_from_modified_smiles(m_smiles)
+        except Exception as e:
+            logger.debug(f"Failed to parse m-SMILES: {e}")
+            return []
 
     clean_ff_params = {
         k: v
@@ -253,6 +258,7 @@ def generate_3d_structures(
             "use_kabsch",
             "kabsch_only",
             "embed_no_progress_attempts",
+            "oin_direct",
         )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
