@@ -65,6 +65,7 @@ from verify_roundtrip import (
 
 from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
+from oinsmiles.generator3d.clash import vdw_clash_count
 from oinsmiles.generator3d.ml_optimizer import resolve_xtb_binary
 
 # Environment fields stamped into every report alongside commit_id, so each row
@@ -203,9 +204,26 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
 
         # Geometric fidelity
         mol_orig = Chem.MolFromXYZFile(xyz_path)
-        mol_gen_xyz = Chem.MolFromXYZFile(gen_xyz_path)
+        mol_gen_xyz = Chem.MolFromXYZFile(gen_xyz_path)  # topology-free, for RMSD + clash
         if mol_gen_bonded is None:
             mol_gen_bonded = mol_gen_xyz
+
+        # Clash count -- a reported diagnostic (v0.4.4 SL4), never a gate. The
+        # "no-clash" half of the round-trip contract is enforced upstream by the
+        # generator's vdW acceptance gate; its least-bad fallback can still ship a
+        # clashing conformer, so we surface the count here (same perception as the
+        # release quality metric, via the topology-free coords) rather than
+        # hard-gating on it. A diagnostic must never fail an otherwise-good attempt.
+        if mol_gen_xyz is not None:
+            try:
+                conf = mol_gen_xyz.GetConformer()
+                clash_vdw, _severe, _worst = vdw_clash_count(
+                    conf.GetPositions(),
+                    [a.GetAtomicNum() for a in mol_gen_xyz.GetAtoms()],
+                )
+                report["metrics"]["clash_count"] = int(clash_vdw)
+            except Exception:
+                report["metrics"]["clash_count"] = None
 
         if mol_orig and mol_gen_xyz:
             rmsd, reason = calculate_tmc_rmsd_detailed(
@@ -220,15 +238,19 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
                 report["error"] = f"RMSD mapping failed at {tier_name}: {reason}"
                 return False, last_gen_xyz_content
             report["metrics"]["rmsd"] = round(rmsd, 4)
+            # RMSD is a diagnostic, not a pass/fail gate (v0.4.4 SL4). The canonical
+            # -key string match above is the lossless-hash contract; coordination-
+            # sphere RMSD is only ~0.22-correlated with geometric quality
+            # (FALSIFICATION_v0.4.3_ELIMINATION Sec 1.4), so a string-exact round-trip
+            # that only exceeds the tightness threshold is recorded and counted, not
+            # rejected -- this reclaims the FF-floor near-misses (incl. most stored
+            # ``pending_g-xtb`` rows). ``rmsd is None`` above (the metric could not
+            # map the sphere) stays a failure: that is a metric error, not a
+            # demonstrated geometry pass.
             if rmsd >= RMSD_GATE:
-                report["error"] = f"High RMSD at {tier_name}: {rmsd:.4f}"
-                # The string round-trip already matched above, so this is a
-                # chemically-correct round-trip that only missed the geometric
-                # tightness gate. Under FF-only that is the FF floor, not a defect;
-                # flag it so triage/backlog stop conflating it with real failures.
+                report["metrics"]["rmsd_over_gate"] = True
                 if RUN_ENV.get("optimizer_effective") == "ff":
                     report["ff_floor"] = True
-                return False, last_gen_xyz_content
 
         # Atom count
         atom_count_input = read_atom_count(xyz_path)

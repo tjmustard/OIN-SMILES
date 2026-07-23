@@ -1,4 +1,5 @@
 import logging
+import os
 
 from rdkit.Chem.rdchem import MolSanitizeException
 
@@ -251,6 +252,7 @@ def generate_3d_structures(
             "optimize_num_workers",
             "use_kabsch",
             "kabsch_only",
+            "embed_no_progress_attempts",
         )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
@@ -313,6 +315,20 @@ def generate_3d_structures(
     # max_attempts budget (ZIHGEE ~1696 s) before giving up.
     deadline = (time.monotonic() + embed_time_budget) if embed_time_budget else None
 
+    # Opt-in no-acceptance-progress cutoff (v0.4.4 SL4), gated OFF by default so the
+    # pool-fill path stays byte-identical. When set, the loop gives up after this many
+    # consecutive attempts that produced an embed but grew the pool by nothing -- the
+    # OSIHUU pattern where the vdW acceptance gate rejects every candidate, so a
+    # molecule already at its embed budget would otherwise burn the full max_attempts /
+    # wall-clock deadline before returning empty. Keyed on acceptance progress (not
+    # wall-clock), so it is deterministic and never cuts off a still-progressing embed.
+    # Gated below on had_nonstructural_embed so a uniformly-structural pool still
+    # surfaces via StructuralAssemblyError rather than this generic cutoff.
+    no_progress_limit = ff_params.get("embed_no_progress_attempts") if ff_params else None
+    if no_progress_limit is None and os.environ.get("OIN_EMBED_NO_PROGRESS"):
+        no_progress_limit = int(os.environ["OIN_EMBED_NO_PROGRESS"])
+    no_progress = 0
+
     def _try_accept(positions, scale):
         """Clean one embedded conformer, stereo-filter it, and file the result.
 
@@ -368,6 +384,14 @@ def generate_3d_structures(
                     f"stopping rather than exhausting {max_attempts} attempts."
                 )
                 break
+            if no_progress_limit and no_progress >= no_progress_limit and had_nonstructural_embed:
+                logger.debug(
+                    f"No acceptance progress in {no_progress} consecutive attempt(s) "
+                    f"with {len(successful_mols)} conformer(s); the acceptance gate is "
+                    f"rejecting every embed -- stopping rather than exhausting "
+                    f"{max_attempts} attempts."
+                )
+                break
             scale, option = combinations[i % len(combinations)]
 
             # A single scale/option combo can raise inside the embed (e.g. an
@@ -400,7 +424,9 @@ def generate_3d_structures(
                 _telemetry.record("pool.blanket_exception", exc=type(e).__name__)
                 had_nonstructural_embed = True
                 positions = None
+            pool_before = len(successful_mols)
             _try_accept(positions, scale)
+            no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
     else:
         # Batched, C++-parallel embed path (opt-in via embed_num_threads != 1).
         # Each (scale, option) combo embeds a wave of conformers in one
@@ -428,7 +454,16 @@ def generate_3d_structures(
                     f"stopping rather than exhausting {max_attempts} batches."
                 )
                 break
+            if no_progress_limit and no_progress >= no_progress_limit and had_nonstructural_embed:
+                logger.debug(
+                    f"No acceptance progress in {no_progress} consecutive batch(es) "
+                    f"with {len(successful_mols)} conformer(s); the acceptance gate is "
+                    f"rejecting every embed -- stopping rather than exhausting "
+                    f"{max_attempts} batches."
+                )
+                break
             scale, option = combinations[i % len(combinations)]
+            pool_before = len(successful_mols)
             try:
                 batch = embed.get_embeddings_batch(
                     metal_complex,
@@ -475,11 +510,13 @@ def generate_3d_structures(
                     had_nonstructural_embed = True
                     positions = None
                 _try_accept(positions, scale)
+                no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
                 continue
             for positions in batch:
                 if len(successful_mols) >= target_pool:
                     break
                 _try_accept(positions, scale)
+            no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
 
     if not successful_mols and stereo_rejects:
         # No embed reproduced the requested stereochemistry within the attempt
@@ -552,7 +589,6 @@ def generate_3d_structures(
             # each xtb result is load-independent/deterministic. ThreadPoolExecutor.map
             # preserves INPUT ORDER, so the stable sort-by-energy below is unchanged.
             if len(mols_to_optimize) > 1:
-                import os  # noqa: PLC0415
                 from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
 
                 # Worker cap: default to a safe count BELOW the core total (leave the
