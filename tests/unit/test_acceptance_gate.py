@@ -135,7 +135,11 @@ class TestEarlyExitKeyExact(unittest.TestCase):
             with self.subTest(fixture=name):
                 with _CountEmbeds() as off:
                     # off-flag run: we only need its embed count for the comparison.
-                    OIN3DGenerator(optimizer="ff", seed=SEED).generate(oin)
+                    # early_exit is default-ON since v0.4.4, so opt OUT explicitly here to
+                    # measure the full-pool baseline.
+                    OIN3DGenerator(
+                        optimizer="ff", seed=SEED, ff_params={"early_exit": False}
+                    ).generate(oin)
                 with _CountEmbeds() as on:
                     gen_on = OIN3DGenerator(
                         optimizer="ff", seed=SEED, ff_params={"early_exit": True}
@@ -156,6 +160,26 @@ class TestEarlyExitKeyExact(unittest.TestCase):
 
         # Aggregate: early-exit genuinely saves embeds across the goldens.
         self.assertLess(total_on, total_off, "early-exit saves embeds in aggregate over goldens")
+
+    def test_early_exit_on_by_default(self):
+        # v0.4.4 promote A/B flipped early-exit to default-ON (+15.8pt byte-exact, 0
+        # regressions, ~5x faster). Guard: a DEFAULT run (no ff_params) must early-exit --
+        # i.e. use fewer embeds in aggregate than an explicit early_exit=False full-pool run.
+        # Fails if the default is silently reverted to OFF.
+        total_default = 0
+        total_off = 0
+        for oin in self.GOLDENS.values():
+            with _CountEmbeds() as dflt:
+                OIN3DGenerator(optimizer="ff", seed=SEED).generate(oin)
+            with _CountEmbeds() as off:
+                OIN3DGenerator(
+                    optimizer="ff", seed=SEED, ff_params={"early_exit": False}
+                ).generate(oin)
+            total_default += dflt.count
+            total_off += off.count
+        self.assertLess(
+            total_default, total_off, "early_exit must be ON by default (v0.4.4 promotion)"
+        )
 
 
 if __name__ == "__main__":

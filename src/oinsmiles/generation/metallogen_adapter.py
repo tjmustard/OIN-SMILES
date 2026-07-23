@@ -1463,16 +1463,24 @@ class MetalloGenAdapter:
             ]
         }
 
-        # SL1 generate-until-key-exact early-exit (opt-in via OIN_EARLY_EXIT / ff_params
-        # ["early_exit"], default OFF). When enabled, hand the engine an ``accept_fn`` that
-        # returns True as soon as an embedded conformer INDEPENDENTLY re-encodes to the
-        # requested OIN's fac/mer key (SL0's ``canonical_roundtrip_key``), so the attempt loop
-        # stops building the pool -- a pool of 1 when conformer-1 round-trips. The same flag
-        # turns on the adapter-side accept-first pick below. ``accept_fn=None`` (default) keeps
-        # the engine byte-identical to pristine.
-        early_exit = bool((self.ff_params or {}).get("early_exit")) or (
-            os.environ.get("OIN_EARLY_EXIT", "0") != "0"
-        )
+        # SL1 generate-until-key-exact early-exit. When enabled, hand the engine an
+        # ``accept_fn`` that returns True as soon as an embedded conformer INDEPENDENTLY
+        # re-encodes to the requested OIN's fac/mer key (SL0's ``canonical_roundtrip_key``),
+        # so the attempt loop stops building the pool -- a pool of 1 when conformer-1
+        # round-trips. The same flag turns on the adapter-side accept-first pick below.
+        #
+        # PROMOTED to default-ON in v0.4.4 (promote A/B --
+        # tmCAT-tmPHOTO_xyz_dataset/results-v0.4.4-promote-ab/VALIDATION.md): on the
+        # stratified worst-cohort sample it lifted byte-exact 44.7->60.5%, key-match
+        # 55.3->73.7% with ZERO regressions, and ran ~5x faster (it picks the conformer
+        # reproducing the requested fac/mer isomer instead of leaving it to geometry-
+        # classification luck, and stops as soon as one appears). Non-regressive by
+        # construction: if no pooled conformer matches the key it falls through to the prior
+        # selection. Opt OUT via OIN_EARLY_EXIT=0 or ff_params["early_exit"]=False.
+        if self.ff_params is not None and "early_exit" in self.ff_params:
+            early_exit = bool(self.ff_params["early_exit"])
+        else:
+            early_exit = os.environ.get("OIN_EARLY_EXIT", "1") != "0"
         accept_fn = None
         if early_exit:
             try:
