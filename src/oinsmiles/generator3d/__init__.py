@@ -200,11 +200,18 @@ def generate_3d_structures(
     seed=42,
     embed_time_budget=None,
     metal_complex=None,
+    accept_fn=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
     Returns a list of successful geometries as molecule objects, sorted by energy if an optimizer is
     used.
+
+    accept_fn: optional predicate ``accept_fn(molecule) -> bool`` (SL1 acceptance-gate). When
+    provided, the attempt loop STOPS building the pool the moment a freshly-accepted conformer
+    satisfies it, and that single conformer is returned directly (skipping the pool
+    sort/dedup/clash-rerank and the optimizer pass -- re-optimization could perturb it off the
+    matched key). The default ``None`` leaves both attempt loops byte-identical to pristine.
 
     ff_params: optional dict of TMCOptimizer convergence knobs
     (ff_max_iters, ff_force_tol, ff_energy_tol, d_converge, num_relaxation).
@@ -339,10 +346,12 @@ def generate_3d_structures(
         """Clean one embedded conformer, stereo-filter it, and file the result.
 
         Files into ``successful_mols`` or ``stereo_rejects``. Shared verbatim by the
-        serial and batched fill loops so both apply identical acceptance.
+        serial and batched fill loops so both apply identical acceptance. Returns the
+        accepted ``Molecule`` (the one appended to ``successful_mols``) or ``None`` -- the
+        SL1 early-exit hook keys off this to test the fresh conformer against ``accept_fn``.
         """
         if positions is None:
-            return
+            return None
         tmp_complex = metal_complex.copy()
         tmp_complex.set_position(positions)
 
@@ -358,8 +367,11 @@ def generate_3d_structures(
             if wrong_ez or wrong_chirality:
                 # Right topology, wrong stereochemistry -- keep as fallback only.
                 stereo_rejects.append(tmp_complex.get_molecule())
-                return
-            successful_mols.append(tmp_complex.get_molecule())
+                return None
+            mol = tmp_complex.get_molecule()
+            successful_mols.append(mol)
+            return mol
+        return None
 
     # Surface *why* an exhausted pool failed (see StructuralAssemblyError) only
     # when the complex is *uniformly* unassemblable -- i.e. EVERY attempt raised a
@@ -369,6 +381,24 @@ def generate_3d_structures(
     # its embed did not validate), so we degrade to a generic no_conformers.
     last_structural_error = None
     had_nonstructural_embed = False
+
+    # SL1 accept-first early-exit. ``early_hit`` holds the first conformer that satisfies
+    # ``accept_fn`` (re-encodes to the requested key); once set, both fill loops stop and it is
+    # returned directly. ``accept_fn is None`` (default) => this never fires => byte-identical.
+    early_hit = None
+
+    def _file_and_maybe_stop(positions, scale):
+        """File a conformer, then test it against ``accept_fn``; True => stop building the pool."""
+        nonlocal early_hit
+        accepted = _try_accept(positions, scale)
+        if accept_fn is not None and accepted is not None and early_hit is None:
+            try:
+                if accept_fn(accepted):
+                    early_hit = accepted
+                    return True
+            except Exception:
+                logger.debug("accept_fn raised on a conformer; ignoring", exc_info=True)
+        return False
 
     if num_threads == 1:
         # Serial attempt loop -- byte-identical to pristine.
@@ -431,7 +461,8 @@ def generate_3d_structures(
                 had_nonstructural_embed = True
                 positions = None
             pool_before = len(successful_mols)
-            _try_accept(positions, scale)
+            if _file_and_maybe_stop(positions, scale):
+                break
             no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
     else:
         # Batched, C++-parallel embed path (opt-in via embed_num_threads != 1).
@@ -515,14 +546,25 @@ def generate_3d_structures(
                     logger.debug(f"Embedding failed (scale={scale}, option={option}): {e}")
                     had_nonstructural_embed = True
                     positions = None
-                _try_accept(positions, scale)
+                if _file_and_maybe_stop(positions, scale):
+                    break
                 no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
                 continue
             for positions in batch:
                 if len(successful_mols) >= target_pool:
                     break
-                _try_accept(positions, scale)
+                if _file_and_maybe_stop(positions, scale):
+                    break
             no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
+            if early_hit is not None:
+                break
+
+    if early_hit is not None:
+        # SL1 accept-first early-exit fired: a conformer independently re-encoded to the
+        # requested key. Return it directly, bypassing the pool sort/dedup/clash-rerank AND the
+        # optimizer pass below -- re-optimization could perturb it off the matched key, and the
+        # accept stamp was taken on this exact geometry. Unreachable when accept_fn is None.
+        return [early_hit]
 
     if not successful_mols and stereo_rejects:
         # No embed reproduced the requested stereochemistry within the attempt

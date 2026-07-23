@@ -37,6 +37,17 @@ _PT = Chem.GetPeriodicTable()
 # Disable per run via OIN_VDW_ACCEPTANCE=0, or by setting clash.VDW_ACCEPTANCE_ENABLED = False.
 VDW_ACCEPTANCE_ENABLED = os.environ.get("OIN_VDW_ACCEPTANCE", "1") != "0"
 
+# Stretched-bond acceptance term -- the *complement* of the vdW gate above (that flags
+# non-bonded pairs too CLOSE; this flags bonded pairs too FAR). OFF by default (SL1, v0.4.4):
+# it is an opt-in acceptance criterion for the generate-until-key-exact early-exit path, not a
+# default-path change. A bond is "stretched" when its length exceeds STRETCH_RATIO * the sum of
+# the two RDKit covalent radii -- 1.5 leaves normal covalent AND metal-donor/dative bonds well
+# under the bar (Pt-Cl, Fe-C(eta) sit ~1.0) while catching the pathology it targets: a methyl
+# threaded through a phenyl or interlocked rings tangling a bond out to ~4 Angstrom (ratio ~2.6).
+# Enable per run via OIN_STRETCHED_BOND=1, or by setting clash.STRETCHED_BOND_ENABLED = True.
+STRETCH_RATIO = 1.5
+STRETCHED_BOND_ENABLED = os.environ.get("OIN_STRETCHED_BOND", "0") != "0"
+
 
 def _rcov(z):
     """RDKit covalent radius for atomic number ``z`` (fallback 0.7 Angstrom)."""
@@ -114,3 +125,62 @@ def mol_clash_count(mol):
         return 0
     clash_vdw, _severe, _worst = vdw_clash_count(positions, atomic_numbers)
     return clash_vdw
+
+
+def stretched_bond_count(positions, atomic_numbers, adjacency, stretch_ratio=STRETCH_RATIO):
+    """Count *bonded* atom pairs stretched beyond ``stretch_ratio`` x sum of covalent radii.
+
+    The complement of :func:`vdw_clash_count`: that flags *non-bonded* pairs inside vdW contact
+    (too close); this flags *bonded* pairs pulled too far apart. ``positions`` is an ``(N, 3)``
+    array, ``atomic_numbers`` an ``(N,)`` sequence of Z aligned index-for-index, and
+    ``adjacency`` the molecule's TRUE connectivity as an ``(N, N)`` matrix (nonzero == bonded),
+    e.g. a MetalloGen ``mol.get_adj_matrix()``. The geometric ``1.3*sum(R_cov)`` bond perception
+    ``vdw_clash_count`` uses CANNOT be reused here: an over-stretched bond exceeds that cutoff and
+    silently drops out of the perceived adjacency -- exactly the pair this metric must see. Both
+    matrix orientations are honored (``adj | adj.T``) so a directed adjacency still works.
+
+    Returns ``(n_stretched, worst_ratio)`` where ``ratio = dist / (rcov_i + rcov_j)``:
+    ``n_stretched`` counts bonded pairs above ``stretch_ratio`` and ``worst_ratio`` is the
+    largest bonded ratio (``0.0`` when there are no bonds).
+    """
+    pos = np.asarray(positions, dtype=float)
+    z = np.asarray(atomic_numbers)
+    n = len(z)
+    if n < 2 or adjacency is None:
+        return 0, 0.0
+    adj = np.asarray(adjacency)
+    if adj.shape != (n, n):
+        return 0, 0.0
+
+    dist = cdist(pos, pos)
+    rcov = np.array([_rcov(zi) for zi in z])
+    ratio = dist / (rcov[:, None] + rcov[None, :])
+
+    bonded = (adj != 0) | (adj.T != 0)
+    iu = np.triu_indices(n, 1)
+    bp = bonded[iu]
+    if not bp.any():
+        return 0, 0.0
+    rr = ratio[iu]
+    n_stretched = int(((rr > stretch_ratio) & bp).sum())
+    worst_ratio = float(rr[bp].max())
+    return n_stretched, worst_ratio
+
+
+def mol_stretched_bond_count(mol):
+    """Whole-complex stretched-bond count for a generator ``Molecule``.
+
+    Complement of :func:`mol_clash_count`. Duck-typed: reads ``mol.atom_list`` (atoms exposing
+    ``get_coordinate()`` / ``get_atomic_number()``) and the true adjacency from
+    ``mol.get_adj_matrix()``. Returns 0 when the atoms, coordinates, or adjacency cannot be read
+    (a bare RDKit ``Mol``, or a ``Molecule`` with no perceived connectivity), so a caller that
+    gates on stretched bonds degrades to accepting the candidate rather than dropping it.
+    """
+    try:
+        positions = [a.get_coordinate() for a in mol.atom_list]
+        atomic_numbers = [a.get_atomic_number() for a in mol.atom_list]
+        adjacency = mol.get_adj_matrix()
+    except AttributeError:
+        return 0
+    n_stretched, _worst = stretched_bond_count(positions, atomic_numbers, adjacency)
+    return n_stretched

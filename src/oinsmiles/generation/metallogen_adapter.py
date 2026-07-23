@@ -20,6 +20,7 @@ import numpy as np
 from rdkit import Chem
 
 from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
+from ..oin.compare import canonical_roundtrip_key
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -1193,7 +1194,43 @@ def _reencode_oin(mol):
                 pass
 
 
-def _select_by_geometry(parsed, mols, honor_winding=True):
+def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False):
+    """True when conformer ``m`` INDEPENDENTLY re-encodes to ``target_key`` (SL1 accept stamp).
+
+    The honest round-trip acceptance test for the generate-until-key-exact early-exit
+    (``OIN_EARLY_EXIT`` / ``ff_params["early_exit"]``). ``target_key`` is
+    ``canonical_roundtrip_key(input_oin)`` (SL0's fac/mer key). Two-stage:
+
+    1. **Cheap pre-filter** -- ``_reencode_oin_fast(cmol)`` re-serializes the *generated
+       geometry* through the generator's own contract-mol connectivity. Its key reflects the
+       generated donor arrangement (fac/mer, winding), so a MISMATCH here is a reliable
+       "geometry is wrong" signal -> reject without paying the full path. A fast MATCH is NOT
+       trusted for acceptance: it shares the generator's connectivity and is blind to
+       bond-order / connectivity regressions (circular), so we confirm below.
+    2. **Independent confirm** -- ``_reencode_oin(m)`` writes XYZ and re-perceives everything
+       via ``XYZToSMILES().convert``. This is the accept decision.
+
+    When ``require_no_stretch`` (i.e. ``clash.STRETCHED_BOND_ENABLED``) is set, a conformer that
+    round-trips but carries any stretched bond is rejected. Returns ``False`` on any failure.
+    """
+    try:
+        if cmol is None:
+            cmol = build_contract_mol(parsed, m)
+        fast = _reencode_oin_fast(cmol)
+        if fast is not None and canonical_roundtrip_key(fast) != target_key:
+            return False
+        full = _reencode_oin(m)
+        if full is None or canonical_roundtrip_key(full) != target_key:
+            return False
+        if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
+            return False
+    except Exception:
+        logger.debug("accept-first re-encode/key comparison failed for a conformer", exc_info=True)
+        return False
+    return True
+
+
+def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
     """Choose the conformer that best realizes the requested coordination geometry.
 
     Falls back to the lowest-energy conformer. Three levels of preference over
@@ -1222,6 +1259,32 @@ def _select_by_geometry(parsed, mols, honor_winding=True):
     (then lowest-energy) conformer when no winding is requested or none matches.
     """
     from ..utils.oin_aligner import classify_and_fit
+
+    # SL1 accept-first (opt-in, OIN_EARLY_EXIT / ff_params["early_exit"]): accept the first
+    # conformer that INDEPENDENTLY re-encodes to the requested OIN's fac/mer key, short-
+    # circuiting AHEAD of the geometry-classification gate below. The round-trip key is the
+    # ground truth, so a key-exact conformer is correct even if its coordination sphere
+    # classifies as a neighbouring template. Strictly non-regressive: on no match we fall
+    # through to the geometry / winding / lowest-energy logic unchanged. Off-flag this whole
+    # block is skipped, so selection is byte-identical to pristine.
+    if early_exit:
+        try:
+            target_key = canonical_roundtrip_key(getattr(parsed, "original_oin", "") or "")
+        except Exception:
+            target_key = None
+        if target_key is not None:
+            require_no_stretch = clash.STRETCHED_BOND_ENABLED
+            for m in mols:
+                cmol = build_contract_mol(parsed, m)
+                if cmol is None:
+                    continue
+                if _reencode_key_matches(
+                    parsed, m, target_key, cmol=cmol, require_no_stretch=require_no_stretch
+                ):
+                    logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
+                    _telemetry.record("adapter.early_exit_hit")
+                    return m, cmol
+            _telemetry.record("adapter.early_exit_miss", n_mols=len(mols))
 
     target = _norm_geo_code(parsed.geo_code)
     expected_n = _expected_coordination_number(parsed.geo_code)
@@ -1390,8 +1453,38 @@ class MetalloGenAdapter:
         clean_ff_params = {
             k: v
             for k, v in (self.ff_params or {}).items()
-            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold", "oin_direct"]
+            if k
+            not in [
+                "uff_pool_size",
+                "rmsd_threshold",
+                "energy_threshold",
+                "oin_direct",
+                "early_exit",
+            ]
         }
+
+        # SL1 generate-until-key-exact early-exit (opt-in via OIN_EARLY_EXIT / ff_params
+        # ["early_exit"], default OFF). When enabled, hand the engine an ``accept_fn`` that
+        # returns True as soon as an embedded conformer INDEPENDENTLY re-encodes to the
+        # requested OIN's fac/mer key (SL0's ``canonical_roundtrip_key``), so the attempt loop
+        # stops building the pool -- a pool of 1 when conformer-1 round-trips. The same flag
+        # turns on the adapter-side accept-first pick below. ``accept_fn=None`` (default) keeps
+        # the engine byte-identical to pristine.
+        early_exit = bool((self.ff_params or {}).get("early_exit")) or (
+            os.environ.get("OIN_EARLY_EXIT", "0") != "0"
+        )
+        accept_fn = None
+        if early_exit:
+            try:
+                _target_key = canonical_roundtrip_key(getattr(parsed, "original_oin", "") or "")
+            except Exception:
+                _target_key = None
+            if _target_key is not None:
+                _require_no_stretch = clash.STRETCHED_BOND_ENABLED
+
+                def accept_fn(mg_mol, _pk=_target_key, _rns=_require_no_stretch):
+                    return _reencode_key_matches(parsed, mg_mol, _pk, require_no_stretch=_rns)
+
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
                 msmiles,
@@ -1409,6 +1502,7 @@ class MetalloGenAdapter:
                 # `timeout` semantics, which cap a single optimizer call.
                 embed_time_budget=self.timeout,
                 seed=self.seed,
+                accept_fn=accept_fn,
             )
         if not mols:
             raise ValueError(
@@ -1417,8 +1511,11 @@ class MetalloGenAdapter:
 
         # Prefer the conformer whose re-perceived coordination geometry matches the
         # requested OIN code (fixes floppy-donor cases where a distorted geometry is
-        # energetically competitive), falling back to the lowest-energy conformer.
-        chosen_mol, mol = _select_by_geometry(parsed, mols)
+        # energetically competitive), falling back to the lowest-energy conformer. With
+        # early-exit on, the accept-first pass inside also short-circuits to a key-exact
+        # conformer (belt-and-suspenders with the engine's accept_fn: the returned pool may be
+        # size 1 already, but a full-pool fallback still gets the honest accept-first pick).
+        chosen_mol, mol = _select_by_geometry(parsed, mols, early_exit=early_exit)
 
         xyz_str = get_xyz_string(chosen_mol)
         # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.
@@ -1447,9 +1544,7 @@ class MetalloGenAdapter:
         metal_complex = om.get_om_from_parsed(metal_frag, ligand_specs, geo)
 
         haptic_ligs = [
-            lig
-            for lig in metal_complex.ligands
-            if any(len(bi[0]) > 1 for bi in lig.binding_infos)
+            lig for lig in metal_complex.ligands if any(len(bi[0]) > 1 for bi in lig.binding_infos)
         ]
         if haptic_ligs and not all(lig.winding is not None for lig in haptic_ligs):
             return None
@@ -1466,7 +1561,14 @@ class MetalloGenAdapter:
         clean_ff_params = {
             k: v
             for k, v in (self.ff_params or {}).items()
-            if k not in ["uff_pool_size", "rmsd_threshold", "energy_threshold", "oin_direct"]
+            if k
+            not in [
+                "uff_pool_size",
+                "rmsd_threshold",
+                "energy_threshold",
+                "oin_direct",
+                "early_exit",
+            ]
         }
         if is_haptic:
             # Route haptic complexes through the rigid placer (option 3), where
