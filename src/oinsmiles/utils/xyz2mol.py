@@ -2,6 +2,10 @@
 
 import argparse
 import logging
+import os
+import pickle
+import resource
+import select
 import signal
 import subprocess
 from itertools import combinations
@@ -323,6 +327,105 @@ def get_basic_mol(xyz_file, overall_charge):
     return mol, xyz_coords
 
 
+# --- time-bounded resonance enumeration -------------------------------------------------
+# ResonanceMolSupplier builds its conjugation-electron groups in a C++ call that HOLDS THE
+# GIL and can run unbounded (minutes+) on a large conjugated ligand -- the encode-fail
+# timeout cohort hangs here. `maxStructs` does not bound it (even maxStructs=2 hangs) and a
+# watchdog thread cannot interrupt it (the GIL is held). Run the enumeration in a forked
+# child bounded by a CPU-time budget (RLIMIT_CPU -> SIGXCPU, enforced by the kernel even
+# mid-C-call): when it finishes we use its forms (byte-identical to the inline path); when it
+# burns past the budget the kernel kills it and we fall back to the single perceived form
+# (recovering the otherwise-unencodable molecule). The bound is CPU-time, not wall-clock, so
+# the outcome does NOT depend on machine load -- a given ligand's resonance uses ~constant
+# CPU seconds whether the box is idle or saturated, which keeps the encode deterministic.
+# os.fork -- not multiprocessing -- is used so it works inside the dataset harness's daemon
+# workers and inherits the ligand copy-on-write (no input pickling). Only large ligands take
+# this path; ordinary ligands run inline unchanged. The size gate sits below the hanging
+# cohort's ligands (heavy 68-96 / aromatic 48-72) and above ordinary ligands; routing a
+# completer here is byte-identical, so it only trades a fork for a safety net.
+_RESONANCE_ISOLATION_HEAVY = 50
+_RESONANCE_ISOLATION_AROMATIC = 35
+_RESONANCE_CPU_BUDGET_S = 120  # CPU seconds the child may spend before SIGXCPU kills it
+_RESONANCE_WALL_SAFETY_S = 900  # wall-clock backstop if a starved child never even runs
+
+
+def _resonance_needs_isolation(lig_mol):
+    """Whether resonance for this ligand is large enough to risk a C-level hang."""
+    if not hasattr(os, "fork"):
+        return False
+    if lig_mol.GetNumHeavyAtoms() >= _RESONANCE_ISOLATION_HEAVY:
+        return True
+    return sum(1 for a in lig_mol.GetAtoms() if a.GetIsAromatic()) >= _RESONANCE_ISOLATION_AROMATIC
+
+
+def _enumerate_resonance_inline(lig_mol):
+    """The original two-step ResonanceMolSupplier candidate list (no isolation, no None)."""
+    res_mols = rdchem.ResonanceMolSupplier(lig_mol)
+    if len(res_mols) == 0:
+        res_mols = rdchem.ResonanceMolSupplier(lig_mol, flags=Chem.ALLOW_INCOMPLETE_OCTETS)
+    return [res_mols[i] for i in range(len(res_mols)) if res_mols[i] is not None]
+
+
+def _resonance_candidates_isolated(lig_mol, cpu_budget=None):
+    """Enumerate resonance forms in a forked child bounded by a CPU-time budget.
+
+    Returns ``("ok", forms)`` (identical to the inline list) when the child finishes within
+    ``cpu_budget`` CPU seconds, ``("timeout", None)`` when the kernel kills it for exceeding
+    the budget (a genuine hang -> caller falls back to the single form), or ``("error",
+    None)`` when the child died some other way (caller retries inline). The child inherits
+    ``lig_mol`` via fork; only the result crosses the pipe, each form as a property-preserving
+    binary. ``cpu_budget`` defaults to the module constant, read at call time so tests can
+    shorten it. The CPU bound (not wall-clock) makes the result load-independent.
+    """
+    if cpu_budget is None:
+        cpu_budget = _RESONANCE_CPU_BUDGET_S
+    r_fd, w_fd = os.pipe()
+    pid = os.fork()
+    if pid == 0:  # child
+        try:
+            os.close(r_fd)
+            resource.setrlimit(resource.RLIMIT_CPU, (cpu_budget, cpu_budget + 2))
+            Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
+            forms = _enumerate_resonance_inline(lig_mol)
+            payload = pickle.dumps(
+                [m.ToBinary() for m in forms], protocol=pickle.HIGHEST_PROTOCOL
+            )
+            with os.fdopen(w_fd, "wb") as w:
+                w.write(payload)
+        except BaseException:
+            os._exit(1)
+        os._exit(0)
+
+    os.close(w_fd)
+    # Wall-clock backstop only guards against a child so starved it never runs; the real
+    # bound is the child's own RLIMIT_CPU. Well above cpu_budget so a busy box never trips it.
+    ready, _, _ = select.select([r_fd], [], [], _RESONANCE_WALL_SAFETY_S)
+    if not ready:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
+        os.close(r_fd)
+        return ("timeout", None)
+    chunks = []
+    with os.fdopen(r_fd, "rb") as rdr:
+        while True:
+            b = rdr.read(65536)
+            if not b:
+                break
+            chunks.append(b)
+    _, status = os.waitpid(pid, 0)
+    data = b"".join(chunks)
+    if data and os.waitstatus_to_exitcode(status) == 0:
+        try:
+            return ("ok", [Chem.Mol(b) for b in pickle.loads(data)])
+        except Exception:
+            return ("error", None)
+    # No usable data. SIGXCPU (CPU budget exceeded) or SIGKILL (backstop) == genuine hang ->
+    # fall back; any other death is an unexpected error -> caller retries inline.
+    if os.WIFSIGNALED(status) and os.WTERMSIG(status) in (signal.SIGXCPU, signal.SIGKILL):
+        return ("timeout", None)
+    return ("error", None)
+
+
 def lig_checks(lig_mol, coordinating_atoms):
     """Sending proposed ligand mol object through series of checks.
 
@@ -338,18 +441,26 @@ def lig_checks(lig_mol, coordinating_atoms):
       -> If "bad" partial charges still exists suggest a new charge:
          add/subtract electrons based on the values of the partial charges
     """
-    res_mols = rdchem.ResonanceMolSupplier(lig_mol)
-    if len(res_mols) == 0:
-        res_mols = rdchem.ResonanceMolSupplier(lig_mol, flags=Chem.ALLOW_INCOMPLETE_OCTETS)
-
-    # ResonanceMolSupplier is a stateful iterator: len() runs the enumeration and
-    # leaves the cursor at the end, so a subsequent `for res_mol in res_mols` can
-    # yield None instead of restarting (AttributeError on res_mol.GetAtoms(), the
-    # xyz2mol_none_crash bucket). Index instead of iterating, drop any None the
-    # enumeration hands back, and fall back to the un-resonated ligand so a
-    # supplier that yields nothing usable degrades instead of crashing.
-    candidates = [res_mols[i] for i in range(len(res_mols))]
-    candidates = [m for m in candidates if m is not None] or [lig_mol]
+    # A large conjugated ligand can hang the C-level ResonanceMolSupplier indefinitely.
+    # Run its enumeration in a forked child with a wall-clock timeout: a completer is
+    # byte-identical to the inline path, a genuine hang is killed and degrades to the single
+    # perceived form (recovering the molecule). Ordinary ligands stay on the inline path.
+    #
+    # (ResonanceMolSupplier is a stateful iterator: len() runs the enumeration and leaves the
+    # cursor at the end, so a subsequent `for res_mol in res_mols` can yield None instead of
+    # restarting -- the xyz2mol_none_crash bucket. Both paths index instead of iterating and
+    # drop any None, then fall back to the un-resonated ligand so a supplier that yields
+    # nothing usable degrades instead of crashing.)
+    if _resonance_needs_isolation(lig_mol):
+        status, forms = _resonance_candidates_isolated(lig_mol)
+        if status == "timeout":
+            candidates = [lig_mol]
+        elif status == "ok":
+            candidates = forms or [lig_mol]
+        else:  # child failed for a non-timeout reason -> inline is byte-identical here
+            candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
+    else:
+        candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
 
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []
@@ -421,6 +532,33 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
         return rescued, trial_charge
 
     return best_res_mol, charge
+
+
+def _is_electron_deficient_cluster(frag_mol):
+    """Whether a ligand fragment is an electron-deficient boron cluster.
+
+    Carboranes and closo/nido boranes bond through 3-center-2-electron cage
+    interactions, so their vertices carry more neighbours than a 2-center-2-electron
+    Lewis structure admits. ``AC2mol`` -- and the whole ``get_lig_mol`` charge sweep
+    over it -- can never perceive such a cage into a sanitizable molecule: this is a
+    permanent representational ceiling of the RDKit valence model, not a missed
+    charge guess.
+
+    Signal: at least three borons and at least one boron-boron bond, which is
+    specific to cage/cluster boron. A ``BPh4-`` borate (four B-C bonds, no B-B bond)
+    perceives fine and is deliberately excluded, so this only ever classifies a
+    fragment that already failed perception.
+    """
+    n_boron = 0
+    for a in frag_mol.GetAtoms():
+        if a.GetAtomicNum() == 5:
+            n_boron += 1
+    if n_boron < 3:
+        return False
+    for bond in frag_mol.GetBonds():
+        if bond.GetBeginAtom().GetAtomicNum() == 5 and bond.GetEndAtom().GetAtomicNum() == 5:
+            return True
+    return False
 
 
 def get_lig_mol(mol, charge, coordinating_atoms):
@@ -635,6 +773,14 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
                     frag_smiles = Chem.MolToSmiles(m)
                 except Exception:
                     frag_smiles = f"<{m.GetNumAtoms()} atoms>"
+                if _is_electron_deficient_cluster(m):
+                    raise OINEncodeError(
+                        f"electron-deficient boron cluster in ligand fragment #{i} "
+                        f"(SMILES: {frag_smiles!r}): no 2-center-2-electron Lewis "
+                        f"structure exists for a 3-center-2-electron boron cage, so "
+                        f"get_lig_mol failed. This is an irreducible encoder ceiling "
+                        f"(RDKit cannot valence-perceive carborane/borane clusters)."
+                    )
                 raise ValueError(
                     f"get_lig_mol failed for ligand fragment #{i} "
                     f"(SMILES: {frag_smiles!r}); cannot build TMC mol"

@@ -581,6 +581,105 @@ def get_UA_pairs(UA, AC, DU, use_graph=True):
     return UA_pairs
 
 
+# Above this many total per-atom valence combinations, AC2BO skips the O/N/C/P/S
+# valence-ordering heuristic (which would materialise the full Cartesian product and
+# hang on a large conjugated ligand) and iterates a bounded lazy product instead.
+# Chosen well above any ligand that currently perceives quickly and far below the
+# exponential blow-ups of the encode-fail timeout cohort, so sub-cap ligands (every
+# currently-encodable structure) are byte-identical.
+_VALENCE_COMBO_CAP = 500_000
+
+# In the over-cap fallback the main loop iterates the *unsorted* lazy product and
+# early-returns on the first valid assignment; this bounds how many candidates it will
+# try before giving up (returning best_BO, which downstream perception then judges).
+# Far smaller than the sort cap because each iteration runs the full BO/charge check --
+# enough to catch a chemically-sensible assignment near the front of the product order,
+# small enough that a genuinely unperceivable large ligand fails fast instead of hanging.
+_VALENCE_FALLBACK_TRIES = 20_000
+
+
+def _ordered_valences(valences_list_of_lists, atoms):
+    """Sort candidate valence assignments by the O/N/C/P/S grouping heuristic.
+
+    Extracted verbatim from ``AC2BO``'s inner loop so the caller can bypass it when
+    the Cartesian product of per-atom valences is too large to materialise. The
+    heuristic only reorders which valid assignment the main loop finds first, so
+    skipping it changes nothing a sub-cap (currently-encodable) ligand relies on.
+    """
+    valences_list = itertools.product(*valences_list_of_lists)
+
+    O_valences = [
+        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 8
+    ]
+    N_valences = [
+        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 7
+    ]
+    C_valences = [
+        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 6
+    ]
+    P_valences = [
+        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 15
+    ]
+    S_valences = [
+        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 16
+    ]
+
+    O_sums = []
+    for v_list in itertools.product(*O_valences):
+        O_sums.append(v_list)
+
+    N_sums = []
+    for v_list in itertools.product(*N_valences):
+        N_sums.append(v_list)
+
+    C_sums = []
+    for v_list in itertools.product(*C_valences):
+        C_sums.append(v_list)
+
+    P_sums = []
+    for v_list in itertools.product(*P_valences):
+        P_sums.append(v_list)
+
+    S_sums = []
+    for v_list in itertools.product(*S_valences):
+        S_sums.append(v_list)
+
+    order_dict = dict()
+    for i, v_list in enumerate(itertools.product(*[O_sums, N_sums, C_sums, P_sums, S_sums])):
+        order_dict[v_list] = i
+
+    valence_order_list = []
+    for valence_list in valences_list:
+        C_sum = []
+        N_sum = []
+        O_sum = []
+        P_sum = []
+        S_sum = []
+        for v, atomicNum in zip(valence_list, atoms):
+            if atomicNum == 6:
+                C_sum.append(v)
+            if atomicNum == 7:
+                N_sum.append(v)
+            if atomicNum == 8:
+                O_sum.append(v)
+            if atomicNum == 15:
+                P_sum.append(v)
+            if atomicNum == 16:
+                S_sum.append(v)
+
+        order_idx = order_dict[
+            (tuple(O_sum), tuple(N_sum), tuple(C_sum), tuple(P_sum), tuple(S_sum))
+        ]
+        valence_order_list.append(order_idx)
+
+    return [
+        y
+        for x, y in sorted(
+            zip(valence_order_list, list(itertools.product(*valences_list_of_lists)))
+        )
+    ]
+
+
 def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow_carbenes=True):
     """Implemenation of algorithm shown in Figure 2.
 
@@ -624,86 +723,29 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
         valences_list_of_lists.append(possible_valence)
 
     # convert [[4],[2,1]] to [[4,2],[4,1]]
-    valences_list = itertools.product(*valences_list_of_lists)
-
     best_BO = AC.copy()
 
-    O_valences = [
-        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 8
-    ]
-    N_valences = [
-        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 7
-    ]
-    C_valences = [
-        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 6
-    ]
-    P_valences = [
-        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 15
-    ]
-    S_valences = [
-        v_list for v_list, atomicNum in zip(valences_list_of_lists, atoms) if atomicNum == 16
-    ]
+    # The O/N/C/P/S valence-ordering heuristic (in _ordered_valences) materialises the
+    # full Cartesian product of per-atom valences to try chemically-sensible assignments
+    # first. For a large conjugated ligand that product is exponential and AC2BO hangs
+    # building it (the encode-fail timeout cohort: BENVOG et al. never return). Only sort
+    # when the product is small enough to materialise cheaply; above the cap iterate the
+    # lazy (unsorted) product, capped at _VALENCE_FALLBACK_TRIES candidates, so the main
+    # loop early-returns on the first valid assignment (or fails fast) instead of hanging.
+    # Every currently-encodable ligand is well under the cap and takes the byte-identical
+    # sorted path.
+    combo_size = 1
+    for _vll in valences_list_of_lists:
+        combo_size *= len(_vll)
+        if combo_size > _VALENCE_COMBO_CAP:
+            break
 
-    O_sums = []
-    for v_list in itertools.product(*O_valences):
-        O_sums.append(v_list)
-        # if sum(v_list) not in O_sums:
-        #    O_sums.append(v_list))
-
-    N_sums = []
-    for v_list in itertools.product(*N_valences):
-        N_sums.append(v_list)
-        # if sum(v_list) not in N_sums:
-        #    N_sums.append(sum(v_list))
-
-    C_sums = []
-    for v_list in itertools.product(*C_valences):
-        C_sums.append(v_list)
-        # if sum(v_list) not in C_sums:
-        #    C_sums.append(sum(v_list))
-
-    P_sums = []
-    for v_list in itertools.product(*P_valences):
-        P_sums.append(v_list)
-
-    S_sums = []
-    for v_list in itertools.product(*S_valences):
-        S_sums.append(v_list)
-
-    order_dict = dict()
-    for i, v_list in enumerate(itertools.product(*[O_sums, N_sums, C_sums, P_sums, S_sums])):
-        order_dict[v_list] = i
-
-    valence_order_list = []
-    for valence_list in valences_list:
-        C_sum = []
-        N_sum = []
-        O_sum = []
-        P_sum = []
-        S_sum = []
-        for v, atomicNum in zip(valence_list, atoms):
-            if atomicNum == 6:
-                C_sum.append(v)
-            if atomicNum == 7:
-                N_sum.append(v)
-            if atomicNum == 8:
-                O_sum.append(v)
-            if atomicNum == 15:
-                P_sum.append(v)
-            if atomicNum == 16:
-                S_sum.append(v)
-
-        order_idx = order_dict[
-            (tuple(O_sum), tuple(N_sum), tuple(C_sum), tuple(P_sum), tuple(S_sum))
-        ]
-        valence_order_list.append(order_idx)
-
-    sorted_valences_list = [
-        y
-        for x, y in sorted(
-            zip(valence_order_list, list(itertools.product(*valences_list_of_lists)))
+    if combo_size > _VALENCE_COMBO_CAP:
+        sorted_valences_list = itertools.islice(
+            itertools.product(*valences_list_of_lists), _VALENCE_FALLBACK_TRIES
         )
-    ]
+    else:
+        sorted_valences_list = _ordered_valences(valences_list_of_lists, atoms)
 
     for valences in sorted_valences_list:  # valences_list:
         UA, DU_from_AC = get_UA(valences, AC_valence)

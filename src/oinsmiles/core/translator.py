@@ -86,6 +86,7 @@ class XYZToSMILES:
         from rdkit import Chem
 
         from ..core.chirality import CIPAssigner
+        from ..utils.aromaticity import OINEncodeError
         from ..utils.xyz2mol import get_oin_string, get_tmc_mol
 
         charge = 0  # Default
@@ -93,6 +94,11 @@ class XYZToSMILES:
 
         try:
             tmc_mol, xyz_coords = get_tmc_mol(path, charge, with_stereo=False)
+        except OINEncodeError:
+            # A classified, irreducible encoder limitation (e.g. an electron-deficient
+            # boron cluster) -- propagate the typed error so callers can distinguish a
+            # known ceiling from an unexpected failure. It is already a ValueError.
+            raise
         except Exception as e:
             raise ValueError(f"xyz2mol failed: {e}")
 
