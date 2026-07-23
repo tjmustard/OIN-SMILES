@@ -870,7 +870,17 @@ def _bite_residual(placed, donor_locals, slot_vectors, bond_lens):
     return float(np.sqrt(np.mean(np.sum((got - tgt) ** 2, axis=1))))
 
 
-def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3):
+def _rotate_about_axis(coords, pivot, axis, angle):
+    """Rotate ``coords`` about the line through ``pivot`` along unit ``axis`` by ``angle`` (rad).
+
+    ``axis`` must already be a unit vector (callers pass ``_unit(axis)``) so the
+    rotation matrix stays bit-identical to the pre-factoring inline math.
+    """
+    rot = R.from_rotvec(angle * axis).as_matrix()
+    return (rot @ (coords - pivot).T).T + pivot
+
+
+def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3, score_indices=None):
     """Phase-3 packing: torsionally de-clash monodentate bodies about their M-donor axes.
 
     Independent placement can interpenetrate bulky ligands on adjacent vertices.
@@ -887,9 +897,18 @@ def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3):
 
     ``n_passes`` sequential sweeps let a ligand react to neighbours moved earlier in
     the same pass (mutually-clashing tris-chelates need more than one look).
+
+    ``score_indices`` (default None) restricts the repulsive-potential score to a
+    subset of atoms. None scores over the whole complex -- byte-identical to before;
+    a list scores over only those atoms, used by the greedy path to settle the
+    already-placed *prefix* while the not-yet-placed atoms still sit at the origin.
     """
     positions = positions.copy()
     angles = [2 * np.pi * k / n_steps for k in range(1, n_steps)]
+
+    def _score(pos):
+        return get_repulsive_potential(pos if score_indices is None else pos[score_indices])
+
     for _pass in range(n_passes):
         improved_any = False
         for atom_indices, axis_info in ligand_axes:
@@ -899,14 +918,13 @@ def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3):
             axis = _unit(axis)
             if np.linalg.norm(axis) < 1e-9:
                 continue
-            best_potential = get_repulsive_potential(positions)
+            best_potential = _score(positions)
             best_positions = None
-            block = positions[atom_indices] - pivot
             for angle in angles:
-                rot = R.from_rotvec(angle * axis).as_matrix()
                 trial = positions.copy()
-                trial[atom_indices] = (rot @ block.T).T + pivot
-                pot = get_repulsive_potential(trial)
+                block = positions[atom_indices]
+                trial[atom_indices] = _rotate_about_axis(block, pivot, axis, angle)
+                pot = _score(trial)
                 if pot < best_potential:
                     best_potential = pot
                     best_positions = trial
@@ -918,6 +936,123 @@ def _pack_ligands(positions, ligand_axes, metal_index, n_steps=12, n_passes=3):
     return positions
 
 
+def _gyration_radius(coords):
+    """Radius of gyration of a point set -- a cheap steric-bulk proxy."""
+    coords = np.asarray(coords, dtype=float)
+    if len(coords) < 2:
+        return 0.0
+    centroid = coords.mean(axis=0)
+    return float(np.sqrt(np.mean(np.sum((coords - centroid) ** 2, axis=1))))
+
+
+def _ligand_difficulty_key(ligand, free_coords):
+    """Placement-order key: most-constrained ligand FIRST (ascending sort).
+
+    denticity desc -> haptic-before-monodentate -> steric bulk (radius of gyration)
+    desc -> atom-count desc. A chelate/pincer anchors the sphere (it constrains the
+    most slots); a haptic ring and bulky monodentates fit next; a lone halide
+    (Rg 0, one atom) drops to the end, into whatever space remains. (SL3 ordering,
+    user-confirmed.)
+    """
+    binding_infos = ligand.binding_infos
+    denticity = len(binding_infos)
+    is_haptic = 1 if (denticity == 1 and len(binding_infos[0][0]) > 1) else 0
+    n_atoms = len(ligand.molecule.atom_list)
+    rg = _gyration_radius(free_coords)
+    return (-denticity, -is_haptic, -rg, -n_atoms)
+
+
+def _place_one_ligand(ligand, P, direction_vector, metal_r, scale, greedy=False):
+    """Rigidly place one free-embedded ligand ``P`` onto its ideal slot(s).
+
+    Shared by the independent (``greedy=False``, byte-identical) and greedy paths.
+    Returns ``(placed, axis_info)`` where ``axis_info`` is the ``(pivot, axis)`` for
+    the guarded torsional de-clash, or ``None`` when no donor-preserving axis exists.
+    A haptic face gets a de-clash axis (its slot-normal -- an in-plane spin that
+    preserves winding sign AND every metal-ring distance) ONLY in greedy mode; on the
+    default path it keeps ``None`` so the existing option=3 output is byte-identical.
+    """
+    atom_list = ligand.molecule.atom_list
+    binding_infos = ligand.binding_infos
+    if len(binding_infos) == 1 and len(binding_infos[0][0]) == 1:
+        # Monodentate single donor.
+        donor_local = binding_infos[0][0][0]
+        slot = binding_infos[0][1]
+        v_slot = _unit(direction_vector[slot - 1])
+        bond_len = (metal_r + atom_list[donor_local].get_radius()) * scale
+        adj_matrix = ligand.get_adj_matrix()
+        neighbor_locals = np.where(adj_matrix[donor_local, :] == 1)[0]
+        placed = _place_monodentate(P, donor_local, neighbor_locals, v_slot, bond_len)
+        axis_info = (v_slot * bond_len, v_slot)
+    elif len(binding_infos) == 1 and len(binding_infos[0][0]) > 1:
+        # Haptic (eta) face.
+        face_locals = binding_infos[0][0]
+        slot = binding_infos[0][1]
+        v_slot = _unit(direction_vector[slot - 1])
+        atom_r = atom_list[face_locals[0]].get_radius()
+        placed = _place_haptic(
+            P, face_locals, v_slot, metal_r, atom_r, scale, winding=ligand.winding
+        )
+        axis_info = None
+        if greedy:
+            centroid = placed[list(face_locals)].mean(axis=0)
+            axis_info = (centroid, v_slot)
+    else:
+        # Polydentate chelate: one donor per binding_info.
+        donor_locals = [bi[0][0] for bi in binding_infos]
+        slots = [bi[1] for bi in binding_infos]
+        slot_vectors = [_unit(direction_vector[s - 1]) for s in slots]
+        bond_lens = [(metal_r + atom_list[dl].get_radius()) * scale for dl in donor_locals]
+        placed = _place_chelate(P, donor_locals, slot_vectors, bond_lens)
+        logger.debug(
+            "kabsch chelate bite residual: %.3f",
+            _bite_residual(placed, donor_locals, slot_vectors, bond_lens),
+        )
+        axis_info = None
+        if len(donor_locals) == 2:
+            d1 = placed[donor_locals[0]]
+            d2 = placed[donor_locals[1]]
+            axis_info = (d1, d2 - d1)
+    return placed, axis_info
+
+
+def _interligand_clash_cost(ligand_coords, other_coords):
+    """Cross-set repulsive potential between a ligand and the already-placed atoms.
+
+    Same soft ``1/(d-0.5)**6`` form as the intra-set ``get_repulsive_potential``.
+    Intra-ligand pairs are rigid under a rotation about the donor axis, so scoring
+    only the cross term is equivalent to -- and cheaper than -- scoring the merged set.
+    """
+    d = cdist(np.asarray(ligand_coords, dtype=float), np.asarray(other_coords, dtype=float))
+    return float(np.sum(1.0 / (d - 0.5) ** 6))
+
+
+def _place_ligand_collision_aware(placed, axis_info, positions, committed_indices, n_steps=12):
+    """Spin ``placed`` about its donor axis to the pose that least clashes with others.
+
+    Donors lie ON the axis, so every trial keeps them exactly on-slot -- only the free
+    rotational DOF is searched (the on-slot fidelity is what fixes fac/mer). Returns
+    the chosen pose (the base pose if there is no axis or nothing to avoid).
+    """
+    if axis_info is None or len(committed_indices) == 0:
+        return placed
+    pivot, axis = axis_info
+    axis = _unit(axis)
+    if np.linalg.norm(axis) < 1e-9:
+        return placed
+    other = positions[committed_indices]
+    best_pose = placed
+    best_cost = _interligand_clash_cost(placed, other)
+    for k in range(1, n_steps):
+        angle = 2 * np.pi * k / n_steps
+        trial = _rotate_about_axis(placed, pivot, axis, angle)
+        cost = _interligand_clash_cost(trial, other)
+        if cost < best_cost:
+            best_cost = cost
+            best_pose = trial
+    return best_pose
+
+
 def _kabsch_embedding(
     metal_complex,
     new_complex,
@@ -927,6 +1062,7 @@ def _kabsch_embedding(
     atom_d_criteria,
     ratio_criteria,
     adj_ratio_criteria,
+    greedy=False,
 ):
     """Independent-build + rigid-placement embed for ``option=3`` (see module note).
 
@@ -953,65 +1089,72 @@ def _kabsch_embedding(
     if seed is None:
         seed = random.randint(0, 1000000)
 
-    for i, ligand in enumerate(new_complex.ligands):
-        P = _embed_free_ligand(ligand, seed + i)
-        if P is None:
-            return None
-        global_indices = atom_indices_for_each_ligand[i]
-        atom_list = ligand.molecule.atom_list
-        binding_infos = ligand.binding_infos
-        axis_info = None
+    ligands = list(new_complex.ligands)
 
-        if len(binding_infos) == 1 and len(binding_infos[0][0]) == 1:
-            # Monodentate single donor.
-            donor_local = binding_infos[0][0][0]
-            slot = binding_infos[0][1]
-            v_slot = _unit(direction_vector[slot - 1])
-            bond_len = (metal_r + atom_list[donor_local].get_radius()) * scale
-            adj_matrix = ligand.get_adj_matrix()
-            neighbor_locals = np.where(adj_matrix[donor_local, :] == 1)[0]
-            placed = _place_monodentate(P, donor_local, neighbor_locals, v_slot, bond_len)
-            axis_info = (v_slot * bond_len, v_slot)
-        elif len(binding_infos) == 1 and len(binding_infos[0][0]) > 1:
-            # Haptic (eta) face.
-            face_locals = binding_infos[0][0]
-            slot = binding_infos[0][1]
-            v_slot = _unit(direction_vector[slot - 1])
-            atom_r = atom_list[face_locals[0]].get_radius()
-            # ligand.winding (SL2) drives deterministic winding construction; None
-            # on the default path keeps _place_haptic byte-identical.
-            placed = _place_haptic(
-                P, face_locals, v_slot, metal_r, atom_r, scale, winding=ligand.winding
+    if not greedy:
+        # Independent placement in parse order (byte-identical option=3 / A4 path).
+        for i, ligand in enumerate(ligands):
+            P = _embed_free_ligand(ligand, seed + i)
+            if P is None:
+                return None
+            global_indices = atom_indices_for_each_ligand[i]
+            placed, axis_info = _place_one_ligand(
+                ligand, P, direction_vector, metal_r, scale, greedy=False
             )
-        else:
-            # Polydentate chelate: one donor per binding_info (first face atom if a
-            # haptic arm ever appears inside a chelate).
-            donor_locals = [bi[0][0] for bi in binding_infos]
-            slots = [bi[1] for bi in binding_infos]
-            slot_vectors = [_unit(direction_vector[s - 1]) for s in slots]
-            bond_lens = [(metal_r + atom_list[dl].get_radius()) * scale for dl in donor_locals]
-            placed = _place_chelate(P, donor_locals, slot_vectors, bond_lens)
-            logger.debug(
-                "kabsch chelate bite residual: %.3f",
-                _bite_residual(placed, donor_locals, slot_vectors, bond_lens),
+            for j, g in enumerate(global_indices):
+                positions[g] = placed[j]
+            ligand_axes.append((list(global_indices), axis_info))
+        positions[metal_index] = np.array([0.0, 0.0, 0.0])
+        # Phase 3 -- guarded torsional packing (only kept if it lowers clash).
+        positions = _pack_ligands(positions, ligand_axes, metal_index)
+    else:
+        # Greedy: difficulty-ordered, collision-aware sequential placement (SL3).
+        # Pre-embed every ligand FIRST, seeded by its ORIGINAL index so the free
+        # conformer -- and thus byte-level reproducibility -- is independent of the
+        # placement order we are about to choose.
+        free_coords = []
+        for i, ligand in enumerate(ligands):
+            P = _embed_free_ligand(ligand, seed + i)
+            if P is None:
+                return None
+            free_coords.append(P)
+        order = sorted(
+            range(len(ligands)),
+            key=lambda i: _ligand_difficulty_key(ligands[i], free_coords[i]),
+        )
+        # Metal anchors the origin first; each ligand is then placed into the space
+        # the higher-priority ligands already occupy, and the committed prefix is
+        # re-settled so earlier ligands can yield to the newcomer. Atoms are always
+        # written to their canonical global indices, so metal-first / slot ordering
+        # is preserved -- only the *iteration* order changes.
+        positions[metal_index] = np.array([0.0, 0.0, 0.0])
+        committed_indices = [metal_index]
+        committed_axes = []
+        for i in order:
+            ligand = ligands[i]
+            global_indices = atom_indices_for_each_ligand[i]
+            placed, axis_info = _place_one_ligand(
+                ligand, free_coords[i], direction_vector, metal_r, scale, greedy=True
             )
-            # A bidentate can be de-clashed by rotating its body about the line
-            # through its two donors -- that keeps BOTH donors on their slots (they
-            # lie on the axis) while swinging the ligand out of a neighbour. Denticity
-            # >2 has no such donor-preserving axis, so it is left to the FF.
-            if len(donor_locals) == 2:
-                d1 = placed[donor_locals[0]]
-                d2 = placed[donor_locals[1]]
-                axis_info = (d1, d2 - d1)
-
-        for j, g in enumerate(global_indices):
-            positions[g] = placed[j]
-        ligand_axes.append((list(global_indices), axis_info))
-
-    positions[metal_index] = np.array([0.0, 0.0, 0.0])
-
-    # Phase 3 -- guarded torsional packing (only kept if it lowers clash).
-    positions = _pack_ligands(positions, ligand_axes, metal_index)
+            placed = _place_ligand_collision_aware(
+                placed, axis_info, positions, committed_indices
+            )
+            for j, g in enumerate(global_indices):
+                positions[g] = placed[j]
+            committed_indices.extend(global_indices)
+            committed_axes.append((list(global_indices), axis_info))
+            ligand_axes.append((list(global_indices), axis_info))
+            # Guarded between-placement settle of the committed prefix only (the
+            # not-yet-placed atoms still sit at the origin, so score on the prefix).
+            positions = _pack_ligands(
+                positions,
+                committed_axes,
+                metal_index,
+                n_passes=1,
+                score_indices=committed_indices,
+            )
+        # Final guarded torsional packing over the whole assembled complex.
+        positions = _pack_ligands(positions, ligand_axes, metal_index)
 
     good, candidate = _finalize_positions(
         positions,
@@ -1031,7 +1174,14 @@ def _kabsch_embedding(
 
 
 def get_embedding(
-    metal_complex, scale=1.0, option=0, align=False, use_random=True, seed=None, alt_cache=None
+    metal_complex,
+    scale=1.0,
+    option=0,
+    align=False,
+    use_random=True,
+    seed=None,
+    alt_cache=None,
+    greedy=False,
 ):
     """Return the embedding.
 
@@ -1064,6 +1214,7 @@ def get_embedding(
             atom_d_criteria,
             ratio_criteria,
             adj_ratio_criteria,
+            greedy=greedy,
         )
 
     # new_complex gives the geometry ... (metal complex remains no change)

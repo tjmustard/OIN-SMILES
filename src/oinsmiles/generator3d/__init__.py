@@ -188,6 +188,17 @@ def _stereo_targets_satisfied(positions, targets):
     return True
 
 
+def _greedy_enabled(ff_params):
+    """SL3 greedy-placement gate: ``ff_params["greedy"]`` or ``OIN_GREEDY_PLACEMENT``.
+
+    Default OFF -> the embed pool is byte-identical to pristine. Mirrors the
+    ``_oin_direct_enabled`` (SL2) / ``clash.VDW_ACCEPTANCE_ENABLED`` env+flag pattern.
+    """
+    return bool(ff_params and ff_params.get("greedy")) or (
+        os.environ.get("OIN_GREEDY_PLACEMENT", "0") != "0"
+    )
+
+
 def generate_3d_structures(
     m_smiles,
     num_conformers=1,
@@ -266,6 +277,7 @@ def generate_3d_structures(
             "kabsch_only",
             "embed_no_progress_attempts",
             "oin_direct",
+            "greedy",
         )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
@@ -278,6 +290,15 @@ def generate_3d_structures(
             options = [3]
         elif ff_params.get("use_kabsch"):
             options = [0, 1, 2, 3]
+    # SL3 greedy placement (opt-in via OIN_GREEDY_PLACEMENT / ff_params["greedy"],
+    # default OFF -> byte-identical). Greedy is a *variant of the kabsch embed*
+    # (option 3), so enabling it ensures option 3 is in the pool; by default it
+    # enters COMPETITIVELY alongside the DG embeds ([0,1,2,3]) and the existing
+    # clash-ranked pool selection keeps it only when it wins. kabsch_only/use_kabsch
+    # still shape the pool as before -- greedy just changes how option 3 places.
+    greedy_enabled = _greedy_enabled(ff_params)
+    if greedy_enabled and 3 not in options:
+        options = options + [3]
     scales = [0.8, 0.9, 1.0, 1.1, 1.2]
 
     # Target number of initial structures to generate
@@ -443,6 +464,7 @@ def generate_3d_structures(
                     align=True,
                     seed=seed + i * 1009,
                     alt_cache=alt_cache,
+                    greedy=greedy_enabled,
                 )
                 had_nonstructural_embed = True  # got past sanitization (positions or None)
             except _STRUCTURAL_EMBED_ERRORS as e:
@@ -535,6 +557,7 @@ def generate_3d_structures(
                         align=True,
                         seed=seed + i * 1009,
                         alt_cache=alt_cache,
+                        greedy=greedy_enabled,
                     )
                     had_nonstructural_embed = True  # got past sanitization
                 except _STRUCTURAL_EMBED_ERRORS as e:
