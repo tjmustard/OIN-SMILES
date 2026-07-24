@@ -114,8 +114,11 @@ def main() -> None:
         if (i + 1) % 200 == 0:
             print(f"  ...{i + 1}/{len(targets)} done", flush=True)
 
-    print(f"\nchecked={len(targets)}  identical={identical}  "
-          f"DIFFERENT={diffs}  now_fail={now_fail}  errors={errors}", flush=True)
+    print(
+        f"\nchecked={len(targets)}  identical={identical}  "
+        f"DIFFERENT={diffs}  now_fail={now_fail}  errors={errors}",
+        flush=True,
+    )
     if diff_list:
         print("REGRESSION (OIN changed):", ", ".join(diff_list[:40]), flush=True)
     if fail_list:

@@ -27,12 +27,54 @@ import traceback
 
 # The 48-molecule encode_fail cohort frozen in spec/handoffs/v0.4.4/BASELINE.md.
 COHORT = [
-    "ASISAX", "AVOFIB", "BEKLUA", "BEKMIP", "BENVOG", "CAKBEW", "CAKBOG", "COZCEZ",
-    "FAQYUU", "GANYEZ", "GOHWOQ", "HAXJAS", "HAXJOG", "HICLAG", "HOCVAY", "HOHKUL",
-    "HUCNAU", "ICEZIC", "JABGAX", "JAFMIP", "JAFTAO", "JAFTES", "KAXVOX", "KAXWAK",
-    "KEMTED", "KESWUB", "LEZWAO", "MAFSIY", "MODZUA", "NAKLET", "OZAREO", "PAQBOZ",
-    "PAQCAM", "PAYTUH", "RANCIU", "RANMUR", "RAWJEG", "RIWKAK", "RIWKEO", "RONPES",
-    "RONQET", "RONQOD", "RULBUV", "ULODUU", "WEFZAL", "XUKRIF", "YIBZIV", "YIVLAQ",
+    "ASISAX",
+    "AVOFIB",
+    "BEKLUA",
+    "BEKMIP",
+    "BENVOG",
+    "CAKBEW",
+    "CAKBOG",
+    "COZCEZ",
+    "FAQYUU",
+    "GANYEZ",
+    "GOHWOQ",
+    "HAXJAS",
+    "HAXJOG",
+    "HICLAG",
+    "HOCVAY",
+    "HOHKUL",
+    "HUCNAU",
+    "ICEZIC",
+    "JABGAX",
+    "JAFMIP",
+    "JAFTAO",
+    "JAFTES",
+    "KAXVOX",
+    "KAXWAK",
+    "KEMTED",
+    "KESWUB",
+    "LEZWAO",
+    "MAFSIY",
+    "MODZUA",
+    "NAKLET",
+    "OZAREO",
+    "PAQBOZ",
+    "PAQCAM",
+    "PAYTUH",
+    "RANCIU",
+    "RANMUR",
+    "RAWJEG",
+    "RIWKAK",
+    "RIWKEO",
+    "RONPES",
+    "RONQET",
+    "RONQOD",
+    "RULBUV",
+    "ULODUU",
+    "WEFZAL",
+    "XUKRIF",
+    "YIBZIV",
+    "YIVLAQ",
 ]
 
 PER_MOL_TIMEOUT_S = 90
@@ -111,21 +153,37 @@ def drive(dataset_dir: str, out_stem: str) -> None:
         path = find_xyz(mol, dataset_dir)
         nB = boron_count(path) if path else 0
         cmd = [
-            sys.executable, os.path.abspath(__file__),
-            "--worker", mol, "--dataset-dir", dataset_dir,
+            sys.executable,
+            os.path.abspath(__file__),
+            "--worker",
+            mol,
+            "--dataset-dir",
+            dataset_dir,
         ]
         env = dict(os.environ)
         try:
             proc = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=PER_MOL_TIMEOUT_S, env=env,
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=PER_MOL_TIMEOUT_S,
+                env=env,
             )
             line = next(
-                (ln for ln in proc.stdout.splitlines() if ln.startswith("{")), None,
+                (ln for ln in proc.stdout.splitlines() if ln.startswith("{")),
+                None,
             )
-            rec = json.loads(line) if line else {
-                "mol": mol, "status": "FAIL", "etype": "NoOutput",
-                "loc": "?", "msg": (proc.stderr[-200:] or "no json line"),
-            }
+            rec = (
+                json.loads(line)
+                if line
+                else {
+                    "mol": mol,
+                    "status": "FAIL",
+                    "etype": "NoOutput",
+                    "loc": "?",
+                    "msg": (proc.stderr[-200:] or "no json line"),
+                }
+            )
         except subprocess.TimeoutExpired:
             rec = {"mol": mol, "status": "TIMEOUT"}
         rec["nB"] = nB
@@ -150,9 +208,7 @@ def drive(dataset_dir: str, out_stem: str) -> None:
     for r in sorted(results, key=lambda r: (r["bucket"], r["mol"])):
         detail = r.get("oin", "") if r["status"] == "OK" else r.get("msg", r["status"])
         detail = str(detail)[:80].replace("|", r"\|")
-        lines.append(
-            f"| {r['mol']} | {r['nB']} | `{r['bucket']}` | {r['status']} | {detail} |"
-        )
+        lines.append(f"| {r['mol']} | {r['nB']} | `{r['bucket']}` | {r['status']} | {detail} |")
     with open(f"{out_stem}.md", "w") as fh:
         fh.write("\n".join(lines) + "\n")
 

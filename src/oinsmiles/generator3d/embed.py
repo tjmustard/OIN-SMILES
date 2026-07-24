@@ -1136,9 +1136,7 @@ def _kabsch_embedding(
             placed, axis_info = _place_one_ligand(
                 ligand, free_coords[i], direction_vector, metal_r, scale, greedy=True
             )
-            placed = _place_ligand_collision_aware(
-                placed, axis_info, positions, committed_indices
-            )
+            placed = _place_ligand_collision_aware(placed, axis_info, positions, committed_indices)
             for j, g in enumerate(global_indices):
                 positions[g] = placed[j]
             committed_indices.extend(global_indices)

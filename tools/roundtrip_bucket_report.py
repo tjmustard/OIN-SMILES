@@ -190,9 +190,7 @@ def build_report(rows, indiv_dir):
 
     elapsed_all = [r["elapsed_s"] for r in results if isinstance(r["elapsed_s"], (int, float))]
     elapsed_eta = [
-        r["elapsed_s"]
-        for r in results
-        if r["eta"] and isinstance(r["elapsed_s"], (int, float))
+        r["elapsed_s"] for r in results if r["eta"] and isinstance(r["elapsed_s"], (int, float))
     ]
 
     lines = [

@@ -77,7 +77,9 @@ class TestDifficultyOrdering(unittest.TestCase):
     def test_bulkier_monodentate_sorts_before_smaller(self):
         big = _FakeLigand([([0], 1)], 6)
         small = _FakeLigand([([0], 1)], 2)
-        big_coords = np.array([[0, 0, 0], [2, 0, 0], [0, 2, 0], [0, 0, 2], [2, 2, 0], [1, 1, 2]], float)
+        big_coords = np.array(
+            [[0, 0, 0], [2, 0, 0], [0, 2, 0], [0, 0, 2], [2, 2, 0], [1, 1, 2]], float
+        )
         small_coords = np.array([[0, 0, 0], [0.3, 0, 0]], float)
         order = sorted(
             [small, big],
@@ -91,8 +93,7 @@ class TestGreedyPlacement(unittest.TestCase):
 
     CISPLATIN = "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
     FERROCENE = (
-        "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1"
-        ".[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
     )
     EN_CHELATE = "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}CCN{3}"
 

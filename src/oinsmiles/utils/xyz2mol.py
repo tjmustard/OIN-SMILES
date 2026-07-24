@@ -387,9 +387,7 @@ def _resonance_candidates_isolated(lig_mol, cpu_budget=None):
             resource.setrlimit(resource.RLIMIT_CPU, (cpu_budget, cpu_budget + 2))
             Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
             forms = _enumerate_resonance_inline(lig_mol)
-            payload = pickle.dumps(
-                [m.ToBinary() for m in forms], protocol=pickle.HIGHEST_PROTOCOL
-            )
+            payload = pickle.dumps([m.ToBinary() for m in forms], protocol=pickle.HIGHEST_PROTOCOL)
             with os.fdopen(w_fd, "wb") as w:
                 w.write(payload)
         except BaseException:

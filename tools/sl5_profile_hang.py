@@ -53,8 +53,7 @@ def main() -> None:
         print(f"{args.mol}: OK in {time.monotonic() - t0:.1f}s -> {oin[:60]}", flush=True)
     except Exception as e:  # noqa: BLE001
         print(
-            f"{args.mol}: {type(e).__name__} in {time.monotonic() - t0:.1f}s -> "
-            f"{str(e)[:120]}",
+            f"{args.mol}: {type(e).__name__} in {time.monotonic() - t0:.1f}s -> {str(e)[:120]}",
             flush=True,
         )
     finally:

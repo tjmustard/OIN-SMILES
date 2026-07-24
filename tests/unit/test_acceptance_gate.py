@@ -36,9 +36,7 @@ SEED = 42
 
 CISPLATIN = "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 TRANSPLATIN = "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}"
-FERROCENE = (
-    "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
-)
+FERROCENE = "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
 
 
 def _roundtrip_key(oin_string):
@@ -148,9 +146,7 @@ class TestEarlyExitKeyExact(unittest.TestCase):
                 self.assertIsNotNone(gen_on.mol, f"{name}: early-exit returned no bonded mol")
                 key_in = _roundtrip_key(oin)
                 key_on = _roundtrip_key(_reencode(gen_on.mol, gen_on.xyz))
-                self.assertEqual(
-                    key_in, key_on, f"{name}: early-exit conformer is not key-exact"
-                )
+                self.assertEqual(key_in, key_on, f"{name}: early-exit conformer is not key-exact")
                 # Never MORE attempts than the full-pool path.
                 self.assertLessEqual(
                     on.count, off.count, f"{name}: early-exit used more embeds than full-pool"
@@ -172,9 +168,9 @@ class TestEarlyExitKeyExact(unittest.TestCase):
             with _CountEmbeds() as dflt:
                 OIN3DGenerator(optimizer="ff", seed=SEED).generate(oin)
             with _CountEmbeds() as off:
-                OIN3DGenerator(
-                    optimizer="ff", seed=SEED, ff_params={"early_exit": False}
-                ).generate(oin)
+                OIN3DGenerator(optimizer="ff", seed=SEED, ff_params={"early_exit": False}).generate(
+                    oin
+                )
             total_default += dflt.count
             total_off += off.count
         self.assertLess(

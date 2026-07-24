@@ -102,7 +102,9 @@ class TestStretchedBondCount(unittest.TestCase):
         self.assertEqual(clash_vdw, 1, "the non-bonded 2-3 pair is the only vdW clash")
 
         # Complementarity: the stretched bond alone has no clash; the clash alone has no stretch.
-        stretch_only = clash.stretched_bond_count(positions[:2], atomic_numbers[:2], [[0, 1], [1, 0]])
+        stretch_only = clash.stretched_bond_count(
+            positions[:2], atomic_numbers[:2], [[0, 1], [1, 0]]
+        )
         clash_only, _s, _w = clash.vdw_clash_count(positions[:2], atomic_numbers[:2])
         self.assertEqual((stretch_only[0], clash_only), (1, 0))
 
