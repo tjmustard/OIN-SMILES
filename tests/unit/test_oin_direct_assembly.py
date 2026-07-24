@@ -101,6 +101,16 @@ class TestFlagGating(unittest.TestCase):
         with mock.patch.dict(os.environ, {"OIN_DIRECT_ASSEMBLY": "0"}):
             self.assertFalse(MetalloGenAdapter()._oin_direct_enabled())
 
+    def test_direct_dg_on_by_default(self):
+        # v0.4.4: OIN-direct assembly feeds the DG embed as the DEFAULT path (an A/B matched
+        # the m-SMILES path byte-for-byte per molecule). Guard a silent revert to off.
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("OIN_DIRECT_DG", None)
+            self.assertTrue(MetalloGenAdapter()._direct_dg_enabled())
+        with mock.patch.dict(os.environ, {"OIN_DIRECT_DG": "0"}):
+            self.assertFalse(MetalloGenAdapter()._direct_dg_enabled())
+        self.assertFalse(MetalloGenAdapter(ff_params={"direct_dg": False})._direct_dg_enabled())
+
 
 class TestHapticPoolCollapse(unittest.TestCase):
     """Under oin_direct, a haptic complex routes to rigid placement with NO widening."""

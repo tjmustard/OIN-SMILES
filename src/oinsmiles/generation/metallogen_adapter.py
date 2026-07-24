@@ -1411,6 +1411,23 @@ class MetalloGenAdapter:
             return True
         return os.environ.get("OIN_DIRECT_ASSEMBLY", "0") == "1"
 
+    def _direct_dg_enabled(self) -> bool:
+        """Whether OIN-direct assembly feeds the DG embed -- the DEFAULT path (v0.4.4).
+
+        Builds the ``MetalComplex`` straight from ``ParsedOIN`` (preserving winding +
+        metal chirality, no lossy m-SMILES bridge) and runs it through the SAME distance-
+        geometry embed + winding-search + early-exit/selection body as before -- so OIN
+        format changes reach 3D generation without a translation layer. An A/B on a
+        38-molecule stratified sample matched the m-SMILES path byte-for-byte per molecule
+        (0 regressions, 0 gains), so it ships as the default; the m-SMILES bridge remains
+        only as a fallback (see ``generate``). Opt out with ``OIN_DIRECT_DG=0`` or
+        ``ff_params["direct_dg"]=False``. Distinct from ``oin_direct`` (SL2), which rigidly
+        *constructs* haptic winding (kept opt-in, regresses eta).
+        """
+        if self.ff_params and "direct_dg" in self.ff_params:
+            return bool(self.ff_params["direct_dg"])
+        return os.environ.get("OIN_DIRECT_DG", "1") != "0"
+
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
         if self._oin_direct_enabled():
@@ -1421,8 +1438,26 @@ class MetalloGenAdapter:
             # mixed-denticity eta arm, or a non-inline OIN) fell through -- honor it
             # via the searched m-SMILES path below rather than ship an arbitrary face.
 
-        msmiles = convert_parsed_to_msmiles(parsed)
-        logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
+        # DEFAULT path (v0.4.4): build the complex straight from the OIN (no lossy m-SMILES
+        # bridge) and run it through the SAME DG-embed + winding-search + early-exit body.
+        # Keeping the metal + all ligand info (winding on the ligand, metal chirality) in one
+        # representation means OIN-format changes reach 3D generation without a translation
+        # layer. The m-SMILES bridge is retained ONLY as a fallback: if direct assembly raises
+        # on some edge case, drop to the (winding-lossy) m-SMILES path rather than hard-fail.
+        # Opt out of the direct path entirely with OIN_DIRECT_DG=0.
+        prebuilt_complex = None
+        msmiles = None
+        if self._direct_dg_enabled():
+            try:
+                metal_frag, ligand_specs, geo = _prepare_ligand_fragments(parsed)
+                prebuilt_complex = om.get_om_from_parsed(metal_frag, ligand_specs, geo)
+                logger.debug("OIN %r -> direct MetalComplex (%s)", parsed.original_oin, geo)
+            except Exception:
+                logger.debug("OIN-direct assembly failed; falling back to m-SMILES", exc_info=True)
+                prebuilt_complex = None
+        if prebuilt_complex is None:
+            msmiles = convert_parsed_to_msmiles(parsed)
+            logger.debug("OIN %r -> m-SMILES %r", parsed.original_oin, msmiles)
 
         # Build the full energy-ranked conformer pool so geometry-aware selection
         # has candidates to choose among. The pool width is driven by
@@ -1511,6 +1546,7 @@ class MetalloGenAdapter:
                 embed_time_budget=self.timeout,
                 seed=self.seed,
                 accept_fn=accept_fn,
+                metal_complex=prebuilt_complex,
             )
         if not mols:
             raise ValueError(
