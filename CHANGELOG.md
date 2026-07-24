@@ -5,6 +5,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-07-23
+
+An **accuracy + measurement** release, developed as six parallel worktree swimlanes (SL0–SL5)
+squash-merged to `main`, then a promote pass. Where v0.4.3 attacked structure *quality*, v0.4.4
+attacks round-trip *string accuracy* and the instrument used to measure it. The centerpiece is a
+**fac/mer-aware canonical round-trip key** (SL0) that distinguishes a genuine *fac*↔*mer* miss
+from benign slot-relabeling — turning "did it round-trip" from a brittle byte-compare into a
+symmetry-aware hash, and decomposing the accuracy gap into byte_exact / key_equal /
+facmer_divergent / structural / hard_fail / encode_fail buckets
+(`tools/roundtrip_bucket_report.py`). Two levers earned promotion to default on the worst-cohort
+A/B: **early-exit conformer acceptance** (accept the first conformer that re-encodes to the key —
+byte-exact 44.7% → 60.5%, ~5× faster, zero regressions) and **OIN-direct assembly** (build the
+internal complex straight from the parsed OIN, retiring the lossy m-SMILES bridge to a fallback —
+accuracy-neutral, and metal `@SPn` chirality now rides through the representation). Three other
+levers (rigid η-winding construction, greedy placement, stretched-bond metric) were measured,
+found net-negative or neutral, and **kept opt-in** — a third confirmation that *selection beats
+construction*. No OIN format-version change (still v3.7 inline). Full unit suite **488 → 551 OK /
+3 skip**; FF-path goldens round-trip byte-identically under the new defaults. See
+`docs/GENERATION_PIPELINE.md` for the full default pipeline and `docs/DIRECT_DG_VALIDATION.md` for
+the direct-assembly decision record.
+
+### Added
+- **fac/mer-aware canonical round-trip key** (`oin/compare.py::canonical_roundtrip_key`): a
+  symmetry-aware slot canonicalization that distinguishes *fac* from *mer* (and cis/trans) while
+  folding benign slot-relabeling, so a round-trip "pass" measures isomer identity rather than byte
+  equality. Paired with **`tools/roundtrip_bucket_report.py`**, which classifies every round-trip
+  into byte_exact / key_equal / facmer_divergent / structural / hard_fail / encode_fail. (SL0.)
+- **`docs/GENERATION_PIPELINE.md`**: a sectioned description of the full default OIN → 3D pipeline
+  (parse → direct assembly → distance-geometry embed → winding search → early-exit acceptance →
+  geometry selection) and how each stage is validated.
+- **Opt-in generation levers** (all OFF by default; success path byte-identical): direct-assembly
+  rigid η-winding construction (`OIN_DIRECT_ASSEMBLY` / `ff_params={"oin_direct": True}`, SL2),
+  difficulty-ordered collision-aware Kabsch greedy placement (SL3), a stretched-bond acceptance
+  metric (SL1), and a no-acceptance-progress embed cutoff (`OIN_EMBED_NO_PROGRESS`, SL4).
+
+### Changed
+- **Early-exit conformer acceptance is now ON by default** (`generator3d/__init__.py`,
+  `generation/metallogen_adapter.py`; opt out with `OIN_EARLY_EXIT=0` or
+  `ff_params={"early_exit": False}`). Generation stops at the first conformer that independently
+  re-encodes to the fac/mer key instead of exhausting the pool. On the worst-cohort A/B this lifted
+  byte-exact round-trip **44.7% → 60.5%** and key-match **55.3% → 73.7%** with **zero regressions**,
+  ~5× faster. (SL1 promote.)
+- **OIN-direct assembly is now the default generation path** (`generation/metallogen_adapter.py`;
+  opt out with `OIN_DIRECT_DG=0` or `ff_params={"direct_dg": False}`). The internal `MetalComplex`
+  is built directly from the parsed OIN via `om.get_om_from_parsed`, retiring the winding-lossy
+  m-SMILES bridge (`convert_parsed_to_msmiles`) to a **fallback** used only if direct assembly
+  raises. Proven accuracy-neutral twice (0 regressions / 0 gains / identical buckets on a
+  38-molecule stratified A/B and a confirmation A/B); metal `@SPn` chirality now survives into 3D
+  generation. (direct-dg promote; `docs/DIRECT_DG_VALIDATION.md`.)
+- **The round-trip harness demotes RMSD to a diagnostic** (`tools/test_dataset_roundtrip.py`): a
+  string-exact round trip that only exceeds the coordination-sphere RMSD gate is now a **success**
+  carrying an `rmsd_over_gate` diagnostic (RMSD is only ~0.22-correlated with geometric quality),
+  reclaiming 51 of 306 hard-fail molecules (28 directly attributable to the demote) with no
+  regression to the passing middle. (SL4; `docs/RELIABILITY_v0.4.4_SL4.md`.)
+
+### Fixed
+- **Electron-deficient boron clusters now fail with a typed, classified error** (`utils/xyz2mol.py`,
+  `core/translator.py`): a carborane / closo-nido borane cage (≥3 borons with a B–B bond) that RDKit
+  cannot perceive into a Lewis structure now raises a typed **`OINEncodeError`** naming the cause
+  instead of returning `None`, so a known encode ceiling is distinguishable from an unexpected
+  failure. `OINEncodeError` subclasses `ValueError`, so existing handlers are unaffected. Classifies
+  34 of the 48 capstone `encode_fail` molecules. (SL5; `docs/ENCODER_ROBUSTNESS_v0.4.4_SL5.md`.)
+- **xyz2mol perception hangs on large conjugated ligands bounded and recovered**
+  (`utils/xyz2mol_local.py`, `utils/xyz2mol.py`): the `AC2BO` valence-combination sort is now capped
+  (`_VALENCE_COMBO_CAP`), and the `ResonanceMolSupplier` enumeration runs in a **forked,
+  CPU-time-bounded child** (`RLIMIT_CPU`) — a completer returns its true resonance form
+  byte-identically, while a genuine hang is killed and degrades to the single form, recovering
+  previously-unencodable molecules (e.g. `BENVOG`, `HUCNAU`) without changing any currently-encodable
+  OIN. (SL5.)
+
 ## [0.4.3] - 2026-07-21
 
 A **structure-quality + conformer-invariance** release, developed as nine parallel worktree
