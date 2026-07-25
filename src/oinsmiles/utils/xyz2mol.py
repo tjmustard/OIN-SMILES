@@ -476,7 +476,39 @@ def lig_checks(lig_mol, coordinating_atoms):
                 negative_atoms.append(a.GetIdx())
 
         possible_lig_mols.append((res_mol, len(positive_atoms), len(negative_atoms), N_aromatic))
+
+    # v0.4.5 Lane 1 (opt-in, OIN_CANONICAL_PERCEPTION): put the candidates in a canonical
+    # order. Every consumer of this list -- `_select_lig_mol`'s three accumulate loops and
+    # `_rescue_unusable_perception`'s `max` -- selects on (most aromatic, fewest formal
+    # charges) and resolves a TIE by taking whichever candidate came FIRST. First is
+    # currently ResonanceMolSupplier's enumeration order, which depends on the input atom
+    # numbering, so permuting the atoms in the XYZ file silently picks a different
+    # resonance form: an amidinate flips `N=C(N-)` to `N-C(=N)`, a 2-iminopyridine flips
+    # its C=N. That is the single largest source of `rdkit_canonical` drift the
+    # rotation/renumbering probe finds, and it changes the comparison KEY, not merely the
+    # string. Sorting here fixes every consumer at once and changes no selection LOGIC --
+    # only which member of an exact tie wins, and now that is decided by the candidate's
+    # own canonical SMILES rather than by atom numbering.
+    if os.environ.get("OIN_CANONICAL_PERCEPTION"):
+        possible_lig_mols.sort(key=_resonance_candidate_key)
     return possible_lig_mols
+
+
+def _resonance_candidate_key(item):
+    """Total order on ``lig_checks`` candidates: most aromatic, fewest charges, then form.
+
+    The first two components restate the preference every consumer already applies, so
+    sorting cannot change which candidate wins on the merits. The third is the tie-break
+    that replaces "whatever the supplier yielded first": the candidate's own canonical
+    SMILES, which is a property of the molecule rather than of the input file. A form RDKit
+    cannot write sorts last, so it can never win a tie by being unwritable.
+    """
+    res_mol, n_pos, n_neg, n_aromatic = item
+    try:
+        form = Chem.MolToSmiles(Chem.Mol(res_mol))
+    except Exception:
+        form = "￿"
+    return (-n_aromatic, n_pos + n_neg, form)
 
 
 def _perception_is_usable(candidate):
