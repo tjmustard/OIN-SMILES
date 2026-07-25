@@ -56,6 +56,15 @@ def default_probe_set() -> list[TwinProbe]:
         TwinProbe("fac-Ir(ppy)3", str(fx / "fac-Ir(ppy)3.xyz"), "metal Δ/Λ"),
         TwinProbe("PdCl2-R-BINAP", str(fx / "PdCl2-R-BINAP.xyz"), "axial (atropisomer)"),
         TwinProbe("POJJOP (metal-bound 2° amine)", str(fx / "POJJOP.xyz"), "amine flip R→S (P3)"),
+        # Lane 7 / Task 0: the two metal-stereo fixtures Lane 5 is validated against.
+        # ZUMNEC is a homoleptic tris-bidentate with SYMMETRY-EQUIVALENT donors, so metal
+        # helicity is its sole stereogenic element -- fac-Ir(ppy)3 cannot catch a descriptor
+        # that encodes fac/mer instead of Δ/Λ, and this one can.
+        TwinProbe("ZUMNEC (Δ/Λ tris-bidentate)", str(fx / "ZUMNEC.xyz"), "metal Δ/Λ (symmetric)"),
+        # JEGKOW exercises @SP, not @OH. Its mirror is correctly NOT distinct (a square-planar
+        # complex is planar, hence achiral); the probe below is therefore an invariance
+        # control, and @SP isomerism is probed by ``swap_donor`` instead.
+        TwinProbe("JEGKOW (4-donor square planar)", str(fx / "JEGKOW.xyz"), "none (SP achiral)"),
         # probe swimlanes drop additional fixtures here as they land.
     ]
     return [p for p in candidates if Path(p.xyz_path).exists()]
