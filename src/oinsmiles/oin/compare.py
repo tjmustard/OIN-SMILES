@@ -130,6 +130,15 @@ def _canonical_fragment_smiles(smiles: str) -> str:
         return "RAW:" + smiles
 
 
+#: Public name for "the canonical form of one slot-stripped ligand body".
+#:
+#: v0.4.5 Lane 1 promotes this exact form into the encoder (``oin.canonical_body``), and
+#: Lane 2 uses it as the vertex *color* it minimizes the slot permutation over. All three
+#: consumers must agree by construction, so they share one implementation rather than
+#: three copies. The private name is kept for this module's own call sites.
+canonical_fragment_body = _canonical_fragment_smiles
+
+
 def _chelate_locked_fragment_key(frag: str) -> str:
     """Canonical fragment key that clears E/Z on metal-chelate-locked bonds.
 
