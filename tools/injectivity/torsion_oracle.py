@@ -459,7 +459,9 @@ def configurational_verdict(
 
     root = int(np.argmax([a.GetAtomicNum() for a in mol.GetAtoms()]))  # heaviest atom
     tors = rotatable_torsions(mol, root)
-    budget = restarts * max(1, sweeps) * max(1, len(tors)) * (grid + 4)
+    # +3 starts that are not random: the undeformed structure and the two signs of the
+    # dihedral-negating seed. Counted so the reported budget is not an under-report.
+    budget = (restarts + 3) * max(1, sweeps) * max(1, len(tors)) * (grid + 4)
 
     if rigid <= threshold:
         return TorsionVerdict(
