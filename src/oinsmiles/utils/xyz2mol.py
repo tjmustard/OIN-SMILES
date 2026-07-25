@@ -476,7 +476,39 @@ def lig_checks(lig_mol, coordinating_atoms):
                 negative_atoms.append(a.GetIdx())
 
         possible_lig_mols.append((res_mol, len(positive_atoms), len(negative_atoms), N_aromatic))
+
+    # v0.4.5 Lane 1 (opt-in, OIN_CANONICAL_PERCEPTION): put the candidates in a canonical
+    # order. Every consumer of this list -- `_select_lig_mol`'s three accumulate loops and
+    # `_rescue_unusable_perception`'s `max` -- selects on (most aromatic, fewest formal
+    # charges) and resolves a TIE by taking whichever candidate came FIRST. First is
+    # currently ResonanceMolSupplier's enumeration order, which depends on the input atom
+    # numbering, so permuting the atoms in the XYZ file silently picks a different
+    # resonance form: an amidinate flips `N=C(N-)` to `N-C(=N)`, a 2-iminopyridine flips
+    # its C=N. That is the single largest source of `rdkit_canonical` drift the
+    # rotation/renumbering probe finds, and it changes the comparison KEY, not merely the
+    # string. Sorting here fixes every consumer at once and changes no selection LOGIC --
+    # only which member of an exact tie wins, and now that is decided by the candidate's
+    # own canonical SMILES rather than by atom numbering.
+    if os.environ.get("OIN_CANONICAL_PERCEPTION"):
+        possible_lig_mols.sort(key=_resonance_candidate_key)
     return possible_lig_mols
+
+
+def _resonance_candidate_key(item):
+    """Total order on ``lig_checks`` candidates: most aromatic, fewest charges, then form.
+
+    The first two components restate the preference every consumer already applies, so
+    sorting cannot change which candidate wins on the merits. The third is the tie-break
+    that replaces "whatever the supplier yielded first": the candidate's own canonical
+    SMILES, which is a property of the molecule rather than of the input file. A form RDKit
+    cannot write sorts last, so it can never win a tie by being unwritable.
+    """
+    res_mol, n_pos, n_neg, n_aromatic = item
+    try:
+        form = Chem.MolToSmiles(Chem.Mol(res_mol))
+    except Exception:
+        form = chr(0xFFFF)  # sorts after every real SMILES
+    return (-n_aromatic, n_pos + n_neg, form)
 
 
 def _perception_is_usable(candidate):
@@ -1369,6 +1401,10 @@ def get_oin_string(tmc_mol, xyz_coords):
 
         sanitized_smiles = ""
         sanitized_mol = frag_mol  # Default fallback
+        # v0.4.5 Lane 1: donor -> SMILES-position map produced by the canonical-body
+        # reparse. None means the reparse did not run (flag off) or bailed, in which case
+        # the position map is derived from `sanitized_mol` exactly as before.
+        canonical_body_positions = None
         if not is_metal:
             sanitized_smiles, sanitized_mol = OINSanitizer.generate_robust_smiles(
                 frag_mol, frag_binding_indices_local
@@ -1379,6 +1415,22 @@ def get_oin_string(tmc_mol, xyz_coords):
             # canonical SMILES writes the '/' and '\' cis/trans markers.
             Chem.SetDoubleBondNeighborDirections(sanitized_mol)
             sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
+
+            # v0.4.5 Lane 1 (opt-in): canonicalize the ligand BODY. The graph perceived
+            # from 3D distances is not unique -- max_weight_matching picks one of several
+            # Kekule structures and AC2BO one of several resonance forms -- so two
+            # geometries of the same molecule serialize differently even though
+            # MolToSmiles is canonical for each. Round-trip the body through
+            # MolFromSmiles/MolToSmiles (the compare layer's own fix, promoted upstream)
+            # and clear chelate-locked E/Z. Slot identity is carried through the reparse
+            # by atom map number, never re-derived. Default OFF -> byte-identical output,
+            # and the module is not even imported.
+            if os.environ.get("OIN_CANONICAL_BODY"):
+                from ..oin.canonical_body import canonical_body_emit
+
+                _canon = canonical_body_emit(sanitized_mol, frag_binding_indices_local)
+                if _canon is not None:
+                    sanitized_smiles, canonical_body_positions, sanitized_mol = _canon
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 
@@ -1398,14 +1450,23 @@ def get_oin_string(tmc_mol, xyz_coords):
         # the deprotonated X-type carbon and the string drifts c{N} -> [cH]{N}.
         frag_to_smiles_idx = {}
         output_order = None
-        if sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder"):
+        if canonical_body_positions is None and (
+            sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder")
+        ):
             try:
                 raw = sanitized_mol.GetProp("_smilesAtomOutputOrder")
                 output_order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
             except Exception:
                 output_order = None
 
-        if output_order is not None:
+        if canonical_body_positions is not None:
+            # Lane 1 already carried each donor's identity through the reparse by atom map
+            # number and read the output order off the REPARSED mol, so its positions are
+            # authoritative -- and neither branch below may run, since both would rebuild
+            # the map from a mol whose output order describes the PRE-reparse string.
+            # Donors are the only keys, which is all the lookup below asks for.
+            frag_to_smiles_idx = dict(canonical_body_positions)
+        elif output_order is not None:
             # output_order[pos] = fragment-atom index emitted at SMILES position pos
             for s_idx, f_idx in enumerate(output_order):
                 frag_to_smiles_idx[f_idx] = s_idx

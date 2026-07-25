@@ -20,6 +20,7 @@ except ImportError:
     rdEHTTools = None
 
 import logging
+import os
 import sys
 from collections import defaultdict
 
@@ -680,7 +681,119 @@ def _ordered_valences(valences_list_of_lists, atoms):
     ]
 
 
+def _canonical_atom_permutation(AC, atoms):
+    """Canonical atom ordering of the connectivity graph, or ``None``.
+
+    Returns ``perm`` with ``perm[new_position] = old_index``: a total order on the atoms
+    that depends only on the *graph* (elements + adjacency), never on the order the atoms
+    happened to appear in the input file.
+
+    The order is taken from ``_smilesAtomOutputOrder`` after writing the all-single-bond
+    graph with ``MolToSmiles`` -- **not** from ``CanonicalRankAtoms(breakTies=True)``.
+    That distinction is load-bearing and was measured: over 20 random renumberings of
+    ``CC(N)=NC``, ``CanonicalRankAtoms(breakTies=True)`` returned a different ranking 18
+    times (it settles ties between symmetry-equivalent atoms on the input index), while
+    ``MolToSmiles`` returned one single string every time. The canonical *string* is the
+    invariant RDKit actually guarantees, so the write order is what to build on. Two atoms
+    swapped by a graph automorphism may still land in swapped positions, which is harmless:
+    the perceived bond orders then come out as the automorphic image, and the automorphic
+    image serializes to the same canonical SMILES.
+
+    Bond orders are deliberately not used: at this point in perception they do not exist
+    yet -- deciding them is what the caller is about to do. ``strict=False`` plus
+    ``FastFindRings`` keeps an over-valent transition metal (six single bonds to a d-block
+    centre) from failing the property cache.
+    """
+    try:
+        n = len(atoms)
+        if n == 0 or AC.shape[0] != n:
+            return None
+        rw = Chem.RWMol()
+        for z in atoms:
+            rw.AddAtom(Chem.Atom(int(z)))
+        for i in range(n):
+            for j in range(i + 1, n):
+                if AC[i, j]:
+                    rw.AddBond(i, j, Chem.BondType.SINGLE)
+        mol = rw.GetMol()
+        mol.UpdatePropertyCache(strict=False)
+        Chem.FastFindRings(mol)
+        Chem.MolToSmiles(mol)
+        raw = mol.GetProp("_smilesAtomOutputOrder")
+        perm = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
+        if sorted(perm) != list(range(n)):
+            return None  # not a total order -- refuse rather than guess
+        return perm
+    except Exception:
+        return None
+
+
 def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow_carbenes=True):
+    """Bond orders from atomic connectivity, optionally made renumbering-invariant.
+
+    ``_AC2BO_core`` returns, in its own words, "an arbitrary resonance form": it walks
+    candidate per-atom valence assignments and returns the **first** one that validates,
+    and both the walk order (``_ordered_valences`` -> ``itertools.product`` over per-atom
+    lists in *input index* order) and the Kekule double-bond placement inside it
+    (``get_UA_pairs`` -> ``nx.max_weight_matching``, whose result depends on the order
+    edges were inserted) are functions of the input atom numbering. Permuting the atoms in
+    the XYZ file therefore yields a genuinely different bond-order assignment for the same
+    molecule -- an amidinate flips ``N=C(N-)`` to ``N-C(=N)``, a dioxime flips to its
+    nitroso-enamine form -- and the emitted OIN string moves with it. Measured on the
+    rotation/renumbering probe, this is the dominant cause of ``rdkit_canonical`` drift,
+    and in about a fifth of drifting molecules it moves the comparison KEY too, not just
+    the string. Re-serializing cannot repair it: ``MolToSmiles`` is faithful to whichever
+    resonance form it is handed.
+
+    ``OIN_CANONICAL_PERCEPTION`` (default OFF -> byte-identical) closes it by conjugation:
+    relabel the atoms into a canonical order that depends only on the graph, do the whole
+    perception there, and map the result back. That makes **every** index-order dependence
+    inside the core -- the valence walk, the matching, the ``best_BO`` tie-break -- a
+    function of the canonical labelling instead of the input numbering, in one place,
+    rather than hardening each of them separately. Any failure falls through to the
+    un-permuted path, so behaviour is unchanged whenever the canonical order cannot be
+    computed.
+    """
+    if not os.environ.get("OIN_CANONICAL_PERCEPTION"):
+        return _AC2BO_core(
+            AC,
+            atoms,
+            charge,
+            allow_charged_fragments=allow_charged_fragments,
+            use_graph=use_graph,
+            allow_carbenes=allow_carbenes,
+        )
+
+    perm = _canonical_atom_permutation(AC, atoms)
+    if perm is None:
+        return _AC2BO_core(
+            AC,
+            atoms,
+            charge,
+            allow_charged_fragments=allow_charged_fragments,
+            use_graph=use_graph,
+            allow_carbenes=allow_carbenes,
+        )
+
+    idx = np.asarray(perm)
+    BO_c, atomic_valence_electrons_out = _AC2BO_core(
+        AC[np.ix_(idx, idx)],
+        [atoms[i] for i in perm],
+        charge,
+        allow_charged_fragments=allow_charged_fragments,
+        use_graph=use_graph,
+        allow_carbenes=allow_carbenes,
+    )
+    # atomic_valence_electrons is keyed by atomic NUMBER, not by atom index, so it needs
+    # no un-permuting; only the BO matrix does.
+    BO = np.zeros_like(BO_c)
+    BO[np.ix_(idx, idx)] = BO_c
+    return BO, atomic_valence_electrons_out
+
+
+def _AC2BO_core(
+    AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow_carbenes=True
+):
     """Implemenation of algorithm shown in Figure 2.
 
     UA: unsaturated atoms
