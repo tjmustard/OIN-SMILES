@@ -507,7 +507,7 @@ def _resonance_candidate_key(item):
     try:
         form = Chem.MolToSmiles(Chem.Mol(res_mol))
     except Exception:
-        form = "￿"
+        form = chr(0xFFFF)  # sorts after every real SMILES
     return (-n_aromatic, n_pos + n_neg, form)
 
 
