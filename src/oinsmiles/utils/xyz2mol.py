@@ -1369,6 +1369,10 @@ def get_oin_string(tmc_mol, xyz_coords):
 
         sanitized_smiles = ""
         sanitized_mol = frag_mol  # Default fallback
+        # v0.4.5 Lane 1: donor -> SMILES-position map produced by the canonical-body
+        # reparse. None means the reparse did not run (flag off) or bailed, in which case
+        # the position map is derived from `sanitized_mol` exactly as before.
+        canonical_body_positions = None
         if not is_metal:
             sanitized_smiles, sanitized_mol = OINSanitizer.generate_robust_smiles(
                 frag_mol, frag_binding_indices_local
@@ -1379,6 +1383,22 @@ def get_oin_string(tmc_mol, xyz_coords):
             # canonical SMILES writes the '/' and '\' cis/trans markers.
             Chem.SetDoubleBondNeighborDirections(sanitized_mol)
             sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
+
+            # v0.4.5 Lane 1 (opt-in): canonicalize the ligand BODY. The graph perceived
+            # from 3D distances is not unique -- max_weight_matching picks one of several
+            # Kekule structures and AC2BO one of several resonance forms -- so two
+            # geometries of the same molecule serialize differently even though
+            # MolToSmiles is canonical for each. Round-trip the body through
+            # MolFromSmiles/MolToSmiles (the compare layer's own fix, promoted upstream)
+            # and clear chelate-locked E/Z. Slot identity is carried through the reparse
+            # by atom map number, never re-derived. Default OFF -> byte-identical output,
+            # and the module is not even imported.
+            if os.environ.get("OIN_CANONICAL_BODY"):
+                from ..oin.canonical_body import canonical_body_emit
+
+                _canon = canonical_body_emit(sanitized_mol, frag_binding_indices_local)
+                if _canon is not None:
+                    sanitized_smiles, canonical_body_positions, sanitized_mol = _canon
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 
@@ -1398,14 +1418,23 @@ def get_oin_string(tmc_mol, xyz_coords):
         # the deprotonated X-type carbon and the string drifts c{N} -> [cH]{N}.
         frag_to_smiles_idx = {}
         output_order = None
-        if sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder"):
+        if canonical_body_positions is None and (
+            sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder")
+        ):
             try:
                 raw = sanitized_mol.GetProp("_smilesAtomOutputOrder")
                 output_order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
             except Exception:
                 output_order = None
 
-        if output_order is not None:
+        if canonical_body_positions is not None:
+            # Lane 1 already carried each donor's identity through the reparse by atom map
+            # number and read the output order off the REPARSED mol, so its positions are
+            # authoritative -- and neither branch below may run, since both would rebuild
+            # the map from a mol whose output order describes the PRE-reparse string.
+            # Donors are the only keys, which is all the lookup below asks for.
+            frag_to_smiles_idx = dict(canonical_body_positions)
+        elif output_order is not None:
             # output_order[pos] = fragment-atom index emitted at SMILES position pos
             for s_idx, f_idx in enumerate(output_order):
                 frag_to_smiles_idx[f_idx] = s_idx
