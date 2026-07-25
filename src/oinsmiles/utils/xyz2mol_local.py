@@ -11,6 +11,7 @@ Main implementation by Jan H. Jensen, based on the paper
 Modified by Maria Harris Rasmussen 2024
 """
 
+import contextlib
 import copy
 import itertools
 
@@ -681,6 +682,26 @@ def _ordered_valences(valences_list_of_lists, atoms):
     ]
 
 
+#: Process-local kill switch for ``OIN_CANONICAL_PERCEPTION``. ``get_tmc_mol`` sets it to
+#: retry an encode in input order after the canonical perception produced a molecule the
+#: encoder cannot use. Module-global rather than a parameter because the perception is
+#: reached through several layers of the vendored xyz2mol call chain; the encoder already
+#: forks for isolation where concurrency matters.
+_SUPPRESS_CANONICAL_PERCEPTION = False
+
+
+@contextlib.contextmanager
+def suppress_canonical_perception():
+    """Force input-order perception inside this block, whatever the env lever says."""
+    global _SUPPRESS_CANONICAL_PERCEPTION
+    previous = _SUPPRESS_CANONICAL_PERCEPTION
+    _SUPPRESS_CANONICAL_PERCEPTION = True
+    try:
+        yield
+    finally:
+        _SUPPRESS_CANONICAL_PERCEPTION = previous
+
+
 def _canonical_atom_permutation(AC, atoms):
     """Canonical atom ordering of the connectivity graph, or ``None``.
 
@@ -728,7 +749,45 @@ def _canonical_atom_permutation(AC, atoms):
         return None
 
 
-def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow_carbenes=True):
+def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
+    """Whether ``_AC2BO_core`` will cap its valence walk, making its answer order-sensitive.
+
+    Mirrors the per-atom ``possible_valence`` construction and the ``_VALENCE_COMBO_CAP``
+    test at the top of ``_AC2BO_core``, and reads nothing but ``(AC, atoms)`` -- so the
+    answer is the same however the atoms were numbered, which is what lets ``AC2BO`` use it
+    as a renumbering-invariant switch. Errs toward ``True`` (do not canonicalize) on
+    anything unexpected.
+    """
+    try:
+        combo = 1
+        for atomicNum, valence in zip(atoms, list(AC.sum(axis=1))):
+            possible = [x for x in atomic_valence[atomicNum] if x >= valence]
+            if atomicNum == 6 and valence == 1 and 2 in possible:
+                possible.remove(2)
+            if atomicNum == 6 and not allow_carbenes and valence == 2 and 2 in possible:
+                possible.remove(2)
+            if atomicNum == 6 and valence == 2:
+                possible.append(3)
+            if atomicNum == 16 and valence == 1:
+                possible = [1, 2]
+            if not possible:
+                return True
+            combo *= len(possible)
+            if combo > _VALENCE_COMBO_CAP:
+                return True
+        return False
+    except Exception:
+        return True
+
+
+def AC2BO(
+    AC,
+    atoms,
+    charge,
+    allow_charged_fragments=True,
+    use_graph=True,
+    allow_carbenes=True,
+):
     """Bond orders from atomic connectivity, optionally made renumbering-invariant.
 
     ``_AC2BO_core`` returns, in its own words, "an arbitrary resonance form": it walks
@@ -750,30 +809,46 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
     perception there, and map the result back. That makes **every** index-order dependence
     inside the core -- the valence walk, the matching, the ``best_BO`` tie-break -- a
     function of the canonical labelling instead of the input numbering, in one place,
-    rather than hardening each of them separately. Any failure falls through to the
-    un-permuted path, so behaviour is unchanged whenever the canonical order cannot be
-    computed.
+    rather than hardening each of them separately.
+
+    **Canonicality never outranks perception quality.** The core's valence walk is
+    *truncated* above ``_VALENCE_COMBO_CAP``: it tries only the first
+    ``_VALENCE_FALLBACK_TRIES`` members of an exponential product and returns ``best_BO``
+    if none validates. Which members those are depends on the atom order, so relabelling
+    can move a valid assignment out of the searched window. Those molecules keep the
+    un-permuted path, decided by ``_valence_search_is_truncated``, which reads only
+    ``(AC, atoms)`` and so is itself renumbering-invariant.
+
+    Even below the cap the walk can find a *different but equally valid* Lewis structure --
+    on ``tests/fixtures/AGUFEN.xyz`` (a PPN counter-cation) the canonical order drops the
+    total bond order 128 -> 126 and yields a pentavalent carbon that
+    ``kekulize_safe_sanitize`` rejects, turning a working encode into an ``OINEncodeError``.
+    ``utils.xyz2mol.get_tmc_mol`` catches that case: if the encode raises, it retries the
+    whole perception with ``suppress_canonical_perception()``. A right answer that drifts
+    beats a reproducible wrong one.
+
+    Both fallbacks are decided from the CANONICAL result alone, never by comparing it with
+    the un-permuted one. Comparing would silently re-import the order-dependence this
+    closes, since the un-permuted result is a function of the input numbering -- that was
+    tried, and it broke the ``NAXDOI`` invariance guard.
+
+    Any failure falls through to the un-permuted path, so behaviour is unchanged whenever
+    the canonical order cannot be computed.
     """
-    if not os.environ.get("OIN_CANONICAL_PERCEPTION"):
-        return _AC2BO_core(
-            AC,
-            atoms,
-            charge,
-            allow_charged_fragments=allow_charged_fragments,
-            use_graph=use_graph,
-            allow_carbenes=allow_carbenes,
-        )
+    plain = lambda: _AC2BO_core(  # noqa: E731
+        AC,
+        atoms,
+        charge,
+        allow_charged_fragments=allow_charged_fragments,
+        use_graph=use_graph,
+        allow_carbenes=allow_carbenes,
+    )
+    if _SUPPRESS_CANONICAL_PERCEPTION or not os.environ.get("OIN_CANONICAL_PERCEPTION"):
+        return plain()
 
     perm = _canonical_atom_permutation(AC, atoms)
-    if perm is None:
-        return _AC2BO_core(
-            AC,
-            atoms,
-            charge,
-            allow_charged_fragments=allow_charged_fragments,
-            use_graph=use_graph,
-            allow_carbenes=allow_carbenes,
-        )
+    if perm is None or _valence_search_is_truncated(AC, atoms, allow_carbenes):
+        return plain()
 
     idx = np.asarray(perm)
     BO_c, atomic_valence_electrons_out = _AC2BO_core(

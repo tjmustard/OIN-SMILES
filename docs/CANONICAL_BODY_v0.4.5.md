@@ -60,9 +60,28 @@ Under that instrument — 250 dataset molecules (248 encoded), 3 trials × 3 tra
 |---|---:|---:|---:|---:|---:|
 | levers off | 146 (58.87%) | 102 | 71 | 42 | **49** |
 | `OIN_CANONICAL_BODY` | 152 (61.29%) | 96 | 65 | 39 | **49** |
+| both levers | 156 (62.90%) | 92 | 58 | 40 | **41** |
 
-Molecule-by-molecule: **6 fixed, 0 regressed**. The reparse is strictly non-regressive but
-it fixes **zero** key-level defects.
+Molecule-by-molecule, against the levers-off arm:
+
+| | byte-stability | key |
+|---|---|---|
+| `OIN_CANONICAL_BODY` | 6 fixed, 0 regressed | **0 fixed, 0 broken** |
+| both levers | 10 fixed, 0 regressed | **9 fixed, 1 broken** (net −8) |
+
+The reparse is strictly non-regressive but fixes **zero** key-level defects. The perception
+lever is what repairs the key.
+
+The one new key-level break is `YOYBIY_comp_0`: for one numbering the canonical valence
+walk lands on an all-single-bond perception of a bis(pyridylamidine) ligand
+(`C1[CH][CH][CH][CH]N1` where the other numberings give `c1ccccn1`). It is usable, so the
+`get_tmc_mol` retry below does not catch it — the perception is not *broken*, just poor.
+Confirmed still present after the safety fixes.
+
+> The three-arm table was measured before the aromaticity guard and the `get_tmc_mol`
+> retry described in §3 landed. Both make the levers *more* conservative, so the direction
+> cannot reverse; spot re-checks on every molecule the fixes touch (`NAXDOI`, `AGUFEN`, the
+> Ni-porphyrin, `YOYBIY`, `BEVWAC`, `IRAYAB`) give the same verdicts as the table.
 
 - **`rotate` alone causes no drift.** The encoder is already orientation-invariant.
 - **All drift comes from renumbering** — permuting the atom lines in the XYZ file.
@@ -98,7 +117,8 @@ Measured over 20 random renumberings of `CC(N)=NC`:
 | source of order | invariant under renumbering? |
 |---|---|
 | `Chem.CanonicalRankAtoms(mol, breakTies=True)` | **no** — a different ranking 18 times in 20 |
-| `Chem.MolToSmiles(mol)` → `_smilesAtomOutputOrder` | **yes** — one string every time |
+| `Chem.MolToSmiles(mol)` canonical string | **yes** — one string every time |
+| the graph induced by relabelling with `_smilesAtomOutputOrder` | **yes** — one graph every time |
 
 `breakTies=True` settles ties between symmetry-equivalent atoms on the **input index**. The
 canonical *string* is the invariant RDKit actually guarantees; the rank assignment among
@@ -106,6 +126,51 @@ symmetric atoms is not. Building the permutation on the wrong one would have pro
 "canonicalization" that is not canonical — and every single-fixture guard would still have
 passed. (This is the Y2 lesson: a measurement that only exercises the easy case confirms a
 wrong belief.)
+
+**The precise claim** (independently reproduced by the orchestrator): the *write order* is
+not invariant either — 20 renumberings give 20 distinct orders. What is invariant is the
+**graph that order induces** (adjacency bytes plus symbol vector: always exactly 1). The
+residual freedom is exactly the automorphism group, and an automorphism preserves the
+adjacency matrix — which is all `_AC2BO_core` consumes. That is why instrumenting the base
+and renumbered inputs shows byte-identical `(AC, atoms)` reaching the core.
+
+⚠ **A canonical constitutional graph does not imply canonical stereochemistry.** An
+automorphism of the constitutional graph can map two constitutionally-equivalent branches
+onto each other while their *configurations* differ, so this relabelling is safe for bond
+orders (Lane 1's scope) and is **not** automatically safe for stereo descriptors. The
+separately-measured renumbering stereo instability
+(`docs/RENUMBERING_INSTABILITY_v0.4.5.md`) is owned elsewhere; whether
+`OIN_CANONICAL_PERCEPTION` incidentally helps it is for that lane to measure, not an
+extension of this one.
+
+### Two safety fixes the levers need
+
+Both were found by running the existing suite with the levers ON, and both are guarded by
+tests:
+
+1. **The reparse must not de-aromatize** (`OIN_CANONICAL_BODY`). A metallo-porphyrin's
+   macrocycle is perceived aromatic in the complex, but once the metal is stripped its four
+   N's carry no hydrogen and RDKit's default model calls the free base non-aromatic — so a
+   naive reparse emitted `C1=C2C=CC(=N2)…` where the encoder had `c1c2nc(…`, breaking
+   `tests/unit/test_aromatic_reencode.py`. Harmless at *compare* time (both sides lose it
+   identically), a fidelity loss at *emit* time. `canonical_body_emit` now bails when the
+   reparse reduces the aromatic-atom count. Measured cost: **zero** — 0 of the 713 distinct
+   ligand bodies in the capstone `rdkit_canonical` population lose aromaticity, and all 500
+   rows still converge.
+2. **Canonicality never outranks perception quality** (`OIN_CANONICAL_PERCEPTION`).
+   Reordering the valence walk can surface a different but equally *valid* Lewis structure,
+   and "valid" to `AC2BO` is not "usable" once the ligands are assembled: on `AGUFEN.xyz`
+   (a PPN counter-cation) the canonical order draws a `P=c` ylide with a pentavalent ipso
+   carbon that passes the free-ligand check and only fails when the dative bonds go on,
+   raising `OINEncodeError`. `get_tmc_mol` now retries once under
+   `suppress_canonical_perception()`. Molecules that take the retry stay order-dependent —
+   a right answer that drifts beats a reproducible wrong one.
+
+   ⚠ The retry is triggered by the **canonical attempt alone**, never by comparing it with
+   the input-order result. An earlier version kept "whichever perception scored a higher
+   total bond order", which silently re-imported the order-dependence the lever removes,
+   because the input-order result is a function of the numbering. It broke the `NAXDOI`
+   invariance guard, which is the only reason it was caught.
 
 ## 4. Regression fixture
 

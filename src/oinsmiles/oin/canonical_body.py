@@ -110,6 +110,10 @@ def _composition(mol):
     return tuple(sorted(counts.items())), n_h, charge
 
 
+def _n_aromatic(mol) -> int:
+    return sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic())
+
+
 def _clear_chelate_locked_stereo(mol, donor_indices) -> None:
     r"""Clear E/Z on double bonds held rigid by a ring that closes through the metal.
 
@@ -183,6 +187,19 @@ def _reparse_once(mol, donors):
     # Guard 1: the reparse must not have changed the molecule. A map number forces a
     # bracket, and a bracket redefines the implicit-H count of the atom it wraps.
     if _composition(mol) != _composition(reparsed):
+        return None
+
+    # Guard 1b: the reparse must not DE-AROMATIZE. A fragment's aromatic flags can carry
+    # information the free fragment no longer supports on its own: a metallo-porphyrin's
+    # macrocycle is perceived aromatic in the complex, but once the metal is stripped its
+    # four N's have no hydrogen and RDKit's default model calls the free base non-aromatic,
+    # so a naive reparse would emit `C1=C2C=CC(=N2)...` where the encoder had `c1c2nc(...`.
+    # That is fine for the COMPARISON key (both sides lose it identically) but at emit time
+    # it is a loss of chemical fidelity -- exactly what tests/unit/test_aromatic_reencode.py
+    # pins. Measured over the 713 distinct ligand bodies in the capstone `rdkit_canonical`
+    # population, this guard rejects NOTHING (0 of 713 lose aromaticity) and all 500 rows
+    # still converge, so it costs no folding power at all.
+    if _n_aromatic(reparsed) < _n_aromatic(mol):
         return None
 
     by_map: dict[int, int] = {}

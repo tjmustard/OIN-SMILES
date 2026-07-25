@@ -28,6 +28,7 @@ from .xyz2mol_local import (
     AC2mol,
     chiral_stereo_check,
     read_xyz_file,
+    suppress_canonical_perception,
     xyz2AC_obabel,
 )
 
@@ -495,20 +496,29 @@ def lig_checks(lig_mol, coordinating_atoms):
 
 
 def _resonance_candidate_key(item):
-    """Total order on ``lig_checks`` candidates: most aromatic, fewest charges, then form.
+    """Total order on ``lig_checks`` candidates, used only to make TIES reproducible.
 
-    The first two components restate the preference every consumer already applies, so
-    sorting cannot change which candidate wins on the merits. The third is the tie-break
-    that replaces "whatever the supplier yielded first": the candidate's own canonical
-    SMILES, which is a property of the molecule rather than of the input file. A form RDKit
-    cannot write sorts last, so it can never win a tie by being unwritable.
+    ``(-N_aromatic, N_pos + N_neg)`` restates the preference every consumer already
+    applies, so sorting cannot change which candidate wins on the merits. Two tie-breaks
+    follow, in this order:
+
+    1. **usable before unusable.** ``_select_lig_mol`` keeps the first candidate at the
+       best (aromatic, charge) score, and the old first-wins order happened to reach a
+       usable one. Re-ordering a tie can otherwise surface a form with, say, a pentavalent
+       carbon that ``kekulize_safe_sanitize`` rejects, turning a working encode into an
+       ``OINEncodeError`` (AGUFEN, the PPN counter-cation). Usability is the codebase's own
+       notion of "a perception that can be made into a molecule", so deferring to it here
+       preserves the outcome the accidental order used to give -- deliberately, this time.
+    2. **the candidate's own canonical SMILES**, a property of the molecule rather than of
+       the input file, replacing ``ResonanceMolSupplier`` enumeration order. A form RDKit
+       cannot write sorts last, so it can never win a tie by being unwritable.
     """
     res_mol, n_pos, n_neg, n_aromatic = item
     try:
         form = Chem.MolToSmiles(Chem.Mol(res_mol))
     except Exception:
         form = chr(0xFFFF)  # sorts after every real SMILES
-    return (-n_aromatic, n_pos + n_neg, form)
+    return (-n_aromatic, n_pos + n_neg, 0 if _perception_is_usable(res_mol) else 1, form)
 
 
 def _perception_is_usable(candidate):
@@ -729,6 +739,35 @@ def _select_lig_mol(mol, charge, coordinating_atoms):
 
 
 def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
+    """Get TMC mol object from given xyz file, retrying if canonical perception fails.
+
+    ``OIN_CANONICAL_PERCEPTION`` reorders the valence walk so the perceived bond orders
+    stop depending on the input atom numbering. Reordering can surface a DIFFERENT but
+    equally valid Lewis structure, and "valid" to ``AC2BO`` is not the same as "usable"
+    once the ligands are assembled around the metal: on ``tests/fixtures/AGUFEN.xyz``
+    (a PPN counter-cation) the canonical order draws a ``P=c`` ylide with a pentavalent
+    ipso carbon that survives the free-ligand usability check and only fails when the
+    dative bonds go on, raising ``OINEncodeError``.
+
+    So: perceive canonically, and if the encode raises, perceive again in input order.
+    The retry is triggered by the canonical attempt alone, never by comparing it against
+    the input-order result -- comparing would re-import the very order-dependence the
+    lever removes. Only molecules that take the retry stay order-dependent, which is the
+    right trade: a right answer that drifts beats a reproducible wrong one.
+
+    With the lever off this is a plain call with one dead branch.
+    """
+    if not os.environ.get("OIN_CANONICAL_PERCEPTION"):
+        return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+    try:
+        return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+    except Exception:
+        logger.debug("canonical perception unusable for %s; retrying in input order", xyz_file)
+        with suppress_canonical_perception():
+            return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+
+
+def _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=False):
     """Get TMC mol object from given xyz file.
 
     Args:
