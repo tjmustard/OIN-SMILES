@@ -67,3 +67,26 @@ under the new default (goldens byte-identical via the direct path).
 
 Guarded by `tests/unit/test_oin_direct_assembly.py::test_direct_dg_on_by_default`.
 See `docs/GENERATION_PIPELINE.md` for the full default pipeline.
+
+## Scale validation — v0.4.0 regression sweep (2026-07-24)
+
+The 38-molecule promote A/B above was corroborated at scale by a full regression sweep of the
+v0.4.4 default (early-exit + direct-DG on) against the v0.4.0 baseline. Set: **3,917 molecules**
+= all **2,917 v0.4.0 failures** + **1,000 seed-42 v0.4.0 successes**, full quality (300 s tiers,
+real g-xTB), run at HEAD `f50a199e`. Both runs were classified with the *same* fac/mer
+`oin.compare` key and diffed per molecule, so rdkit-version and key-version drift cannot fabricate
+a regression. Report: `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.4-regression/REGRESSION_REPORT.md`
+(results dir gitignored).
+
+| cohort | n | v0.4.0 round-trip-OK | v0.4.4 round-trip-OK | Δ |
+|---|---|---|---|---|
+| v0.4.0 successes (regression guard) | 1000 | 999 (99.9%) | 988 (98.8%) | −11 |
+| v0.4.0 failures (fix target) | 2917 | 0 | 1092 (37.4%) | +1092 |
+| all | 3917 | 999 (25.5%) | 2080 (53.1%) | +1081 |
+
+→ **11 regressions, 1,092 fixes, net +1,081** round-trip-OK (`OK = byte_exact | key_equal`).
+On this set the `structural` bucket collapsed 349 → 42 and `encode_fail` 417 → 241. **Zero**
+regressions landed in the correctness buckets (`structural` / `facmer_divergent` / `encode_fail`):
+all 11 regressions are 300 s **generation timeouts** — see the full-quality-timeout note in
+`docs/KNOWN_LIMITATIONS.md`. This confirms direct-DG-as-default introduces no wrong-answer
+regressions at dataset scale while fixing 37.4% of the prior-version failures.

@@ -21,11 +21,26 @@ Create the output directory if it does not exist:
 mkdir -p spec/process
 ```
 
-Name the file: `process_<YYYYMMDD_HHMMSS>_<slug>.md`
+Name the file: `process_<YYYYMMDD>_<slug>.md`
 
-- Use the current timestamp for `<YYYYMMDD_HHMMSS>`
+- Use the current date for `<YYYYMMDD>` (date only — no time component)
 - Derive `<slug>` from `$ARGUMENTS` by lowercasing and replacing spaces/special characters with hyphens (e.g., "Dynamic Workflow Engine" → `dynamic-workflow-engine`)
 - If no `$ARGUMENTS` provided, use `session` as the slug
+
+**Disambiguate same-day documents with a version suffix.** If a file with that exact name already exists (e.g. more than one process document is written on the same date), append `_v2`, `_v3`, … to the end of the filename — before the `.md` extension — using the next unused number. The first document of the day carries no suffix:
+
+```bash
+base="spec/process/process_$(date +%Y%m%d)_<slug>"   # substitute the real <slug>
+path="${base}.md"
+n=2
+while [ -e "$path" ]; do
+  path="${base}_v${n}.md"
+  n=$((n + 1))
+done
+# $path is now collision-free, e.g.
+#   spec/process/process_20260616_dynamic-workflow-engine.md      (first of the day)
+#   spec/process/process_20260616_dynamic-workflow-engine_v2.md   (second of the day)
+```
 
 ---
 
@@ -143,7 +158,7 @@ Replace redacted content with `[REDACTED]`.
 After saving the file, print the full path to the user:
 
 ```
-Process document saved to: spec/process/process_20260616_143022_dynamic-workflow-engine.md
+Process document saved to: spec/process/process_20260616_dynamic-workflow-engine.md
 ```
 
 Do NOT print the document contents to the conversation — it would pollute the context this skill is trying to preserve.

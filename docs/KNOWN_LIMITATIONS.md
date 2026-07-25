@@ -366,6 +366,25 @@ are properties of the benchmark harness and the FF-only generation decision.
 owns the honest split (genuine vs artifact) and the harness relabeling; docs records that these
 buckets are, by construction, not accuracy regressions.
 
+### Full-quality generation can time out where quick mode succeeds (observed v0.4.4)
+
+The v0.4.0-vs-v0.4.4 regression sweep (`REGRESSION_REPORT.md`) surfaced a *different* timeout
+regime from the `--quick` labeling artifact above. Of the 1,000 v0.4.0-success guard molecules,
+**11 no longer round-tripped under full quality** -- and every one is a 300 s generation
+`TimeoutException` (10 UFF, 1 g-xTB), **not** a wrong-answer/notation regression (zero regressions
+landed in `structural`/`facmer_divergent`/`encode_fail`). All 11 are medium-large (69--157 atoms)
+and each finished in **6--29 s under v0.4.0 quick mode** (`uff_pool_size=2, max_attempts=10`, 30 s
+cap) but exceeded the 300 s cap under full quality (full UFF pool + direct-DG default) -- a
+10--50x per-molecule slowdown (`TIVNAQ`/`XEXMEV` went 6--7 s -> >300 s). Members: `CALQEO`,
+`DOSBUJ`, `DOZGIJ`, `HACDUM`, `LUZDEP`, `QOVSAV`, `QUSYUA`, `SOJMIQ`, `TIVNAQ`, `WIMBOL`, `XEXMEV`
+(all `_comp_0`).
+
+**Layer / status:** generator compute cost, not encoder/notation. Root cause is **not yet
+isolated** -- full-pool size vs the direct-DG embed path -- so this is recorded as an observed
+full-quality generation-time limitation, not a fixed defect. Open follow-up: re-run the 11 at
+quick config (they each passed in <30 s at v0.4.0) to confirm no code defect, then profile the
+full-pool + direct-DG path on these structures.
+
 ---
 
 ## Uncoordinated outer-sphere fragments (`UncoordinatedFragmentError`)

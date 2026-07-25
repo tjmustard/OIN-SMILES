@@ -4,6 +4,28 @@
 ## Purpose
 Captures the current state of OIN-SMILES development. Updated after significant task completions. Read first to understand where to pick up.
 
+## Current State (as of 2026-07-24)
+
+**Release lineage now runs through v0.4.4 (local, unpushed).** See `CHANGELOG.md` for authoritative
+per-version detail. The dated blocks below are retained as history.
+
+- **v0.4.3** — structure-quality wave (A1–A5). Released on **local `main` only** (tag `v0.4.3`),
+  **unpushed** (standing user directive). Flipped defaults: vdW acceptance ON, engine optimizer
+  xtb→ff, Kabsch opt-in.
+- **v0.4.4** — accuracy + measurement wave (SL0–SL5). Released on **local `main` only**
+  (annotated tag `v0.4.4`), **unpushed**. Centerpiece: the fac/mer-aware canonical round-trip key
+  (`oin/compare.py`, `tools/roundtrip_bucket_report.py`). Two levers promoted to default: **early-exit
+  conformer acceptance** and **OIN-direct DG assembly** (`OIN_DIRECT_DG`, m-SMILES retained as
+  fallback). Unit suite 551 OK / 3 skip. Note: the local commit stack has been **rebased** more than
+  once (hashes re-written; content stable) — always re-verify `HEAD` before trusting a run.
+- **v0.4.4 regression-validated vs v0.4.0 (2026-07-24).** Full sweep of the v0.4.4 default over
+  **3,917 molecules** (2,917 v0.4.0 failures + 1,000 seed-42 successes, full quality). Result:
+  **11 regressions / 1,092 fixes / net +1,081** round-trip-OK; **zero correctness regressions** on
+  the 1,000-success guard — all 11 regressions are 300 s generation timeouts (a full-pool + direct-DG
+  compute-time regime, not wrong answers). 37.4% of prior-version failures now round-trip. Report:
+  `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.4-regression/REGRESSION_REPORT.md`; decision record
+  `docs/DIRECT_DG_VALIDATION.md`; limitation `docs/KNOWN_LIMITATIONS.md`.
+
 ## Current State (as of 2026-07-18)
 
 **Release lineage now runs through v0.4.2** — see `CHANGELOG.md` for the authoritative per-version

@@ -419,6 +419,8 @@ def _polyhedron_signature(geo: str, vcolor: dict) -> tuple:
         candidate = tuple(arr)
         if best is None or candidate < best:
             best = candidate
+    # `group` is non-empty (guarded above), so the loop always assigns `best`.
+    assert best is not None
     return best
 
 

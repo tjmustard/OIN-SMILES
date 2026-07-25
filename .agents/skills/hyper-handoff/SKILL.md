@@ -19,8 +19,24 @@ Resolve the OS temp directory by running:
 python3 -c "import tempfile; print(tempfile.gettempdir())"
 ```
 
-Name the file: `handoff_<YYYYMMDD_HHMMSS>.md` using the current timestamp.
-Save there — **not** in the current workspace.
+Name the file: `handoff_<YYYYMMDD>.md` using the current date (date only — no time component).
+Save it in the temp directory resolved above — **not** in the current workspace.
+
+**Disambiguate same-day handoffs with a version suffix.** If a file with that exact name already exists in the temp directory, append `_v2`, `_v3`, … to the end of the filename — before the `.md` extension — using the next unused number. The first handoff of the day carries no suffix:
+
+```bash
+tmp="$(python3 -c 'import tempfile; print(tempfile.gettempdir())')"
+base="${tmp}/handoff_$(date +%Y%m%d)"
+path="${base}.md"
+n=2
+while [ -e "$path" ]; do
+  path="${base}_v${n}.md"
+  n=$((n + 1))
+done
+# $path is now collision-free, e.g.
+#   /tmp/handoff_20260606.md      (first of the day)
+#   /tmp/handoff_20260606_v2.md   (second of the day)
+```
 
 ---
 
@@ -109,7 +125,7 @@ Replace redacted content with `[REDACTED]`.
 After saving the file, print the full path to the user:
 
 ```
-Handoff document saved to: /tmp/handoff_20260606_143022.md
+Handoff document saved to: /tmp/handoff_20260606.md
 ```
 
 Do NOT print the document contents to the conversation — it may be long and would pollute the context this skill is trying to compact.

@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`docs/DIRECT_DG_VALIDATION.md`**: scale-validation section recording the v0.4.0-vs-v0.4.4
+  regression sweep (3,917 molecules = 2,917 v0.4.0 failures + 1,000 seed-42 successes, full
+  quality) — **11 regressions / 1,092 fixes / net +1,081** round-trip-OK, zero correctness
+  regressions on the 1,000-success guard, confirming direct-DG-as-default at dataset scale.
+- **`docs/KNOWN_LIMITATIONS.md`**: note that full-quality generation can time out (300 s) on 11
+  medium-large molecules that quick mode round-trips in <30 s — a generation compute-time regime
+  (full pool + direct-DG), not a wrong-answer/notation regression; root cause not yet isolated.
+
 ## [0.4.4] - 2026-07-23
 
 An **accuracy + measurement** release, developed as six parallel worktree swimlanes (SL0–SL5)
