@@ -53,6 +53,8 @@ def _parse_fragment(smiles: str):
 
 
 _METAL_STEREO_RE = re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
+#: opt-in axial / atropisomer suffix ` |ax:+-|` (OIN_EMIT_AXIAL); folded out of the key.
+_AXIAL_TOKEN_RE = re.compile(r"\s*\|ax:[+\-]*\|")
 
 
 def normalize_oin_for_comparison(oin_string: str) -> str:
@@ -88,7 +90,13 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     has them to work with; the only other consumers of this string are the
     human-readable ``Exp:/Got:`` round-trip diagnostics.
     """
-    s = _METAL_STEREO_RE.sub(r"[\1_\2]", oin_string)
+    # Fold the opt-in axial / atropisomer token (` |ax:+-|`, OIN_EMIT_AXIAL). Like the
+    # metal @-stereo above, it is a distinguisher the round-trip key does not yet gate on
+    # (the generator cannot reproduce the axis), so the batch key stays blind to it and the
+    # harness is unaffected whether or not the emit flag is set. Y2 P2; see
+    # docs/INJECTIVITY_Y2_FEASIBILITY.md.
+    s = _AXIAL_TOKEN_RE.sub("", oin_string)
+    s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")
     # Winding markers ({n>} / {n<}) are intentionally NOT stripped -- they carry

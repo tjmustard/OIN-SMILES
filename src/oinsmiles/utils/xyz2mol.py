@@ -1098,6 +1098,17 @@ def get_oin_string(tmc_mol, xyz_coords):
     7. Align Geometry (OINDiscreteAligner V2.4).
     8. Serialize output.
     """
+    # 0. Opt-in axial / atropisomer token (Y2 P2). Computed HERE from the pristine input
+    # conformer -- before _align_to_pai, whose principal-axis alignment may reflect the
+    # coordinates and would corrupt the dihedral sign. Default OFF -> byte-identical output.
+    _axial_suffix = ""
+    if os.environ.get("OIN_EMIT_AXIAL"):
+        from ..oin.axial import axial_token
+
+        _tok = axial_token(tmc_mol)
+        if _tok:
+            _axial_suffix = f" |ax:{_tok}|"
+
     # 1. Identify Metal and Connections
     metal_idx = -1
     for atom in tmc_mol.GetAtoms():
@@ -1599,7 +1610,7 @@ def get_oin_string(tmc_mol, xyz_coords):
 
     inline_oin = OINInlineHandler.generate_inline_string(sidecar_oin)
 
-    return inline_oin
+    return inline_oin + _axial_suffix
 
 
 # Re-export necessary components

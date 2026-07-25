@@ -431,3 +431,51 @@ builder, so the round trip differs on stereo through no encoder fault.
 **Layer:** generator geometry realization / builder stereo -- it cannot deterministically
 reproduce input handedness at a metal-adjacent centre or for a winding whose sign a proper
 rotation flips. Not an encoder or notation defect.
+
+---
+
+## Encoder injectivity blind spots (Y1 audit -- round-trip *false positives*)
+
+Every limitation above is a round-trip **FALSE NEGATIVE** (the round trip FAILs, but the OIN
+was fine -- usually the generator). This section is the opposite and more dangerous cell: axes
+where two **genuinely distinct isomers encode to the same OIN**, so the round trip PASSES while
+the notation is silently lossy. Found by the Y1 injectivity audit (`tools/injectivity/`), which
+mirror-twins a structure and asks whether the encoder can still tell the enantiomers apart --
+no 3D generator involved. Full write-up: `docs/INJECTIVITY_Y1_OVERVIEW.md`.
+
+**Wave 2 update (feasibility):** all three axes are **recoverable from the input 3D** — the
+encoder discards a signal it has, it does not lack one — so none is a *permanent* limitation
+(`docs/INJECTIVITY_Y2_FEASIBILITY.md`). A per-axis descriptor recovered from the coordinates flips
+between enantiomers on every fixture. P2 has an opt-in encoder emit; P1/P3 are deferred to the
+v0.4.5 canonical-string work (they need a canonical, orientation-invariant ordering + generator
+support before a token can be emitted safely).
+
+- **Metal-centre Δ/Λ (@SP/@OH) -- KEY-BLIND (recoverable, deferred to v0.4.5).** `fac-Ir(ppy)3`
+  and its enantiomer produce different *raw* strings, but only by non-reproducible slot renumbering,
+  which the round-trip key deliberately folds (`oin/compare.py` `_METAL_STEREO_RE` +
+  `_polyhedron_signature`). RDKit's `AssignStereochemistryFrom3D` *does* recover the Δ/Λ
+  configuration (octahedral permutation 10 vs 8), so this is recoverable; it needs a canonical donor
+  ordering (the v0.4.5 problem) + generator support to emit an `@OHn` token. Detail:
+  `docs/INJECTIVITY_Y1_P1_METAL.md`.
+- **Axial / atropisomeric chirality (biaryl, BINAP) -- ENCODER-BLIND by default; OPT-IN EMIT that
+  now ROUND-TRIPS (Wave 2).** `R`-BINAP and `S`-BINAP encode to **byte-identical** OIN strings by
+  default. The axis is recovered from the signed biaryl dihedral (`src/oinsmiles/oin/axial.py`);
+  behind `OIN_EMIT_AXIAL` (default OFF) the encoder appends a *canonical* axial-sign token so the
+  two diverge (`|ax:-|` vs `|ax:+|`), the round-trip key folds it (batch unaffected), and the
+  generator honours it (axial-aware conformer selection + acceptance): measured **2/2 vs 1/2
+  baseline**, so the axis survives the round trip. A stereogenicity gate keeps the encoder from
+  claiming chirality for achiral symmetric-end biaryls. Still opt-in pending a broader A/B than
+  one fixture pair. Guards: `tests/unit/test_axial_emit.py`,
+  `tests/integration/test_axial_roundtrip.py`. Detail: `docs/INJECTIVITY_Y1_P2_AXIAL.md`.
+- **Trivalent-N amine inversion on binding -- ENCODER-BLIND (recoverable, deferred to v0.4.5).** A
+  *metal-bound* secondary amine is stereogenic only because the metal locks its 4th position; the
+  encoder strips the metal, leaving a trivalent N that Zone-A clears (`core/chirality.py:722-727`; N
+  is out of lone-pair-CIP scope, `:33-36`). Recoverable as the signed tetrahedral volume at the
+  locked N (−9.4 vs +9.4); emitting needs a Zone-A carve-out + canonical ordering + generator.
+  Distinct from the pendant-amine `[N@@H]→[NH]` residual under *Documented residuals* above, which
+  is a generator loss. Detail: `docs/INJECTIVITY_Y1_P3_AMINE.md`.
+
+**Layer:** encoder injectivity / notation completeness. Reproduce with
+`PYTHONPATH=$PWD/src python -m tools.injectivity.report --probes`. Guards:
+`tests/unit/test_injectivity_probes.py`, `tests/unit/test_config_oracle.py`,
+`tests/unit/test_axial_emit.py`.

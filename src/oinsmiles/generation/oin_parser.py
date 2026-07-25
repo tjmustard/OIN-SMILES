@@ -100,7 +100,16 @@ class OINParser:
         """Parse an OIN string into a ParsedOIN structure."""
         # Check for V3.0 Inline Topology
         # Heuristic: No "|" separator AND contains Metal tag like [Pt_SPL]
+        from ..oin.axial import AXIAL_TOKEN_RE
         from ..oin.inline import OINInlineHandler
+
+        # Strip the opt-in axial/atropisomer token (` |ax:-|`) before anything else. It is
+        # trailing metadata consumed downstream by the adapter's axial-aware selection --
+        # which reads it back off ``original_oin`` -- and must not participate in parsing:
+        # the inline-vs-sidecar test below keys on the ABSENCE of "|", so leaving the token
+        # in would misroute an inline OIN to the sidecar branch and lose the geometry code.
+        original_oin = oin_string
+        oin_string = AXIAL_TOKEN_RE.sub("", oin_string).strip()
 
         is_inline = False
         parts = oin_string.split("|")
@@ -151,7 +160,7 @@ class OINParser:
                 fragments=fragments,
                 metal_fragment_idx=metal_fragment_idx,
                 vectors=vectors,
-                original_oin=oin_string,
+                original_oin=original_oin,
                 geo_code=geo_code,
                 winding_by_slot=winding_by_slot,
             )
@@ -224,6 +233,6 @@ class OINParser:
             fragments=fragments,
             metal_fragment_idx=metal_fragment_idx,
             vectors=vectors,
-            original_oin=oin_string,
+            original_oin=original_oin,
             geo_code=geo_code,
         )

@@ -105,3 +105,7 @@ spec/worklog/
 /crest_sweep
 tools/schedule.py
 docs/social_media/
+
+# Injectivity audit (Y1/Y2/Y3) -- regenerable probe output
+/results-injectivity-y1/
+/results-injectivity-y2/

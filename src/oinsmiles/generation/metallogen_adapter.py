@@ -20,6 +20,7 @@ import numpy as np
 from rdkit import Chem
 
 from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
+from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
@@ -1230,7 +1231,56 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
     return True
 
 
-def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
+def _axial_narrow(candidates, to_mol, target_axial):
+    """Keep candidates whose axial token equals ``target_axial``.
+
+    Returns ``(kept, n_blind)`` where ``n_blind`` counts candidates whose token could not be
+    PERCEIVED at all (``mol_axial_token`` -> ``None``) as opposed to perceived-and-different.
+
+    That distinction is the point. A genuine miss (every conformer perceived, none matching)
+    and a perception failure (nothing perceived, so nothing can match) both produce an empty
+    result and both fall through to the unfiltered pool -- silently returning a plausible
+    structure of the WRONG atropisomer. This is exactly how the axial pass was defeated
+    during development: raw MetalloGen conformers are unsanitized, ``CanonicalRankAtoms``
+    raised, every token came back ``None``, and the filter compared ``None`` against ``'-'``.
+    Counting the blind ones lets the caller say which failure it was.
+    """
+    kept = []
+    n_blind = 0
+    for c in candidates:
+        mol = to_mol(c)
+        token = mol_axial_token(mol) if mol is not None else None
+        if token is None:
+            n_blind += 1
+        elif token == target_axial:
+            kept.append(c)
+    return kept, n_blind
+
+
+def _axial_report_miss(n_candidates, n_blind, target_axial, *, key):
+    """Record an axial narrowing miss, loudly when it was really a PERCEPTION failure."""
+    if n_candidates and n_blind == n_candidates:
+        # Nothing was perceivable -- the filter never had a chance. This is a defect in the
+        # axial path itself, not a legitimately absent conformer, so warn rather than
+        # whisper: the run will otherwise return the wrong atropisomer and still look fine.
+        logger.warning(
+            "axial-aware selection: axial perception FAILED on all %d candidates "
+            "(requested %r); falling through -- the generated atropisomer may be wrong",
+            n_candidates,
+            target_axial,
+        )
+        _telemetry.record("adapter.axial_perception_failed", **{key: n_candidates})
+        return
+    logger.debug(
+        "axial-aware selection: no candidate matched token %r (%d candidates, %d unperceived)",
+        target_axial,
+        n_candidates,
+        n_blind,
+    )
+    _telemetry.record("adapter.axial_miss", n_blind=n_blind, **{key: n_candidates})
+
+
+def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False):
     """Choose the conformer that best realizes the requested coordination geometry.
 
     Falls back to the lowest-energy conformer. Three levels of preference over
@@ -1260,6 +1310,11 @@ def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
     """
     from ..utils.oin_aligner import classify_and_fit
 
+    # The atropisomer token requested by the OIN, if any (Y2 P2). None -- the case for every
+    # OIN encoded without OIN_EMIT_AXIAL -- disables every axial-aware branch below, so this
+    # function stays byte-identical to pristine for them.
+    target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
+
     # SL1 accept-first (opt-in, OIN_EARLY_EXIT / ff_params["early_exit"]): accept the first
     # conformer that INDEPENDENTLY re-encodes to the requested OIN's fac/mer key, short-
     # circuiting AHEAD of the geometry-classification gate below. The round-trip key is the
@@ -1280,7 +1335,7 @@ def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
                     continue
                 if _reencode_key_matches(
                     parsed, m, target_key, cmol=cmol, require_no_stretch=require_no_stretch
-                ):
+                ) and (target_axial is None or mol_axial_token(cmol) == target_axial):
                     logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
                     _telemetry.record("adapter.early_exit_hit")
                     return m, cmol
@@ -1316,6 +1371,45 @@ def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
                 logger.debug("geometry perception failed for a conformer", exc_info=True)
                 continue
         scored.sort(key=lambda t: (t[0], t[1], t[2]))
+
+    # Axial-aware narrowing (Y2 P2): when the requested OIN carries an atropisomer token
+    # (` |ax:-|`), keep only conformers whose own axial token reproduces it. The embed sets
+    # a biaryl torsion stochastically, so without this the atropisomer is left to chance --
+    # the same problem, and the same "selection beats construction" remedy, as the eta
+    # winding pass below. Self-gating: an OIN encoded without OIN_EMIT_AXIAL carries no
+    # token, so `target_axial` is None and this is a no-op. Strictly non-regressive: if no
+    # conformer matches, the pool is left exactly as it was and we fall through unchanged.
+    # The token is canonical (graph-derived), which is what makes it comparable between the
+    # requested OIN and a freshly embedded conformer with different atom numbering.
+    if target_axial:
+        if scored:
+            # t[4] is the CONTRACT mol: raw pool conformers are unsanitized, so axial
+            # perception must run on the same prepared mol the re-encode uses.
+            keep, blind = _axial_narrow(scored, lambda t: t[4], target_axial)
+            if keep:
+                logger.debug(
+                    "axial-aware selection: %d/%d conformers match token %r",
+                    len(keep),
+                    len(scored),
+                    target_axial,
+                )
+                scored = keep
+            else:
+                _axial_report_miss(len(scored), blind, target_axial, key="n_scored")
+        else:
+            keep_mols, blind = _axial_narrow(
+                mols, lambda m: build_contract_mol(parsed, m), target_axial
+            )
+            if keep_mols:
+                logger.debug(
+                    "axial-aware selection: %d/%d pool conformers match token %r",
+                    len(keep_mols),
+                    len(mols),
+                    target_axial,
+                )
+                mols = keep_mols
+            else:
+                _axial_report_miss(len(mols), blind, target_axial, key="n_mols")
 
     # Winding-aware pick: prefer the conformer whose re-encoded eta-ring winding
     # matches the requested OIN. Search geometry-eligible conformers first (best
@@ -1367,6 +1461,47 @@ def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
     # Fallback: lowest-energy conformer -- the pre-selection default behavior.
     _telemetry.record("adapter.geometry_select_fallthrough", target=target, n_mols=len(mols))
     return mols[0], build_contract_mol(parsed, mols[0])
+
+
+def _verify_axial_honored(parsed, chosen_mol, cmol):
+    """Warn when the requested atropisomer is NOT the one we are about to return.
+
+    Every axial branch above is deliberately non-regressive: on any miss it falls through to
+    the unfiltered pool. That safety has a cost -- the run then yields a structurally fine
+    conformer of the WRONG atropisomer, whose round-trip key still matches (the key folds the
+    axial token), so nothing downstream complains. Verifying once at the single exit turns
+    that silent wrong answer into an observable event.
+    """
+    target = parse_axial_token(getattr(parsed, "original_oin", None))
+    if not target:
+        return
+    probe = cmol if cmol is not None else build_contract_mol(parsed, chosen_mol)
+    got = mol_axial_token(probe) if probe is not None else None
+    if got == target:
+        return
+    logger.warning(
+        "axial NOT honored: requested %r but returning %r -- the round-trip key folds the "
+        "axial token, so this will not surface as a round-trip failure",
+        target,
+        got,
+    )
+    _telemetry.record("adapter.axial_not_honored", requested=target, got=got)
+
+
+def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
+    """Conformer choice (see :func:`_select_by_geometry_impl`) plus an axial self-check.
+
+    Kept as the module's entry point so every caller -- including the tests and
+    ``tools/benchmark_generation.py``, which monkeypatch this name -- gets the verification.
+    """
+    chosen, cmol = _select_by_geometry_impl(
+        parsed, mols, honor_winding=honor_winding, early_exit=early_exit
+    )
+    try:
+        _verify_axial_honored(parsed, chosen, cmol)
+    except Exception:  # a diagnostic must never break generation
+        logger.debug("axial verification raised", exc_info=True)
+    return chosen, cmol
 
 
 class MetalloGenAdapter:
@@ -1524,9 +1659,32 @@ class MetalloGenAdapter:
                 _target_key = None
             if _target_key is not None:
                 _require_no_stretch = clash.STRETCHED_BOND_ENABLED
+                # The round-trip key deliberately FOLDS the axial token (so the batch
+                # harness is unaffected by OIN_EMIT_AXIAL). That makes the key alone an
+                # unsound acceptance test once an axial token is requested: it would accept
+                # the first key-matching conformer of EITHER atropisomer and stop the pool,
+                # so the axial-aware pick in _select_by_geometry would never see an
+                # alternative. Require both. None when the OIN carries no token, so this is
+                # a no-op for every OIN encoded without the flag.
+                _target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
 
-                def accept_fn(mg_mol, _pk=_target_key, _rns=_require_no_stretch):
-                    return _reencode_key_matches(parsed, mg_mol, _pk, require_no_stretch=_rns)
+                def accept_fn(mg_mol, _pk=_target_key, _rns=_require_no_stretch, _ax=_target_axial):
+                    if _ax is None:
+                        # byte-identical to the pre-axial predicate for every OIN that
+                        # carries no token -- i.e. everything, absent OIN_EMIT_AXIAL.
+                        return _reencode_key_matches(parsed, mg_mol, _pk, require_no_stretch=_rns)
+                    # Perceive on the CONTRACT mol (raw pool conformers are unsanitized, so
+                    # axial perception throws on them); build it once and share it with the
+                    # key check rather than letting each build its own.
+                    cmol = build_contract_mol(parsed, mg_mol)
+                    if cmol is None:
+                        return False
+                    return (
+                        _reencode_key_matches(
+                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns
+                        )
+                        and mol_axial_token(cmol) == _ax
+                    )
 
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(
