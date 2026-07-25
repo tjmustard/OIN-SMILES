@@ -66,6 +66,13 @@ def _iter_dataset(dataset: Path) -> list[Path]:
     return files
 
 
+def _progress(it, total: int):
+    for i, item in enumerate(it, 1):
+        yield item
+        if i % 100 == 0:
+            print(f"  ... {i}/{total}", flush=True)
+
+
 def _mirror_flip_check(path: Path) -> dict:
     """Does this structure's axial token FLIP for its mirror image?
 
@@ -104,9 +111,42 @@ def _mirror_flip_check(path: Path) -> dict:
     }
 
 
-def scan(dataset: Path, n: int, mirror_check: bool = False) -> dict:
+def _classify_one(args: tuple) -> dict:
+    """Per-file verdict. Module-level and self-contained so it is picklable for ``--jobs``.
+
+    Pure in the file: nothing is shared or accumulated here, so the parent can fold the
+    results in sample order and get a byte-identical report whatever ``--jobs`` is.
+    """
+    path, mirror_check = args
     from oinsmiles.utils.xyz2mol import get_tmc_mol
 
+    out: dict = {"name": path.stem, "path": str(path)}
+    try:
+        with _silence():
+            mol, _ = get_tmc_mol(path, 0, with_stereo=False)
+        axes = detect_axial_axes(mol)
+    except Exception:
+        out["load_failure"] = True
+        return out
+    hindered = [a for a in axes if a.hindered]
+    emitting = [a for a in hindered if a.stereogenic]
+    out.update(
+        any_biaryl=bool(axes),
+        hindered=bool(hindered),
+        n_axes=len(emitting),
+        dihedrals=[a.dihedral_deg for a in emitting],
+        token="".join("+" if a.sign > 0 else "-" for a in emitting),
+        hindered_dihedrals=[a.dihedral_deg for a in hindered],
+    )
+    if emitting and mirror_check:
+        try:
+            out["mirror"] = _mirror_flip_check(path)
+        except Exception as e:
+            out["mirror"] = {"error": f"{type(e).__name__}: {e}", "flips": None}
+    return out
+
+
+def scan(dataset: Path, n: int, mirror_check: bool = False, jobs: int = 1) -> dict:
     files = _iter_dataset(dataset)
     rng = random.Random(SAMPLE_SEED)
     sample = files if n <= 0 or n >= len(files) else rng.sample(files, n)
@@ -117,37 +157,41 @@ def scan(dataset: Path, n: int, mirror_check: bool = False) -> dict:
     oversensitive_examples: list[dict] = []
     failures = 0
 
-    for i, path in enumerate(sample, 1):
-        try:
-            with _silence():
-                mol, _ = get_tmc_mol(path, 0, with_stereo=False)
-            axes = detect_axial_axes(mol)
-        except Exception:
+    work = [(p, mirror_check) for p in sample]
+    if jobs > 1:
+        import multiprocessing as mp
+
+        # imap (not imap_unordered) so results arrive in sample order -- the report must not
+        # depend on which worker finished first.
+        ctx = mp.get_context("fork")
+        with ctx.Pool(jobs) as pool:
+            results = pool.imap(_classify_one, work, chunksize=1)
+            verdicts = list(_progress(results, len(work)))
+    else:
+        verdicts = list(_progress((_classify_one(w) for w in work), len(work)))
+
+    for res in verdicts:
+        if res.get("load_failure"):
             failures += 1
             continue
         counts["scanned"] += 1
-        if not axes:
+        if not res["any_biaryl"]:
             continue
         counts["any_biaryl"] += 1
-        hindered = [a for a in axes if a.hindered]
-        if not hindered:
+        if not res["hindered"]:
             continue
         counts["hindered"] += 1
-        emitting = [a for a in hindered if a.stereogenic]
-        if emitting:
+        if res["n_axes"]:
             counts["emitting"] += 1
             row = {
-                "name": path.stem,
-                "path": str(path),
-                "n_axes": len(emitting),
-                "dihedrals": [a.dihedral_deg for a in emitting],
-                "token": "".join("+" if a.sign > 0 else "-" for a in emitting),
+                "name": res["name"],
+                "path": res["path"],
+                "n_axes": res["n_axes"],
+                "dihedrals": res["dihedrals"],
+                "token": res["token"],
             }
-            if mirror_check:
-                try:
-                    row["mirror"] = _mirror_flip_check(path)
-                except Exception as e:
-                    row["mirror"] = {"error": f"{type(e).__name__}: {e}", "flips": None}
+            if mirror_check and "mirror" in res:
+                row["mirror"] = res["mirror"]
                 if row["mirror"].get("flips") is True:
                     counts["mirror_flips"] += 1
                 elif row["mirror"].get("flips") is False:
@@ -159,10 +203,8 @@ def scan(dataset: Path, n: int, mirror_check: bool = False) -> dict:
             counts["hindered_not_stereogenic"] += 1
             if len(oversensitive_examples) < 25:
                 oversensitive_examples.append(
-                    {"name": path.stem, "dihedrals": [a.dihedral_deg for a in hindered]}
+                    {"name": res["name"], "dihedrals": res["hindered_dihedrals"]}
                 )
-        if i % 100 == 0:
-            print(f"  ... {i}/{len(sample)}  emitting={counts['emitting']}", flush=True)
 
     scanned = max(counts["scanned"], 1)
     return {
@@ -266,16 +308,30 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="verify each emitting structure's token FLIPS for its mirror (sign-convention audit)",
     )
+    ap.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="parallel workers. Per-file classification is pure and results are folded in "
+        "sample order, so the report is identical for any --jobs (verify with --n 100).",
+    )
+    ap.add_argument(
+        "--tag",
+        default="",
+        help="suffix for the output files, e.g. --tag skeleton -> axial_population_skeleton.json. "
+        "Lets a descriptor change be measured without overwriting the baseline scan.",
+    )
     args = ap.parse_args(argv)
 
     if not args.dataset.exists():
         print(f"dataset not found: {args.dataset}", file=sys.stderr)
         return 2
-    res = scan(args.dataset, args.n, mirror_check=args.mirror_check)
+    res = scan(args.dataset, args.n, mirror_check=args.mirror_check, jobs=max(1, args.jobs))
     OUT_DIR.mkdir(exist_ok=True)
-    (OUT_DIR / "axial_population.json").write_text(json.dumps(res, indent=2) + "\n")
+    stem = f"axial_population_{args.tag}" if args.tag else "axial_population"
+    (OUT_DIR / f"{stem}.json").write_text(json.dumps(res, indent=2) + "\n")
     md = render(res)
-    (OUT_DIR / "axial_population.md").write_text(md)
+    (OUT_DIR / f"{stem}.md").write_text(md)
     print(md)
     return 0
 

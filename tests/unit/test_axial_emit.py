@@ -80,6 +80,30 @@ class TestDefaultOff(_AxialEmitBase):
         self.assertEqual(r, s, "default OFF must stay byte-identical (no regression)")
         self.assertNotIn("|ax:", r)
 
+    def test_emit_gate_is_off_unless_the_env_var_is_set(self):
+        """``OIN_EMIT_AXIAL`` must stay **opt-in**. Guard against an accidental promotion.
+
+        v0.4.5 product call: injectivity levers stay default-OFF for this release. The
+        evidence to promote exists (cohort A/B 22/22 vs 8/22 on single-axis structures) and is
+        written up as a staged v0.4.6 recommendation in ``docs/KNOWN_LIMITATIONS.md``, but the
+        flip is deliberately not taken here -- turning it on changes the emitted string for
+        part of the corpus and makes the round-trip key's fold of the token load-bearing.
+
+        Unlike ``OIN_EARLY_EXIT`` (``os.environ.get(..., "1") != "0"``) this gate is a bare
+        truthiness test on an unset variable, so "off" is the absence of the variable. Assert
+        that shape directly: an unset environment must not emit.
+        """
+        self._set(False)
+        self.assertIsNone(os.environ.get("OIN_EMIT_AXIAL"))
+
+        oin = XYZToSMILES().convert(BINAP)
+        self.assertNotIn("|ax:", oin, "OIN_EMIT_AXIAL must default to OFF in v0.4.5")
+
+        os.environ["OIN_EMIT_AXIAL"] = "0"
+        self.assertNotIn(
+            "|ax:", XYZToSMILES().convert(BINAP), "an explicit falsey value must stay OFF"
+        )
+
 
 class TestFlagOn(_AxialEmitBase):
     def test_binap_atropisomers_diverge_in_raw_string(self):
@@ -175,6 +199,55 @@ class TestTokenIsCanonical(unittest.TestCase):
         self.assertNotEqual(mirrored, base)
 
 
+def _two_axis_probe(twists=(75.0, -75.0)):
+    """A molecule with two SYMMETRY-EQUIVALENT hindered axes, twisted as asked.
+
+    Two disconnected copies of 2,2'-dimethylbiphenyl. Each axis end is a 2-methylphenyl,
+    whose ortho pair (C-CH3 vs C-H) is asymmetric, so both axes are hindered and stereogenic;
+    the two copies are indistinguishable, so the axes *tie* on symmetry rank -- which is
+    precisely the configuration the sign-sorting bug corrupted. Built here rather than taken
+    from a fixture so the two signs can be set independently and the guard cannot be
+    satisfied by a molecule whose axes happen to agree.
+    """
+    from rdkit import Chem
+    from rdkit.Chem import AllChem, rdMolTransforms
+
+    from oinsmiles.oin.axial import detect_axial_axes
+
+    mol = Chem.AddHs(Chem.MolFromSmiles("Cc1ccccc1-c1ccccc1C.Cc1ccccc1-c1ccccc1C"))
+    ps = AllChem.ETKDGv3()
+    ps.randomSeed = 0xF00D
+    if AllChem.EmbedMolecule(mol, ps) != 0:
+        raise unittest.SkipTest("ETKDG could not embed the two-axis probe")
+    AllChem.MMFFOptimizeMolecule(mol)
+    conf = mol.GetConformer()
+    for ax, want in zip(detect_axial_axes(mol), twists):
+        n1 = next(
+            n.GetIdx()
+            for n in mol.GetAtomWithIdx(ax.a1).GetNeighbors()
+            if n.GetIdx() != ax.a2 and n.GetIsAromatic()
+        )
+        n2 = next(
+            n.GetIdx()
+            for n in mol.GetAtomWithIdx(ax.a2).GetNeighbors()
+            if n.GetIdx() != ax.a1 and n.GetIsAromatic()
+        )
+        rdMolTransforms.SetDihedralDeg(conf, n1, ax.a1, ax.a2, n2, want)
+    return mol
+
+
+def _z_mirror(mol):
+    from rdkit import Chem
+    from rdkit.Geometry import Point3D
+
+    out = Chem.Mol(mol)
+    conf = out.GetConformer()
+    for i in range(out.GetNumAtoms()):
+        p = conf.GetAtomPosition(i)
+        conf.SetAtomPosition(i, Point3D(p.x, p.y, -p.z))
+    return out
+
+
 class TestSymmetryEquivalentAxesStillFlip(unittest.TestCase):
     """Regression: a multi-axis token must not be sorted BY SIGN.
 
@@ -184,36 +257,114 @@ class TestSymmetryEquivalentAxesStillFlip(unittest.TestCase):
     carrying ``-+``. The token stopped being a chirality descriptor for exactly the
     structures that need it most.
 
-    `YESKOZ` is a real corpus example: two symmetry-equivalent hindered biaryl axes of
-    opposite sign, which the independent geometric oracle calls chiral (mirror RMSD 3.2 A).
-    Found by the corpus-wide sign-convention audit (34/37 flipped; this was one of the 3).
+    This used to be guarded with the ``YESKOZ`` fixture, which no longer emits: its two
+    meso-aryl axes are **not** stereogenic per-axis (see
+    ``TestPorphyrinMesoAxesAreNotPerAxisStereogenic``). A constructed probe is a better guard
+    anyway -- the two signs can be set independently, so a token that collapsed them could
+    not pass by luck.
     """
 
     def test_two_equivalent_axes_of_opposite_sign_flip(self):
+        from oinsmiles.oin.axial import axial_token
 
+        mol = _two_axis_probe()
+        base = axial_token(mol)
+        self.assertEqual(len(base), 2, "the probe must present exactly two emitting axes")
+        self.assertEqual(set(base), {"+", "-"}, "the two signs must be opposite")
+
+        mirror = axial_token(_z_mirror(mol))
+        self.assertEqual(
+            mirror,
+            base.translate(str.maketrans("+-", "-+")),
+            "the multi-axis token must flip for the mirror",
+        )
+        self.assertNotEqual(mirror, base)
+
+    def test_same_sign_pair_is_not_confused_with_opposite_sign_pair(self):
+        """``++`` and ``+-`` must be different strings -- the collapse the old sort caused."""
+        from oinsmiles.oin.axial import axial_token
+
+        same = axial_token(_two_axis_probe(twists=(75.0, 75.0)))
+        opposite = axial_token(_two_axis_probe(twists=(75.0, -75.0)))
+        self.assertEqual(len(same), 2)
+        self.assertEqual(len(set(same)), 1, "both axes were twisted the same way")
+        self.assertNotEqual(same, opposite)
+
+
+class TestPerceptionInvariance(unittest.TestCase):
+    """The token must not depend on which bond-order model perceived the molecule.
+
+    The encoder perceives bond orders from interatomic distances (``xyz2mol``); the generator
+    transfers them from the OIN fragment SMILES (``build_contract_mol``). The two disagree
+    for a metalloporphyrin -- the encoder reads an aromatic pyrrolide core on Zn(II), the
+    generated mol a neutral localized tautomer. A descriptor keyed on ``GetIsAromatic()``
+    therefore found a meso-aryl axis on the input and **none at all** on any generated
+    conformer, which is what made the multi-axis cohort unreproducible: the generator holds
+    both hindered twists, but nothing downstream could see them.
+
+    The perturbation below changes only the perception -- coordinates, elements and
+    connectivity are untouched, so the handedness is untouched -- and the token must be
+    unchanged. ``tools/injectivity/axial_perception_sweep.py`` runs the same check at corpus
+    scale.
+    """
+
+    def _delocalized(self, mol):
+        from tools.injectivity.axial_perception_sweep import delocalize
+
+        return delocalize(mol)
+
+    def test_binap_token_survives_delocalization(self):
         from oinsmiles.oin.axial import axial_token
         from tools.injectivity.config_oracle import load_mol
 
-        fixture = FIX / "YESKOZ.xyz"
-        base = axial_token(load_mol(str(fixture)))
-        self.assertEqual(len(base), 2, "YESKOZ must present exactly two emitting axes")
-        self.assertEqual(set(base), {"+", "-"}, "the two signs must be opposite")
+        mol = load_mol(BINAP)
+        base = axial_token(mol)
+        self.assertTrue(base, "BINAP must emit a token to make this guard meaningful")
+        self.assertEqual(axial_token(self._delocalized(mol)), base)
 
-        lines = fixture.read_text().splitlines()
-        n = int(lines[0])
+    def test_two_axis_probe_survives_delocalization(self):
+        from oinsmiles.oin.axial import axial_token
 
-        with tempfile.TemporaryDirectory() as d:
-            mirrored = Path(d) / "mirror.xyz"
-            body = []
-            for ln in lines[2 : 2 + n]:
-                p = ln.split()
-                body.append(f"{p[0]}  {p[1]}  {p[2]}  {-float(p[3]):.6f}")
-            mirrored.write_text(f"{lines[0]}\n{lines[1]}\n" + "\n".join(body) + "\n")
-            mirror = axial_token(load_mol(str(mirrored)))
+        mol = _two_axis_probe()
+        base = axial_token(mol)
+        self.assertEqual(len(base), 2)
+        self.assertEqual(axial_token(self._delocalized(mol)), base)
 
-        expected = base.translate(str.maketrans("+-", "-+"))
-        self.assertEqual(mirror, expected, "the multi-axis token must flip for the mirror")
-        self.assertNotEqual(mirror, base)
+
+class TestPorphyrinMesoAxesAreNotPerAxisStereogenic(unittest.TestCase):
+    """``YESKOZ`` must NOT emit -- its meso-aryl axes have a local C2 at the porphyrin end.
+
+    A 5,15-diarylporphyrin's meso carbon is flanked by two pyrrole rings that a graph
+    automorphism swaps, so rotating that half 180 deg about the meso-aryl axis reproduces the
+    molecule and the axis carries no per-axis handedness. Both configurations are in fact
+    achiral: for the anti (alpha/beta) isomer the mirror plane through the two meso positions
+    composed with the C2 about the porphyrin normal maps it to itself, and for syn the mirror
+    plane through the other two meso positions does.
+
+    The old descriptor called these axes stereogenic, but only by accident: it ranked atoms
+    on the molecule *as perceived*, and the arbitrary resonance form ``AC2BO`` happened to
+    return broke the macrocycle's symmetry. So the emitted ``+-`` was a false positive
+    resting on a non-canonical choice -- which is why the generator could never reproduce it,
+    and why the multi-axis cohort measured 0/2 in *both* A/B arms.
+
+    What is genuinely lost is the syn/anti *diastereomerism* (which face each ortho
+    substituent points to). That is a relative configuration across two axes, not a sign on
+    one, and a per-axis signed dihedral cannot express it -- see ``docs/KNOWN_LIMITATIONS.md``.
+    """
+
+    def test_yeskoz_emits_no_token(self):
+        from oinsmiles.oin.axial import axial_token, detect_axial_axes
+        from tools.injectivity.config_oracle import load_mol
+
+        mol = load_mol(str(FIX / "YESKOZ.xyz"))
+        axes = detect_axial_axes(mol)
+        self.assertEqual(len(axes), 2, "the two meso-aryl axes must still be DETECTED")
+        self.assertTrue(all(a.hindered for a in axes), "both are sterically hindered")
+        self.assertFalse(
+            any(a.stereogenic for a in axes),
+            "neither meso-aryl axis is stereogenic on its own",
+        )
+        self.assertEqual(axial_token(mol), "")
 
 
 class TestNotOverSensitive(unittest.TestCase):
