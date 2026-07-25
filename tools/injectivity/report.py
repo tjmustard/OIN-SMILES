@@ -1,10 +1,14 @@
 """Aggregate injectivity probes + a dataset population-at-risk scan into a report.
 
-Two jobs:
+Three jobs:
 
-1. **Curated probes** -- run the named Y1 twin probes (the confirmed blind-spot fixtures)
-   and roll their verdicts into a confusion-matrix summary + a falsification verdict.
-2. **Population-at-risk** -- sample the dataset, run the full twin probe on each, and
+1. **Curated mirror probes** -- run the named Y1 twin probes (the confirmed blind-spot
+   fixtures) and roll their verdicts into a confusion-matrix summary + a falsification verdict.
+2. **Structural-edit probes** (``--operators``) -- the same idea with the Lane 7 operators
+   instead of a mirror. A mirror answers only whole-molecule *enantiomerism*; ``swap_donor``
+   reaches diastereomerism (a square-planar complex is achiral, so nothing else distinguishes
+   ``@SP1``/``@SP2``/``@SP3``) and ``invert_axial`` flips one stereo element at a time.
+3. **Population-at-risk** -- sample the dataset, run the full twin probe on each, and
    estimate what fraction of *chiral* structures the encoder collides with its mirror.
    This is the blast radius: how much of the corpus a chirality blind spot can silently
    mis-pass through the round trip.
@@ -13,7 +17,7 @@ Deterministic: no timestamps, seeded sampling -- re-running regenerates byte-ide
 ``injectivity_metrics.json`` and ``report.md``.
 
 Run:
-  PYTHONPATH=$PWD/src python -m tools.injectivity.report --probes
+  PYTHONPATH=$PWD/src python -m tools.injectivity.report --probes --operators
   PYTHONPATH=$PWD/src python -m tools.injectivity.report --population 300 --dataset <dir>
 """
 
@@ -55,6 +59,8 @@ def default_operator_probes() -> list[tuple[str, Path, str, tuple]]:
         # cis <-> trans on the achiral control: the swap must produce a REAL isomer
         ("CisPlatin", fx / "CisPlatin.xyz", "swap_donor", ()),
         ("JEGKOW (4-donor SP)", fx / "JEGKOW.xyz", "swap_donor", ()),
+        # octahedral, not square planar: an H<->CO swap is the cis/trans dihydride pair
+        ("FeH2(CO)4 (octahedral)", fx / "FeH2(CO)4.xyz", "swap_donor", ()),
         # two symmetry-equivalent hindered axes: flip ONE, which no mirror can do
         ("YESKOZ (multi-axis)", fx / "YESKOZ.xyz", "invert_axial", (0, 1)),
         # sole stereocentre is a metal-bound 2 deg amine: invert it in place (P3)

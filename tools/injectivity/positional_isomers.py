@@ -409,6 +409,7 @@ def main(argv=None) -> int:
                 fx / "CisPlatin.xyz",
                 fx / "JEGKOW.xyz",
                 fx / "TransPlatin.xyz",
+                fx / "FeH2(CO)4.xyz",
             )
             if p.exists()
         ]
