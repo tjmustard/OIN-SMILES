@@ -38,20 +38,29 @@ string is identical across N random **proper** rotations of the input.
 | molecule | symptom | deciding tier (input / generated) | rot-inv | `generated == mirror(input)` | root cause | verdict |
 |---|---|---|:---:|:---:|---|---|
 | **GIPDEQ** | star moves (B → CH₂), sign unchanged | **2-GEOMETRIC / 2-GEOMETRIC** | yes | no | `_canonical_heading_atom` returns `None` (boron ylide `[CH2]=c1cc(C)cc(C)c1=B(...)` will not kekulize), so Tier 1 fell through to the geometric heading, which tracks the embedding | **fixed** (Fix A) |
-| **GAMJAG** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | two **separate, identical** benzylindenyl fragments at interchangeable TET slots; the slot-labelling maximization is a genuine 2-way tie broken by the Kabsch fit | **fixed** (Fix C) |
-| **SIMDIE** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | symmetric Me₂Si-bridged bis(2-Me-4-Ar-7-OMe-indenyl): the **meso** diastereomer, whose two mirror-related spellings are one achiral compound | **fixed** (Fix C) |
-| **TEYXEA** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | as SIMDIE (Si-bridged, two equivalent rings) | **fixed** (Fix C) |
-| **WUHRIB** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | as SIMDIE (butenyl-bridged bis(tBu-Cp), two equivalent rings) | **fixed** (Fix C) |
-| **QIGZAJ** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | Cp ↔ fluorenyl are **not** automorphic, so the two spellings are **genuine enantiomers**. The generator built the wrong one | **not a bug — must not be folded** |
+| **GAMJAG** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | two **separate, identical** benzylindenyl fragments; ε = +1, signs opposite ⇒ **achiral**, so the two spellings are one compound | **fixed** (Fix C) |
+| **SIMDIE** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | Me₂Si-bridged bis(2-Me-4-Ar-7-OMe-indenyl); ε = −1, signs opposite ⇒ **chiral** — input and generated are **enantiomers** | **not an encoder bug** |
+| **TEYXEA** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | as SIMDIE (ε = −1, opposite ⇒ chiral) | **not an encoder bug** |
+| **WUHRIB** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | as SIMDIE (ε = −1, opposite ⇒ chiral) | **not an encoder bug** |
+| **QIGZAJ** | both signs swap | 1a-strict / 1a-strict | yes | **yes** | Cp ↔ fluorenyl are **not** automorphic (ε undefined) ⇒ **genuine enantiomers** | **not an encoder bug** |
+
+Plus one **latent** case the characterization surfaced that was not in the drift list at
+all: **MECJOU** (ε = −1, signs *same* ⇒ achiral) encodes differently from its own mirror
+image. Input and generated happened to agree, so no sweep ever flagged it — but it is the
+same defect as GAMJAG and Fix C closes it too.
 
 ### Three distinct causes, not one
 
 1. **Geometric heading fallback** (GIPDEQ, 1 case) — the lane's stated premise. Real, and
    the only case where a geometric tier is load-bearing.
-2. **Eta slot-labelling / automorphism freedom** (GAMJAG + SIMDIE/TEYXEA/WUHRIB, 4 cases) —
-   the encoder is correct and rotation-invariant; it simply has two equally valid spellings
-   for one compound and picks between them by geometry.
-3. **A generator stereochemistry error the key over-folds** (QIGZAJ, 1 case) — see §5.
+2. **Un-canonicalized reflection freedom on an ACHIRAL eta arrangement** (GAMJAG, plus
+   latent MECJOU) — the encoder is correct and rotation-invariant; it simply has two
+   equally valid spellings for one compound and picks by geometry.
+3. **A generator stereochemistry error that the key over-folds** (SIMDIE, TEYXEA, WUHRIB,
+   QIGZAJ — 4 of 6) — the encoder is *right*; the generated structure is the enantiomer.
+   See §5.
+
+**So the majority of this lane's residual is not an encoder defect at all.**
 
 ## 3. What was measured, and what it rules out
 
@@ -96,13 +105,40 @@ cyclic sense (an automorphism that *reverses* it is exactly the orientation-free
 already forced to a fixed `>`). So `(ring identity, winding char)` travels as a unit, and
 the only freedom is **which interchangeable slot each unit is written at**.
 
-This reproduces the textbook chemistry as a consistency check:
+### ⚠ The sense factor ε — where a first cut of this got it exactly backwards
 
-| arrangement | signs | mirror | verdict |
-|---|---|---|---|
-| **rac** ansa-metallocene | `(>,>)` | `(<,<)` — different multiset | chiral, two distinct strings ✅ |
-| **meso** ansa-metallocene | `(>,<)` | `(<,>)` — same multiset, reachable by the C2 that swaps the two eta slots | achiral, must be one string ✅ |
-| Cp/fluorenyl (QIGZAJ) | `(>,<)` | `(<,>)` — rings **not** automorphic, so not reachable | chiral, two distinct strings ✅ |
+The winding character is read off **each ring's own canonical SMILES order**. So an
+automorphism carrying ring A onto ring B does *not* simply hand the character over — it
+hands it over **possibly reversed**, depending on whether it maps A's cyclic order onto B's
+in the same rotational sense (`ε = +1`) or the opposite one (`ε = −1`).
+
+Applying the slot-swapping proper rotation together with the automorphism maps `(w₀, w₁)`
+to `(ε·w₁, ε·w₀)`. That composite equals the mirror spelling `(−w₀, −w₁)` exactly when:
+
+| ε | achiral arrangement is | typical structure |
+|---:|---|---|
+| **+1** | **opposite** signs `(>,<)` | two separate copies of one fragment — canonically ordered identically |
+| **−1** | **same** signs `(>,>)` | two rings inside ONE bridged fragment — the canonical SMILES runs out along one ring and back along the other |
+
+**ε is not a constant.** Measured: `+1` for the TiCat3/TiCat4 ligand, `−1` for SIMDIE and
+MECJOU. A first implementation assumed the mapping and simply *sorted* the two characters;
+that made the encoder **reflection-invariant** for every bridged case and folded a rac pair
+— the v0.4.4 axial failure, reproduced exactly. It passed every guard written against the
+easy fixture. What caught it was building the independent oracle and finding it reported
+ACHIRAL for the same-sign case and CHIRAL for the opposite-sign one, the inverse of the
+assumption. `_eta_swap_sense` now **computes** ε from the real fragment automorphism.
+
+Verdicts from the computed ε agree with the independent geometric oracle **6/6**:
+
+| case | signs | ε | ε-verdict | oracle |
+|---|---|---:|---|---|
+| TiCat3 | `(>,>)` | +1 | CHIRAL | CHIRAL (2.14 Å) |
+| TiCat4 | `(<,>)` | +1 | ACHIRAL | ACHIRAL (0.03 Å) |
+| SIMDIE | `(<,>)` | −1 | CHIRAL | CHIRAL (2.78 Å) |
+| MECJOU | `(>,>)` | −1 | ACHIRAL | ACHIRAL (0.04 Å) |
+| TEYXEA | `(<,>)` | −1 | CHIRAL | CHIRAL (2.65 Å) |
+| WUHRIB | `(>,<)` | −1 | CHIRAL | CHIRAL (1.45 Å) |
+| QIGZAJ | `(>,<)` | — (not automorphic) | no fold | CHIRAL (2.70 Å) |
 
 ## 5. QIGZAJ: the key over-folds an enantiomer pair (a finding for Lane 2)
 
@@ -133,7 +169,7 @@ as a fail-safe.
 
 ### Fix C — canonical winding across automorphic eta groups (`OIN_CANONICAL_ETA_WINDING`, default **OFF**)
 
-`OINDiscreteAligner._canonical_eta_winding` implements §4's criterion:
+`OINDiscreteAligner._canonical_eta_winding`:
 
 1. collect the eta groups whose winding is load-bearing (skipping orientation-free rings);
 2. colour every occupied slot by `(chem_id, eta automorphism class)` — **winding excluded**,
@@ -141,12 +177,11 @@ as a fail-safe.
    characters about to be reassigned;
 3. keep the proper rotations (`_brute_force_symmetries`, all from `Rotation.from_euler` —
    no reflection can enter) that preserve every slot colour;
-4. within each orbit of eta slots that are **all in one automorphism class**, sort the
-   winding characters and reassign in ascending slot order;
-5. **guard:** only when the induced group realizes *every* rearrangement of the orbit
-   (`|induced| == |orbit|!`). A rotation group may offer only cyclic permutations on a
-   3-orbit, and assigning a sorted sequence the group cannot reach would fold genuinely
-   distinct isomers. Otherwise fail safe to today's behaviour.
+4. for each **2-orbit** of eta slots in one automorphism class, compute ε with
+   `_eta_swap_sense` and apply the achirality test above. If achiral, emit the
+   lexicographically smaller of the spelling and its mirror; if chiral, **leave it alone**;
+5. **fail safe** on anything else — a larger orbit, a missing automorphism, an
+   uncomputable ε — to today's behaviour.
 
 `_eta_automorphism_class` is the canonical SMILES of the fragment with every constituent
 atom given the same atom-map number — two eta groups match exactly when some automorphism
@@ -154,15 +189,26 @@ of the fragment carries one constituent set onto the other. It works across frag
 identical separate indenyls) and within one (a bridged pair), and it deliberately skips
 sanitization so an unkekulizable borate still gets an id.
 
-**Why this cannot destroy stereochemistry.** No reflection is applied. On a rac
-diastereomer both rings carry the same character, so the sort is a no-op and the mirror
-stays a different string. Measured on 8 same-sign corpus cases (MECJOU, SERTUE, WOHNAJ,
-EGIBEB, ODUFUO, HOHGEQ, RERQIO, XIBQEE): the lever changes **nothing**, and
-`mirror != input` holds with it both OFF and ON. This is the guard the v0.4.4 axial wave
-lacked when it sorted a token by sign and silently made it reflection-invariant.
+**Why this cannot destroy stereochemistry.** Only proper rotations and graph automorphisms
+are applied, and the fold is gated on a *measured* achirality test rather than an assumed
+one. Guards in `tests/unit/test_winding_canonical.py`: TiCat3/TiCat4 — a real rac/meso pair
+of one Me₂Si-bridged bis(indenyl) ligand, differing *only* in eta winding — stay distinct
+with the lever on; a chiral eta structure still differs from its mirror; an achiral one
+folds only with the lever on; orientation-free metallocenes are untouched.
 
-## 7. Residual
+## 7. Residual — and why it is not zero
 
-`winding_star_drift` goes 6 → **1**, and the 1 is QIGZAJ, which must not be fixed here.
-Closing it means teaching the *key* per-eta-ring colour (Lane 2) and fixing the
-**generator**, which built the wrong enantiomer — not the encoder.
+`winding_star_drift` goes **6 → 2** (GIPDEQ by Fix A, GAMJAG by Fix C; latent MECJOU also
+closed). The remaining SIMDIE, TEYXEA, WUHRIB and QIGZAJ are **not encoder defects** — in
+each the generator produced the enantiomer and the encoder correctly said so. Driving this
+class to 0 in the encoder would mean folding enantiomers.
+
+Closing them properly needs work in two other places:
+
+- **the generator** — it does not reproduce the coordinated face of a bridged eta ring, so
+  it returns the wrong diastereomer/enantiomer (the same shape of failure Lane 4 found for
+  multi-axis atropisomers);
+- **the key** (Lane 2) — it should stop folding them. `compare.py::_parse_vertex_colors`
+  colours every slot in a fragment with the *whole fragment's* body, so an ansa ligand's
+  two eta slots get the same colour and the tetrahedral C2 looks colour-preserving.
+  Per-eta-ring colour, as in `_eta_automorphism_class`, would separate them.
