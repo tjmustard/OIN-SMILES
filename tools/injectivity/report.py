@@ -44,6 +44,59 @@ DEFAULT_DATASET = Path("/home/tjmustard/Documents/GitHub/tmCat-tmPhoto/tmCAT-tmP
 SAMPLE_SEED = 42
 
 
+#: Curated structural-edit probes (Lane 7 / Task C). ``mirror_z`` answers only whole-molecule
+#: enantiomerism; these reach the two questions it cannot -- diastereomerism (a donor swap) and
+#: one stereo element at a time (a single-axis flip in a molecule that carries two).
+def default_operator_probes() -> list[tuple[str, Path, str, tuple]]:
+    fx = REPO / "tests" / "fixtures"
+    return [
+        # square planar, four different donors: mirroring says nothing, a donor swap says all
+        ("PtMeNH3ClBr-Cis", fx / "PtMeNH3ClBr-Cis.xyz", "swap_donor", ()),
+        # cis <-> trans on the achiral control: the swap must produce a REAL isomer
+        ("CisPlatin", fx / "CisPlatin.xyz", "swap_donor", ()),
+        ("JEGKOW (4-donor SP)", fx / "JEGKOW.xyz", "swap_donor", ()),
+        # two symmetry-equivalent hindered axes: flip ONE, which no mirror can do
+        ("YESKOZ (multi-axis)", fx / "YESKOZ.xyz", "invert_axial", (0, 1)),
+        # sole stereocentre is a metal-bound 2 deg amine: invert it in place (P3)
+        ("POJJOP (bound amine)", fx / "POJJOP.xyz", "invert_tetrahedral", ()),
+    ]
+
+
+def run_operator_probes() -> list[dict]:
+    """Run the curated structural-edit probes; skip any fixture absent from this checkout."""
+    from .oracle import load_mol
+    from .twin_operators import (
+        enumerate_donor_swaps,
+        invert_axial,
+        invert_tetrahedral,
+        probe_operator,
+        swap_donor,
+    )
+
+    out: list[dict] = []
+    for name, path, op, args in default_operator_probes():
+        if not path.exists():
+            continue
+        try:
+            mol, coords = load_mol(path)
+        except Exception as e:  # keep the sweep going
+            out.append({"name": name, "operator": op, "verdict": f"load error: {e!r}"[:150]})
+            continue
+        twins = []
+        if op == "swap_donor":
+            twins = [swap_donor(mol, coords, a, b) for a, b in enumerate_donor_swaps(mol)]
+        elif op == "invert_axial":
+            twins = [invert_axial(mol, coords, k) for k in (args or (0,))]
+        elif op == "invert_tetrahedral":
+            from .config_oracle import bound_amine_centers
+
+            twins = [invert_tetrahedral(mol, coords, c.atom_idx) for c in bound_amine_centers(mol)]
+        for twin in twins:
+            o = probe_operator(path, twin, name=name)
+            out.append(o.to_dict())
+    return out
+
+
 def default_probe_set() -> list[TwinProbe]:
     """The curated Y1 mirror-twin probes -- fixtures whose chirality is known by construction.
 
@@ -154,7 +207,42 @@ def _matrix_line(o: ProbeOutcome) -> str:
     )
 
 
-def render_markdown(summary: Summary, population: dict | None) -> str:
+def render_operators(rows: list[dict]) -> list[str]:
+    scored = [r for r in rows if r.get("geometry_ok") and r.get("oracle_distinct")]
+    folded = [r for r in scored if r.get("key_equal")]
+    lines = [
+        "",
+        "## Structural-edit probes (`swap_donor`, `invert_axial`, `invert_tetrahedral`)",
+        "",
+        "`mirror_z` answers exactly one question -- whole-molecule enantiomerism. These reach",
+        "the two it cannot: **diastereomerism** (a square-planar complex is achiral, so only a",
+        "donor swap distinguishes `@SP1`/`@SP2`/`@SP3`) and **one stereo element at a time** (a",
+        "mirror flips every axis together; `invert_axial` flips one).",
+        "",
+        "Unlike a mirror these are structural edits and can produce nonsense, so each is passed",
+        "through the vdW clash gate first; a rejected twin is never scored. Rows with",
+        "`distinct=False` are the **negative control** -- swapping two donors that sit *trans* is",
+        "a 180 deg rotation of the whole complex, so it is the same isomer and must read that way.",
+        "",
+        "| fixture | operator | edit | geometry ok | distinct | raw equal | key equal | verdict |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        lines.append(
+            f"| {r.get('name', '')} | {r.get('operator', '')} | {r.get('detail', '')} "
+            f"| {r.get('geometry_ok')} | {r.get('oracle_distinct')} | {r.get('raw_equal')} "
+            f"| {r.get('key_equal')} | {r.get('verdict', '')} |"
+        )
+    lines += [
+        "",
+        f"Distinct-isomer edits scored: **{len(scored)}**; folded by the round-trip key: "
+        f"**{len(folded)}**.",
+        "",
+    ]
+    return lines
+
+
+def render_markdown(summary: Summary, population: dict | None, operators=None) -> str:
     lines = [
         "# Injectivity Probe Report (Y1)",
         "",
@@ -195,23 +283,31 @@ def render_markdown(summary: Summary, population: dict | None) -> str:
             "rates -- see the caveat. A trustworthy per-axis population needs the configurational",
             "oracle deferred to Wave 3 (the UU hunt).",
         ]
+    if operators:
+        lines += render_operators(operators)
     return "\n".join(lines) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--probes", action="store_true", help="run the curated Y1 twin probes")
+    ap.add_argument(
+        "--operators",
+        action="store_true",
+        help="run the curated structural-edit probes (swap_donor / invert_*)",
+    )
     ap.add_argument("--population", type=int, default=0, help="sample N dataset structures")
     ap.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = ap.parse_args(argv)
 
-    if not args.probes and not args.population:
+    if not args.probes and not args.population and not args.operators:
         args.probes = True  # default action
 
     outcomes = run_probes(default_probe_set()) if args.probes else []
     summary = Summary(outcomes)
     population = population_scan(args.dataset, args.population) if args.population else None
+    operators = run_operator_probes() if args.operators else None
 
     args.out.mkdir(parents=True, exist_ok=True)
     metrics = {
@@ -220,13 +316,19 @@ def main(argv: list[str] | None = None) -> int:
         "n_collisions": len(summary.collisions()),
         "probes": [o.to_dict() for o in outcomes],
         "population_at_risk": population,
+        "operator_probes": operators,
     }
     (args.out / "injectivity_metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
-    (args.out / "report.md").write_text(render_markdown(summary, population))
+    (args.out / "report.md").write_text(render_markdown(summary, population, operators))
 
     print(f"H0: {summary.verdict_h0()}  |  collisions: {len(summary.collisions())}")
     for o in outcomes:
         print(f"  [{o.verdict:14}] {o.name}")
+    for r in operators or []:
+        print(
+            f"  [{r.get('verdict', '')[:14]:14}] {r.get('name', '')} "
+            f"{r.get('operator', '')} {r.get('detail', '')}"
+        )
     if population:
         print(f"  population: {json.dumps(population)}")
     print(f"wrote {args.out}/injectivity_metrics.json and report.md")
