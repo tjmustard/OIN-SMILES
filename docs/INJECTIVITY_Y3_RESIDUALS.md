@@ -136,18 +136,31 @@ configurational.
 > here for the release owner rather than changed inside a measurement lane. The residue split
 > below is unaffected: `config_split` uses the complete enumeration, so it re-decides every case.
 
-### ⚠ What `conformational` does *not* mean
+### ⚠ Two things the verdicts do *not* mean
 
-The search models **geometry, not energy**. A rotational barrier is invisible to it, so an
-isolable atropisomer whose axis is a free (non-ring-locked) torsion is "reachable by rotating
-bonds" and reads `conformational`. That is the strict geometric truth and the chemically
-incomplete one.
+**`conformational` is a geometric statement, not an energetic one.** The search models geometry,
+not barriers, so an isolable atropisomer whose axis is a free (non-ring-locked) torsion is
+"reachable by rotating bonds" and reads `conformational`. That is the strict geometric truth and
+the chemically incomplete one.
 
 This does not corrupt the residue split, because the barrier question is triaged *upstream*:
 `uu_hunt` routes any structure with a stereogenic hindered axis into `known_axis` (P2) before the
 residue is formed, using `oin.axial.detect_axial_axes`' hindrance heuristic. The two instruments
 are complementary — `detect_axial_axes` supplies the barrier judgement, `torsion_oracle` supplies
 the geometry — and neither should be used for the other's question.
+
+**`configurational` can over-report on a ring pucker, so hand inspection has to look for it.**
+The torsion orbit deliberately excludes ring bonds: rotating one would tear the ring open. But a
+saturated ring has *conformational* freedom the orbit therefore cannot express — the λ/δ pucker
+of an ethylenediamine-type chelate is the textbook case, and its mirror is a different pucker of
+the same isomer. Such a structure has no reachable torsion vector and would be reported
+`configurational` even though collapsing it is correct.
+
+This is why the tool's output includes a **residual profile** — the per-atom leftover deviation
+at the best torsion vector, worst first. A residual concentrated on the saturated atoms of a
+chelate ring is the signature of a pucker false positive; one localised on a metal's donor set or
+on a biaryl is the signature of a genuine configurational difference. Every `configurational`
+survivor is checked against this before it is called a candidate blind spot.
 
 ---
 
