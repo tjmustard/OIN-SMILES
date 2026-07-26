@@ -251,6 +251,52 @@ built count still equals the input.
 - Unit-suite baseline at `b23decb4`: `Ran 605 tests, OK (skipped=3, expected failures=3)`.
 - Ruff `check` and `format`: clean.
 
+## 5d. Two things the re-encode A/B turned up that are worth keeping
+
+Re-encoding 25 currently-passing molecules in both lever arms produced **25/25
+byte-identical strings** and **24/25 built counts still equal to the input**. The one
+exception, `XOSTUW_comp_0`, is not a lever regression — both arms give 63 against an input
+of 64 — but it is informative twice over.
+
+### (a) A pre-existing boron regression, not from this lane
+
+`XOSTUW_comp_0` passed the capstone at tier `UFF_1`. Its stored OIN wrote the boron as
+`[BH]`; the current encoder writes bare `B`:
+
+```
+capstone : ...c1cn{2}n([BH](n2cccn{4}2)n2cccn{0}2)c1...   -> adapter builds 64 = input
+current  : ...c1cn{2}n(B(n2cccn{4}2)n2cccn{0}2)c1...      -> adapter builds 63
+```
+
+Feeding the *stored* string through the **current** adapter still gives 64, so the adapter
+and Fix B are not involved. The change is encoder-side and predates this lane: my only
+string-affecting change is lever-gated, and both arms here are byte-identical. It therefore
+sits somewhere between the capstone commit `58bba7ad` and current `main`.
+
+The consequence matters for planning: **the frozen 74-molecule worklist understates this
+class.** A fresh sweep would surface `atom_count` failures that are not in it.
+
+### (b) Cause A also runs in the LOSS direction, and Fix A deliberately declines boron
+
+This is the same write/read asymmetry, losing a hydrogen instead of gaining one. The
+encoder's own molecule has the boron right — `exp=1, tot=1, val=4` — and the writer emits
+bare `B`, which re-reads as 0 H.
+
+`h_faithful_smiles` *detects* this correctly and then **refuses to repair it**, because the
+repaired fragment cannot be verified: a neutral tetravalent boron fails RDKit's valence
+check, so `[BH]`-bearing fragments do not sanitize at all.
+
+```
+c1cnn(B(n2cccn2)n2cccn2)c1      full sanitize = True    (B reads 0 H)
+c1cnn([BH](n2cccn2)n2cccn2)c1   full sanitize = False   <-- cannot be verified
+```
+
+That is the verification gate working as designed rather than a bug — emitting a string that
+does not sanitize would trade a wrong count for a broken fragment. But it means **boron is
+outside Fix A's reach**, consistent with the boron ceiling already recorded for v0.4.4 SL5.
+Closing it needs a decision about how OIN should represent tetravalent boron, which is a
+notation question, not a serialization one.
+
 ## 6. Reproduction
 
 ```bash
