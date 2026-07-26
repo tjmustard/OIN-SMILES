@@ -374,3 +374,55 @@ of work and the honest remaining scope of the lane.
 | donor SET determination | **SOLVED** — take perception's metal-incident bonds, not a distance ratio |
 | chiral vs achiral DECISION | **OPEN** — needs symmetry detection, not a magnitude threshold |
 | wired to the emit path | **NO** — and it must not be until the decision above is sound |
+
+---
+
+# Lane 5, third measurement: the descriptor's INPUT is wrong
+
+Replacing the magnitude threshold with a proper symmetry test (mirror the donor set, ask whether any
+permutation + proper rotation superimposes it) was the right move for the *decision*. It produced a
+harder result:
+
+| fixture | symmetry test says | truth |
+|---|---|---|
+| ZUMNEC — chiral Δ/Λ tris-bidentate | **achiral** | chiral |
+| JEGKOW — square planar | achiral | achiral |
+| ideal square | achiral | achiral |
+
+**ZUMNEC reads achiral, and as a bare point set it IS.** Six oxygens at octahedral vertices admit
+improper operations; there is no handedness in the donor positions alone.
+
+**Δ/Λ helicity is a property of the chelate CONNECTIVITY** — which donor pairs belong to the same
+bidentate ligand, and how those chelate planes twist about the metal. Reflecting a Δ complex yields
+Λ only because the reflection cannot be undone *while keeping the chelate pairing intact*. A
+permutation search over unlabelled points is free to re-pair the donors, so it always finds a
+"symmetry" that is not chemically available.
+
+This also retro-explains the previous result: `chirality_index`'s non-zero reading for ZUMNEC
+(−4.807e-04) was residual crystallographic distortion — the same magnitude as achiral JEGKOW's
+pucker (−3.287e-04). **It was never detecting helicity at all.** Three of its four proven
+properties (rotation invariance, reflection inversion, permutation invariance) were real and are
+still real; they were just properties of a quantity that does not mean what the lane needs.
+
+## What Lane 5 actually requires
+
+Constrain the permutation search to relabellings that **preserve chelate membership** — treat the
+donors as a *coloured* point set, colour = the ligand each donor belongs to. A mirror that has to
+re-pair chelates is then correctly rejected. That needs the ligand partition threaded in from the
+caller, which the current signature does not carry.
+
+## Lane 5 status, corrected again
+
+| property | state |
+|---|---|
+| permutation / relabelling invariance of the index | SOLVED |
+| invariance under proper rotation | PROVEN |
+| inversion under reflection | PROVEN |
+| donor SET determination | SOLVED (perception's metal-incident bonds) |
+| point-set achirality test | BUILT and correct as such |
+| **detects Δ/Λ helicity** | **NO — needs chelate connectivity, not positions** |
+| wired to emit | NO, correctly |
+
+The honest read: the lane has a working achirality test and a working pseudoscalar, neither of which
+is yet a Δ/Λ descriptor. Eighth refutation of this release, and the only one that invalidated the
+*input* rather than the method.

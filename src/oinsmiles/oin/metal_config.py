@@ -56,6 +56,8 @@ was accidentally reflection-invariant and every single-fixture guard passed.
 
 from __future__ import annotations
 
+import itertools
+
 import numpy as np
 
 #: Threshold on the normalized permutation-invariant chirality index (see
@@ -69,7 +71,17 @@ import numpy as np
 #: needs to clear floating-point residue -- not to guess a magnitude.
 _CHIRALITY_EPS = 1e-9
 
-__all__ = ["chirality_index", "metal_config_sign", "metal_config_token"]
+#: Above this donor count the exhaustive permutation search is skipped (see :func:`is_achiral`).
+#: 8! = 40320 superpositions is affordable; 9! = 362880 starts to matter in a hot encode path.
+_MAX_PERM_DONORS = 8
+
+__all__ = [
+    "chirality_index",
+    "is_achiral",
+    "metal_config_sign",
+    "metal_config_sign_symmetry",
+    "metal_config_token",
+]
 
 
 def chirality_index(donor_positions) -> float:
@@ -167,3 +179,98 @@ def metal_config_token(donor_positions) -> str:
     if sign == 0:
         return ""
     return "|mc:+|" if sign > 0 else "|mc:-|"
+
+
+#: RMSD tolerance (Å) for "the mirror image superimposes on the original".
+#:
+#: Chosen from the measured separation rather than guessed: see :func:`is_achiral`. Real
+#: crystallographic pucker in an achiral sphere leaves a residual well under this, while a genuine
+#: Δ/Λ helix cannot be superimposed on its mirror by any proper rotation at all.
+_ACHIRAL_RMSD_TOL = 0.35
+
+
+def _kabsch_proper_rmsd(a, b) -> float:
+    """RMSD after optimal **proper**-rotation superposition of *b* onto *a*.
+
+    Proper only: an improper "rotation" would map any set onto its own mirror and make every
+    structure look achiral, which is precisely the distinction being tested. The SVD's last
+    singular vector is flipped when ``det < 0`` to force ``det R = +1``.
+    """
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    a = a - a.mean(axis=0)
+    b = b - b.mean(axis=0)
+    u, _s, vt = np.linalg.svd(b.T @ a)
+    d = np.sign(np.linalg.det(u @ vt))
+    if d < 0:
+        u[:, -1] *= -1.0
+    rot = u @ vt
+    diff = (b @ rot) - a
+    return float(np.sqrt((diff**2).sum() / len(a)))
+
+
+def is_achiral(donor_positions, tol: float = _ACHIRAL_RMSD_TOL) -> bool:
+    """Does an IMPROPER operation map this donor set onto itself?
+
+    This replaces thresholding :func:`chirality_index`, which was measured NOT to work: on real
+    structures, crystallographic pucker in an achiral complex produces an index of the same order
+    of magnitude as genuine helicity (JEGKOW -3.287e-04 achiral vs ZUMNEC -4.807e-04 chiral,
+    1.5x apart). No magnitude threshold can separate those, because the exact-zero cancellation
+    holds only for idealized coordinates.
+
+    Chirality is a **symmetry** property, so it needs a symmetry test. Mirror the set, then ask
+    whether any relabelling of the mirrored points can be superimposed on the original by a
+    *proper* rotation. If one can, the mirror is the same object and the set is achiral.
+
+    Permutations are enumerated exhaustively, which is why this is affordable: a coordination
+    sphere has at most ~8 donors, and 8! = 40320 cheap superpositions. Above ``_MAX_PERM_DONORS``
+    it returns ``False`` (assume chiral) rather than silently sampling — a wrong "achiral" would
+    suppress a real descriptor, which is the worse error.
+    """
+    pts = np.asarray(donor_positions, dtype=float)
+    if pts.ndim != 2 or pts.shape[0] < 4 or pts.shape[1] != 3:
+        return True  # cannot support a handedness at all
+    n = pts.shape[0]
+    if n > _MAX_PERM_DONORS:
+        return False
+    mirrored = pts.copy()
+    mirrored[:, 0] *= -1.0
+    for perm in itertools.permutations(range(n)):
+        if _kabsch_proper_rmsd(pts, mirrored[list(perm)]) <= tol:
+            return True
+    return False
+
+
+def metal_config_sign_symmetry(donor_positions) -> int:
+    """Achirality decided by symmetry rather than magnitude — and MEASURED INSUFFICIENT.
+
+    ⚠⚠ THE INPUT IS WRONG, NOT JUST THE DECISION RULE. Measured: this reports ZUMNEC — a genuinely
+    chiral Δ/Λ tris(catecholato) complex — as **achiral**, because it is. As a *bare point set*,
+    six oxygens at octahedral vertices admit improper operations; there is no handedness in the
+    positions alone.
+
+    **Δ/Λ helicity is a property of the CHELATE CONNECTIVITY**, not of the donor point set: it is
+    which donor pairs belong to the same bidentate ligand, and how those chelate planes twist about
+    the metal. Reflecting a Δ complex gives Λ only because the reflection cannot be undone
+    *while keeping the chelate pairing intact* — and a permutation search over unlabelled points is
+    free to re-pair them, so it always finds a "symmetry" that does not exist chemically.
+
+    That also explains why :func:`chirality_index` looked like it worked: its non-zero reading for
+    ZUMNEC (-4.807e-04) is residual crystallographic distortion, the same magnitude as achiral
+    JEGKOW's pucker (-3.287e-04). It was never detecting helicity.
+
+    The fix is to constrain the permutation search to relabellings that PRESERVE chelate
+    membership — i.e. treat the donors as a coloured point set where the colour is the ligand a
+    donor belongs to. A mirror that requires re-pairing chelates is then correctly rejected. That
+    needs the ligand partition threaded in from the caller, which the current signature does not
+    carry, so it is the remaining work rather than a tweak.
+
+    Left in place, unwired, because the point-set achirality test itself is correct and reusable —
+    it is the *input* that is incomplete.
+    """
+    if is_achiral(donor_positions):
+        return 0
+    index = chirality_index(donor_positions)
+    if index == 0.0:
+        return 0
+    return 1 if index > 0 else -1
