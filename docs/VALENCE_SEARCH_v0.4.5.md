@@ -283,22 +283,26 @@ ligand:
 |---|---|---|
 | sub-cap (99.8% of corpus) | everything else | **no effect at all** — cannot reach the lever |
 | over-cap, ~37-atom ligand | `QIDKUL`, `QIDKIZ` | **161–253x less wall, OIN byte-identical.** The floor collapses from ~15 s/arm to ~0.3 s/arm |
-| over-cap, 147–220-atom ligand | `KESWUB`, `BENVOG`, `HICLAG`, `HOHKUL` | **partial at best** — see below |
+| over-cap, 92–147-atom ligand | `HICLAG`, `LIYFAA` | **timeout becomes a successful encode** — a coverage gain, but unverifiable against a baseline that never completes |
+| over-cap, 148–220-atom ligand | `KESWUB`, `BENVOG`, `HOHKUL`, `ZAZREZ` | **no effect** — still times out at 200 tries |
 
 For the largest ligands the candidate *count* is not the binding constraint: **the per-candidate
 cost is**. Every over-cap molecule from the wider scan, each arm its own subprocess under a 200 s
 cap:
 
-| molecule | ligand atoms | `tries=200` |
-|---|---|---|
-| `KESWUB_comp_0` | 188 | TIMEOUT |
-| `BENVOG_comp_0` | 148 | TIMEOUT |
-| `HICLAG_comp_0` | 147 | **145.74 s**, 401 cands, `found_valid=1`, OIN `02b9b4e59da5` |
-| `HOHKUL_comp_0` | 220 | TIMEOUT |
-| `LIYFAA_comp_0` | 92 | **34.43 s**, 801 cands, `found_valid=1`, OIN `c5c84be56a0c` |
-| `ZAZREZ_comp_0` | 144 | TIMEOUT |
+| molecule | ligand atoms | `tries=200` | `tries=20 000` |
+|---|---|---|---|
+| `KESWUB_comp_0` | 188 | TIMEOUT | TIMEOUT |
+| `BENVOG_comp_0` | 148 | TIMEOUT | TIMEOUT |
+| `HICLAG_comp_0` | 147 | **145.74 s**, 401 cands, `found_valid=1`, OIN `02b9b4e59da5` | **TIMEOUT** |
+| `HOHKUL_comp_0` | 220 | TIMEOUT | TIMEOUT |
+| `LIYFAA_comp_0` | 92 | **34.43 s**, 801 cands, `found_valid=1`, OIN `c5c84be56a0c` | **TIMEOUT** |
+| `ZAZREZ_comp_0` | 144 | TIMEOUT | TIMEOUT |
 
-**2 of 6 complete at 200 tries; 4 of 6 time out even there.** `HICLAG` spent 145.74 s on **401**
+**2 of 6 complete at 200 tries; 4 of 6 time out even there — and both of those 2 time out at
+20 000.** So within a 200 s budget the cut converts **2 encode failures into encodes**
+(`HICLAG`, `LIYFAA`). That is a coverage gain rather than a speed gain, and it is the one result
+here that would move a pass rate. The other 4 are untouched: `HICLAG` spent 145.74 s on **401**
 candidates — 0.36 s each, against roughly 0.005 s each for the 37-atom ligand, a ~70x difference
 in per-candidate cost. Cutting the count cannot fix a molecule whose 200 candidates already
 exceed the time budget. So the honest claim is: **this lever removes the valence-search floor for
@@ -308,16 +312,18 @@ this lane attacked.
 
 ### The caveat that matters most, stated plainly
 
-`HICLAG` and `LIYFAA` complete at 200 tries and do **not** complete at 20 000 within the same cap.
-They are therefore the two molecules the cut most clearly helps — and they are also **the two for
-which no byte-identity check is possible**, because the 20 000 baseline never produces a string to
-compare against. The molecules that benefit most from the budget cut are exactly the ones whose
-fidelity under it cannot be verified. Their OIN shas are recorded above so a future run on a quiet
-host, with a long enough cap to complete the 20 000 arm, can settle it.
+`HICLAG` and `LIYFAA` complete at 200 tries and do **not** complete at 20 000. They are therefore
+the two molecules the cut most clearly helps — and they are also **the two for which no
+byte-identity check is possible**, because the 20 000 baseline never produces a string to compare
+against. The molecules that benefit most from the budget cut are exactly the ones whose fidelity
+under it cannot be verified. Their OIN shas are recorded above so a future run on a quiet host,
+with a cap long enough to complete the 20 000 arm, can settle it.
 
 So the byte-identity claim is precisely this and no wider: **0 OIN strings changed out of 16
-molecules where both arms completed** — 14 sub-cap plus `QIDKUL_comp_0` and `QIDKIZ_comp_0`. The
-other four over-cap molecules produce no comparison in either direction.
+molecules where both arms completed** — 14 sub-cap plus `QIDKUL_comp_0` and `QIDKIZ_comp_0`. Of
+the remaining six over-cap molecules, two changed from *no string at all* to a string, and four
+produce no comparison in either direction. Nobody should read "0 changed" as covering the
+over-cap class; it covers two of its eight known members.
 
 That also corrects an inference the reader might otherwise draw from Q1: the 4-of-7 enrichment in
 the unresolved encoder cohort does **not** mean this lever fixes 4 molecules. It means those 4
