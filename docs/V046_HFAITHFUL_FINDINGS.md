@@ -463,3 +463,45 @@ Recorded rather than built because step 1 has not been run, and this release con
 hypotheses that looked obvious and died to precisely the measurement that got skipped. The idea's
 value is that it sits outside the category the project has already disproved — not that it is likely
 to work.
+
+---
+
+# Correction: the eta cost looks like COST-PER-ATTEMPT, not attempt count
+
+The section above attributed the eta tail to a low acceptance rate and proposed post-hoc ring-face
+repair to reduce the number of attempts. A size-controlled measurement undercuts that.
+
+Eta vs non-eta among the 634 succeeding molecules, banded by atom count:
+
+| atoms | eta median | non-eta median | ratio |
+|---|---|---|---|
+| 0–50 | 7.9 s (n=47) | 3.3 s (n=86) | **2.4×** |
+| 50–80 | 15.5 s (n=91) | 5.0 s (n=182) | **3.1×** |
+| 80–120 | 49.7 s (n=31) | 8.1 s (n=176) | **6.2×** |
+
+Two things follow.
+
+**Size is not a confound — it is the opposite.** Eta molecules are *smaller* on median (62 vs 73
+atoms) while being 3.2× slower overall, and the eta penalty holds inside every band. So the eta
+correlation reported earlier survives control for size, and is in fact understated by the raw
+comparison.
+
+**But the mechanism is probably not acceptance rate.** If the cost were the NUMBER of attempts
+before the requested ring face appears, the eta/non-eta ratio would be roughly FLAT across size
+bands — attempt count is a property of the winding constraint, not of molecule size. It is not flat:
+it climbs 2.4 → 3.1 → 6.2×. A penalty that scales with size is a **cost-per-attempt** signature —
+more work per conformer (haptic scaling, ring placement, relaxation) rather than more conformers.
+
+A supporting argument from the other direction: the tail's median eta count is **1 marker**, i.e. one
+ring, two faces. An unbiased embed should hit the requested face about half the time, and
+`OIN_EARLY_EXIT` fires on the first acceptance — so an attempt-count story predicts eta molecules
+finish in one or two attempts and are therefore FAST. They are 2.4–6.2× slower.
+
+**Consequence for the repair idea recorded above: it probably does not help.** Reducing attempts
+cannot fix a per-attempt cost. Recorded rather than deleted, because the reasoning that killed it is
+the useful part, and because the discriminating measurement is now specific and cheap: instrument the
+fill loop to log attempts-to-acceptance for eta molecules (a COUNT, load-independent). If eta
+molecules accept in 1–2 attempts, attempt count is definitively not the mechanism and the lever is
+per-conformer eta cost — a profiling problem, not a stereochemistry one.
+
+Ninth refutation of this release, and the first of a proposal made in this same document.
