@@ -161,6 +161,36 @@ Lane1→stacked step, with zero molecules going the other way and zero going sta
 23 → 23 alone, 18 → 18 stacked). That is the over-folding guard at corpus scale: had the
 canonicalization merged a real isomer, the comparison key would have registered it.
 
+### Exactly which pinned goldens the lever moves — and proof each is a relabeling
+
+With `OIN_CANONICAL_SLOTS` alone, three of the six pinned fixtures move and three are already
+canonical. **Every moved string has an unchanged `canonical_roundtrip_key`**, i.e. the lever
+relabeled the isomer without becoming a different one.
+
+| fixture | off | on |
+|---|---|---|
+| CisPlatin | `[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}` | `[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}` |
+| TransPlatin | `[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}` | `[Pt_SPL].N{0}.[Cl]{1}.N{2}.[Cl]{3}` |
+| fac-Ir(ppy)₃ | `…c{0}…n{3}1.c{5}…n{1}1.c{2}…n{4}1` | `…c{0}…n{5}1.c{2}…n{1}1.c{4}…n{3}1` |
+| mer-Ir(ppy)₃, Ferrocene, Cis-PtCl₂(en) | — | unchanged |
+
+Cisplatin is the clearest case. The old labeling put the chlorides on slots 0,1 only because
+the fragment sort ranks by descending mass. The lex-min runs over vertex *colours* and
+`"N" < "[Cl]"` bytewise, so the canonical labeling puts the amines on the lowest vertices.
+**Cis is still cis** — the chlorides land on 2 and 3, which are adjacent.
+
+All of this is pinned by `TestLeverOnGoldens` (moved strings *and* the key-invariance
+assertion *and* the unmoved set, so gratuitous churn is caught too), which turns the
+promotion A/B into a diff against a committed expectation rather than a judgement call.
+
+Consequence to expect at promotion time: `tests/unit/test_regression_stability.py` pins the
+**default path** and does not clear the environment, so running the suite with
+`OIN_CANONICAL_SLOTS` exported fails exactly those 3 goldens (`test_cisplatin`,
+`test_transplatin`, `test_fac_irppy3`) and nothing else. Left as-is on purpose: that file is
+the project's default-path pin and hardening it is a change to a shared guard, not this
+lane's call. `TestLeverOffIsByteIdentical` re-checks two of the same goldens with the
+environment force-cleared, so golden coverage survives either decision.
+
 ### Rotation-group unification: measured blast radius
 
 Deterministic encoder-vs-encoder byte diff over the same 150 molecules, derived group vs the

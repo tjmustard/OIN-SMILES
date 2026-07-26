@@ -146,6 +146,63 @@ class TestLeverOffIsByteIdentical(unittest.TestCase):
             )
 
 
+class TestLeverOnGoldens(unittest.TestCase):
+    """Pins WHAT the lever changes, and proves each change is a relabeling, not a re-isomer.
+
+    Measured with ``OIN_CANONICAL_SLOTS`` alone over the six pinned fixtures: three move
+    (CisPlatin, TransPlatin, fac-Ir(ppy)3) and three are already canonical (mer-Ir(ppy)3,
+    Ferrocene, Cis-PtCl2(en)). Pinning the moved strings turns the promotion A/B into a diff
+    against a committed expectation rather than a judgement call; pinning the *unmoved* ones
+    catches gratuitous churn.
+
+    Cisplatin is the clearest case. The old labeling put the chlorides on slots 0,1 only
+    because the fragment sort ranks by descending mass. The lex-min runs over the vertex
+    COLOURS and ``"N" < "[Cl]"`` bytewise, so the canonical labeling puts the amines on the
+    lowest vertices. Cis is still cis: the chlorides land on 2,3, which are adjacent.
+
+    The second assertion in each case is the one that matters -- the canonical round-trip key
+    is UNCHANGED, i.e. the lever relabeled the isomer without turning it into a different
+    one. A canonicalization that merged two isomers would fail here even with the string
+    assertion passing.
+    """
+
+    _EXPECT = {
+        "CisPlatin.xyz": "[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}",
+        "TransPlatin.xyz": "[Pt_SPL].N{0}.[Cl]{1}.N{2}.[Cl]{3}",
+        "fac-Ir(ppy)3.xyz": (
+            "[Ir_OCT].c{0}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{1}1.c{4}1ccccc1-c1ccccn{3}1"
+        ),
+    }
+    _UNMOVED = ("mer-Ir(ppy)3.xyz", "Ferrocene.xyz", "Cis-PtCl2(en).xyz")
+
+    @staticmethod
+    def _encode(name, lever_on):
+        env = {k: v for k, v in os.environ.items() if k != "OIN_CANONICAL_SLOTS"}
+        if lever_on:
+            env["OIN_CANONICAL_SLOTS"] = "1"
+        with mock.patch.dict(os.environ, env, clear=True):
+            return XYZToSMILES().convert(os.path.join(_FIXTURES, name))
+
+    def test_moved_goldens_are_relabelings_not_new_isomers(self):
+        from oinsmiles.oin.compare import canonical_roundtrip_key
+
+        for name, expected in self._EXPECT.items():
+            with self.subTest(name):
+                off, on = self._encode(name, False), self._encode(name, True)
+                self.assertNotEqual(off, on, "expected this fixture's labeling to move")
+                self.assertEqual(on, expected, "the canonical labeling itself changed")
+                self.assertEqual(
+                    canonical_roundtrip_key(off),
+                    canonical_roundtrip_key(on),
+                    "the lever changed the ISOMER, not just the labels -- over-folding",
+                )
+
+    def test_already_canonical_fixtures_do_not_churn(self):
+        for name in self._UNMOVED:
+            with self.subTest(name):
+                self.assertEqual(self._encode(name, False), self._encode(name, True))
+
+
 class TestNoOverFolding(unittest.TestCase):
     """The whole risk of this lane: a canonicalization that merges two real isomers.
 
