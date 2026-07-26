@@ -183,9 +183,15 @@ def metal_config_token(donor_positions) -> str:
 
 #: RMSD tolerance (Å) for "the mirror image superimposes on the original".
 #:
-#: Chosen from the measured separation rather than guessed: see :func:`is_achiral`. Real
-#: crystallographic pucker in an achiral sphere leaves a residual well under this, while a genuine
-#: Δ/Λ helix cannot be superimposed on its mirror by any proper rotation at all.
+#: Chosen from the measured separation, using the chelate-aware test
+#: (:func:`is_achiral_chelate_aware`):
+#:
+#:     ZUMNEC  chiral Δ/Λ tris-bidentate   best mirror-superposition RMSD = 1.3752 Å
+#:     JEGKOW  achiral square planar       best mirror-superposition RMSD = 0.0582 Å
+#:
+#: A 24x separation, so 0.35 is a wide margin rather than a tuned constant. Crystallographic pucker
+#: in an achiral sphere leaves a residual far below it, while a genuine Δ/Λ helix cannot be
+#: superimposed on its mirror by ANY chelate-preserving proper rotation.
 _ACHIRAL_RMSD_TOL = 0.35
 
 
@@ -274,3 +280,80 @@ def metal_config_sign_symmetry(donor_positions) -> int:
     if index == 0.0:
         return 0
     return 1 if index > 0 else -1
+
+
+#: Precomputed internal orderings per group size, so the product below iterates LISTS.
+_INTERNALS: dict[int, list[tuple[int, ...]]] = {
+    n: list(itertools.permutations(range(n))) for n in range(1, 7)
+}
+
+
+def _admissible_permutations(groups):
+    """Relabellings that PRESERVE chelate membership.
+
+    ``groups`` partitions the donor indices by the ligand each donor belongs to — so a
+    tris(bidentate) sphere is ``[(0,1),(2,3),(4,5)]`` and four monodentates are
+    ``[(0,),(1,),(2,),(3,)]``.
+
+    A relabelling is admissible only if it maps whole chelates onto whole chelates of the same
+    size. That is the constraint an unconstrained permutation search lacks, and its absence is why
+    the search found a bogus "mirror symmetry" for a genuinely chiral Δ complex: it was allowed to
+    re-pair the donors into different ligands, which no physical operation can do.
+
+    Count stays small: a tris-bidentate gives 3! group assignments x (2!)^3 internal orderings = 48.
+    """
+    by_size: dict[int, list[tuple[int, ...]]] = {}
+    for g in groups:
+        by_size.setdefault(len(g), []).append(g)
+
+    per_size_options = []
+    for size, gs in sorted(by_size.items()):
+        options = []
+        for target_order in itertools.permutations(range(len(gs))):
+            # list(...), NOT the bare iterator: `[itertools.permutations(x)] * n` repeats ONE
+            # iterator, so after the first is consumed the rest are empty and the product
+            # collapses to nothing. That made this generator yield ZERO permutations, which made
+            # is_achiral_chelate_aware() return "chiral" for everything -- a vacuous loop that
+            # reads exactly like a detection. Same family as the empty-corpus and
+            # buffered-stdout failures recorded in docs: nothing measured, confident answer.
+            for internals in itertools.product(*[_INTERNALS[size]] * len(gs)):
+                pairs = []
+                for src_i, dst_i in enumerate(target_order):
+                    src, dst = gs[src_i], gs[dst_i]
+                    pairs += [(src[k], dst[internals[src_i][k]]) for k in range(size)]
+                options.append(pairs)
+        per_size_options.append(options)
+
+    for combo in itertools.product(*per_size_options):
+        mapping = {}
+        for pairs in combo:
+            mapping.update(dict(pairs))
+        yield [mapping[i] for i in range(len(mapping))]
+
+
+def is_achiral_chelate_aware(donor_positions, groups, tol: float = _ACHIRAL_RMSD_TOL) -> bool:
+    """Achirality with the chelate partition respected — the form that actually works for Δ/Λ.
+
+    :func:`is_achiral` searches ALL permutations and therefore reports a chiral Δ/Λ tris-bidentate
+    as achiral: free to re-pair donors into different ligands, it always finds a superposition.
+    Restricting to :func:`_admissible_permutations` removes exactly that freedom.
+    """
+    pts = np.asarray(donor_positions, dtype=float)
+    if pts.ndim != 2 or pts.shape[0] < 4 or pts.shape[1] != 3:
+        return True
+    mirrored = pts.copy()
+    mirrored[:, 0] *= -1.0
+    for perm in _admissible_permutations(groups):
+        if _kabsch_proper_rmsd(pts, mirrored[perm]) <= tol:
+            return True
+    return False
+
+
+def metal_config_token_chelate(donor_positions, groups) -> str:
+    """The Δ/Λ sidecar, decided by chelate-aware symmetry. ``""`` when achiral."""
+    if is_achiral_chelate_aware(donor_positions, groups):
+        return ""
+    index = chirality_index(donor_positions)
+    if index == 0.0:
+        return ""
+    return "|mc:+|" if index > 0 else "|mc:-|"
