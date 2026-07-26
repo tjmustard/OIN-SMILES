@@ -7,16 +7,26 @@ real isomers) or destroys stereochemistry by folding over a reflection.
 """
 
 import itertools
+import re
 import unittest
 
 import numpy as np
 
 from oinsmiles.oin.canonical_slots import (
     GEOMETRY_VERTICES,
+    VERTEX_SENTINEL,
+    canonical_slot_map,
     canonical_slot_permutation,
+    canonicalize_oin_slots,
     derive_rotation_group,
     geometry_rotation_group,
+    geometry_vertex_count,
     lexmin_vertex_signature,
+)
+from oinsmiles.oin.compare import (
+    _parse_vertex_colors,
+    canonical_roundtrip_key,
+    normalize_oin_for_comparison,
 )
 from oinsmiles.utils.oin_aligner import TEMPLATE_SPECS, OINDiscreteAligner
 
@@ -129,39 +139,44 @@ class TestRotationGroupIsAGroup(unittest.TestCase):
         self.assertIsNone(geometry_rotation_group("NOPE"))
 
 
-class TestBruteForceSymmetriesIsIncomplete(unittest.TestCase):
-    """Pins the measured gap that justifies unifying on ``derive_rotation_group``.
+class TestAlignerSymmetriesAreUnified(unittest.TestCase):
+    """The encoder and the comparison key must enumerate ONE rotation group (TD-005).
 
-    ``oin_aligner._brute_force_symmetries`` builds the same group by brute-forcing Euler
-    angles from the fixed grid ``[0, 90, 120, 180, 240, 270]``. That grid cannot express
-    PBP's 72-degree five-fold equatorial rotation, so it finds only 2 of the 10 proper
-    rotations -- the encoder currently cannot canonicalize a pentagonal-bipyramidal
-    equatorial labeling at all.
+    ``oin_aligner._brute_force_symmetries`` used to build the group by brute-forcing Euler
+    triples from the fixed grid ``[0, 90, 120, 180, 240, 270]``. That grid cannot express
+    PBP's 72-degree five-fold equatorial rotation, so it found **2 of the 10** proper
+    rotations and the encoder could not canonicalize a pentagonal-bipyramidal equatorial
+    labeling at all. It agreed with ``derive_rotation_group`` on the other ten geometries
+    and never invented a non-rotation, which is what made unifying safe.
+
+    v0.4.5 Lane 2 unified it. These tests now assert agreement rather than pinning the gap,
+    and ``test_pbp_five_fold_is_now_reachable`` keeps the specific defect from coming back
+    if someone reintroduces an angle-grid search.
     """
 
     @staticmethod
-    def _brute(geo):
+    def _aligner_group(geo):
         aligner = OINDiscreteAligner.__new__(OINDiscreteAligner)
         spec = TEMPLATE_SPECS[geo]
         tv = [np.asarray(spec[i]["pos"], dtype=float) for i in sorted(spec)]
         return set(tuple(p) for p in aligner._brute_force_symmetries(tv))
 
-    def test_brute_force_never_exceeds_the_derived_group(self):
-        """Brute force may MISS elements, but must never invent one."""
+    def test_aligner_agrees_with_the_derived_group_everywhere(self):
         for geo in GEOMETRY_VERTICES:
-            derived = set(geometry_rotation_group(geo))
-            extra = self._brute(geo) - derived
-            self.assertFalse(extra, f"{geo}: brute force found non-rotations {extra}")
+            self.assertEqual(
+                self._aligner_group(geo),
+                set(geometry_rotation_group(geo)),
+                f"{geo}: the encoder and the key disagree about the rotation group",
+            )
 
-    def test_pbp_is_the_one_disagreement(self):
-        disagree = {
-            geo
-            for geo in GEOMETRY_VERTICES
-            if self._brute(geo) != set(geometry_rotation_group(geo))
-        }
-        self.assertEqual(disagree, {"PBP"}, "the set of geometries where the two differ moved")
-        self.assertEqual(len(self._brute("PBP")), 2)
-        self.assertEqual(len(geometry_rotation_group("PBP")), 10)
+    def test_pbp_five_fold_is_now_reachable(self):
+        """The 72-degree equatorial rotation the old Euler grid could not express."""
+        group = self._aligner_group("PBP")
+        self.assertEqual(len(group), 10)
+        # PBP vertex order is 0=+z, 1=-z, then five equatorial vertices 2..6 at 72-degree
+        # steps. The C5 generator fixes the axial pair and cycles the equator.
+        c5 = (0, 1, 3, 4, 5, 6, 2)
+        self.assertIn(c5, group, "the five-fold rotation is missing again")
 
 
 # Colored-vertex helpers for the signature tests. OCT vertex order is
@@ -246,6 +261,144 @@ class TestCanonicalSlotPermutation(unittest.TestCase):
         b = derive_rotation_group(GEOMETRY_VERTICES["OCT"])
         self.assertEqual(a, b)
         self.assertEqual(len(a), 24)
+
+
+FAC_OIN = "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1"
+MER_OIN = "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{1}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{4}1"
+
+
+def _relabel_oin(oin, perm):
+    """Apply a vertex permutation to an OIN string's slot integers (winding kept)."""
+    return re.sub(
+        r"\{(\d+)([<>^]?)\}",
+        lambda m: "{" + str(perm[int(m.group(1))]) + m.group(2) + "}",
+        oin,
+    )
+
+
+class TestCanonicalizeOinSlots(unittest.TestCase):
+    """The string-level post-pass. Fast, generator-free, no encoder in the loop.
+
+    These are the sharp tests for the lane's central claim: a slot labeling and any
+    proper-rotation image of it must emit ONE string, while two labelings NOT related by a
+    proper rotation (fac vs mer) must stay apart.
+    """
+
+    def test_every_rotation_of_one_labeling_gives_one_string(self):
+        for oin in (FAC_OIN, MER_OIN):
+            outs = {
+                canonicalize_oin_slots(_relabel_oin(oin, perm))
+                for perm in geometry_rotation_group("OCT")
+            }
+            self.assertEqual(len(outs), 1, f"{len(outs)} distinct strings over the OCT group")
+
+    def test_fac_and_mer_do_not_collapse(self):
+        """The over-folding guard at string level: worse than drift, because it is silent."""
+        self.assertNotEqual(canonicalize_oin_slots(FAC_OIN), canonicalize_oin_slots(MER_OIN))
+
+    def test_cis_and_trans_do_not_collapse(self):
+        cis = "[Pt_SPL].N{0}.[CH3]{1}.[Br]{2}.[Cl]{3}"
+        trans = "[Pt_SPL].N{0}.[Br]{1}.[CH3]{2}.[Cl]{3}"
+        self.assertNotEqual(canonicalize_oin_slots(cis), canonicalize_oin_slots(trans))
+
+    def test_idempotent(self):
+        once = canonicalize_oin_slots(FAC_OIN)
+        self.assertEqual(canonicalize_oin_slots(once), once)
+
+    def test_metal_fragment_stays_first(self):
+        """``fragments[0]`` is the metal -- a load-bearing project invariant."""
+        for oin in (FAC_OIN, MER_OIN, "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"):
+            self.assertTrue(canonicalize_oin_slots(oin).split(".")[0].startswith("["))
+            self.assertIn("_", canonicalize_oin_slots(oin).split(".")[0])
+
+    def test_winding_character_is_preserved_verbatim(self):
+        """``^`` is folded to ``>`` for COLORING only; the emitted char must survive."""
+        oin = (
+            "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1^}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
+        )
+        out = canonicalize_oin_slots(oin)
+        self.assertEqual(out.count(">"), 1)
+        self.assertEqual(out.count("^"), 1)
+
+    def test_axial_suffix_is_carried_through(self):
+        oin = "[Pd_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3} |ax:+-|"
+        self.assertTrue(canonicalize_oin_slots(oin).endswith(" |ax:+-|"))
+
+    def test_no_slots_is_returned_unchanged(self):
+        self.assertEqual(canonicalize_oin_slots("[Fe_OCT]"), "[Fe_OCT]")
+        self.assertEqual(canonicalize_oin_slots(""), "")
+
+    def test_emitted_labeling_achieves_the_keys_lex_min(self):
+        """Encoder and comparison key agree BY CONSTRUCTION -- the point of this seam.
+
+        After the post-pass the identity permutation must already be optimal for
+        ``_polyhedron_signature``, i.e. re-canonicalizing moves nothing.
+        """
+        for oin in (FAC_OIN, MER_OIN):
+            out = canonicalize_oin_slots(oin)
+            _metal, geo, vcolor = _parse_vertex_colors(normalize_oin_for_comparison(out))
+            sig, _perm = lexmin_vertex_signature(geo, vcolor)
+            identity = [VERTEX_SENTINEL] * geometry_vertex_count(geo)
+            for slot, color in vcolor.items():
+                identity[slot] = color
+            self.assertEqual(tuple(identity), sig)
+
+    def test_comparison_key_is_unchanged_by_the_post_pass(self):
+        """The post-pass may not move the key -- it only relabels within one orbit."""
+        for oin in (FAC_OIN, MER_OIN):
+            self.assertEqual(
+                canonical_roundtrip_key(oin), canonical_roundtrip_key(canonicalize_oin_slots(oin))
+            )
+
+
+class TestCanonicalSlotMap(unittest.TestCase):
+    """The documented Lane 5 / Lane 6 entry point: ``canonical_slot_map(oin)[slot]``."""
+
+    def test_map_matches_the_relabeled_string(self):
+        mapping = canonical_slot_map(FAC_OIN)
+        self.assertEqual(_relabel_oin(FAC_OIN, mapping), canonicalize_oin_slots(FAC_OIN))
+
+    def test_map_is_identity_on_an_already_canonical_string(self):
+        out = canonicalize_oin_slots(FAC_OIN)
+        mapping = canonical_slot_map(out)
+        self.assertEqual(mapping, {s: s for s in mapping})
+
+    @staticmethod
+    def _per_donor_maps(oin, geo):
+        """Distinct 'physical donor -> canonical slot' assignments over the whole group.
+
+        The donor that starts at slot ``s`` sits at ``perm[s]`` in the rotated presentation,
+        so its canonical slot is ``canonical_slot_map(rotated)[perm[s]]``.
+        """
+        n = geometry_vertex_count(geo)
+        out = set()
+        for perm in geometry_rotation_group(geo):
+            cmap = canonical_slot_map(_relabel_oin(oin, perm))
+            out.add(tuple(cmap[perm[s]] for s in range(n)))
+        return out
+
+    def test_per_donor_map_is_unique_when_donors_are_distinguishable(self):
+        """Lane 5's requirement: 'canonical slot of donor d' is a function of the molecule."""
+        het = "[Ir_OCT].[F]{0}.[Cl]{1}.[Br]{2}.[I]{3}.N{4}.O{5}"
+        self.assertEqual(len(self._per_donor_maps(het, "OCT")), 1)
+
+    def test_per_donor_ambiguity_is_exactly_the_genuine_automorphism(self):
+        """fac-M(ppy)3 has a real C3 axis, so three donor labelings are equally canonical.
+
+        The **string** is still unique (asserted here too) -- the ambiguity is only in which
+        of three interchangeable ligands is called 'first'. It is bounded by the colored
+        polyhedron's rotational automorphism group, and every member of that group is a
+        PROPER rotation, so no stereochemical descriptor Lane 5 or Lane 6 derives from the
+        canonical arrangement can differ between them. If this count ever exceeds the
+        automorphism order, the tie-break has stopped being a property of the molecule.
+        """
+        maps = self._per_donor_maps(FAC_OIN, "OCT")
+        self.assertEqual(len(maps), 3, "not the C3 of fac-tris-homoleptic")
+        outs = {
+            canonicalize_oin_slots(_relabel_oin(FAC_OIN, perm))
+            for perm in geometry_rotation_group("OCT")
+        }
+        self.assertEqual(len(outs), 1)
 
 
 if __name__ == "__main__":
