@@ -23,6 +23,7 @@ import warnings
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
+from ..oin.locked_donor import restore_locked_donor_tags
 from .constants import TRANSITION_METALS_NUM
 
 logger = logging.getLogger(__name__)
@@ -724,6 +725,15 @@ class ChiralityRecoveryUtility:
                 # N -- N is out of scope, Sec.3.2). Metal removed, 3
                 # neighbours remain; @/@@ is undefined without the full
                 # coordination sphere or a lone-pair tag.
+                #
+                # The carve-out for a metal-LOCKED donor is deliberately NOT here.
+                # This clear stays unconditional -- it is what keeps a genuinely
+                # invertible amine and a symmetric phosphine from acquiring spurious
+                # handedness, and narrowing the predicate in place would put the
+                # exemption ahead of AssignStereochemistry(cleanIt=True) above, which
+                # clears a trivalent nitrogen anyway. Lane 6 instead restores the tag
+                # AFTER this loop, from a property stamped during the fragment rebuild
+                # (see restore_locked_donor_tags below).
                 atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
 
             elif stored_cip and total_deg >= 4:
@@ -740,5 +750,15 @@ class ChiralityRecoveryUtility:
                 # 4 neighbours but no _OIN_CIPCode — non-standard valence.
                 # Neutral fallback: clear the stray chiral tag.
                 atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+
+        # --- Metal-locked N/P donor (Y1 P3), LAST so nothing above can undo it ---
+        # A donor whose fourth position is held by the metal cannot invert, so its
+        # configuration is real -- but the loop above has just cleared it (correctly, in
+        # general), and Chem.AssignStereochemistry(cleanIt=True) had already cleared any
+        # trivalent nitrogen before that. Restore it here from the property the fragment
+        # rebuild stamped off the input 3D. Only touches atoms left UNSPECIFIED, so the
+        # Zone-A lone-pair P path and the >=4-neighbour verify-and-flip keep priority.
+        # No-op unless OIN_EMIT_LOCKED_DONOR was set at encode time (nothing is stamped).
+        restore_locked_donor_tags(rw)
 
         return rw.GetMol()

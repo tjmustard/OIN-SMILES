@@ -18,6 +18,7 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
+from ..oin import locked_donor
 from .aromaticity import (  # noqa: F401
     OINEncodeError,
     kekulize_safe_sanitize,
@@ -1109,6 +1110,22 @@ def get_oin_string(tmc_mol, xyz_coords):
         if _tok:
             _axial_suffix = f" |ax:{_tok}|"
 
+    # 0b. Opt-in metal-locked donor stereo (Y1 P3: the bound secondary amine, and the
+    # trivalent P donor whose tag the Zone-A rule clears before Lane 8's restamp can
+    # correct it). Eligibility is computed ONCE here, on the metal-present mol and its
+    # PRISTINE conformer -- _align_to_pai below can reflect the coordinates, which would
+    # invert the recovered sign. Default OFF -> nothing is stamped -> byte-identical.
+    _locked_plan = None
+    _locked_donor_conf = None
+    if locked_donor.lever_enabled():
+        try:
+            _locked_plan = locked_donor.plan_locked_donors(tmc_mol)
+            if _locked_plan:
+                _locked_donor_conf = tmc_mol.GetConformer()
+        except Exception:  # noqa: BLE001 - guarded: degrade to today's behaviour
+            _locked_plan = None
+            _locked_donor_conf = None
+
     # 1. Identify Metal and Connections
     metal_idx = -1
     for atom in tmc_mol.GetAtoms():
@@ -1325,6 +1342,21 @@ def get_oin_string(tmc_mol, xyz_coords):
             pass
 
         frag_mol = _repair_mixed_aromaticity(frag_mol)
+
+        # Record the metal-locked donor configuration on the rebuilt fragment (Y1 P3).
+        # A PROPERTY, not a tag: the sanitising steps between here and the final
+        # MolToSmiles clear a trivalent nitrogen's tag by design, and property values
+        # survive them. ChiralityRecoveryUtility.recover() converts it back to a tag as
+        # its last action. Runs AFTER _repair_mixed_aromaticity, which may return a
+        # rebuilt mol. No-op unless OIN_EMIT_LOCKED_DONOR is set.
+        if _locked_plan and _locked_donor_conf is not None:
+            locked_donor.stamp_locked_donor_stereo(
+                frag_mol,
+                tmc_mol,
+                _locked_donor_conf,
+                old_to_new,
+                plan=_locked_plan,
+            )
 
         # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
         # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).
