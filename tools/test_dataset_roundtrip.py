@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import json
 import logging
 import multiprocessing
@@ -478,6 +479,35 @@ def initialize_report(xyz_path: str, commit_id: str = "unknown") -> dict:
     }
 
 
+@contextlib.contextmanager
+def _telemetry_collecting():
+    """Yield a dict of telemetry counts for the enclosed block, or ``None`` when disabled.
+
+    Kept local to the harness so the tool has no hard dependency on the telemetry module's
+    presence or shape: any ImportError or API drift degrades to yielding ``None``, which the
+    caller treats as "no telemetry" rather than failing a 15-hour sweep over instrumentation.
+    """
+    try:
+        from oinsmiles.generation import _telemetry
+    except Exception:
+        yield None
+        return
+    if not _telemetry.enabled():
+        yield None
+        return
+    box: dict = {}
+    try:
+        with _telemetry.collecting():
+            yield box
+            try:
+                box.update(_telemetry.counts())
+            except Exception:
+                pass
+    except Exception:
+        # collecting() unavailable or changed shape -- never let instrumentation break the sweep.
+        yield None
+
+
 def save_artifacts(report, last_xyz, output_dir, is_final=False):
     basename = report["molecule"]
 
@@ -712,9 +742,24 @@ def main():
         # The encode runs inside the watchdog too: UGUHAH_comp_0 hangs in
         # XYZToSMILES.convert(), not in the generator.
         t0 = time.monotonic()
-        success, last_xyz, oin1_string = _encode_and_attempt(
-            "UFF_1", gen_uff, uff_kwargs, xyz_path, report, args.mol_timeout, xyz_to_smiles
-        )
+        # Collect silent-degradation telemetry per molecule when OIN_TELEMETRY=1.
+        #
+        # `_telemetry.record()` is a no-op unless the env var is set AND a `collecting()` context
+        # is active. The harness never opened one, so setting the env var alone captured NOTHING --
+        # which meant `adapter.early_exit_hit` / `early_exit_miss` was unreachable from a sweep even
+        # though the generator has recorded it all along. That is the signal which settles whether
+        # the eta runtime tail is attempt-count or cost-per-attempt (see
+        # docs/V046_HFAITHFUL_FINDINGS.md), so a sweep now yields the accuracy numbers and that
+        # distribution in one run.
+        #
+        # Cannot perturb the measurement: `record()` is documented to never raise and never consume
+        # randomness, and with the env var unset this whole block is a bare context enter/exit.
+        with _telemetry_collecting() as _tele:
+            success, last_xyz, oin1_string = _encode_and_attempt(
+                "UFF_1", gen_uff, uff_kwargs, xyz_path, report, args.mol_timeout, xyz_to_smiles
+            )
+        if _tele is not None:
+            report["telemetry"] = _tele
         # Stamp wall-clock spent here. Set *after* the call so the subprocess path's
         # report.clear()/update(child_report) cannot wipe it. PASS 2 (if reached) adds
         # its own tier time to this figure.
