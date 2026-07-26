@@ -68,6 +68,7 @@ from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
 from oinsmiles.generator3d.clash import vdw_clash_count
 from oinsmiles.generator3d.ml_optimizer import resolve_xtb_binary
+from oinsmiles.oin.coordination import coordination_report
 
 # Environment fields stamped into every report alongside commit_id, so each row
 # in summary_roundtrip.json can be attributed to the code + env that produced it.
@@ -198,6 +199,31 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         # are kept only for the human-readable diagnostic message.
         s1 = normalize_oin_for_comparison(oin1_string.strip())
         s2 = normalize_oin_for_comparison(oin2_string.strip())
+
+        # Coordination integrity -- a reported DIAGNOSTIC, never a gate. Recorded BEFORE the key
+        # comparison returns, so it is present on mismatches too.
+        #
+        # Why it is here at all: the key comparison below CANNOT see a detached ligand.
+        # ``oin2_string`` comes from ``get_oin_string(mol_gen_bonded, ...)`` -- the GENERATOR's own
+        # bond graph -- so a Cp ring that drifted 0.85 A off the metal is still "bonded" there and
+        # the key matches. Measured over the 633 scored successes of results-v0.4.5-rebaseline:
+        # 9.6% of passes overall, and 28.1% of HAPTIC passes, carry coordination the geometry does
+        # not support (docs/METRIC_FALSE_POSITIVES.md). This field is the only thing in the report
+        # that can see it, because it reads distances from the two geometries and consults neither
+        # bond graph.
+        #
+        # Validated against that population: FLAG catches 55/61 known false positives (90.2%) at a
+        # 3.7% false-alarm rate, ~2.2 ms/molecule. NOT a gate, deliberately -- gating would move
+        # ~61 molecules pass->fail in one step, indistinguishable from a regression, which is the
+        # confound that produced v0.4.4's 11 phantom "regressions".
+        try:
+            with open(xyz_path) as _fh:
+                report["coordination"] = coordination_report(_fh.read(), last_gen_xyz_content or "")
+        except Exception as _e:  # a diagnostic must never break the run it describes
+            report["coordination"] = {
+                "intact": None,
+                "reason": f"probe failed: {type(_e).__name__}",
+            }
 
         if canonical_roundtrip_key(oin1_string) != canonical_roundtrip_key(oin2_string):
             report["error"] = f"String mismatch at {tier_name}. Exp: {s1}, Got: {s2}"
