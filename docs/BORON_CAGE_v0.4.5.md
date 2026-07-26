@@ -270,6 +270,11 @@ The 14 silently-corrupted passers lose **133 of 269 cage bonds (49.4%)**:
 `KIXXOF` (10/18) · `RAJNOI` (10/21) · `XIQKOY` (10/18) · `UYEJAK` (9/21) · `XIQLAL` (9/18) ·
 `PEKQII` (8/16) · `VOFHUW` (8/21) · `CIDHAY` (7/18) · `SEMTOV` (6/12) · `VEJXOZ` (6/12)
 
+All 14 also **round-trip cleanly with the lever on** (`tools/boron_roundtrip_14passing.json`,
+14/14 `ROUNDTRIP_OK`: deterministic, all fragments re-parse, heavy-atom + heavy-bond multisets
+and boron-H exact, key canonical with no `RAW:`). Two of them — `KIXXOF` and `DUDTIG`, both Rh
+thiaboranes — needed §5b's crash fix first; before it they killed the worker process outright.
+
 Read plainly: **the pruning defect reaches 186 corpus molecules. 34 fail loudly, 14 fail
 silently while being scored correct, and 138 were never measured.** The "34 permanent ceiling"
 number was both a misdiagnosis and an undercount, and the accuracy metric was reporting 14
@@ -403,3 +408,7 @@ hash, which is what OIN actually requires.
 "encodes and round-trips behind a default-OFF lever."** Combined with §7 of
 `ENCODE_FAIL_v0.4.5.md` (4 already work, 1 fixed, 3 deferred, 7 timeout-bound), the
 "confirmed unfixable" row of that table is now **0**.
+
+And the correct total is **48 molecules, not 34**: the 34 loud failures plus the 14 silent ones
+from §5a, all 48 now encoding and round-tripping (34/34 and 14/14 `ROUNDTRIP_OK`). The 14 are
+the more interesting half, because they were being counted as *successes*.

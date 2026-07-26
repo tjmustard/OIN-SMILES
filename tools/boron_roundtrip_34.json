@@ -3,8 +3,8 @@
     "mol": "AVOFIB",
     "lever": true,
     "xyz_atoms": 59,
-    "oin": "[Co_NON].[CH][BH]123[B@@H]4B56([CH][CH][C]7[CH][CH][CH][CH][CH]7)[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86%101.[CH][BH]123[B@@H]4[BH]56[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86%101",
-    "oin_len": 188,
+    "oin": "[Co_NON].[CH][BH]123[BH]4B56([CH][CH][C]7[CH][CH][CH][CH][CH]7)[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101.[CH][BH]123[BH]4[BH]56[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101",
+    "oin_len": 182,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -25,7 +25,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 0,
     "key_ok": true,
-    "key_repr": "(('Co', 'NON'), (), ('[CH][BH]123[B@@H]4B56([CH][CH][C]7[CH][CH][CH][CH][CH]7)[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86%101', '[CH][BH]123[B@@H]4[BH]56[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86",
+    "key_repr": "(('Co', 'NON'), (), ('[CH][BH]123[BH]4B56([CH][CH][C]7[CH][CH][CH][CH][CH]7)[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101', '[CH][BH]123[BH]4[BH]56[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101')",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -34,8 +34,8 @@
     "mol": "BEKLUA",
     "lever": true,
     "xyz_atoms": 62,
-    "oin": "[Co_NON].[CH]1[CH][CH]N(CB234[B@H]5[BH]678[CH][CH][BH]29[BH]2%10[B@H]6[BH]276[BH]9%103[BH]5486)[CH][CH]1.COB123[BH]45[CH][BH]467[BH]4[BH]89%10[CH][BH]18[BH]291[BH]536[BH]47%101",
-    "oin_len": 176,
+    "oin": "[Co_NON].[CH]1[CH][CH]N(CB234[BH]5[BH]678[CH][CH][BH]29[BH]2%10[BH]6[BH]276[BH]9%103[BH]5486)[CH][CH]1.COB123[BH]45[CH][BH]467[BH]4[BH]89%10[CH][BH]18[BH]291[BH]536[BH]47%101",
+    "oin_len": 174,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -56,7 +56,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 0,
     "key_ok": true,
-    "key_repr": "(('Co', 'NON'), (), ('COB123[BH]45[CH][BH]467[BH]4[BH]89%10[CH][BH]18[BH]291[BH]536[BH]47%101', '[CH]1[CH][CH]N(CB234[B@H]5[BH]678[CH][CH][BH]29[BH]2%10[B@H]6[BH]276[BH]9%103[BH]5486)[CH][CH]1'))",
+    "key_repr": "(('Co', 'NON'), (), ('COB123[BH]45[CH][BH]467[BH]4[BH]89%10[CH][BH]18[BH]291[BH]536[BH]47%101', '[CH]1[CH][CH]N(CB234[BH]5[BH]678[CH][CH][BH]29[BH]2%10[BH]6[BH]276[BH]9%103[BH]5486)[CH][CH]1'))",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -65,8 +65,8 @@
     "mol": "BEKMIP",
     "lever": true,
     "xyz_atoms": 47,
-    "oin": "[Co_NON].[CH][BH]123[B@@H]4B56(COB789[BH]%10%11[CH][BH]%10%12%13[BH]%10[BH]%14%15%16[CH][BH]7%14[BH]8%157[BH]%119%12[BH]%10%13%167)[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86%101",
-    "oin_len": 180,
+    "oin": "[Co_NON].[CH][BH]123[BH]4B56(COB789[BH]%10%11[CH][BH]%10%12%13[BH]%10[BH]%14%15%16[CH][BH]7%14[BH]8%157[BH]%119%12[BH]%10%13%167)[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101",
+    "oin_len": 177,
     "deterministic": true,
     "n_frags": 2,
     "parse_modes": {
@@ -87,7 +87,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 0,
     "key_ok": true,
-    "key_repr": "(('Co', 'NON'), (), ('[CH][BH]123[B@@H]4B56(COB789[BH]%10%11[CH][BH]%10%12%13[BH]%10[BH]%14%15%16[CH][BH]7%14[BH]8%157[BH]%119%12[BH]%10%13%167)[BH]78[CH][BH]79%10[B@H]1[BH]291[BH]453[BH]86%101',))",
+    "key_repr": "(('Co', 'NON'), (), ('[CH][BH]123[BH]4B56(COB789[BH]%10%11[CH][BH]%10%12%13[BH]%10[BH]%14%15%16[CH][BH]7%14[BH]8%157[BH]%119%12[BH]%10%13%167)[BH]78[CH][BH]79%10[BH]1[BH]291[BH]453[BH]86%101',))",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -96,8 +96,8 @@
     "mol": "CAKBEW",
     "lever": true,
     "xyz_atoms": 71,
-    "oin": "[Zr_TET].C[Si](C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)[C@]12[BH]34[BH]56[BH]378[BH]439C{1}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125.CCN{2}CC.CCN{3}CC",
-    "oin_len": 160,
+    "oin": "[Zr_TET].C[Si](C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)C12[BH]34[BH]56[BH]378[BH]439C{1}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125.CCN{2}CC.CCN{3}CC",
+    "oin_len": 157,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -118,7 +118,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Zr', 'TET'), (('CCNCC', 'N', ''), ('CCNCC', 'N', ''), ('C[Si](C)(C1[CH][CH][CH][CH]1)[C@]12[BH]34[BH]56[BH]378[BH]439C4[BH]1%10%11[BH]521[BH]672[BH]385[BH]49%10[BH]%11125', 'C', ''), ('C[Si](C)(C1[",
+    "key_repr": "(('Zr', 'TET'), (('CCNCC', 'N', ''), ('CCNCC', 'N', ''), ('C[Si](C)(C1[CH][CH][CH][CH]1)C12[BH]34[BH]56[BH]378[BH]439C4[BH]1%10%11[BH]521[BH]672[BH]385[BH]49%10[BH]%11125', 'C', ''), ('C[Si](C)(C1[CH]",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -127,8 +127,8 @@
     "mol": "CAKBOG",
     "lever": true,
     "xyz_atoms": 59,
-    "oin": "[Zr_TET].C[Si](C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)[C@]12[BH]345C{1}6[BH]78[BH]9%10[BH]36%11[BH]936[BH]7%109[BH]187[BH]241[BH]5%113[BH]6971.CN{2}C.CN{3}C",
-    "oin_len": 156,
+    "oin": "[Zr_TET].C[Si](C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)C12[BH]345C{1}6[BH]78[BH]9%10[BH]36%11[BH]936[BH]7%109[BH]187[BH]241[BH]5%113[BH]6971.CN{2}C.CN{3}C",
+    "oin_len": 153,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -149,7 +149,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Zr', 'TET'), (('CNC', 'N', ''), ('CNC', 'N', ''), ('C[Si](C)(C1[CH][CH][CH][CH]1)[C@]12[BH]345C6[BH]78[BH]9%10[BH]63%11[BH]936[BH]7%109[BH]817[BH]241[BH]%1153[BH]9761', 'C', ''), ('C[Si](C)(C1[CH][",
+    "key_repr": "(('Zr', 'TET'), (('CNC', 'N', ''), ('CNC', 'N', ''), ('C[Si](C)(C1[CH][CH][CH][CH]1)C12[BH]345C6[BH]78[BH]9%10[BH]63%11[BH]936[BH]7%109[BH]817[BH]241[BH]%1153[BH]9761', 'C', ''), ('C[Si](C)(C1[CH][CH]",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -158,8 +158,8 @@
     "mol": "COZCEZ",
     "lever": true,
     "xyz_atoms": 120,
-    "oin": "[Rh_SPL].CCCCOC(O)CC[BH]123[BH]{0}45[C@@]67CCC[C@@]68[BH]16[BH]819[B@@H]8[BH]{1}47%10[BH]184[BH]25%10[BH]3694.c1ccc(P{2}(c2ccccc2)c2ccccc2)cc1.c1ccc(P{3}(c2ccccc2)c2ccccc2)cc1",
-    "oin_len": 175,
+    "oin": "[Rh_SPL].CCCCOC(O)CC[BH]123[BH]{0}45[C@@]67CCC[C@@]68[BH]16[BH]819[BH]8[BH]{1}47%10[BH]184[BH]25%10[BH]3694.c1ccc(P{2}(c2ccccc2)c2ccccc2)cc1.c1ccc(P{3}(c2ccccc2)c2ccccc2)cc1",
+    "oin_len": 173,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -180,7 +180,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 2,
     "key_ok": true,
-    "key_repr": "(('Rh', 'SPL'), (('CCCCOC(O)CC[BH]123[BH]45[C@@]67CCC[C@@]68[BH]16[BH]819[B@@H]8[BH]47%10[BH]814[BH]52%10[BH]6394', 'B', ''), ('CCCCOC(O)CC[BH]123[BH]45[C@@]67CCC[C@@]68[BH]16[BH]819[B@@H]8[BH]47%10[B",
+    "key_repr": "(('Rh', 'SPL'), (('CCCCOC(O)CC[BH]123[BH]45[C@@]67CCC[C@@]68[BH]16[BH]819[BH]8[BH]47%10[BH]814[BH]52%10[BH]6394', 'B', ''), ('CCCCOC(O)CC[BH]123[BH]45[C@@]67CCC[C@@]68[BH]16[BH]819[BH]8[BH]47%10[BH]81",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -189,8 +189,8 @@
     "mol": "GANYEZ",
     "lever": true,
     "xyz_atoms": 81,
-    "oin": "[Zr_TET].CC(C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)[C@@]12[BH]345C{1}6[BH]178[BH]19[BH]36%10[BH]436[BH]54[BH]275[BH]812[BH]9%103[BH]6452.CC(C)(C{2}1[CH]{2}[CH]{2>}[CH]{2}[CH]{2}1)[C@@]12[BH]345C{3}6[BH]789[BH]3%10[BH]43%11[BH]54[BH]15%12[BH]267[BH]851[BH]9%103[BH]%114%121",
-    "oin_len": 272,
+    "oin": "[Zr_TET].CC(C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)C12[BH]345C{1}6[BH]178[BH]19[BH]36%10[BH]436[BH]54[BH]275[BH]812[BH]9%103[BH]6452.CC(C)(C{2}1[CH]{2}[CH]{2>}[CH]{2}[CH]{2}1)C12[BH]345C{3}6[BH]789[BH]3%10[BH]43%11[BH]54[BH]15%12[BH]267[BH]851[BH]9%103[BH]%114%121",
+    "oin_len": 264,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -211,7 +211,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Zr', 'TET'), (('CC(C)(C1[CH][CH][CH][CH]1)[C@@]12[BH]345C6[BH]178[BH]19[BH]63%10[BH]436[BH]54[BH]275[BH]182[BH]9%103[BH]4562', 'C', ''), ('CC(C)(C1[CH][CH][CH][CH]1)[C@@]12[BH]345C6[BH]178[BH]19[BH",
+    "key_repr": "(('Zr', 'TET'), (('CC(C)(C1[CH][CH][CH][CH]1)C12[BH]345C6[BH]178[BH]19[BH]63%10[BH]436[BH]54[BH]275[BH]182[BH]9%103[BH]4562', 'C', ''), ('CC(C)(C1[CH][CH][CH][CH]1)C12[BH]345C6[BH]178[BH]19[BH]63%10[B",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -220,8 +220,8 @@
     "mol": "GOHWOQ",
     "lever": true,
     "xyz_atoms": 57,
-    "oin": "[Zr_PBP].CC(C)(C{2}1[CH][CH]C2[CH][CH][CH][CH]C12)C{0}1[CH]{0>}[BH]{5}23[BH]45[B@H]6[BH]78[BH]{3}19[BH]{4}21[BH]342[BH]567[BH]8912.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[Cl]{6}",
-    "oin_len": 177,
+    "oin": "[Zr_PBP].CC(C)(C{2}1[CH][CH]C2[CH][CH][CH][CH]C12)C{0}1[CH]{0>}[BH]{5}23[BH]45[BH]6[BH]78[BH]{3}19[BH]{4}21[BH]342[BH]567[BH]8912.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[Cl]{6}",
+    "oin_len": 176,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -243,7 +243,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Zr', 'PBP'), (('CC(C)(C1[CH][CH]C2[CH][CH][CH][CH]C21)C1[CH][BH]23[BH]45[B@H]6[BH]78[BH]19[BH]21[BH]342[BH]657[BH]9812', 'C', '>'), ('c1cccc1', 'C', '>'), ('CC(C)(C1[CH][CH]C2[CH][CH][CH][CH]C21)C1",
+    "key_repr": "(('Zr', 'PBP'), (('CC(C)(C1[CH][CH]C2[CH][CH][CH][CH]C21)C1[CH][BH]23[BH]45[BH]6[BH]78[BH]19[BH]21[BH]342[BH]657[BH]9812', 'C', '>'), ('c1cccc1', 'C', '>'), ('CC(C)(C1[CH][CH]C2[CH][CH][CH][CH]C21)C1[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -252,8 +252,8 @@
     "mol": "HAXJAS",
     "lever": true,
     "xyz_atoms": 62,
-    "oin": "[Ir_TET].[CH]1[CH][CH]C(C[C@@]23[BH]456C{0}7[BH]289[BH]2%10[BH]47%11[BH]547[BH]65[BH]386[BH]923[BH]%10%114[BH]7563)N{1}[CH]1.[Cl]{2}.Cc{3}1c{3>}(C)c{3}(C)c{3}(C)c{3}1C",
-    "oin_len": 167,
+    "oin": "[Ir_TET].[CH]1[CH][CH]C(CC23[BH]456C{0}7[BH]289[BH]2%10[BH]47%11[BH]547[BH]65[BH]386[BH]923[BH]%10%114[BH]7563)N{1}[CH]1.[Cl]{2}.Cc{3}1c{3>}(C)c{3}(C)c{3}(C)c{3}1C",
+    "oin_len": 163,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -275,7 +275,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 3,
     "key_ok": true,
-    "key_repr": "(('Ir', 'TET'), (('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('[CH]1[CH][CH]C(C[C@@]23[BH]456C7[BH]289[BH]2%10[BH]74%11[BH]547[BH]65[BH]386[BH]293[BH]%10%114[BH]5673)N[CH]1', 'C', ''), ('[Cl]', 'Cl', ''), ('[CH",
+    "key_repr": "(('Ir', 'TET'), (('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('[CH]1[CH][CH]C(CC23[BH]456C7[BH]289[BH]2%10[BH]74%11[BH]547[BH]65[BH]386[BH]293[BH]%10%114[BH]5673)N[CH]1', 'C', ''), ('[Cl]', 'Cl', ''), ('[CH]1[C",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -284,8 +284,8 @@
     "mol": "HAXJOG",
     "lever": true,
     "xyz_atoms": 84,
-    "oin": "[Rh_TET].S{0}[C@]12[BH]34[BH]156[BH]217[BH]28[C@@]9(CC%10[CH][CH][CH][CH]N{1}%10)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.Cc{2}1c{2>}(C)c{2}(C)c{2}(C)c{2}1C.S{3}[C@]12[BH]345[BH]67[C@]89[BH]6%10%11B6%12%13[BH]37%10[BH]463[BH]154[BH]281[BH]9%11%12[BH]%13341",
-    "oin_len": 267,
+    "oin": "[Rh_TET].S{0}C12[BH]34[BH]156[BH]217[BH]28C9(CC%10[CH][CH][CH][CH]N{1}%10)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.Cc{2}1c{2>}(C)c{2}(C)c{2}(C)c{2}1C.S{3}C12[BH]345[BH]67C89[BH]6%10%11B6%12%13[BH]37%10[BH]463[BH]154[BH]281[BH]9%11%12[BH]%13341",
+    "oin_len": 254,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -307,7 +307,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Rh', 'TET'), (('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('S[C@]12[BH]345[BH]67[C@]89[BH]6%10%11B6%12%13[BH]7%103[BH]643[BH]154[BH]821[BH]9%12%11[BH]%13143', 'S', ''), ('S[C@]12[BH]34[BH]156[BH]217[BH]28[C@",
+    "key_repr": "(('Rh', 'TET'), (('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('SC12[BH]345[BH]67C89[BH]6%10%11B6%12%13[BH]7%103[BH]643[BH]154[BH]821[BH]9%12%11[BH]%13143', 'S', ''), ('SC12[BH]34[BH]156[BH]217[BH]28C9(CC%10[CH]",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -316,8 +316,8 @@
     "mol": "ICEZIC",
     "lever": true,
     "xyz_atoms": 107,
-    "oin": "[Ni_SPL].CC(C)(C)N1C(C2[CH][CH][CH][CH][CH]2)N(C(C)(C)C)[Si]{0}1[C@]12[BH]345[BH]67[BH]89%10[BH]%11([C@@]38[Si]{1}3N(C(C)(C)C)C(C8[CH][CH][CH][CH][CH]8)N3C(C)(C)C)[BH]138[BH]9%111[BH]6%109[BH]476[BH]253[BH]8196.[Br]{2}.[Br]{3}",
-    "oin_len": 226,
+    "oin": "[Ni_SPL].CC(C)(C)N1C(C2[CH][CH][CH][CH][CH]2)N(C(C)(C)C)[Si]{0}1C12[BH]34[BH]156[BH]17[BH]289C2([Si]{1}%10N(C(C)(C)C)C(C%11[CH][CH][CH][CH][CH]%11)N%10C(C)(C)C)[BH]3%10%11[BH]453[BH]614[BH]781[BH]92%10[BH]%11341.[Br]{2}.[Br]{3}",
+    "oin_len": 227,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -338,7 +338,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Ni', 'SPL'), (('CC(C)(C)N1C(C2[CH][CH][CH][CH][CH]2)N(C(C)(C)C)[Si]1[C@]12[BH]345[BH]67[BH]89%10[BH]%11([C@]83[Si]3N(C(C)(C)C)C(C8[CH][CH][CH][CH][CH]8)N3C(C)(C)C)[BH]138[BH]%1191[BH]6%109[BH]746[B",
+    "key_repr": "(('Ni', 'SPL'), (('CC(C)(C)N1C(C2[CH][CH][CH][CH][CH]2)N(C(C)(C)C)[Si]1C12[BH]34[BH]156[BH]17[BH]289C2([Si]%10N(C(C)(C)C)C(C%11[CH][CH][CH][CH][CH]%11)N%10C(C)(C)C)[BH]3%10%11[BH]453[BH]164[BH]781[BH]",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -347,8 +347,8 @@
     "mol": "JABGAX",
     "lever": true,
     "xyz_atoms": 66,
-    "oin": "[Ir_OCT].[H]{0}.[Cl]{1}.CC(C)P{2}(C1[BH]234B{4}5[BH]678[C@H]9[BH]%10%11[BH]12%12[BH]%1012[BH]69%11[BH]716[BH]358[BH]4%1226)C(C)C.[CH]{5}1=[CH]{5>}CC[CH]{3>}=[CH]{3}CC1",
-    "oin_len": 167,
+    "oin": "[Ir_OCT].[H]{0}.[Cl]{1}.CC(C)P{2}(C1[BH]234B{4}5[BH]678C9[BH]%10%11[BH]12%12[BH]%1012[BH]69%11[BH]716[BH]358[BH]4%1226)C(C)C.[CH]{5}1=[CH]{5>}CC[CH]{3>}=[CH]{3}CC1",
+    "oin_len": 163,
     "deterministic": true,
     "n_frags": 5,
     "parse_modes": {
@@ -369,7 +369,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 1,
     "key_ok": true,
-    "key_repr": "(('Ir', 'OCT'), (('C1=CCCC=CCC1', 'C', '>'), ('CC(C)P(C(C)C)C1[BH]234B5[BH]678[C@H]9[BH]%10%11[BH]12%12[BH]%1012[BH]9%116[BH]716[BH]538[BH]4%1226', 'B', ''), ('C1=CCCC=CCC1', 'C', '>'), ('CC(C)P(C(C)C",
+    "key_repr": "(('Ir', 'OCT'), (('C1=CCCC=CCC1', 'C', '>'), ('CC(C)P(C(C)C)C1[BH]234B5[BH]678C9[BH]%10%11[BH]12%12[BH]%1012[BH]9%116[BH]716[BH]538[BH]4%1226', 'B', ''), ('C1=CCCC=CCC1', 'C', '>'), ('CC(C)P(C(C)C)C1[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -378,8 +378,8 @@
     "mol": "JAFMIP",
     "lever": true,
     "xyz_atoms": 97,
-    "oin": "[Ru_SPY].B{0}12[BH]345[C@@H]6[C@]7([C@]89[BH]%10%11%12C{2}%13[BH]{3}%14%15[BH]%16%17[BH]%10%13%18[BH]%16%10%13[BH]%14%17%16[BH]8%15%14[BH]9%118[BH]%12%18%10[BH]%13%16%148)[BH]189[BH]71%10[B@H]7[BH]36%11[BH]173[BH]4%111[BH]258[BH]9%1031.c1ccc(P{1}(CCP{4}(c2ccccc2)c2ccccc2)c2ccccc2)cc1",
-    "oin_len": 284,
+    "oin": "[Ru_SPY].B{0}12[BH]345[C@@H]6[C@]7(C89[BH]%10%11%12C{2}%13[BH]{3}%14%15[BH]%16%17[BH]%10%13%18[BH]%16%10%13[BH]%14%17%16[BH]8%15%14[BH]9%118[BH]%12%18%10[BH]%13%16%148)[BH]189[BH]71%10[BH]7[BH]36%11[BH]173[BH]4%111[BH]258[BH]9%1031.c1ccc(P{1}(CCP{4}(c2ccccc2)c2ccccc2)c2ccccc2)cc1",
+    "oin_len": 280,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -400,7 +400,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 1,
     "key_ok": true,
-    "key_repr": "(('Ru', 'SPY'), (('B12[BH]345[C@@H]6[C@]7([C@]89[BH]%10%11%12C%13[BH]%14%15[BH]%16%17[BH]%13%10%18[BH]%16%10%13[BH]%14%17%16[BH]%158%14[BH]9%118[BH]%18%12%10[BH]%16%14%138)[BH]189[BH]71%10[B@H]7[BH]63",
+    "key_repr": "(('Ru', 'SPY'), (('B12[BH]345[C@@H]6[C@]7(C89[BH]%10%11%12C%13[BH]%14%15[BH]%16%17[BH]%13%10%18[BH]%16%10%13[BH]%14%17%16[BH]%158%14[BH]9%118[BH]%18%12%10[BH]%16%14%138)[BH]189[BH]71%10[BH]7[BH]63%11[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -409,8 +409,8 @@
     "mol": "JAFTAO",
     "lever": true,
     "xyz_atoms": 97,
-    "oin": "[Ru_OCT].CC#N{0}.CC#N{1}.B{2}12[BH]345[C@@H]6[C@]7([C@]89[BH]%10%11[BH]8%12%13[BH]8%14[BH]9%15%16C{4}9[BH]%10%17%18[BH]%159%10[BH]8%169[BH]%12%148[BH]%11%13%17[BH]%18%1098)[BH]189[BH]71%10[B@H]7[BH]36%11[BH]173[BH]4%111[BH]258[BH]9%1031.CC#N{3}.c1ccc(P{5}(c2ccccc2)c2ccccc2)cc1",
-    "oin_len": 277,
+    "oin": "[Ru_OCT].CC#N{0}.CC#N{1}.B{2}12[BH]345[C@@H]6[C@]7(C89[BH]%10%11[BH]8%12%13[BH]8%14[BH]9%15%16C{4}9[BH]%10%17%18[BH]%159%10[BH]8%169[BH]%12%148[BH]%11%13%17[BH]%18%1098)[BH]189[BH]71%10[BH]7[BH]36%11[BH]173[BH]4%111[BH]258[BH]9%1031.CC#N{3}.c1ccc(P{5}(c2ccccc2)c2ccccc2)cc1",
+    "oin_len": 273,
     "deterministic": true,
     "n_frags": 6,
     "parse_modes": {
@@ -431,7 +431,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 1,
     "key_ok": true,
-    "key_repr": "(('Ru', 'OCT'), (('B12[BH]345[C@@H]6[C@]7([C@]89[BH]%10%11[BH]8%12%13[BH]8%14[BH]9%15%16C9[BH]%10%17%18[BH]9%15%10[BH]8%169[BH]%14%128[BH]%11%13%17[BH]%18%1098)[BH]189[BH]71%10[B@H]7[BH]63%11[BH]713[B",
+    "key_repr": "(('Ru', 'OCT'), (('B12[BH]345[C@@H]6[C@]7(C89[BH]%10%11[BH]8%12%13[BH]8%14[BH]9%15%16C9[BH]%10%17%18[BH]9%15%10[BH]8%169[BH]%14%128[BH]%11%13%17[BH]%18%1098)[BH]189[BH]71%10[BH]7[BH]63%11[BH]713[BH]4%",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -440,8 +440,8 @@
     "mol": "JAFTES",
     "lever": true,
     "xyz_atoms": 101,
-    "oin": "[Ru_OCT].C{0}#O.C{1}#O.c1ccc(P{2}(CCP{4}(c2ccccc2)c2ccccc2)c2ccccc2)cc1.B{5}12[BH]345[C@H]6[BH]789[C@@]%10([C@@]%11%12[BH]%13%14%15C{3}%16[BH]%17%18%19[BH]%13%20[BH]%14%13%21[BH]%15%14[BH]%11%15%22[BH]%12%16%17[BH]%18%15%11[BH]%19%20%13[BH]%21%14%22%11)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134",
-    "oin_len": 313,
+    "oin": "[Ru_OCT].C{0}#O.C{1}#O.c1ccc(P{2}(CCP{4}(c2ccccc2)c2ccccc2)c2ccccc2)cc1.B{5}12[BH]345C6[BH]789C%10(C%11%12[BH]%13%14%15C{3}%16[BH]%17%18%19[BH]%13%20[BH]%14%13%21[BH]%15%14[BH]%11%15%22[BH]%12%16%17[BH]%18%15%11[BH]%19%20%13[BH]%21%14%22%11)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134",
+    "oin_len": 301,
     "deterministic": true,
     "n_frags": 5,
     "parse_modes": {
@@ -462,7 +462,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 3,
     "key_ok": true,
-    "key_repr": "(('Ru', 'OCT'), (('B12[BH]345[C@H]6[BH]789[C@@]%10([C@@]%11%12[BH]%13%14%15C%16[BH]%17%18%19[BH]%13%20[BH]%14%13%21[BH]%15%14[BH]%11%15%22[BH]%16%12%17[BH]%18%15%11[BH]%20%19%13[BH]%14%21%22%11)[BH]1%",
+    "key_repr": "(('Ru', 'OCT'), (('B12[BH]345C6[BH]789C%10(C%11%12[BH]%13%14%15C%16[BH]%17%18%19[BH]%13%20[BH]%14%13%21[BH]%15%14[BH]%11%15%22[BH]%16%12%17[BH]%18%15%11[BH]%20%19%13[BH]%14%21%22%11)[BH]1%11%12[BH]231",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -471,8 +471,8 @@
     "mol": "MAFSIY",
     "lever": true,
     "xyz_atoms": 119,
-    "oin": "[Ir_OCT].FC1C(F)C(F)C([C@]23[BH]456[BH]78[BH]9%10%11[BH]%12([C@@]49C4[CH]C{0}C(C9[CH][CH][CH][CH]N{5}9)[CH][CH]4)[BH]249[BH]%10%122[BH]7%11%10[BH]587[BH]364[BH]92%107)C(F)C1F.CC(=O{3})C=C(C)O{1}.FC1C(F)C(F)C([C@]23[BH]456[B@H]7[BH]89%10[C@@]%11(C%12[CH]C{2}C(C%13[CH][CH][CH][CH]N{4}%13)[CH][CH]%12)[BH]2%12%13[BH]8%112[BH]98%11[BH]47%10[BH]584[BH]36%12[BH]%132%114)C(F)C1F",
-    "oin_len": 373,
+    "oin": "[Ir_OCT].FC1C(F)C(F)C(C23[BH]456[BH]7[BH]89%10C%11(C%12[CH]C{0}C(C%13[CH][CH][CH][CH]N{5}%13)[CH][CH]%12)[BH]2%12%13[BH]8%112[BH]98%11[BH]47%10[BH]584[BH]36%12[BH]%132%114)C(F)C1F.CC(=O{1})C=C(C)O{3}.FC1C(F)C(F)C(C23[BH]456[BH]78[BH]9%10%11[BH]%12(C49C4[CH]C{2}C(C9[CH][CH][CH][CH]N{4}9)[CH][CH]4)[BH]249[BH]%10%122[BH]7%11%10[BH]587[BH]364[BH]92%107)C(F)C1F",
+    "oin_len": 358,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -493,7 +493,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 25,
     "key_ok": true,
-    "key_repr": "(('Ir', 'OCT'), (('CC(=O)C=C(C)O', 'O', ''), ('FC1C(F)C(F)C([C@]23[BH]456[B@H]7[BH]89%10[C@@]%11(C%12[CH][CH]C(C%13[CH][CH][CH][CH]N%13)C[CH]%12)[BH]2%12%13[BH]%1182[BH]98%11[BH]7%104[BH]584[BH]36%12[",
+    "key_repr": "(('Ir', 'OCT'), (('CC(=O)C=C(C)O', 'O', ''), ('FC1C(F)C(F)C(C23[BH]456[BH]78[BH]9%10%11[BH]%12(C94C4[CH][CH]C(C9[CH][CH][CH][CH]N9)C[CH]4)[BH]249[BH]%12%102[BH]7%11%10[BH]857[BH]364[BH]92%107)C(F)C1F'",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -565,8 +565,8 @@
     "mol": "PAQBOZ",
     "lever": true,
     "xyz_atoms": 78,
-    "oin": "[Zr_TET].CC(C)N(C(C)C)P(C{0}1[CH]{0<}[CH]{0}C{0}2[CH][CH][CH][CH]C{0}12)[C@]12[BH]34[BH]56[BH]378[BH]439C{1}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125.CN{2}C.CN{3}C",
-    "oin_len": 174,
+    "oin": "[Zr_TET].CC(C)N(C(C)C)P(C{0}1[CH]{0<}[CH]{0}C{0}2[CH][CH][CH][CH]C{0}12)C12[BH]34[BH]56[BH]378[BH]439C{1}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125.CN{2}C.CN{3}C",
+    "oin_len": 171,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -587,7 +587,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 6,
     "key_ok": true,
-    "key_repr": "(('Zr', 'TET'), (('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][CH][CH]C21)[C@]12[BH]34[BH]56[BH]378[BH]439C4[BH]1%10%11[BH]521[BH]672[BH]385[BH]49%10[BH]%11125', 'C', ''), ('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH",
+    "key_repr": "(('Zr', 'TET'), (('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][CH][CH]C21)C12[BH]34[BH]56[BH]378[BH]439C4[BH]1%10%11[BH]521[BH]672[BH]385[BH]49%10[BH]%11125', 'C', ''), ('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][C",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -596,8 +596,8 @@
     "mol": "PAQCAM",
     "lever": true,
     "xyz_atoms": 90,
-    "oin": "[Hf_TET].CC(C)N(C(C)C)P(C{0}1[CH]{0}[CH]{0}C{0}2[CH][CH][CH][CH]C{0<}12)[C@@]12[BH]345C{1}6[BH]78[BH]69%10[BH]36[BH]93%11[BH]7%109[BH]187[BH]241[BH]563[BH]%11971.CCN{2}CC.CCN{3}CC",
-    "oin_len": 179,
+    "oin": "[Hf_TET].CC(C)N(C(C)C)P(C{0}1[CH]{0}[CH]{0}C{0}2[CH][CH][CH][CH]C{0<}12)C12[BH]345C{1}6[BH]78[BH]69%10[BH]36[BH]93%11[BH]7%109[BH]187[BH]241[BH]563[BH]%11971.CCN{2}CC.CCN{3}CC",
+    "oin_len": 175,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -618,7 +618,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 6,
     "key_ok": true,
-    "key_repr": "(('Hf', 'TET'), (('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][CH][CH]C21)[C@@]12[BH]345C6[BH]78[BH]69%10[BH]36[BH]93%11[BH]7%109[BH]817[BH]241[BH]653[BH]79%111', 'C', ''), ('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][C",
+    "key_repr": "(('Hf', 'TET'), (('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][CH][CH]C21)C12[BH]345C6[BH]78[BH]69%10[BH]36[BH]93%11[BH]7%109[BH]817[BH]241[BH]653[BH]79%111', 'C', ''), ('CC(C)N(C(C)C)P(C1[CH][CH]C2[CH][CH][C",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -689,8 +689,8 @@
     "mol": "RANMUR",
     "lever": true,
     "xyz_atoms": 99,
-    "oin": "[Zn_SPY].C[OH]{0}.CCC1C2[CH]C3N{1}C([CH]C4[CH][CH]C(N{3}4)C(C4[CH][CH]C(C[C@@]56[BH]789[B@H]%10[BH]%11%12%13[C@@]%14(C)[BH]5%15%16[BH]%11%145[BH]%12%11%14[BH]7%10%13[BH]8%117[BH]69%15[BH]%165%147)[CH][CH]4)C4[CH][CH]C([CH]C(N{4}2)C1C)N{2}4)C(C)C3CC",
-    "oin_len": 248,
+    "oin": "[Zn_SPY].C[OH]{0}.CCC1C2[CH]C3N{1}C([CH]C4[CH][CH]C(N{3}4)C(C4[CH][CH]C(CC56[BH]789[BH]%10[BH]%11%12%13C%14(C)[BH]5%15%16[BH]%11%145[BH]%12%11%14[BH]7%10%13[BH]8%117[BH]69%15[BH]%165%147)[CH][CH]4)C4[CH][CH]C([CH]C(N{4}2)C1C)N{2}4)C(C)C3CC",
+    "oin_len": 239,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -711,7 +711,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 19,
     "key_ok": true,
-    "key_repr": "(('Zn', 'SPY'), (('CO', 'O', ''), ('CCC1C2[CH]C3NC([CH]C4[CH][CH]C(N4)C(C4[CH][CH]C(C[C@@]56[BH]789[B@H]%10[BH]%11%12%13[C@@]%14(C)[BH]5%15%16[BH]%14%115[BH]%12%11%14[BH]%10%137[BH]8%117[BH]69%15[BH]%",
+    "key_repr": "(('Zn', 'SPY'), (('CO', 'O', ''), ('CCC1C2[CH]C3NC([CH]C4[CH][CH]C(N4)C(C4[CH][CH]C(CC56[BH]789[BH]%10[BH]%11%12%13C%14(C)[BH]5%15%16[BH]%14%115[BH]%12%11%14[BH]%10%137[BH]8%117[BH]69%15[BH]%165%147)[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -720,8 +720,8 @@
     "mol": "RAWJEG",
     "lever": true,
     "xyz_atoms": 25,
-    "oin": "[Hg_LIN].[B@H]12[BH]345C{0}6[BH]789[C@@H]%10[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.[Cl]{1}",
-    "oin_len": 112,
+    "oin": "[Hg_LIN].[BH]12[BH]345C{0}6[BH]789C%10[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.[Cl]{1}",
+    "oin_len": 106,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -742,7 +742,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 1,
     "key_ok": true,
-    "key_repr": "(('Hg', 'LIN'), (('[B@H]12[BH]345C6[BH]789[C@@H]%10[BH]1%11%12[BH]231[BH]423[BH]657[BH]824[BH]%10%119[BH]%12134', 'C', ''), ('[Cl]', 'Cl', '')), ('[B@H]12[BH]345C6[BH]789[C@@H]%10[BH]1%11%12[BH]231[BH",
+    "key_repr": "(('Hg', 'LIN'), (('[BH]12[BH]345C6[BH]789C%10[BH]1%11%12[BH]231[BH]423[BH]657[BH]824[BH]%10%119[BH]%12134', 'C', ''), ('[Cl]', 'Cl', '')), ('[BH]12[BH]345C6[BH]789C%10[BH]1%11%12[BH]231[BH]423[BH]657[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -751,8 +751,8 @@
     "mol": "RIWKAK",
     "lever": true,
     "xyz_atoms": 55,
-    "oin": "[Co_TET].[CH]{0}C([CH]C(S{1}[C@]12[BH]345[B@@H]6[BH]789[C@]%10(S{2})[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134)C(O)OC)C(O)OC.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
-    "oin_len": 181,
+    "oin": "[Co_TET].[CH]{0}C([CH]C(S{1}C12[BH]345[BH]6[BH]789C%10(S{2})[BH]1%11%12[BH]7%101[BH]87%10[BH]369[BH]473[BH]25%11[BH]%121%103)C(O)OC)C(O)OC.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
+    "oin_len": 177,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -774,7 +774,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 7,
     "key_ok": true,
-    "key_repr": "(('Co', 'TET'), (('[CH]C([CH]C(S[C@]12[BH]345[B@@H]6[BH]789[C@]%10(S)[BH]1%11%12[BH]231[BH]423[BH]657[BH]824[BH]%109%11[BH]%12134)C(O)OC)C(O)OC', 'C', ''), ('[CH]C([CH]C(S[C@]12[BH]345[B@@H]6[BH]789[C",
+    "key_repr": "(('Co', 'TET'), (('[CH]C([CH]C(SC12[BH]345[BH]6[BH]789C%10(S)[BH]1%11%12[BH]%1071[BH]87%10[BH]693[BH]473[BH]25%11[BH]%121%103)C(O)OC)C(O)OC', 'C', ''), ('[CH]C([CH]C(SC12[BH]345[BH]6[BH]789C%10(S)[BH]",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -783,8 +783,8 @@
     "mol": "RIWKEO",
     "lever": true,
     "xyz_atoms": 55,
-    "oin": "[Co_TPL].COC(O)[CH][CH][B@]12[BH]345[BH]678[BH]39%10[BH]63%11[B@@]6([CH][CH]C(O)OC)[BH]73%12[C@](S{1})([C@@]3(S{0})[BH]149[BH]%10%1163)[BH]258%12.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1",
-    "oin_len": 184,
+    "oin": "[Co_TPL].COC(O)[CH][CH]B12[BH]345[BH]678[BH]9%10%11B%12([CH][CH]C(O)OC)[BH]69%13[C@](S{1})([C@@]6(S{0})[BH]139[BH]47%10[BH]%11%1269)[BH]258%13.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1",
+    "oin_len": 181,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -806,7 +806,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 6,
     "key_ok": true,
-    "key_repr": "(('Co', 'TPL'), (('COC(O)[CH][CH][B@]12[BH]345[BH]678[BH]39%10[BH]63%11[B@@]6([CH][CH]C(O)OC)[BH]73%12[C@](S)([C@@]3(S)[BH]194[BH]63%10%11)[BH]285%12', 'S', ''), ('COC(O)[CH][CH][B@]12[BH]345[BH]678[B",
+    "key_repr": "(('Co', 'TPL'), (('COC(O)[CH][CH]B12[BH]345[BH]678[BH]9%10%11B%12([CH][CH]C(O)OC)[BH]96%13[C@](S)([C@@]6(S)[BH]139[BH]4%107[BH]%126%119)[BH]258%13', 'S', ''), ('COC(O)[CH][CH]B12[BH]345[BH]678[BH]9%10",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -815,8 +815,8 @@
     "mol": "RONPES",
     "lever": true,
     "xyz_atoms": 66,
-    "oin": "[Ru_OCT].Cc{0}1[cH]{0>}c{0}(C)[cH]{0}c{0}(C)[cH]{0}1.[CH]{2}1[BH]{4}23[BH]{3}45[BH]{5}67C{1}(C8[BH]9%10%11[B@@H]%12[BH]%13%14%15[C@H]%16[BH]8%17%18[BH]98[BH]%109%19[BH]%11%12%13[BH]%149%10[BH]%15%16%17[BH]%188%19%10)[BH]689[B@@H]6[BH]12%10[BH]341[BH]578[BH]96%101",
-    "oin_len": 263,
+    "oin": "[Ru_OCT].Cc{0}1[cH]{0>}c{0}(C)[cH]{0}c{0}(C)[cH]{0}1.[CH]{2}1[BH]{4}23[BH]{3}45[BH]{5}67C{1}(C8[BH]9%10%11[BH]%12[BH]%13%14%15C%16[BH]8%17%18[BH]98[BH]%109%19[BH]%11%12%13[BH]%149%10[BH]%15%16%17[BH]%188%19%10)[BH]689[BH]6[BH]12%10[BH]341[BH]578[BH]96%101",
+    "oin_len": 255,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -837,7 +837,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 2,
     "key_ok": true,
-    "key_repr": "(('Ru', 'OCT'), (('Cc1cc(C)cc(C)c1', 'C', '>'), ('[CH]1[BH]23[BH]45[BH]67C(C8[BH]9%10%11[B@@H]%12[BH]%13%14%15[C@H]%16[BH]8%17%18[BH]98[BH]%109%19[BH]%12%11%13[BH]%149%10[BH]%16%17%15[BH]8%18%19%10)[B",
+    "key_repr": "(('Ru', 'OCT'), (('Cc1cc(C)cc(C)c1', 'C', '>'), ('[CH]1[BH]23[BH]45[BH]67C(C8[BH]9%10%11[BH]%12[BH]%13%14%15C%16[BH]8%17%18[BH]98[BH]%109%19[BH]%12%11%13[BH]%149%10[BH]%16%17%15[BH]8%18%19%10)[BH]689[",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -846,8 +846,8 @@
     "mol": "RONQET",
     "lever": true,
     "xyz_atoms": 75,
-    "oin": "[Ru_TPY].C{0}12[BH]{2}34[BH]56[BH]178[BH]219[C@@]2([C@]%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C{3}%13[BH]%10%19%20[BH]%11%14%10[BH]%15%16%11[BH]%17%12%14[BH]%18%13%19[BH]%20%10%11%14)[BH]3%10%11[BH]453[BH]674[BH]815[BH]92%10[BH]%11345.Cc{1}1c{1}(C)c{1>}(C)c{1}(C)c{1}(C)c{1}1C",
-    "oin_len": 289,
+    "oin": "[Ru_TPY].C{0}12[BH]{2}34[BH]56[BH]178[BH]219C2(C%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C{3}%13[BH]%10%19%20[BH]%11%14%10[BH]%15%16%11[BH]%17%12%14[BH]%18%13%19[BH]%20%10%11%14)[BH]3%10%11[BH]453[BH]674[BH]815[BH]92%10[BH]%11345.Cc{1}1c{1}(C)c{1>}(C)c{1}(C)c{1}(C)c{1}1C",
+    "oin_len": 282,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -868,7 +868,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 2,
     "key_ok": true,
-    "key_repr": "(('Ru', 'TPY'), (('C12[BH]34[BH]56[BH]178[BH]219[C@@]2([C@]%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C%13[BH]%10%19%20[BH]%14%11%10[BH]%15%16%11[BH]%12%17%14[BH]%13%18%19[BH]%20%10%11%14)[BH",
+    "key_repr": "(('Ru', 'TPY'), (('C12[BH]34[BH]56[BH]178[BH]219C2(C%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C%13[BH]%10%19%20[BH]%14%11%10[BH]%15%16%11[BH]%12%17%14[BH]%13%18%19[BH]%20%10%11%14)[BH]3%10%1",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -877,8 +877,8 @@
     "mol": "RONQOD",
     "lever": true,
     "xyz_atoms": 63,
-    "oin": "[Ru_TET].C{0}12[BH]34[BH]156[BH]217[BH]28[C@]9([C@@]%10%11[BH]%12%13[BH]%14%15%16C{1}%17[BH]%18%19[BH]%14%17%20[BH]%18%14%17[BH]%10%19%18[BH]%11%12%10[BH]%13%15%11[BH]%16%20%14[BH]%17%18%10%11)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.CC#N{2}.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
-    "oin_len": 298,
+    "oin": "[Ru_TET].C{0}12[BH]34[BH]156[BH]217[BH]28C9(C%10%11[BH]%12%13[BH]%14%15%16C{1}%17[BH]%18%19[BH]%14%17%20[BH]%18%14%17[BH]%10%19%18[BH]%11%12%10[BH]%13%15%11[BH]%16%20%14[BH]%17%18%10%11)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.CC#N{2}.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
+    "oin_len": 291,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -899,7 +899,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 2,
     "key_ok": true,
-    "key_repr": "(('Ru', 'TET'), (('C12[BH]34[BH]156[BH]217[BH]28[C@]9([C@@]%10%11[BH]%12%13[BH]%14%15%16C%17[BH]%18%19[BH]%17%14%20[BH]%18%14%17[BH]%19%10%18[BH]%12%11%10[BH]%13%15%11[BH]%20%16%14[BH]%18%10%17%11)[BH",
+    "key_repr": "(('Ru', 'TET'), (('C12[BH]34[BH]156[BH]217[BH]28C9(C%10%11[BH]%12%13[BH]%14%15%16C%17[BH]%18%19[BH]%17%14%20[BH]%18%14%17[BH]%19%10%18[BH]%12%11%10[BH]%13%15%11[BH]%20%16%14[BH]%18%10%17%11)[BH]3%10%1",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -908,8 +908,8 @@
     "mol": "RULBUV",
     "lever": true,
     "xyz_atoms": 87,
-    "oin": "[Hg_LIN].[CH]1[CH][CH]C([C@@]23[BH]456[BH]78[BH]9%10[BH]7%11[BH]97%12C{0}9[BH]48%10[BH]54[BH]795[BH]2%11%12[BH]3645)[CH][CH]1.[CH]1[CH][CH]C([C@]23[BH]456[BH]78[BH]9%10[BH]47[BH]547C{1}5[BH]9%11%12[BH]8%10[BH]2%118[BH]45%12[BH]3678)[CH][CH]1.c1ccc(-c2ccccn2)nc1",
-    "oin_len": 261,
+    "oin": "[Hg_LIN].[CH]1[CH][CH]C(C23[BH]456[BH]78[BH]9%10[BH]7%11[BH]97%12C{0}9[BH]48%10[BH]54[BH]795[BH]2%11%12[BH]3645)[CH][CH]1.[CH]1[CH][CH]C(C23[BH]456[BH]78[BH]9%10[BH]47[BH]547C{1}5[BH]9%11%12[BH]8%10[BH]2%118[BH]45%12[BH]3678)[CH][CH]1.c1ccc(-c2ccccn2)nc1",
+    "oin_len": 254,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -930,7 +930,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Hg', 'LIN'), (('[CH]1[CH][CH]C([C@@]23[BH]456[BH]78[BH]9%10[BH]7%11[BH]97%12C9[BH]%1084[BH]54[BH]975[BH]%112%12[BH]4365)[CH][CH]1', 'C', ''), ('[CH]1[CH][CH]C([C@]23[BH]456[BH]78[BH]9%10[BH]74[BH]5",
+    "key_repr": "(('Hg', 'LIN'), (('[CH]1[CH][CH]C(C23[BH]456[BH]78[BH]9%10[BH]7%11[BH]97%12C9[BH]%1084[BH]54[BH]975[BH]%112%12[BH]4365)[CH][CH]1', 'C', ''), ('[CH]1[CH][CH]C(C23[BH]456[BH]78[BH]9%10[BH]74[BH]547C5[BH",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -939,8 +939,8 @@
     "mol": "ULODUU",
     "lever": true,
     "xyz_atoms": 69,
-    "oin": "[Zr_TET].CC(C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)[C@]12[BH]345[B@H]6[BH]789[C@@H]%10[BH]1%11%12[BH]7%101[BH]87%10[BH]369[BH]473[BH]25%11[BH]%121%103.Cc{1}1c{1>}(C)c{1}(C)c{1}(C)c{1}1C.[Cl]{2}.[Cl]{3}",
-    "oin_len": 201,
+    "oin": "[Zr_TET].CC(C)(C{0}1[CH]{0}[CH]{0>}[CH]{0}[CH]{0}1)C12[BH]345[BH]6[BH]789C%10[BH]1%11%12[BH]7%101[BH]87%10[BH]369[BH]473[BH]25%11[BH]%121%103.Cc{1}1c{1>}(C)c{1}(C)c{1}(C)c{1}1C.[Cl]{2}.[Cl]{3}",
+    "oin_len": 192,
     "deterministic": true,
     "n_frags": 5,
     "parse_modes": {
@@ -962,7 +962,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 1,
     "key_ok": true,
-    "key_repr": "(('Zr', 'TET'), (('CC(C)(C1[CH][CH][CH][CH]1)[C@]12[BH]345[B@H]6[BH]789[C@@H]%10[BH]1%11%12[BH]%1071[BH]87%10[BH]693[BH]473[BH]25%11[BH]%121%103', 'C', '>'), ('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('[Cl]',",
+    "key_repr": "(('Zr', 'TET'), (('CC(C)(C1[CH][CH][CH][CH]1)C12[BH]345[BH]6[BH]789C%10[BH]1%11%12[BH]%1071[BH]87%10[BH]693[BH]473[BH]25%11[BH]%121%103', 'C', '>'), ('Cc1c(C)c(C)c(C)c1C', 'C', '>'), ('[Cl]', 'Cl', ''",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -971,8 +971,8 @@
     "mol": "XUKRIF",
     "lever": true,
     "xyz_atoms": 153,
-    "oin": "[Mo_OCT].C{0}#O.C{1}#O.CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OP{2}(O[C@@H]1C[C@H](C)CC[C@H]1C(C)C)[C@@]12[BH]345[BH]6[BH]789[C@]%10(P{4}(O[C@@H]%11C[C@H](C)CC[C@H]%11C(C)C)O[C@@H]%11C[C@H](C)CC[C@H]%11C(C)C)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.C{3}#O.C{5}#O",
-    "oin_len": 273,
+    "oin": "[Mo_OCT].C{0}#O.C{1}#O.CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OP{2}(O[C@@H]1C[C@H](C)CC[C@H]1C(C)C)C12[BH]345[BH]6[BH]789C%10(P{4}(O[C@@H]%11C[C@H](C)CC[C@H]%11C(C)C)O[C@@H]%11C[C@H](C)CC[C@H]%11C(C)C)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.C{3}#O.C{5}#O",
+    "oin_len": 266,
     "deterministic": true,
     "n_frags": 6,
     "parse_modes": {
@@ -993,7 +993,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 4,
     "key_ok": true,
-    "key_repr": "(('Mo', 'OCT'), (('C#O', 'C', ''), ('C#O', 'C', ''), ('C#O', 'C', ''), ('CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OP(O[C@@H]1C[C@H](C)CC[C@H]1C(C)C)[C@@]12[BH]345[BH]6[BH]789[C@]%10(P(O[C@@H]%11C[C@H](C)CC[C@H]%",
+    "key_repr": "(('Mo', 'OCT'), (('C#O', 'C', ''), ('C#O', 'C', ''), ('C#O', 'C', ''), ('CC(C)[C@@H]1CC[C@@H](C)C[C@H]1OP(O[C@@H]1C[C@H](C)CC[C@H]1C(C)C)C12[BH]345[BH]6[BH]789C%10(P(O[C@@H]%11C[C@H](C)CC[C@H]%11C(C)C",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -1002,8 +1002,8 @@
     "mol": "YIBZIV",
     "lever": true,
     "xyz_atoms": 104,
-    "oin": "[Ir_OCT].O{3}C(=O)c1ccccn{0}1.C[C@]12[BH]345[B@H]6[BH]789[C@@]%10(C%11C(F)[CH]C{1}C(C%12[CH][CH][CH][CH]N{5}%12)C%11F)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.C[C@@]12[BH]34[BH]56[BH]378[BH]439[C@@]4(C%10C(F)[CH]C{2}C(C%11[CH][CH][CH][CH]N{4}%11)C%10F)[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125",
-    "oin_len": 323,
+    "oin": "[Ir_OCT].O{0}C(=O)c1ccccn{3}1.CC12[BH]34[BH]56[BH]378[BH]439C4(C%10C(F)[CH]C{1}C(C%11[CH][CH][CH][CH]N{5}%11)C%10F)[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125.CC12[BH]345[BH]6[BH]789C%10(C%11C(F)[CH]C{2}C(C%12[CH][CH][CH][CH]N{4}%12)C%11F)[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134",
+    "oin_len": 307,
     "deterministic": true,
     "n_frags": 4,
     "parse_modes": {
@@ -1024,7 +1024,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 17,
     "key_ok": true,
-    "key_repr": "(('Ir', 'OCT'), (('C[C@@]12[BH]34[BH]56[BH]378[BH]439[C@@]4(C%10C(F)[CH]CC(C%11[CH][CH][CH][CH]N%11)C%10F)[BH]1%10%11[BH]521[BH]672[BH]835[BH]49%10[BH]1%1125', 'C', ''), ('O=C(O)c1ccccn1', 'O', ''), (",
+    "key_repr": "(('Ir', 'OCT'), (('CC12[BH]345[BH]6[BH]789C%10(C%11C(F)[CH]CC(C%12[CH][CH][CH][CH]N%12)C%11F)[BH]1%11%12[BH]231[BH]423[BH]657[BH]824[BH]%109%11[BH]%12134', 'C', ''), ('O=C(O)c1ccccn1', 'N', ''), ('CC1",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
@@ -1033,8 +1033,8 @@
     "mol": "YIVLAQ",
     "lever": true,
     "xyz_atoms": 67,
-    "oin": "[Rh_SPL].S{0}[C@]12[BH]34[BH]156[BH]217[BH]28[C@]9(P{1}(C%10[CH][CH][CH][CH][CH]%10)C%10[CH][CH][CH][CH][CH]%10)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.[CH]{3}1=[CH]{3>}CC[CH]{2>}=[CH]{2}CC1",
-    "oin_len": 202,
+    "oin": "[Rh_SPL].S{0}C12[BH]34[BH]156[BH]217[BH]28C9(P{1}(C%10[CH][CH][CH][CH][CH]%10)C%10[CH][CH][CH][CH][CH]%10)[BH]3%10%11[BH]293[BH]182[BH]571[BH]46%10[BH]%11321.[CH]{3}1=[CH]{3>}CC[CH]{2>}=[CH]{2}CC1",
+    "oin_len": 196,
     "deterministic": true,
     "n_frags": 3,
     "parse_modes": {
@@ -1055,7 +1055,7 @@
     "cage_H_conserved": true,
     "total_H_delta": 3,
     "key_ok": true,
-    "key_repr": "(('Rh', 'SPL'), (('C1=CCCC=CCC1', 'C', '>'), ('C1=CCCC=CCC1', 'C', '>'), ('S[C@]12[BH]34[BH]156[BH]217[BH]28[C@]9(P(C%10[CH][CH][CH][CH][CH]%10)C%10[CH][CH][CH][CH][CH]%10)[BH]3%10%11[BH]293[BH]812[BH",
+    "key_repr": "(('Rh', 'SPL'), (('C1=CCCC=CCC1', 'C', '>'), ('C1=CCCC=CCC1', 'C', '>'), ('SC12[BH]34[BH]156[BH]217[BH]28C9(P(C%10[CH][CH][CH][CH][CH]%10)C%10[CH][CH][CH][CH][CH]%10)[BH]3%10%11[BH]293[BH]812[BH]571[B",
     "key_has_RAW": false,
     "key_stable": true,
     "result": "ROUNDTRIP_OK"
