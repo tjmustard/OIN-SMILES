@@ -85,16 +85,23 @@ the position in `product(O_sums, N_sums, C_sums, P_sums, S_sums)` — so **O var
 fastest. In these ligands the atoms with a choice are overwhelmingly **O and N**, so the
 heuristic defers changing exactly the atoms that must change.
 
-| molecule | ligand | charge | space | feasible candidates | first feasible rank, raw → heuristic |
-|---|---|---|---|---|---|
-| `QIDKUL_comp_0` | 37 | -8 | 1 259 712 | **16** | 209 858 → 209 858 *(same order)* |
-| `QIDKIZ_comp_0` | 37 | -8 | 1 259 712 | **16** | 209 858 → 209 858 *(same order)* |
-| `LIYFAA_comp_0` | 92 | -10 | 1 679 616 | **0** | — |
-| `HICLAG_comp_0` | 147 | -2 | 53 747 712 | 97 868 | **4 → 32 768** |
-| `BENVOG_comp_0` | 148 | -2 | 26 873 856 | 74 108 | 14 → 224 |
-| `ZAZREZ_comp_0` | 144 | -2 | 8 503 056 | 1 424 304 | 648 → 648 *(same order)* |
-| `KESWUB_comp_0` | 188 | -2 | 6 718 464 | 41 020 | 14 → 896 |
-| `HOHKUL_comp_0` | 220 | -2 | 26 873 856 | 74 108 | 14 → 224 |
+| molecule | ligand | charge | space | `Q0 == charge` | **C1 (what the code enumerates)** | first feasible rank, raw → heuristic |
+|---|---|---|---|---|---|---|
+| `QIDKUL_comp_0` | 37 | -8 | 1 259 712 | **16** | **16** | 209 858 → 209 858 *(same order)* |
+| `QIDKIZ_comp_0` | 37 | -8 | 1 259 712 | **16** | **16** | 209 858 → 209 858 *(same order)* |
+| `LIYFAA_comp_0` | 92 | -10 | 1 679 616 | **0** | **0** | — |
+| `HICLAG_comp_0` | 147 | -2 | 53 747 712 | 97 868 | 105 620 | **4 → 32 768** |
+| `BENVOG_comp_0` | 148 | -2 | 26 873 856 | 74 108 | 80 548 | 14 → 224 |
+| `ZAZREZ_comp_0` | 144 | -2 | 8 503 056 | 1 424 304 | 1 734 696 | 648 → 648 *(same order)* |
+| `KESWUB_comp_0` | 188 | -2 | 6 718 464 | 41 020 | 45 358 | 14 → 896 |
+| `HOHKUL_comp_0` | 220 | -2 | 26 873 856 | 74 108 | 80 548 | 14 → 224 |
+
+**Two counts, and the wider one is the operative one.** `Q0 == charge` is the strict condition;
+**C1** additionally admits `Q0 < charge` with matching parity, because `charge_is_OK` can climb by
+`+2` per trivalent single-bonded carbon. `iter_charge_feasible_valences` enumerates **C1** — it
+must, or the filter would not be necessary-only — so every "candidate *n*" index below is an index
+into the C1 sequence, and C1 is the count a budget has to cover. The ranks are identical under
+either condition on these molecules (the first C1 member is also the first strict member).
 
 "Same order" is literal: when every multi-choice atom belongs to one element group, and a group
 is traversed in atom order, the heuristic sequence *is* the raw sequence. Single-choice atoms
@@ -119,7 +126,7 @@ Measured on the real code path, at the shipped budget of 20 000:
 | `BENVOG` ligand | VALID at 15, 0.28 s | VALID at 225, 4.56 s | **VALID at 1, 0.01 s** |
 | `ZAZREZ` ligand | VALID at 649, 8.10 s | VALID at 649, 8.80 s | **VALID at 1, 0.02 s** |
 | `KESWUB` ligand | timeout (6 033 cands / 90 s) | timeout (6 188 cands / 90 s) | **VALID at candidate 1 216, 22.1 s** |
-| `HOHKUL` ligand | timeout (3 356 cands / 90 s) | timeout (3 947 cands / 90 s) | **20 000 feasible cands examined, none valid**, 583 s |
+| `HOHKUL` ligand | timeout (3 356 cands / 90 s) | timeout (3 947 cands / 90 s) | **80 000 of its 80 548 feasible cands examined, none valid**, 2 572 s |
 
 `KESWUB` is the row that shows why "how deep does the budget reach" matters more than "how many
 candidates does it examine". The 20 000-candidate budget spends its examinations on *feasible*
@@ -229,7 +236,7 @@ constraint is **feasible-candidate density**, and it cuts across size:
 | dense feasible set, valid early | `BENVOG` (148), `ZAZREZ` (144) | already succeeded on the default path; filter reaches the **same** answer (identical `best_BO` sha) in 1 candidate instead of 15 / 649 |
 | sparse feasible set, valid reachable | `QIDKUL`, `QIDKIZ` (37), `HICLAG` (147), `KESWUB` (188) | **timeout or guess → real Lewis structure.** 10, 10, 1 129 and 1 216 candidates |
 | **no feasible candidate at all** | `LIYFAA` (92) | provably hopeless at this charge — see below |
-| unresolved | `HOHKUL` (220) | budget **exhausted** over 20 000 of its 74 108 feasible candidates, none valid; `best_BO` never left `AC.copy()` |
+| effectively refuted | `HOHKUL` (220) | **99.3% of its feasible set searched (80 000 / 80 548), none valid**; `best_BO` never left `AC.copy()` |
 
 The ligand-size split in `docs/VALENCE_SEARCH_v0.4.5.md` does not survive: **`KESWUB` at 188
 atoms is rescued and `BENVOG` at 148 was never failing on this axis**, while the 37-atom pair is
@@ -371,11 +378,14 @@ it is a genuine impossibility.**
   affordable prefix could work; and `LIYFAA` has none at any rank.
 * **A valid Lewis structure does exist, and the encoder can now reach it,** for QIDKUL, QIDKIZ,
   HICLAG, BENVOG, ZAZREZ and KESWUB — six of the eight, four of which the default path cannot
-  perceive at all today. `HOHKUL` is the one genuinely open cell: its filtered arm was stopped by the probe's own 90 s
-  cap after 3 208 of its 20 000 feasible candidates, so it is **undetermined** rather than
-  negative. `KESWUB` needed 1 216, so the range is not obviously out of reach. For `LIYFAA` the answer is **no, provably,
-  at that charge** — which is the "closes the question permanently" outcome the brief asked for,
-  and it relocates that molecule's problem to the charge proposal.
+  perceive at all today. For `HOHKUL` the answer is very nearly **"no"**: 80 000 of its 80 548
+  possibly-valid candidates were examined (2 572 s) and **not one** is accepted — and `best_BO`
+  never left `AC.copy()`, so no candidate even qualified for the fallback update. The last **548
+  (0.7%)** are unexamined, and closing them costs a fresh 43-minute run for 0.7% of a molecule, so
+  it is left stated rather than spent. `HOHKUL`'s defect is therefore **not** the enumeration; it
+  is that `get_BO`'s greedy iterated matching saturates none of its feasible assignments.
+* For `LIYFAA` the answer is **no, provably, at that charge** — the "closes the question
+  permanently" outcome the brief asked for. It relocates that molecule to the charge proposal.
 
 ### Recommended, not taken
 
