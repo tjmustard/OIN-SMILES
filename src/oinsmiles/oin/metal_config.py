@@ -15,21 +15,29 @@ re-parse, and it is the defect Lane 8 had to fix for tetrahedral tags. A slot-se
 descriptor is self-describing instead: it is defined against Lane 2's *canonical* slot
 labelling, which is already invariant under rotation and renumbering by construction.
 
-THE DESCRIPTOR
-==============
-Order the donors by canonical slot index, take the first four, and compute the sign of the
-signed volume (scalar triple product) of the three edge vectors from the first:
+THE DESCRIPTOR — a permutation-invariant pseudoscalar, NOT an ordered signed volume
+==================================================================================
+The first attempt ordered donors by canonical slot and took the signed volume of the first four.
+It failed, measurably, on a HOMOLEPTIC complex: ZUMNEC's six O donors are symmetry-equivalent, so
+every scalar ordering key ties, the tie falls to input order, and some resolutions differ by an
+ODD permutation — which inverts a signed volume. The sign flipped under pure atom renumbering.
 
-    sign det[ p1-p0, p2-p0, p3-p0 ]
+The fix was not a better ordering. It was to **stop needing one**: sum a pseudoscalar over EVERY
+ordered 4-tuple (:func:`chirality_index`), which is permutation-invariant by construction.
 
-* **invariant under proper rotation** — ``det(RA) = det(R)det(A) = +det(A)`` for ``det R = +1``;
-* **inverts under reflection** — an improper operation has ``det R = -1``;
-* **invariant under atom renumbering** — the ordering is by canonical slot, never by atom index;
-* **empty for a planar coordination sphere** — the volume degenerates to zero, so square-planar
-  complexes emit nothing. That is chemically right, not a gap: a square-planar complex's
-  coordination plane IS a mirror plane, so four different donors give diastereomers rather than
-  enantiomers, and the correct distinctness operator there is a donor swap, not reflection.
-  ``tests/unit/test_metal_stereo_fixtures.py`` records that asymmetry for ``JEGKOW``.
+* **invariant under proper rotation** — the triple product carries ``det R = +1``;
+* **inverts under reflection** — an improper operation flips it, dot products unchanged;
+* **invariant under any donor relabelling** — measured identical over 6 random permutations;
+* **exactly 0 for an achiral arrangement** — a perfect square and an ideal octahedron both return
+  ``+0.000e+00``. Achirality falls OUT of the index instead of needing a planarity test beside it,
+  which is why square-planar ``JEGKOW`` emits nothing without a special case. That is chemically
+  right: its coordination plane is a mirror plane, so four different donors give diastereomers,
+  and the correct distinctness operator there is a donor swap, not reflection.
+
+A caution the index also exposed: a signed volume of four LABELLED points is non-zero for any
+non-coplanar set, so the old form reported handedness for a *regular* tetrahedron — which is
+achiral (Td contains improper operations). "The labelling has an orientation" is not "the shape is
+chiral", and only the invariant form can tell them apart.
 
 The token is a trailing sidecar, ``|mc:+|`` / ``|mc:-|``, following the landed ``|ax:±|``
 precedent: it survives the parser (``generation/oin_parser.py`` already strips sidecars), it
@@ -50,46 +58,101 @@ from __future__ import annotations
 
 import numpy as np
 
-#: Planarity threshold on the **dimensionless** triple product
-#: ``det[e1,e2,e3] / (|e1||e2||e3|)``, which lies in [-1, 1] and is therefore comparable across
-#: metals and bond lengths.
+#: Threshold on the normalized permutation-invariant chirality index (see
+#: :func:`chirality_index`).
 #:
-#: An ABSOLUTE volume threshold was tried first and is wrong in kind, not merely in value: the
-#: signed volume scales as (bond length)^3, so a threshold that suits a 2.0 Å Rh-N sphere is
-#: meaningless for a 2.7 Å Rh-I one, and there is no single number that works for both.
-#:
-#: Measured on the two Lane-5 fixtures: ZUMNEC (chiral tris-bidentate) reads -0.862, JEGKOW
-#: (square planar, slight crystallographic pucker) reads +0.026. A factor of ~30 separates them,
-#: so this threshold is a wide margin rather than a tuned constant.
-_PLANARITY_EPS = 0.15
+#: Deliberately tiny, and the first value chosen (1e-3) was WRONG -- larger than the real signal,
+#: so it would have called ZUMNEC achiral and silently emitted nothing for the very fixture the
+#: lane exists for. Measured: an achiral point set cancels to **exactly 0.0** (a perfect square and
+#: an ideal octahedron both return +0.000e+00, not rounding noise), while chiral ZUMNEC reads
+#: 4.81e-4. The separation is therefore between exact zero and the signal, so the threshold only
+#: needs to clear floating-point residue -- not to guess a magnitude.
+_CHIRALITY_EPS = 1e-9
 
-__all__ = ["metal_config_sign", "metal_config_token"]
+__all__ = ["chirality_index", "metal_config_sign", "metal_config_token"]
+
+
+def chirality_index(donor_positions) -> float:
+    """A **permutation-invariant** pseudoscalar for a donor point set.
+
+    This exists because the ordering-based descriptor below cannot work for a HOMOLEPTIC complex.
+    Measured on ZUMNEC (tris-catecholato Mo): its six O donors are symmetry-equivalent, so every
+    scalar ordering key ties, the tie falls to input order, and some resolutions differ by an
+    ODD permutation -- which inverts a signed volume. The sign then flipped under pure atom
+    renumbering, 1 -> -1 on 2 of 4 shuffles.
+
+    The framing "find a canonical ordering up to proper rotation only" was the wrong problem.
+    **No ordering is needed at all.** Summing a pseudoscalar over EVERY ordered 4-tuple is
+    permutation-invariant by construction: relabelling the donors permutes the terms of the sum
+    without changing the total.
+
+    The summand is the Osipov-Pickup-Dunmur chirality index form,
+
+        (r_ij x r_kl) . r_il  *  (r_ij . r_jk)  *  (r_jk . r_kl)
+        --------------------------------------------------------
+                     (|r_ij| |r_jk| |r_kl|)^2
+
+    which is a genuine pseudoscalar: the triple product changes sign under an improper operation
+    while every dot product and magnitude is invariant, so the whole index **negates under
+    reflection** and is **unchanged under proper rotation**. For an achiral point set the terms
+    cancel exactly and it is 0 -- which is the property that makes the square-planar case fall out
+    rather than needing a separate planarity test.
+
+    Normalized by the term count so the magnitude is comparable across coordination numbers.
+    Cost is O(n^4) in donors; with n <= 8 that is at most a few thousand terms.
+    """
+    pts = np.asarray(donor_positions, dtype=float)
+    if pts.ndim != 2 or pts.shape[0] < 4 or pts.shape[1] != 3:
+        return 0.0
+    n = pts.shape[0]
+    total = 0.0
+    terms = 0
+    for i in range(n):
+        for j in range(n):
+            if j == i:
+                continue
+            r_ij = pts[j] - pts[i]
+            n_ij = float(np.linalg.norm(r_ij))
+            if n_ij == 0.0:
+                continue
+            for k in range(n):
+                if k in (i, j):
+                    continue
+                r_jk = pts[k] - pts[j]
+                n_jk = float(np.linalg.norm(r_jk))
+                if n_jk == 0.0:
+                    continue
+                for m in range(n):
+                    if m in (i, j, k):
+                        continue
+                    r_kl = pts[m] - pts[k]
+                    n_kl = float(np.linalg.norm(r_kl))
+                    if n_kl == 0.0:
+                        continue
+                    r_il = pts[m] - pts[i]
+                    pseudo = float(np.dot(np.cross(r_ij, r_kl), r_il))
+                    weight = float(np.dot(r_ij, r_jk)) * float(np.dot(r_jk, r_kl))
+                    total += pseudo * weight / (n_ij * n_jk * n_kl) ** 2
+                    terms += 1
+    return total / terms if terms else 0.0
 
 
 def metal_config_sign(donor_positions) -> int:
     """``+1`` / ``-1`` for the handedness of a donor set, or ``0`` when planar/degenerate.
 
-    Args:
-        donor_positions: donor coordinates **already ordered by canonical slot index**. The
-            caller owns that ordering — this function deliberately does no sorting of its own,
-            so the invariance property is inherited from Lane 2's canonicalization rather than
-            re-derived here (a second derivation is a second thing to drift).
+    Delegates to :func:`chirality_index`, so it needs **no canonical ordering at all** -- the
+    donor positions may arrive in any order. That replaced an earlier signed-volume-of-the-first-
+    four implementation which required a canonical slot ordering and was measured to flip sign
+    under pure atom renumbering on a homoleptic complex (see ``chirality_index``).
 
-    Fewer than four donors cannot define a chirality, and four coplanar donors define an
-    achiral sphere; both return ``0``.
+    Fewer than four donors cannot define a chirality, and an achiral arrangement (square planar,
+    ideal octahedron) cancels to exactly zero; both return ``0``. No separate planarity test is
+    needed -- achirality falls out of the index rather than being detected alongside it.
     """
-    pts = np.asarray(donor_positions, dtype=float)
-    if pts.ndim != 2 or pts.shape[0] < 4 or pts.shape[1] != 3:
+    index = chirality_index(donor_positions)
+    if abs(index) < _CHIRALITY_EPS:
         return 0
-    p0, p1, p2, p3 = pts[0], pts[1], pts[2], pts[3]
-    e1, e2, e3 = p1 - p0, p2 - p0, p3 - p0
-    scale = float(np.linalg.norm(e1) * np.linalg.norm(e2) * np.linalg.norm(e3))
-    if scale <= 0.0:
-        return 0  # coincident donors
-    normalized = float(np.dot(np.cross(e1, e2), e3)) / scale
-    if abs(normalized) < _PLANARITY_EPS:
-        return 0
-    return 1 if normalized > 0 else -1
+    return 1 if index > 0 else -1
 
 
 def metal_config_token(donor_positions) -> str:

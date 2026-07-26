@@ -167,9 +167,8 @@ class TestZumnecHelicity(unittest.TestCase):
             "exact defect the Y2 axial wave shipped",
         )
 
-    @unittest.expectedFailure
     def test_invariant_under_atom_renumbering(self):
-        """KNOWN LIMITATION, and it is the crux of Lane 5. Measured, not assumed.
+        """SOLVED. Was an expectedFailure; the fix was to stop needing an ordering.
 
         ZUMNEC is HOMOLEPTIC: its six O donors are symmetry-equivalent, so every term in an
         invariant ordering key -- element, distance to metal, the multiset of distances to the
@@ -252,11 +251,24 @@ class TestDegenerateInputs(unittest.TestCase):
         square = np.array([[1.0, 0, 0], [0, 1.0, 0], [-1.0, 0, 0], [0, -1.0, 0]]) * 2.0
         self.assertEqual(metal_config_sign(square), 0)
 
-    def test_a_known_chiral_arrangement_has_a_definite_sign(self):
-        """A right-handed tetrahedron and its mirror must give opposite, non-zero signs."""
+    def test_a_REGULAR_tetrahedron_is_achiral(self):
+        """Td symmetry contains improper operations, so a regular tetrahedron has NO handedness.
+
+        This test previously asserted the opposite -- it called this arrangement "a known chiral
+        arrangement" and required a non-zero sign. That was MY error, and the old
+        signed-volume-of-the-first-four descriptor happily agreed with it: a signed volume is
+        non-zero for any non-coplanar set of four LABELLED points, so it reported handedness for a
+        shape that has none. Confusing "the labelling has an orientation" with "the shape is
+        chiral" is exactly the flaw the permutation-invariant index removes.
+        """
         tet = np.array([[1.0, 1.0, 1.0], [1.0, -1.0, -1.0], [-1.0, 1.0, -1.0], [-1.0, -1.0, 1.0]])
+        self.assertEqual(metal_config_sign(tet), 0)
+
+    def test_a_SCALENE_tetrahedron_is_chiral_and_inverts(self):
+        """Four points with no mirror symmetry: a genuine handedness that must flip."""
+        tet = np.array([[1.7, 0.2, 0.1], [0.3, 2.1, -0.4], [-1.1, 0.5, 1.9], [-0.6, -1.8, -1.3]])
         s = metal_config_sign(tet)
-        self.assertNotEqual(s, 0)
+        self.assertNotEqual(s, 0, "a scalene tetrahedron has no mirror symmetry")
         self.assertEqual(metal_config_sign(_reflected(tet)), -s)
 
 
