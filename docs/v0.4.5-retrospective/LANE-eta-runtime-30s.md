@@ -1,6 +1,19 @@
 # Lane: eta runtime — the `<30 s per job` goal
 
-**Status:** mechanism FOUND, fix BUILT and MEASURED, lever **default OFF** pending a corpus A/B.
+**Status:** mechanism FOUND, fix BUILT and MEASURED, lever **default OFF**.
+
+> ⚠ **§3.2's "pass-rate: neutral" and §4's "promote once the sweep confirms" are SUPERSEDED.**
+> A parallel v0.4.7 lane (`swimlane/v047-promote`, `docs/ACCEPT_SCORED_v0.4.7.md`) built on these
+> commits and added the arms this cohort A/B lacked. Its **G2 gate FAILS**, and it fails on a flaw
+> in *my* measurement: `passed` here is computed with `get_oin_string(gen.mol, coords)` — the very
+> predicate the lever accepts on — so it is **circular** and structurally cannot detect what
+> dropping the independent confirm costs. With a genuinely independent arm: **indep 15/20 → 7/20,
+> 8 regressions, 0 fixes**, and the 8 are not cosmetic (6 lose haptic coordination outright, 1
+> reassigns the donor atom, 1 detaches a hydrogen). Its G3 gate does pass — the emitted string is
+> byte-identical 20/20 — so the honest one-line trade is **byte-identical notation, changed
+> geometry**. Read that document, not this section, for the promotion decision. Everything in
+> §2 (the mechanism), §2.4 (`timeout` is advisory), §2.5 (`PREFILTER_VETO`), §3.3/§3.4 (quality,
+> and the dead metric) stands.
 **Branch:** `research/eta-relax-invariant-proxy` (`e11a4cfe`, `15b7b7ff`, + this report). **UNLANDED
 at time of writing.**
 **Supersedes:** commit `41d2f52e` ("the eta pool cost is structural, not a defect. Item closed.")
