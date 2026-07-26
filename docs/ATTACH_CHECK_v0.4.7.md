@@ -242,3 +242,92 @@ The invalid run is kept as `spec/handoffs/v0.4.7/runs/INVALID_c21_noop.json`. **
 comes from it.**
 
 ---
+## 3. THE FOUR GATES, RE-RUN WITH THE CHECK ENABLED
+
+Method: **arm C** = `OIN_ACCEPT_SCORED=1` **+** `OIN_ATTACH_CHECK=1`, run as a `--single-arm`
+pass and compared against stored arms A and B. Re-measuring arm A costs more than the rest of
+the lane (median 21 s, tail to 400 s); §4.2/§4.4 of the promote lane established generator
+determinism at coordinate level, and this lane reproduced it a **third** time, so a stored arm
+A is a valid comparator. The premise is checked, not assumed: `sha_in` must agree on every
+molecule, and it does.
+
+### 3.1 Gap cohort (n=21, both arms fresh this session) — **G1 and G2 both stop failing**
+
+| gate | question | A → B (bare lever) | **A → C (lever + check)** | verdict |
+|---|---|---|---|---|
+| **G3** | does `smiles_2` stay byte-identical? | 20/20 identical | **20/20 identical, 0 divergent** | **PASS** |
+| **G1** | does structure quality degrade? | clash 16→2, severe 7→0 | **clash 16→0, severe 7→0, worst_overlap min 0.4344→0.75** | **PASS** |
+| **G2** | what does dropping independent re-perception cost? | 15/20 → 7/20, **8 regressions** | **15/20 → 13/20, 2 regressions** | **mostly recovered** |
+| **G4** | does any passing molecule stop passing? | 19/21, none | **19/21, none** | **PASS** |
+
+Against the bare lever, arm C is a strict improvement on the arm that mattered:
+**`indep` 7/20 → 13/20, six fixes, zero regressions.**
+
+#### Recovery, per molecule, on the 8 the bare lever broke
+
+| molecule | A `indep` | B | **C** | A s | B s | **C s** | |
+|---|---|---|---|---|---|---|---|
+| DAKGON | ✓ | ✗ | **✓** | 17.8 | 3.6 | 20.2 | **RECOVERED** |
+| FEXYOZ | ✓ | ✗ | **✓** | 12.7 | 2.9 | 21.7 | **RECOVERED** |
+| HIDCIH_comp_1 | ✓ | ✗ | **✓** | 64.2 | 2.0 | 69.0 | **RECOVERED** |
+| KAQDOV | ✓ | ✗ | **✓** | 202.6 | 7.1 | 248.9 | **RECOVERED** |
+| RATPEK | ✓ | ✗ | **✓** | 53.7 | 9.2 | 69.2 | **RECOVERED** |
+| ZITSIE | ✓ | ✗ | **✓** | 188.9 | 3.9 | 210.0 | **RECOVERED** |
+| **MEDZUR** | ✓ | ✗ | **✗** | 8.9 | 1.0 | 7.4 | still broken |
+| **POVPIA** | ✓ | ✗ | **✗** | 21.2 | 5.4 | 10.5 | still broken |
+
+**6 of 8 recovered.** On all six the check returns arm A's *exact* structure — same
+`sha256(smiles_2)`, same `clash_vdw`, same `worst_overlap` to four decimals — at approximately
+arm A's runtime.
+
+### 3.2 ⚠ Production recovery is 6/8, not the 7/8 the falsification measured
+
+The offline predicate separates 7 of 8 (§1.3). Production recovers 6. **The two numbers answer
+different questions and both belong in the record.**
+
+§1.3 asks *can the predicate tell arm A's conformer from arm B's?* §3.1 asks *does the pipeline
+end up returning a good one?* A filter cannot manufacture a conformer that does not exist in
+the pool. `MEDZUR_comp_0` is the gap: the check correctly rejected arm B's conformer, the pool
+was then filled, and selection returned a **third** structure (`worst_overlap` 0.7611 — neither
+arm A's 0.7577 nor arm B's 0.7705) which **passes the attachment check and still fails
+independent re-perception.**
+
+### 3.3 Three residual mechanisms, read off arm C's own returned conformers
+
+Scoring the check against what arm C actually returned (`--dump-xyz`, then `attach_probe`)
+separates the residual cleanly. Only the first was anticipated.
+
+| molecule | check on C's structure | `indep` | mechanism |
+|---|---|---|---|
+| POVPIA | passes | ✗ | **Known and predicted (§6.4).** Metal sphere intact; the defect is ligand-internal — a hydrogen detaches and C–N reads as C=N. Unreachable by any metal-centred predicate. |
+| MEDZUR | **passes** | ✗ | **New class, not predicted by anyone.** Attachment fully intact and independent re-perception still disagrees. Here the attachment check is simply not the binding constraint. |
+| GAVSED | **fails** | ✗ | **The scope limit (§2.1), demonstrated.** Acceptance rejected every conformer, so `_select_by_geometry`'s geometry-ranked fallback returned one regardless — **and that fallback is not attachment-aware.** |
+
+GAVSED is the one to act on: the check guards **acceptance**, and on molecules where it rejects
+everything, the structure that ships was chosen by a ranking that never consults it. That is a
+named, fixable gap and it is **not** fixed here, because closing it would change arm A's
+behaviour too and that is outside this lane's scope.
+
+### 3.4 The cost — and this is where the case weakens
+
+**Runtime is ADVISORY throughout: load averaged 42–65 on 12 cores, with a 5k sweep and two
+sibling lanes running.** Totals within one cohort are comparable because both arms met the same
+conditions; absolute seconds are not portable.
+
+| gap cohort, n=21 | A default | B bare lever | **C lever + check** |
+|---|---|---|---|
+| total_s | 1788.9 | **220.6** | 1273.5 |
+| median_s | 21.17 | **3.84** | 13.08 |
+| `>30s` | 10 | **2** | 7 |
+| speedup vs A | — | **8.11×** | **1.40×** |
+
+**The check retains 32.9% of the bare lever's saving on this cohort** (B saves 1568 s against
+A; C saves 515 s). The mechanism is not subtle and it is visible per molecule above: when the
+check rejects the conformers the score would have accepted, `accept_fn` never fires, the pool
+fills to completion, and **pool filling is where arm A's cost lives.** So on precisely the
+molecules the lever was fastest on — KAQDOV 7.1 s → 248.9 s, ZITSIE 3.9 s → 210.0 s — the check
+hands the runtime straight back.
+
+**This cohort was selected to exhibit the acceptance gap**, so it is the worst case for speedup
+retention by construction, in the same way it was the wrong cohort to estimate G1 from (§4.8).
+The population number is §3.5 and it is the one to quote.
