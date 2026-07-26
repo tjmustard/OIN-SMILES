@@ -196,7 +196,56 @@ of one Me₂Si-bridged bis(indenyl) ligand, differing *only* in eta winding — 
 with the lever on; a chiral eta structure still differs from its mirror; an achiral one
 folds only with the lever on; orientation-free metallocenes are untouched.
 
-## 7. Residual — and why it is not zero
+## 7. Measured
+
+### Fix A (default ON) — unmodified `main` vs this branch, lever OFF
+
+1176 common re-encoded pairs. **2 molecules changed their emitted string**, both already
+`structural` in both arms, so **no bucket moved**. GIPDEQ goes `winding_star_drift` →
+`byte_exact`. Scoped exactly as predicted: only fragments where the strict canonical rank
+is unavailable.
+
+### Fix C (lever) — its complete provable scope
+
+Fix C can only ever rewrite a winding character inside a 2-orbit of eta slots, so every
+molecule it could touch has **≥ 2 eta winding markers**. All 500 such molecules in the
+corpus were re-encoded in both arms:
+
+| bucket | lever OFF | lever ON |
+|---|---:|---:|
+| `byte_exact` | 203 | **204** |
+| `key_equal` / `winding_star_drift` | 5 | **4** |
+| `key_equal` / `rdkit_canonical` | 54 | 54 |
+| `key_equal` / `slot_renumber` | 55 | 55 |
+| `facmer_divergent` | 52 | 52 |
+| `structural` | 131 | 131 |
+
+- **emitted string changed: 3 / 500**; all three are `byte_exact` with the lever on (one is
+  GAMJAG's fix, two are latent MECJOU-type recanonicalizations of pairs that already
+  agreed).
+- **bucket changed: 1** — GAMJAG, `winding_star_drift` → `byte_exact`.
+- **`facmer_divergent` did not rise** (52 → 52): no isomer over-folding.
+
+A broader 1082-molecule sample outside this scope showed **exactly one** string change
+(GAMJAG), consistent with the scope argument.
+
+### Guards
+
+`tests/unit/test_winding_canonical.py` (6 tests) and the pre-existing
+`tests/unit/test_winding_helper.py` are green; full suite **605 OK / 3 skip / 3 xfail**;
+ruff clean.
+
+### Note on instruments
+
+`canonicality_probe.py` cannot see this class at all — it holds the structure fixed and
+varies presentation, whereas these residuals are *input structure vs a differently
+generated structure*. Consistent with the orchestrator's corpus-wide finding of zero
+`rotate` drift, and with this lane's own direct measurement that every one of the 6 cases
+is invariant across random proper rotations. The acceptance number therefore comes from the
+`reencode_ab` + bucket-report `key_equal` sub-split, the part of that instrument the
+orchestrator's trust gate confirmed (12.04% vs the sweep's 12.32%).
+
+## 8. Residual — and why it is not zero
 
 `winding_star_drift` goes **6 → 2** (GIPDEQ by Fix A, GAMJAG by Fix C; latent MECJOU also
 closed). The remaining SIMDIE, TEYXEA, WUHRIB and QIGZAJ are **not encoder defects** — in
