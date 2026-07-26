@@ -1488,6 +1488,20 @@ def get_oin_string(tmc_mol, xyz_coords):
                     new_bond.SetStereoAtoms(a0, a1)
                     new_bond.SetStereo(bond.GetStereo())
 
+        # v0.4.5 Lane 8: the chiral tags AddAtom copied above are parities relative
+        # to the PARENT's neighbour order, and this rebuild changed that order --
+        # hydrogens were folded into SetNumExplicitHs and bonds were re-added by
+        # ascending parent index. Both are functions of the input atom numbering,
+        # so the same stereocentre can emit @ or @@ depending only on how the XYZ
+        # happened to be numbered. Re-derive the tags from the geometry instead.
+        # Default OFF -> byte-identical output.
+        if os.environ.get("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():
+            from ..oin.stable_stereo import restamp_fragment_chirality
+
+            restamp_fragment_chirality(
+                mw, {v: k for k, v in old_to_new.items()}, mol.GetConformer()
+            )
+
         frag_mol = mw.GetMol()
         # Materialize single-bond directions from the carried E/Z stereo *now*,
         # before the downstream recover()/AssignStereochemistry(cleanIt=True):
