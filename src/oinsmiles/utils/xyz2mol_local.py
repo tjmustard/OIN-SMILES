@@ -663,6 +663,8 @@ def _fallback_tries():
 AC2BO_STATS = {
     "ac2bo_calls": 0,  # AC2BO invocations
     "over_cap_calls": 0,  # ... of which took the bounded lazy-product branch
+    "over_cap_ordered_calls": 0,  # ... of which enumerated in heuristic order (lever ON)
+    "over_cap_filtered_calls": 0,  # ... of which enumerated charge-feasible-only (lever ON)
     "candidates": 0,  # candidate valence assignments examined, all branches
     "over_cap_candidates": 0,  # ... of which on the over-cap branch
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
@@ -730,6 +732,172 @@ def valence_combo_size(valences_list_of_lists, cap=_VALENCE_COMBO_CAP):
     return combo_size
 
 
+# The element grouping _ordered_valences sorts by, in its own priority order:
+# O slowest-varying, then N, then C, then P, with S fastest. iter_ordered_valences
+# reproduces this exactly, so the constant must stay in sync with the group extraction
+# in _ordered_valences below (test_valence_order.py asserts the two orders are equal).
+_HEURISTIC_ELEMENTS = (8, 7, 6, 15, 16)  # O, N, C, P, S
+
+# Env lever, default OFF. When enabled, the over-cap branch of AC2BO enumerates candidate
+# valence assignments in the SAME order _ordered_valences produces -- lazily, so it does not
+# materialise the exponential product -- instead of the raw itertools.product order. Read
+# only inside `if over_cap:`, so sub-cap ligands (99.8% of the corpus) are byte-identical by
+# construction, exactly as OIN_VALENCE_FALLBACK_TRIES is. See docs/VALENCE_ORDER_v0.4.5.md.
+_ORDERED_FALLBACK_ENV = "OIN_VALENCE_ORDERED_FALLBACK"
+
+# Prefer the single-source lever registry when it is present. It is not on this branch's
+# base (it arrives with trial/v045-merge2), so fall back to the same semantics locally
+# rather than importing something that may not exist. The point of both is to close the
+# sense-inversion trap: os.environ.get("X") is truthy for the string "0", so the obvious
+# way to opt out of a bare-truthiness lever turns it ON.
+try:  # pragma: no cover - depends on which branch this file is built from
+    from oinsmiles.oin.levers import lever_enabled as _lever_enabled
+except ImportError:  # pragma: no cover
+    _LEVER_FALSEY = frozenset({"0", "", "false", "no", "off"})
+
+    def _lever_enabled(name, override=None):
+        """Is ``name`` enabled? Default OFF; ``"0"``/``"false"``/``"no"``/``"off"`` disable."""
+        if override is not None:
+            return bool(override)
+        raw = os.environ.get(name)
+        if raw is None:
+            return False
+        return raw.strip().lower() not in _LEVER_FALSEY
+
+
+def iter_ordered_valences(valences_list_of_lists, atoms):
+    """Yield candidates in exactly ``_ordered_valences``' order, lazily.
+
+    ``_ordered_valences`` materialises the whole Cartesian product twice (once to score,
+    once to sort), which is why ``AC2BO`` cannot use it above ``_VALENCE_COMBO_CAP``. But
+    its sort key is ``(order_idx, full_tuple)`` where ``order_idx`` is the position in
+    ``itertools.product(O_sums, N_sums, C_sums, P_sums, S_sums)`` -- i.e. a plain nested
+    enumeration with O outermost and S innermost. Ties in ``order_idx`` can only differ at
+    atoms that are none of O/N/C/P/S (the key pins every O/N/C/P/S valence), and
+    ``sorted()`` breaks them lexicographically on the valence tuple in atom order, which
+    is ascending per position.
+
+    So six nested ``itertools.product``s over small per-element groups reproduce the
+    order **exactly** in O(1) memory. ``tests/unit/test_valence_order.py`` asserts the two
+    orders are element-for-element equal, so this is an equality claim, not an
+    approximation.
+    """
+    groups = [[i for i, num in enumerate(atoms) if num == el] for el in _HEURISTIC_ELEMENTS]
+    grouped = {i for group in groups for i in group}
+    other = [i for i in range(len(atoms)) if i not in grouped]
+
+    group_lists = [[valences_list_of_lists[i] for i in group] for group in groups]
+    # The sorted() tie-break is ascending per position; the grouped elements keep their
+    # own list order (which is atomic_valence's preference order, not ascending).
+    other_lists = [sorted(valences_list_of_lists[i]) for i in other]
+
+    out = [0] * len(atoms)
+
+    def scatter(idxs, values):
+        for i, value in zip(idxs, values):
+            out[i] = value
+
+    for o_vals in itertools.product(*group_lists[0]):
+        scatter(groups[0], o_vals)
+        for n_vals in itertools.product(*group_lists[1]):
+            scatter(groups[1], n_vals)
+            for c_vals in itertools.product(*group_lists[2]):
+                scatter(groups[2], c_vals)
+                for p_vals in itertools.product(*group_lists[3]):
+                    scatter(groups[3], p_vals)
+                    for s_vals in itertools.product(*group_lists[4]):
+                        scatter(groups[4], s_vals)
+                        for other_vals in itertools.product(*other_lists):
+                            scatter(other, other_vals)
+                            yield tuple(out)
+
+
+_CHARGE_FILTER_ENV = "OIN_VALENCE_CHARGE_FILTER"
+
+
+def _charge_feasible_suffix_counts(order_atoms, order_choices):
+    """``counts[k]`` = the ``(dq, dpar)`` states reachable using variables ``k..n-1``.
+
+    ``dq`` is the total ``get_atomic_charge`` contribution and ``dpar`` the parity of the
+    valence sum. Both are additive over atoms, which is the whole reason this works.
+    """
+    n = len(order_atoms)
+    counts = [None] * (n + 1)
+    counts[n] = {(0, 0)}
+    for k in range(n - 1, -1, -1):
+        z = order_atoms[k]
+        table = set()
+        for val in order_choices[k]:
+            dq = get_atomic_charge(z, atomic_valence_electrons[z], val)
+            dpar = val & 1
+            for q, par in counts[k + 1]:
+                table.add((q + dq, par ^ dpar))
+        counts[k] = table
+    return counts
+
+
+def iter_charge_feasible_valences(valences_list_of_lists, atoms, charge, ac_valence):
+    """Yield only the candidates that can possibly satisfy ``AC2BO``'s own predicate.
+
+    **This is a subsequence of ``itertools.product(*valences_list_of_lists)``, in the same
+    relative order** -- it skips candidates, it never reorders them. That matters: every
+    candidate a valid perception could use is still yielded, at its original relative
+    position, so the *first valid candidate found is the same one an unbounded raw search
+    would have found*. What changes is that the budget is no longer spent on candidates
+    that provably cannot be valid.
+
+    Why the skip is sound. A valid return from ``AC2BO`` forces ``BO.sum(axis=1) ==
+    valences`` exactly: either ``UA`` is empty and ``BO = AC``, or ``valences_not_too_large``
+    bounds every atom above by ``valences`` while ``(BO - AC).sum() == sum(DU)`` fixes the
+    total, so every per-atom slack is zero. ``charge_is_OK`` therefore evaluates
+    ``get_atomic_charge`` on the candidate's own valences, giving
+    ``Q0 = sum_i get_atomic_charge(z_i, v_i)``; its only correction is ``Q += 2`` per
+    trivalent single-bonded carbon and only while running below the target, so
+    ``Q_final = Q0 + 2k`` with ``k >= 0``. Hence:
+
+    * **C1** ``Q0 <= charge`` and ``charge - Q0`` even;
+    * **C2** ``sum(valences) - sum(ac_valence)`` even, since every added bond raises
+      ``BO.sum()`` by exactly 2.
+
+    Both are necessary and both are additive, so a suffix DP prunes whole subtrees. The
+    conditions are **not sufficient** -- ``get_BO``'s matching may still fail to saturate --
+    so survivors are still handed to the real predicate by the caller.
+
+    ``tests/unit/test_valence_order.py`` brute-forces small ligands and asserts that every
+    candidate the real predicate accepts passes this filter, so the derivation above is
+    pinned by measurement rather than by argument.
+    """
+    n = len(atoms)
+    choices = [list(lst) for lst in valences_list_of_lists]
+    counts = _charge_feasible_suffix_counts(atoms, choices)
+    want_par = int(sum(ac_valence)) & 1
+    targets = {
+        (q, par)
+        for q, par in counts[0]
+        if par == want_par and q <= charge and (charge - q) % 2 == 0
+    }
+    if not targets:
+        return  # provably no valid Lewis structure at this charge -- yield nothing
+
+    out = [0] * n
+
+    def walk(k, acc_q, acc_par):
+        if k == n:
+            yield tuple(out)
+            return
+        z = atoms[k]
+        for val in choices[k]:
+            q2 = acc_q + get_atomic_charge(z, atomic_valence_electrons[z], val)
+            par2 = acc_par ^ (val & 1)
+            reachable = counts[k + 1]
+            if not any((tq - q2, tp ^ par2) in reachable for tq, tp in targets):
+                continue
+            out[k] = val
+            yield from walk(k + 1, q2, par2)
+
+    yield from walk(0, 0, 0)
+
+
 def _ordered_valences(valences_list_of_lists, atoms):
     """Sort candidate valence assignments by the O/N/C/P/S grouping heuristic.
 
@@ -737,6 +905,10 @@ def _ordered_valences(valences_list_of_lists, atoms):
     the Cartesian product of per-atom valences is too large to materialise. The
     heuristic only reorders which valid assignment the main loop finds first, so
     skipping it changes nothing a sub-cap (currently-encodable) ligand relies on.
+
+    ``iter_ordered_valences`` produces the identical order without materialising
+    anything; this function is kept as the sub-cap path (so that path stays
+    byte-identical by construction) and as the reference the equality test compares to.
     """
     valences_list = itertools.product(*valences_list_of_lists)
 
@@ -847,9 +1019,22 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
     over_cap = combo_size > _VALENCE_COMBO_CAP
     if over_cap:
         AC2BO_STATS["over_cap_calls"] += 1
-        sorted_valences_list = itertools.islice(
-            itertools.product(*valences_list_of_lists), _fallback_tries()
-        )
+        # Default: the raw product order. Two default-OFF levers change what the bounded
+        # prefix contains -- OIN_VALENCE_ORDERED_FALLBACK reorders it into the sub-cap
+        # heuristic's order (measured WORSE; see docs/VALENCE_ORDER_v0.4.5.md), and
+        # OIN_VALENCE_CHARGE_FILTER keeps the order but drops candidates that provably
+        # cannot be valid. The filter wins if both are set, since it subsumes the question.
+        if _lever_enabled(_CHARGE_FILTER_ENV):
+            AC2BO_STATS["over_cap_filtered_calls"] += 1
+            candidate_source = iter_charge_feasible_valences(
+                valences_list_of_lists, atoms, charge, AC_valence
+            )
+        elif _lever_enabled(_ORDERED_FALLBACK_ENV):
+            AC2BO_STATS["over_cap_ordered_calls"] += 1
+            candidate_source = iter_ordered_valences(valences_list_of_lists, atoms)
+        else:
+            candidate_source = itertools.product(*valences_list_of_lists)
+        sorted_valences_list = itertools.islice(candidate_source, _fallback_tries())
     else:
         sorted_valences_list = _ordered_valences(valences_list_of_lists, atoms)
 
