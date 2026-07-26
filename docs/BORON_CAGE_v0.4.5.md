@@ -386,6 +386,27 @@ $V tools/boron_regression_ab.py --dataset-dir $D \
 $V -m unittest tests.unit.test_boron_cage tests.unit.test_regression_stability
 ```
 
+## 8a. Suite, lint, and exactly which commit each number came from
+
+| gate | result | measured at |
+|---|---|---|
+| `uvx ruff@0.15.20 check` + `format --check`, whole tree | clean | final (`262f83da`) |
+| `tests/unit/test_regression_stability.py`, 4 goldens | **6/6 OK**, lever OFF *and* ON, byte-identical across the lever | final |
+| `tests/unit/test_boron_cage.py` | **19/19 OK** | final |
+| 4 cage molecules x 5 encodes in one process | no crash, all deterministic, no `[B@` in output | final |
+| all 6 corpus molecules with >=3 B and no cage motif | **6/6 byte-identical** with the lever ON | final |
+| full `discover tests/unit` | **605 tests, OK (skipped=3, expected failures=3)** | `5ca3f6e9`+docs, i.e. every src change **except** `clear_boron_cage_stereo` |
+| 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | same commit as above |
+
+Being explicit about the last two rows rather than rounding them up: the full-suite and
+120-molecule A/B numbers were taken before `clear_boron_cage_stereo` landed. That function is
+gated on **both** the lever and the B-B-B motif, so it cannot alter either measurement with the
+lever unset (which is how the whole suite and the A/B's OFF arm run), and its effect on the ON arm
+for non-cage molecules is likewise nil — which is the claim the 6/6 boron-rich cage-free row tests
+directly. A re-run of both on the final tree was still in flight when this was written (the box
+was at load 35 from a sibling 936-molecule sweep); `tools/suite_final.txt` and
+`tools/ab_final.txt` are where it lands.
+
 ## 9. Verdict on the ceiling
 
 Sharper than "the model cannot do it":
