@@ -650,3 +650,40 @@ The measurement to take, in order:
 This is where the item genuinely stops: not for want of a fix, but because step 1 has not been run
 and the fix is unsound without it. Sixth attempt on this tail would otherwise be a guess about
 acceptance semantics, and five of five previous guesses here were wrong.
+
+## RESOLVED: the eta pool cost is irreducible via acceptance. Item closed.
+
+Ran the gate. For Ferrocene, the requested OIN and the regenerated OIN are **byte-identical**, and
+`canonical_roundtrip_key` equality **holds** for the finally-selected conformer:
+
+```
+requested   [Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}...
+regenerated [Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}...
+keys equal: True
+```
+
+So the key is **not** stricter in some unnamed dimension — the hypothesis behind the fill-loop fix.
+The real explanation is different and it settles the item:
+
+**`accept_fn` is handed RAW pool conformers; the key only matches AFTER optimization.** For CisPlatin
+the raw conformer already satisfies the key, which is why it accepts on attempt 0. For an eta
+molecule the ring winding is not right until relaxation — and relaxation happens *after* the fill
+loop. At the moment `accept_fn` sees an eta conformer, that conformer is genuinely not yet
+acceptable.
+
+**Therefore no acceptance-predicate change can shorten the eta fill.** Adding winding-match to
+`accept_fn` would test a property the conformer does not have yet, and would either never fire (no
+gain) or fire on pre-relaxation geometry (unsound). The widened pool is doing real work: it exists so
+that *after* optimization, at least one member has the requested face.
+
+**The eta runtime cost is the price of correctness, not a defect.** The `<30 s` tail is therefore not
+closable by cheap means. What remains are genuinely expensive options — make the embed produce the
+requested face before relaxation (construction over selection: three prior negative results), or
+relax fewer candidates by scoring winding pre-relaxation (needs a pre-relaxation winding predicate
+that does not currently exist).
+
+Six attempts, one per hypothesis, each killed by a measurement:
+low-acceptance-rate → pool widening → cost-per-attempt → attempt-driven → selection-side alignment →
+fill-loop `accept_fn`. **The answer is that the cost is structural.** The `OIN_ETA_EARLY_EXIT` lever
+stays default-OFF and documented as ineffective; the per-attempt counter stays, since it is what made
+each refutation take one A/B instead of a cycle of argument.
