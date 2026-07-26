@@ -39,6 +39,10 @@ from rdkit import Chem  # noqa: E402
 
 from oinsmiles import XYZToSMILES  # noqa: E402
 from oinsmiles.core.chirality import CIPAssigner  # noqa: E402
+from oinsmiles.oin.compare import (  # noqa: E402
+    normalize_oin_for_comparison,
+    winding_canonical_key,
+)
 from oinsmiles.oin.locked_donor import ENV_LEVER, plan_locked_donors  # noqa: E402
 from oinsmiles.utils.xyz2mol import get_tmc_mol  # noqa: E402
 
@@ -172,6 +176,22 @@ class TestLeverOnDivergesOnEnantiomers(_LeverBase):
         # Whole-string, not counts: every locked N inverted and nothing else moved.
         self.assertEqual(mirror, _swap_n_tags(base))
         self.assertEqual(set(_n_descriptors(base)) & set(_n_descriptors(mirror)), set())
+
+    def test_round_trip_key_still_folds_the_descriptor(self):
+        """The batch harness's acceptance predicate must be blind to this descriptor.
+
+        The key re-parses each fragment through RDKit, which drops trivalent-nitrogen
+        chirality, so POJJOP and its mirror still share a key with the lever ON. Two
+        consequences, and both are load-bearing: promoting this lever cannot move
+        ``facmer_divergent`` or any other harness count, and equally the harness cannot
+        *confirm* the descriptor -- only the raw string can.
+        """
+        self._set(True)
+        base, mirror = self._base_and_mirror(POJJOP)
+        self.assertNotEqual(base, mirror)
+        kb = winding_canonical_key(normalize_oin_for_comparison(base))
+        km = winding_canonical_key(normalize_oin_for_comparison(mirror))
+        self.assertEqual(kb, km, "the round-trip key must fold the locked-donor descriptor")
 
 
 class TestDescriptorIsCanonical(_LeverBase):
