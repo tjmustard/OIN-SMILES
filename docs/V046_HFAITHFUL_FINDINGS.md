@@ -263,3 +263,34 @@ Correct sequencing, therefore:
 Step 2 is not optional cost: without a clean v0.4.5 number there is nothing to diff the boron
 promotion against, and "34 molecules now encode" would be an unanchored claim rather than a
 measured delta.
+
+## The scoping is VERIFIED — 0 boron-free fragments affected, n=1194
+
+The full-encoder byte-identity run was killed mid-flight (6 of 61 fixtures, no `#DONE` sentinel —
+the sentinel is what made "incomplete" immediately distinguishable from "agreement"). It was
+replaced with a **better** instrument rather than restarted.
+
+My change touches exactly one predicate, `_parse_fragment`'s cage rung, so exercising that
+directly is both cheaper and more targeted than comparing whole OIN strings downstream. Harvested
+every distinct fragment body the corpus actually emits (from `smiles_1`/`smiles_2` across the
+936-molecule re-baseline, slot markers and `_GEO` stripped) and compared the parse result with the
+lever ON and OFF:
+
+| | |
+|---|---|
+| distinct emitted fragment bodies | **1,194** |
+| fragments whose parse result differs ON vs OFF | **56** |
+| …of those, containing boron | **56** — the intended scope |
+| …of those, boron-FREE | **0** — the leak is closed |
+
+All 56 go `None → parsed` (e.g. an 8-atom `[BH]1B[BH][B@H]2...` cage, a 46-atom carborane
+thioether), which is the recovery the lever exists for. `C#O` and every other over-valent
+non-boron fragment is untouched.
+
+Better than the instrument it replaced on every axis: n=1194 rather than 61, it tests the changed
+code rather than a downstream proxy, it runs in seconds rather than ~80 minutes, and it is
+load-independent so the running sweep cannot corrupt it.
+
+**The boron promotion now has no unmeasured risk.** What remains before it can be called an
+accuracy delta is arithmetic, not safety: the 5k sweep has to publish a clean v0.4.5 baseline to
+diff against on identical molecules.
