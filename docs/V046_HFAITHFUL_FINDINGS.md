@@ -194,3 +194,46 @@ matches. If matches usually come early, incremental widening is a large win; if 
 late, it changes nothing and adds a retry path. That distribution needs an idle machine, so it is
 the first measurement to take once the 5k sweep finishes. Guessing which regime holds is exactly
 the error that produced four refuted hypotheses earlier in this release.
+
+---
+
+# ⚠ CAUTION ON THE BORON PROMOTION — blast radius is wider than boron
+
+Promoting `OIN_BORON_CAGE` left exactly one suite failure out of 840, and it is not a stale
+golden. `test_canonical_body::test_unparseable_body_gets_stable_raw_token`:
+
+```
+AssertionError: 'C#O' != 'RAW:C#O'
+```
+
+**Carbon monoxide now parses under boron mode.** `compare.py::_parse_fragment` gates its
+valence-check-free rungs (`_NO_VALENCE`, `_NO_VALENCE_NO_KEKULIZE`) on `OIN_BORON_CAGE`, and those
+rungs apply to **every fragment**, not only to boron cages. `C#O` fails the valence check and
+nothing else, so with valence checking skipped it succeeds and never reaches the `RAW:` fallback.
+
+That matters because **CO is one of the most common ligands in transition-metal chemistry**. The
+promotion therefore changes fragment parsing for a large population that has nothing to do with
+boron — far beyond the 34 molecules the promotion was justified on.
+
+## What is NOT yet established
+
+The 61-fixture byte-identity check in this branch was run **before** the promotion, with
+`OIN_BORON_CAGE` OFF. There is **no byte-identity evidence for non-boron molecules under
+boron-ON**. Two questions are open and both need measuring before this is merged:
+
+1. does any non-boron fixture's emitted OIN change when the lever is on?
+2. for a CO-containing complex, is the permissively parsed `C#O` mol *correct*, or is it an
+   over-valent carbon that the `RAW:` fallback existed to keep out of the string?
+
+## The narrower fix, if the answer to either is bad
+
+Scope the valence-free rungs to fragments that actually contain a boron cage — the detector
+already exists (`_is_electron_deficient_cluster`, and `_has_boron_cage` at the `xyz2mol` call
+sites) — instead of enabling them globally whenever the lever is set. That keeps the measured
+0/36 → 34/36 gain while removing the collateral change to CO and every other over-valent
+fragment.
+
+Recorded rather than fixed because the deciding measurement (a boron-ON vs boron-OFF byte-identity
+A/B over the fixture set and a CO-containing cohort) has not been run, and this release already
+contains four hypotheses that looked obvious and were refuted by exactly the measurement that was
+skipped.
