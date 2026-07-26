@@ -159,10 +159,29 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
         except Exception:
             # If it fails to kekulize, it's likely an aromatic ring missing a charge (like Cp)
             # Try adding a -1 charge to one atom in each 5-membered aromatic ring
+            #
+            # The charge is applied to EVERY 5-membered all-aromatic ring, including
+            # rings that kekulize perfectly well and are not the reason this fragment
+            # failed -- a thiophene or pyrrole riding along on a ligand whose carbene
+            # donor is the actual culprit. That over-reach is tolerable for kekulization
+            # but NOT for the atom count: a -1 on a BARE aromatic carbon flips its
+            # implicit-H count from 1 to 0, and the hydrogen is destroyed silently. The
+            # generator then builds a molecule one atom smaller than the input and the
+            # round trip fails its final gate (QOBFOF_comp_0 31->30, AJODEI_comp_0
+            # 97->95; 13 of the 13 auditable atom-count LOSS rows in the v0.4.5
+            # capstone class -- see docs/ATOM_COUNT_v0.4.5.md Sec 4).
+            #
+            # So freeze the H count BEFORE charging. A Cp ring is unaffected either way:
+            # its carbons arrive as `[cH]` brackets with NoImplicit already set, so both
+            # calls are no-ops and the charge cannot touch their hydrogen. Only a bare
+            # aromatic atom -- the vulnerable case -- changes at all.
             ring_info = mol.GetRingInfo()
             for ring in ring_info.AtomRings():
                 if len(ring) == 5 and all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring):
-                    mol.GetAtomWithIdx(ring[0]).SetFormalCharge(-1)
+                    charged = mol.GetAtomWithIdx(ring[0])
+                    charged.SetNumExplicitHs(charged.GetTotalNumHs())
+                    charged.SetNoImplicit(True)
+                    charged.SetFormalCharge(-1)
             try:
                 Chem.Kekulize(mol)
             except Exception:
