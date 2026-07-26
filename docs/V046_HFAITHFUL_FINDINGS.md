@@ -505,3 +505,24 @@ molecules accept in 1–2 attempts, attempt count is definitively not the mechan
 per-conformer eta cost — a profiling problem, not a stereochemistry one.
 
 Ninth refutation of this release, and the first of a proposal made in this same document.
+
+## The eta discriminating test needs a small HARNESS change, not a sweep restart
+
+The signal that settles attempt-count vs cost-per-attempt already exists in the code:
+`metallogen_adapter` records `adapter.early_exit_hit` and `adapter.early_exit_miss` (with
+`n_mols`). If eta molecules **hit** early exit, acceptance is fine and the cost is per-attempt; if
+they **miss**, acceptance is the bottleneck. No new instrumentation required.
+
+⚠ But `OIN_TELEMETRY=1` alone captures NOTHING. `generation/_telemetry.record()` is a no-op unless
+the env var is set **and** a `collecting()` context is active, and `tools/test_dataset_roundtrip.py`
+never opens one — verified, not assumed. Restarting the v0.4.6 sweep with the env var set would have
+discarded ~60 completed molecules for zero data.
+
+So the step is: wrap per-molecule generation in `telemetry.collecting()` in the harness and persist
+the snapshot into each `individual_reports/*.json`. Then a single sweep yields the accuracy numbers
+**and** the eta acceptance distribution together. `record()` is documented as never raising and never
+consuming randomness, so it cannot perturb the accuracy result — worth confirming on a small run
+before a 15 h one, given how many assumptions in this release turned out false.
+
+Do NOT retrofit this onto the currently running sweep; it needs a code change the running processes
+have already imported past.
