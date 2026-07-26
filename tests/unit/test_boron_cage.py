@@ -35,6 +35,15 @@ OZAREO = FIXTURES / "OZAREO_comp_0.xyz"
 #: o-carborane C2B10 on Ag(PPh3)2 -- a cage plus two ordinary phosphine ligands,
 #: so it also pins that the relaxation does not leak into the non-cage fragments.
 MODZUA = FIXTURES / "MODZUA_comp_0.xyz"
+#: A Rh thiaborane (S is a cage vertex). Encoding it used to kill the process:
+#: RDKit stamped a chiral tag on a 6-connected cage boron and `AssignStereochemistry`
+#: then raised `RuntimeError: basic_string::_M_create` / aborted with
+#: `free(): invalid size`. Pins `clear_boron_cage_stereo`.
+KIXXOF = FIXTURES / "KIXXOF_comp_0.xyz"
+#: A nido-C2B7 on Ru that is scored as a PASS today while being silently wrong:
+#: with the lever off, 6 of its 12 B-B cage bonds are deleted and the encoder
+#: invents a C=B double bond to balance the valences.
+VEJXOZ = FIXTURES / "VEJXOZ_comp_0.xyz"
 
 LEVER = "OIN_BORON_CAGE"
 
@@ -159,6 +168,65 @@ class TestCageEncodes(_LeverMixin):
         oin = XYZToSMILES().convert(str(MODZUA))
         self.assertIn("c1ccc(P", oin)
         self.assertIn("[BH]", oin)
+
+
+class TestCageStereoMustNeverBeTagged(_LeverMixin):
+    """A chiral tag on a cage vertex is a native memory fault, not a bad descriptor.
+
+    Measured before ``clear_boron_cage_stereo`` existed: ``KIXXOF`` raised
+    ``RuntimeError: basic_string::_M_create`` out of ``Chem.AssignStereochemistry``,
+    and its sibling ``DUDTIG`` killed the interpreter with ``free(): invalid size``
+    (SIGABRT). RDKit has no stereo permutation table for a 5-/6-connected boron.
+    """
+
+    def test_thiaborane_encodes_without_crashing(self):
+        self.set_lever(True)
+        oin = XYZToSMILES().convert(str(KIXXOF))
+        self.assertTrue(oin)
+
+    def test_no_chiral_tag_survives_on_a_cage_vertex(self):
+        self.set_lever(True)
+        oin = XYZToSMILES().convert(str(KIXXOF))
+        # `[B@]` / `[B@@]` / `[B@H]` would mean a tag reached the serializer.
+        self.assertNotIn("[B@", oin)
+
+
+class TestSilentCorruptionOfAPassingMolecule(_LeverMixin):
+    """The pruning defect also corrupts molecules that are scored as passing.
+
+    ``VEJXOZ`` produces an OIN either way and round-trips against its own mol
+    either way -- which is exactly why the round-trip key could not see that the
+    lever-off graph is wrong. The check has to be on the cage bond count.
+    """
+
+    def _cage_bond_count(self, path):
+        from oinsmiles.utils.xyz2mol import get_tmc_mol
+
+        mol, _xyz = get_tmc_mol(str(path), 0, with_stereo=False)
+        bb = sum(
+            1
+            for b in mol.GetBonds()
+            if b.GetBeginAtom().GetAtomicNum() == 5 and b.GetEndAtom().GetAtomicNum() == 5
+        )
+        spurious = sum(
+            1
+            for b in mol.GetBonds()
+            if str(b.GetBondType()) == "DOUBLE"
+            and 5 in (b.GetBeginAtom().GetAtomicNum(), b.GetEndAtom().GetAtomicNum())
+        )
+        return bb, spurious
+
+    def test_lever_off_deletes_half_the_cage_and_invents_a_double_bond(self):
+        self.set_lever(False)
+        bb, spurious = self._cage_bond_count(VEJXOZ)
+        self.assertEqual(bb, 6)  # geometry has 12
+        self.assertGreaterEqual(spurious, 1)  # a C=B double bond in a carborane
+
+    def test_lever_on_keeps_the_cage_and_invents_nothing(self):
+        self.set_lever(True)
+        bb, spurious = self._cage_bond_count(VEJXOZ)
+        self.assertEqual(bb, 12)
+        self.assertEqual(spurious, 0)
 
 
 class TestNonCageMoleculesUnaffected(_LeverMixin):
