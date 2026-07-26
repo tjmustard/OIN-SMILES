@@ -173,6 +173,53 @@ hydrogen, so it can never be the source of a net gain.
 preparation but is pure bookkeeping — it never reaches the 3D machinery. Cause A is an
 encoder losslessness defect: the OIN string does not record the input's atom count.
 
+## 5b. The two fixes, and what each is scoped to
+
+### Fix B — default ON, no lever
+
+`generation/metallogen_adapter.py`: the kekulization rescue now charges only **all-carbon**
+5-membered aromatic rings. A ring of five carbons cannot kekulize neutral and the `-1` is
+what makes it a legal aromatic anion; a thiophene, pyrrole, furan or pyrazole kekulizes as it
+stands and never needed charging. Rings that need the charge keep **exactly** the old
+behaviour, so no Cp/indenyl/fluorenyl path moves.
+
+It is default-on because it cannot change any OIN string — it is entirely on the generator's
+SMILES-preparation side — and because the only behaviour it removes is charging a ring that
+had no reason to be charged.
+
+Measured: the adapter-implied atom count now equals the input for **all 14 LOSS molecules**,
+and **13/13 of the ones run end-to-end come back `status: success`** at tier `UFF_1` — the
+canonical key, the RMSD mapping and the atom count all passing, not merely the count.
+
+### Fix A — behind `OIN_H_FAITHFUL`, default OFF
+
+`oin/hydrogen.py::h_faithful_smiles` writes a fragment, reads it back, compares hydrogen
+counts atom by atom against RDKit's own `_smilesAtomOutputOrder`, and forces a bracket on any
+atom that came back different. Applied at the three **encoder-side** serializations
+(`oin_aligner`, `xyz2mol`, `oin/inline.py`), plus a narrower bracket-preserving step in the
+adapter.
+
+Default off because it changes OIN strings. Verified byte-identical with the lever unset, and
+the four golden fixtures pass with it **both off and on**.
+
+Measured, and this is the number that matters: with the lever the only difference in one
+session, the same molecules go from **4/4 failing on the exact atom-count mismatch** to
+**4/4 `status: success`** (CIDDAU, FABPEG, HIKDIR, INENOF).
+
+### The measurement that saved the fix from being cosmetic
+
+Patching the three encoder-side serializations alone moved **45 of the 74 OIN strings and
+changed the built atom count for exactly 0 of them.** The adapter's own final `MolToSmiles`
+re-de-brackets everything the string had preserved. Without that A/B this would have shipped
+as "45 strings fixed" with zero molecules passing.
+
+And one thing deliberately *not* done: `h_faithful_smiles` is **not** used at the adapter's
+final serialization. It makes a string faithful to the molecule it is handed, and that
+molecule's H counts are not ground truth — a bare `c{n}` haptic ipso carbon arrives already
+carrying a phantom implicit H, so "faithful" preserves the error being removed. It broke the
+eta indenyl and every LOSS fixture. Ground truth lives upstream, in the encoder, where counts
+come from the input geometry.
+
 ## 6. Reproduction
 
 ```bash
