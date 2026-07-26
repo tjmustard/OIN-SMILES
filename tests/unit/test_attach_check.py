@@ -6,6 +6,8 @@ graph. `test_detached_ligand_is_caught_even_though_its_bond_survives` is that gu
 is the whole point of the module.
 """
 
+import contextlib
+import os
 import unittest
 
 import numpy as np
@@ -18,6 +20,21 @@ from oinsmiles.generation.attach_check import (
     ligands_attached,
 )
 from oinsmiles.oin.levers import held_off, lever_enabled
+
+
+@contextlib.contextmanager
+def _enable_telemetry():
+    """`_telemetry.record()` returns immediately unless OIN_TELEMETRY=1 -- deliberately, so the
+    instrument cannot perturb what it measures."""
+    prior = os.environ.get("OIN_TELEMETRY")
+    os.environ["OIN_TELEMETRY"] = "1"
+    try:
+        yield
+    finally:
+        if prior is None:
+            os.environ.pop("OIN_TELEMETRY", None)
+        else:
+            os.environ["OIN_TELEMETRY"] = prior
 
 
 def _square_planar_ptcl2n2():
@@ -165,6 +182,59 @@ class TestTrapAvoidance(unittest.TestCase):
         self.assertTrue(conformer_ligands_attached(mol))
 
 
+class TestAbstentionIsLoud(unittest.TestCase):
+    """(telemetry is opt-in by design -- `record()` no-ops unless OIN_TELEMETRY=1, so these
+    tests enable it explicitly. In production, observing an abstention requires the same.)"""
+
+    """Regression guard for a real bug in this module's first version.
+
+    The check was wired to receive ``m`` -- MetalloGen's ``Molecule``, which has no
+    ``GetAtoms`` -- instead of ``cmol``. Every call raised ``AttributeError``, the
+    abstain-on-error branch swallowed it, and a full 21-molecule A/B reported the check as
+    having no effect. "Never rejects" and "never runs" produced identical output, which is the
+    same defect shape as ``clash.mol_clash_count`` returning 0 on ``AttributeError``.
+
+    Abstention must therefore be observable.
+    """
+
+    def test_a_non_mol_records_unevaluable_rather_than_failing_silently(self):
+        from oinsmiles.generation import _telemetry
+
+        class NotAMol:
+            pass
+
+        with _enable_telemetry(), _telemetry.collecting() as events:
+            result = conformer_ligands_attached(NotAMol())
+
+        self.assertTrue(result, "abstain, do not reject")
+        sites = [e["site"] for e in events]
+        self.assertIn(
+            "adapter.attach_check_unevaluable",
+            sites,
+            "a check that cannot run must say so; silence is how the no-op survived a full A/B",
+        )
+
+    def test_an_evaluable_mol_records_a_verdict(self):
+        from oinsmiles.generation import _telemetry
+
+        rw = Chem.RWMol()
+        for zn in (78, 17, 17, 7, 7):
+            rw.AddAtom(Chem.Atom(zn))
+        for j in (1, 2, 3, 4):
+            rw.AddBond(0, j, Chem.BondType.SINGLE)
+        mol = rw.GetMol()
+        conf = Chem.Conformer(mol.GetNumAtoms())
+        for i, p in enumerate([(0, 0, 0), (2, 0, 0), (-2, 0, 0), (0, 2, 0), (0, -2, 0)]):
+            conf.SetAtomPosition(i, tuple(float(v) for v in p))
+        mol.AddConformer(conf)
+
+        with _enable_telemetry(), _telemetry.collecting() as events:
+            conformer_ligands_attached(mol)
+        sites = [e["site"] for e in events]
+        self.assertIn("adapter.attach_check_passed", sites)
+        self.assertNotIn("adapter.attach_check_unevaluable", sites)
+
+
 class TestRealCrystalInputsAreNotRejected(unittest.TestCase):
     """The check must not reject genuine structures. Ferrocene is the sharpest available
     fixture: two eta5 rings, i.e. exactly the coordination the check reasons about."""
@@ -189,8 +259,6 @@ class TestLeverRegistration(unittest.TestCase):
         self.assertIn("POVPIA", why, "the known residual must be stated, not hidden")
 
     def test_lever_defaults_off(self):
-        import os
-
         prior = os.environ.pop("OIN_ATTACH_CHECK", None)
         try:
             self.assertFalse(lever_enabled("OIN_ATTACH_CHECK"))
@@ -215,6 +283,17 @@ class TestAcceptancePredicateWiring(unittest.TestCase):
         before = src.split(guard, 1)[0]
         self.assertIn("conformer_ligands_attached", after)
         self.assertNotIn("conformer_ligands_attached", before)
+
+    def test_the_check_is_handed_cmol_and_not_the_metallogen_molecule(self):
+        """`m` is MetalloGen's `Molecule` and has no `GetAtoms`. Passing it made every call
+        abstain, which a 21-molecule A/B could not distinguish from "the check does nothing"."""
+        import inspect
+
+        from oinsmiles.generation import metallogen_adapter
+
+        src = inspect.getsource(metallogen_adapter._reencode_key_matches)
+        self.assertIn("conformer_ligands_attached(cmol)", src)
+        self.assertNotIn("conformer_ligands_attached(m)", src)
 
 
 if __name__ == "__main__":

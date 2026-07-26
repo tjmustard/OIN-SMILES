@@ -94,10 +94,14 @@ for the check to be measuring what the encoder measures.
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 from rdkit import Chem
 
 from . import _telemetry
+
+logger = logging.getLogger(__name__)
 
 #: A -- same threshold as ``metallogen_adapter._HAPTIC_GROUP_CUTOFF`` and
 #: ``oin_aligner._reduce_hapticity``. Kept in step with them: it defines what counts as ONE
@@ -233,6 +237,16 @@ def conformer_ligands_attached(mol, claimed_donors=None):
     this module touches connectivity, and only as the reference set. Returns ``True`` when the
     check cannot be evaluated, so a perception failure never rejects a conformer that the
     predicate has not actually judged.
+
+    ⚠ **That abstain-on-error branch is a loaded gun and it has already gone off once.** Passed
+    the wrong object -- MetalloGen's ``Molecule`` rather than an ``rdkit.Chem.Mol`` -- every
+    call raised ``AttributeError``, every call abstained, and the check silently became a no-op
+    that a full A/B run reported as "no effect" rather than as "not wired up". This is the same
+    shape of defect as ``clash.mol_clash_count`` returning 0 on ``AttributeError``, which the
+    promote lane had to fix for the same reason. So the branch now RECORDS
+    ``adapter.attach_check_unevaluable`` before abstaining: a check that cannot run must be
+    loud, because "never rejects" and "never runs" are otherwise indistinguishable in the
+    output.
     """
     from ..utils.xyz2mol import TRANSITION_METALS_NUM
 
@@ -256,8 +270,11 @@ def conformer_ligands_attached(mol, claimed_donors=None):
                 b.GetOtherAtomIdx(metal_idx) for b in mol.GetAtomWithIdx(metal_idx).GetBonds()
             ]
         ok, detail = ligands_attached(claimed_donors, znums, coords)
-        if not ok:
-            _telemetry.record("adapter.attach_check_rejected", **detail)
+        _telemetry.record(
+            "adapter.attach_check_rejected" if not ok else "adapter.attach_check_passed", **detail
+        )
         return ok
-    except Exception:
+    except Exception as exc:
+        _telemetry.record("adapter.attach_check_unevaluable", error=f"{type(exc).__name__}: {exc}")
+        logger.debug("attachment check could not be evaluated for a conformer", exc_info=True)
         return True

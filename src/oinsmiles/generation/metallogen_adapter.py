@@ -1419,7 +1419,15 @@ def _reencode_key_matches(
         if not independent_confirm and fast is not None:
             if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
                 return False
-            if lever_enabled("OIN_ATTACH_CHECK") and not conformer_ligands_attached(m):
+            # ⚠ `cmol`, NOT `m`. `m` is a MetalloGen ``Molecule``, not an ``rdkit.Chem.Mol`` --
+            # it has no ``GetAtoms``. The first version of this line passed `m`, every call
+            # raised AttributeError, the abstain-on-error branch swallowed it, and the check
+            # became a silent no-op that still cost nothing and changed nothing. It was caught
+            # only because arm C came back bit-identical to arm B on all 20 molecules and that
+            # was treated as suspicious rather than as a null result. `cmol` is the contract
+            # mol -- a real RDKit mol carrying the same conformer -- and it is what the §1
+            # falsification scored, so this is also the mol the measured numbers describe.
+            if lever_enabled("OIN_ATTACH_CHECK") and not conformer_ligands_attached(cmol):
                 return False
             return True
         if cache is not None and id(m) in cache:
