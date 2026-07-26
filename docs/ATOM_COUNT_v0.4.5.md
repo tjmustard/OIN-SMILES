@@ -191,6 +191,15 @@ Measured: the adapter-implied atom count now equals the input for **all 14 LOSS 
 and **13/13 of the ones run end-to-end come back `status: success`** at tier `UFF_1` — the
 canonical key, the RMSD mapping and the atom count all passing, not merely the count.
 
+### Where that leaves the class
+
+| | molecules | status |
+|---|---|---|
+| LOSS, cause B | 14 | **13/13 run end-to-end pass.** Default-on. |
+| GAIN, cause A | 60 | **10/12 sampled pass end-to-end** behind the lever. Not extrapolated to the other 48. |
+| of which not really defects | 3 | `GOFTUQ`, `INENOF`, `TESFIH` — the input is missing hydrogens (Sec 4b) |
+| residual, undiagnosed | 2 of the sample | `LOCGAL_comp_0` (+2), `MEGZIH_comp_0` (+1) |
+
 ### Fix A — behind `OIN_H_FAITHFUL`, default OFF
 
 `oin/hydrogen.py::h_faithful_smiles` writes a fragment, reads it back, compares hydrogen
@@ -202,9 +211,19 @@ adapter.
 Default off because it changes OIN strings. Verified byte-identical with the lever unset, and
 the four golden fixtures pass with it **both off and on**.
 
-Measured, and this is the number that matters: with the lever the only difference in one
-session, the same molecules go from **4/4 failing on the exact atom-count mismatch** to
-**4/4 `status: success`** (CIDDAU, FABPEG, HIKDIR, INENOF).
+Measured, and this is the number that matters. Twelve GAIN molecules run end-to-end through
+the real harness in one session, with the lever as the **only** difference:
+
+| arm | result |
+|---|---|
+| `OIN_H_FAITHFUL` unset | **0 pass** — every one fails on the exact atom-count mismatch |
+| `OIN_H_FAITHFUL=1` | **10 of 12 `status: success`** |
+
+`status: success` is the full contract, not an atom count: the canonical round-trip key
+matched, the RMSD mapping succeeded, *and* the atom count agreed. Passing: CIDDAU, FABPEG,
+HIKDIR, INENOF, JAPCOT, JOTJEK, KIKROO, KILQAZ, UQUXAG, XAJBIW. Still failing: `LOCGAL_comp_0`
+(+2) and `MEGZIH_comp_0` (+1) — the lever does not reach them and their cause is not yet
+diagnosed.
 
 ### The measurement that saved the fix from being cosmetic
 
