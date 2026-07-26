@@ -60,6 +60,15 @@ def main() -> int:
         action="store_true",
         help="stop the fill once BOTH verdicts have fired once (cohort-affordable)",
     )
+    ap.add_argument(
+        "--capture-veto",
+        action="store_true",
+        help="keep the actual `fast` and `full` OIN strings for the first conformer where the "
+        "CHEAP test rejects and the STRICT test accepts. That combination is the "
+        "PREFILTER_VETO defect (AROHIA_comp_0: cheap 0/48, strict 16/48): in production the "
+        "cheap veto returns False before the strict test ever runs, so those 16 conformers "
+        "are unreachable in BOTH arms. Counts say it happens; only the strings say why.",
+    )
     args = ap.parse_args()
 
     name = os.path.basename(args.xyz)
@@ -87,6 +96,10 @@ def main() -> int:
         # or the trace measures a different question than the one asked.
         if target_key != target:
             rec["TARGET_KEY_MISMATCH"] = True
+        # Bound before the try blocks: --capture-veto reads both, and either assignment can
+        # be skipped by an exception. An UnboundLocalError here would be swallowed by
+        # `_file_and_maybe_stop` and silently reported as "no conformer ever matched".
+        fast = full = None
         try:
             c = cmol if cmol is not None else real_build(parsed, m)
             fast = real_fast(c) if c is not None else None
@@ -107,6 +120,18 @@ def main() -> int:
             rec["strict_match"] = False
             rec["strict_error"] = f"{type(e).__name__}: {e}"
         rec["t_after"] = round(time.monotonic() - t_start, 2)
+        if (
+            args.capture_veto
+            and rec.get("strict_match")
+            and not rec.get("cheap_match")
+            and not any(r.get("veto_fast") for r in trace)
+        ):
+            # The cheap prefilter vetoed a conformer the strict test would have taken.
+            # `_reencode_oin_fast`'s docstring claims it is verified to agree with the full
+            # `XYZToSMILES().convert` path; this is the counterexample, in full.
+            rec["veto_fast"] = fast
+            rec["veto_full"] = full
+            rec["veto_target_oin"] = oin_in
         trace.append(rec)
         if args.stop_after_both:
             # Both first-hit indices are known once each verdict has fired once; stopping
@@ -150,6 +175,12 @@ def main() -> int:
         "n_cheap_match": sum(1 for r in trace if r.get("cheap_match")),
         "n_strict_match": sum(1 for r in trace if r.get("strict_match")),
         "n_cheap_only": sum(1 for r in trace if r.get("cheap_match") and not r.get("strict_match")),
+        # PREFILTER_VETO: strict would accept, cheap rejects first. Unreachable in production
+        # in BOTH arms -- the lever cannot cause it and cannot fix it.
+        "n_strict_only": sum(
+            1 for r in trace if r.get("strict_match") and not r.get("cheap_match")
+        ),
+        "veto_example": next((r for r in trace if r.get("veto_fast") is not None), None),
         "trace": trace,
     }
 
@@ -164,6 +195,13 @@ def main() -> int:
         f" (t={fs['t'] if fs else '-'}s)"
     )
     print(f"  cheap-only (recoverable early exits): {out['n_cheap_only']}")
+    print(f"  strict-only (PREFILTER_VETO, unreachable in both arms): {out['n_strict_only']}")
+    if out["veto_example"] is not None:
+        ve = out["veto_example"]
+        print(f"  veto example at i={ve['i']}:")
+        print(f"    target (oin_in) : {ve['veto_target_oin']}")
+        print(f"    fast  (vetoes)  : {ve['veto_fast']}")
+        print(f"    full  (accepts) : {ve['veto_full']}")
     if fc and not fs:
         print("  => VERDICT: a scoring conformer exists that accept_fn REJECTS.")
     elif fc and fs and fc["i"] < fs["i"]:
