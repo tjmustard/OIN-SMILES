@@ -21,7 +21,7 @@ except ImportError:
 
 import logging
 import sys
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 
 import networkx as nx
 import numpy as np
@@ -223,14 +223,22 @@ def int_atom(atom):
 
 
 def get_UA(maxValence_list, valence_list):
-    """"""
+    """Unsaturated atoms and their degree of unsaturation.
+
+    Same loop as before, with the subtraction done once instead of twice and the
+    ``append`` bound outside. Deliberately *not* vectorised: at ~60 atoms a numpy
+    round trip costs more than the Python loop it replaces (measured -- see
+    ``docs/ENCODER_PERF_v0.4.5.md``).
+    """
     UA = []
     DU = []
+    add_UA = UA.append
+    add_DU = DU.append
     for i, (maxValence, valence) in enumerate(zip(maxValence_list, valence_list)):
-        if not maxValence - valence > 0:
-            continue
-        UA.append(i)
-        DU.append(maxValence - valence)
+        d = maxValence - valence
+        if d > 0:
+            add_UA(i)
+            add_DU(d)
     return UA, DU
 
 
@@ -244,7 +252,9 @@ def get_BO(AC, UA, DU, valences, UA_pairs, use_graph=True):
             BO[i, j] += 1
             BO[j, i] += 1
 
-        BO_valence = list(BO.sum(axis=1))
+        # .tolist() not list(): see valences_not_too_large -- boxed np.int64 makes
+        # every downstream subtraction in get_UA go through numpy scalar dispatch.
+        BO_valence = BO.sum(axis=1).tolist()
         DU_save = copy.copy(DU)
         UA, DU = get_UA(valences, BO_valence)
         UA_pairs = get_UA_pairs(UA, AC, DU, use_graph=use_graph)[0]
@@ -252,8 +262,14 @@ def get_BO(AC, UA, DU, valences, UA_pairs, use_graph=True):
 
 
 def valences_not_too_large(BO, valences):
-    """"""
-    number_of_bonds_list = BO.sum(axis=1)
+    """Whether no atom carries more bonds than its assigned valence.
+
+    Same loop as before. The one change is ``.tolist()`` in place of ``list()``:
+    ``list()`` over a numpy array yields ``np.int64`` *objects*, and every subsequent
+    comparison then goes through numpy's scalar machinery, which is several times
+    slower than the equivalent on a Python ``int``. ``.tolist()`` converts once.
+    """
+    number_of_bonds_list = BO.sum(axis=1).tolist()
     for valence, number_of_bonds in zip(valences, number_of_bonds_list):
         if number_of_bonds > valence:
             return False
@@ -272,27 +288,66 @@ def charge_is_OK(
     allow_charged_fragments=True,
     allow_carbenes=True,
 ):
+    """Whether the formal charges implied by ``BO`` sum to the requested ``charge``.
+
+    Same loop, same branch ladder, same order-dependent carbon corrections. This was
+    the second-largest cost in the encoder (measured 14.4-16.7 s of a 49-58 s encode on
+    QIDKUL_comp_0 / QIDKIZ_comp_0) and essentially all of it was interpreter overhead,
+    removed here in three ways:
+
+    * ``list(BO[i, :]).count(1)`` allocated a fresh 59-element list of boxed
+      ``np.int64`` per carbon atom, per call. One vectorised ``(BO == 1).sum(axis=1)``
+      gives the same counts for every atom at once. (Counting row entries equal to 1 is
+      exactly what ``.count(1)`` did.)
+    * :func:`get_atomic_charge` was one Python call per atom -- 4.4 million calls in a
+      single encode of QIDKUL_comp_0. Inlined here as the identical ``elif`` ladder.
+    * ``list(BO.sum(axis=1))`` yields boxed ``np.int64`` objects, so every downstream
+      ``1 - v``, ``v == 2`` and ``Q += q`` ran through numpy's scalar machinery.
+      ``.tolist()`` converts once and the arithmetic is then plain Python ``int``.
+
+    The corrections are left as a Python loop on purpose: they read the *running* ``Q``
+    (``if ns == 3 and Q + 1 < charge``), so they cannot be reordered or vectorised
+    without changing the answer.
+
+    The original also built a ``q_list`` that it never read; that dead accumulator is
+    dropped.
+    """
     # total charge
     Q = 0
-    # charge fragment list
-    q_list = []
 
     if allow_charged_fragments:
-        BO_valences = list(BO.sum(axis=1))
+        BO_valences = BO.sum(axis=1).tolist()
+        # Only carbons consult it, so pay for it only when there is a carbon.
+        n_single_list = (BO == 1).sum(axis=1).tolist() if 6 in atoms else None
         for i, atom in enumerate(atoms):
-            q = get_atomic_charge(atom, atomic_valence_electrons[atom], BO_valences[i])
+            v = BO_valences[i]
+            # get_atomic_charge, inlined verbatim
+            if atom == 1:
+                q = 1 - v
+            elif atom == 5:
+                q = 3 - v
+            elif atom == 6 and v == 2:
+                q = 0
+            elif atom == 13:
+                q = 3 - v
+            elif atom == 15 and v == 5:
+                q = 0
+            elif atom == 16 and v == 6:
+                q = 0
+            elif atom == 16 and v == 4:  # testing for sulphur
+                q = 0
+            elif atom == 16 and v == 5:
+                q = 1
+            else:
+                q = atomic_valence_electrons[atom] - 8 + v
             Q += q
             if atom == 6:
-                number_of_single_bonds_to_C = list(BO[i, :]).count(1)
-                if not allow_carbenes and number_of_single_bonds_to_C == 2 and BO_valences[i] == 2:
+                number_of_single_bonds_to_C = n_single_list[i]
+                if not allow_carbenes and number_of_single_bonds_to_C == 2 and v == 2:
                     logger.debug("found illegal carbene")
                     Q += 1
-                    q = 2
                 if number_of_single_bonds_to_C == 3 and Q + 1 < charge:
                     Q += 2
-                    q = 1
-            if q != 0:
-                q_list.append(q)
     return charge == Q
 
 
@@ -326,6 +381,9 @@ def BO_is_OK(
     if not valences_not_too_large(BO, valences):
         return False
 
+    # Left as-is on purpose. `BO.sum() - AC.sum()` avoids the NxN temporary and is
+    # algebraically identical, but measured 0.72x -- two reductions cost more than one
+    # subtract-plus-reduction at this matrix size. See docs/ENCODER_PERF_v0.4.5.md.
     check_sum = (BO - AC).sum() == sum(DU)
     check_charge = charge_is_OK(
         BO,
@@ -502,8 +560,105 @@ def set_atomic_radicals(mol, atoms, atomic_valence_electrons, BO_valences, use_a
     return mol
 
 
+# --- memo for AC2BO's candidate-generation loop -------------------------------------
+#
+# ``xyz2mol.py::_select_lig_mol`` runs a charge/carbene ladder that calls
+# ``AC2mol`` -> ``AC2BO`` up to five times on the *same* adjacency matrix, and
+# ``_rescue_unusable_perception`` sweeps up to eight more charges over one AC of its own.
+# Only ``BO_is_OK`` / ``charge_is_OK`` read ``charge``: the candidate-generation half of
+# ``AC2BO``'s loop (``get_UA`` -> ``get_UA_pairs`` -> ``get_BO``) therefore recomputes
+# bit-identical results on every arm. Measured on QIDKUL_comp_0: 60 001 matching-running
+# ``get_UA_pairs`` calls for 26 668 distinct results, and 180 005 ``get_bonds`` calls for
+# 4 007 distinct results.
+#
+# A small LRU over adjacency matrices rather than a single slot, because a round trip
+# re-perceives *the same ligand connectivity* many times -- the input structure, then
+# every generated conformer the SL1 accept-first check re-encodes -- and each of those is
+# a fresh AC array with identical contents.
+#
+# Keyed on the exact bytes (plus shape and dtype) of the matrix, and only *read* when the
+# caller's ``AC`` **is** an array the cache holds a live reference to. That identity test
+# is what makes it safe: no ``id()`` recycling can alias a stale entry, and an unrelated
+# caller simply misses and recomputes exactly as before.
+_AC2BO_SLOTS = OrderedDict()
+
+# How many distinct adjacency matrices to keep. Small: the working set of one round trip
+# is a handful of ligand fragments.
+_AC2BO_MEMO_SLOTS = 6
+
+# Total cached entries across all slots. Above this the cache stops growing and calls just
+# recompute -- slower, never wrong. A blow-up guard: one capped AC2BO search produces
+# ~29 000 entries, so this leaves room for the working set without unbounded growth.
+_AC2BO_MEMO_MAX = 200_000
+
+
+def _ac2bo_memo_for(AC):
+    """The memo dicts for ``AC``, or ``(None, None)`` if no slot holds this array."""
+    slot = _AC2BO_SLOTS.get(id(AC))
+    # `is` and not `==`: the id() lookup is only a fast index into slots whose arrays we
+    # keep alive, and this check is what rejects a recycled id.
+    if slot is not None and slot["ac"] is AC:
+        return slot["bonds"], slot["uap"]
+    return None, None
+
+
+def _ac2bo_memo_entries():
+    """Total cached entries across all slots."""
+    return sum(len(s["bonds"]) + len(s["uap"]) for s in _AC2BO_SLOTS.values())
+
+
+def _ac2bo_memo_anchor(AC):
+    """Register ``AC`` with the cache, reusing entries when its contents are already known.
+
+    Called once per ``AC2BO`` entry -- five or so times per encode -- so hashing the matrix
+    here costs nothing measurable. Shape and dtype join the byte content in the tag because
+    ``tobytes`` alone would not distinguish differently-shaped matrices.
+    """
+    key = id(AC)
+    slot = _AC2BO_SLOTS.get(key)
+    if slot is not None and slot["ac"] is AC:
+        _AC2BO_SLOTS.move_to_end(key)
+        return
+
+    tag = (AC.shape, AC.dtype.str, AC.tobytes())
+    for other_key, other in _AC2BO_SLOTS.items():
+        if other["tag"] == tag:
+            # Same connectivity, different array object (a re-perceived conformer, or the
+            # charge sweep rebuilding its AC): adopt the entries and re-anchor the identity
+            # test onto the object this caller will pass down.
+            del _AC2BO_SLOTS[other_key]
+            other["ac"] = AC
+            _AC2BO_SLOTS[key] = other
+            return
+
+    if _ac2bo_memo_entries() >= _AC2BO_MEMO_MAX:
+        _AC2BO_SLOTS.clear()
+    _AC2BO_SLOTS[key] = {"ac": AC, "tag": tag, "bonds": {}, "uap": {}}
+    while len(_AC2BO_SLOTS) > _AC2BO_MEMO_SLOTS:
+        _AC2BO_SLOTS.popitem(last=False)
+
+
+def _ac2bo_memo_clear():
+    """Drop every memo slot (frees its memory). Used by tests."""
+    _AC2BO_SLOTS.clear()
+
+
 def get_bonds(UA, AC):
-    """"""
+    """Bonds of ``AC`` whose both ends are unsaturated.
+
+    A function of ``(AC, UA)`` alone, so it is memoised against the current AC slot.
+    Callers mutate the list they get back (``get_UA_pairs`` appends the virtual-node
+    edges to it), so a hit is rehydrated into a fresh list and the snapshot stored in
+    the memo is an immutable tuple taken before any caller can touch it.
+    """
+    memo, _ = _ac2bo_memo_for(AC)
+    key = None
+    if memo is not None:
+        key = tuple(UA)
+        hit = memo.get(key)
+        if hit is not None:
+            return list(hit)
+
     bonds = []
 
     for k, i in enumerate(UA):
@@ -511,11 +666,36 @@ def get_bonds(UA, AC):
             if AC[i, j] == 1:
                 bonds.append(tuple(sorted([i, j])))
 
+    if key is not None and _ac2bo_memo_entries() < _AC2BO_MEMO_MAX:
+        memo[key] = tuple(bonds)
     return bonds
 
 
 def get_UA_pairs(UA, AC, DU, use_graph=True):
-    """"""
+    """Maximum matching over the unsaturated-atom bond graph.
+
+    Memoised against the current AC slot on ``(UA, du > 1 pattern)``. That key is
+    sufficient -- not merely convenient -- because ``DU`` is read **only** through the
+    ``du > 1`` predicate below, which decides how many virtual matching nodes get
+    allocated and to which atoms. Everything else the result depends on comes from
+    ``UA`` and ``AC``. So two calls agreeing on that key are handed the identical edge
+    list in the identical insertion order, and ``nx.max_weight_matching`` is
+    deterministic on identical input; the memo can only make the same answer arrive
+    sooner.
+
+    Only the ``use_graph`` result is cached. The ``len(bonds) == 0`` early-out is
+    already cheap (its only real work, ``get_bonds``, is memoised separately) and the
+    ``use_graph=False`` combinatorial branch is not reached by this codebase.
+    """
+    _, memo = _ac2bo_memo_for(AC)
+    key = None
+    if memo is not None and use_graph:
+        key = (tuple(UA), tuple(du > 1 for du in DU))
+        hit = memo.get(key)
+        if hit is not None:
+            # Fresh list per call: the caller is free to mutate what it gets back.
+            return [list(hit)]
+
     N_UA = 10000
     matching_ids = dict()
     matching_ids2 = dict()
@@ -564,6 +744,8 @@ def get_UA_pairs(UA, AC, DU, use_graph=True):
         for p1, p2 in zip(remove_pairs, add_pairs):
             UA_pair.remove(p1)
             UA_pair.append(p2)
+        if key is not None and _ac2bo_memo_entries() < _AC2BO_MEMO_MAX:
+            memo[key] = tuple(UA_pair)
         return [UA_pair]
 
     max_atoms_in_combo = 0
@@ -692,9 +874,14 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
     global atomic_valence
     global atomic_valence_electrons
 
+    # Anchor the single-slot memo (see _AC2BO_MEMO) on this AC. Entries survive a
+    # repeat call on the same adjacency matrix -- which is exactly what
+    # _select_lig_mol's charge/carbene ladder does -- and are dropped otherwise.
+    _ac2bo_memo_anchor(AC)
+
     # make a list of valences, e.g. for CO: [[4],[2,1]]
     valences_list_of_lists = []
-    AC_valence = list(AC.sum(axis=1))
+    AC_valence = AC.sum(axis=1).tolist()
 
     for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
         # valence can't be smaller than number of neighbourgs
@@ -782,21 +969,30 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
                 allow_charged_fragments=allow_charged_fragments,
                 allow_carbenes=allow_carbenes,
             )
-            charge_OK = charge_is_OK(
-                BO,
-                AC,
-                charge,
-                DU_from_AC,
-                atomic_valence_electrons,
-                atoms,
-                valences,
-                allow_charged_fragments=allow_charged_fragments,
-                allow_carbenes=allow_carbenes,
-            )
-
             if status:
                 return BO, atomic_valence_electrons
-            elif BO.sum() >= best_BO.sum() and valences_not_too_large(BO, valences) and charge_OK:
+            # `charge_is_OK` was computed eagerly above this branch, then consumed only
+            # here -- behind two cheaper predicates that already short-circuit, and even
+            # when `status` had already returned. Evaluating it in place is a pure
+            # dead-work removal: the value used is the same value, just not computed when
+            # it cannot be read. (It is a pure predicate; its only side effect is a
+            # DEBUG log line reachable only on the allow_carbenes=False arm, so the
+            # emitted OIN is untouched.)
+            elif (
+                BO.sum() >= best_BO.sum()
+                and valences_not_too_large(BO, valences)
+                and charge_is_OK(
+                    BO,
+                    AC,
+                    charge,
+                    DU_from_AC,
+                    atomic_valence_electrons,
+                    atoms,
+                    valences,
+                    allow_charged_fragments=allow_charged_fragments,
+                    allow_carbenes=allow_carbenes,
+                )
+            ):
                 best_BO = BO.copy()
 
     return best_BO, atomic_valence_electrons
