@@ -22,6 +22,7 @@ from rdkit import Chem
 from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
+from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -153,16 +154,52 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
 
         mol.UpdatePropertyCache(strict=False)
 
+        # Which atoms did the OIN string itself bracket? A bracket atom is parsed with
+        # NoImplicit set, so its hydrogen count is what the encoder wrote rather than
+        # what RDKit would guess -- and that is the only H information in this molecule
+        # that is trustworthy. Recorded HERE, before the strip heuristics and the
+        # kekulization rescue start setting NoImplicit for their own reasons.
+        authoritative = {a.GetIdx() for a in mol.GetAtoms() if a.GetNoImplicit()}
+
         # Fix kekulization for neutral radicals (like Cp)
         try:
             Chem.Kekulize(mol)
         except Exception:
             # If it fails to kekulize, it's likely an aromatic ring missing a charge (like Cp)
             # Try adding a -1 charge to one atom in each 5-membered aromatic ring
+            #
+            # Restricted to ALL-CARBON rings. The charge exists for the Cp/indenyl/
+            # fluorenyl case: a 5-membered aromatic ring of five carbons cannot be
+            # kekulized neutral, and the -1 is what makes it a legal aromatic anion. A
+            # 5-ring carrying a heteroatom -- thiophene, pyrrole, furan, pyrazole --
+            # kekulizes perfectly well as it stands and never needed charging. Charging
+            # it anyway is not harmless: a -1 on a BARE aromatic carbon flips its
+            # implicit-H count from 1 to 0, so the hydrogen is destroyed silently, the
+            # generator builds a molecule one atom smaller than the input, and the round
+            # trip fails its final gate. QOBFOF_comp_0 (31 -> 30) is a thiophene riding
+            # along on a ligand whose carbene donor is the actual kekulization culprit;
+            # AJODEI_comp_0 (97 -> 95) is the same story on a pyrrole, once per ligand.
+            # 13 of the 13 auditable atom-count LOSS rows in the v0.4.5 capstone class --
+            # see docs/ATOM_COUNT_v0.4.5.md Sec 4.
+            #
+            # Deliberately NOT done here: preserving the H count of the atom that *does*
+            # get charged. On an all-carbon haptic ring, that charge is load-bearing in a
+            # second, undocumented way -- it is what strips the phantom implicit H off a
+            # bare 0-H eta ipso/fusion carbon written `c{n}`, which the explicit lock
+            # below only catches once GetTotalNumHs() has already reached 0. An eta
+            # indenyl depends on it (tests/unit/test_haptic_carbon_hcount.py). So the
+            # rings that need the charge keep exactly the old behaviour; the only change
+            # is that rings which never needed it are left alone.
             ring_info = mol.GetRingInfo()
             for ring in ring_info.AtomRings():
-                if len(ring) == 5 and all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring):
-                    mol.GetAtomWithIdx(ring[0]).SetFormalCharge(-1)
+                if len(ring) != 5:
+                    continue
+                atoms = [mol.GetAtomWithIdx(idx) for idx in ring]
+                if not all(a.GetIsAromatic() for a in atoms):
+                    continue
+                if not all(a.GetAtomicNum() == 6 for a in atoms):
+                    continue
+                mol.GetAtomWithIdx(ring[0]).SetFormalCharge(-1)
             try:
                 Chem.Kekulize(mol)
             except Exception:
@@ -237,6 +274,22 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
                     # Bare chalcogen donor = anionic alkoxide / thiolate / oxo -> 0 H.
                     # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
                     strip = True
+                elif sym == "P":
+                    # Same argument as the N branch below, and for the same reason it is
+                    # exact rather than a heuristic: `replace_map` in oin/inline.py
+                    # de-brackets a binding atom only when the bracket content is a bare
+                    # organic-subset symbol, so `[PH]`/`[PH2]` keeps its bracket and takes
+                    # the explicit branch above. A BARE `P{n}` therefore always means 0 H.
+                    #
+                    # Without this branch a bare P donor keeps a phantom implicit H, and
+                    # the phantom only exists when perception gave the phosphorus valence
+                    # 4 (a phosphaalkene C=P, an ylide) -- RDKit then climbs to P's next
+                    # allowed valence, 5, with one hydrogen. A tertiary phosphine sits at
+                    # valence 3 with 0 implicit H already, so PPh3/PMe3/dppe are
+                    # untouched and this cannot move the many phosphine complexes that
+                    # already round-trip. MEGZIH_comp_0 (73 -> 74) is the phosphaalkene
+                    # case: `C=P{1}` re-read as `[PH]`.
+                    strip = heavy >= 1
                 elif sym == "N":
                     # A bare N with any heavy neighbour is a 0-H anionic X-type
                     # donor: amido, anilide, silylamide, azide, phosphinimide
@@ -314,6 +367,35 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
             # MetalloGen map numbers are 1-based (slot index + 1).
             atom.SetAtomMapNum(mg_slot_idx + 1)
 
+        # Re-bracket the atoms the OIN string had already bracketed.
+        #
+        # This is the LAST serialization before MetalloGen, so it decides the built atom
+        # count -- and left alone it discards what the encoder said. A `[C]` that arrived
+        # bracketed from the string is written back out as a bare `C` and re-reads as
+        # `CH2`. Patching the three encoder-side serializations without this one moved 45
+        # of the 74 atom_count OIN strings and changed the built atom count for exactly
+        # none of them.
+        #
+        # Scoped to `authoritative`: atoms that were bracketed IN THE STRING (NoImplicit
+        # set at parse) and are not binding atoms. That is information the encoder
+        # deliberately wrote, so echoing it is preservation, not a guess -- and it is why
+        # h_faithful_smiles is NOT used here. That helper makes a string faithful to the
+        # molecule it is handed, and this molecule's H counts are not ground truth: a
+        # bare `c{n}` haptic ipso carbon arrives carrying a phantom implicit H, and being
+        # "faithful" to that phantom preserves the very error we are removing (it breaks
+        # the eta indenyl in tests/unit/test_haptic_carbon_hcount.py and every LOSS
+        # fixture). Ground truth lives upstream, in the encoder, where the counts come
+        # from the input geometry.
+        #
+        # An unpaired electron is only a lever to force RDKit to bracket the atom: SMILES
+        # has no radical syntax, so nothing about it reaches the string, and `mol` is not
+        # handed to MetalloGen -- only `mapped_smiles` is.
+        if hydrogen_faithfulness_enabled():
+            binder_indices = {v.atom_in_fragment_idx for v in frag_vectors}
+            for idx in authoritative - binder_indices:
+                atom = mol.GetAtomWithIdx(idx)
+                if atom.GetNumRadicalElectrons() == 0 and atom.GetTotalNumHs() == 0:
+                    atom.SetNumRadicalElectrons(1)
         mapped_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
         # RDKit records the canonical output ordering as a side effect of
         # MolToSmiles: output_order[canonical_pos] = original fragment atom index.

@@ -1,6 +1,5 @@
 import itertools
 import logging
-import os
 from collections import defaultdict
 from functools import lru_cache
 
@@ -8,6 +7,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from ..oin.canonical_slots import derive_rotation_group
+from ..oin.hydrogen import h_faithful_smiles
+from ..oin.levers import lever_enabled
 from ..oin.winding import signed_circulation
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,11 @@ logger = logging.getLogger(__name__)
 #: change that is NOT byte-identical, because it rewrites the emitted winding for the
 #: meso arrangement of a symmetric ansa-metallocene -- two spellings of one achiral
 #: compound that the encoder currently picks between by geometry.
-CANONICAL_ETA_WINDING = os.environ.get("OIN_CANONICAL_ETA_WINDING", "0") != "0"
+#: Read at import, so a test must patch this attribute rather than the environment.
+#: The DEFAULT now lives in oin.levers (promoted to ON in v0.4.5) rather than being
+#: spelled here -- the old inline `"0") != "0"` form is exactly the drift lever_enabled
+#: exists to prevent, since a sibling site used bare truthiness where "0" ENABLED a lever.
+CANONICAL_ETA_WINDING = lever_enabled("OIN_CANONICAL_ETA_WINDING")
 
 try:
     from rdkit import Chem
@@ -361,8 +366,16 @@ class OINSanitizer:
 
         # 2. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
+        #
+        # h_faithful_smiles, not MolToSmiles: everything above this line works to get
+        # each atom's hydrogen count right, and the writer can still throw it away. A
+        # 0-H atom whose valence sits between two allowed values -- a 3-valent thiophene
+        # sulfur, between sulfur's 2 and 4 -- serializes BARE, and a bare symbol
+        # re-reads as "fill to the next allowed valence with H", so the count step 1
+        # just froze comes back one too high. Step 1b above is a narrower, per-motif
+        # version of the same repair. Default-OFF lever; see oin/hydrogen.py.
         kmol = rw_mol.GetMol()
-        smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
+        smiles = h_faithful_smiles(kmol, isomericSmiles=True, canonical=True)
         return smiles, kmol
 
     @staticmethod

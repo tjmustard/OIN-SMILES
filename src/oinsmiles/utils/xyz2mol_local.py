@@ -29,6 +29,17 @@ import networkx as nx
 import numpy as np
 from rdkit import Chem
 
+# Single-source lever registry. This was a guarded import with a local fallback while the
+# registry did not yet exist on every branch; now that it ships, the fallback is a TRAP --
+# it defaulted every lever to OFF, which would silently revert the six levers promoted to
+# default-ON in v0.4.5 if the import ever broke. A missing registry should be a loud
+# ImportError, not six quiet behaviour changes.
+#
+# The registry's purpose is to close a sense-inversion trap that is live in older code:
+# os.environ.get("X") is truthy for the string "0", so the obvious way to opt out of a
+# bare-truthiness lever turns it ON.
+from ..oin.levers import lever_enabled as _lever_enabled
+
 logger = logging.getLogger(__name__)
 
 global __ATOM_LIST__
@@ -934,25 +945,6 @@ _HEURISTIC_ELEMENTS = (8, 7, 6, 15, 16)  # O, N, C, P, S
 # construction, exactly as OIN_VALENCE_FALLBACK_TRIES is. See docs/VALENCE_ORDER_v0.4.5.md.
 _ORDERED_FALLBACK_ENV = "OIN_VALENCE_ORDERED_FALLBACK"
 
-# Prefer the single-source lever registry when it is present. It is not on this branch's
-# base (it arrives with trial/v045-merge2), so fall back to the same semantics locally
-# rather than importing something that may not exist. The point of both is to close the
-# sense-inversion trap: os.environ.get("X") is truthy for the string "0", so the obvious
-# way to opt out of a bare-truthiness lever turns it ON.
-try:  # pragma: no cover - depends on which branch this file is built from
-    from oinsmiles.oin.levers import lever_enabled as _lever_enabled
-except ImportError:  # pragma: no cover
-    _LEVER_FALSEY = frozenset({"0", "", "false", "no", "off"})
-
-    def _lever_enabled(name, override=None):
-        """Is ``name`` enabled? Default OFF; ``"0"``/``"false"``/``"no"``/``"off"`` disable."""
-        if override is not None:
-            return bool(override)
-        raw = os.environ.get(name)
-        if raw is None:
-            return False
-        return raw.strip().lower() not in _LEVER_FALSEY
-
 
 def iter_ordered_valences(valences_list_of_lists, atoms):
     """Yield candidates in exactly ``_ordered_valences``' order, lazily.
@@ -1350,7 +1342,7 @@ def AC2BO(
         use_graph=use_graph,
         allow_carbenes=allow_carbenes,
     )
-    if _SUPPRESS_CANONICAL_PERCEPTION or not os.environ.get("OIN_CANONICAL_PERCEPTION"):
+    if _SUPPRESS_CANONICAL_PERCEPTION or not _lever_enabled("OIN_CANONICAL_PERCEPTION"):
         return plain()
 
     perm = _canonical_atom_permutation(AC, atoms)
@@ -1899,7 +1891,7 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
         atomic_nums = [mol.GetAtomWithIdx(i).GetAtomicNum() for i in range(num_atoms)]
         exempt = boron_cage_vertices(atomic_nums, AC)
 
-    if os.environ.get("OIN_STABLE_METAL_AC"):
+    if _lever_enabled("OIN_STABLE_METAL_AC"):
 
         def _cap_key(i):
             nbrs = np.nonzero(AC[i, :])[0]

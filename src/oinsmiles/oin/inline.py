@@ -2,6 +2,7 @@ import re
 from typing import List, NamedTuple, Optional, Tuple
 
 from . import locked_donor
+from .hydrogen import h_faithful_smiles
 
 #: A metal-locked nitrogen descriptor in a fragment SMILES (``[N@H]`` / ``[N@@H]``).
 #: Only nitrogen needs the guard below: RDKit keeps a trivalent phosphorus tag through
@@ -252,7 +253,19 @@ class OINInlineHandler:
                             mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + offset)
 
                     # Generate SMILES with maps
-                    mapped_smiles = Chem.MolToSmiles(mol, canonical=False)
+                    #
+                    # This re-write is not the round trip it looks like. RDKit's writer
+                    # re-decides bracketing from scratch, and it silently DE-BRACKETS a
+                    # correctly-written 0-H atom: the encoder's
+                    # `CCCCN1[C]N([C]c2c3ccccc3cc3ccccc23)C=C1` (20 H) comes back out as
+                    # `CCCCN1CN(Cc2c3ccccc3cc3ccccc23)C=C1`, which re-reads as 24 H --
+                    # both carbene brackets destroyed. The `{slot}` markers give the
+                    # generator's donor-strip heuristics a chance to recover the binding
+                    # atoms; a non-binding one (a benzylic carbon whose hydrogens the
+                    # input never had) has nothing to save it, and the generator builds
+                    # a molecule with extra atoms (INENOF_comp_0, 58 -> 60).
+                    # Default-OFF lever; see oin/hydrogen.py.
+                    mapped_smiles = h_faithful_smiles(mol, canonical=False)
                     # canonical=False to hopefully preserve atom order if input was canonical?
                     # Ideally we want output to match input structure but with tags.
                     # RDKit might reorder.

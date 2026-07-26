@@ -19,6 +19,8 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
 from ..oin import locked_donor
+from ..oin.hydrogen import h_faithful_smiles
+from ..oin.levers import lever_enabled
 from .aromaticity import (  # noqa: F401
     OINEncodeError,
     kekulize_safe_sanitize,
@@ -492,7 +494,7 @@ def lig_checks(lig_mol, coordinating_atoms):
     # string. Sorting here fixes every consumer at once and changes no selection LOGIC --
     # only which member of an exact tie wins, and now that is decided by the candidate's
     # own canonical SMILES rather than by atom numbering.
-    if os.environ.get("OIN_CANONICAL_PERCEPTION"):
+    if lever_enabled("OIN_CANONICAL_PERCEPTION"):
         possible_lig_mols.sort(key=_resonance_candidate_key)
     return possible_lig_mols
 
@@ -845,7 +847,7 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
 
     With the lever off this is a plain call with one dead branch.
     """
-    if not os.environ.get("OIN_CANONICAL_PERCEPTION"):
+    if not lever_enabled("OIN_CANONICAL_PERCEPTION"):
         return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
     try:
         return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
@@ -1184,7 +1186,7 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     tolerance = 1e-5
     candidates = np.where(dists_sq >= max_dist_sq - tolerance)[0]
 
-    if os.environ.get("OIN_CANONICAL_SLOTS"):
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
         # v0.4.5 Lane 2: settle the tie on the CONTENT of the candidate atoms instead of
         # their file position. `np.min(candidates)` below is a raw input atom index, so
         # two presentations of one structure can pivot on different atoms and land in
@@ -1222,7 +1224,7 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     # Metric: sum(z_i * (i+1)**3) - Super-linear weighting to break symmetry
     # If negative, flip Z (and Y to maintain right-hand).
 
-    if os.environ.get("OIN_CANONICAL_SLOTS"):
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
         # v0.4.5 Lane 2: the (i+1)**3 weighting below is a function of the FILE, not the
         # molecule -- renumber the atoms and the sign of the moment can flip, mirroring
         # the whole frame in y/z. Replace it with mass-weighted odd moments in z, which
@@ -1605,7 +1607,7 @@ def get_oin_string(tmc_mol, xyz_coords):
         # so the same stereocentre can emit @ or @@ depending only on how the XYZ
         # happened to be numbered. Re-derive the tags from the geometry instead.
         # Default OFF -> byte-identical output.
-        if os.environ.get("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():
+        if lever_enabled("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():
             from ..oin.stable_stereo import restamp_fragment_chirality
 
             restamp_fragment_chirality(
@@ -1696,18 +1698,37 @@ def get_oin_string(tmc_mol, xyz_coords):
             # Derive the single-bond directions from the carried E/Z stereo so the
             # canonical SMILES writes the '/' and '\' cis/trans markers.
             Chem.SetDoubleBondNeighborDirections(sanitized_mol)
-            sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
+            # h_faithful_smiles, not MolToSmiles: this call DISCARDS the string
+            # generate_robust_smiles just built and re-derives it from the recovered
+            # mol, so the hydrogen bookkeeping that function froze has to survive the
+            # writer a second time. It does not on its own -- a 0-H atom whose valence
+            # sits between two allowed values serializes BARE and re-reads one hydrogen
+            # heavier. This is the site that actually produces the sidecar fragment, so
+            # it is the one that decides the OIN's atom count. Default-OFF lever
+            # (OIN_H_FAITHFUL); with it unset this is exactly MolToSmiles. See
+            # oin/hydrogen.py.
+            sanitized_smiles = h_faithful_smiles(sanitized_mol, isomericSmiles=True, canonical=True)
 
-            # v0.4.5 Lane 1 (opt-in): canonicalize the ligand BODY. The graph perceived
-            # from 3D distances is not unique -- max_weight_matching picks one of several
-            # Kekule structures and AC2BO one of several resonance forms -- so two
-            # geometries of the same molecule serialize differently even though
-            # MolToSmiles is canonical for each. Round-trip the body through
-            # MolFromSmiles/MolToSmiles (the compare layer's own fix, promoted upstream)
-            # and clear chelate-locked E/Z. Slot identity is carried through the reparse
-            # by atom map number, never re-derived. Default OFF -> byte-identical output,
-            # and the module is not even imported.
-            if os.environ.get("OIN_CANONICAL_BODY"):
+            # v0.4.5 Lane 1: canonicalize the ligand BODY. The graph perceived from 3D
+            # distances is not unique -- max_weight_matching picks one of several Kekule
+            # structures and AC2BO one of several resonance forms -- so two geometries of
+            # the same molecule serialize differently even though MolToSmiles is canonical
+            # for each. Round-trip the body through MolFromSmiles/MolToSmiles (the compare
+            # layer's own fix, promoted upstream) and clear chelate-locked E/Z. Slot
+            # identity is carried through the reparse by atom map number, never re-derived.
+            #
+            # MERGE NOTE (Lane 1 x atom_count): these two levers touch the same write and
+            # they INTERACT. canonical_body_emit reparses through MolFromSmiles/MolToSmiles,
+            # which is precisely the round trip that re-reads a bare 0-H symbol one hydrogen
+            # heavier -- the defect OIN_H_FAITHFUL exists to prevent. So with BOTH on, the
+            # reparse can undo the H-faithful fix.
+            #
+            # Safe in the shipped configuration (OIN_CANONICAL_BODY ON, OIN_H_FAITHFUL OFF):
+            # h_faithful_smiles then behaves as plain MolToSmiles and nothing is lost. Do
+            # NOT promote OIN_H_FAITHFUL until canonical_body_emit is H-faithful too, or the
+            # two are reordered so the reparse runs first, with a both-levers-on test over
+            # the atom_count GAIN fixtures. Recorded in oin/levers.py::_HELD_OFF.
+            if lever_enabled("OIN_CANONICAL_BODY"):
                 from ..oin.canonical_body import canonical_body_emit
 
                 _canon = canonical_body_emit(sanitized_mol, frag_binding_indices_local)
@@ -1796,7 +1817,7 @@ def get_oin_string(tmc_mol, xyz_coords):
     # Metal is Rank 0 (First).
 
     def get_input_order_key(item):
-        canonical = bool(os.environ.get("OIN_CANONICAL_SLOTS"))
+        canonical = bool(lever_enabled("OIN_CANONICAL_SLOTS"))
         if item["is_metal"]:
             # Metal first. Typed to match the branch below so the two never meet in one
             # comparison: () sorts before every non-empty tuple, -1 before every index.
@@ -1994,7 +2015,7 @@ def get_oin_string(tmc_mol, xyz_coords):
     # against it is correct with the lever either way, and stays correct after promotion.
     # Do NOT call `canonical_slot_permutation(geo, vcolor)` for that question; see its
     # docstring warning (its tie-break is a property of the incoming labeling).
-    if os.environ.get("OIN_CANONICAL_SLOTS"):
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
         from ..oin.canonical_slots import canonicalize_oin_slots
 
         inline_oin = canonicalize_oin_slots(inline_oin)
