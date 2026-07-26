@@ -49,6 +49,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 import numpy as np  # noqa: E402
+from rdkit import Chem  # noqa: E402
 from rdkit.Chem import GetPeriodicTable  # noqa: E402
 
 
@@ -84,6 +85,70 @@ def actual_donor_set(znums, coords, tolerance: float = 0.5):
         for j in sorted(donors)
     }
     return metal_idx, donors, d
+
+
+def fast_donor_set(znums, coords, tolerance: float = 0.5):
+    """The metal's donor row by the DISTANCE CRITERION ALONE -- `xyz2AC_obabel`'s first pass,
+    without building the full N x N matrix and without the valence-cap pruning loop.
+
+    `xyz2AC_obabel` prunes an atom's longest bonds when its degree exceeds max(atomic_valence),
+    and that loop CAN touch the metal row (the code's own DUDREA_comp_0 example drops a bridging
+    Y-H). So this is an approximation of `actual_donor_set` and the two are measured against
+    each other on every conformer rather than assumed equal -- `ac_row_divergence` below.
+    """
+    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
+
+    pt = GetPeriodicTable()
+    metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
+    if metal_idx is None:
+        return None, set()
+    rad = np.array([pt.GetRcovalent(int(z)) for z in znums])
+    d = np.linalg.norm(coords - coords[metal_idx], axis=1)
+    hit = (d <= rad[metal_idx] + rad + tolerance) & (np.arange(len(znums)) != metal_idx)
+    return metal_idx, set(int(j) for j in np.nonzero(hit)[0])
+
+
+_HETEROATOM_DONORS = {7, 8, 15, 16}  # N, O, P, S -- _get_tmc_mol_impl's own set
+
+
+def encoder_donor_set(znums, coords, tolerance: float = 0.5):
+    """`_get_tmc_mol_impl`'s donor set EXACTLY: the AC metal row, then its aromatic-ring-carbon
+    filter (a ring carbon whose neighbour is a coordinating N/O/P/S is dropped -- the
+    heteroatom is the real donor, e.g. the phenylene bridge of a bidentate phosphine).
+
+    `actual_donor_set` omits that filter and therefore over-counts donors on chelates. Whether
+    that over-count matters is measured, not assumed: both sets are scored side by side.
+    """
+    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
+    from oinsmiles.utils.xyz2mol_local import xyz2AC_obabel
+
+    metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
+    if metal_idx is None:
+        return None, set()
+    AC, proto = xyz2AC_obabel(list(znums), coords, tolerance=tolerance)
+    raw = set(int(j) for j in np.nonzero(AC[metal_idx])[0])
+    rw = Chem.RWMol(proto)
+    n = len(AC)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if AC[i, j]:
+                rw.AddBond(i, j, Chem.BondType.SINGLE)
+    mol = rw.GetMol()
+    try:
+        Chem.GetSymmSSSR(mol)
+    except Exception:
+        return metal_idx, raw
+    keep = set()
+    for idx in raw:
+        a = mol.GetAtomWithIdx(idx)
+        if a.GetAtomicNum() == 6 and a.IsInRing():
+            if any(
+                nb.GetAtomicNum() in _HETEROATOM_DONORS and nb.GetIdx() in raw
+                for nb in a.GetNeighbors()
+            ):
+                continue
+        keep.add(idx)
+    return metal_idx, keep
 
 
 _HAPTIC_GROUP_CUTOFF = 1.6  # A -- metallogen_adapter._HAPTIC_GROUP_CUTOFF, kept in step
@@ -132,6 +197,12 @@ def score_one(xyz_path: str, claim_path: str, tolerance: float = 0.5) -> dict:
     t0 = time.monotonic()
     midx, actual, dists = actual_donor_set(znums, coords, tolerance)
     ms = round((time.monotonic() - t0) * 1000, 1)
+    t1 = time.monotonic()
+    _, fast_actual = fast_donor_set(znums, coords, tolerance)
+    fast_ms = round((time.monotonic() - t1) * 1000, 3)
+    t2 = time.monotonic()
+    _, filt = encoder_donor_set(znums, coords, tolerance)
+    filt_ms = round((time.monotonic() - t2) * 1000, 1)
 
     claimed = set(claim.get("claimed_donors") or [])
     pt = GetPeriodicTable()
@@ -158,6 +229,9 @@ def score_one(xyz_path: str, claim_path: str, tolerance: float = 0.5) -> dict:
     # distance of the metal. Ring slip (5 of 5 -> 3 of 5) leaves the site present; a ring that
     # has drifted out of the sphere leaves it empty.
     lost_groups = [[sym.get(i) for i in g] for g in claim_groups if not (set(g) & actual)]
+
+    filt_groups = _groups(sorted(filt), coords)
+    lost_groups_f = [[sym.get(i) for i in g] for g in claim_groups if not (set(g) & filt)]
     return {
         "molecule": claim["molecule"],
         "natoms": len(znums),
@@ -194,7 +268,19 @@ def score_one(xyz_path: str, claim_path: str, tolerance: float = 0.5) -> dict:
         # inside bonding distance. Tolerant of eta5 -> eta3 ring slip (which the round-trip key
         # forgives) while still catching a ring that has left the metal entirely.
         "p_sitecov": not lost_groups,
+        # ...and the same two predicates computed on the FILTERED donor set, i.e. exactly the
+        # set `_get_tmc_mol_impl` hands downstream.
+        "n_actual_filt": len(filt),
+        "n_sites_filt": len(filt_groups),
+        "filt_ms": filt_ms,
+        "p_sites_f": len(filt_groups) == n_slots and n_slots > 0,
+        "p_sitecov_f": not lost_groups_f,
         "check_ms": ms,
+        "fast_ms": fast_ms,
+        "n_actual_fast": len(fast_actual),
+        # Does skipping the valence-cap pruning loop change the METAL's row? Measured, not
+        # assumed -- the cheap form is only usable if this is empty everywhere.
+        "ac_row_divergence": sorted(fast_actual ^ actual),
         "indep_passed": claim.get("indep_passed"),
         "passed": claim.get("passed"),
     }
@@ -247,7 +333,7 @@ def report(res: dict) -> None:
     print(f"\n=== §6.5 FALSIFICATION  ({a} vs {b}, tolerance {res['tolerance']}) ===")
     print(
         f"{'molecule':16s} {'M':>3s} {'slot':>4s} {'clm':>4s} "
-        f"{'Aact':>5s}{'Bact':>5s} {'Asite':>6s}{'Bsite':>6s}  "
+        f"{'Aact':>5s}{'Bact':>5s} {'Astf':>6s}{'Bstf':>6s}  "
         f"{'A_ind':>6s}{'B_ind':>6s}  B_sites_lost"
     )
     for m in mols:
@@ -255,7 +341,7 @@ def report(res: dict) -> None:
         print(
             f"{m:16s} {ra['metal']:>3s} {ra['n_slots_oin']:>4d} {ra['n_claimed']:>4d} "
             f"{ra['n_actual']:>5d}{rb['n_actual']:>5d} "
-            f"{ra['n_sites_actual']:>6d}{rb['n_sites_actual']:>6d}  "
+            f"{ra['n_sites_filt']:>6d}{rb['n_sites_filt']:>6d}  "
             f"{str(ra['indep_passed']):>6s}{str(rb['indep_passed']):>6s}  "
             f"{rb['sites_lost'] if rb['sites_lost'] else ''}"
         )
@@ -265,11 +351,15 @@ def report(res: dict) -> None:
         ("P2 subset", "p_subset"),
         ("P3 sites==slots", "p_sites"),
         ("P4 site coverage", "p_sitecov"),
-        ("P3 and P4", None),
+        ("P3f sites==slots FILT", "p_sites_f"),
+        ("P4f site cov FILT", "p_sitecov_f"),
+        ("P3f and P4f", "__and_f"),
     )
 
     def val(r, key):
-        return (r["p_sites"] and r["p_sitecov"]) if key is None else r[key]
+        if key == "__and_f":
+            return r["p_sites_f"] and r["p_sitecov_f"]
+        return r[key]
 
     reg = [m for m in mols if A[m]["indep_passed"] and not B[m]["indep_passed"]]
     print(f"\n---- separation on the {len(reg)} INDEP REGRESSIONS ----")
@@ -302,11 +392,23 @@ def report(res: dict) -> None:
         caught = [f"{m}[{arm}]" for m, arm in fails if not val(A[m] if arm == a else B[m], key)]
         print(f"  {name:18s} flags {len(caught)}/{len(fails)} indep-FAILING conformers")
 
-    ms = [r["check_ms"] for arm in arms for r in res["arms"][arm]]
+    rows = [r for arm in arms for r in res["arms"][arm]]
+    ms = [r["check_ms"] for r in rows]
+    fms = [r["fast_ms"] for r in rows if "fast_ms" in r]
+    div = [r["molecule"] for r in rows if r.get("ac_row_divergence")]
     if ms:
         print(
-            f"\n  check cost: {min(ms):.1f}-{max(ms):.1f} ms "
+            f"\n  full  xyz2AC_obabel check: {min(ms):.1f}-{max(ms):.1f} ms "
             f"(median {sorted(ms)[len(ms) // 2]:.1f} ms) over {len(ms)} evaluations"
+        )
+    if fms:
+        print(
+            f"  fast  metal-row-only check: {min(fms):.3f}-{max(fms):.3f} ms "
+            f"(median {sorted(fms)[len(fms) // 2]:.3f} ms)"
+        )
+        print(
+            f"  metal row identical without the valence-cap pruning loop: "
+            f"{len(rows) - len(div)}/{len(rows)}" + (f"  DIVERGES on {div}" if div else "")
         )
 
 
