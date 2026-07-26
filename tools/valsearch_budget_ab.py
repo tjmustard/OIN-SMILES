@@ -146,6 +146,15 @@ def main():
     ap.add_argument("--mols", required=True, help="comma-separated refcodes, or @file")
     ap.add_argument("--budgets", default="20000,5000,1000,200")
     ap.add_argument("--out", default=None)
+    ap.add_argument(
+        "--one-arm",
+        type=int,
+        default=None,
+        help="Encode each molecule at exactly this budget and print one line per molecule, "
+        "then exit. For ligands where the 20 000 arm never returns, an in-process sweep "
+        "cannot be bounded -- wrap this in `timeout N` instead, so a non-terminating arm "
+        "is recorded as a timeout rather than hanging the whole comparison.",
+    )
     args = ap.parse_args()
 
     root = Path(args.dataset)
@@ -156,6 +165,28 @@ def main():
     budgets = [int(x) for x in args.budgets.split(",")]
     # Repeat the first budget last: a same-process determinism self-check.
     order = budgets + [budgets[0]]
+
+    if args.one_arm is not None:
+        for name in names:
+            hits = list(root.glob(f"*/{name}.xyz"))
+            if not hits:
+                print(f"{name}: NOT FOUND under {root}", flush=True)
+                continue
+            res = encode_at_budget(hits[0], args.one_arm)
+            print(
+                f"{name} tries={args.one_arm} wall={res['wall']:.2f}s "
+                f"cands={res['stats']['candidates']} "
+                f"over_cap_calls={res['stats']['over_cap_calls']} "
+                f"exhausted={res['stats']['over_cap_exhausted']} "
+                f"found_valid={res['stats']['found_valid']} "
+                f"matching={res['stats']['matching_calls']} "
+                f"guess_sha={res['guess_sha']} oin_sha={res['oin_sha']}"
+                + (f" ERROR {res['error']}" if res["error"] else ""),
+                flush=True,
+            )
+            if args.out:
+                Path(args.out).write_text(json.dumps({name: res}, indent=1))
+        return
 
     out = {}
     for name in names:
