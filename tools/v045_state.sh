@@ -104,8 +104,30 @@ elif [ "$NEXT" = 8 ]; then
     echo "  Finish Lane 8: extend oin/stable_stereo.py to trivalent P donors, then"
     echo "  prove the descriptor still FLIPS for the mirror (not stable-because-constant)."
 else
-    echo "  No WIP lane outstanding. Next: verify the integrated suite, then Lanes 5/6,"
-    echo "  Wave D promotion A/B, the 5k sweep (tools/run_sweep.sh + cohort-v0.4.5-5k)."
+    cat <<'EOT'
+  INTEGRATION IS DONE. All 16 lanes are merged on `release/v0.4.5` (worktree
+  ../oin-v045-final), 84 commits ahead of main, ruff clean, and the six canonicality
+  levers are PROMOTED to default-ON through src/oinsmiles/oin/levers.py.
+
+  Remaining, in order:
+    1. Triage the release suite. Promotion makes every test written as "levers OFF ->
+       byte-identical" fail BY DESIGN -- Lane 2 established that CisPlatin, TransPlatin
+       and fac-Ir(ppy)3 move under OIN_CANONICAL_SLOTS (key-identical, pinned separately
+       in TestLeverOnGoldens). Separate "asserts the old default" from real breakage and
+       update the former. Do NOT merge to main until this is clean.
+    2. Read the final re-baseline number once tier 2 drains. Check
+       `systemctl --user is-active v045-rebaseline` -- NOT the report count. 936/936
+       reports existed while the g-xTB tier was still running, and reading count as
+       completion once already produced a premature published figure.
+    3. Merge release/v0.4.5 -> main (local only, DO NOT PUSH), tag before deleting any
+       swimlane branch.
+    4. Optional: the 5k sweep on cohort-v0.4.5-5k, now that the config is settled.
+
+  Two levers deliberately held OFF with reasons in levers.py::_HELD_OFF -- read those
+  before promoting either: OIN_H_FAITHFUL is BLOCKED (canonical_body_emit's reparse undoes
+  it) and OIN_BORON_CAGE is decided-to-promote but not yet enabled (it moves 14
+  scored-passing molecules to failing, which is correct -- they were wrong).
+EOT
 fi
 echo
 echo "RULES THAT BIT US ALREADY"
