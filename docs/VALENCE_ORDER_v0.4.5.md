@@ -101,6 +101,14 @@ is traversed in atom order, the heuristic sequence *is* the raw sequence. Single
 contribute nothing. So for QIDKUL, QIDKIZ and ZAZREZ the hypothesis is not merely false, it is
 **vacuous** — there was no reordering to be had.
 
+`BENVOG` and `HOHKUL` share every number in that table, which is exactly what a cache-keying bug
+looks like — the sibling lane shipped one — so it was checked rather than shrugged at. The two
+captures are distinct ligands (148 atoms `C76H52N4O16`, `AC.sum` 320, sha `fea3a4d18cac`; 220
+atoms `C100H100N4O16`, `AC.sum` 464, sha `4a37c79878f2`) that happen to have the **same
+choice-bearing census** — 4 N and 16 O with a choice, everything else pinned. The DP depends only
+on that census and the target charge, so identical profiles are the expected result, not a
+collision.
+
 Measured on the real code path, at the shipped budget of 20 000:
 
 | molecule | raw | heuristic order | charge filter |
@@ -111,7 +119,7 @@ Measured on the real code path, at the shipped budget of 20 000:
 | `BENVOG` ligand | VALID at 15, 0.28 s | VALID at 225, 4.56 s | **VALID at 1, 0.01 s** |
 | `ZAZREZ` ligand | VALID at 649, 8.10 s | VALID at 649, 8.80 s | **VALID at 1, 0.02 s** |
 | `KESWUB` ligand | timeout (6 033 cands / 90 s) | timeout (6 188 cands / 90 s) | **VALID at candidate 1 216, 22.1 s** |
-| `HOHKUL` ligand | timeout (3 356 cands / 90 s) | timeout (3 947 cands / 90 s) | timeout (3 208 cands / 90 s) — see below |
+| `HOHKUL` ligand | timeout (3 356 cands / 90 s) | timeout (3 947 cands / 90 s) | **20 000 feasible cands examined, none valid**, 583 s |
 
 `KESWUB` is the row that shows why "how deep does the budget reach" matters more than "how many
 candidates does it examine". The 20 000-candidate budget spends its examinations on *feasible*
@@ -221,7 +229,7 @@ constraint is **feasible-candidate density**, and it cuts across size:
 | dense feasible set, valid early | `BENVOG` (148), `ZAZREZ` (144) | already succeeded on the default path; filter reaches the **same** answer (identical `best_BO` sha) in 1 candidate instead of 15 / 649 |
 | sparse feasible set, valid reachable | `QIDKUL`, `QIDKIZ` (37), `HICLAG` (147), `KESWUB` (188) | **timeout or guess → real Lewis structure.** 10, 10, 1 129 and 1 216 candidates |
 | **no feasible candidate at all** | `LIYFAA` (92) | provably hopeless at this charge — see below |
-| unresolved | `HOHKUL` (220) | no valid structure in the first 3 208 feasible candidates; **time-capped, not budget-exhausted** |
+| unresolved | `HOHKUL` (220) | budget **exhausted** over 20 000 of its 74 108 feasible candidates, none valid; `best_BO` never left `AC.copy()` |
 
 The ligand-size split in `docs/VALENCE_SEARCH_v0.4.5.md` does not survive: **`KESWUB` at 188
 atoms is rescued and `BENVOG` at 148 was never failing on this axis**, while the 37-atom pair is
@@ -331,6 +339,20 @@ the over-cap branch, exactly as the code structure implies.
 $V tools/valorder_encode_ab.py --dataset <dir> --mols JIQBET_comp_0,… \
    --files "tests/fixtures/CisPlatin.xyz,tests/fixtures/Ferrocene.xyz,…" --cap 150
 ```
+
+## Suite and lint
+
+`discover tests/unit` at `0790946d`: **632 tests OK** (3 skipped, 3 expected failures) in 890 s.
+That is the `valsearch` baseline of **618** plus this lane's **14** tests, with **identical**
+skipped and expected-failure counts. A second full run covers the two later commits (the
+transition-metal guard added 2 more tests); the interval between them is confined to code inside
+`if over_cap:` that only executes with a lever on, plus a behaviour-preserving refactor.
+`uvx ruff@0.15.20 check` and `format --check` clean across `src`, `tools` and `tests`.
+
+Honest gap, same one the sibling lane recorded: **no pre-change baseline was run on this host.**
+The 618 figure is `valsearch`'s measurement on the branch this one is based on, and the evidence
+that nothing regressed is that arithmetic together with the unchanged skip/xfail counts — not a
+paired before/after run. The release sweep is holding six cores throughout.
 
 ## Verdict on the ordering hypothesis
 
