@@ -56,19 +56,27 @@ LEVER = "OIN_BORON_CAGE"
 
 
 class _LeverMixin(unittest.TestCase):
+    """Sets ``OIN_BORON_CAGE`` EXPLICITLY in both directions.
+
+    Deleting the variable used to mean "off" and stopped meaning that when the lever was
+    promoted to default-ON in v0.4.6: every ``test_lever_off_*`` below silently became a second
+    lever-ON test and asserted the amputated-cage behaviour against the fixed path. Third and
+    fourth occurrences of that trap in this release -- see
+    ``test_levers.py::TestNoTestUnsetsAPromotedLever``, which now makes it a lint.
+    """
+
     def setUp(self):
-        self._saved = os.environ.pop(LEVER, None)
+        self._saved = os.environ.get(LEVER)
+        os.environ[LEVER] = "0"
 
     def tearDown(self):
-        os.environ.pop(LEVER, None)
-        if self._saved is not None:
+        if self._saved is None:
+            os.environ.pop(LEVER, None)
+        else:
             os.environ[LEVER] = self._saved
 
     def set_lever(self, on):
-        if on:
-            os.environ[LEVER] = "1"
-        else:
-            os.environ.pop(LEVER, None)
+        os.environ[LEVER] = "1" if on else "0"
 
 
 class TestCageMotifDetection(unittest.TestCase):

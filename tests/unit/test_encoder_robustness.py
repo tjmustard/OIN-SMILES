@@ -4,9 +4,13 @@ The v0.4.2 capstone had 48 molecules whose crystal XYZ produced no OIN string at
 (``smiles_1 is None``). Sub-triage (``tools/sl5_triage.py``) split them into:
 
 * ~34 electron-deficient boron clusters (carboranes / closo-nido boranes): RDKit's
-  2-center-2-electron valence model has no Lewis structure for a 3-center-2-electron cage,
-  so these are an irreducible ceiling. The encoder now *classifies* the failure with a
+  2-center-2-electron valence model has no Lewis structure for a 3-center-2-electron cage.
+  v0.4.4 treated this as an irreducible ceiling and merely *classified* the failure with a
   typed ``OINEncodeError`` instead of a bare ``ValueError`` (W1).
+  ⚠ NO LONGER A CEILING IN THE DEFAULT CONFIGURATION. ``OIN_BORON_CAGE`` was promoted to
+  default-ON in v0.4.6 and takes this population from 0/36 encoding to 34/36. The W1 test
+  below now pins the OPT-OUT contract (typed error when the lever is explicitly off), not the
+  shipped behaviour.
 * A timeout cohort that hung inside xyz2mol perception on large conjugated ligands --
   ``AC2BO`` materialising an exponential valence-order product, and ``ResonanceMolSupplier``
   building conjugation groups. Both are now bounded so oversized ligands complete (encode
@@ -21,6 +25,7 @@ correct metal token, plus forward-encode stability.
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
@@ -43,9 +48,22 @@ def _fixture(name):
 
 
 class TestBoronClusterTypedCeiling(unittest.TestCase):
-    """W1: an electron-deficient boron cluster fails with a classified OINEncodeError."""
+    """W1: with ``OIN_BORON_CAGE`` OFF, a boron cluster fails with a classified OINEncodeError.
+
+    ⚠ The lever is pinned OFF explicitly. This class asserts the **opt-out** contract, which is
+    still real: someone who disables cage mode must get a typed ceiling rather than a bare
+    ValueError. It previously set nothing and relied on the default -- which stopped meaning "off"
+    when ``OIN_BORON_CAGE`` was promoted to default-ON in v0.4.6, at which point both tests were
+    asserting a ceiling the shipped encoder no longer has. The same fixture now ENCODES; the
+    ceiling described in this module's docstring is lifted for the default configuration.
+    """
 
     FIXTURE = _fixture("RAWJEG_comp_0.xyz")
+
+    def setUp(self):
+        patcher = mock.patch.dict(os.environ, {"OIN_BORON_CAGE": "0"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
     def test_get_tmc_mol_raises_typed_error(self):

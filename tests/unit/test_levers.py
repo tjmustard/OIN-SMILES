@@ -66,5 +66,69 @@ class TestOverride(unittest.TestCase):
             self.assertFalse(lever_enabled("OIN_CANONICAL_BODY", override=None))
 
 
+class TestNoTestUnsetsAPromotedLever(unittest.TestCase):
+    """A lint, not a unit test: no test may spell "lever off" by DELETING the variable.
+
+    Deleting a lever's env var means "take the default". While every lever defaulted OFF that was
+    indistinguishable from disabling it. The moment a lever is promoted, every
+    ``env.pop(LEVER)`` or ``{k: v for k, v in os.environ.items() if k != LEVER}`` silently becomes
+    a second lever-ON test -- and a test asserting the OLD behaviour then fails for a reason
+    unrelated to what it tests, while a test asserting *stability* goes quietly vacuous instead.
+
+    This trap has cost **23 test failures across two promotions** (17 in v0.4.5, 6 more when
+    ``OIN_BORON_CAGE`` was promoted in v0.4.6) and was diagnosed from scratch each time. The fix
+    is always the same one line -- write ``"0"`` instead of deleting -- so it becomes mechanical
+    here. Prose in a docstring did not prevent occurrences three and four; a failing test will.
+    """
+
+    #: `pop` on a lever is legitimate when RESTORING a saved pre-test value. The guard is usually
+    #: on a PRECEDING line (``if self._saved is None:`` / ``if cls._prior is None:``), so the scan
+    #: looks back a couple of lines -- checking only the pop's own line produced two false
+    #: positives against correct teardown code on first run.
+    _RESTORE_HINTS = ("_saved", "_prev", "_prior", "restore", "tearDown")
+    _LOOKBACK = 3
+
+    #: Explicit opt-out for the rare test whose SUBJECT is the unset state itself -- e.g. "an
+    #: unset variable must take the promoted default". Put this marker on the pop line. An
+    #: auditable marker is deliberately preferred over a looser regex: widening the heuristic
+    #: to accommodate one legitimate case would blind the lint to the illegitimate ones.
+    _ALLOW = "lever-lint: intentional-unset"
+
+    def test_no_test_file_unsets_a_default_on_lever(self):
+        import pathlib
+        import re
+
+        promoted = sorted(default_on())
+        here = pathlib.Path(__file__).resolve()
+        pop_re = re.compile(r"(?:environ|env)\.pop\(\s*[\"']?([A-Za-z_]+)")
+        strip_re = re.compile(r"if\s+k\s*!=\s*[\"']([A-Z_]+)[\"']")
+
+        offenders = []
+        for path in sorted(here.parent.glob("test_*.py")):
+            if path.name == here.name:
+                continue
+            text = path.read_text()
+            # resolve a module-level `LEVER = "OIN_..."` alias so `env.pop(LEVER)` is caught too
+            aliases = dict(re.findall(r"^([A-Z_]+)\s*=\s*[\"'](OIN_[A-Z_]+)[\"']", text, re.M))
+            lines = text.splitlines()
+            for lineno, line in enumerate(lines, 1):
+                if self._ALLOW in line:
+                    continue
+                window = lines[max(0, lineno - 1 - self._LOOKBACK) : lineno]
+                if any(h in w for w in window for h in self._RESTORE_HINTS):
+                    continue
+                for m in list(pop_re.finditer(line)) + list(strip_re.finditer(line)):
+                    name = aliases.get(m.group(1), m.group(1))
+                    if name in promoted:
+                        offenders.append(f'{path.name}:{lineno} unsets {name} -- write "0"')
+
+        self.assertEqual(
+            offenders,
+            [],
+            "these express a promoted lever's OFF state by DELETING the variable, which now "
+            "means ON:\n  " + "\n  ".join(offenders),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
