@@ -18,6 +18,7 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
+from ..oin.hydrogen import h_faithful_smiles
 from .aromaticity import (  # noqa: F401
     OINEncodeError,
     kekulize_safe_sanitize,
@@ -1378,7 +1379,15 @@ def get_oin_string(tmc_mol, xyz_coords):
             # Derive the single-bond directions from the carried E/Z stereo so the
             # canonical SMILES writes the '/' and '\' cis/trans markers.
             Chem.SetDoubleBondNeighborDirections(sanitized_mol)
-            sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
+            # h_faithful_smiles, not MolToSmiles: this call DISCARDS the string
+            # generate_robust_smiles just built and re-derives it from the recovered
+            # mol, so the hydrogen bookkeeping that function froze has to survive the
+            # writer a second time. It does not on its own -- a 0-H atom whose valence
+            # sits between two allowed values serializes BARE and re-reads one hydrogen
+            # heavier. This is the site that actually produces the sidecar fragment, so
+            # it is the one that decides the OIN's atom count. Default-OFF lever; see
+            # oin/hydrogen.py.
+            sanitized_smiles = h_faithful_smiles(sanitized_mol, isomericSmiles=True, canonical=True)
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 

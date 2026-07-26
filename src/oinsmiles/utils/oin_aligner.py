@@ -6,6 +6,7 @@ from functools import lru_cache
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from ..oin.hydrogen import h_faithful_smiles
 from ..oin.winding import signed_circulation
 
 logger = logging.getLogger(__name__)
@@ -352,8 +353,16 @@ class OINSanitizer:
 
         # 2. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
+        #
+        # h_faithful_smiles, not MolToSmiles: everything above this line works to get
+        # each atom's hydrogen count right, and the writer can still throw it away. A
+        # 0-H atom whose valence sits between two allowed values -- a 3-valent thiophene
+        # sulfur, between sulfur's 2 and 4 -- serializes BARE, and a bare symbol
+        # re-reads as "fill to the next allowed valence with H", so the count step 1
+        # just froze comes back one too high. Step 1b above is a narrower, per-motif
+        # version of the same repair. Default-OFF lever; see oin/hydrogen.py.
         kmol = rw_mol.GetMol()
-        smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
+        smiles = h_faithful_smiles(kmol, isomericSmiles=True, canonical=True)
         return smiles, kmol
 
     @staticmethod
