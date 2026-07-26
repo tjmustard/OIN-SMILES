@@ -1042,10 +1042,11 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
         # heuristic's order (measured WORSE; see docs/VALENCE_ORDER_v0.4.5.md), and
         # OIN_VALENCE_CHARGE_FILTER keeps the order but drops candidates that provably
         # cannot be valid. The filter wins if both are set, since it subsumes the question.
-        if _lever_enabled(_CHARGE_FILTER_ENV) and not charge_filter_supported(atoms):
+        want_filter = _lever_enabled(_CHARGE_FILTER_ENV)
+        if want_filter and not charge_filter_supported(atoms):
             AC2BO_STATS["over_cap_filter_unsupported"] += 1
             candidate_source = itertools.product(*valences_list_of_lists)
-        elif _lever_enabled(_CHARGE_FILTER_ENV):
+        elif want_filter:
             AC2BO_STATS["over_cap_filtered_calls"] += 1
             feasible = iter_charge_feasible_valences(
                 valences_list_of_lists, atoms, charge, AC_valence

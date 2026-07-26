@@ -180,6 +180,34 @@ re-parse check strips slot markers and metal tags, so it is naive about some OIN
 arms identically. It is therefore evidence of a *difference between arms on one molecule*, which
 is what is claimed here, rather than an absolute grammar check.
 
+### The rescued structures, checked rather than assumed
+
+`HICLAG` and `KESWUB` produce **no** string on the default path (both order arms time out), so
+there is no before/after diff to show. What can be shown is that the structure the filter finds
+is sound on its own terms:
+
+| | `HICLAG` (147) | `KESWUB` (188) | `BENVOG` (148) |
+|---|---|---|---|
+| `found_valid` at candidate | 1 129 | 1 216 | 1 |
+| `BO.sum()` / `best_BO` sha | 392 / `7ff80f862e9d` | 450 / `3deb2077e1c0` | 398 / `f4e60eba2807` |
+| per-atom formal charges sum to the target `-2` | **yes** | **yes** | **yes** |
+| atoms above their max tabulated valence | none | none | none |
+| `SanitizeMol` | OK | OK | OK |
+| nonzero formal charges | 2 × `O⁻` | 2 × `O⁻` | 2 × `O⁻` |
+
+Each sha matches the one the independent ligand probe recorded, so the verification and the
+measurement agree.
+
+One nuance worth recording, because it is the sort of thing that looks like a charge bug and is
+not. `charge_is_OK` (and `set_atomic_charges` with it) applies a `+2` correction per trivalent
+single-bonded carbon while the running total is below the target. On the four validated
+structures above the per-atom charges hit the target **exactly**, so that correction never
+fires. On the 200-candidate `best_BO` guesses captured for `HICLAG` and `KESWUB` they sum to
+`-4` against a target of `-2`, and only reach the target *through* the correction — which writes
+`+1` onto a carbon `get_atomic_charge` calls `-1`. The net charge ends up right either way; the
+difference is that the guess needs a heuristic patch on two carbons and the validated structure
+needs none.
+
 ## Q3 — does it help the large-ligand class?
 
 **Partly, and the split is not the one the ligand-size table predicted.**
