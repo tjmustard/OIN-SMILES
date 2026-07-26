@@ -27,11 +27,35 @@ N="${3:-6}"
 MOL_TIMEOUT="${4:-300}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PY="$REPO/.venv/bin/python"
+
+# Locate the interpreter. A git WORKTREE has no .venv of its own -- this project's rule is
+# to use the MAIN checkout's pinned venv and never `uv sync` in a worktree -- and sweeping
+# from a worktree is the normal case here, so $REPO/.venv is usually absent. Resolution
+# order: explicit override, this repo's own venv, then a sibling checkout's.
+if [ -n "${OIN_SWEEP_PYTHON:-}" ]; then
+    PY="$OIN_SWEEP_PYTHON"
+elif [ -x "$REPO/.venv/bin/python" ]; then
+    PY="$REPO/.venv/bin/python"
+else
+    for cand in "$(dirname "$REPO")"/*/.venv/bin/python; do
+        [ -x "$cand" ] && PY="$cand" && break
+    done
+fi
+if [ -z "${PY:-}" ] || [ ! -x "$PY" ]; then
+    echo "error: no python found. Set OIN_SWEEP_PYTHON to the MAIN checkout's" >&2
+    echo "       .venv/bin/python (rdkit is pinned there; never uv sync in a worktree)." >&2
+    exit 1
+fi
+echo "[launch] interpreter=$PY"
 
 [ -d "$COHORT" ] || { echo "error: cohort dir $COHORT not found" >&2; exit 1; }
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
+
+# The harness appends its OWN ../src to sys.path, so running a copy from a different
+# checkout than the code under test silently mixes two trees. Pin it explicitly.
+export PYTHONPATH="$REPO/src${PYTHONPATH:+:$PYTHONPATH}"
+echo "[launch] PYTHONPATH=$PYTHONPATH"
 
 NMOL=$(find "$COHORT" -name '*.xyz' | wc -l)
 echo "[launch] $(date -Is) HEAD=$(git rev-parse --short HEAD) shards=$N mol_timeout=${MOL_TIMEOUT}s molecules=$NMOL"
