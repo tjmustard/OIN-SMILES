@@ -395,17 +395,32 @@ $V -m unittest tests.unit.test_boron_cage tests.unit.test_regression_stability
 | `tests/unit/test_boron_cage.py` | **19/19 OK** | final |
 | 4 cage molecules x 5 encodes in one process | no crash, all deterministic, no `[B@` in output | final |
 | all 6 corpus molecules with >=3 B and no cage motif | **6/6 byte-identical** with the lever ON | final |
-| full `discover tests/unit` | **605 tests, OK (skipped=3, expected failures=3)** | `5ca3f6e9`+docs, i.e. every src change **except** `clear_boron_cage_stereo` |
-| 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | same commit as above |
+| pre-existing tests (non-boron), full discovery | **605, all OK** | final src |
+| tests collected on the final tree | **624** = 605 pre-existing + 19 new; **0 load failures** | final |
+| 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | `5ca3f6e9`+docs, i.e. every src change **except** `clear_boron_cage_stereo` |
 
-Being explicit about the last two rows rather than rounding them up: the full-suite and
-120-molecule A/B numbers were taken before `clear_boron_cage_stereo` landed. That function is
-gated on **both** the lever and the B-B-B motif, so it cannot alter either measurement with the
-lever unset (which is how the whole suite and the A/B's OFF arm run), and its effect on the ON arm
-for non-cage molecules is likewise nil — which is the claim the 6/6 boron-rich cage-free row tests
-directly. A re-run of both on the final tree was still in flight when this was written (the box
-was at load 35 from a sibling 936-molecule sweep); `tools/suite_final.txt` and
-`tools/ab_final.txt` are where it lands.
+### A measurement of mine that was not clean, and what it does and does not support
+
+The full-suite run against the final src reported **`Ran 623 tests, OK (skipped=3, expected
+failures=3)`** — but 623 is one short of the 624 the loader collects, and the reason is my own
+error: **I edited `tests/unit/test_boron_cage.py` while that run was in flight**, so it executed
+605 pre-existing tests plus 18 of what are now 19 boron tests. A mixed-state count.
+
+What it still supports, because these are separable:
+
+* the run was `OK` with zero failures and it *did* execute all **605 pre-existing** tests, and the
+  src tree has not changed since (only tests and docs), so **the pre-existing suite is green on
+  the final src**;
+* explicit collection on the stable tree returns **624 tests, 605 of them non-boron — exactly the
+  pre-change baseline — and 0 load failures**, so no test was removed or silently unimportable;
+* the 19 boron tests were run directly against the final tree: **19/19 OK**.
+
+What it does not support: a single clean invocation covering all 624 at once. That re-run is
+`tools/suite_clean.txt`. The 120-molecule A/B likewise predates `clear_boron_cage_stereo`, which
+is gated on **both** the lever and the B-B-B motif and therefore cannot move the A/B's OFF arm
+(nor the whole suite, which runs lever-unset); its effect on the ON arm for non-cage molecules is
+what the 6/6 boron-rich cage-free row tests directly. Both re-runs were in flight at the time of
+writing, on a box at load 42 from a sibling 936-molecule sweep.
 
 ## 9. Verdict on the ceiling
 
