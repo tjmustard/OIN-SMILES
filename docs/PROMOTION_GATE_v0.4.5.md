@@ -10,24 +10,31 @@ truth rather than an inferred baseline.
 
 ## 1. Headline: all six canonicality levers together
 
-200 molecules encoded (2 of 3 shards; the third agreed and is folded into §2):
+**Final, all 3 shards** (298 / 299 molecules encoded):
 
 | arm | byte-stable | comparison **key** broken |
 |---|---|---|
-| all levers OFF | 124/200 — **62.0%** | 39 — **19.5%** |
-| all levers ON | 147/200 — **73.5%** | 8 — **4.0%** |
-| **delta** | **+11.5 pts (+23 molecules)** | **39 → 8, a 79% reduction** |
+| all levers OFF | 173/298 — **58.1%** | 60 — **20.1%** |
+| all levers ON | 208/299 — **69.6%** | 16 — **5.4%** |
+| **delta** | **+11.5 pts (+35 molecules)** | **60 → 16, a 73% reduction** |
 
 Drift by subclass:
 
 | subclass | OFF | ON | |
 |---|---:|---:|---|
-| `rdkit_canonical` | 54 | **9** | −45; the perception and body levers do the heavy lifting |
-| `slot_renumber` | 28 | 45 | +17 — **reclassification, not regression** (see below) |
+| `rdkit_canonical` | 91 | **18** | −73; the perception and body levers do the heavy lifting |
+| `slot_renumber` | 42 | 74 | +32 — **reclassification, not regression** (see below) |
 | `encode_fail` | 1 | 0 | |
 
-Drift by transform: `renumber` 110 → 64, `both` 103 → 66, and **`rotate` is 0 in both arms** —
+Drift by transform: `renumber` 176 → 107, `both` 165 → 119, and **`rotate` is 0 in both arms** —
 orientation-invariance was already sound and is preserved.
+
+> **Correction to an earlier draft of this document.** I first published these figures from 2 of 3
+> shards, as 62.0% → 73.5% and key-broken 39 → 8 (−79%). The third shard contained harder
+> molecules, so the absolute levels are lower and the key reduction is −73% rather than −79%. The
+> **delta held at exactly +11.5 points** across both reads, which is the quantity the promotion
+> decision rests on — but the partial absolutes should not stand as if final, so they are replaced
+> here rather than left in place.
 
 **The key-instability number is the one that matters most.** The comparison key is the harness's
 acceptance predicate and the basis of every accuracy figure this project reports. It goes from
