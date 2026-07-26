@@ -550,9 +550,23 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
 
     Deliberately additive: a ligand whose current perception is usable never enters
     this path, so nothing that already round-trips can move.
+
+    ``OIN_RESCUE_STUCK_RING`` (opt-in, default OFF): the loop below used to reject any
+    candidate with a "stuck" (unkekulizable-as-aromatic) ring outright, even when
+    ``_perception_is_usable`` -- which already calls ``kekulize_safe_sanitize`` and can
+    repair a stuck ring by de-aromatizing it -- says the candidate is fine. That made this
+    rescue loop *stricter* than the encoder's own repair path for no documented reason, and
+    it is why ``ASISAX`` (a Ni tetraaza-macrocycle whose only usable ligand charge, 0, has
+    stuck rings that de-aromatize cleanly) fell through to a hard `encode_fail` although a
+    usable perception existed. See ``docs/ENCODE_FAIL_v0.4.5.md``. Off by default: flipping it can
+    change which charge/candidate an *already-rescued* ligand lands on (the loop returns the
+    first hit in Huckel-distance order), so it is not proven byte-identical for every ligand
+    that currently reaches this loop -- only for ones that currently return nothing.
     """
     if best_res_mol is not None and _perception_is_usable(best_res_mol):
         return best_res_mol, charge
+
+    _permissive_stuck_ring = bool(os.environ.get("OIN_RESCUE_STUCK_RING"))
 
     ordered = sorted(range(-4, 5), key=lambda q: (abs(q - charge), q))
     for trial_charge in ordered:
@@ -565,7 +579,9 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
             continue
         if any(a.GetNumRadicalElectrons() for a in candidate.GetAtoms()):
             continue
-        if stuck_ring_atoms(candidate) or not _perception_is_usable(candidate):
+        if not _permissive_stuck_ring and stuck_ring_atoms(candidate):
+            continue
+        if not _perception_is_usable(candidate):
             continue
         logger.debug("re-perceived ligand at charge %d (was %d)", trial_charge, charge)
         resonance_forms = lig_checks(candidate, coordinating_atoms)
