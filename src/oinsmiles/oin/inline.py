@@ -1,6 +1,13 @@
 import re
 from typing import List, NamedTuple, Optional, Tuple
 
+from . import locked_donor
+
+#: A metal-locked nitrogen descriptor in a fragment SMILES (``[N@H]`` / ``[N@@H]``).
+#: Only nitrogen needs the guard below: RDKit keeps a trivalent phosphorus tag through
+#: sanitisation, and clears nitrogen's unconditionally.
+_LOCKED_N_TAG_RE = re.compile(r"\[N@")
+
 
 def _count_smiles_atoms_before(smiles: str, pos: int) -> int:
     """Return the 0-based index of the last SMILES atom seen before *pos*.
@@ -217,6 +224,19 @@ class OINInlineHandler:
                     if not mol:
                         # Fallback to simple replace
                         raise ValueError("Invalid SMILES")
+
+                    # A metal-locked amine descriptor (Y1 P3) would be deleted right
+                    # here. MolFromSmiles(sanitize=False) DOES read `[N@H]`, but the
+                    # MolToSmiles below re-runs assignStereochemistry(cleanIt=True)
+                    # whenever the mol has no `_StereochemDone`, and that call clears
+                    # trivalent-nitrogen chirality unconditionally -- correct for a free
+                    # amine, wrong for one the metal is holding. Mark perception done so
+                    # the tag the previous step deliberately set is carried through the
+                    # slot-marker round trip. Gated twice over: the lever must be on AND
+                    # this fragment must actually carry an N descriptor, so no other
+                    # fragment's serialization changes.
+                    if _LOCKED_N_TAG_RE.search(frag_smiles) and locked_donor.lever_enabled():
+                        mol.SetIntProp("_StereochemDone", 1)
 
                     # Apply Map Numbers = Slot + 1000 (normal) or + 2000
                     # (heading >) or + 3000 (heading <)
