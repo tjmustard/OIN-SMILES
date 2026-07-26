@@ -23,6 +23,7 @@ import warnings
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
+from ..utils.aromaticity import sanitize_allowing_boron_cage
 from .constants import TRANSITION_METALS_NUM
 
 logger = logging.getLogger(__name__)
@@ -472,7 +473,10 @@ class CIPAssigner:
             raise ValueError("mol must not be None")
 
         # Hard precondition — exception propagates to caller.
-        Chem.SanitizeMol(mol)
+        # Routed through the boron-cage-aware wrapper: with OIN_BORON_CAGE unset,
+        # or on any mol without a deltahedral cage, this is exactly
+        # Chem.SanitizeMol(mol) and propagates the same exceptions.
+        sanitize_allowing_boron_cage(mol)
 
         # MUST precede AssignStereochemistry: sets CHI_TETRAHEDRAL_CW/CCW from
         # the 3D conformer geometry.  Without this call, AssignStereochemistry

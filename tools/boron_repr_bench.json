@@ -1,0 +1,328 @@
+[
+  {
+    "head": {
+      "mol": "AVOFIB",
+      "frag_atoms": 22,
+      "frag_nB": 9,
+      "frag_nBB": 18,
+      "frag_maxBdeg": 6
+    },
+    "results": [
+      {
+        "repr": "A single / full sanitize",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 0 C, 5, is greater than permitted"
+      },
+      {
+        "repr": "B single / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "OK",
+        "smiles": "[H]B123B45([H])C67([H])C89([H])B1%10([H])B21%11([H])B342([H])B563([H])B784([H])B%1091([H])B2%1134[H]",
+        "smiles_len": 100,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          22,
+          22
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "C single / ^PROPERTIES ^KEKULIZE",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "OK",
+        "smiles": "[H]B123B45([H])C67([H])C89([H])B1%10([H])B21%11([H])B342([H])B563([H])B784([H])B%1091([H])B2%1134[H]",
+        "smiles_len": 100,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          22,
+          22
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "D B-B DATIVE / full",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 0 C, 5, is greater than permitted"
+      },
+      {
+        "repr": "E B-B UNSPECIFIED / full",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 0 C, 5, is greater than permitted"
+      },
+      {
+        "repr": "F single+pinned H / full",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 0 C, 5, is greater than permitted"
+      },
+      {
+        "repr": "G B-B ZERO / full",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 0 C, 5, is greater than permitted"
+      },
+      {
+        "repr": "H B-B ZERO / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 22,
+        "n_bonds": 36,
+        "sanitize": "OK",
+        "smiles": "[H][B]123~[B]45([H])~[B]67([H])C89([H])[B]~6%10%11([H])~B86%12([H])~[B]~18([H])(C296[H])~[B]~3~41([H])~[B]~7~5~%10([H])~[B]~%12~8~%11~1[H]",
+        "smiles_len": 138,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": false,
+        "atoms_before_after": [
+          22,
+          22
+        ],
+        "fp_before": "(22, (('B', 9), ('C', 2), ('H', 11)), ((\"(('B', 'B'), 'ZERO')\", 18), (\"(('B', 'C'), 'SINGLE')\", 6), (\"(('B', 'H'), 'SINGLE')\", 9), (\"(('C', 'C'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 2)))",
+        "fp_after": "(22, (('B', 9), ('C', 2), ('H', 11)), ((\"(('B', 'B'), 'SINGLE')\", 11), (\"(('B', 'B'), 'UNSPECIFIED')\", 7), (\"(('B', 'C'), 'SINGLE')\", 6), (\"(('B', 'H'), 'SINGLE')\", 9), (\"(('C', 'C'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 2)))",
+        "smiles_idempotent": false,
+        "smiles2": "[H]B123[B]456([H])[B]~17([H])C18([H])C9%10([H])[B]~2%11([H])[B]3~42([H])B~534([H])[B]%119~2([H])~B%1013([H])~B7864[H]"
+      }
+    ]
+  },
+  {
+    "head": {
+      "mol": "OZAREO",
+      "frag_atoms": 36,
+      "frag_nB": 12,
+      "frag_nBB": 30,
+      "frag_maxBdeg": 6
+    },
+    "results": [
+      {
+        "repr": "A single / full sanitize",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 13 B, 6, is greater than permitted"
+      },
+      {
+        "repr": "B single / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "OK",
+        "smiles": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])B1234B567([H])B89%10([H])B%11%12%13([H])B85%14([H])B%1158([H])B%12%11%15([H])B%139%12([H])B%1061([H])B%12%112([H])B5%153([H])B%14874[H]",
+        "smiles_len": 180,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          36,
+          36
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "C single / ^PROPERTIES ^KEKULIZE",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "OK",
+        "smiles": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])B1234B567([H])B89%10([H])B%11%12%13([H])B85%14([H])B%1158([H])B%12%11%15([H])B%139%12([H])B%1061([H])B%12%112([H])B5%153([H])B%14874[H]",
+        "smiles_len": 180,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          36,
+          36
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "D B-B DATIVE / full",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 22 B, 4, is greater than permitted"
+      },
+      {
+        "repr": "E B-B UNSPECIFIED / full",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "OK",
+        "smiles": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])[B]1234~[B]567([H])~[B]89%10([H])~[B]%11%12%13([H])~[B]~8~5%14([H])~[B]~%1158([H])~[B]~%12%11%15([H])~[B]~%13~9%12([H])~[B]~%10~6~1([H])~[B]~%12~%11~2([H])~[B]~5~%15~3([H])~[B]~%14~8~7~4[H]",
+        "smiles_len": 234,
+        "serialize": "OK",
+        "reparse": "resanitize AtomValenceException: Explicit valence for atom # 13 B, 5, is greater than permitted",
+        "roundtrip_graph_equal": false,
+        "atoms_before_after": [
+          36,
+          36
+        ],
+        "fp_before": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'UNSPECIFIED')\", 30), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), 'SINGLE')\", 1)))",
+        "fp_after": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'SINGLE')\", 19), (\"(('B', 'B'), 'UNSPECIFIED')\", 11), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), ",
+        "smiles_idempotent": false,
+        "smiles2": "[H]N(C(O)N(C([H])([H])[H])C([H])([H])[H])B1234B567([H])B89%10([H])B%11%12%13([H])B5~8%14([H])B1~65([H])B%11~%141([H])B2~56([H])B~%12~12([H])B9~%131([H])B3~%10~7([H])B26~1~4[H]"
+      },
+      {
+        "repr": "F single+pinned H / full",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 13 B, 6, is greater than permitted"
+      },
+      {
+        "repr": "G B-B ZERO / full",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "OK",
+        "smiles": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])[B]1234~[B]567([H])~[B]89%10([H])~[B]%11%12%13([H])~[B]~8~5%14([H])~[B]~%1158([H])~[B]~%12%11%15([H])~[B]~%13~9%12([H])~[B]~%10~6~1([H])~[B]~%12~%11~2([H])~[B]~5~%15~3([H])~[B]~%14~8~7~4[H]",
+        "smiles_len": 234,
+        "serialize": "OK",
+        "reparse": "resanitize AtomValenceException: Explicit valence for atom # 13 B, 5, is greater than permitted",
+        "roundtrip_graph_equal": false,
+        "atoms_before_after": [
+          36,
+          36
+        ],
+        "fp_before": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'ZERO')\", 30), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), 'SINGLE')\", 1)))",
+        "fp_after": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'SINGLE')\", 19), (\"(('B', 'B'), 'UNSPECIFIED')\", 11), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), ",
+        "smiles_idempotent": false,
+        "smiles2": "[H]N(C(O)N(C([H])([H])[H])C([H])([H])[H])B1234B567([H])B89%10([H])B%11%12%13([H])B5~8%14([H])B1~65([H])B%11~%141([H])B2~56([H])B~%12~12([H])B9~%131([H])B3~%10~7([H])B26~1~4[H]"
+      },
+      {
+        "repr": "H B-B ZERO / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 36,
+        "n_bonds": 54,
+        "sanitize": "OK",
+        "smiles": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])[B]1234~[B]567([H])~[B]89%10([H])~[B]%11%12%13([H])~[B]~8~5%14([H])~[B]~%1158([H])~[B]~%12%11%15([H])~[B]~%13~9%12([H])~[B]~%10~6~1([H])~[B]~%12~%11~2([H])~[B]~5~%15~3([H])~[B]~%14~8~7~4[H]",
+        "smiles_len": 234,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": false,
+        "atoms_before_after": [
+          36,
+          36
+        ],
+        "fp_before": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'ZERO')\", 30), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), 'SINGLE')\", 1)))",
+        "fp_after": "(36, (('B', 12), ('C', 3), ('H', 18), ('N', 2), ('O', 1)), ((\"(('B', 'B'), 'SINGLE')\", 19), (\"(('B', 'B'), 'UNSPECIFIED')\", 11), (\"(('B', 'H'), 'SINGLE')\", 11), (\"(('B', 'N'), 'SINGLE')\", 1), (\"(('C', 'H'), 'SINGLE')\", 6), (\"(('C', 'N'), 'SINGLE')\", 4), (\"(('C', 'O'), 'SINGLE')\", 1), (\"(('H', 'N'), ",
+        "smiles_idempotent": false,
+        "smiles2": "[H]N([C]([O])N(C([H])([H])[H])C([H])([H])[H])B1234[B]567([H])[B]89%10([H])[B]%11%12%13([H])[B]5~8%14([H])[B]1~65([H])[B]%11~%141([H])B2~56([H])[B]~%12~12([H])[B]9~%131([H])[B]3~%10~7([H])[B]26~1~4[H]"
+      }
+    ]
+  },
+  {
+    "head": {
+      "mol": "CAKBEW",
+      "frag_atoms": 40,
+      "frag_nB": 10,
+      "frag_nBB": 21,
+      "frag_maxBdeg": 6
+    },
+    "results": [
+      {
+        "repr": "A single / full sanitize",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 1 C, 6, is greater than permitted"
+      },
+      {
+        "repr": "B single / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "OK",
+        "smiles": "[H][C]1[C]([H])[C]([H])[C]([Si](C([H])([H])[H])(C([H])([H])[H])C2345C678B9%10%11([H])B6%12%13([H])B96%14([H])B%109%15([H])B6%10%16([H])B%12%146([H])B7%132([H])B6%103([H])B9%164([H])B8%11%155[H])[C]1[H]",
+        "smiles_len": 201,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          40,
+          40
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "C single / ^PROPERTIES ^KEKULIZE",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "OK",
+        "smiles": "[H][C]1[C]([H])[C]([H])[C]([Si](C([H])([H])[H])(C([H])([H])[H])C2345C678B9%10%11([H])B6%12%13([H])B96%14([H])B%109%15([H])B6%10%16([H])B%12%146([H])B7%132([H])B6%103([H])B9%164([H])B8%11%155[H])[C]1[H]",
+        "smiles_len": 201,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": true,
+        "atoms_before_after": [
+          40,
+          40
+        ],
+        "smiles_idempotent": true
+      },
+      {
+        "repr": "D B-B DATIVE / full",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 1 C, 6, is greater than permitted"
+      },
+      {
+        "repr": "E B-B UNSPECIFIED / full",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 1 C, 6, is greater than permitted"
+      },
+      {
+        "repr": "F single+pinned H / full",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 1 C, 6, is greater than permitted"
+      },
+      {
+        "repr": "G B-B ZERO / full",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "AtomValenceException: Explicit valence for atom # 1 C, 6, is greater than permitted"
+      },
+      {
+        "repr": "H B-B ZERO / ^PROPERTIES",
+        "note": "",
+        "n_atoms": 40,
+        "n_bonds": 59,
+        "sanitize": "OK",
+        "smiles": "[H][C]1[C]([H])[C]([H])[C]([Si](C([H])([H])[H])(C([H])([H])[H])C2345[B]678([H])~B29%10([H])~[B]2%11%12([H])C93%13[B]~239([H])~B%1342([H])~[B]~654([H])~[B]~2~35([H])~[B]~%11~92([H])~[B]~%10~%12~7([H])~[B]~8~4~5~2[H])[C]1[H]",
+        "smiles_len": 222,
+        "serialize": "OK",
+        "reparse": "OK",
+        "roundtrip_graph_equal": false,
+        "atoms_before_after": [
+          40,
+          40
+        ],
+        "fp_before": "(40, (('B', 10), ('C', 9), ('H', 20), ('Si', 1)), ((\"(('B', 'B'), 'ZERO')\", 21), (\"(('B', 'C'), 'SINGLE')\", 8), (\"(('B', 'H'), 'SINGLE')\", 10), (\"(('C', 'C'), 'SINGLE')\", 6), (\"(('C', 'H'), 'SINGLE')\", 10), (\"(('C', 'Si'), 'SINGLE')\", 4)))",
+        "fp_after": "(40, (('B', 10), ('C', 9), ('H', 20), ('Si', 1)), ((\"(('B', 'B'), 'SINGLE')\", 13), (\"(('B', 'B'), 'UNSPECIFIED')\", 8), (\"(('B', 'C'), 'SINGLE')\", 8), (\"(('B', 'H'), 'SINGLE')\", 10), (\"(('C', 'C'), 'SINGLE')\", 6), (\"(('C', 'H'), 'SINGLE')\", 10), (\"(('C', 'Si'), 'SINGLE')\", 4)))",
+        "smiles_idempotent": false,
+        "smiles2": "[H][C]1[C]([H])[C]([H])[C]([Si](C([H])([H])[H])(C([H])([H])[H])C2345C678B29%10([H])[B]2%11%12([H])B6~9%13([H])[B]~269([H])B7%132([H])[B]~67%13([H])B83~2([H])~B742([H])[B]5~%11~%10([H])B%1292~%13[H])[C]1[H]"
+      }
+    ]
+  }
+]

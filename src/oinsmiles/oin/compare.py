@@ -14,6 +14,7 @@ and ``OINInlineHandler`` so it can be imported without pulling in the heavy
 interactive verifier both use it.
 """
 
+import os
 import re
 
 import numpy as np
@@ -28,6 +29,12 @@ from .inline import OINInlineHandler
 # kekulizing. Skipping only that step lets the chelate-lock E/Z clearing run on
 # exactly the fragments that carry the ring-locked slash (see _parse_fragment).
 _NO_KEKULIZE = Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
+
+# Valence-check-free variants, used only by the OIN_BORON_CAGE rung in
+# _parse_fragment: a deltahedral cage boron is a well-formed graph node that
+# violates nothing but SANITIZE_PROPERTIES' valence table.
+_NO_VALENCE = Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES
+_NO_VALENCE_NO_KEKULIZE = _NO_VALENCE ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
 
 
 def _parse_fragment(smiles: str):
@@ -47,9 +54,26 @@ def _parse_fragment(smiles: str):
         return None
     try:
         Chem.SanitizeMol(mol, sanitizeOps=_NO_KEKULIZE)
+        return mol
     except Exception:
-        return None
-    return mol
+        pass
+    # Boron-cage rung (OIN_BORON_CAGE, default OFF). A deltahedral cage vertex is
+    # 5- or 6-connected, which violates only RDKit's valence *rule*; skipping
+    # SANITIZE_PROPERTIES canonicalizes the fragment properly instead of dropping it
+    # to the order-dependent ``RAW:`` string. Without this, a cage fragment's
+    # contribution to the key is the literal input SMILES, so two orderings of the
+    # same cage get different keys and the key stops meaning what it claims.
+    if os.environ.get("OIN_BORON_CAGE"):
+        for ops in (_NO_VALENCE, _NO_VALENCE_NO_KEKULIZE):
+            retry = Chem.MolFromSmiles(smiles, sanitize=False)
+            if retry is None:
+                break
+            try:
+                Chem.SanitizeMol(retry, sanitizeOps=ops)
+                return retry
+            except Exception:
+                continue
+    return None
 
 
 _METAL_STEREO_RE = re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
