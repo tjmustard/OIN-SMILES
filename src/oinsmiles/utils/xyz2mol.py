@@ -1253,8 +1253,14 @@ def get_oin_string(tmc_mol, xyz_coords):
     # 0. Opt-in axial / atropisomer token (Y2 P2). Computed HERE from the pristine input
     # conformer -- before _align_to_pai, whose principal-axis alignment may reflect the
     # coordinates and would corrupt the dihedral sign. Default OFF -> byte-identical output.
+    #
+    # Read as "0"-means-off rather than as a bare truthiness test: the plain test treated
+    # OIN_EMIT_AXIAL=0 as ON (a non-empty string), so the obvious way to spell "leave this
+    # opt-in lever alone" silently turned it on. This is the mirror of the on-by-default
+    # spelling used for OIN_EARLY_EXIT (`get(..., "1") != "0"`); default OFF is preserved and
+    # guarded by tests/unit/test_axial_emit.py::TestDefaultOff.
     _axial_suffix = ""
-    if os.environ.get("OIN_EMIT_AXIAL"):
+    if os.environ.get("OIN_EMIT_AXIAL", "0") != "0":
         from ..oin.axial import axial_token
 
         _tok = axial_token(tmc_mol)

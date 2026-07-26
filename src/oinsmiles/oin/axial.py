@@ -47,6 +47,142 @@ _ATROP_TWIST_LO = 20.0
 _ATROP_TWIST_HI = 160.0
 
 
+def _skeleton(mol: Chem.Mol) -> Chem.Mol:
+    """A bond-order-, charge- and aromaticity-erased copy: pure element connectivity.
+
+    **Why the ranks must not come from the molecule as perceived.** The descriptor is only
+    useful if the token an encoder computes from the deposited geometry can be compared
+    against the token a *generated* conformer yields. Those two mols are built by different
+    routes -- ``xyz2mol`` bond-order perception from distances on one side,
+    ``build_contract_mol``'s per-fragment transfer on the other -- and for a metalloporphyrin
+    they disagree about the macrocycle: the encoder reads an aromatic pyrrolide core on
+    Zn(II), the generated mol a neutral localized tautomer with dative bonds pointing the
+    other way. Canonical ranks computed on either mol therefore differ, which would pick a
+    *different* reference ortho neighbour on each side -- and the reference neighbour sets the
+    dihedral SIGN. Comparing two tokens defined against different references is not a
+    comparison at all: it can report a match for the mirror-image structure.
+
+    Erasing bond orders, charges and aromatic flags leaves the heavy-atom + explicit-H
+    connectivity, which the two routes do agree on. Ranks over that skeleton are therefore
+    identical for both perceptions of one structure, while remaining graph-derived -- so the
+    token stays invariant under input atom renumbering and under proper rotation, and still
+    flips only under reflection. ``tests/unit/test_axial_emit.py`` pins this as an explicit
+    perception-invariance guard.
+
+    **Metal bonds are dropped, not down-graded.** Turning a dative M-donor bond into a plain
+    single bond closes every chelate ring, and a bidentate biaryl (BINAP) then has its own
+    axis bond sitting *inside* the P-M-P ring -- ``IsInRing()`` becomes true and the axis
+    disappears. Dropping the bonds also sidesteps a second inconsistency: ``DATIVE``
+    direction is begin-to-end, and the two routes write it opposite ways round (the encoder
+    N->M, ``build_contract_mol`` M->N), so a rank that saw the bond at all would not be
+    route-independent anyway.
+    """
+    probe = Chem.RWMol(mol)
+    metal_bonds = [
+        (b.GetBeginAtomIdx(), b.GetEndAtomIdx())
+        for b in probe.GetBonds()
+        if b.GetBeginAtom().GetAtomicNum() in TRANSITION_METALS_NUM
+        or b.GetEndAtom().GetAtomicNum() in TRANSITION_METALS_NUM
+    ]
+    for i, j in metal_bonds:
+        probe.RemoveBond(i, j)
+    for b in probe.GetBonds():
+        b.SetBondType(Chem.BondType.SINGLE)
+        b.SetIsAromatic(False)
+    for a in probe.GetAtoms():
+        a.SetIsAromatic(False)
+        a.SetFormalCharge(0)
+        a.SetNoImplicit(True)
+        a.SetNumExplicitHs(0)
+    out = probe.GetMol()
+    out.UpdatePropertyCache(strict=False)
+    Chem.FastFindRings(out)
+    return out
+
+
+def _ranks(mol: Chem.Mol, *, break_ties: bool = False) -> list[int]:
+    return list(Chem.CanonicalRankAtoms(mol, breakTies=break_ties))
+
+
+def _axis_cut_ranks(skel: Chem.Mol, a1: int, a2: int) -> list[int]:
+    """Skeleton symmetry ranks with the axis bond ``a1-a2`` cut.
+
+    Stereogenicity and the reference-neighbour choice are properties of **one half** of the
+    molecule -- an end is non-stereogenic when rotating that half 180° about the axis
+    reproduces the structure -- so they are judged with the axis bond cut. Two reasons:
+
+    * **It removes a silent coin toss.** The reference ortho neighbour is ``max`` by rank, so
+      when the two ortho neighbours *tie* the winner is whichever the neighbour list happens
+      to yield first. The two candidates sit ~180° apart, so that choice sets the SIGN. Cut
+      ranks are strictly finer than intact ranks (cutting can only distinguish atoms the
+      intact graph merged), which resolves ties that carry real asymmetry.
+    * **It scopes the question correctly.** Whether *this* end has a local C2 must not depend
+      on what the far half looks like.
+
+    It is a refinement, not a repair: a graph automorphism is free to fix a pendant group
+    pointwise while permuting the ring it hangs off, so a cut rank can still tie where a
+    *geometric* rotation would disturb something remote. A 5,15-diarylporphyrin is exactly
+    that case -- the two pyrrole alpha carbons flanking a meso carbon tie either way, so the
+    meso-aryl axes are reported non-stereogenic. That verdict happens to be right (both the
+    syn and anti configurations are achiral, see
+    ``tests/unit/test_axial_emit.py::TestPorphyrinMesoAxesAreNotPerAxisStereogenic``), but it
+    is right for a weaker reason than a full automorphism analysis would give. Deciding
+    stereogenicity for axes *coupled* through a symmetric core needs that analysis; until it
+    exists the gate stays conservative and simply does not emit. See
+    ``docs/KNOWN_LIMITATIONS.md``.
+    """
+    cut = Chem.RWMol(skel)
+    cut.RemoveBond(a1, a2)
+    out = cut.GetMol()
+    out.UpdatePropertyCache(strict=False)
+    Chem.FastFindRings(out)
+    return _ranks(out)
+
+
+def _is_trigonal_ring_atom(a: Chem.Atom) -> bool:
+    """Is ``a`` a ring atom that can carry an inter-ring axis, judged from connectivity only?
+
+    Replaces an ``atom.GetIsAromatic()`` test that was **not** invariant across the two
+    perception routes (see :func:`_skeleton`): a porphyrin meso carbon reads aromatic when
+    the encoder perceives the deposited crystal geometry and *aliphatic* on the generated
+    side, so the meso-aryl axes of a tetra/di-arylporphyrin were detectable on the input and
+    invisible on every generated conformer -- the real cause of the multi-axis round-trip
+    failure (the generator does hold both twists; nothing could see them).
+
+    A ring atom bearing exactly **three heavy neighbours and no hydrogen** is trigonal:
+    with four valences to spend and only three sigma bonds it must hold a pi bond, so it is
+    sp2 whatever bond-order model perceived it. That is a strict *superset* of the previous
+    aromatic test -- an aromatic axis end always has two ring neighbours plus the axis
+    partner and no H, and an aromatic atom already carrying three ring bonds (a fusion atom)
+    has no valence left to bear an axis partner at all -- so no axis that used to be found is
+    lost. Metals are excluded so a dative M-donor bond is never mistaken for an axis.
+
+    Hydrogens are counted with ``includeNeighbors=True`` so the test reads the same whether
+    the caller's mol carries explicit H atoms (both pipeline routes do) or implicit counts.
+    """
+    if a.GetAtomicNum() in TRANSITION_METALS_NUM or not a.IsInRing():
+        return False
+    if a.GetTotalNumHs(includeNeighbors=True) != 0:
+        return False
+    heavy = sum(1 for n in a.GetNeighbors() if n.GetAtomicNum() > 1)
+    return heavy == 3
+
+
+def _ring_neighbors(a: Chem.Atom, across: int) -> list[Chem.Atom]:
+    """Ring neighbours of ``a`` other than the axis partner ``across`` (metals excluded).
+
+    The dihedral reference is picked from this set. For an aromatic axis end this is exactly
+    the set the previous ``GetIsAromatic()`` filter produced -- an axis end is never a ring
+    fusion atom (no spare valence), so its two ring neighbours lie in the one ring and share
+    its aromaticity -- but it survives a perception route that reads the ring as localized.
+    """
+    return [
+        n
+        for n in a.GetNeighbors()
+        if n.GetIdx() != across and n.IsInRing() and n.GetAtomicNum() not in TRANSITION_METALS_NUM
+    ]
+
+
 @dataclass(frozen=True)
 class AxialAxis:
     """A biaryl single-bond axis and its signed dihedral (atropisomer configuration)."""
@@ -74,6 +210,20 @@ def _is_atropisomer_candidate(a1: Chem.Atom, a2: Chem.Atom, dih: float) -> bool:
     * **ortho-walled** -- each ring end carries a heavy, non-aromatic, *non-metal* exocyclic
       ortho substituent (the steric wall). Metals are excluded so a chelated biaryl (ppy) is
       not mistaken for a hindered one on the strength of the M-C bond.
+
+    **This is the one part of the descriptor that still reads an aromatic flag**, and
+    deliberately so. Relaxing it is not safe in either direction: dropping the aromatic term
+    makes every twisted biphenyl "walled" (the ortho ring carbon itself becomes a wall), which
+    would emit conformational, non-configurational signs at scale; while tightening it to
+    "exocyclic substituent" alone would *stop* a meso-arylporphyrin qualifying, since its
+    porphyrin end is walled by the fused pyrrole rings rather than by a substituent.
+
+    The residual asymmetry it leaves is benign in the direction that matters. A generated mol
+    reads *fewer* atoms as aromatic, so it is *more* likely to call an axis hindered, never
+    less: the generator can therefore never quietly drop an axis the encoder asked for. It
+    could in principle report an extra one, which lengthens the token, fails the match, and
+    falls through to the unfiltered pool -- loud and non-regressive, never a silent wrong
+    answer. See ``docs/KNOWN_LIMITATIONS.md``.
     """
     if not (_ATROP_TWIST_LO <= abs(dih) <= _ATROP_TWIST_HI):
         return False
@@ -97,18 +247,23 @@ def _is_atropisomer_candidate(a1: Chem.Atom, a2: Chem.Atom, dih: float) -> bool:
 
 
 def detect_axial_axes(mol: Chem.Mol) -> list[AxialAxis]:
-    """Every inter-ring aromatic single bond, with its signed dihedral configuration.
+    """Every inter-ring conjugated single bond, with its signed dihedral configuration.
 
     RDKit does not nominate these from 3D (see module docstring), so we enumerate them
     ourselves. Returns ``[]`` when the mol has no conformer (nothing to sign).
 
-    **Canonicality.** The reference neighbour on each ring end is the ortho neighbour with
-    the highest *symmetry* rank (``breakTies=False``). Symmetry ranks depend only on the
-    molecular graph, so the choice -- and hence the dihedral sign -- is invariant under
-    input atom renumbering and under any proper rotation of the coordinates, and flips
-    under reflection. Tie-broken ranks must NOT be used here: RDKit breaks ties
-    arbitrarily between symmetry-equivalent atoms, which would pick a reference ~180° away
-    on one end of a symmetric biaryl and silently flip the sign.
+    An axis end must be a **trigonal ring atom** (:func:`_is_trigonal_ring_atom`) rather than
+    a *flagged-aromatic* one, because aromatic flags are not stable across the encoder's and
+    the generator's perception routes.
+
+    **Canonicality.** The reference neighbour on each ring end is the ortho ring neighbour
+    with the highest *symmetry* rank over the connectivity skeleton
+    (:func:`_skeleton_ranks`). Those ranks depend only on the molecular graph, so the choice
+    -- and hence the dihedral sign -- is invariant under input atom renumbering, under any
+    proper rotation of the coordinates, and under which bond-order model perceived the
+    molecule; it flips only under reflection. Tie-broken ranks must NOT be used here: RDKit
+    breaks ties arbitrarily between symmetry-equivalent atoms, which would pick a reference
+    ~180° away on one end of a symmetric biaryl and silently flip the sign.
 
     An end whose two ortho neighbours are symmetry-*equivalent* has a local C2 through the
     axis: rotating that ring 180° reproduces the molecule, so the axis is **not
@@ -118,18 +273,19 @@ def detect_axial_axes(mol: Chem.Mol) -> list[AxialAxis]:
     if mol.GetNumConformers() == 0:
         return []
     conf = mol.GetConformer()
-    sym = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
+    skel = _skeleton(mol)
     out: list[AxialAxis] = []
     for b in mol.GetBonds():
         if b.GetBondType() != Chem.BondType.SINGLE or b.IsInRing():
             continue
         a1, a2 = b.GetBeginAtom(), b.GetEndAtom()
-        if not (a1.GetIsAromatic() and a2.GetIsAromatic()):
+        if not (_is_trigonal_ring_atom(a1) and _is_trigonal_ring_atom(a2)):
             continue
-        n1 = [n for n in a1.GetNeighbors() if n.GetIdx() != a2.GetIdx() and n.GetIsAromatic()]
-        n2 = [n for n in a2.GetNeighbors() if n.GetIdx() != a1.GetIdx() and n.GetIsAromatic()]
+        n1 = _ring_neighbors(a1, a2.GetIdx())
+        n2 = _ring_neighbors(a2, a1.GetIdx())
         if not n1 or not n2:
             continue
+        sym = _axis_cut_ranks(skel, a1.GetIdx(), a2.GetIdx())
         # stereogenic only when neither ring end is symmetry-degenerate about the axis
         stereogenic = len({sym[n.GetIdx()] for n in n1}) == len(n1) and len(
             {sym[n.GetIdx()] for n in n2}
@@ -155,10 +311,11 @@ def detect_axial_axes(mol: Chem.Mol) -> list[AxialAxis]:
 def axial_token(mol: Chem.Mol) -> str:
     """Opt-in atropisomer token for the raw OIN string; ``""`` when no hindered axis.
 
-    The signs of every hindered, stereogenic axis, ordered by the *symmetry* ranks of the
-    axis atoms so the token depends only on the molecular graph plus the geometry -- not on
-    input atom order. One hindered axis (BINAP) -> ``"-"`` (R) / ``"+"`` (S). No qualifying
-    axis -> ``""`` (so ordinary molecules are completely unaffected by the flag).
+    The signs of every hindered, stereogenic axis, ordered by the skeleton *symmetry* ranks
+    of the axis atoms so the token depends only on the molecular graph plus the geometry --
+    not on input atom order, and not on which bond-order model perceived the molecule
+    (:func:`_skeleton_ranks`). One hindered axis (BINAP) -> ``"-"`` (R) / ``"+"`` (S). No
+    qualifying axis -> ``""`` (so ordinary molecules are completely unaffected by the flag).
 
     **The sort must never depend on the sign.** Symmetry-equivalent axes tie on symmetry
     rank, and an earlier version broke that tie with ``ax.sign`` to keep the string
@@ -173,8 +330,8 @@ def axial_token(mol: Chem.Mol) -> str:
     axes = [ax for ax in detect_axial_axes(mol) if ax.emits]
     if not axes:
         return ""
-    sym = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
-    tie = list(Chem.CanonicalRankAtoms(mol, breakTies=True))
+    skel = _skeleton(mol)
+    sym, tie = _ranks(skel), _ranks(skel, break_ties=True)
     axes.sort(
         key=lambda ax: (
             tuple(sorted((sym[ax.a1], sym[ax.a2]))),
