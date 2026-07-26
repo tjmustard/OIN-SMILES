@@ -87,12 +87,16 @@ if [ "$NEXT" = 2 ]; then
     cat <<'EOT'
   Finish Lane 2 (CRITICAL PATH — Lanes 5 and 6 are blocked on it).
     worktree ../oin-v045-lane2, branch swimlane/v045-lane2
-    1. DUDREA_comp_0 still drifts: [Y_SPY] -> [Y_TET] under pure atom renumbering.
-       Suspect the (i+1)**3 Z-moment weighting at utils/xyz2mol.py:971 and the
-       pivot np.min(candidates) at :941.
-    2. No A/B numbers exist yet. Measure with:
+    1. DUDREA_comp_0 is DIAGNOSED and FIXED behind OIN_STABLE_METAL_AC (commit
+       8bf9df61). It was never a slot-labelling problem: xyz2AC_obabel's
+       valence-capping loop iterated in atom-index order, so capping the metal
+       before vs after a bridging hydride decided whether the Y-H bond survived
+       (degree 5 / SPY vs degree 4 / TET). AC differed in 3/8 renumberings off,
+       0/8 on. STILL NEEDED: a corpus A/B, because this changes PERCEPTION and
+       capping the metal first can only ADD bonds the old order discarded.
+    2. Lane 2's own slot post-pass still has NO A/B numbers. Measure with:
          PYTHONPATH=$PWD/src <venv>/python tools/canonicality_probe.py --n 200 --trials 2
-       once with the lever off, once with OIN_CANONICAL_SLOTS=1.
+       once with levers off, once with OIN_CANONICAL_SLOTS=1.
     3. Over-folding guards NOT confirmed green — these are the whole risk:
          tests/unit/test_facmer_key.py  tests/integration/test_isomer_divergence.py
 EOT
