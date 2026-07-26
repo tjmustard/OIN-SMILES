@@ -666,6 +666,7 @@ AC2BO_STATS = {
     "over_cap_ordered_calls": 0,  # ... of which enumerated in heuristic order (lever ON)
     "over_cap_filtered_calls": 0,  # ... of which enumerated charge-feasible-only (lever ON)
     "over_cap_infeasible": 0,  # ... of which had NO feasible candidate at all (charge is wrong)
+    "over_cap_filter_unsupported": 0,  # ... of which the filter declined (metal in the fragment)
     "candidates": 0,  # candidate valence assignments examined, all branches
     "over_cap_candidates": 0,  # ... of which on the over-cap branch
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
@@ -814,6 +815,22 @@ def iter_ordered_valences(valences_list_of_lists, atoms):
 
 
 _CHARGE_FILTER_ENV = "OIN_VALENCE_CHARGE_FILTER"
+
+
+def charge_filter_supported(atoms):
+    """Can the charge filter reason about this fragment at all?
+
+    ``get_atomic_charge`` is called as ``get_atomic_charge(z, atomic_valence_electrons[z], v)``,
+    and the 30 transition metals have an ``atomic_valence`` entry (``[20]``) but **no**
+    ``atomic_valence_electrons`` entry -- so that lookup is a ``KeyError`` for them. The
+    default path hits the same wall later (via ``charge_is_OK``), but the filter would hit it
+    *before examining any candidate*, which would turn "crashes at candidate 1" into "crashes
+    at candidate 0" and, in the exotic case where no candidate ever reaches ``charge_is_OK``,
+    a working default into a crash. So an unsupported fragment declines the filter and takes
+    the historical enumeration instead. Strict dominance again: the lever must never make
+    anything worse.
+    """
+    return all(z in atomic_valence_electrons for z in atoms)
 
 
 def _charge_feasible_suffix_counts(order_atoms, order_choices):
@@ -1025,7 +1042,10 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
         # heuristic's order (measured WORSE; see docs/VALENCE_ORDER_v0.4.5.md), and
         # OIN_VALENCE_CHARGE_FILTER keeps the order but drops candidates that provably
         # cannot be valid. The filter wins if both are set, since it subsumes the question.
-        if _lever_enabled(_CHARGE_FILTER_ENV):
+        if _lever_enabled(_CHARGE_FILTER_ENV) and not charge_filter_supported(atoms):
+            AC2BO_STATS["over_cap_filter_unsupported"] += 1
+            candidate_source = itertools.product(*valences_list_of_lists)
+        elif _lever_enabled(_CHARGE_FILTER_ENV):
             AC2BO_STATS["over_cap_filtered_calls"] += 1
             feasible = iter_charge_feasible_valences(
                 valences_list_of_lists, atoms, charge, AC_valence

@@ -20,6 +20,7 @@ for the string ``"0"``, so the obvious way to opt out of a bare-truthiness lever
 ``OIN_VALENCE_ORDERED_FALLBACK=0`` must mean off.
 """
 
+import contextlib
 import itertools
 import os
 import random
@@ -234,6 +235,37 @@ class TestInfeasibleChargeFallsBackToTheHistoricalPath(unittest.TestCase):
         self.assertEqual(base_stats["over_cap_infeasible"], 0)
         self.assertTrue(np.array_equal(BO, base), "infeasible fallback changed best_BO")
         self.assertEqual(stats["candidates"], base_stats["candidates"])
+
+
+class TestChargeFilterDeclinesWhatItCannotReasonAbout(unittest.TestCase):
+    """A fragment containing a transition metal must not be made *worse* by the lever.
+
+    All 30 transition metals have an ``atomic_valence`` entry (``[20]``) and **no**
+    ``atomic_valence_electrons`` entry, so ``get_atomic_charge``'s call signature is a
+    ``KeyError`` for them. The filter would hit that before examining a single candidate.
+    """
+
+    def test_the_gap_this_guard_exists_for_is_real(self):
+        missing = [z for z in xl.atomic_valence if z not in xl.atomic_valence_electrons]
+        self.assertTrue(missing, "no element lacks a valence-electron count any more")
+        self.assertFalse(xl.charge_filter_supported([missing[0], 6]))
+        self.assertTrue(xl.charge_filter_supported([6, 7, 8, 1]))
+
+    def test_a_metal_bearing_fragment_takes_the_historical_path(self):
+        AC, atoms = chain_ac(17)
+        atoms = list(atoms)
+        atoms[0] = next(z for z in xl.atomic_valence if z not in xl.atomic_valence_electrons)
+        env = {xl._CHARGE_FILTER_ENV: "1", xl._FALLBACK_TRIES_ENV: "3"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            os.environ.pop(xl._ORDERED_FALLBACK_ENV, None)
+            xl.reset_ac2bo_stats()
+            with contextlib.suppress(KeyError):
+                # The default path raises this too, from charge_is_OK. What is asserted is
+                # only that the filter declined rather than crashing earlier than the default.
+                xl.AC2BO(AC, atoms, 0)
+            stats = dict(xl.AC2BO_STATS)
+        self.assertEqual(stats["over_cap_filter_unsupported"], 1)
+        self.assertEqual(stats["over_cap_filtered_calls"], 0)
 
 
 class TestOverCapLeverDefaults(unittest.TestCase):

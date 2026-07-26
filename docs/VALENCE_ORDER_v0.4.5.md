@@ -234,9 +234,17 @@ default OFF**:
 Both are read **only inside `if over_cap:`**, so sub-cap ligands — 99.8% of the corpus per the
 sibling lane's scan — cannot reach them and are byte-identical **by construction**, the same
 structural argument `OIN_VALENCE_FALLBACK_TRIES` rests on. Lever reads prefer
-`oinsmiles/oin/levers.py` when it is present (it is not on this branch's base) and otherwise use
-identical local semantics; either way `OIN_VALENCE_CHARGE_FILTER=0` **disables**, closing the
-sense-inversion trap that registry exists for.
+`oinsmiles/oin/levers.py` when it is present (it is **not** on this branch's base; it arrives with
+`trial/v045-merge2`) and otherwise use identical local semantics. Either way
+`OIN_VALENCE_CHARGE_FILTER=0` **disables**, closing the sense-inversion trap that registry exists
+for.
+
+That forward compatibility was checked rather than hoped for: dropping the registry file in and
+importing both from the package root and from the submodule resolves `_lever_enabled` to
+`oinsmiles.oin.levers` with **no circular import** (`oinsmiles/oin/` is a namespace package, so
+nothing re-enters `oinsmiles/__init__.py`), and unset still reads OFF because neither lever is in
+`_DEFAULT_ON`. When the registry lands, the local fallback can be deleted; until then it is not
+a duplicate of the registry, only of its two-line semantics.
 
 ### The filter is designed to be strictly dominant
 
