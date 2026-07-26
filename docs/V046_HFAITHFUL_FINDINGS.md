@@ -136,3 +136,61 @@ genuinely **different graph** between two conformers near the covalent-radius + 
 (`xyz2mol_local.py`), which bounds what any canonicalization can achieve — this is stated as
 out-of-scope in the v0.4.5 plan and remains true. The <30 s target is much closer: already 83.6%
 of succeeding molecules, median 6.9 s, p90 50 s.
+
+---
+
+# The <30 s tail: driver identified and quantified
+
+Previously this target was measured (83.6% of succeeding molecules ≤30 s, median 6.9 s, max
+277 s) but its cause was never attributed. It is **eta-ring winding**.
+
+Measured over the 634 succeeding molecules of the re-baseline, by presence of an eta winding
+marker (`{n>}` / `{n<}`) in the emitted OIN:
+
+| band | n | eta-winding present |
+|---|---|---|
+| ≤30 s | 530 | **19.8%** |
+| >30 s | 104 | **63.5%** |
+| 30–60 s | 51 | 58.8% |
+| 60–120 s | 30 | **76.7%** |
+| >120 s | 23 | 56.5% |
+
+A **3.2× enrichment** in the tail. This corroborates the earlier v0.4.4 finding that eta is 23% of
+molecules but 35.6% of CPU, and it locates the cost precisely.
+
+⚠ Deliberately a **string-presence count, not a timing measurement**. A 6-shard sweep was running
+at load 21–33 and `tools/v045_state.sh` states wall-clock is meaningless above ~12 — the same trap
+that already cost the timing half of the quick-mode probe. Marker presence is identical on an idle
+and a loaded machine, so this result survives the contention.
+
+Size is NOT the driver: the twelve slowest molecules are 73–139 atoms (35–66 heavy) against a
+6.9 s median at 2–3× smaller. The relationship is not one of scale.
+
+## The mechanism, and the fix candidate
+
+`metallogen_adapter.py`, in the pool-sizing block:
+
+```python
+needs_winding = bool(_eta_winding_multiset(getattr(parsed, "original_oin", None)))
+base_pool = ETA_SELECT_POOL if needs_winding else DEFAULT_SELECT_POOL
+pool_n = max(self.ensemble_size, base_pool)
+...
+if needs_winding:
+    uff_pool_size = max(uff_pool_size, 2 * pool_n)
+```
+
+An eta molecule pays a **wider select pool AND a 2× wider UFF pre-pool, committed UP FRONT**,
+because "winding-aware selection can only pick a winding that exists in the pool".
+
+The candidate fix is **incremental widening**: start at `DEFAULT_SELECT_POOL` and widen only if no
+conformer with an acceptable winding was found, rather than paying 2× for every eta molecule
+regardless. `OIN_EARLY_EXIT` (default-ON since v0.4.4) already short-circuits on the first
+accepted conformer, so molecules whose winding is sampled early would stop paying for a pool they
+never walk.
+
+**NOT implemented, and the honest reason:** the payoff depends on a number this probe cannot
+obtain under load — how many candidates an eta molecule typically walks before its winding
+matches. If matches usually come early, incremental widening is a large win; if they usually come
+late, it changes nothing and adds a retry path. That distribution needs an idle machine, so it is
+the first measurement to take once the 5k sweep finishes. Guessing which regime holds is exactly
+the error that produced four refuted hypotheses earlier in this release.
