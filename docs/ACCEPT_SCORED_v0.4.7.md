@@ -329,9 +329,98 @@ blocker.
 B 18/19 produced.** The one non-byte-exact molecule in each arm is AROHIA — the PREFILTER_VETO
 case of §2. So the lever does not degrade byte-exactness relative to input either.
 
-### 4.4 G2 — the independent re-perception arm
+### 4.4 G3 at its true denominator — this lane's own run
 
-*(pending — `l2-ab22` in flight; `ab_v2.json` predates the `indep` field)*
+`spec/handoffs/v0.4.7/runs/ab22.json`, 22 molecules, both arms, `--hard-cap 500`.
+
+**20 comparable · 20 byte-identical · 0 different · 0 one-arm · 2 neither.**
+
+The two `neither` are the **DEAD class** — `XIQKOY_comp_0` (`MetalloGen failed to generate any
+conformers via OIN-direct`) and `DEJHEF_comp_0` (`UncoordinatedFragmentError: Fragment 3 ('II')
+has no binding slot`). Both fail identically in both arms. That is a *named class*, not a hole
+in the evidence.
+
+`only one arm produced a string: 0` is the line that matters most here: it closes the concern
+that arm A's SIGKILLs were concealing a divergence. With the wider 500s cap, arm A completed
+GAVSED (`a0cbabdc832a6a63`) and QIDKUL (`563845a7fc3be79a`) — both matching arm B exactly, and
+both matching the *rescued* run's arm B, cross-run.
+
+**`sha_in` control: OK on all 22.**
+
+**Cross-run determinism, sha-level:** this lane's arm A vs the rescued run's arm A —
+**17 identical, 0 differ.** Independent processes, different tool builds, different caps. The
+A-vs-A′ control is therefore discharged as confirmation rather than a blocker: with 0 sha
+differences anywhere, the question it was guarding against does not arise.
+
+### 4.5 G2 — the independent re-perception arm. **This is where the lever costs something.**
+
+| metric | A default | B scored |
+|---|---|---|
+| `passed` (circular metric) | 19/22 | 19/22 |
+| **`indep_passed` / measured** | **15/20** | **7/20** |
+| credited by circular metric ONLY (`circular_only`) | 5 | **13** |
+| INDEP REGRESSIONS (A pass → B fail) | — | **8** |
+| INDEP FIXES | — | **0** |
+
+The eight: `KAQDOV`, `ZITSIE`, `FEXYOZ`, `DAKGON`, `RATPEK`, `MEDZUR`, `POVPIA`, `HIDCIH`.
+**All eight are key MISMATCHES, not exceptions** — re-perception succeeded and returned a
+different answer. None is a perception crash.
+
+**Note what the project's own metric sees: nothing.** `passed` is 19/22 in both arms, no
+regressions. The entire cost is invisible to the harness, which is precisely why the lever's
+docstring insisted this arm exists.
+
+#### The exact predictor — and the model it replaces
+
+My first model was "the GAP class regresses." That model has an exception (`YIZHIY_comp_0` is
+GAP-class and did **not** regress), and rather than wave it through, here is the model that has
+none:
+
+> **A molecule regresses on `indep` iff the lever returned a DIFFERENT conformer *and* arm A's
+> conformer had passed `indep`.**
+
+**Correct on 20/20 molecules that produced a structure in both arms.** ("Different conformer" =
+`clash_vdw` or `worst_overlap` differs; given the demonstrated determinism, identical values
+mean identical coordinates.)
+
+| bucket | n | outcome |
+|---|---|---|
+| different conformer **and** A passed `indep` | **8** | **all 8 regress** |
+| different conformer, A already failed `indep` | 4 | no change — already broken with the lever OFF (HEJXIF, WIWRIE, NOMMOU, QIDKUL) |
+| same conformer returned | 8 | no change — the lever changed nothing it could change (AROHIA, LIYXEY, ODEWID, QESRUE, XUPTAF, YIYGAP, **YIZHIY**, GAVSED) |
+
+**YIZHIY is explained, not excused:** the lever returned a bit-identical structure (same sha,
+same `clash_vdw`, same `worst_overlap`), so no outcome could differ. Its probe classification
+(`c@0, s@1`) is the smallest possible non-zero gap, too small for the pool to diverge.
+
+**The sharp form of the result:** when the lever changed the returned conformer, it *never once*
+found a different conformer that still passed independent re-perception — **8 of 8**. That is
+not a random quality drift; the strict test is doing real work, and the conformers it was
+holding out for are the only ones that satisfy it.
+
+#### Why G3 and G2 can both be true
+
+`sha256(smiles_2)` is byte-identical between arms while `worst_overlap` moves. So the lever
+returns a **different conformer that emits the same OIN string**. The notation is untouched;
+the geometry underneath it is not. Both gates are measuring honestly and they are measuring
+different things.
+
+#### ⚠ `indep` is NOT a pristine oracle — read `indep=False` carefully
+
+This belongs next to the number above, because `indep=False` is easy to over-read as "the
+structure is wrong":
+
+- **`ODEWID_comp_0` passes `indep` on the key but NOT on bytes.** Full re-perception renumbers
+  donor slots (`N{3}` ↔ `N{1}`) on a molecule that is otherwise a clean round trip. Scoring the
+  independent arm on bytes would have manufactured a failure.
+- **`AROHIA_comp_0` has the cheap and full encoders disagreeing in the *opposite* direction**
+  (`pass=False indep=True`) — full re-perception says it round-trips while the harness's own
+  scoring path says it does not.
+
+So the full `XYZToSMILES().convert()` path has its own presentation instabilities and its own
+disagreements with the cheap path. `indep=False` means "the two encoders disagree about this
+structure," which is strong evidence of a real difference but is not proof the geometry is
+wrong.
 
 ### 4.4 G4 — guard population
 
