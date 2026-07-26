@@ -1,8 +1,17 @@
 # `OIN_ACCEPT_SCORED` — promotion gates (v0.4.7, lane L2-promote)
 
-**Status: ALL FOUR GATES MEASURED. Recommendation: DO NOT PROMOTE (§5.4).** Results sections are filled as runs land. Method and mechanism are
-settled and are recorded here first, deliberately: they are the part that does not survive an
-interrupted session otherwise.
+**Status: ALL FOUR GATES MEASURED. Recommendation: DO NOT PROMOTE — keep default-OFF (§5.4).**
+
+Headline: the lever leaves the OIN string **byte-identical** (118/118 molecules) and degrades
+the **structure** underneath it — on a representative population, +28 vdW clashes, severe
+clashes 5→14, and independent re-perception lost on 26 molecules with **zero** recoveries. None
+of that moves the project's reported pass rate, which is itself the most important finding here
+(§4.7).
+
+> Two verdicts in this document were **reversed by later measurement**, and both reversals are
+> left visible rather than edited away: G1 read as a quality *improvement* on the gap-selected
+> 22 and inverts at population scale (§4.8); the recommendation was *promote-with-scope* at
+> commit `6c9b6d3d` and is now *do not promote* (§5.4).
 
 ---
 
@@ -170,7 +179,12 @@ nothing ever is.
 
 ## 4. Results
 
-### 4.1 G1 — structure quality. Measured for the first time. **B is better in aggregate and worse on two molecules.**
+### 4.1 G1 on the 22-cohort — measured for the first time. ⚠ **SUPERSEDED BY §4.8**
+
+> **Read §4.8 before drawing anything from this section.** Everything below is correct *for the
+> gap-selected 22*, and it does not generalise: the apparent aggregate improvement is a single
+> molecule (POVPIA), and at population scale G1 **inverts** to a clear degradation. Kept intact
+> because how the wrong conclusion arose is worth more than a tidy edit.
 
 > ⚠ **CORRECTION.** An earlier revision of this file (commit `9f6ba5ba`) concluded from a
 > **partial** log that "the quality cost is one clash on one molecule." That was wrong, and it
@@ -659,9 +673,13 @@ population run exposed it.**
 
 ### 5.2 The trade, stated in one line
 
-**Byte-identical notation, changed geometry.** The lever never alters the emitted OIN string
-(G3, 20/20). It does alter which conformer is returned, and when it does, that conformer stops
-surviving independent re-perception (G2, 8/8).
+**Byte-identical notation, degraded geometry.** The lever never alters the emitted OIN string —
+**118/118 molecules across both cohorts, 0 divergent**. It does alter which conformer is
+returned, on **35 of 98** population molecules, and among those: clashes ×3.2, severe clashes
+**0→9**, independent re-perception lost on **26 of 35**.
+
+The one-line version of the whole lane: **the identifier is preserved and the thing it
+identifies is not** — and the project's metric reports only the first half.
 
 ### 5.3 Two readings, and they genuinely differ
 
