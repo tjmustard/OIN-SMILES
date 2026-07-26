@@ -87,15 +87,27 @@ often and most visibly. A non-eta molecule with an unusually large rejected-conf
 its geometry/energy pick would show the same pattern — see the still-open `QIDKIZ_comp_0` question
 in the progress file.
 
+## Confirmed since the above was written
+
+Byte-identity: cisplatin, transplatin, ferrocene, POJJOP (full two-directional git-show A/B) and
+`QIDKUL_comp_0` (full two-directional A/B) all match SHA256 before/after. A second, independent
+`max_attempts=2` bounded run reproduced `reencode_oin_full_calls=2` on `QIDKUL_comp_0` post-fix,
+matching the pre-commit measurement.
+
 ## What's still open (see PROGRESS-perf.md for the live version)
 
-1. Confirm byte-identity (fix vs `git show HEAD:...` pre-fix) across eta + non-eta molecules —
-   in flight as this doc is written.
-2. Re-measure the stratified slow-tail sample with the fix in place, attempt-count-bounded (not
-   wall-clock-bounded — that approach wasted real session time chasing a moving contention
-   target), to quantify the aggregate win.
-3. The handoff's own named eta costs (scale sweep, pool width, no batching) are still real and
-   still unclaimed; revisit once this bigger confound is out of the measurement.
-4. Encode-side cost (`XYZToSMILES().convert()` itself measured 48-71s on this same molecule) is
-   out of this lane's scope but flagged: an eta molecule whose bare encode alone exceeds 30s
-   cannot hit the 30s round-trip target regardless of any generation-side fix.
+1. A broader attempt-count-bounded sweep over the full stratified 16-molecule sample (8 eta / 8
+   non-eta) was started and deliberately stopped after 1 molecule — each bounded attempt still
+   costs 1-3 minutes even post-fix, and the mechanism is already established by structural
+   reading of every code path between the two call sites, not just by sampling more molecules.
+   Re-run `run_attrib_final.sh` (see PROGRESS-perf.md §5) for a fuller per-molecule table.
+2. The handoff's own named eta costs (scale sweep, pool width, no batching) are still real and
+   still unclaimed; revisit now that this bigger confound is out of the measurement.
+3. Encode-side cost (`XYZToSMILES().convert()` itself measured 46-71s across repeated runs on this
+   same molecule) is out of this lane's scope but flagged: an eta molecule whose bare encode alone
+   exceeds 30s cannot hit the 30s round-trip target regardless of any generation-side fix. This
+   fix does NOT close the gap to 30s for QIDKUL_comp_0 or similar eta cases by itself — it removes
+   the single largest identified redundancy (roughly halving the reencode-dominated cost), not
+   the whole tail. See the final report for an honest per-class breakdown.
+4. `QIDKIZ_comp_0` (39 atoms, non-eta, 1641.4s) — still unexplained, still a good candidate to
+   check whether the SAME mechanism fires on a non-eta molecule.
