@@ -112,6 +112,54 @@ than deferred. Suspects, in order:
 3. `_align_to_pai`'s index-dependent pivot and `(i+1)**3` Z-sign (`utils/xyz2mol.py:941`,
    `:971`) — confirmed live by `DUDREA_comp_0`.
 
+## Follow-up, measured 2026-07-25 (later the same day)
+
+### One of the three mechanisms is now diagnosed to the line and fixed
+
+**`DUDREA_comp_0` — CLOSED behind `OIN_STABLE_METAL_AC`** (`swimlane/v045-lane2` @ `8bf9df61`).
+It was never a slot-labelling problem, which is why Lane 2's slot post-pass could not touch it.
+
+`xyz2AC_obabel`'s distance pass (`utils/xyz2mol_local.py:1194-1202`) is order-**free**: a symmetric
+comparison of the distance matrix against the covalent-radius sum. The **only** order-dependent
+step in AC perception is the valence-capping loop that follows, which iterated
+`for i in range(num_atoms)` — in input atom order. Capping atom *i* removes a bond, lowering some
+atom *j*'s count, so whether *j* still needs capping depends on whether *i* was visited first.
+
+This molecule is a Y borohydride whose bridging hydride is bonded to **both** B and Y, exceeding
+H's valence of 1. Cap Y first → the Y–H bond survives → metal degree 5 → geometry `SPY`. Cap that
+H first → it drops Y–H instead → degree 4 → `TET`. The losing contact was **not** the shortest:
+the metal has six hydrides at 2.298 / 2.300 / 2.328 / 2.379 / 2.408 / 2.421 Å and the one that
+flipped was 2.328 Å — so this was never "shortest wins", it was iteration order.
+
+Measured: the perceived AC differed in **3 of 8** random renumberings with the lever off and
+**0 of 8** with it on, metal degree settling consistently at 7.
+
+⚠ Not promotable on this evidence. It changes **perception**, and capping the metal first can only
+*keep* bonds the old order discarded — so coordination numbers can rise and geometries reclassify
+elsewhere in the corpus. Needs a corpus A/B before any default flip.
+
+### A hypothesis recorded earlier in this document's programme was WRONG
+
+I had reasoned, and told the Lane 8 agent in writing, that the 13% stereo-flip class was probably
+downstream of order-dependent bond-order perception and so would be fixed by Lane 1's
+`OIN_CANONICAL_PERCEPTION`. **Measured on the three worked examples, 3 trials × 3 transforms:**
+
+| levers | byte-stable | key-level defects remaining |
+|---|---|---|
+| all OFF | 0/3 | **3** |
+| `OIN_STABLE_METAL_AC` | 0/3 | **2** |
+| `+ OIN_CANONICAL_PERCEPTION` | 0/3 | 2 |
+| `+ OIN_CANONICAL_BODY + OIN_CANONICAL_SLOTS` (all four) | 0/3 | **2** |
+
+Only the metal-AC fix closes anything. **`FEQFIS_comp_0`'s stereo flip and `CEBVIR_comp_0`'s
+aromaticity collapse survive all four levers.** So the stereo class does **not** share a root with
+Lane 1's perception work, and Lane 8's independent investigation is genuinely required rather than
+redundant. Its WIP (`swimlane/v045-lane8` @ `8fdccb55`) should be finished, not folded into Lane 1.
+
+Scope caveat on this table: n = 3, deliberately the **hardest** hand-picked cases. It does not
+refute Lane 1's general result (6 fixed / 0 regressed over 250 molecules); it refutes only the
+specific claim that Lane 1's lever closes the stereo-flip class.
+
 ## Reproducing
 
 ```bash
