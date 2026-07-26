@@ -102,6 +102,19 @@ def _parse_fragment(smiles: str):
 _METAL_STEREO_RE = re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
 #: opt-in axial / atropisomer suffix ` |ax:+-|` (OIN_EMIT_AXIAL); folded out of the key.
 _AXIAL_TOKEN_RE = re.compile(r"\s*\|ax:[+\-]*\|")
+#: opt-in metal-centred Delta/Lambda suffix ` |mc:+|` (OIN_EMIT_METAL_CONFIG); folded out too.
+#:
+#: FOLDED, not compared, and deliberately so for now. The token is a NEW descriptor: the generator
+#: cannot yet reproduce a requested helicity, so comparing it would turn every emitting molecule
+#: into a round-trip failure the moment the lever is switched on -- converting a silent collapse
+#: into a loud one without fixing anything. Folding keeps lever-ON round trips honest about
+#: everything else while the generator side is built.
+#:
+#: ⚠ The fold must be REMOVED in the same commit that promotes OIN_EMIT_METAL_CONFIG, exactly as
+#: recorded for _AXIAL_TOKEN_RE. A key that folds an axis is not a valid acceptance predicate for
+#: that axis -- the Y2 lesson, and the reason P1 was a blind spot in the first place: the key has
+#: always folded metal stereo, so no round-trip measurement could ever have revealed the collapse.
+_METAL_CONFIG_TOKEN_RE = re.compile(r"\s*\|mc:[+\-]\|")
 
 
 def normalize_oin_for_comparison(oin_string: str) -> str:
@@ -143,6 +156,7 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     # harness is unaffected whether or not the emit flag is set. Y2 P2; see
     # docs/INJECTIVITY_Y2_FEASIBILITY.md.
     s = _AXIAL_TOKEN_RE.sub("", oin_string)
+    s = _METAL_CONFIG_TOKEN_RE.sub("", s)
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")
