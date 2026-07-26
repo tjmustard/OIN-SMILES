@@ -103,21 +103,35 @@ def _write_atoms(dst: Path, head, atoms) -> str:
 class _LeverBase(unittest.TestCase):
     """Set/restore ``OIN_EMIT_LOCKED_DONOR`` around each test.
 
-    ⚠ Also pins ``OIN_CANONICAL_BODY`` OFF, because the two levers are INCOMPATIBLE and
-    ``OIN_CANONICAL_BODY`` is default-ON as of v0.4.5. ``canonical_body_emit`` reparses the
-    ligand body through ``MolFromSmiles``/``MolToSmiles``, and sanitizing a *metal-free*
-    fragment clears the ``[N@]`` on a 2-degree amine -- RDKit sees a freely inverting amine,
-    which is the exact behaviour this descriptor exists to work around and the reason the tag
-    has to be restored from the parent geometry in the first place. So with both levers on the
-    descriptor is stamped and then thrown away, and all seven assertions below see a bare ``N``.
+    ⚠ Pins ``OIN_CANONICAL_BODY`` **OFF**, because the two levers are still INCOMPATIBLE and
+    ``OIN_CANONICAL_BODY`` is default-ON since v0.4.5. ``canonical_body_emit`` reparses the
+    ligand body, and sanitizing a *metal-free* fragment runs
+    ``AssignStereochemistry(cleanIt=True)``, which strips the chiral tag off a 2-degree amine as
+    a freely inverting nitrogen -- the exact RDKit behaviour this descriptor exists to work
+    around. With both on, the tag is stamped upstream and then discarded, so every assertion
+    below would see a bare ``N``.
 
-    Consequence, stated plainly rather than hidden behind this setUp: **P3 is not usable in the
-    shipped default configuration.** It is built, oracle-validated and passing here, but only
-    with ``OIN_CANONICAL_BODY=0``. Making it work alongside the canonical body means stamping
-    the tag *inside* ``canonical_body_emit``, before its final ``MolToSmiles`` -- which also
-    re-derives the donor marker positions, the machinery whose corruption silently mislabels
-    coordination. Deferred to v0.4.6 rather than rushed; recorded in ``oin/levers.py::_HELD_OFF``
-    alongside the identical ``OIN_H_FAITHFUL`` interaction.
+    **So P3 is not usable in the shipped default configuration.** Stated here rather than hidden,
+    because the pin makes this suite green against a configuration nobody ships.
+
+    ⚠ THE OBVIOUS FIX WAS TRIED IN v0.4.6 AND IS MEASURABLY WRONG. Copying the chiral tag onto
+    the reparsed donor (the correspondence is available -- ``_reparse_once``'s Guard 2 already
+    proves same element, same heavy degree) does make P3 emit under ``OIN_CANONICAL_BODY``, and
+    POJJOP passes. But setting a tag after the sanitize introduces a stereocentre the canonical
+    ranker did not account for, which changes the canonical WRITE ORDER -- and ``@``/``@@`` is a
+    parity relative to that order. On ``RIFGUJ_comp_2`` the three ring-CARBON tags then flip
+    between a structure and its mirror, and the geometry says they must not:
+    ``AssignStereochemistryFrom3D`` + ``rdCIPLabeler`` label those carbons lowercase ``s``
+    (pseudo-asymmetric, a RELATIVE all-cis descriptor) and read ``s`` identically for the
+    structure and its reflection.
+
+    ``TestMultiCentreDescriptor::test_flips_under_reflection`` and
+    ``TestLeverOnDivergesOnEnantiomers::test_three_locked_amines_all_invert_together`` are what
+    caught it. Single-centre POJJOP could not -- the Y2 lesson, intact.
+
+    A correct fix must preserve the tag WITHOUT perturbing the ranking: keep the donor bracketed
+    through the sanitize, or re-derive parity from the parent geometry once the write order is
+    fixed. See ``oin/canonical_body.py::_reparse_once`` and ``oin/levers.py::_HELD_OFF``.
     """
 
     def setUp(self):
@@ -379,5 +393,51 @@ class TestPlanIsRenumberingInvariant(_LeverBase):
         self.assertEqual(set(counts), {3}, f"eligibility drifted under renumbering: {counts}")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestRifgujRingCarbonsArePseudoAsymmetric(unittest.TestCase):
+    """The guard that killed the naive P3-under-canonical-body fix. Keep it.
+
+    RIFGUJ's three ring carbons are **pseudo-asymmetric**: they carry lowercase ``s``, a
+    RELATIVE (all-cis) descriptor, and reflecting the molecule does NOT change them. Any change
+    that makes the emitted string flip those carbons between a structure and its mirror is
+    rewriting stereochemistry the geometry says is fixed -- which is exactly what happened when
+    v0.4.6 tried to restore the locked-donor tag onto the reparsed fragment: setting a tag after
+    the sanitize moved the canonical write order, and ``@``/``@@`` is a parity relative to that
+    order.
+
+    Runs in the SHIPPED configuration (all v0.4.5 defaults, locked-donor lever off), so it does
+    not depend on either lever's state and cannot be pinned away.
+    """
+
+    def _cip(self, path):
+        from rdkit.Chem import rdCIPLabeler
+
+        mol, _ = get_tmc_mol(Path(path), 0, with_stereo=True)
+        Chem.AssignStereochemistryFrom3D(mol)
+        rdCIPLabeler.AssignCIPLabels(mol)
+        return [
+            (a.GetIdx(), a.GetProp("_CIPCode"))
+            for a in mol.GetAtoms()
+            if a.HasProp("_CIPCode") and a.GetSymbol() == "C"
+        ]
+
+    def test_geometry_says_the_ring_carbons_do_not_invert(self):
+        with tempfile.TemporaryDirectory() as d:
+            head, atoms = _read_atoms(RIFGUJ)
+            mir = _write_atoms(
+                Path(d) / "mirror.xyz",
+                head,
+                [(s, np.array([-c[0], c[1], c[2]])) for s, c in atoms],
+            )
+            base, mirror = self._cip(RIFGUJ), self._cip(mir)
+
+        self.assertEqual(len(base), 3, f"expected 3 ring-carbon centres, got {base}")
+        self.assertTrue(
+            all(code.islower() for _, code in base),
+            f"these must be pseudo-asymmetric (lowercase r/s), got {base}",
+        )
+        self.assertEqual(
+            [c for _, c in base],
+            [c for _, c in mirror],
+            "reflection must NOT change a pseudo-asymmetric descriptor -- if this fails, either "
+            "the fixture changed or something is now rewriting relative stereochemistry",
+        )

@@ -54,6 +54,7 @@ guards are load-bearing:
 from rdkit import Chem
 
 from .compare import _parse_fragment, canonical_fragment_body
+from .hydrogen import h_faithful_smiles
 
 __all__ = ["canonical_body", "canonical_body_emit"]
 
@@ -176,7 +177,20 @@ def _reparse_once(mol, donors):
     work = Chem.RWMol(mol)
     for k, d in enumerate(donors):
         work.GetAtomWithIdx(d).SetAtomMapNum(k + 1)
-    mapped = Chem.MolToSmiles(work, isomericSmiles=True, canonical=True)
+    # h_faithful_smiles, NOT Chem.MolToSmiles. This write is the one that decides the emitted
+    # body, so a plain MolToSmiles here silently discards the OIN_H_FAITHFUL repair applied
+    # upstream at xyz2mol.py -- the caller overwrites its H-faithful string with whatever this
+    # function returns. That is why the two levers were mutually exclusive.
+    #
+    # Safe by construction: h_faithful_smiles returns plain MolToSmiles output verbatim when
+    # OIN_H_FAITHFUL is off, so with the shipped default this line is byte-identical. When the
+    # lever IS on it can only change a string whose atom count was already measurably wrong.
+    #
+    # It also makes the composition guard below reachable in the useful direction: a fragment
+    # whose bare 0-H symbol used to re-read one hydrogen heavier failed `_composition`, so the
+    # whole reparse was discarded and the fragment kept a non-canonical body. Repairing the H
+    # first lets those fragments canonicalize instead of being rejected.
+    mapped = h_faithful_smiles(work, isomericSmiles=True, canonical=True)
     if not mapped:
         return None
 
@@ -228,12 +242,40 @@ def _reparse_once(mol, donors):
 
     _clear_chelate_locked_stereo(reparsed, new_donors)
 
+    # ⚠ DO NOT restore the metal-locked donor tag here. Tried in v0.4.6 and MEASURED WRONG.
+    #
+    # The idea was obvious and the correspondence is available: Guard 2 above has already proven
+    # donors[k] <-> new_donors[k] (same element, same heavy degree), so copying the chiral tag
+    # from `mol` onto `reparsed` looks safe and does make P3 emit under OIN_CANONICAL_BODY.
+    # POJJOP passes. It is still wrong.
+    #
+    # Setting a chiral tag AFTER the sanitize adds a stereocentre the canonical ranker did not
+    # know about, which changes the canonical WRITE ORDER -- and `@`/`@@` is a parity relative to
+    # that order, not an absolute label. On RIFGUJ_comp_2 (three Cu-bound amines on one
+    # cyclohexane) the three ring-CARBON tags then flip between a structure and its mirror.
+    # The geometry says they must not: AssignStereochemistryFrom3D + rdCIPLabeler give those
+    # carbons lowercase `s` -- pseudo-asymmetric, i.e. a RELATIVE (all-cis) descriptor -- and
+    # they read `s` identically for the structure AND its reflection. So the restoration
+    # silently rewrote carbon stereochemistry that should have been untouched.
+    #
+    # tests/unit/test_locked_donor.py::TestMultiCentreDescriptor::test_flips_under_reflection and
+    # ::test_three_locked_amines_all_invert_together are what caught it; the single-centre POJJOP
+    # fixture could not, which is the Y2 lesson intact.
+    #
+    # A correct fix has to make the reparse preserve the tag WITHOUT perturbing the ranking --
+    # e.g. keep the donor bracketed through the sanitize, or re-derive parity from the parent
+    # geometry after the write order is fixed. Until then OIN_EMIT_LOCKED_DONOR stays
+    # incompatible with OIN_CANONICAL_BODY, as recorded in oin/levers.py::_HELD_OFF.
+
     # Clear BEFORE the final emit: the body must be a pure canonical SMILES of the
     # reparsed graph, with no `:k` residue for the inline handler to trip over.
     for atom in reparsed.GetAtoms():
         atom.SetAtomMapNum(0)
 
-    smiles = Chem.MolToSmiles(reparsed, isomericSmiles=True, canonical=True)
+    # h_faithful_smiles, NOT Chem.MolToSmiles: THIS is the write whose output becomes the
+    # emitted body, so a plain MolToSmiles here discards the OIN_H_FAITHFUL repair no matter
+    # what the intermediate pass did. Byte-identical when that lever is off.
+    smiles = h_faithful_smiles(reparsed, isomericSmiles=True, canonical=True)
     if not smiles:
         return None
     return smiles, new_donors, reparsed
