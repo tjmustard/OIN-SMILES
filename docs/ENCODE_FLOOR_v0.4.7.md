@@ -33,11 +33,11 @@ regimes, and is off by a factor of ~100 for another.
 
 The two slowest molecules measured in this lane are both **R3**:
 
-| molecule | encode wall (ADVISORY) | `_AC2BO_core` | share | `_ordered_valences` |
-|---|---:|---:|---:|---:|
-| `XIRMER_comp_0` | 1235.54 s | 46.69 s | **3.8 %** | 0.698 s (0.06 %) |
-| `NAKLET_comp_0` | 1160.92 s | 10.01 s | **0.9 %** | 0.158 s (0.01 %) |
-| `HACYEQ_comp_0` | 54.89 s | 0.13 s | **0.2 %** | 0.084 s (0.15 %) |
+| molecule | encode wall (ADVISORY) | `_AC2BO_core` | share | what the rest is |
+|---|---:|---:|---:|---|
+| `XIRMER_comp_0` | 1235.54 s | 46.69 s | **3.8 %** | **3 forked resonance timeouts = 95.8 %** (§4.1) |
+| `NAKLET_comp_0` | 1160.92 s | 10.01 s | **0.9 %** | forked resonance (child observed via `ps`) |
+| `HACYEQ_comp_0` | 54.89 s | 0.13 s | **0.2 %** | **1 forked resonance, `ok`, = 90.2 %** (§4) |
 
 > **A slow encode is not evidence of an over-cap ligand** — the v0.4.5 lane already said
 > this. Stronger version, measured here: *a slow encode is not evidence of `AC2BO` at all.*
@@ -289,12 +289,43 @@ times on `AGUFEN` and **12** on `LEZWAO` with zero forks — those ligands sit b
 `_resonance_needs_isolation`'s thresholds, so the ladder's repetition is only expensive
 once a fragment is large enough to be isolated.
 
-For `XIRMER_comp_0` and `NAKLET_comp_0` the fork counters were not captured (the
-instrumentation post-dates those runs); the evidence there is `ps` showing the attribution
-process with a **forked child several minutes old**, plus `_AC2BO_core` accounting for only
-3.8 % and 0.9 % of their ~20-minute encodes. Capturing their fork status histogram is the
-single most valuable next measurement — it decides whether they are `ok`-but-slow like
-`HACYEQ` or repeated `timeout`s, and those two want different fixes.
+### 4.1 `XIRMER_comp_0` — the cause, finally
+
+Re-run with the fork counters:
+
+```
+FORKED RESONANCE: lig_checks=3 forks=3 status={'timeout': 3} wall=988.18s (95.8% of encode)
+_AC2BO_core calls=3  sum(wall_core)=39.90s (3.9% of encode)
+_ordered_valences total = 0.000s (0 calls)
+```
+
+**Three ladder rungs, three forks, all three `timeout`** — each burns the full 120 CPU-second
+budget and returns nothing, so the caller degrades to the single perceived form each time.
+988.18 s of a 1031.40 s encode: **95.8 %**. That is the answer to "sub-cap, >35 minutes,
+forks a child, cause never identified".
+
+And the three forks are doing the *same* work on the *same* fragment: this molecule has one
+ligand fragment (`_canonical_atom_permutation` reports **1 distinct** AC across all three
+`AC2BO` calls), and the rungs differ only in `(charge, allow_carbenes)` —
+`(-2, True)`, `(-2, False)`, `(-4, True)`. The encode pays `3 × 120` CPU seconds to learn
+the same thing three times.
+
+**The obvious fix and its catch.** Caching "this fragment's resonance enumeration times
+out" within one encode would cut XIRMER's floor by ~2/3. The catch is that `lig_checks`
+receives the *perceived* `lig_mol`, whose bond orders differ per rung — so a key on the
+fragment's connectivity is not obviously sound (a different resonance starting point could
+in principle terminate where another does not), while a key on the fully-perceived mol may
+simply never hit. **Which of those is true is a measurement nobody has made**, and it is
+the single highest-value next step for the encode floor. It is a correctness question, not
+a caching one, and it should not be shipped on the strength of the argument above.
+
+Also worth noting from this run: post-change, XIRMER's `AC2BO_STATS` are
+`candidates=12288 matching=4096 found_valid=0` — **identical** to the pre-change run, and
+`ordered_len` now reports `-` (the lazy path), giving a byte-identity data point on a
+17-minute molecule for free.
+
+For `NAKLET_comp_0` the fork counters were not captured; the evidence there is `ps` showing
+a forked child several minutes old plus `_AC2BO_core` at 0.9 % of its ~19-minute encode.
 
 The CPU bound is deliberate and correct (it makes the *outcome* load-independent), but it
 means R3's wall cost under contention is `k × 120` CPU-seconds stretched by the load
@@ -303,15 +334,17 @@ factor — at load 45 on 12 cores, a 120 CPU-second child can take ~8 wall minut
 **This, not `AC2BO`, is where the remaining encode floor work is.** Candidate directions,
 none measured by this lane and none of them free:
 
-1. Memoize `lig_checks`' resonance enumeration on the ligand graph across ladder rungs —
-   the ladder varies `charge`, but `ResonanceMolSupplier` is run on the *perceived*
-   `lig_mol`, so distinctness has to be measured before assuming it is redundant.
-2. Cache the `timeout` verdict per ligand graph within one encode: once a fragment has
-   burned 120 CPU-seconds and been declared a hang, later rungs re-fork and burn it again.
-   This is the cheapest-looking of the three and is the recommended next probe.
+1. **Cache the `timeout` verdict within one encode** — measured to be worth ~2/3 of
+   `XIRMER`'s entire encode (§4.1). Recommended next probe, with the soundness question
+   spelled out there. Measure first whether the perceived `lig_mol` actually repeats across
+   rungs; if it does, the key is sound and the win is free.
+2. Memoize the enumeration *result* (not just the verdict) across ladder rungs — same
+   distinctness question, larger payoff on `HACYEQ`-like molecules whose forks return `ok`.
 3. Lower `_RESONANCE_CPU_BUDGET_S`. **Not byte-identical** — a child that would have
    completed at 119 s now returns `timeout` and the caller degrades to the single perceived
-   form, which can change the emitted OIN. Would need its own fidelity A/B.
+   form, which can change the emitted OIN. Would need its own fidelity A/B. Note `HACYEQ`'s
+   fork returns `ok` after ~29 s, so a budget cut aimed at `XIRMER` would risk exactly the
+   molecules that currently succeed.
 
 ---
 
