@@ -28,11 +28,16 @@ ordered 4-tuple (:func:`chirality_index`), which is permutation-invariant by con
 * **invariant under proper rotation** — the triple product carries ``det R = +1``;
 * **inverts under reflection** — an improper operation flips it, dot products unchanged;
 * **invariant under any donor relabelling** — measured identical over 6 random permutations;
-* **exactly 0 for an achiral arrangement** — a perfect square and an ideal octahedron both return
-  ``+0.000e+00``. Achirality falls OUT of the index instead of needing a planarity test beside it,
-  which is why square-planar ``JEGKOW`` emits nothing without a special case. That is chemically
-  right: its coordination plane is a mirror plane, so four different donors give diastereomers,
-  and the correct distinctness operator there is a donor swap, not reflection.
+* **exactly 0 for an IDEALIZED achiral arrangement** — a perfect square and an ideal octahedron
+  both return ``+0.000e+00``.
+
+  ⚠ THAT DOES NOT EXTEND TO REAL STRUCTURES, and reading it as though it did cost a wrong turn.
+  Crystallographic pucker in an achiral sphere produces an index of the same ORDER OF MAGNITUDE as
+  genuine helicity: measured, achiral square-planar ``JEGKOW`` reads ``-3.287e-04`` against chiral
+  ``ZUMNEC``'s ``-4.807e-04`` — 1.5x apart. So achirality does NOT "fall out of the index", no
+  magnitude threshold separates the two, and the achirality decision is made separately by
+  :func:`is_achiral_chelate_aware` (a symmetry test). ``JEGKOW`` emits nothing because of that
+  symmetry test, not because its index is small.
 
 A caution the index also exposed: a signed volume of four LABELLED points is non-zero for any
 non-coplanar set, so the old form reported handedness for a *regular* tetrahedron — which is
@@ -44,14 +49,26 @@ precedent: it survives the parser (``generation/oin_parser.py`` already strips s
 leaves ``[El_GEO]`` untouched so ``METAL_REGEX`` and ``_METAL_STEREO_RE`` are unaffected, and it
 cannot collide with a ligand body.
 
-STATUS — DESCRIPTOR AND VALIDATION ONLY, NOT WIRED TO EMIT
-==========================================================
-This module computes and validates the descriptor. It is deliberately **not** yet called from
-``xyz2mol.py``'s emit path, and no lever turns it on, because emitting it is the half that
-requires the generator to reproduce what it emits — the trade recorded for every
-information-ADDING lever in ``levers.py::_HELD_OFF``. Wiring is the next increment; the
-three-property proof has to come first, because the Y2 wave shipped an axial descriptor that
-was accidentally reflection-invariant and every single-fixture guard passed.
+STATUS — WIRED END TO END, LEVER DEFAULT OFF
+============================================
+Superseded an earlier "descriptor and validation only, NOT wired to emit" note that stayed in this
+docstring after the wiring landed. The current state is:
+
+* emit — :func:`token_for_mol` is called from ``xyz2mol.py`` (the ``OIN_EMIT_METAL_CONFIG`` block,
+  around line 1391), computed from the PRISTINE input conformer beside the axial token and for the
+  same reason: ``_align_to_pai`` below may REFLECT the coordinates, and a reflection inverts a
+  chirality descriptor. Appended as a trailing sidecar at the single return site.
+* key — folded by ``compare.py::_METAL_CONFIG_TOKEN_RE``, with the un-fold obligation recorded
+  there. A key that folds an axis is not a valid acceptance predicate for that axis; that is
+  precisely why P1 was a blind spot at all.
+* generator — ``metallogen_adapter``'s ``accept_fn`` requires ``token_for_mol(cmol) == target_mc``.
+  This must exist SEPARATELY from the key check, because the key folds the token: a key match says
+  nothing about helicity, so accepting on it alone would return the wrong enantiomer while
+  reporting success.
+
+``OIN_EMIT_METAL_CONFIG`` remains DEFAULT OFF, for the standard information-ADDING reason recorded
+in ``levers.py::_HELD_OFF`` — the generator must reproduce what is emitted, so promoting converts a
+silent collapse of Δ/Λ enantiomers into a loud round-trip failure.
 """
 
 from __future__ import annotations
@@ -344,6 +361,13 @@ def is_achiral_chelate_aware(donor_positions, groups, tol: float = _ACHIRAL_RMSD
     """
     pts = np.asarray(donor_positions, dtype=float)
     if pts.ndim != 2 or pts.shape[0] < 4 or pts.shape[1] != 3:
+        return True
+    # Bounds the exhaustive permutation search, and guards the _INTERNALS lookup below, which is
+    # precomputed for denticities 1-6 only. Without this a 7-denticity chelate raised KeyError
+    # inside _admissible_permutations and was swallowed by token_for_mol's blanket except, silently
+    # emitting no descriptor. Returning True (assume achiral -> emit nothing) reaches the same
+    # outcome DELIBERATELY rather than by accident.
+    if pts.shape[0] > _MAX_PERM_DONORS or any(len(g) > max(_INTERNALS) for g in groups):
         return True
     mirrored = pts.copy()
     mirrored[:, 0] *= -1.0
