@@ -632,6 +632,22 @@ Against the 22-cohort's 8/15 = **53%** upper bound: the population rate is rough
 selected-cohort rate, exactly as a gap-selected cohort predicts — **but it is 29.5%, not 3%.**
 The 22-cohort exaggerated the magnitude; it did not invent the effect.
 
+> **Does the lower population rate soften the G2 FAIL and warrant revisiting the
+> recommendation? No — and the recommendation got firmer, not softer.** Three reasons, stated
+> because the question is the right one to ask:
+>
+> 1. **29.5% is not a small number.** Nearly one molecule in three that survives an independent
+>    re-derivation with the lever off stops surviving it with the lever on. Halving 53% lands on
+>    "large", not on "noise".
+> 2. **The denominator is the wrong one to be reassured by.** The lever only *acts* on 35 of 98
+>    molecules; on the other 63 it returns a bit-identical structure and cannot cost anything.
+>    Conditioned on the lever actually doing something, the regression rate is **26/35 = 74%**,
+>    which is *higher* than the gap-selected cohort's headline. The population rate is diluted by
+>    molecules the lever never touched, not by molecules it touched harmlessly.
+> 3. **G1 moved the other way.** The gap-selected cohort was flattering G1, not just G2. Widening
+>    the cohort softened G2 and **inverted G1** from a net improvement to a clear degradation.
+>    The net effect of widening is a *worse* case for promotion, not a better one.
+
 Still **perfectly one-way: 0 fixes in 100 molecules.** Across both cohorts, 34 regressions and
 **zero** instances of the lever finding a different conformer that still passed.
 
@@ -847,15 +863,67 @@ as a separate lever: *"accept the first conformer the score credits **that still
 attached.**"* It preserves the speedup exactly where the speedup lives (haptic molecules) instead
 of scoping the lever away from them.
 
-**The outstanding test, which needs compute and is deferred behind G4:** run the prototype
-against arm A's and arm B's *accepted conformers* for the six and confirm it separates them in
-practice, not only in principle. §6.2 makes the outcome near-certain, but "near-certain by
-reading" is exactly the confidence level this project has been burned by — and the falsifying
-observation is cheap. **If the predicate cannot separate them, this section is wrong and the
-proposal dies.**
+**The outstanding test, still owed:** run the prototype against arm A's and arm B's *accepted
+conformers* for the six and confirm it separates them in practice, not only in principle. §6.2
+makes the outcome near-certain, but "near-certain by reading" is exactly the confidence level
+this project has been burned by — and the falsifying observation is cheap. **If the predicate
+cannot separate them, this section is wrong and the proposal dies.**
+
+**Run it on L1's frozen cohort (§7.3), which is 60% eta**, rather than on a fresh draw — the
+claim is specifically about haptic coordination, so the cohort should concentrate that mechanism
+rather than dilute it.
 
 Independently valuable: the same check would close the §4.7 measurement defect, which exists
 whether or not the lever ships.
+
+---
+
+## 7. Cross-references to sibling v0.4.7 lanes
+
+### 7.1 L4 explains *why* `timeout` is advisory — the mechanism behind the cap overruns
+
+Every run in this document applies a **hard wall-clock SIGKILL** (`--hard-cap`) rather than
+trusting the generator's `timeout`, because the generator was measured overrunning it (60s
+requested, 60.7–137.9s spent). **L4 found the mechanism**, and it is worth recording next to
+these numbers:
+
+- `generate_3d_structures` checks its deadline **only between attempts, never within one**;
+- the CBC bond-order solve has **no `timeLimit` at all**
+  (`generator3d/utils/compute_chg_and_bo_pulp.py:253-259`);
+- one single **cache-hit** attempt was measured at **91.45 s**.
+
+So a single attempt can blow any budget arbitrarily, and no deadline check will interrupt it.
+This vindicates the hard SIGKILL as the only real enforcement — and it means the `KILLED at hard
+cap` rows in these runs are a property of the generator, not of load. It also explains the
+duplicate `KILLED` journal lines (the killer prints once per poll cycle while reaping): the
+**JSON row counts are authoritative**, 100 + 100 for the guard run against 203 journal lines.
+
+### 7.2 L4 independently reproduced the discipline this lane used — and it paid off twice
+
+- L4's first fail-fast predicate (a bare boron-cage motif check) was **refuted by
+  `RAWJEG_comp_0`**, which carries the motif and generates fine in 2.5 s. Same shape as this
+  lane's refuted "GAP class regresses" model (§4.5) and refuted "the `indep` failures are
+  cosmetic" hypothesis (§4.5).
+- L4 took this lane's **`_coordination_vectors` warning** (§6.1 — never build a predicate on
+  anything the generator constructs) and built its predicate to read **only the parsed OIN
+  string**. The finding propagated correctly across lanes, which is the outcome §6.1 was written
+  for.
+
+### 7.3 L1's frozen cohort is the right population for §6.5's outstanding test
+
+The one falsification still owed on the attachment check (§6.5) needs a population larger than
+the 22. **Use L1's frozen cohort**, not a fresh draw:
+
+```
+top-100 · cutoff 93.06s · max 299.44s · bands A=27 / B=67 / C=6 · eta 60/100
+ARM2 golden MANIFEST_SHA256=6f61359bc61af48943e773031f913698005c9c02ef2d893511e36325fc4ab794
+#DONE 100
+```
+
+**eta 60/100 makes it especially well suited**: the attachment check's entire claim is about
+haptic coordination (§6.2, 6 of the 8 failure modes), so a cohort that is 60% eta exercises
+exactly the mechanism under test rather than diluting it — the opposite of the mistake §4.8
+caught in G1.
 
 ---
 
