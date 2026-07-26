@@ -21,11 +21,42 @@ OIN-implied atom count against the input XYZ (generator-free):
 | `OIN_H_FAITHFUL=0`, canonical body ON | 8 | 37 |
 | `OIN_H_FAITHFUL=1`, canonical body ON | **8** | **37** |
 
-Identical. **The atom-count class is not a serialization defect.** `h_faithful_smiles` guarantees
-only that a string re-reads with the hydrogens it was *written* with; if the perceived molecule
-already disagrees with the input XYZ, the string faithfully describes a wrong graph and no
-emit-side change can help. This is the phantom-hydrogen class, and it lives in perception
-(`get_lig_mol` / `AC2BO`), not in `MolToSmiles`.
+Identical. `h_faithful_smiles` guarantees only that a string re-reads with the hydrogens it was
+*written* with, so whatever moves the count is not that.
+
+### Where the count actually diverges — and what is NOT yet known
+
+Three measurements, and two hypotheses killed along the way. Recorded in order because both wrong
+turns were over-reads of small samples.
+
+| measurement | result |
+|---|---|
+| `perceived_H` (parent mol) vs `input_H` (XYZ) | **agrees in 36/45** — perception is right |
+| `oin_H` (implied by the string) vs `input_H` | diverges in **41/45** |
+| `dH` vs count of BARE donor atoms in the string | **matches in only 4/45** |
+
+So the divergence appears **between the perceived parent and the emitted string**, not in
+perception and not in write/read fidelity.
+
+⚠ **Hypothesis 1, WRONG:** "it lives in perception (`get_lig_mol` / `AC2BO`)". Inferred from the
+flat A/B without checking where the H entered. Refuted by `perceived_H == input_H` in 36/45.
+
+⚠ **Hypothesis 2, WRONG:** "one implicit H per severed metal–donor bond — a bare `N{1}` gains the
+hydrogen the metal bond was spending". It is a real effect and it reads convincingly off examples
+like `CUDBOU` (`N{1}c1ccccc1N{2}`), but it does not survive the corpus: `dH` equals the bare-donor
+count in 4/45, and `dH` is **bidirectional**, spanning −36 to +14. A single donor-cut rule cannot
+produce negative `dH`.
+
+**What the distribution says instead:** the class is heterogeneous, with at least two mechanisms.
+28 of 45 sit at `dH` = +1…+3 (consistent with something small and donor-adjacent), 4 are `dH` = 0
+(the mismatch is not hydrogen at all), and three are large losses (−14, −16, −36) which no
+donor-cut story explains — those need their own attribution, probably haptic/eta bodies or the
+`[CH]`-radical writing.
+
+**Next step is per-ATOM attribution, not another aggregate.** Walk one molecule from each `dH`
+band, mapping parent atom → fragment atom → emitted token, and record which atom's H changed and
+at which step. Aggregates have now produced two plausible-and-wrong answers; only per-atom
+provenance will settle it.
 
 **Why the change is kept anyway:** it removes a genuine inconsistency — one lever silently
 undoing another — and it is a prerequisite for `OIN_H_FAITHFUL` ever mattering. It is **not** an
