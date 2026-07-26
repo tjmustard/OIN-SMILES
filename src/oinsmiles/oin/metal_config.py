@@ -57,6 +57,7 @@ was accidentally reflection-invariant and every single-fixture guard passed.
 from __future__ import annotations
 
 import itertools
+import re
 
 import numpy as np
 
@@ -82,6 +83,7 @@ __all__ = [
     "metal_config_sign_symmetry",
     "metal_config_token",
     "metal_config_token_chelate",
+    "parse_metal_config_token",
     "token_for_mol",
 ]
 
@@ -407,3 +409,21 @@ def token_for_mol(mol) -> str:
         return metal_config_token_chelate(pts, [tuple(v) for v in groups.values()])
     except Exception:
         return ""
+
+
+#: Matches the emitted sidecar so the generator can read back what was requested.
+_TOKEN_RE = re.compile(r"\|mc:([+\-])\|")
+
+
+def parse_metal_config_token(oin_string):
+    """The Δ/Λ token an OIN requests, as ``"|mc:+|"`` / ``"|mc:-|"``, or ``None``.
+
+    ``None`` for every OIN encoded without ``OIN_EMIT_METAL_CONFIG`` — which is the default — and
+    that is what makes the generator's helicity-aware branch inert by construction: a caller keys
+    off ``target is None`` to skip it entirely, so pool selection stays byte-identical to pristine
+    for the whole corpus. Same contract as ``axial.parse_axial_token``.
+    """
+    if not oin_string:
+        return None
+    m = _TOKEN_RE.search(oin_string)
+    return f"|mc:{m.group(1)}|" if m else None
