@@ -283,3 +283,31 @@ class TestNonCageMoleculesUnaffected(_LeverMixin):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestValenceBypassIsScopedToBoron(_LeverMixin):
+    """The bypass must not leak to non-boron fragments. Regression guard for a real leak.
+
+    ``_parse_fragment``'s cage rung skips ``SANITIZE_PROPERTIES`` -- a valence-RULE bypass. When
+    ``OIN_BORON_CAGE`` was promoted to default-ON it was unscoped, so it applied to every fragment
+    and parsed ``C#O``: carbon monoxide fails the valence check and nothing else. CO is among the
+    commonest ligands in transition-metal chemistry, so the promotion was silently changing
+    chemistry far outside the 34 boron molecules it was justified on.
+    """
+
+    def test_carbon_monoxide_still_falls_back_with_the_lever_ON(self):
+        from oinsmiles.oin.compare import _parse_fragment
+
+        self.set_lever(True)
+        self.assertIsNone(
+            _parse_fragment("C#O"),
+            "over-valent C#O must NOT take the boron valence bypass -- it contains no boron, so "
+            "it cannot be a deltahedral cage, and parsing it hides an over-valent carbon that "
+            "the RAW: fallback exists to exclude",
+        )
+
+    # The other half -- that scoping costs the boron population nothing -- is already covered by
+    # TestPruningExemption::test_lever_on_keeps_the_full_icosahedron (30/30 B-B edges survive) and
+    # TestCageEncodes::test_key_does_not_degrade_to_the_raw_fallback, both of which exercise a
+    # REAL cage fixture with the lever on. A hand-written cage SMILES was tried here and only
+    # proved that hand-written cage SMILES are easy to get wrong.

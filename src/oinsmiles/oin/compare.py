@@ -70,7 +70,23 @@ def _parse_fragment(smiles: str):
     # to the order-dependent ``RAW:`` string. Without this, a cage fragment's
     # contribution to the key is the literal input SMILES, so two orderings of the
     # same cage get different keys and the key stops meaning what it claims.
-    if _lever_enabled("OIN_BORON_CAGE"):
+    #
+    # SCOPED TO FRAGMENTS THAT ACTUALLY CONTAIN BORON. Skipping SANITIZE_PROPERTIES is a
+    # valence-RULE bypass, and applying it to every fragment makes the lever change chemistry it
+    # was never justified on: ``C#O`` fails the valence check and NOTHING else, so an unscoped
+    # rung parses carbon monoxide -- among the commonest ligands in transition-metal chemistry --
+    # instead of letting it reach the ``RAW:`` fallback. Measured the moment OIN_BORON_CAGE was
+    # promoted to default-ON, as test_canonical_body::test_unparseable_body_gets_stable_raw_token
+    # failing with ``'C#O' != 'RAW:C#O'``.
+    #
+    # A fragment with no boron cannot be a deltahedral cage, so this guard costs the boron
+    # population nothing -- its 34 recovered molecules all contain B by construction -- while
+    # confining the bypass to the case it was measured on. Deliberately a cheap substring test
+    # rather than a parse: this runs before any mol exists, and boron's presence in the SMILES is
+    # a necessary condition for a cage. A false POSITIVE (a `B` inside e.g. `Br`) merely restores
+    # the previous unscoped behaviour for that one fragment, which is the lever's intent anyway;
+    # a false negative is impossible, since a cage cannot be written without a boron symbol.
+    if _lever_enabled("OIN_BORON_CAGE") and ("B" in smiles or "b" in smiles):
         for ops in (_NO_VALENCE, _NO_VALENCE_NO_KEKULIZE):
             retry = Chem.MolFromSmiles(smiles, sanitize=False)
             if retry is None:
