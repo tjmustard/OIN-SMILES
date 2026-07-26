@@ -1201,13 +1201,50 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
                 AC[i, j] = 1
                 AC[j, i] = 1
 
-    # filter adjacency matrix if max valence is exceeded
-    for i in range(num_atoms):
-        a_i = mol.GetAtomWithIdx(i)
+    # Filter the adjacency matrix where max valence is exceeded.
+    #
+    # ORDER MATTERS HERE, and by default it is the input atom order -- which makes
+    # perception depend on how the XYZ file happened to be numbered. Capping atom i removes
+    # a bond, which lowers some atom j's count, so whether j still needs capping depends on
+    # whether i was visited first. The distance pass above is order-free (a symmetric
+    # comparison), so this loop is the ONLY order-dependent step in AC perception.
+    #
+    # Measured on tests/fixtures/DUDREA_comp_0 (a Y borohydride): the bridging hydride is
+    # bonded to both B and Y, exceeding H's valence of 1. Cap Y first and the Y-H bond
+    # survives (metal degree 5, geometry SPY); cap that H first and it drops the Y-H bond
+    # instead (degree 4, geometry TET). Renumbering flipped the perceived AC in 2 of 5 random
+    # trials, and downstream that flips the emitted geometry tag [Y_SPY] <-> [Y_TET] -- an
+    # isomer-level change from nothing but atom numbering.
+    # See docs/RENUMBERING_INSTABILITY_v0.4.5.md.
+    #
+    # OIN_STABLE_METAL_AC replaces the index order with a canonical one:
+    #   * heaviest element first, so a metal is capped before the light atoms bridging to it
+    #     (chemically the right way round -- a kappa-2/kappa-3 BH4 really is bound through
+    #     its hydrides, so the metal should claim them before H's valence rule discards
+    #     them), and it reproduces the current answer for DUDREA, where the metal happened
+    #     to be atom 0;
+    #   * then by a per-atom fingerprint built only from rotation- and permutation-invariant
+    #     scalars (current neighbour count, then the sorted neighbour distances), so two
+    #     genuinely equivalent atoms tie and everything else is separated without reference
+    #     to an atom index.
+    # Default OFF: unset leaves the loop byte-identical to before.
+    if os.environ.get("OIN_STABLE_METAL_AC"):
+
+        def _cap_key(i):
+            nbrs = np.nonzero(AC[i, :])[0]
+            dists = tuple(sorted(round(float(dMat[i, j]), 4) for j in nbrs))
+            return (-mol.GetAtomWithIdx(int(i)).GetAtomicNum(), -len(nbrs), dists)
+
+        cap_order = sorted(range(num_atoms), key=_cap_key)
+    else:
+        cap_order = range(num_atoms)
+
+    for i in cap_order:
+        a_i = mol.GetAtomWithIdx(int(i))
         N_con = np.sum(AC[i, :])
         while N_con > max(atomic_valence[a_i.GetAtomicNum()]):
             # print("removing longest bond")
-            AC = remove_weakest_bond(mol, i, AC, dMat, pt)
+            AC = remove_weakest_bond(mol, int(i), AC, dMat, pt)
             N_con = np.sum(AC[i, :])
 
     # print(Chem.MolToSmiles(mol))
