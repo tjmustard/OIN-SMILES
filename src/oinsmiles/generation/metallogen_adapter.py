@@ -254,6 +254,63 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
 
+            # A saturated (sp3, non-conjugated) neutral donor whose valence is
+            # ALREADY fully satisfied without the metal bond -- a
+            # fully-substituted tertiary/secondary amine N, a bracket aqua O --
+            # has no valence room left for the coming metal->donor bond, and
+            # RDKit's sanitizer rejects the assembled complex with e.g.
+            # "Explicit valence for atom # k N, 4, is greater than permitted":
+            # the confirmed dominant `no_conformers` root cause
+            # (docs/KNOWN_LIMITATIONS.md "Group 1 -- neutral L-donor
+            # over-valence": GEZKAZ's aqua O, VIBRIK's tertiary-amine N; same
+            # shape in FEJFAD/FEJFOR/LECSUJ/MUTYEG/VIBROQ/VIRWOJ/WIQRIA's
+            # N,N-chelate + dihalide complexes).
+            #
+            # Measured (not assumed) to be geometry- AND hybridization-specific:
+            # an aromatic donor (pyridine n) or an sp2 donor with a double bond
+            # (an imine C=N) is ALSO at "full" integer valence pre-metal-bond by
+            # this same count, yet embeds fine on every geometry tried,
+            # including 4_tetrahedral -- only a saturated sp3 donor
+            # (amine/aqua) on 4_tetrahedral specifically crashes (verified with
+            # a decision-table probe: aqua/amine + halides embeds fine on
+            # 3_trigonal_planar, 4_square_planar, 5_square_pyramidal,
+            # 5_trigonal_bipyramidal and 6_octahedral, and crashes ONLY on
+            # 4_tetrahedral; an aromatic/imine donor never crashes, even on
+            # 4_tetrahedral). 4_tetrahedral is the only geometry in this table
+            # with a stereogenic metal centre, so its embed path evidently adds
+            # an explicit (valence-counted) bond that the others do not. Gating
+            # on both conditions keeps this from ever touching a donor shape
+            # that is not already reproducibly broken -- an untargeted version
+            # of this fix bumped charge on 15/15 sampled unrelated PASSING
+            # donors (pyridine, imine, phosphine, aqua-on-non-tetrahedral,
+            # haptic arene) before this gate was added; do not widen it without
+            # re-running that A/B.
+            #
+            # Give the donor the same +1-formal-charge escape
+            # ``_charge_fix_promotion`` (generator3d/embed.py) already uses,
+            # ungated, for an over-valent double-bond promotion: an ammonium-/
+            # oxonium-like reading of the dative bond, with the H count frozen
+            # so RDKit does not also insert a phantom H now that a bond's worth
+            # of "room" exists. This never reaches the output OIN -- the round
+            # trip re-encodes from the generated 3D geometry, not from this
+            # internal RDKit bookkeeping -- so net charge does not need to
+            # balance.
+            if (
+                geo == "4_tetrahedral"
+                and atom.GetFormalCharge() == 0
+                and not atom.GetIsAromatic()
+                and not any(
+                    b.GetBondType() in (Chem.BondType.DOUBLE, Chem.BondType.TRIPLE)
+                    for b in atom.GetBonds()
+                )
+            ):
+                mol.UpdatePropertyCache(strict=False)
+                default_valence = Chem.GetPeriodicTable().GetDefaultValence(atom.GetAtomicNum())
+                if 0 < default_valence <= atom.GetTotalValence():
+                    atom.SetFormalCharge(1)
+                    atom.SetNoImplicit(True)
+                    atom.SetNumExplicitHs(atom.GetTotalNumHs())
+
             # MetalloGen map numbers are 1-based (slot index + 1).
             atom.SetAtomMapNum(mg_slot_idx + 1)
 
