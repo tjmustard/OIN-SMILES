@@ -122,7 +122,10 @@ def compare(name_a: str, A: dict, name_c: str, C: dict, mols: list) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument(
-        "--baseline", required=True, help="ab_accept_scored.py --out JSON (arm_a + arm_b)"
+        "--baseline",
+        required=True,
+        help="ab_accept_scored.py --out JSON (arm_a + arm_b), or a --single-arm JSON to use "
+        "as the arm-B-only comparator (for cohorts where arm A is unaffordable)",
     )
     ap.add_argument(
         "--armc", required=True, help="--single-arm 1 JSON run WITH the attachment check"
@@ -130,16 +133,22 @@ def main() -> int:
     args = ap.parse_args()
 
     base = json.load(open(args.baseline))
-    A = {r["molecule"]: r for r in base["arm_a"]}
-    B = {r["molecule"]: r for r in base["arm_b"]}
+    if "arm_a" in base:
+        A = {r["molecule"]: r for r in base["arm_a"]}
+        B = {r["molecule"]: r for r in base["arm_b"]}
+    else:
+        A = None
+        B = load_single(args.baseline)
     C = load_single(args.armc)
 
-    mols = sorted(set(A) & set(B) & set(C))
-    dropped = sorted((set(A) | set(C)) - set(mols))
+    arms = [x for x in (A, B, C) if x is not None]
+    mols = sorted(set.intersection(*[set(x) for x in arms]))
+    dropped = sorted(set.union(*[set(x) for x in arms]) - set(mols))
     if dropped:
-        print(f"  not present in all three arms, excluded: {dropped}")
+        print(f"  not present in every arm, excluded: {dropped}")
 
-    compare("A default", A, "C lever+check", C, mols)
+    if A is not None:
+        compare("A default", A, "C lever+check", C, mols)
     compare("B lever only", B, "C lever+check", C, mols)
     return 0
 
