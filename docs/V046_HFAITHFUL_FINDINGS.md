@@ -291,6 +291,43 @@ Better than the instrument it replaced on every axis: n=1194 rather than 61, it 
 code rather than a downstream proxy, it runs in seconds rather than ~80 minutes, and it is
 load-independent so the running sweep cannot corrupt it.
 
+---
+
+# The eta "incremental widening" fix is WRONG — refuted BEFORE implementing it
+
+An earlier section named incremental pool widening as the fix for the eta-driven >30 s tail: start
+at `DEFAULT_SELECT_POOL` and widen only on failure, instead of committing a 2× UFF pre-pool up
+front for every eta molecule. I was about to implement it. **It would have achieved nothing.**
+
+`generator3d/__init__.py`'s fill loop already does this. From `_try_accept`'s own docstring:
+
+> Returns the accepted ``Molecule`` (the one appended to ``successful_mols``) or ``None`` -- the
+> SL1 early-exit hook keys off this to test the fresh conformer against ``accept_fn``.
+
+`accept_fn` is consulted **per conformer, during the fill**, and `OIN_EARLY_EXIT` (default-ON since
+v0.4.4) short-circuits the moment one is accepted. So a wide `uff_pool_size` is a *ceiling*, not a
+cost: a molecule whose winding appears on attempt 3 stops at attempt 3 whether the ceiling was 10
+or 40. Incremental widening would re-implement, with added retry machinery, a short-circuit that
+already exists.
+
+**So the eta cost is not pool bookkeeping — it is a LOW ACCEPTANCE RATE.** Eta molecules are
+expensive because the embed seldom produces the requested ring face: nothing accepts, so the loop
+runs toward `reject_budget` / `embed_time_budget` instead of exiting early. The surrounding code
+says exactly this about the analogous E/Z case — AFECIZ "went from 565s unconstrained to >27 min,
+all of it spent rejecting", which is why `reject_budget` exists at all.
+
+**What would actually help, and why it is not a quick win:** raise the *probability* of generating
+the right winding — constrained embedding, or seeding the ring face directly — not the pool size.
+That is construction rather than selection, and this project already carries **three recorded
+negative results for construction over selection**. So it is a research question with prior
+evidence against the obvious approach, not an afternoon's work.
+
+This is the sixth hypothesis refuted in this release and the only one refuted *before* being built.
+Reading the code the fix would have touched cost minutes; implementing and then measuring it would
+have cost hours for a null result. Worth keeping as a habit: **when a fix is named from a mechanism
+rather than from a measurement, read the code it would replace first — the short-circuit you are
+about to add may already be there.**
+
 **The boron promotion now has no unmeasured risk.** What remains before it can be called an
 accuracy delta is arithmetic, not safety: the 5k sweep has to publish a clean v0.4.5 baseline to
 diff against on identical molecules.
