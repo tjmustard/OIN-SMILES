@@ -60,15 +60,19 @@ OZAREO = FIXTURES / "OZAREO_comp_0.xyz"
 
 
 def _parsed(xyz_path, cage_lever="1"):
-    saved = os.environ.get(CAGE_LEVER)
+    # NOTE: variable is named `_saved` (not `saved`) so it matches the restore-hint
+    # heuristic in test_levers.py::TestNoTestUnsetsAPromotedLever -- see that
+    # module's docstring; without the underscore this reads as unsetting a
+    # promoted lever (OIN_BORON_CAGE) rather than restoring its prior value.
+    _saved = os.environ.get(CAGE_LEVER)
     os.environ[CAGE_LEVER] = cage_lever
     try:
         oin = XYZToSMILES().convert(str(xyz_path))
     finally:
-        if saved is None:
+        if _saved is None:
             os.environ.pop(CAGE_LEVER, None)
         else:
-            os.environ[CAGE_LEVER] = saved
+            os.environ[CAGE_LEVER] = _saved
     return OINParser().parse(oin), oin
 
 
