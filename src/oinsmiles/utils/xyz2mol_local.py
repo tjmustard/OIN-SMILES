@@ -677,6 +677,34 @@ def get_bonds(UA, AC):
     return bonds
 
 
+# Env lever, default OFF (unset == nx.max_weight_matching, the historical matcher, so the
+# default path is byte-identical). The graph built in ``get_UA_pairs`` carries **no weight
+# attributes**, so ``nx.max_weight_matching`` is solving maximum *cardinality* matching with
+# a general (Blossom) weighted matcher. Alternatives can return a *different* matching of the
+# same size, which is a different Kekule structure and therefore a different perceived BO --
+# hence the lever. Measured in docs/VALENCE_SEARCH_v0.4.5.md.
+_MATCHER_ENV = "OIN_VALENCE_MATCHER"
+
+
+def _maximum_matching(G):
+    """Maximum matching of an unweighted graph, matcher selected by ``OIN_VALENCE_MATCHER``.
+
+    ``nx`` (default) is the historical ``nx.max_weight_matching``. ``maxcard`` asks the same
+    Blossom implementation for the max-cardinality variant. ``greedy`` is
+    ``nx.maximal_matching``, which is *maximal* but not *maximum* -- it is included only so
+    the cost/fidelity trade-off can be measured, and it can return a smaller matching.
+    """
+    which = os.environ.get(_MATCHER_ENV) or "nx"
+    if which == "nx":
+        return nx.max_weight_matching(G)
+    if which == "maxcard":
+        return nx.max_weight_matching(G, maxcardinality=True)
+    if which == "greedy":
+        return nx.maximal_matching(G)
+    logger.warning("%s=%r is not a known matcher; using nx", _MATCHER_ENV, which)
+    return nx.max_weight_matching(G)
+
+
 def get_UA_pairs(UA, AC, DU, use_graph=True):
     """Maximum matching over the unsaturated-atom bond graph.
 
@@ -725,7 +753,8 @@ def get_UA_pairs(UA, AC, DU, use_graph=True):
     if use_graph:
         G = nx.Graph()
         G.add_edges_from(bonds)
-        UA_pairs = [list(nx.max_weight_matching(G))]
+        AC2BO_STATS["matching_calls"] += 1
+        UA_pairs = [list(_maximum_matching(G))]
         UA_pair = UA_pairs[0]
 
         remove_pairs = []
@@ -784,6 +813,108 @@ _VALENCE_COMBO_CAP = 500_000
 # enough to catch a chemically-sensible assignment near the front of the product order,
 # small enough that a genuinely unperceivable large ligand fails fast instead of hanging.
 _VALENCE_FALLBACK_TRIES = 20_000
+
+# Env lever, default OFF (unset == the historical 20 000, so the default path is
+# byte-identical). Set OIN_VALENCE_FALLBACK_TRIES=<int> to change how many candidate
+# valence assignments the over-cap fallback grinds before giving up and returning
+# ``best_BO``. This is NOT byte-identical for over-cap ligands: ``best_BO`` is updated
+# with ``BO.sum() >= best_BO.sum()`` (note ``>=``), so the *last* candidate attaining the
+# maximum sum wins and a smaller budget can select a different one. See
+# docs/VALENCE_SEARCH_v0.4.5.md for the measured stability table.
+_FALLBACK_TRIES_ENV = "OIN_VALENCE_FALLBACK_TRIES"
+
+
+def _fallback_tries():
+    """How many over-cap candidates to try. Env-overridable; default is unchanged."""
+    raw = os.environ.get(_FALLBACK_TRIES_ENV)
+    if not raw:
+        return _VALENCE_FALLBACK_TRIES
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning(
+            "%s=%r is not an integer; using %d", _FALLBACK_TRIES_ENV, raw, _VALENCE_FALLBACK_TRIES
+        )
+        return _VALENCE_FALLBACK_TRIES
+    if value < 1:
+        logger.warning(
+            "%s=%d is < 1; using %d", _FALLBACK_TRIES_ENV, value, _VALENCE_FALLBACK_TRIES
+        )
+        return _VALENCE_FALLBACK_TRIES
+    return value
+
+
+# Deterministic counters for the valence search. Wall clock is unusable on this host
+# (the release sweep keeps load above 12), so every claim in
+# docs/VALENCE_SEARCH_v0.4.5.md is made in these instead.
+AC2BO_STATS = {
+    "ac2bo_calls": 0,  # AC2BO invocations
+    "over_cap_calls": 0,  # ... of which took the bounded lazy-product branch
+    "candidates": 0,  # candidate valence assignments examined, all branches
+    "over_cap_candidates": 0,  # ... of which on the over-cap branch
+    "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
+    "over_cap_found_valid": 0,  # ... of which were over-cap
+    "over_cap_exhausted": 0,  # over-cap calls that fell through and returned best_BO
+    "over_cap_best_bo_improved": 0,  # best_BO reassignments on the over-cap branch
+    "matching_calls": 0,  # nx.max_weight_matching invocations
+}
+
+
+def reset_ac2bo_stats():
+    """Zero the deterministic counters. Call before a measured encode."""
+    for key in AC2BO_STATS:
+        AC2BO_STATS[key] = 0
+
+
+def possible_valences(AC_valence, atoms, allow_carbenes=True):
+    """The per-atom candidate valence lists whose Cartesian product ``AC2BO`` searches.
+
+    Extracted verbatim from ``AC2BO`` so the size of that product can be computed
+    without running the search -- ``tools/valsearch_scan.py`` uses this to find the
+    over-cap ligand population for free. ``AC2BO`` calls it, so the two cannot drift.
+    """
+    valences_list_of_lists = []
+    for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
+        # valence can't be smaller than number of neighbourgs
+        possible_valence = [x for x in atomic_valence[atomicNum] if x >= valence]
+        if atomicNum == 6 and valence == 1:
+            possible_valence.remove(2)
+        if atomicNum == 6 and not allow_carbenes and valence == 2:
+            possible_valence.remove(2)
+        if atomicNum == 6 and valence == 2:
+            possible_valence.append(3)
+        if atomicNum == 16 and valence == 1:
+            possible_valence = [1, 2]
+
+        if not possible_valence:
+            logger.debug(
+                "%s %s %s %s %s %s %s",
+                "Valence of atom",
+                i,
+                "is",
+                valence,
+                "which bigger than allowed max",
+                max(atomic_valence[atomicNum]),
+                ". Stopping",
+            )
+            sys.exit()
+        valences_list_of_lists.append(possible_valence)
+    return valences_list_of_lists
+
+
+def valence_combo_size(valences_list_of_lists, cap=_VALENCE_COMBO_CAP):
+    """Product of the per-atom valence-list lengths, short-circuited above ``cap``.
+
+    Mirrors ``AC2BO``'s own early break, so the returned number is exactly what the
+    encoder compares against ``_VALENCE_COMBO_CAP``: the true product at or below the
+    cap, and merely "greater than the cap" above it.
+    """
+    combo_size = 1
+    for _vll in valences_list_of_lists:
+        combo_size *= len(_vll)
+        if combo_size > cap:
+            break
+    return combo_size
 
 
 def _ordered_valences(valences_list_of_lists, atoms):
@@ -1071,35 +1202,16 @@ def _AC2BO_core(
     # _select_lig_mol's charge/carbene ladder does -- and are dropped otherwise.
     _ac2bo_memo_anchor(AC)
 
+    AC2BO_STATS["ac2bo_calls"] += 1
+
     # make a list of valences, e.g. for CO: [[4],[2,1]]
-    valences_list_of_lists = []
-    AC_valence = AC.sum(axis=1).tolist()
-
-    for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
-        # valence can't be smaller than number of neighbourgs
-        possible_valence = [x for x in atomic_valence[atomicNum] if x >= valence]
-        if atomicNum == 6 and valence == 1:
-            possible_valence.remove(2)
-        if atomicNum == 6 and not allow_carbenes and valence == 2:
-            possible_valence.remove(2)
-        if atomicNum == 6 and valence == 2:
-            possible_valence.append(3)
-        if atomicNum == 16 and valence == 1:
-            possible_valence = [1, 2]
-
-        if not possible_valence:
-            logger.debug(
-                "%s %s %s %s %s %s %s",
-                "Valence of atom",
-                i,
-                "is",
-                valence,
-                "which bigger than allowed max",
-                max(atomic_valence[atomicNum]),
-                ". Stopping",
-            )
-            sys.exit()
-        valences_list_of_lists.append(possible_valence)
+    # MERGE NOTE (encspeed x valsearch): both lanes changed this block. encspeed added the
+    # memo anchor above; valsearch extracted the per-atom valence construction into
+    # possible_valences() and added the call counter. Both are kept -- the memo and the
+    # counter are orthogonal to the extraction, and the extracted function carries the same
+    # logic the inline block had.
+    AC_valence = list(AC.sum(axis=1))
+    valences_list_of_lists = possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes)
 
     # convert [[4],[2,1]] to [[4,2],[4,1]]
     best_BO = AC.copy()
@@ -1113,20 +1225,21 @@ def _AC2BO_core(
     # loop early-returns on the first valid assignment (or fails fast) instead of hanging.
     # Every currently-encodable ligand is well under the cap and takes the byte-identical
     # sorted path.
-    combo_size = 1
-    for _vll in valences_list_of_lists:
-        combo_size *= len(_vll)
-        if combo_size > _VALENCE_COMBO_CAP:
-            break
+    combo_size = valence_combo_size(valences_list_of_lists)
 
-    if combo_size > _VALENCE_COMBO_CAP:
+    over_cap = combo_size > _VALENCE_COMBO_CAP
+    if over_cap:
+        AC2BO_STATS["over_cap_calls"] += 1
         sorted_valences_list = itertools.islice(
-            itertools.product(*valences_list_of_lists), _VALENCE_FALLBACK_TRIES
+            itertools.product(*valences_list_of_lists), _fallback_tries()
         )
     else:
         sorted_valences_list = _ordered_valences(valences_list_of_lists, atoms)
 
     for valences in sorted_valences_list:  # valences_list:
+        AC2BO_STATS["candidates"] += 1
+        if over_cap:
+            AC2BO_STATS["over_cap_candidates"] += 1
         UA, DU_from_AC = get_UA(valences, AC_valence)
         check_len = len(UA) == 0
         if check_len:
@@ -1145,6 +1258,9 @@ def _AC2BO_core(
             check_bo = None
 
         if check_len and check_bo:
+            AC2BO_STATS["found_valid"] += 1
+            if over_cap:
+                AC2BO_STATS["over_cap_found_valid"] += 1
             return AC, atomic_valence_electrons
 
         UA_pairs_list = get_UA_pairs(UA, AC, DU_from_AC, use_graph=use_graph)
@@ -1162,6 +1278,9 @@ def _AC2BO_core(
                 allow_carbenes=allow_carbenes,
             )
             if status:
+                AC2BO_STATS["found_valid"] += 1
+                if over_cap:
+                    AC2BO_STATS["over_cap_found_valid"] += 1
                 return BO, atomic_valence_electrons
             # `charge_is_OK` was computed eagerly above this branch, then consumed only
             # here -- behind two cheaper predicates that already short-circuit, and even
@@ -1186,7 +1305,11 @@ def _AC2BO_core(
                 )
             ):
                 best_BO = BO.copy()
+                if over_cap:
+                    AC2BO_STATS["over_cap_best_bo_improved"] += 1
 
+    if over_cap:
+        AC2BO_STATS["over_cap_exhausted"] += 1
     return best_BO, atomic_valence_electrons
 
 
