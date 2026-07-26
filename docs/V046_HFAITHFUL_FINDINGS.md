@@ -557,3 +557,41 @@ What would actually settle it, stated without the confidence I had before:
 **What IS confirmed:** the harness telemetry plumbing works end to end in a real sweep — captured on
 16/16, absent when the env var is unset. That part is reusable for step 1 above and cost nothing to
 verify.
+
+## MEASURED: the eta tail is attempt-driven. Both my earlier answers were wrong.
+
+Added a plain per-attempt counter to `generator3d`'s fill loop (`pool.attempts_spent`, recorded at
+**every** return of `generate_3d_structures`, not just the last) and measured:
+
+| molecule | attempts | accepted | target_pool |
+|---|---|---|---|
+| Ferrocene (eta) | **32** | 28 | **32** |
+| CisPlatin (non-eta) | **0** | 1 | 10 |
+
+The non-eta molecule short-circuits on the FIRST attempt via early exit. The eta molecule runs the
+**entire** pool and never short-circuits — and its pool is itself widened (32 vs 10). So it pays ~32
+attempts where a comparable molecule pays 1, which comfortably explains a 3–6× wall-clock penalty.
+
+**So "cost-per-attempt", inferred earlier from the ratio-vs-size slope, was wrong** — and so was the
+"low acceptance rate" story in its original form. The mechanism is specifically: **eta molecules
+never satisfy the early-exit predicate, so the widened pool is paid in full.**
+
+That also partly resurrects the fix I refuted. I killed incremental pool widening on the grounds that
+`accept_fn` short-circuits per conformer — true in principle, but eta molecules never satisfy it, so
+the short-circuit never fires and the 2× widening is a real cost after all.
+
+### The precise defect, and the fix I did NOT implement
+
+Early exit accepts on `canonical_roundtrip_key` equality. Ferrocene round-trips fine (it is a
+golden), so the final `_select_by_geometry(honor_winding=True)` DOES find a correct winding — it is
+only the early-exit key match that never succeeds. The two acceptance predicates disagree: the
+cheaper one that could stop the loop is stricter than the one that ultimately judges success.
+
+**Fix: make early exit accept what `_select_by_geometry` would accept.** Then eta molecules stop at
+the first acceptable conformer instead of filling 32, with no change to what counts as a correct
+round trip.
+
+NOT implemented here: it changes acceptance semantics in the selection path, which needs a corpus A/B
+(does any molecule that currently passes stop passing?) and that is not something to land on the
+strength of two molecules. Two fixtures is exactly the sample size that produced the four wrong
+answers above.

@@ -263,7 +263,7 @@ def generate_3d_structures(
             metal_complex = om.get_om_from_modified_smiles(m_smiles)
         except Exception as e:
             logger.debug(f"Failed to parse m-SMILES: {e}")
-            return []
+        return []
 
     clean_ff_params = {
         k: v
@@ -421,9 +421,36 @@ def generate_3d_structures(
                 logger.debug("accept_fn raised on a conformer; ignoring", exc_info=True)
         return False
 
+    # Attempts actually spent, for the eta runtime question. A PLAIN COUNTER, not a
+    # degradation site: the `adapter.early_exit_*` counters cannot answer it because
+    # `_select_by_geometry(..., early_exit=False)` is the default and that block never runs, so a
+    # telemetry sweep came back with every site at zero (docs/V046_HFAITHFUL_FINDINGS.md).
+    #
+    # What this discriminates: flat attempts across eta and size-matched non-eta molecules means the
+    # eta 3-6x penalty is COST-PER-ATTEMPT (a profiling target); systematically higher attempts for
+    # eta means it is ACCEPTANCE-LIMITED (the embed rarely produces the requested ring face).
+    # Recorded via _telemetry, so it is a no-op unless OIN_TELEMETRY=1 and a collecting() context is
+    # active -- byte-identical otherwise, and it consumes no randomness.
+    _attempts_spent = 0
+
+    def _record_attempts(n_accepted):
+        """Observation only: a no-op unless OIN_TELEMETRY=1 with a collecting() context active.
+
+        Called at EVERY return of this function, not just the last one. The first version recorded
+        only at the final return and never fired: the early-exit path returns at
+        `return [early_hit]` well before it -- exactly the molecules whose count matters most.
+        """
+        _telemetry.record(
+            "pool.attempts_spent",
+            attempts=int(_attempts_spent),
+            accepted=int(n_accepted),
+            target_pool=int(target_pool),
+        )
+
     if num_threads == 1:
         # Serial attempt loop -- byte-identical to pristine.
         for i in range(max_attempts):
+            _attempts_spent = i
             if len(successful_mols) >= target_pool:
                 break
             if deadline is not None and time.monotonic() > deadline:
@@ -587,6 +614,7 @@ def generate_3d_structures(
         # requested key. Return it directly, bypassing the pool sort/dedup/clash-rerank AND the
         # optimizer pass below -- re-optimization could perturb it off the matched key, and the
         # accept stamp was taken on this exact geometry. Unreachable when accept_fn is None.
+        _record_attempts(1)
         return [early_hit]
 
     if not successful_mols and stereo_rejects:
@@ -688,6 +716,7 @@ def generate_3d_structures(
             optimized_mols.sort(key=lambda x: x[0])
             successful_mols = [m[1] for m in optimized_mols]
 
+    _record_attempts(len(successful_mols))
     return successful_mols[:num_conformers]
 
 
