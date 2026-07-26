@@ -190,6 +190,22 @@ slow one (`OIN_BORON_GEN_FASTFAIL` toggled, everything else identical):
 | `CAKBEW` | OFF | False | 28.35s |
 | `CAKBEW` | **ON** | False (same outcome) | **0.00s** |
 
+**`got_mol=True` alone is not proof of a correct structure** -- a harness that re-encodes through
+the generator's own bond graph can score a wrong-graph structure as a pass, which is exactly the
+failure mode `docs/BORON_CAGE_v0.4.5.md` §5a documents for 14 OTHER molecules at the encoder
+layer. So `RAWJEG`'s xyz was written to a fresh file and independently re-perceived with a brand
+new `XYZToSMILES().convert()` call -- coordinates in, nothing from the generator's own mol object
+reused -- and compared against the original OIN:
+
+```
+ORIGINAL OIN:   [Hg_LIN].[BH]12[BH]345C{0}6[BH]789C%10[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.[Cl]{1}
+RE-ENCODED OIN: [Hg_LIN].[BH]12[BH]345C{0}6[BH]789C%10[BH]1%11%12[BH]231[BH]423[BH]567[BH]824[BH]9%10%11[BH]%12134.[Cl]{1}
+BYTE-IDENTICAL: True
+```
+
+Byte-identical. `RAWJEG`'s success is a genuine round trip, not a wrong-graph pass -- the `LIN`
+exclusion in §3.2 is not built on a false positive.
+
 Pinned in `tests/unit/test_boron_gen_fastfail.py`: the predicate against every confirmed-failing
 geometry class checked (`KIXXOF` TET, `VEJXOZ` TPL, `OZAREO` TPY) and both specificity controls
 (`ASUVIV`, `AROTAE` -- boron-rich, no cage motif, must never fire regardless of the lever); an

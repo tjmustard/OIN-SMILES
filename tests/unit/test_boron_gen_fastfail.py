@@ -3,12 +3,12 @@
 Background (measured, see ``docs/BORON_GEN_CEILING_v0.4.7.md``): promoting
 ``OIN_BORON_CAGE`` (v0.4.6) fixed a genuine ENCODER ceiling -- 34 boron-cluster
 molecules go from 0/34 to 34/36 encoding -- but exposed a GENERATOR ceiling the
-encode failure had been hiding. A sample of 32 coordinated-cage molecules on a
-non-LIN geometry (the 34-molecule ``encode_fail`` class plus a 14-molecule control
-group, minus the two exceptions this module pins) all burn their whole embed
-budget or worse without producing a structure. This lever detects the same B-B-B
-cage motif ``OIN_BORON_CAGE`` gates on, BEFORE generation starts, and raises
-immediately instead.
+encode failure had been hiding. Of a 48-molecule sample (the 34-molecule
+``encode_fail`` class plus a 14-molecule control group), 40 burn their whole embed
+budget or worse without producing a structure, 7 already fail instantly for
+unrelated reasons, and 1 (``RAWJEG``) genuinely succeeds. This lever detects the
+same B-B-B cage motif ``OIN_BORON_CAGE`` gates on, BEFORE generation starts, and
+raises immediately instead -- but only for the 40, never the other 8.
 
 The naive version of this predicate (bare motif check) was MEASURED WRONG:
 ``RAWJEG_comp_0`` ([Hg_LIN], monodentate cage + Cl-) carries the motif and still
@@ -122,6 +122,46 @@ class TestPredicateSpecificityControls(_LeverMixin):
     def test_boron_at_several_coordination_numbers_no_deltahedron(self):
         parsed, _ = _parsed(AROTAE)
         self.assertFalse(_parsed_oin_has_boron_cage(parsed))
+
+
+class TestRawjegSuccessIsGenuineNotAWrongGraphPass(_LeverMixin):
+    """``got_mol is not None`` is not proof of a CORRECT structure -- a harness
+    that re-encodes through the generator's own bond graph can score a
+    wrong-graph structure as a pass (the exact failure mode
+    ``docs/BORON_CAGE_v0.4.5.md`` SS5a documents for 14 other molecules at the
+    encoder layer). The ``RAWJEG`` exclusion this predicate relies on
+    (``_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES``) would be built on a false positive
+    if its "success" were actually wrong, so this is checked independently: the
+    generated xyz is written out and re-perceived with a FRESH
+    ``XYZToSMILES().convert()`` call -- nothing from the generator's own mol
+    object is reused -- and compared against the original OIN.
+    """
+
+    def test_rawjeg_generated_structure_reencodes_byte_identically(self):
+        import tempfile
+
+        rawjeg = FIXTURES / "RAWJEG_comp_0.xyz"
+        if not rawjeg.exists():
+            self.skipTest("RAWJEG_comp_0.xyz fixture not present in this checkout")
+        original_oin = XYZToSMILES().convert(str(rawjeg))
+        result = OIN3DGeneratorMetallogen(optimizer=None, ensemble_size=1, timeout=30).generate(
+            original_oin
+        )
+        self.assertIsNotNone(result.xyz)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as f:
+            f.write(result.xyz)
+            tmp_path = f.name
+        try:
+            reencoded_oin = XYZToSMILES().convert(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+        self.assertEqual(
+            reencoded_oin,
+            original_oin,
+            "RAWJEG's generated structure must independently re-encode to the "
+            "SAME OIN -- if this ever fails, the LIN safety exclusion above is "
+            "built on a false positive and must be revisited.",
+        )
 
 
 class TestEndToEndFastFailIsActuallyFast(_LeverMixin):
