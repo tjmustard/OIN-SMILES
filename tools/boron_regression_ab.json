@@ -22,7 +22,7 @@
       "mol": "VEJXOZ_comp_0",
       "kind": "off_vs_on",
       "off": "[Ru_TPL].[BH]{1}=[CH]{1}[BH]{1<}[B@H]1B[B@H]2[CH]{0}=C{0}(c3ccc(C#C)cc3)[BH]{0>}[B@@H]12.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1",
-      "on": "[Ru_TPL].[CH]CC1[CH][CH]C(C{1}2[CH]{1}[BH]345[B@@H]{0}6[CH]{0}[BH]{0<}78[BH]{1<}29[B@H]3[BH]479[BH]568)[CH][CH]1.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1"
+      "on": "[Ru_TPL].[CH]CC1[CH][CH]C(C{1}2[CH]{1}[BH]345[BH]{0}6[CH]{0}[BH]{0<}78[BH]{1<}29[BH]3[BH]479[BH]568)[CH][CH]1.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1"
     }
   ]
 }

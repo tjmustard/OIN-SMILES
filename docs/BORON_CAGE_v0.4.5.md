@@ -397,7 +397,7 @@ $V -m unittest tests.unit.test_boron_cage tests.unit.test_regression_stability
 | all 6 corpus molecules with >=3 B and no cage motif | **6/6 byte-identical** with the lever ON | final |
 | pre-existing tests (non-boron), full discovery | **605, all OK** | final src |
 | tests collected on the final tree | **624** = 605 pre-existing + 19 new; **0 load failures** | final |
-| 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | `5ca3f6e9`+docs, i.e. every src change **except** `clear_boron_cage_stereo` |
+| 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | **final src** (re-run; bit-identical to the earlier arm) |
 
 ### A measurement of mine that was not clean, and what it does and does not support
 
@@ -416,11 +416,15 @@ What it still supports, because these are separable:
 * the 19 boron tests were run directly against the final tree: **19/19 OK**.
 
 What it does not support: a single clean invocation covering all 624 at once. That re-run is
-`tools/suite_clean.txt`. The 120-molecule A/B likewise predates `clear_boron_cage_stereo`, which
-is gated on **both** the lever and the B-B-B motif and therefore cannot move the A/B's OFF arm
-(nor the whole suite, which runs lever-unset); its effect on the ON arm for non-cage molecules is
-what the 6/6 boron-rich cage-free row tests directly. Both re-runs were in flight at the time of
-writing, on a box at load 42 from a sibling 936-molecule sweep.
+`tools/suite_clean.txt`.
+
+The **120-molecule A/B is not affected by any of this** — it was re-run against the final src and
+came back bit-for-bit identical to the earlier arm: 120/120 OFF==frozen, 119/120 OFF==ON
+(`VEJXOZ` again), same donor-H histogram `{-4: 2, 0: 29, 1: 22, 2: 37, 3: 13, 4: 8, 5: 5, 6: 4}`.
+Confirmed by `git diff <crash-fix commit> HEAD -- src` being empty, so the src the A/B imported is
+the src shipped here. That the numbers did not move is the expected result —
+`clear_boron_cage_stereo` is gated on both the lever and the B-B-B motif, so it cannot reach the
+OFF arm at all — but it is now measured rather than argued from the gate.
 
 ## 9. Verdict on the ceiling
 
