@@ -12,7 +12,17 @@ So every molecule reports three numbers, and a promotion needs all three to hold
     passed        canonical_roundtrip_key(oin_in) == key(get_oin_string(gen.mol, coords))
                   -- the SAME predicate tools/test_dataset_roundtrip.py scores with, so a
                   pass here means a pass there
-    clashes       clash.mol_clash_count(gen.mol) on the returned structure
+    clash_vdw     non-bonded pairs inside vdW contact, computed FROM THE RETURNED COORDINATES
+    clash_severe  the subset below the severe cutoff
+    worst_overlap smallest non-bonded dist/(rvdw+rvdw); continuous, so the comparison is not
+                  hostage to where clash_cutoff happens to sit
+
+⚠ Do NOT use `clash.mol_clash_count(gen_result.mol)` here. It duck-types on `mol.atom_list`
+and RETURNS 0 on AttributeError, and `gen_result.mol` is a bare `rdkit.Chem.rdchem.Mol` with
+no such attribute. The first version of this script did exactly that and reported "clash 0"
+for all 44 measurements in both arms -- a degenerate metric that would have certified the
+quality arm without measuring it. `vdw_clash_count(positions, atomic_numbers)` takes raw
+coordinates and is the honest call at this site.
 
 One molecule per subprocess is deliberate: the lever is read from the environment at
 predicate-construction time, and a single process cannot host both arms honestly.
@@ -40,6 +50,7 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 def measure_one(xyz_path: str, timeout: float) -> dict:
     """Encode, generate, score, and count clashes for one molecule in THIS process."""
     import numpy as np
+    from rdkit.Chem import GetPeriodicTable
 
     from oinsmiles import XYZToSMILES
     from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen
@@ -70,7 +81,13 @@ def measure_one(xyz_path: str, timeout: float) -> dict:
         oin_out = get_oin_string(mol, coords)
         out["oin_out"] = oin_out
         out["passed"] = canonical_roundtrip_key(oin_in) == canonical_roundtrip_key(oin_out)
-        out["clashes"] = int(clash.mol_clash_count(mol))
+
+        pt = GetPeriodicTable()
+        znums = [pt.GetAtomicNumber(lines[2 + i].split()[0]) for i in range(natoms)]
+        cv, cs, worst = clash.vdw_clash_count(coords, znums)
+        out["clash_vdw"] = int(cv)
+        out["clash_severe"] = int(cs)
+        out["worst_overlap"] = round(float(worst), 4)
     except Exception as e:
         out.setdefault("elapsed_s", round(time.monotonic() - t0, 2))
         out["passed"] = False
@@ -78,7 +95,14 @@ def measure_one(xyz_path: str, timeout: float) -> dict:
     return out
 
 
-def run_arm(cohort: list[dict], arm: str, env_extra: dict, timeout: float, workers: int) -> list:
+def run_arm(
+    cohort: list[dict],
+    arm: str,
+    env_extra: dict,
+    timeout: float,
+    workers: int,
+    hard_cap: float,
+) -> list:
     """Run every molecule of one arm, one subprocess each so the lever is read cleanly."""
     results: list[dict] = []
     pending = list(cohort)
@@ -103,12 +127,23 @@ def run_arm(cohort: list[dict], arm: str, env_extra: dict, timeout: float, worke
                 env=env,
                 text=True,
             )
-            running.append((p, rec))
+            running.append((p, rec, time.monotonic()))
         time.sleep(0.5)
-        for p, rec in list(running):
+        for p, rec, started in list(running):
+            # HARD wall-clock kill. The generator's `timeout` is ADVISORY, not a bound:
+            # embed_time_budget bounds the embed attempt loop, not the OIN-direct assembly
+            # around it (measured: 60s requested, 60.7-137.9s spent, GOHWOQ 2.3x over). The
+            # first run of this script relied on `timeout` and sat on one molecule for 30+
+            # minutes. Only the harness's SIGKILL subprocess really enforces a budget, so this
+            # reproduces that. Applied identically to both arms so the comparison stays fair.
             if p.poll() is None:
+                if time.monotonic() - started > hard_cap:
+                    p.kill()
+                    print(
+                        f"  [{arm}] {rec['mol']:16s} KILLED at hard cap {hard_cap:.0f}s", flush=True
+                    )
                 continue
-            running.remove((p, rec))
+            running.remove((p, rec, started))
             raw = p.stdout.read() if p.stdout else ""
             try:
                 r = json.loads(raw.strip().splitlines()[-1])
@@ -125,7 +160,7 @@ def run_arm(cohort: list[dict], arm: str, env_extra: dict, timeout: float, worke
             print(
                 f"  [{arm}] {r['molecule']:16s} "
                 f"{r.get('elapsed_s', '?'):>8}s pass={r.get('passed')} "
-                f"clash={r.get('clashes', '-')}",
+                f"clash={r.get('clash_vdw', '-')} worst={r.get('worst_overlap', '-')}",
                 flush=True,
             )
     return results
@@ -134,7 +169,9 @@ def run_arm(cohort: list[dict], arm: str, env_extra: dict, timeout: float, worke
 def summarize(rows: list[dict], label: str) -> dict:
     done = [r for r in rows if isinstance(r.get("elapsed_s"), (int, float))]
     el = [r["elapsed_s"] for r in done]
-    cl = [r["clashes"] for r in rows if isinstance(r.get("clashes"), int)]
+    cl = [r["clash_vdw"] for r in rows if isinstance(r.get("clash_vdw"), int)]
+    sev = [r["clash_severe"] for r in rows if isinstance(r.get("clash_severe"), int)]
+    wo = [r["worst_overlap"] for r in rows if isinstance(r.get("worst_overlap"), float)]
     s = {
         "arm": label,
         "n": len(rows),
@@ -143,8 +180,12 @@ def summarize(rows: list[dict], label: str) -> dict:
         "mean_s": round(statistics.mean(el), 2) if el else None,
         "total_s": round(sum(el), 1) if el else None,
         "over_30s": sum(1 for v in el if v > 30),
+        "clash_measured_on": len(cl),
         "clash_total": sum(cl) if cl else 0,
         "clash_mols_with_any": sum(1 for v in cl if v > 0),
+        "clash_severe_total": sum(sev) if sev else 0,
+        "worst_overlap_min": round(min(wo), 4) if wo else None,
+        "worst_overlap_median": round(statistics.median(wo), 4) if wo else None,
     }
     return s
 
@@ -156,6 +197,13 @@ def main() -> int:
     ap.add_argument("--out")
     ap.add_argument("--timeout", type=float, default=300.0)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument(
+        "--hard-cap",
+        type=float,
+        default=0.0,
+        help="wall-clock SIGKILL per molecule; default 1.6x --timeout, since the "
+        "generator's own timeout is advisory (see run_arm)",
+    )
     args = ap.parse_args()
 
     if args.one:
@@ -170,9 +218,14 @@ def main() -> int:
     print(f"cohort: {len(cohort)} molecules, {args.workers} workers, timeout {args.timeout}s")
 
     print("\n--- ARM A: default (independent confirm ON) ---")
-    a = run_arm(cohort, "A-default", {"OIN_ACCEPT_SCORED": "0"}, args.timeout, args.workers)
+    hard_cap = args.hard_cap if args.hard_cap else args.timeout * 1.6
+    a = run_arm(
+        cohort, "A-default", {"OIN_ACCEPT_SCORED": "0"}, args.timeout, args.workers, hard_cap
+    )
     print("\n--- ARM B: OIN_ACCEPT_SCORED=1 ---")
-    b = run_arm(cohort, "B-scored", {"OIN_ACCEPT_SCORED": "1"}, args.timeout, args.workers)
+    b = run_arm(
+        cohort, "B-scored", {"OIN_ACCEPT_SCORED": "1"}, args.timeout, args.workers, hard_cap
+    )
 
     sa, sb = summarize(a, "A-default"), summarize(b, "B-scored")
     by = {r["molecule"]: r for r in a}
@@ -188,7 +241,9 @@ def main() -> int:
         print(
             f"  {s['arm']:10s} pass {s['passed']}/{s['n']}  median {s['median_s']}s  "
             f"total {s['total_s']}s  >30s: {s['over_30s']}  "
-            f"clashes {s['clash_total']} over {s['clash_mols_with_any']} mols"
+            f"clash {s['clash_total']} over {s['clash_mols_with_any']}/"
+            f"{s['clash_measured_on']} mols (severe {s['clash_severe_total']}, "
+            f"worst_overlap min {s['worst_overlap_min']} med {s['worst_overlap_median']})"
         )
     print(f"  PASS REGRESSIONS (A pass -> B fail): {regressions or 'none'}")
     print(f"  PASS FIXES       (A fail -> B pass): {fixes or 'none'}")
