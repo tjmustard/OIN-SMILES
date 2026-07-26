@@ -144,21 +144,31 @@ def encode(path, filter_on, cap):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True)
-    ap.add_argument("--mols", required=True)
+    ap.add_argument("--dataset", default=".")
+    ap.add_argument("--mols", default="", help="refcodes resolved under --dataset")
+    ap.add_argument("--files", default="", help="explicit xyz paths (the goldens live in tests/)")
     ap.add_argument("--cap", type=float, default=400.0)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
     root = Path(args.dataset)
-    names = [x.strip() for x in args.mols.split(",") if x.strip()]
-    out = {}
-    for name in names:
+    targets = []
+    for name in [x.strip() for x in args.mols.split(",") if x.strip()]:
         hits = sorted(root.glob(f"cat/{name}.xyz")) + sorted(root.glob(f"photo/{name}.xyz"))
         if not hits:
             print(f"{name}: NOT FOUND", flush=True)
             continue
-        path = hits[0]
+        targets.append((name, hits[0]))
+    for raw in [x.strip() for x in args.files.split(",") if x.strip()]:
+        path = Path(raw)
+        if not path.exists():
+            print(f"{raw}: NOT FOUND", flush=True)
+            continue
+        targets.append((path.stem, path))
+    if not targets:
+        sys.exit("FATAL: nothing to encode -- pass --mols and/or --files")
+    out = {}
+    for name, path in targets:
         print(f"\n=== {name} ({path.parent.name})", flush=True)
         arms = [encode(path, False, args.cap), encode(path, True, args.cap)]
         arms.append(encode(path, False, args.cap))  # repeat OFF: determinism self-check

@@ -665,6 +665,7 @@ AC2BO_STATS = {
     "over_cap_calls": 0,  # ... of which took the bounded lazy-product branch
     "over_cap_ordered_calls": 0,  # ... of which enumerated in heuristic order (lever ON)
     "over_cap_filtered_calls": 0,  # ... of which enumerated charge-feasible-only (lever ON)
+    "over_cap_infeasible": 0,  # ... of which had NO feasible candidate at all (charge is wrong)
     "candidates": 0,  # candidate valence assignments examined, all branches
     "over_cap_candidates": 0,  # ... of which on the over-cap branch
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
@@ -1026,9 +1027,23 @@ def AC2BO(AC, atoms, charge, allow_charged_fragments=True, use_graph=True, allow
         # cannot be valid. The filter wins if both are set, since it subsumes the question.
         if _lever_enabled(_CHARGE_FILTER_ENV):
             AC2BO_STATS["over_cap_filtered_calls"] += 1
-            candidate_source = iter_charge_feasible_valences(
+            feasible = iter_charge_feasible_valences(
                 valences_list_of_lists, atoms, charge, AC_valence
             )
+            first = next(feasible, None)
+            if first is None:
+                # Provably nothing here can be valid, so there is no valid structure to
+                # find -- but best_BO is still the value downstream judges, and it is built
+                # from candidates the filter would drop. Fall back to the historical
+                # enumeration so this case stays byte-identical to the default: the lever's
+                # blast radius is then exactly "a guess becomes a real Lewis structure",
+                # and never "a guess becomes a different guess". (The DP has already proved
+                # the grind cannot succeed, so short-circuiting it is a separate, safe
+                # optimisation -- see docs/VALENCE_ORDER_v0.4.5.md.)
+                AC2BO_STATS["over_cap_infeasible"] += 1
+                candidate_source = itertools.product(*valences_list_of_lists)
+            else:
+                candidate_source = itertools.chain([first], feasible)
         elif _lever_enabled(_ORDERED_FALLBACK_ENV):
             AC2BO_STATS["over_cap_ordered_calls"] += 1
             candidate_source = iter_ordered_valences(valences_list_of_lists, atoms)

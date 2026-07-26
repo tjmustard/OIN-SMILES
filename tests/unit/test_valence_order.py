@@ -204,6 +204,38 @@ class TestChargeFilterIsNecessary(unittest.TestCase):
         self.assertGreater(len(kept), 0)
 
 
+class TestInfeasibleChargeFallsBackToTheHistoricalPath(unittest.TestCase):
+    """The lever must never turn one guess into a *different* guess.
+
+    When no candidate can satisfy the charge, there is no valid structure to find -- but
+    ``best_BO`` is still what downstream judges, and it is assembled from candidates the
+    filter drops. So the over-cap branch falls back to the raw product in that case, which
+    is what makes the lever's blast radius exactly "a guess becomes a real Lewis structure".
+    LIYFAA_comp_0 is the real molecule this covers: 0 feasible candidates at charge -10.
+    """
+
+    def _call(self, charge, env):
+        AC, atoms = chain_ac(17)
+        env = dict(env)
+        env.setdefault(xl._FALLBACK_TRIES_ENV, "5")
+        with mock.patch.dict(os.environ, env, clear=False):
+            for name in (xl._ORDERED_FALLBACK_ENV, xl._CHARGE_FILTER_ENV):
+                if name not in env:
+                    os.environ.pop(name, None)
+            xl.reset_ac2bo_stats()
+            BO, _ = xl.AC2BO(AC, atoms, charge)
+        return BO, dict(xl.AC2BO_STATS)
+
+    def test_an_infeasible_charge_reproduces_the_default_answer_exactly(self):
+        # +99 on a 17-carbon chain is unreachable, so the feasible set is empty.
+        base, base_stats = self._call(99, {})
+        BO, stats = self._call(99, {xl._CHARGE_FILTER_ENV: "1"})
+        self.assertEqual(stats["over_cap_infeasible"], 1)
+        self.assertEqual(base_stats["over_cap_infeasible"], 0)
+        self.assertTrue(np.array_equal(BO, base), "infeasible fallback changed best_BO")
+        self.assertEqual(stats["candidates"], base_stats["candidates"])
+
+
 class TestOverCapLeverDefaults(unittest.TestCase):
     """Both levers OFF by default, and ``"0"`` means off."""
 
