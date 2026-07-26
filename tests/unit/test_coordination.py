@@ -138,3 +138,39 @@ class TestVerdict(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDenticitySignatureIsDataNotVerdict(unittest.TestCase):
+    """The signature is RECORDED but must never move `intact`.
+
+    Measured on the 633-molecule validation set: folding it into the verdict lifts recall
+    90.2% -> 98.4% but takes the false-alarm rate from 3.7% to 55.8%. A signature that changes
+    for more than half of the structures that are fine separates nothing. This test is the guard
+    that keeps a future reader from "improving" the verdict by wiring it in.
+    """
+
+    def test_signature_describes_a_sandwich(self):
+        from oinsmiles.oin.coordination import denticity_signature, parse_xyz
+
+        syms, coords = parse_xyz(ferrocene_like(2.05))
+        self.assertEqual(denticity_signature(syms, coords, 0), (5, 5))
+
+    def test_signature_is_reported_on_every_metal(self):
+        s = ferrocene_like(2.05)
+        rep = coordination_report(s, s)
+        m = rep["metals"][0]
+        self.assertEqual(m["denticity_in"], [5, 5])
+        self.assertEqual(m["denticity_gen"], [5, 5])
+
+    def test_a_changed_signature_alone_does_NOT_flag(self):
+        """Two monodentates -> one bidentate changes the partition with no contact lost."""
+        base = xyz([("Fe", 0, 0, 0), ("N", 2.0, 0, 0), ("N", -2.0, 0, 0)])
+        # Same two N still in contact with Fe (1.59 A, cutoff ~2.48), but now 1.5 A apart --
+        # inside the ~1.87 A N-N cutoff -- so they form ONE bidentate ligand, not two monodentates.
+        joined = xyz([("Fe", 0, 0, 0), ("N", 1.4, 0.75, 0), ("N", 1.4, -0.75, 0)])
+        rep = coordination_report(base, joined)
+        m = rep["metals"][0]
+        self.assertNotEqual(m["denticity_in"], m["denticity_gen"])
+        self.assertIsNot(
+            rep["intact"], False, "signature change alone must not degrade the verdict"
+        )

@@ -117,6 +117,90 @@ def metal_contacts(symbols, coords, metal_index: int, slack: float = CONTACT_SLA
     return counts, contacts
 
 
+def denticity_signature(symbols, coords, metal_index: int, slack: float = CONTACT_SLACK):
+    """How many contacts each *ligand* contributes to the metal, as a sorted tuple.
+
+    Ferrocene is ``(5, 5)``. A tris-bidentate is ``(2, 2, 2)``. Four monodentates are
+    ``(1, 1, 1, 1)``.
+
+    WHY THIS EXISTS, and why it does NOT need slot->atom correspondence
+    ------------------------------------------------------------------
+    The per-element contact multiset is blind to two real failure modes, both measured on the
+    633-molecule validation set:
+
+      * **same-count hapticity rearrangement** -- ``OGARAP_comp_0`` slips eta3 -> eta2 while the
+        total carbon-contact count stays at 5, because a different atom moved into contact.
+      * **gain-driven over-coordination** -- 4 of the 61 known false positives GAINED contacts
+        (6 -> 11, 7 -> 12) and changed the geometry tag without losing anything.
+
+    Both change *which ligand* the contacts come from, so grouping contacts by ligand catches them.
+    Ligands are recovered as connected components of the **non-metal** covalent graph -- no OIN slot
+    markers and no atom-index correspondence between the two structures, so none of the fragility
+    that made mapping slots the wrong tool here. Sorted, so it is invariant to atom ordering and to
+    which ligand is written first.
+
+    ⚠ MEASURED AND REFUTED AS A VERDICT -- record it, do NOT gate on it.
+    ---------------------------------------------------------------------
+    It does catch what it was built to catch: 5 of the 6 molecules that the loss-based verdict
+    misses (all but ``OGARAP_comp_0``), lifting recall 90.2% -> 98.4% on the 633-molecule set. But
+    on the same set it fires on **55.8% of GENUINE PASSES**:
+
+        rule                          recall          false alarm
+        loss only (shipped)           55/61 = 90.2%   21/572 =  3.7%
+        loss OR denticity change      60/61 = 98.4%   319/572 = 55.8%
+        denticity change only         60/61 = 98.4%   318/572 = 55.6%
+
+    A signature that changes for more than half of the structures that are fine cannot separate
+    anything -- 8 points of recall for a 15x worse false-alarm rate is not a trade, it is a
+    different and useless instrument. The cause is sensitivity: any small relaxation moves one
+    contact across the cutoff in *some* ligand, and the partition then differs even though the
+    coordination is chemically intact.
+
+    So this is exported and RECORDED per metal (``denticity_in`` / ``denticity_gen``) because the
+    partitions are genuinely informative when inspecting a specific molecule -- ``[1,1] -> [3,2]``
+    or ``[4,2,1] -> [10,1,1]`` tells you immediately what went wrong -- but ``intact`` remains
+    loss-based. ``OGARAP_comp_0`` (eta3 -> eta2, signature ``[3,2] -> [3,2]`` unchanged) is caught
+    by neither and stays a known miss.
+    """
+    if not symbols or coords.shape[0] != len(symbols):
+        return ()
+    n = len(symbols)
+    if not (0 <= metal_index < n):
+        return ()
+    r = np.array([_PT.GetRcovalent(s) for s in symbols])
+    d = np.linalg.norm(coords[:, None, :] - coords[None, :, :], axis=2)
+    adj = d < (r[:, None] + r[None, :] + slack)
+    np.fill_diagonal(adj, False)
+
+    # Union-find over non-metal atoms only. Dropping the metal is what separates the ligands from
+    # each other -- they are otherwise all connected THROUGH it, into one component.
+    parent = list(range(n))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for i in range(n):
+        if i == metal_index:
+            continue
+        for j in range(i + 1, n):
+            if j == metal_index or not adj[i][j]:
+                continue
+            ra, rb = find(i), find(j)
+            if ra != rb:
+                parent[rb] = ra
+
+    per_ligand: dict = {}
+    for i in range(n):
+        if i == metal_index or not adj[metal_index][i]:
+            continue
+        root = find(i)
+        per_ligand[root] = per_ligand.get(root, 0) + 1
+    return tuple(sorted(per_ligand.values(), reverse=True))
+
+
 def coordination_report(input_xyz_text: str, generated_xyz_text: str, slack: float = CONTACT_SLACK):
     """Compare metal coordination between the input and the generated geometry.
 
@@ -219,6 +303,8 @@ def coordination_report(input_xyz_text: str, generated_xyz_text: str, slack: flo
                 "lost_beyond_band": beyond,
                 "gained": gained,
                 "marginal_gen": marginal,
+                "denticity_in": list(denticity_signature(in_syms, in_xyz, mi, slack)),
+                "denticity_gen": list(denticity_signature(gen_syms, gen_xyz, mg, slack)),
                 "nearest_in": [(s, round(d, 3)) for _i, s, d, _c in in_contacts[:12]],
                 "nearest_gen": [(s, round(d, 3)) for _i, s, d, _c in gen_contacts[:12]],
             }
