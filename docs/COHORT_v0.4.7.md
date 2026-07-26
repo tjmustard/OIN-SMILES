@@ -187,6 +187,16 @@ stronger and would fail a lane for legitimately picking a different-but-equivale
 conformer. The generated XYZ's sha is recorded as an OBSERVATION column only in ARM 2's
 output, never gated on.
 
+**For other lanes reusing this cohort as a byte-gate directly** (e.g. an
+`OIN_ACCEPT_SCORED`-style A/B): `tools/gate_v047_arm2_golden.tsv` records BOTH
+`sha256(smiles_1)` AND `sha256(smiles_2)` per molecule, keyed by name, columns 2 and 3
+respectively (`name<TAB>sha1<TAB>sha2<TAB>len1<TAB>len2<TAB>eta`) — a lane whose own
+arm produces no output for some molecules can diff its own two arms' shas against this
+manifest without re-deriving anything, and the frozen 62-name list
+(`docs/COHORT_v0.4.7.md` §2 table) is exactly the population the byte-exact selection
+predicate already vetted, so it doubles as a denominator check for "did my arm produce
+output at all" as well as "is the string unchanged."
+
 ### ARM 1 — encoder, 61 fixtures
 
 `tools/gate_arm1_encode.py` iterates every `tests/fixtures/*.xyz` file (asserted to be
@@ -198,7 +208,19 @@ revisions agree), emit `name<TAB>sha256(oin)<TAB>len<TAB>eta`. Errors are part o
 contract too (`ERROR:<Type>:<msg>` in the sha column) — two revisions must raise the SAME
 error. Output is sorted by name, followed by `# MANIFEST_SHA256=<...>` and `#DONE 61`.
 
-**ARM 1 run to completion this session. `MANIFEST_SHA256 = <FILLED IN BELOW>`.**
+**ARM 1 run to completion this session** (`PYTHONPATH=src .venv/bin/python
+tools/gate_arm1_encode.py --fixtures-dir tests/fixtures`):
+
+```
+# molecules=61 fixtures_dir=.../tests/fixtures
+# MANIFEST_SHA256=373cc387bae9a38c665bd8cbe4b5023682b933802b607499c645e78aa13aaf69
+#DONE 61
+```
+
+Frozen as the committed golden at `tools/gate_v047_arm1_golden.tsv` (61 data rows,
+sorted by name, plus the `# MANIFEST_SHA256=...` and `#DONE 61` lines). A future
+`tools/gate_v047.sh arm1` run diffs against this file and fails loudly on any
+byte difference, in either the manifest hash or any individual row.
 
 ### ARM 2 — round trip, the frozen 62-molecule cohort
 
