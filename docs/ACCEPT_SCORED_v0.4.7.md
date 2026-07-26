@@ -114,6 +114,28 @@ documented as "may only REJECT" is only sound if it rejects nothing the strict t
 disagreeing strings for the first instance, because counts say it happens and only the strings
 say why.
 
+**Confirmed from production data, not just from the probe.** AROHIA's row in this lane's run
+is the exact inverse of every other molecule in the cohort:
+
+```
+[A-default] AROHIA_comp_0   53.75s pass=False indep=True  sha=596fde4bb73155a7 clash=0 worst=0.8152
+```
+
+`passed` is computed with `get_oin_string(gen.mol, coords)` — the same function
+`_reencode_oin_fast` uses — and it says **mismatch**. `indep_passed` runs the full
+`XYZToSMILES().convert()` and it says **match**. So the structure the generator returned *does*
+round-trip; the cheap encoder is what is wrong about it. Everywhere else in this cohort the
+cheap test is the permissive one and strict is the strict one. On AROHIA the ordering inverts,
+which is precisely the condition under which a "may only REJECT" prefilter becomes unsound.
+
+Two consequences, both worth stating separately:
+
+1. **It is an acceptance defect.** 16 of 48 conformers that the strict test would take are
+   unreachable, with the lever on or off.
+2. **It is also a measurement defect.** The harness scores with the cheap path, so AROHIA is
+   recorded as a round-trip FAILURE while independent re-perception says it round-trips. The
+   reported pass rate is wrong on this molecule in the pessimistic direction.
+
 **Recorded, not fixed, per lane scope.**
 
 ---
@@ -195,11 +217,38 @@ speedup *is* a pass-rate effect.
 > where both predicates already fire at pool index 0 and the lever changes nothing it could
 > change. Said explicitly so nobody later reads these four rows as a slowdown.
 
-### 4.2 G3 / G2 on the 22-molecule cohort
+### 4.2 Same-arm reproducibility — an unplanned control that de-risks G3
+
+G3's premise is that a sha difference between arms is caused by the lever. That only holds if
+the generator is deterministic, and this project has a documented habit of confirming wrong
+beliefs with measurements that never exercised the hard case. So the premise got checked.
+
+Arm A was measured **twice**: this lane's run and the rescued prior run — different process,
+different tool build, different `--hard-cap`. `clash_vdw` and `worst_overlap` are functions of
+the returned coordinates alone, so agreement to 4 decimal places means the generator returned
+the same structure.
+
+| molecule | run 1 | run 2 | | molecule | run 1 | run 2 |
+|---|---|---|---|---|---|---|
+| DAKGON | 0 / 0.8164 | 0 / 0.8164 | | POVPIA | 16 / 0.4344 | 16 / 0.4344 |
+| FEXYOZ | 0 / 0.7621 | 0 / 0.7621 | | RATPEK | 0 / 0.7599 | 0 / 0.7599 |
+| HEJXIF | 0 / 0.7632 | 0 / 0.7632 | | WIWRIE | 0 / 0.7539 | 0 / 0.7539 |
+| KAQDOV | 0 / 0.7504 | 0 / 0.7504 | | YIZHIY | 0 / 0.7588 | 0 / 0.7588 |
+| MEDZUR | 0 / 0.7577 | 0 / 0.7577 | | ZITSIE | 0 / 0.7526 | 0 / 0.7526 |
+| NOMMOU | 0 / 0.7579 | 0 / 0.7579 | | | | |
+
+**11 of 11 identical** on molecules where both runs produced a structure. (A twelfth, GAVSED,
+is not a disagreement: the rescued run killed it at its tighter 330s cap and produced nothing.)
+
+This does **not** discharge the blocking control — any molecule whose `sha_out` differs between
+arms still gets an explicit A-vs-A′ `--single-arm` re-run before a G3 verdict is stated. It does
+mean generator nondeterminism is an unlikely explanation for any difference that appears.
+
+### 4.3 G3 / G2 on the 22-molecule cohort
 
 *(pending — run `l2-ab22` in flight)*
 
-### 4.3 G4 — guard population
+### 4.4 G4 — guard population
 
 *(pending)*
 
