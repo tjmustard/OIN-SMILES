@@ -33,7 +33,15 @@ for _p in (str(_ROOT), str(_ROOT / "src")):
         sys.path.insert(0, _p)
 
 from oinsmiles.core.constants import TRANSITION_METALS_NUM  # noqa: E402
-from oinsmiles.oin.metal_config import metal_config_sign, metal_config_token  # noqa: E402
+from oinsmiles.oin.metal_config import (  # noqa: E402
+    _admissible_permutations,
+    is_achiral,
+    is_achiral_chelate_aware,
+    metal_config_sign,
+    metal_config_token,
+    metal_config_token_chelate,
+)
+from oinsmiles.utils.xyz2mol import get_tmc_mol  # noqa: E402
 
 FIXTURES = _ROOT / "tests" / "fixtures"
 ZUMNEC = FIXTURES / "ZUMNEC.xyz"
@@ -274,3 +282,93 @@ class TestDegenerateInputs(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _donors_and_chelate_groups(path):
+    """Donor coordinates plus the chelate partition, both from perception.
+
+    ``groups`` partitions donor POSITIONS (not atom indices) by which ligand each donor belongs to,
+    obtained as the connected components left after deleting the metal. That partition is the input
+    the descriptor was missing: Δ/Λ helicity is a property of chelate connectivity, and six oxygens
+    at octahedral vertices are an achiral point SET however carefully they are measured.
+    """
+    from rdkit import Chem
+
+    mol, _ = get_tmc_mol(Path(path), 0, with_stereo=False)
+    conf = mol.GetConformer()
+    metal = next(a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() in TRANSITION_METALS_NUM)
+    idxs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(metal).GetNeighbors()]
+    pts = np.array([list(conf.GetAtomPosition(i)) for i in idxs])
+
+    stripped = Chem.RWMol(mol)
+    stripped.RemoveAtom(metal)
+    comp = {a: fi for fi, f in enumerate(Chem.GetMolFrags(stripped.GetMol())) for a in f}
+    groups = {}
+    for pos, atom_idx in enumerate(idxs):
+        groups.setdefault(comp[atom_idx - 1 if atom_idx > metal else atom_idx], []).append(pos)
+    return pts, [tuple(v) for v in groups.values()]
+
+
+class TestAdmissiblePermutations(unittest.TestCase):
+    """The generator that must not be empty. It WAS, and that made a detection look real.
+
+    ``[itertools.permutations(x)] * n`` repeats ONE iterator, so after the first is consumed the
+    rest are empty and ``itertools.product`` collapses to nothing. ``_admissible_permutations``
+    yielded ZERO permutations for every input, so ``is_achiral_chelate_aware``'s "no symmetry found
+    -> chiral" verdict came from a loop that never ran. Every fixture came back chiral -- including
+    the achiral one, which is what exposed it. An empty generator is indistinguishable from a
+    confident answer at the call site, so it gets asserted here.
+    """
+
+    def test_counts_are_exact(self):
+        self.assertEqual(len(list(_admissible_permutations([(0, 1), (2, 3), (4, 5)]))), 48)
+        self.assertEqual(len(list(_admissible_permutations([(0,), (1, 2), (3,)]))), 4)
+        self.assertEqual(len(list(_admissible_permutations([(0,), (1,), (2,), (3,)]))), 24)
+
+    def test_every_yield_is_a_genuine_permutation(self):
+        for groups in ([(0, 1), (2, 3), (4, 5)], [(0,), (1, 2), (3,)]):
+            n = sum(len(g) for g in groups)
+            for perm in _admissible_permutations(groups):
+                with self.subTest(groups=groups, perm=perm):
+                    self.assertEqual(sorted(perm), list(range(n)))
+
+    def test_chelate_membership_is_preserved(self):
+        groups = [(0, 1), (2,), (3,), (4, 5)]
+        size_of = {i: len(g) for g in groups for i in g}
+        for perm in _admissible_permutations(groups):
+            for src, dst in enumerate(perm):
+                self.assertEqual(size_of[src], size_of[dst])
+
+
+@unittest.skipUnless(ZUMNEC.exists() and JEGKOW.exists(), "fixtures missing")
+class TestChelateAwareDeltaLambda(unittest.TestCase):
+    """The descriptor that actually detects Δ/Λ, on both fixtures."""
+
+    def test_zumnec_is_chiral_and_the_token_inverts(self):
+        pts, groups = _donors_and_chelate_groups(ZUMNEC)
+        self.assertFalse(is_achiral_chelate_aware(pts, groups))
+        token = metal_config_token_chelate(pts, groups)
+        self.assertIn(token, ("|mc:+|", "|mc:-|"))
+        self.assertEqual(
+            metal_config_token_chelate(_reflected(pts), groups),
+            "|mc:+|" if token == "|mc:-|" else "|mc:-|",
+            "the token must INVERT for the enantiomer -- Y2 shipped one that did not",
+        )
+
+    def test_jegkow_square_planar_emits_nothing(self):
+        pts, groups = _donors_and_chelate_groups(JEGKOW)
+        self.assertTrue(is_achiral_chelate_aware(pts, groups))
+        self.assertEqual(metal_config_token_chelate(pts, groups), "")
+
+    def test_unconstrained_search_disagrees_on_zumnec(self):
+        """Pins WHY the chelate partition is required, not merely that it helps."""
+        pts, groups = _donors_and_chelate_groups(ZUMNEC)
+        self.assertTrue(is_achiral(pts), "bare point set: octahedral donors are achiral")
+        self.assertFalse(is_achiral_chelate_aware(pts, groups), "with chelates: chiral")
+
+    def test_invariant_under_proper_rotation(self):
+        pts, groups = _donors_and_chelate_groups(ZUMNEC)
+        base = metal_config_token_chelate(pts, groups)
+        for seed in range(4):
+            with self.subTest(seed=seed):
+                self.assertEqual(metal_config_token_chelate(_rotated(pts, seed), groups), base)
