@@ -1,6 +1,6 @@
 # `OIN_ACCEPT_SCORED` — promotion gates (v0.4.7, lane L2-promote)
 
-**Status: G1, G2, G3 MEASURED. G4 in flight.** Results sections are filled as runs land. Method and mechanism are
+**Status: ALL FOUR GATES MEASURED. Recommendation: DO NOT PROMOTE (§5.4).** Results sections are filled as runs land. Method and mechanism are
 settled and are recorded here first, deliberately: they are the part that does not survive an
 interrupted session otherwise.
 
@@ -548,20 +548,114 @@ disagreements with the cheap path. `indep=False` means "the two encoders disagre
 structure," which is strong evidence of a real difference but is not proof the geometry is
 wrong.
 
-### 4.4 G4 — guard population
+### 4.8 G4 — guard population, n=100. **It answers its own question YES and overturns G1.**
 
-*(pending)*
+100 molecules drawn seed-42 from the 634 `status=="success"` reports in
+`results-v0.4.5-rebaseline`. Zero overlap with the 22-cohort. `--timeout 150 --hard-cap 240`.
+`spec/handoffs/v0.4.7/runs/guard100.json`.
+
+#### The literal question: does anything that passes stop passing? **No.**
+
+| | arm A | arm B |
+|---|---|---|
+| `passed` (circular metric) | 98/100 | 99/100 |
+| PASS REGRESSIONS | — | **none** |
+| PASS FIXES | — | 1 (`CUCBUZ_comp_0`) |
+
+**95% upper bound on the pass-regression rate: 3.06%** (0 events over 98 arm-A passes).
+
+#### G3 at population scale: **PASS, and stronger than the 22-cohort**
+
+**98 comparable · 98 byte-identical · 0 different · 2 not comparable.**
+**95% upper bound on the byte-divergence rate: 3.06%.**
+
+Across both cohorts that is **118 comparable molecules, 0 divergent**. G3 is the one gate that
+holds everywhere it has been measured.
+
+#### G1 at population scale: **FAILS — and the 22-cohort's PASS was an artifact**
+
+| metric (paired, n=98) | A default | B scored |
+|---|---|---|
+| `clash_vdw` total | 77 | **105** |
+| `clash_severe` total | 5 | **14** |
+| `worst_overlap` min | 0.5101 | **0.4927** |
+| per-molecule | — | **B worse 23 · B better 13 · identical 62** |
+
+> ⚠ **This reverses the G1 verdict recorded earlier in this document.** On the 22-cohort G1 looked
+> like a net *improvement* (clash 16→2, severe 7→0). That result was **one molecule**: POVPIA,
+> whose 16-clash arm-A structure the lever happened to repair. Remove it and the 22-cohort had
+> nothing to show. A cohort selected to exhibit the acceptance gap is not a sample from which
+> structure quality can be estimated, and I read it as one. **G4 is the corrective.**
+
+**Not outlier-driven, and I checked specifically because the last G1 conclusion was:**
+
+- 11 molecules **gain** clashes (total **+35**); 2 lose them (total −7); **net +28**.
+- Excluding the single largest mover in *each* direction: still **+21**. The effect survives.
+- **Severe clashes: 4 molecules worse, 0 molecules better.** Totals 5 → 14, near-tripled.
+- Worst individual case `ROJXOE_comp_0`: `0 → 11` clashes, `worst_overlap 0.7564 → 0.4927`.
+
+#### The sharpest cut: restrict to where the lever actually changed the answer
+
+The lever returned an identical structure on 63 of 98 molecules — it cannot cost anything there.
+Everything it does costs is concentrated in the other 35:
+
+| among the **35** molecules where the returned conformer changed | A | B |
+|---|---|---|
+| `clash_vdw` total | 13 | **41** (×3.2) |
+| `clash_severe` total | **0** | **9** |
+| independent re-perception lost | — | **26 of 35 (74%)** |
+
+**Where the lever acts, it triples clashes, creates severe clashes where there were none, and
+breaks independent re-perception on three molecules in four.**
+
+#### G2 at population scale
+
+`indep_passed` **88/98 → 62/98 paired**; **26 regressions, 0 fixes.**
+**Population rate 26/88 = 29.5%** of the molecules that passed independent re-perception with
+the lever off.
+
+Against the 22-cohort's 8/15 = **53%** upper bound: the population rate is roughly half the
+selected-cohort rate, exactly as a gap-selected cohort predicts — **but it is 29.5%, not 3%.**
+The 22-cohort exaggerated the magnitude; it did not invent the effect.
+
+Still **perfectly one-way: 0 fixes in 100 molecules.** Across both cohorts, 34 regressions and
+**zero** instances of the lever finding a different conformer that still passed.
+
+#### The 20/20 predictor, tested out-of-sample: **98/98**
+
+> a molecule regresses on `indep` iff the lever returned a DIFFERENT conformer **and** arm A's
+> conformer had passed `indep`
+
+Fitted on the 22-cohort, tested on this independently-drawn 100. **Correct on 98/98.**
+Combined: **118/118, zero misses.** This is no longer a description of one cohort; it is a
+mechanism.
+
+#### ⚠ G4 "passing" is not reassurance — it is a demonstration of §4.7
+
+Read the first and last blocks together:
+
+- **PASS regressions: 0.** The harness metric reports the lever as completely free.
+- **Same molecules: +28 clashes, severe ×2.8, 26 independent re-perception failures.**
+
+The metric is not silent because nothing happened. It is silent **because it re-encodes through
+the generator's own bond graph and therefore cannot see any of this.** G4's clean bill of health
+is the strongest available evidence that the measurement defect in §4.7 is real and consequential
+— a lever can degrade 26 molecules' structures and raise severe clashes from 0 to 9 without
+moving the number this project reports.
 
 ## 5. Recommendation
 
-### 5.1 Gate scorecard
+### 5.1 Gate scorecard — all four measured
 
-| gate | question | result | verdict |
-|---|---|---|---|
-| **G3** | does `smiles_2` stay byte-identical? | 20 comparable, **20 identical, 0 different**; 2 DEAD-class unmeasurable | **PASS** |
-| **G1** | does structure quality degrade? | paired clash 16→2, **severe 7→0**, worst overlap 0.4344→0.7283; B worse 4 / better 8 / identical 8 | **PASS (net improvement)** |
-| **G2** | what does dropping independent re-perception cost? | `indep` **15/20 → 7/20**, **8 regressions, 0 fixes** | **FAIL** |
-| **G4** | does any currently-passing molecule stop passing? | *(pending — `l2-guard100`)* | pending |
+| gate | question | 22-cohort (gap-selected) | **n=100 population** | verdict |
+|---|---|---|---|---|
+| **G3** | does `smiles_2` stay byte-identical? | 20/20 identical | **98/98 identical, 0 divergent** (95% UB 3.06%) | **PASS** |
+| **G1** | does structure quality degrade? | clash 16→2, severe 7→0 *(one molecule)* | **clash 77→105, severe 5→14, worse 23 / better 13** | **FAIL** |
+| **G2** | what does dropping independent re-perception cost? | 15/20 → 7/20, 8 regressions | **88/98 → 62/98, 26 regressions, 0 fixes (29.5%)** | **FAIL** |
+| **G4** | does any currently-passing molecule stop passing? | — | **No — 0 regressions** (95% UB 3.06%) | **PASS** |
+
+**Two of four gates fail, and the G1 failure was hidden by the gap-selected cohort until the
+population run exposed it.**
 
 ### 5.2 The trade, stated in one line
 
@@ -572,38 +666,63 @@ surviving independent re-perception (G2, 8/8).
 ### 5.3 Two readings, and they genuinely differ
 
 **Reading A — the OIN string is a canonical 1D identifier.**
-Then G3 settles it. The notation is provably unchanged on every measurable molecule, structure
-quality improves in aggregate (including repairing a 16-clash default-path defect), the harness
-metric is unchanged, and the runtime win is large. `indep` becomes a diagnostic about geometry,
-not about the identifier. **Promote.**
+Then G3 settles it: the notation is provably unchanged on all 118 measurable molecules, the
+harness metric is unchanged, and the runtime win is large. `indep` becomes a diagnostic about
+geometry, not about the identifier. **This was the case for promoting — and G4 weakened it
+badly.** Even under this reading the generator is now returning structures with tripled clashes
+and detached ligands; a canonical identifier for a structure nobody can reproduce is a weaker
+thing than it sounds.
 
 **Reading B — the round trip must also reproduce *the* geometry.**
-Then the GAP class is a real regression: 8 molecules that survived an independent, connectivity-
-blind re-derivation no longer do, and the project's own metric is structurally incapable of
-noticing. Losslessness claims that lean on round-tripping would be resting on a test that now
-shares the generator's bond graph. **Do not promote.**
+Then this is a clear regression: on a representative population, 26 molecules that survived an
+independent, connectivity-blind re-derivation no longer do, severe clashes go 0→9 among affected
+molecules, and the project's own metric is structurally incapable of noticing. Losslessness
+claims that lean on round-tripping would rest on a test that shares the generator's bond graph.
+**Do not promote.**
 
-These are not two spins on one number. They are different definitions of what the round trip is
-*for*, and the measurements cannot choose between them.
+These were not two spins on one number — they are different definitions of what the round trip
+is *for*. **Before G4 the measurements could not choose between them. After G4 they largely do:**
+Reading A's case rested on G1 showing a quality *improvement*, and at population scale G1 shows
+the opposite. Both readings now point the same way.
 
-### 5.4 My recommendation: **promote-with-scope — default-OFF for correctness work, opt-in for throughput. Do NOT flip the global default on this evidence.**
+### 5.4 Recommendation: **DO NOT PROMOTE. Keep `OIN_ACCEPT_SCORED` default-OFF.**
 
-Reasoning, in the order it actually weighed:
+*(This supersedes the "promote-with-scope" recommendation recorded at commit `6c9b6d3d`, which
+was written before G4. G4 inverted G1 and put a population number on G2. Superseding it is the
+point of having run the gate.)*
 
-1. **G2 failed, and a failed gate is a result, not an obstacle to route around.** 8 regressions,
-   0 fixes, and the direction is perfectly one-way: 8/8 conformer changes lost `indep`. This
-   project has nine refuted hypotheses in one release, every one produced by a measurement that
-   only exercised the easy case. G3 passing is not a licence to discount G2.
-2. **The cost is invisible to the metric that would police it.** `passed` is 19/22 in both arms.
-   If this ships default-ON, no existing sweep will ever report the regression. A cost that the
-   monitoring cannot see should not be taken by default.
-3. **But the lever is genuinely good at what it does.** G3 is clean at a 20/22 denominator, G1
-   is a net improvement, and the latency win is order-of-magnitude on the GAP class. Burying it
-   as "held off" would waste a real result.
-4. **The honest scope is the trade itself.** Throughput and metric-fidelity work (large sweeps,
-   generator benchmarking, timeout-bound cohorts) should turn it on and say so. Correctness and
-   losslessness work should leave it off, because the independent re-perception is the only test
-   in the predicate that does not share the generator's connectivity.
+Reasoning, in the order it weighed:
+
+1. **Two gates fail, and one of them failed only when the cohort widened.** On the gap-selected
+   22 the lever looked like a structure-quality *improvement*. On 100 representative molecules
+   it raises total clashes 77→105 and severe clashes 5→14, with **4 molecules worse on severe and
+   0 better**. The improvement was a single molecule (POVPIA). This is the project's signature
+   failure mode — a measurement that only exercised the easy case — and it was caught only
+   because G4 exists.
+2. **Where the lever acts, the cost is severe, not marginal.** Restricted to the 35 of 98
+   molecules where it actually changed the returned conformer: clashes ×3.2 (13→41), severe
+   clashes **0→9**, independent re-perception lost on **26 of 35 (74%)**. It is not a diffuse
+   quality drift; it is concentrated damage.
+3. **The cost is invisible to the metric that would police it.** Pass regressions: **zero**. If
+   this ships default-ON, no existing sweep will ever report any of the above. **A cost that the
+   monitoring cannot see must not be taken by default** — and G4 is the proof, not the
+   reassurance it superficially looks like (§4.8).
+4. **The direction is perfectly one-way across 122 molecules.** 34 `indep` regressions, **0
+   fixes**. The lever has never once, in any cohort, found a different conformer that still
+   passed independent re-perception. The strict test is not redundant; it is load-bearing.
+5. **G3 passing does not rescue it.** The notation is genuinely unaffected — 118/118 byte-
+   identical. But "the string is unchanged" is a statement about the *identifier*, and G1/G2 are
+   statements about the *structure the identifier is supposed to describe*. A lossless notation
+   whose generator returns detached ligands has not preserved anything worth preserving.
+
+**What should happen instead:** build the attachment check of §6 as the lever's missing safety
+condition, then re-run these four gates. §6 is feasible (11–81 ms vs 48–57 s) and would recover
+6–7 of 8 failure modes by construction. **That is the path to promotion; this evidence is not.**
+
+**What the lever is still good for:** it remains a legitimate opt-in for throughput work where
+the geometry is not the product — generator benchmarking, timeout-bound sweeps, latency
+profiling. The runtime win is real and large. It should keep its `_HELD_OFF` documentation and
+its env-var opt-in, and it should not become anyone's default.
 
 **Conditions that would change this to full promotion:**
 - ~~the GAP-class `indep` failures are presentation instabilities of the full encoder rather
