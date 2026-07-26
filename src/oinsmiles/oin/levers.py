@@ -117,6 +117,27 @@ _HELD_OFF = {
         "write order is fixed. Guarded by "
         "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
     ),
+    "OIN_ACCEPT_SCORED": (
+        "makes pool acceptance use the predicate the SCORE uses -- "
+        "`get_oin_string(gen.mol, coords)`, i.e. `_reencode_oin_fast` -- instead of also "
+        "requiring the independent `XYZToSMILES().convert` re-perception. This is the mechanism "
+        "behind OIN_ETA_EARLY_EXIT's 'fires but ineffective' result: the eta early targets do "
+        "fire, and then step 2 rejects the conformer anyway. MEASURED on HIDCIH_comp_1 with a "
+        "forced full pool fill (tools/probe_accept_gap.py): of 48 conformers, the scored "
+        "predicate matched 46 -- the FIRST at pool index 0, t=1.66s -- while independent "
+        "re-perception matched only 2, first at index 25, t=49.4s. The unpatched run spends 96s "
+        "reaching that conformer. So 44 conformers were scored-successes that acceptance threw "
+        "away. Held OFF for two reasons that are the whole substance of the trade: (1) step 2 is "
+        "the ONLY test in the predicate that does not share the generator's own connectivity, so "
+        "dropping it makes acceptance circular in the same way the reported metric already is -- "
+        "it buys latency, not genuine losslessness, and 2/48 independent re-perception is itself "
+        "a finding worth keeping visible; (2) accepting earlier bypasses _select_by_geometry's "
+        "clash-first ranking (clash.VDW_ACCEPTANCE_ENABLED is ON), so structure quality must be "
+        "an arm of the promotion A/B next to pass-rate and runtime. Promotion gate: corpus A/B on "
+        "runtime AND pass-rate AND vdW clash count -- one molecule produced this hypothesis and "
+        "one molecule (YIYGAP, where both predicates fire at index 0) already shows the gap is "
+        "molecule-dependent."
+    ),
     "OIN_ETA_EARLY_EXIT": (
         "lets an ETA molecule short-circuit the conformer pool on the winding criterion that "
         "actually judges it. MEASURED (pool.attempts_spent): Ferrocene "
