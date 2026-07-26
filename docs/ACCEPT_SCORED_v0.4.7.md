@@ -405,6 +405,55 @@ returns a **different conformer that emits the same OIN string**. The notation i
 the geometry underneath it is not. Both gates are measuring honestly and they are measuring
 different things.
 
+#### What the 8 failures actually ARE — the escape hatch, tested and REFUTED
+
+§5.4 named a condition that would upgrade this to full promotion: *"the GAP-class `indep`
+failures are shown to be presentation instabilities of the full encoder (the `ODEWID`
+slot-renumbering failure mode) rather than genuine geometry differences."* That test costs
+nothing — `oin_indep` is already stored — so it was run. **It refutes the hypothesis.**
+
+Diffing `oin_indep` against `oin_in` on all 8, three distinct failure modes and none is cosmetic:
+
+| mode | n | what changes |
+|---|---|---|
+| **haptic coordination no longer perceived** | **6** | KAQDOV, ZITSIE, FEXYOZ, MEDZUR, RATPEK, HIDCIH |
+| **donor atom reassigned** | 1 | DAKGON |
+| **hydrogen detached + bond order changed** | 1 | POVPIA |
+
+**The 6 eta cases, KAQDOV in full.** Arm A's independent re-perception is **byte-identical to
+the input**. Arm B's is not:
+
+```
+oin_in      : [Ru_TET]. ... .[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1
+A oin_indep : [Ru_TET]. ... .[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1     <- identical to input
+B oin_indep : [Ru_TPL]. ... .c1cccc1                                    <- Cp is UNBOUND
+```
+
+The Cp ring loses **every** binding slot and its winding marker — it is perceived as a free
+molecule — and the metal geometry tag degrades in lockstep, `[Ru_TET]` → `[Ru_TPL]`, exactly one
+donor fewer. The same signature repeats on all six: `[Zr_TET]`→`[Zr_LIN]`,
+`[Ir_TET]`→`[Ir_TPL]`, `[Ru_TET]`→`[Ru_LIN]`, `[Ni_TPL]`→`[Ni_LIN]`, `[Ti_OCT]`→`[Ti_SPY]`.
+**The arm-B conformer has moved the haptic ligand far enough that coordination is no longer
+detected at all.**
+
+**POVPIA is worse still, and it inverts the clash verdict:**
+
+```
+oin_in      : ... Cc1cccc(N{4}Cc2ccccn{1}2)c1 ...
+A oin_indep : ... Cc1cccc(N{4}Cc2ccccn{1}2)c1 ...            <- identical to input
+B oin_indep : ... Cc1cccc(N{4}=Cc2ccccn{1}2)c1 ... .[H]      <- H DETACHED, C-N became C=N
+```
+
+A hydrogen has come off and the amine has been read as an imine. **This is the molecule G1
+scored as B's biggest win** (16 clashes → 0). So on POVPIA the two quality metrics *disagree*:
+arm B's structure is cleaner by vdW contact and structurally broken by re-perception. vdW clash
+count is not a sufficient proxy for structure quality, and this is the counterexample.
+
+**Consequence for the recommendation:** the named upgrade condition is closed. These are not
+presentation artifacts of a fussy encoder — they are loss of detected metal–ligand coordination
+in 6 cases, a donor reassignment in 1, and a detached hydrogen in 1. G2's FAIL stands on
+strengthened evidence, not weakened.
+
 #### ⚠ `indep` is NOT a pristine oracle — read `indep=False` carefully
 
 This belongs next to the number above, because `indep=False` is easy to over-read as "the
@@ -480,12 +529,19 @@ Reasoning, in the order it actually weighed:
    in the predicate that does not share the generator's connectivity.
 
 **Conditions that would change this to full promotion:**
+- ~~the GAP-class `indep` failures are presentation instabilities of the full encoder rather
+  than genuine geometry differences~~ — **TESTED AND REFUTED** (§4.5). 6 of 8 lose haptic
+  coordination entirely with the metal geometry tag degrading in lockstep, 1 reassigns the donor
+  atom, 1 detaches a hydrogen. Nothing cosmetic. This condition is closed and the FAIL is
+  firmer, not softer.
 - G4 shows a near-zero regression rate on the guard population **and** the project explicitly
-  adopts Reading A; or
-- the GAP-class `indep` failures are shown to be presentation instabilities of the full encoder
-  (the `ODEWID` slot-renumbering failure mode) rather than genuine geometry differences. That is
-  directly testable and is the highest-value follow-up: diff `oin_indep` against `oin_in` on the
-  8 regressed molecules and classify each difference.
+  adopts Reading A.
+
+**A new consideration this surfaced:** the 6 haptic failures matter more than their count
+suggests, because eta is ~23% of molecules and 35.6% of generator CPU. A lever whose cost
+concentrates on haptic coordination is a lever whose cost concentrates on the hardest and most
+expensive part of the corpus — the same part it delivers its biggest speedups on. Speedup and
+cost are not independent here; they are the same molecules.
 
 **This is a product call and it is not mine to make unilaterally.** Recorded with both readings,
 the reasoning, and the exact evidence, for an explicit decision.
