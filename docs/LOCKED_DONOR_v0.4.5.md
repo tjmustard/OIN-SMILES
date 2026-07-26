@@ -269,7 +269,20 @@ Recorded rather than resolved.
 * **Trivalent P in practice.** See §5b: implemented, tested, and measured to be unnecessary on
   this corpus. Do not quote this lane as having closed a phosphorus defect.
 
-## 9. Reproducing
+## 9. Acceptance
+
+| criterion | result |
+|---|---|
+| `POJJOP` + mirror emit different strings | yes — `[N@@H]{0}` vs `[N@H]{0}` |
+| three-property test, >=2 fixtures | `POJJOP` whole-string; `RIFGUJ_comp_2` per §6 |
+| ammine + primary amine emit nothing | `CisPlatin`, `PtMeNH3ClBr`, `Cis-PtCl2(en)`: no eligibility, no string change |
+| `JUCCUH` unaffected | byte-identical, lever on |
+| `facmer_divergent` cannot rise | lever default OFF, **and** the key folds the descriptor with it ON |
+| unit suite | **620 OK / 3 skip / 3 xfail** vs baseline **605 / 3 / 3** — delta **+15**, exactly `tests/unit/test_locked_donor.py`, 0 regressions |
+| ruff | `check` + `format` clean on `src/ tools/ tests/` |
+| levers-OFF byte-identical | structural (nothing is stamped, so the restore loop and the inline guard are both no-ops) and confirmed by the 605 pre-existing tests passing unchanged |
+
+## 10. Reproducing
 
 ```bash
 cd ../oin-v045-lane6 && export PYTHONPATH=$PWD/src:$PWD
