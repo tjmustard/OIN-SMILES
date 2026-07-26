@@ -160,6 +160,44 @@ Scope caveat on this table: n = 3, deliberately the **hardest** hand-picked case
 refute Lane 1's general result (6 fixed / 0 regressed over 250 molecules); it refutes only the
 specific claim that Lane 1's lever closes the stereo-flip class.
 
+### The stereo class IS closed, by Lane 8's own fix — measured and guarded
+
+`OIN_STABLE_STEREO` on `swimlane/v045-lane8`, measured over **10 of the 29** known stereo-flip
+molecules, 3 trials × 3 transforms:
+
+| | byte-stable | drifted | key-level defects |
+|---|---|---|---|
+| lever OFF | **0/10** | 10/10 | **10** |
+| `OIN_STABLE_STEREO=1` | **8/10** | 2/10 | **1** |
+
+**Mechanism** (Lane 8's diagnosis, and it is sharper than my "bond-order perception" guess):
+a chiral tag is a parity *relative to the atom's neighbour order*, and the fragment rebuild
+changes that order — hydrogens are folded into `SetNumExplicitHs` and bonds are re-added by
+ascending parent index, both functions of the input numbering. So the copied tag is a parity
+against an ordering that no longer exists. `stable_stereo.restamp_fragment_chirality` re-derives
+the tag from the parent geometry instead, with a `_PLANARITY_TOL` that declines centres too close
+to planar to read rather than resolving them by numerical noise.
+
+**The guard that mattered, run because Lane 8 never confirmed it.** A fix that made stereo
+*stable* by making it *constant* would be worse than the bug — that is the Y2 trap. Tested by
+z-mirroring each molecule with the lever ON:
+
+- **10/10 mirrors produce a DIFFERENT string** — nothing collapsed.
+- On every case inspected, **`mirror == swap(base)`**, where `swap` exchanges `@`↔`@@`: the mirror
+  string is the base string with *every* chiral tag inverted and nothing else changed. That is a
+  textbook enantiomer pair, i.e. the descriptor is doing exactly its job.
+
+(An earlier pass of this check reported 7/10 by comparing tag *counts*. That test is blind to a
+symmetric swap — a molecule with three `@@` and three `@` maps to three `@` and three `@@`, same
+counts — so the 7/10 was an artifact of the test, not a property of the fix.)
+
+**Still open:** 2 of 10 molecules keep drifting, 1 at key level. Lane 8's own note says trivalent
+phosphorus donors are unhandled, and the mechanism for that is *not* a Lane 8 defect: at
+`stable_stereo.py:112-118` the restamp only *corrects tags that already exist*, so a P donor whose
+tag was already cleared by the Zone-A rule (`core/chirality.py:722-727`) has nothing to restamp.
+**Making metal-locked donor tags exist in the first place is Lane 6's job (P3).** The two lanes are
+complementary, not overlapping, and Lane 8 should not be widened to cover it.
+
 ## Reproducing
 
 ```bash
