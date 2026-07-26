@@ -132,30 +132,45 @@ class TestWhyAPerFragmentTestIsMisleading(unittest.TestCase):
         self.assertNotIn(chelate_only, group, "(2 3) alone must not be a proper rotation of SPL")
         self.assertIn(composite, group, "(0 1)(2 3) must be a proper rotation of SPL")
 
-    def test_every_rotation_is_proper_so_chirality_cannot_be_folded(self):
-        """Folding over this group can never merge enantiomers -- the Y2 axial hazard."""
+    def test_spanning_geometries_admit_only_proper_rotations(self):
+        """Why Lane 9's verdict is safe: folding here cannot merge enantiomers.
+
+        Scope, stated rather than implied. For a **spanning** (rank-3) vertex set the
+        realizing linear map is unique, so "is this permutation a proper rotation?" has one
+        answer and this asserts it -- OCT, TET and PBP are checked. **Planar templates (SPL,
+        TPL, LIN) are skipped on purpose**, not overlooked: the out-of-plane direction is
+        free, so every Gram-preserving permutation of a planar vertex set extends to a proper
+        3D rotation and the check would be vacuous. `(0 1)` on the square is the concrete
+        case -- a C2 about the in-plane axis through vertices 2 and 3, genuinely proper.
+
+        This mirrors `derive_rotation_group`'s own `det > 0` filter, so it is a guard against
+        that filter being removed, not an independent derivation. It is here because the Y2
+        axial wave lost chirality exactly by folding over something that turned out to be a
+        reflection.
+        """
         import numpy as np
 
         from oinsmiles.oin.canonical_slots import GEOMETRY_VERTICES
 
-        for geo in ("OCT", "TET", "SPL", "PBP"):
+        checked = 0
+        for geo in ("OCT", "TET", "PBP", "SPL"):
             verts = np.asarray(GEOMETRY_VERTICES[geo], dtype=float)
             verts = verts / np.linalg.norm(verts, axis=1, keepdims=True)
+            if np.linalg.matrix_rank(verts, tol=1e-6) < 3:
+                continue  # planar -- see docstring
+            basis: list[int] = []
+            for i in range(len(verts)):
+                if np.linalg.matrix_rank(verts[basis + [i]], tol=1e-6) == len(basis) + 1:
+                    basis.append(i)
+                if len(basis) == 3:
+                    break
             for perm in geometry_rotation_group(geo):
-                # The Gram matrix is preserved by construction; assert the realizing map is a
-                # proper rotation for the spanning (rank-3) templates.
-                if np.linalg.matrix_rank(verts, tol=1e-6) < 3:
-                    continue
-                basis: list[int] = []
-                for i in range(len(verts)):
-                    if np.linalg.matrix_rank(verts[basis + [i]], tol=1e-6) == len(basis) + 1:
-                        basis.append(i)
-                    if len(basis) == 3:
-                        break
                 rot = verts[[perm[b] for b in basis]].T @ np.linalg.inv(verts[basis].T)
                 self.assertGreater(
                     np.linalg.det(rot), 0, f"{geo} group must contain proper rotations only"
                 )
+                checked += 1
+        self.assertGreaterEqual(checked, 24 + 12 + 10, "OCT+TET+PBP groups must all be checked")
 
 
 if __name__ == "__main__":
