@@ -204,7 +204,21 @@ that structure; this one must reject it. There is also a ring-slip test (η5→�
 > carbons form a site of their own with nothing bonded in it. The check rejected it and was
 > right to. The corrected fixture translates the ring **rigidly**.
 
-### 2.1 Scope limit — an acceptance condition, not a return condition
+### 2.1 Verification status
+
+- `tests/unit/test_attach_check.py` — **20 tests, all passing**; `test_levers` passing alongside.
+- `uvx ruff@0.15.20 check` and `format` clean on every file touched (the pre-commit hook ran on
+  each of the 9 commits; none used `--no-verify`).
+- Default path byte-identical: `ODEWID_comp_0` → `f00fdf52371f5cdb`, `YIYGAP_comp_0` →
+  `816ebda751edf06d`, generated with `OIN_ATTACH_CHECK=1` and `OIN_ACCEPT_SCORED` **off**. Both
+  match the promote lane's own recorded shas.
+- ⚠ The full `python -m unittest discover tests/unit` suite runs **>18 min** on this box and did
+  not complete inside the session's budget. **This is pre-existing, not introduced here** — it
+  was measured timing out at the 10-minute mark *before* any `src/` change was made this
+  session. Stated rather than omitted, because "the full suite was not seen green" is a real
+  gap in this lane's evidence even though the cause is not this lane's code.
+
+### 2.2 Scope limit — an acceptance condition, not a return condition
 
 This guards **acceptance**. On the CHEAP_ONLY class (`docs/eta_accept_gap_cohort.md`, and §3 of
 the promote lane's report) *nothing is ever accepted*: the pool fills to completion and
@@ -215,7 +229,7 @@ at all. Those molecules are unaffected by this check, with the lever on or off.
 qualification on everything below.
 
 ---
-## 2.2 ⚠ The first implementation was a SILENT NO-OP, and a full A/B reported it as a result
+### 2.3 ⚠ The first implementation was a SILENT NO-OP, and a full A/B reported it as a result
 
 Recorded in the body rather than a footnote, because the way it was caught is the transferable
 part.
