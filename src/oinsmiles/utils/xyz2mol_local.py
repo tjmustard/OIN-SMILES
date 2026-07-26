@@ -1447,7 +1447,19 @@ def _AC2BO_core(
             candidate_source = itertools.product(*valences_list_of_lists)
         sorted_valences_list = itertools.islice(candidate_source, _fallback_tries())
     else:
-        sorted_valences_list = _ordered_valences(valences_list_of_lists, atoms)
+        # Same order, same first valid candidate, same best_BO -- generated instead of
+        # materialised. `_ordered_valences` builds the full Cartesian product TWICE (once
+        # to score, once inside `sorted(zip(...))`) plus a dict over the five-group
+        # product, and the loop below measurably consumes only a prefix of it: on
+        # `NOCGAN_comp_0` one call consumed **1** candidate of a materialised 20 736
+        # (1.956 s of that call's 1.972 s), and on `UDITAD_comp_0` 9 of 11 664 (94.2%).
+        # `iter_ordered_valences` yields the identical sequence in O(1) memory --
+        # `tests/unit/test_valence_order.py` asserts element-for-element equality on 400
+        # random configs AND on corpus-shaped ones, so this is dead-work removal against
+        # an equality, not a heuristic swap. Byte-identity therefore holds whether the
+        # loop early-returns (same first valid candidate) or exhausts (same candidates in
+        # the same order, so the same `>=` tie-break survives into `best_BO`).
+        sorted_valences_list = iter_ordered_valences(valences_list_of_lists, atoms)
 
     for valences in sorted_valences_list:  # valences_list:
         AC2BO_STATS["candidates"] += 1

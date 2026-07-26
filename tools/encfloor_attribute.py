@@ -168,14 +168,58 @@ class Recorder:
             wrap_keyed("valence_combo_size", lambda vll: repr(vll)[:200] + str(len(vll))),
         )
 
+    def install_resonance(self, x2m):
+        """Instrument the SL5 forked resonance path in ``utils.xyz2mol``.
+
+        A sub-cap ligand fragment can still take tens of minutes to encode with ``AC2BO``
+        contributing ~nothing (``HACYEQ_comp_0``: 54.89 s encode, ``_AC2BO_core`` 0.13 s =
+        0.2 %). ``lig_checks`` forks a CPU-budgeted child per call
+        (``_RESONANCE_CPU_BUDGET_S`` = 120 CPU seconds, 900 s wall backstop), and the
+        charge ladder plus ``_rescue_unusable_perception`` can call it many times over --
+        so the floor for that cohort is ``k x 120`` CPU seconds, not valence combinatorics.
+        The ``status`` histogram is the load-independent evidence: ``timeout`` means the
+        child burned the whole budget.
+        """
+        self.resonance = {"calls": 0, "wall": 0.0, "status": {}, "lig_checks": 0}
+        self.res_restores = []
+
+        orig_iso = getattr(x2m, "_resonance_candidates_isolated", None)
+        if orig_iso is not None:
+
+            def iso(*a, **kw):
+                t0 = time.perf_counter()
+                out = orig_iso(*a, **kw)
+                self.resonance["calls"] += 1
+                self.resonance["wall"] += time.perf_counter() - t0
+                st = out[0] if isinstance(out, tuple) else "?"
+                self.resonance["status"][st] = self.resonance["status"].get(st, 0) + 1
+                return out
+
+            x2m._resonance_candidates_isolated = iso
+            self.res_restores.append((x2m, "_resonance_candidates_isolated", orig_iso))
+
+        orig_lc = getattr(x2m, "lig_checks", None)
+        if orig_lc is not None:
+
+            def lc(*a, **kw):
+                self.resonance["lig_checks"] += 1
+                return orig_lc(*a, **kw)
+
+            x2m.lig_checks = lc
+            self.res_restores.append((x2m, "lig_checks", orig_lc))
+
     def restore(self):
         for name, orig in reversed(self.restores):
             setattr(self.loc, name, orig)
         self.restores = []
+        for obj, attr, orig in reversed(getattr(self, "res_restores", [])):
+            setattr(obj, attr, orig)
+        self.res_restores = []
 
 
 def run_one(path, name):
     from oinsmiles import XYZToSMILES
+    from oinsmiles.utils import xyz2mol as x2m
     from oinsmiles.utils import xyz2mol_local as loc
 
     rec = Recorder(loc)
@@ -184,6 +228,7 @@ def run_one(path, name):
     if clear is not None:
         clear()
     rec.install()
+    rec.install_resonance(x2m)
     t0 = time.perf_counter()
     err = None
     oin = None
@@ -208,11 +253,23 @@ def run_one(path, name):
         "ac2bo_calls": rec.calls,
         "helpers": helper,
         "ac2bo_stats": dict(loc.AC2BO_STATS),
+        "resonance": rec.resonance,
     }
 
 
 def report(res):
     print(f"\n=== {res['molecule']}  ({res['path']}) ===")
+    # The A/B payload, printed per molecule rather than only written to --json-out at the
+    # end: a run killed partway (these molecules can take 20 minutes each) must still leave
+    # a comparable arm behind. Counters accompany the sha because they localise a
+    # divergence -- a different sha with identical `candidates` is a downstream difference,
+    # not a valence-search one.
+    st = res["ac2bo_stats"]
+    print(
+        f"AB oin_sha={res['oin_sha']} candidates={st['candidates']} "
+        f"matching={st['matching_calls']} found_valid={st['found_valid']} "
+        f"ac2bo_calls={st['ac2bo_calls']} over_cap={st['over_cap_calls']}"
+    )
     print(f"wall_total (ADVISORY, host contended) = {res['wall_total']:.2f}s  err={res['error']}")
     calls = res["ac2bo_calls"]
     core_sum = sum(c["wall_core"] for c in calls)
@@ -244,6 +301,13 @@ def report(res):
         f"({100 * ord_sum / res['wall_total'] if res['wall_total'] else 0:.2f}% of encode, "
         f"{100 * ord_sum / core_sum if core_sum else 0:.2f}% of _AC2BO_core)"
     )
+    r = res.get("resonance") or {}
+    if r:
+        pc = 100 * r["wall"] / res["wall_total"] if res["wall_total"] else 0.0
+        print(
+            f"\nFORKED RESONANCE: lig_checks={r['lig_checks']} forks={r['calls']} "
+            f"status={r['status']} wall={r['wall']:.2f}s ({pc:.1f}% of encode)"
+        )
     print("AC2BO_STATS:", json.dumps(res["ac2bo_stats"]))
 
 
