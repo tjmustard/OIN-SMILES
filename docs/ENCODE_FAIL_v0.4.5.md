@@ -45,12 +45,27 @@ not "the fork budget is broken" — I did not have the isolated machine time to 
 apart, and did not chase it further (out of this lane's scope; SL5's forked-resonance design
 is another lane's carefully-reasoned infrastructure).
 
-## 2. Histogram (current `main`-equivalent state, this branch @ fork point)
+## 2. Histogram (current `main`-equivalent state, this branch @ fork point, BEFORE my fix)
 
-Reproduce: `PYTHONPATH=src .venv/bin/python /path/to/rerun_encodefail.py` (200s variant of
-`tools/sl5_triage.py`, dataset dir `tmCAT-tmPHOTO_xyz_dataset`).
+Full 48/48 re-triage completed (200s/mol cap, generation-free, i.e. unambiguously
+encoder-side). Reproduce: 200s variant of `tools/sl5_triage.py`'s `run_worker`/`classify`,
+dataset dir `tmCAT-tmPHOTO_xyz_dataset`.
 
-<!-- FINAL TALLY INSERTED BELOW ONCE THE BACKGROUND RERUN COMPLETES -->
+| bucket | count | molecules |
+|---|---:|---|
+| `boron_cluster` | 34 | electron-deficient carborane/borane cages — §5 |
+| `resonance_timeout` | 7 | `BENVOG`, `FAQYUU`, `HICLAG`, `HOHKUL`, `KEMTED`, `KESWUB`, `NAKLET` — §6 |
+| `encodes_now` | 3 | `HOCVAY`, `HUCNAU`, `WEFZAL` — **already succeed on current `main`, no fix needed**, §6 |
+| `other` (quinoid/ylide kekulize) | 3 | `KAXVOX`, `KAXWAK`, `LEZWAO` — §4 |
+| `perception_charge_gap` | 1 | `ASISAX` — fixed this session, §3 |
+| **total** | **48** | |
+
+The `encodes_now` 3 are the headline surprise: **on unmodified current `main`, with no fix
+from this lane at all, 3 of the frozen 48 already encode successfully** when run
+encoder-only. That means the 48-count in the frozen `results-capstone-v042/bucket_report.json`
+already overstates the *current* encoder's `encode_fail` population by at least 3 — see §6 for
+why (SL5's own resonance fix recovering `HUCNAU`, and a harness-bucketing artifact for the
+other two).
 
 ## 3. Fixed: `ASISAX` — one-line permissive rescue, opt-in lever
 
@@ -147,52 +162,79 @@ widening fixes this class; it needs a different bonding model entirely (multi-ce
 out of scope for a valence-graph encoder. The typed `OINEncodeError` (already landed) is the
 correct, honest terminus: **an encoder that refuses this input is correct**, not a bug.
 
-## 6. Unresolved / needs more machine-time than this lane budgeted
+## 6. Already recovered without any fix from this lane, and the unresolved timeout cohort
 
-A handful of the `resonance_timeout` cohort (`BENVOG`, `FAQYUU`, `HICLAG`, `HOHKUL`, and
-possibly others — see §2's final tally) did not resolve within 200 wall-clock seconds under
-this machine's load during this session (§1's caveat).
+**3 of the 48 already encode on unmodified current `main` (`encodes_now` in §2).** No code
+change needed:
 
-**Two of the three dataset-labelled `oom_killed` molecules are not encoder problems at all.**
-The original `results-capstone-v042/bucket_report.json` records `HICLAG`, `HOCVAY`, and
-`WEFZAL` failing with `Generation/Verification failed at UFF_1: child process died with exit
-code -9` — an OOM kill — landing all three in `encode_fail` only because the harness's
-`_ENCODED` marker mechanism does not survive a child dying (a report with `smiles_1: null`
-cannot distinguish "encoder hung" from "encoder finished fine, generator died later"). Testing
-each directly against `XYZToSMILES().convert()` alone (no generation):
-
-- `HOCVAY` — encodes immediately.
-- `WEFZAL` — encodes in **1.9s**: `[Pd_SPL].CC(=O)OC[C@H]1O[C@@H](N2C{0}N(CCCN3C{1}N([C@@H]4O[C...` (a Pd-nucleoside/PNA-type complex).
-- `HICLAG` — genuinely does not resolve within 200s even encoder-only, consistent with SL5's
-  own doc naming `HICLAG` (alongside `FAQYUU`) as the unrecovered `get_UA_pairs`/
-  `max_weight_matching` O(V³) hang, not a resonance timeout.
+- `HUCNAU` — genuinely recovered by SL5's own forked, CPU-time-bounded resonance enumeration
+  (the mechanism the SL5 doc credits it with). Confirms that fix works in practice, not just
+  in its own artificially-shortened-budget unit test.
+- `HOCVAY`, `WEFZAL` — **not an encoder story at all.** The original
+  `results-capstone-v042/bucket_report.json` records all three of `HICLAG`, `HOCVAY`, `WEFZAL`
+  failing with `Generation/Verification failed at UFF_1: child process died with exit code -9`
+  — an OOM kill — landing them in `encode_fail` only because the harness's `_ENCODED` marker
+  mechanism does not survive a child process dying (a report with `smiles_1: null` cannot
+  distinguish "encoder hung" from "encoder finished fine, generator died later"). Tested
+  directly against `XYZToSMILES().convert()` alone (no generation): `HOCVAY` encodes
+  immediately; `WEFZAL` encodes in **1.9s** —
+  `[Pd_SPL].CC(=O)OC[C@H]1O[C@@H](N2C{0}N(CCCN3C{1}N([C@@H]4O[C...` (a Pd-nucleoside/PNA-type
+  complex). `HICLAG`, the third member of that OOM-labelled trio, genuinely does **not**
+  resolve within 200s even encoder-only — consistent with SL5's own doc naming `HICLAG`
+  (alongside `FAQYUU`) as the unrecovered `get_UA_pairs`/`max_weight_matching` O(V³) hang, a
+  real encoder-side cost, not a harness artifact.
 
 So **2 of 48** (`HOCVAY`, `WEFZAL`) are not `encode_fail` at all under a clean, generation-free
 signal — their presence in the frozen 48-count is a harness-bucketing artifact (a
-generation-side OOM misattributed to the encoder), not an encoder refusal. This is worth
-flagging to whoever owns `hard_fail`/generation: some fraction of what is currently bucketed
-as `encode_fail` in the frozen `bucket_report.json` may actually belong to generation-side
-OOM. I did not re-triage the full 48 against this distinction beyond these three (would
-require re-running the full encode+generate pipeline per molecule, out of this lane's scope),
-but flag it as a measurement caveat on the 11.0%/48 headline number itself: it is measuring
-the *old* harness's bucketing, not a clean encoder-only signal.
+generation-side OOM misattributed to the encoder), not an encoder refusal. Worth flagging to
+whoever owns `hard_fail`/generation: some fraction of what is bucketed as `encode_fail` in the
+frozen `bucket_report.json` may actually belong to generation-side OOM. I did not re-triage
+beyond this trio (would require re-running the full encode+generate pipeline per molecule, out
+of this lane's scope), but it is a real caveat on the 11.0%/48 headline number: it measures the
+*old* harness's bucketing, not a clean encoder-only signal.
+
+**The remaining 7 (`resonance_timeout`: `BENVOG`, `FAQYUU`, `HICLAG`, `HOHKUL`, `KEMTED`,
+`KESWUB`, `NAKLET`)** did not resolve within 200 wall-clock seconds under this machine's load
+during this session (§1's caveat — 5 sibling agents were running concurrently, load 8-12/12
+cores throughout). Direct `faulthandler`-based profiling of `BENVOG` (`tools/sl5_profile_hang.py`)
+confirmed it is genuinely inside SL5's forked resonance wait (`_resonance_candidates_isolated`,
+blocked in the parent's `select()`) at 150s, not stuck somewhere new — so the mechanism is
+doing what it was designed to do, just not within my reproduction's time budget. I cannot
+honestly say whether these 7 would resolve given an isolated machine and the existing 900s
+wall-clock backstop (`_RESONANCE_WALL_SAFETY_S`) — that would need dedicated, uncontended
+machine time I did not have, and chasing SL5's own forked-resonance internals further is
+outside this lane's scope regardless.
 
 ## 7. Addressable-vs-total, honestly
 
-| | count |
-|---|---:|
-| confirmed unfixable (boron valence-model ceiling) | 34 |
-| fixed, encodes, but not proven canonical (moved bucket, not closed) | 1 (`ASISAX`) |
-| documented, deferred — needs a deeper charge-reperception fix in a different function | 3 (quinoid/ylide) |
-| resonance/UA-pairs timeout cohort, encoder-side, unresolved this session | up to 10 (§2 final tally) |
-| dataset-mislabelled — encodes fine in isolation, likely a generation-side OOM | ≥1 (`HOCVAY`), possibly more (§6) |
+| | count | molecules |
+|---|---:|---|
+| confirmed unfixable — boron valence-model ceiling, correct for the encoder to refuse | **34** | `boron_cluster` cohort |
+| already encodes on unmodified `main`, no fix needed from this lane | **3** | `HOCVAY`, `HUCNAU`, `WEFZAL` |
+| fixed this session — encodes, but NOT proven canonical (moved bucket, not closed) | **1** | `ASISAX` |
+| documented, deferred — needs a deeper charge-reperception fix in a different function | **3** | `KAXVOX`, `KAXWAK`, `LEZWAO` |
+| unresolved this session — genuine encoder-side cost, contended-machine time budget exhausted | **7** | `BENVOG`, `FAQYUU`, `HICLAG`, `HOHKUL`, `KEMTED`, `KESWUB`, `NAKLET` |
+| **total** | **48** | |
 
-Of the 48, **1** was actually fixed (with the canonicality caveat above), **34** are honestly
-unfixable within this encoder's valence model, and the remainder needs either more machine
-time free of contention (timeout cohort) or a deeper, different-function fix (quinoid cohort)
-than this lane's budget covered.
+Read plainly: **34 of 48 (70.8%) are an honest, correct ceiling** — no fix should exist for
+them without changing the encoder's entire bonding model. Of the other **14**: **4 already
+work** (3 needed nothing from me, 1 needed one gated line), **3** need a scoped-but-nontrivial
+fix in a different function than I touched, and **7** need either more isolated machine time
+or turn out to be genuinely as expensive as `HICLAG`/`FAQYUU`'s documented O(V³) hang — I did
+not have the evidence to tell those two apart this session. So: **14 of 48 addressable in
+principle, 34 of 48 are not** (and should not be forced) — not "48 molecules of undifferentiated
+effort," and not "1 fixed, 47 untouched" either.
 
-## 8. Reproduce
+## 8. Suite and lint status
+
+- Full `tests/unit` discovery: **607 tests, OK (skipped=3, expected failures=3)** — no new
+  failures introduced by the `OIN_RESCUE_STUCK_RING` change or the 4 added fixtures.
+- `tests/unit/test_regression_stability.py` (the 4 golden fixtures): 6/6 pass, byte-identical.
+- `tests/unit/test_encoder_robustness.py` (SL5's suite + the 4 new `ASISAX` tests added this
+  session): 12/12 pass.
+- `uvx ruff@0.15.20 check` and `format --check` on every changed file: clean.
+
+## 9. Reproduce
 
 ```bash
 export PYTHONPATH=$PWD/src
