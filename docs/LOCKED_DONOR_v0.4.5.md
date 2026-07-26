@@ -163,7 +163,46 @@ had listed as blind:
 **Consequence for the population estimate.** Y1's 2.85% (171/6000) came from a pure-geometry
 pre-filter — "N within 2.6 Å of a transition metal with exactly 1 H and 2 C neighbours" — which
 does not test symmetry-distinctness. It is therefore an **over-count** of the motif that is
-actually stereogenic. See §7 for the measured figure.
+actually stereogenic.
+
+## 5b. Measured prevalence and blast radius
+
+Sampled 400 corpus molecules (seed 42, `cat` + `photo`), perception + encode only, no 3D
+generation, 25 s per-molecule cap. 395 encoded, 2 errors, 3 timeouts.
+
+| | count | share of 395 |
+|---|---:|---:|
+| at least one eligible metal-locked donor | **21** | **5.3%** |
+| — with an eligible **N** | 18 | 4.6% |
+| — with an eligible **P** | 3 | 0.8% |
+| **OIN string changes with the lever ON** | **18** | **4.6%** |
+| eligible N centres / eligible P centres | 27 / 7 | |
+
+The 18 changed molecules all have `nP = 0`, and no molecule had both an eligible N and an
+eligible P (18 + 3 = 21), so the three that were eligible-but-unchanged are exactly the three
+P-bearing ones. That is the single most useful number here, so state it plainly:
+
+> **All 7 eligible metal-locked phosphorus donors, across all 3 molecules carrying them,
+> already had a chiral tag from the existing Zone-A lone-pair path. The restore was a no-op
+> for every one of them.**
+
+### The inherited "trivalent P gap" does not exist as described
+
+`docs/RENUMBERING_INSTABILITY_v0.4.5.md` handed Lane 6 the trivalent-P case on the reasoning that
+`stable_stereo.py:112-118` can only correct tags that already exist, so a P donor cleared by the
+Zone-A rule has nothing to restamp. The reasoning is sound; the case is not there. Measured on the
+two molecules named as Lane 8's residuals:
+
+* **`FEQFIS_comp_0`** — its metal-bound phosphorus is P(N)(O)(O)Au, **aromatic**, and its four
+  neighbours fall in only **3 distinct symmetry classes** (the two oxygens are equivalent). It is
+  not a stereocentre. Emitting a descriptor for it would be the over-sensitivity failure, not a
+  fix. Its renumbering drift is in a `[C@@H]` carbon anyway, not at P.
+* **`CEBVIR_comp_0`** — four aromatic nitrogen donors, each with **3** neighbours (pyridine-type),
+  so none is a tetrahedral stereocentre either.
+
+Both are correctly declined, and the lever changes neither string. So the P half of this lane is
+**implemented, tested and measured to be unnecessary on this corpus** — the mechanism covers a
+metal-locked P if one ever appears with four distinct neighbours and no tag, and none did.
 
 ## 6. Results
 
@@ -227,12 +266,8 @@ Recorded rather than resolved.
   so selection-by-descriptor (the `_axial_narrow` precedent) would need the descriptor carried
   out of band into the parsed structure first. This is the concrete blocker to promoting the
   lever, and it is a generator-side task.
-* **Trivalent P in practice.** The mechanism covers metal-locked P by construction and the
-  notation demonstrably survives for it, but no corpus case was found where a P donor's tag was
-  cleared *and* the four-distinct-classes gate passed. A PR₃ donor's three substituents are very
-  often not all distinct, and when they are, the existing Zone-A lone-pair path usually already
-  produces a label. So the P half of this lane is **implemented and tested but not
-  corpus-demonstrated** — say so rather than claiming it closed something measured.
+* **Trivalent P in practice.** See §5b: implemented, tested, and measured to be unnecessary on
+  this corpus. Do not quote this lane as having closed a phosphorus defect.
 
 ## 9. Reproducing
 
