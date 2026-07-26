@@ -27,6 +27,7 @@ from .aromaticity import (  # noqa: F401
 from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
 from .xyz2mol_local import (
     AC2mol,
+    boron_cage_vertices,
     chiral_stereo_check,
     read_xyz_file,
     suppress_canonical_perception,
@@ -618,12 +619,82 @@ def _is_electron_deficient_cluster(frag_mol):
     return False
 
 
+def _has_boron_cage(frag_mol):
+    """Whether this fragment contains a deltahedral boron cage vertex.
+
+    Uses the same B-B-B triangle motif as the ``xyz2AC_obabel`` pruning exemption
+    (``boron_cage_vertices``), so the two halves of the ``OIN_BORON_CAGE`` lever
+    agree on what a cage is. Deliberately stricter than
+    ``_is_electron_deficient_cluster`` (>=3 B and >=1 B-B bond), which would also
+    match a linear B-B-B chain that is not a cage and perceives normally.
+    """
+    atoms = [a.GetAtomicNum() for a in frag_mol.GetAtoms()]
+    if sum(1 for z in atoms if z == 5) < 3:
+        return False
+    AC = Chem.rdmolops.GetAdjacencyMatrix(frag_mol)
+    return bool(boron_cage_vertices(atoms, AC))
+
+
+def _cage_frag_mol(frag_mol):
+    """Perceive a boron-cage ligand fragment directly, bypassing ``AC2BO``.
+
+    ``AC2BO`` cannot serve a cage for two independent reasons, both measured:
+    a cage vertex's connectivity (5-6) exceeds every entry in
+    ``atomic_valence[5] == [3, 4]``, which makes ``possible_valence`` empty and
+    drives ``AC2BO`` into a bare ``sys.exit()`` (a ``SystemExit``, not catchable by
+    ``except Exception``); and even given a wider table there is no bond-order
+    assignment that saturates a 3c-2e vertex under 2c-2e rules.
+
+    So do not search for bond orders at all. The cage graph *is* the answer: every
+    cage edge is a plain single bond, hydrogens are explicit as the geometry gives
+    them, formal charges are zero. This is the "graph as the geometry presents it"
+    reading -- it deliberately does **not** claim a Lewis structure, and it does
+    not claim the chemically-correct cage charge (a dicarbollide is really 2-,
+    closo-B12H12 is 2-); it claims only a canonical, round-trippable graph.
+
+    The one thing RDKit objects to is its **valence rule**, so sanitize with
+    ``SANITIZE_ALL ^ SANITIZE_PROPERTIES``: everything else (ring perception,
+    aromaticity, adjust-Hs, kekulize) still runs. Measured on real cages from the
+    corpus, the result serializes with ``MolToSmiles`` and re-parses to a
+    graph-identical mol with an idempotent canonical SMILES, which the DATIVE and
+    zero-order alternatives do not (SMILES cannot carry a zero-order bond: it
+    round-trips ``~`` back as a mix of SINGLE and UNSPECIFIED).
+
+    Returns:
+        (mol, 0) on success, or ``None`` if even the relaxed sanitize fails.
+    """
+    m = Chem.RWMol(frag_mol)
+    for a in m.GetAtoms():
+        a.SetFormalCharge(0)
+        a.SetNoImplicit(True)
+        a.SetNumExplicitHs(0)
+    for b in m.GetBonds():
+        b.SetBondType(Chem.BondType.SINGLE)
+    out = m.GetMol()
+    try:
+        Chem.SanitizeMol(
+            out,
+            sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+        )
+    except Exception:  # noqa: BLE001 - a cage that will not sanitize stays a failure
+        return None
+    return out
+
+
 def get_lig_mol(mol, charge, coordinating_atoms):
     """Create a sanitizable mol object for the ligand.
 
     Runs the charge/carbene ladder in ``_select_lig_mol``, then re-perceives at
     another charge if the result is a molecule no sanitize can rescue.
     """
+    # Boron-cage bypass (OIN_BORON_CAGE, default OFF). Must precede
+    # ``_select_lig_mol``: for a cage fragment, AC2BO exits the process rather
+    # than returning, so there is nothing to fall back from.
+    if os.environ.get("OIN_BORON_CAGE") and _has_boron_cage(mol):
+        cage = _cage_frag_mol(mol)
+        if cage is not None:
+            return cage, 0
+
     lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
@@ -835,7 +906,30 @@ def _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=False):
     mdis = rdMolStandardize.MetalDisconnector(params)
     mdis.SetMetalNon(Chem.MolFromSmarts(MetalNon_Hg))
     frags = mdis.Disconnect(mol)
-    frag_mols = rdmolops.GetMolFrags(frags, asMols=True)
+    # ``GetMolFrags(asMols=True)`` full-sanitizes every fragment, so a cage
+    # fragment dies here -- before ``get_lig_mol`` is ever reached. Under
+    # OIN_BORON_CAGE, split unsanitized and then sanitize each fragment
+    # individually: normally for every ordinary ligand (byte-identical to the
+    # default), and with the valence check skipped only for a fragment that
+    # carries a cage vertex. A fragment that fails even the relaxed sanitize is
+    # left as-is for ``get_lig_mol`` to reject as before.
+    if os.environ.get("OIN_BORON_CAGE") and _has_boron_cage(frags):
+        frag_mols = []
+        for f in rdmolops.GetMolFrags(frags, asMols=True, sanitizeFrags=False):
+            try:
+                if _has_boron_cage(f):
+                    Chem.SanitizeMol(
+                        f,
+                        sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL
+                        ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+                    )
+                else:
+                    Chem.SanitizeMol(f)
+            except Exception:  # noqa: BLE001 - keep the unsanitized fragment
+                pass
+            frag_mols.append(f)
+    else:
+        frag_mols = rdmolops.GetMolFrags(frags, asMols=True)
 
     total_lig_charge = 0
     tm_idx = None

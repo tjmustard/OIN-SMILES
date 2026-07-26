@@ -18,12 +18,14 @@ implements.
 from __future__ import annotations
 
 import logging
+import os
 import warnings
 
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
 from ..oin.locked_donor import restore_locked_donor_tags
+from ..utils.aromaticity import sanitize_allowing_boron_cage
 from .constants import TRANSITION_METALS_NUM
 
 logger = logging.getLogger(__name__)
@@ -395,6 +397,58 @@ def _clear_spurious_high_coordination_stereo(mol):
             atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
 
 
+def clear_boron_cage_stereo(mol):
+    """Drop every chiral tag on a deltahedral cage vertex (OIN_BORON_CAGE).
+
+    ``AssignAtomChiralTagsFromStructure`` happily stamps a permutation tag on a
+    5- or 6-connected cage atom because its 3D neighbourhood is asymmetric. RDKit's
+    stereo machinery has no permutation table for that shape, and the failure is not a
+    clean exception. Measured on two corpus thiaboranes: ``AssignStereochemistry``
+    raised ``RuntimeError: basic_string::_M_create``, ``FindPotentialStereo`` aborted
+    the process with ``free(): invalid pointer``, and one molecule died with
+    ``free(): invalid size`` / SIGSEGV -- on the *second* encode in a process, i.e.
+    latent heap corruption from the first. A native memory fault is not something a
+    caller can handle, so the tag must never be set in the first place.
+
+    Clearing it loses nothing: a cage vertex's "handedness" is not a stereo
+    descriptor, it is the polyhedron, and the polyhedron is already carried by the
+    cage's own bond graph.
+
+    Covers the whole deltahedron, not just boron -- a carborane cage carbon and a
+    thiaborane cage sulfur are equally over-coordinated, and it was the *sulfur* tag on
+    ``KIXXOF`` that routed into ``FindPotentialStereo`` and aborted. A cage
+    heteroatom vertex is identified as an atom bonded to >=3 cage-vertex borons, which
+    an exocyclic substituent (bonded to one) can never satisfy.
+
+    Distinct from ``_clear_spurious_high_coordination_stereo``, which keys on a set of
+    identical *terminal* ligands (SF5); a cage vertex has no terminal neighbours, so
+    that guard never fires on one.
+
+    No-op unless the lever is set and the mol carries the B-B-B triangle motif.
+    """
+    if not os.environ.get("OIN_BORON_CAGE"):
+        return
+    atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
+    if sum(1 for z in atoms if z == 5) < 3:
+        return
+    from ..utils.xyz2mol_local import boron_cage_vertices
+
+    try:
+        cage = boron_cage_vertices(atoms, Chem.rdmolops.GetAdjacencyMatrix(mol))
+    except Exception:  # noqa: BLE001 - a mol we cannot read is a mol we do not touch
+        return
+    if not cage:
+        return
+    victims = set(cage)
+    for atom in mol.GetAtoms():
+        if atom.GetIdx() in victims:
+            continue
+        if sum(1 for n in atom.GetNeighbors() if n.GetIdx() in cage) >= 3:
+            victims.add(atom.GetIdx())
+    for idx in victims:
+        mol.GetAtomWithIdx(int(idx)).SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+
+
 def _genuine_stereocentre_indices(mol) -> "frozenset[int] | None":
     """Atom indices RDKit's *modern* stereo perception treats as (potential) stereocentres.
 
@@ -473,7 +527,10 @@ class CIPAssigner:
             raise ValueError("mol must not be None")
 
         # Hard precondition — exception propagates to caller.
-        Chem.SanitizeMol(mol)
+        # Routed through the boron-cage-aware wrapper: with OIN_BORON_CAGE unset,
+        # or on any mol without a deltahedral cage, this is exactly
+        # Chem.SanitizeMol(mol) and propagates the same exceptions.
+        sanitize_allowing_boron_cage(mol)
 
         # MUST precede AssignStereochemistry: sets CHI_TETRAHEDRAL_CW/CCW from
         # the 3D conformer geometry.  Without this call, AssignStereochemistry
@@ -486,6 +543,9 @@ class CIPAssigner:
         # Drop spurious -SF5-style high-coordination stereo (achiral, but tagged from
         # geometry) so the OIN does not carry an @ the generator cannot reproduce.
         _clear_spurious_high_coordination_stereo(mol)
+        # A tag on a 5-/6-connected boron-cage vertex is not merely spurious, it makes
+        # RDKit's stereo perception fault natively. Clear before anything reads it.
+        clear_boron_cage_stereo(mol)
 
         for atom in mol.GetAtoms():
             if atom.GetAtomicNum() in _PN_ATOMIC_NUMS:
@@ -690,6 +750,12 @@ class ChiralityRecoveryUtility:
         # here makes the two sides symmetric. Gate on modern stereo perception so a
         # genuine chiral sulfonimidoyl S(VI) (degree 4) -- re-oriented by the
         # _SP3_CIP_PROP branch above, which also excludes it below -- is never masked.
+        # A cage tag reaching RDKit's stereo perception is a native memory fault, not
+        # an exception, and `_genuine_stereocentre_indices` below is one such entry
+        # point (FindPotentialStereo aborted on KIXXOF's thiaborane cage sulfur). Clear
+        # first: `recover` is entered from `get_oin_string` on a mol this class did not
+        # tag itself, so it cannot rely on CIPAssigner having cleared them.
+        clear_boron_cage_stereo(rw)
         s_tagged = [
             atom.GetIdx()
             for atom in rw.GetAtoms()

@@ -16,6 +16,8 @@ ligand's other, well-behaved rings. Clearing aromaticity on *only* the stuck rin
 preserves correct alternating bond orders everywhere else.
 """
 
+import os
+
 from rdkit import Chem
 
 
@@ -102,6 +104,44 @@ def dearomatize_stuck_rings(rd_molecule, add_hydrogen):
         return rd_molecule
 
 
+def _boron_cage_relaxation_applies(mol):
+    """Whether the ``OIN_BORON_CAGE`` valence relaxation should apply to ``mol``.
+
+    Two conditions, both required: the lever is set, and the mol actually contains
+    a B-B-B triangle (the deltahedral 3c-2e cage motif). Imported lazily because
+    ``xyz2mol_local`` pulls in the heavy perception stack and this module is
+    imported by it in turn.
+    """
+    if not os.environ.get("OIN_BORON_CAGE"):
+        return False
+    atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
+    if sum(1 for z in atoms if z == 5) < 3:
+        return False
+    from .xyz2mol_local import boron_cage_vertices
+
+    return bool(boron_cage_vertices(atoms, Chem.rdmolops.GetAdjacencyMatrix(mol)))
+
+
+def sanitize_allowing_boron_cage(mol):
+    """``Chem.SanitizeMol(mol)``, but tolerating a deltahedral boron cage.
+
+    A drop-in replacement for a bare ``Chem.SanitizeMol`` call on the encode path.
+    With ``OIN_BORON_CAGE`` unset, or on any mol without a B-B-B triangle, this is
+    **exactly** ``Chem.SanitizeMol(mol)`` -- same call, same exceptions, so the
+    ~6,600 non-cage molecules are byte-identical. Only a cage mol takes the
+    ``SANITIZE_ALL ^ SANITIZE_PROPERTIES`` path, and if that also fails the
+    original strict error is raised so the failure is never silently swallowed.
+    """
+    if not _boron_cage_relaxation_applies(mol):
+        Chem.SanitizeMol(mol)
+        return mol
+    try:
+        Chem.SanitizeMol(mol, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_PROPERTIES)
+    except Exception:
+        Chem.SanitizeMol(mol)
+    return mol
+
+
 def kekulize_safe_sanitize(mol):
     """``Chem.SanitizeMol``, retried with the stuck rings de-aromatized.
 
@@ -121,7 +161,20 @@ def kekulize_safe_sanitize(mol):
     Returns a sanitized mol of the same class as the input (callers pass ``RWMol``
     and go on to call ``GetMol()``). Atom properties, including ``__origIdx``, are
     carried across the copy.
+
+    Under ``OIN_BORON_CAGE`` (default OFF) a mol carrying a deltahedral boron-cage
+    vertex sanitizes with ``SANITIZE_PROPERTIES`` skipped, because a 5- or
+    6-connected cage boron trips RDKit's valence *rule* while being a perfectly
+    well-formed graph. Everything else about the sanitize still runs, and the
+    relaxation reaches only a mol that actually contains the cage motif.
     """
+    if _boron_cage_relaxation_applies(mol):
+        try:
+            Chem.SanitizeMol(mol, sanitizeOps=Chem.SANITIZE_ALL ^ Chem.SANITIZE_PROPERTIES)
+            return mol
+        except Exception:  # noqa: BLE001 - fall through to the normal ladder
+            pass
+
     try:
         Chem.SanitizeMol(mol)
         return mol

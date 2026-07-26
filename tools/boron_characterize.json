@@ -1,0 +1,218 @@
+[
+  {
+    "mol": "AVOFIB",
+    "stage": "CONVERT_FAIL",
+    "path": "/home/tjmustard/Documents/GitHub/oin-v045-boron/tmCAT-tmPHOTO_xyz_dataset/cat/AVOFIB_comp_0.xyz",
+    "natoms": 59,
+    "formula": "B18C12Co1H28",
+    "nB_raw": 18,
+    "stage_obabel": "OK",
+    "metals": [
+      "Co"
+    ],
+    "boron_frags": [
+      {
+        "frag": 2,
+        "natoms": 18,
+        "nB": 7,
+        "nBB": 8,
+        "B_degrees": [
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "maxBdeg": 4,
+        "n_cage_C": 1,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]C[B-]1([H])B([H])[B-]2([H])B([H])C([H])[B-]3([H])[B-]1([H])[B-]23[H]",
+        "n_donors": 3,
+        "proposed_charge": 0,
+        "get_lig_mol": "None",
+        "final_charge": -2
+      },
+      {
+        "frag": 3,
+        "natoms": 16,
+        "nB": 7,
+        "nBB": 9,
+        "B_degrees": [
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "maxBdeg": 4,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]CB([H])[B-]1([H])B([H])[B-]2([H])[B-]3([H])[B-]1([H])[B-]23[H]",
+        "n_donors": 2,
+        "proposed_charge": -1,
+        "get_lig_mol": "None",
+        "final_charge": -3
+      },
+      {
+        "frag": 4,
+        "natoms": 2,
+        "nB": 1,
+        "nBB": 0,
+        "B_degrees": [
+          1
+        ],
+        "maxBdeg": 1,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]B",
+        "n_donors": 1,
+        "proposed_charge": 0,
+        "get_lig_mol": "OK",
+        "final_charge": 2
+      },
+      {
+        "frag": 5,
+        "natoms": 2,
+        "nB": 1,
+        "nBB": 0,
+        "B_degrees": [
+          1
+        ],
+        "maxBdeg": 1,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]B",
+        "n_donors": 1,
+        "proposed_charge": 0,
+        "get_lig_mol": "OK",
+        "final_charge": 2
+      },
+      {
+        "frag": 6,
+        "natoms": 16,
+        "nB": 1,
+        "nBB": 0,
+        "B_degrees": [
+          1
+        ],
+        "maxBdeg": 1,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]C(B)C([H])C1C([H])C([H])C([H])C([H])C1[H]",
+        "n_donors": 1,
+        "proposed_charge": 0,
+        "get_lig_mol": "OK",
+        "final_charge": 0
+      },
+      {
+        "frag": 7,
+        "natoms": 2,
+        "nB": 1,
+        "nBB": 0,
+        "B_degrees": [
+          1
+        ],
+        "maxBdeg": 1,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]B",
+        "n_donors": 1,
+        "proposed_charge": 0,
+        "get_lig_mol": "OK",
+        "final_charge": 2
+      }
+    ],
+    "n_boron_frags": 6,
+    "etype": "OINEncodeError",
+    "loc": "xyz2mol.py:775:get_tmc_mol",
+    "err": "electron-deficient boron cluster in ligand fragment #2 (SMILES: '[H]C[B-]1([H])B([H])[B-]2([H])B([H])C([H])[B-]3([H])[B-]1([H])[B-]23[H]'): no 2-center-2-electron Lewis structure exists for a 3-center-2-electron boron cage, so get_lig_mol failed. This is an irreducible encoder ceiling (RDKit cannot "
+  },
+  {
+    "mol": "BEKLUA",
+    "stage": "CONVERT_FAIL",
+    "path": "/home/tjmustard/Documents/GitHub/oin-v045-boron/tmCAT-tmPHOTO_xyz_dataset/cat/BEKLUA_comp_0.xyz",
+    "natoms": 62,
+    "formula": "B18C11Co1H30N1O1",
+    "nB_raw": 18,
+    "stage_obabel": "OK",
+    "metals": [
+      "Co"
+    ],
+    "boron_frags": [
+      {
+        "frag": 1,
+        "natoms": 26,
+        "nB": 9,
+        "nBB": 9,
+        "B_degrees": [
+          2,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "maxBdeg": 4,
+        "n_cage_C": 2,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]B1C([H])[B-]([H])([B-]2([H])B([H])[B-]3([H])B([H])C([H])[B-]32[H])[B-]1([H])BOC([H])([H])[H]",
+        "n_donors": 5,
+        "proposed_charge": 0,
+        "get_lig_mol": "None",
+        "final_charge": -2
+      },
+      {
+        "frag": 2,
+        "natoms": 20,
+        "nB": 8,
+        "nBB": 9,
+        "B_degrees": [
+          2,
+          2,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "maxBdeg": 4,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]BC([H])C([H])[B-]1([H])[B-]([H])(B[H])[B-]2([H])[B-]3([H])[B-]1([H])[B-]23[H]",
+        "n_donors": 4,
+        "proposed_charge": 0,
+        "get_lig_mol": "None",
+        "final_charge": -2
+      },
+      {
+        "frag": 3,
+        "natoms": 15,
+        "nB": 1,
+        "nBB": 0,
+        "B_degrees": [
+          1
+        ],
+        "maxBdeg": 1,
+        "n_cage_C": 0,
+        "B_bound_to_metal": true,
+        "smiles_nosan": "[H]C1C([H])C([H])N(C([H])([H])B)C([H])C1[H]",
+        "n_donors": 1,
+        "proposed_charge": -1,
+        "get_lig_mol": "OK",
+        "final_charge": -1
+      }
+    ],
+    "n_boron_frags": 3,
+    "etype": "OINEncodeError",
+    "loc": "xyz2mol.py:775:get_tmc_mol",
+    "err": "electron-deficient boron cluster in ligand fragment #1 (SMILES: '[H]B1C([H])[B-]([H])([B-]2([H])B([H])[B-]3([H])B([H])C([H])[B-]32[H])[B-]1([H])BOC([H])([H])[H]'): no 2-center-2-electron Lewis structure exists for a 3-center-2-electron boron cage, so get_lig_mol failed. This is an irreducible encode"
+  }
+]

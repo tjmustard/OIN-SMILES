@@ -110,3 +110,7 @@ docs/social_media/
 /results-injectivity-y1/
 /results-injectivity-y2/
 /results-injectivity-y3/
+tools/*_final.txt
+tools/suite_after*.txt
+tools/rt*.txt
+tools/blast.txt

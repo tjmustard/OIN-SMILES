@@ -1749,6 +1749,49 @@ def xyz2AC_huckel(atomicNumList, xyz, charge, tolerance=0.2):
     return AC, mol
 
 
+def boron_cage_vertices(atoms, AC):
+    """Indices of boron atoms sitting on a deltahedral (3c-2e) cage vertex.
+
+    The motif is a **B-B-B triangle**: a boron with two boron neighbours that are
+    themselves bonded. Every closo/nido borane and carborane vertex is on at least
+    one such triangular face, and nothing else in this corpus is:
+
+    * ``BPh4-`` / ``BF4-`` borates have **no B-B bond at all**;
+    * a diborane or diboryl ``B-B`` bond has no third boron to close a triangle;
+    * an ordinary boronic ester / boroxine ring alternates B-O-B, so again no
+      B-B-B triangle.
+
+    So this recognises the actual bonding motif rather than "molecule contains
+    boron", which is what keeps the pruning exemption in ``xyz2AC_obabel`` from
+    reaching any of the ~6,600 non-cage molecules.
+
+    Args:
+        atoms: list of atomic numbers, indexed like ``AC``.
+        AC: adjacency matrix (symmetric, 0/1).
+
+    Returns:
+        set[int]: indices of cage-vertex borons (empty for every non-cage input).
+    """
+    borons = [i for i, z in enumerate(atoms) if z == 5]
+    if len(borons) < 3:
+        return set()
+    bset = set(borons)
+    b_nbrs = {i: [j for j in bset if j != i and AC[i][j]] for i in borons}
+    cage = set()
+    for i in borons:
+        nb = b_nbrs[i]
+        for a_i in range(len(nb)):
+            for b_i in range(a_i + 1, len(nb)):
+                if AC[nb[a_i]][nb[b_i]]:
+                    cage.add(i)
+                    cage.add(nb[a_i])
+                    cage.add(nb[b_i])
+                    break
+            if i in cage:
+                break
+    return cage
+
+
 def remove_weakest_bond(mol, atom_idx, AC, dMat, pt):
     extra_bond_lengths = []
     bond_atoms = np.nonzero(AC[atom_idx, :])[0]
@@ -1822,31 +1865,40 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
 
     # Filter the adjacency matrix where max valence is exceeded.
     #
-    # ORDER MATTERS HERE, and by default it is the input atom order -- which makes
-    # perception depend on how the XYZ file happened to be numbered. Capping atom i removes
-    # a bond, which lowers some atom j's count, so whether j still needs capping depends on
-    # whether i was visited first. The distance pass above is order-free (a symmetric
-    # comparison), so this loop is the ONLY order-dependent step in AC perception.
+    # TWO INDEPENDENT DEFECTS LIVE IN THIS ONE LOOP, and v0.4.5 fixed both. They compose:
+    # one changes WHICH atoms are capped, the other changes the ORDER they are capped in.
     #
-    # Measured on tests/fixtures/DUDREA_comp_0 (a Y borohydride): the bridging hydride is
-    # bonded to both B and Y, exceeding H's valence of 1. Cap Y first and the Y-H bond
-    # survives (metal degree 5, geometry SPY); cap that H first and it drops the Y-H bond
-    # instead (degree 4, geometry TET). Renumbering flipped the perceived AC in 2 of 5 random
-    # trials, and downstream that flips the emitted geometry tag [Y_SPY] <-> [Y_TET] -- an
-    # isomer-level change from nothing but atom numbering.
-    # See docs/RENUMBERING_INSTABILITY_v0.4.5.md.
+    # (a) OIN_BORON_CAGE -- WHICH. The loop deletes an atom's longest bonds while its
+    #     connectivity exceeds max(atomic_valence[Z]). For boron that cap is 4, while a
+    #     closo/nido deltahedral vertex has 5-6 neighbours -- so on a carborane it amputates
+    #     7-19 B-B cage edges, shattering an intact, correctly-perceived cage into sub-cages
+    #     plus loose [H]B. Measured on all 34 `boron_cluster` encode_fail molecules: the
+    #     distance criterion above recovers textbook-exact topologies (o-carborane 10 B / 21
+    #     edges, closo-B12 12/30, dicarbollide 9/18) and this loop then destroys them. The
+    #     downstream "no 2c-2e Lewis structure for a 3c-2e cage" error is a CONSEQUENCE of
+    #     this pruning, not an independent model limit. Exemption is scoped to element B in a
+    #     B-B-B triangle motif and computed from the PRE-pruning AC, so it cannot be
+    #     triggered by pruning itself; borates, diboranes and boroxines are untouched.
     #
-    # OIN_STABLE_METAL_AC replaces the index order with a canonical one:
-    #   * heaviest element first, so a metal is capped before the light atoms bridging to it
-    #     (chemically the right way round -- a kappa-2/kappa-3 BH4 really is bound through
-    #     its hydrides, so the metal should claim them before H's valence rule discards
-    #     them), and it reproduces the current answer for DUDREA, where the metal happened
-    #     to be atom 0;
-    #   * then by a per-atom fingerprint built only from rotation- and permutation-invariant
-    #     scalars (current neighbour count, then the sorted neighbour distances), so two
-    #     genuinely equivalent atoms tie and everything else is separated without reference
-    #     to an atom index.
-    # Default OFF: unset leaves the loop byte-identical to before.
+    # (b) OIN_STABLE_METAL_AC -- ORDER. By default the loop runs in input atom order, so
+    #     perception depends on how the XYZ happened to be numbered: capping atom i removes a
+    #     bond, lowering some atom j's count, so whether j still needs capping depends on
+    #     whether i came first. The distance pass above is order-free, making this loop the
+    #     ONLY order-dependent step in AC perception. Measured on DUDREA_comp_0 (a Y
+    #     borohydride): the bridging hydride is bonded to both B and Y, exceeding H's valence
+    #     of 1 -- cap Y first and Y-H survives (degree 5, SPY), cap that H first and Y-H drops
+    #     (degree 4, TET). Renumbering flipped the AC in 3 of 8 trials, flipping the emitted
+    #     geometry tag. The replacement order is heaviest-element-first (so a metal claims its
+    #     bridging hydrides before H's valence rule discards them), then a per-atom
+    #     fingerprint of rotation- and permutation-invariant scalars only.
+    #
+    # See docs/BORON_CAGE_v0.4.5.md and docs/RENUMBERING_INSTABILITY_v0.4.5.md.
+    # Both default OFF; with neither set this loop is byte-identical to pre-v0.4.5.
+    exempt = set()
+    if os.environ.get("OIN_BORON_CAGE"):
+        atomic_nums = [mol.GetAtomWithIdx(i).GetAtomicNum() for i in range(num_atoms)]
+        exempt = boron_cage_vertices(atomic_nums, AC)
+
     if os.environ.get("OIN_STABLE_METAL_AC"):
 
         def _cap_key(i):
@@ -1859,6 +1911,8 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
         cap_order = range(num_atoms)
 
     for i in cap_order:
+        if i in exempt:
+            continue
         a_i = mol.GetAtomWithIdx(int(i))
         N_con = np.sum(AC[i, :])
         while N_con > max(atomic_valence[a_i.GetAtomicNum()]):
