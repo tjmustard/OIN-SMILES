@@ -337,7 +337,57 @@ the 9:1 ratio does not tempt a future lane into re-deriving the same non-result.
 
 ---
 
-## 6. Ruled OUT
+## 6. LEAD 3 — the `AC2BO` memo DOES hit across a renumbering now, but not where this lane's targets live
+
+`docs/V045_STATUS_2026-07-25.md` concluded the memo "cannot hit on the generated side,
+because its key is a permutation away". That measurement predates the canonicalising
+wrapper: `AC2BO` now calls `_AC2BO_core` on the **permuted** matrix, and
+`_ac2bo_memo_anchor` tags on the bytes of *that* matrix, so two encodes of the same graph
+should share a tag.
+
+Tested **generator-free**, with `tools/encfloor_memo_probe.py`. Renumbering the input XYZ
+is the right instrument because it holds the graph *exactly* fixed while destroying atom
+order — a generated conformer does not (its perceived graph matched the input only 16/36 =
+44 %, and a sibling lane has since measured that under `OIN_ACCEPT_SCORED` six molecules'
+generated structures no longer perceive the haptic ligand as coordinated at all). So this
+is an **upper bound on the mechanism**, measured without spending generator time.
+
+Two arms per molecule in the same process: `REUSE` encodes the original then the
+renumbered copy without clearing the memo; `COLD` clears between. The payload is
+`AC2BO_STATS['matching_calls']` on **encode 2** — exact and load-independent.
+
+| molecule | cap | encode-2 matching, REUSE | encode-2 matching, COLD | verdict | OIN equal |
+|---|---|---:|---:|---|---|
+| `VORREA_comp_0` | sub | **0** | 305 | **HIT** | yes |
+| `EYECAO_comp_0` | sub | **0** | 1 297 | **HIT** | yes |
+| `AKIKOV_comp_0` | sub | **0** | 2 309 | **HIT** | yes |
+| `NOCGAN_comp_0` | sub | **0** | 1 296 | **HIT** | yes |
+| `QIDKIZ_comp_0` | **over** | 26 642 | 26 642 | **MISS** | yes |
+
+**Sub-cap: the memo eliminates 100 % of `nx.max_weight_matching` on the second encode.**
+Not "some" reuse — zero matching calls. The v0.4.5 conclusion is refuted for the sub-cap
+population under canonical perception.
+
+**Over-cap: it cannot hit, and this is structural.** `AC2BO` routes an over-cap fragment to
+`plain()` on the **un-permuted** AC (`_valence_search_is_truncated` returns `True`, which
+is deliberate — relabelling can move a valid assignment out of the truncated search
+window). So the tag is a function of the input numbering and a renumbering guarantees a
+miss. `QIDKIZ_comp_0` shows the underlying order-dependence directly: the renumbered copy
+examines **59 239** candidates where the original examined **60 001**. The emitted OIN
+still matched, but that is `best_BO` happening to serialize the same, not invariance.
+
+Two further facts worth carrying forward: one capped over-cap search produced **~29 000**
+memo entries (`entries=28715` on the COLD arm), confirming the brief's estimate against the
+200 000-entry cap; and no eviction occurred at 59 386 entries on the REUSE arm.
+
+**Consequence for this lane's targets: nothing.** `QIDKUL`/`QIDKIZ` are exactly the case
+that cannot hit. The value of LEAD 3 is for the sub-cap round trip, and it is *already
+delivered by code on `main`* — this lane's contribution is measuring that it works, and
+identifying that extending it to over-cap requires giving the over-cap branch a
+renumbering-invariant anchor, which is a correctness question (which candidates the
+truncated window contains), not a caching one.
+
+## 7. Ruled OUT
 
 Inherited from v0.4.5 and **not** re-chased (each already has numbers): extending
 `OIN_VALENCE_CHARGE_FILTER` to sub-cap; numpy-vectorising `charge_is_OK` / `get_UA` /
@@ -356,7 +406,7 @@ Ruled out **by this lane**:
 
 ---
 
-## 7. Tools added
+## 8. Tools added
 
 | tool | what it answers |
 |---|---|
