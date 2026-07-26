@@ -1904,8 +1904,20 @@ class MetalloGenAdapter:
                 metal_complex=prebuilt_complex,
             )
         if not mols:
+            # Name the assembly path that was actually used. `msmiles` is populated ONLY when
+            # direct assembly failed and we fell back (see the `if prebuilt_complex is None`
+            # above), so on the default OIN-direct path it is None -- and the old message
+            # interpolated it anyway, reporting "m-SMILES None" for every direct-path failure.
+            # All 19 molecules in this class read that way, which points a debugger at a phantom
+            # None in the m-SMILES builder instead of at the embed that actually came up empty.
+            if prebuilt_complex is not None:
+                _via = f"OIN-direct assembly (geometry {getattr(parsed, 'geo_code', None)!r})"
+            else:
+                _via = f"m-SMILES {msmiles!r}"
             raise ValueError(
-                f"MetalloGen failed to generate any conformers for m-SMILES {msmiles!r}"
+                f"MetalloGen produced no conformers via {_via}; "
+                f"OIN={getattr(parsed, 'original_oin', None)!r}, pool={pool_n}, "
+                f"timeout={self.timeout}s"
             )
 
         # Prefer the conformer whose re-perceived coordination geometry matches the
