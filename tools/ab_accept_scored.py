@@ -70,8 +70,17 @@ def _sha(s) -> str | None:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()[:16]
 
 
-def measure_one(xyz_path: str, timeout: float) -> dict:
-    """Encode, generate, score, hash, re-perceive, and count clashes for one molecule here."""
+def measure_one(xyz_path: str, timeout: float, dump_dir: str | None = None) -> dict:
+    """Encode, generate, score, hash, re-perceive, and count clashes for one molecule here.
+
+    ``dump_dir`` (L5-attach): additionally persist the ACCEPTED conformer's coordinates and
+    the generator's own claimed metal-donor set. Nothing in this script's verdicts depends on
+    it. It exists because the run JSONs record only derived scalars (sha/clash/oin), so the
+    §6.5 falsification -- "does a coordinate-only donor-set predicate separate arm A's
+    accepted conformer from arm B's?" -- was otherwise unanswerable without regenerating
+    every molecule once per candidate predicate. With the dump, generation is paid once and
+    predicate iteration is free and offline.
+    """
     import tempfile
 
     import numpy as np
@@ -141,6 +150,52 @@ def measure_one(xyz_path: str, timeout: float) -> dict:
             out["indep_passed"] = False
             out["indep_error"] = f"{type(e).__name__}: {e}"
         out["indep_s"] = round(time.monotonic() - ti, 2)
+
+        if dump_dir:
+            # The accepted conformer, plus the generator's CLAIM about which atoms are bonded
+            # to the metal. The claim is a REFERENCE only -- never a measurement of attachment
+            # (§6.1: a detached ligand keeps its bond object). Written so the falsification can
+            # be re-scored offline against any candidate predicate.
+            try:
+                os.makedirs(dump_dir, exist_ok=True)
+                stem = os.path.join(dump_dir, out["molecule"])
+                with open(stem + ".xyz", "w") as fh:
+                    fh.write(res.xyz)
+                from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
+
+                midx = next(
+                    (
+                        a.GetIdx()
+                        for a in mol.GetAtoms()
+                        if a.GetAtomicNum() in TRANSITION_METALS_NUM
+                    ),
+                    None,
+                )
+                claim = (
+                    sorted(b.GetOtherAtomIdx(midx) for b in mol.GetAtomWithIdx(midx).GetBonds())
+                    if midx is not None
+                    else []
+                )
+                with open(stem + ".claim.json", "w") as fh:
+                    json.dump(
+                        {
+                            "molecule": out["molecule"],
+                            "input_xyz": xyz_path,
+                            "metal_idx": midx,
+                            "claimed_donors": claim,
+                            "claimed_elements": [mol.GetAtomWithIdx(i).GetSymbol() for i in claim],
+                            "natoms": mol.GetNumAtoms(),
+                            "oin_in": out.get("oin_in"),
+                            "oin_out": out.get("oin_out"),
+                            "oin_indep": out.get("oin_indep"),
+                            "indep_passed": out.get("indep_passed"),
+                            "passed": out.get("passed"),
+                        },
+                        fh,
+                        indent=1,
+                    )
+            except Exception as e:  # a dump failure must never change a verdict
+                out["dump_error"] = f"{type(e).__name__}: {e}"
     except Exception as e:
         out.setdefault("elapsed_s", round(time.monotonic() - t0, 2))
         out["passed"] = False
@@ -155,6 +210,7 @@ def run_arm(
     timeout: float,
     workers: int,
     hard_cap: float,
+    dump_root: str | None = None,
 ) -> list:
     """Run every molecule of one arm, one subprocess each so the lever is read cleanly."""
     results: list[dict] = []
@@ -166,15 +222,18 @@ def run_arm(
             env = dict(os.environ)
             env.update(env_extra)
             env["PYTHONPATH"] = os.path.join(ROOT, "src")
+            cmd = [
+                sys.executable,
+                os.path.abspath(__file__),
+                "--one",
+                rec["xyz"],
+                "--timeout",
+                str(timeout),
+            ]
+            if dump_root:
+                cmd += ["--dump-xyz", os.path.join(dump_root, arm)]
             p = subprocess.Popen(
-                [
-                    sys.executable,
-                    os.path.abspath(__file__),
-                    "--one",
-                    rec["xyz"],
-                    "--timeout",
-                    str(timeout),
-                ],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 env=env,
@@ -275,10 +334,17 @@ def main() -> int:
         "lever if sha_out is stable across two runs of the SAME arm.",
     )
     ap.add_argument("--label", default="", help="arm label for --single-arm output")
+    ap.add_argument(
+        "--dump-xyz",
+        help="persist each ACCEPTED conformer's coordinates + the generator's claimed metal "
+        "donor set under this directory (one subdir per arm). Purely additive; no verdict in "
+        "this script reads it. Exists so the §6.5 attachment falsification can be re-scored "
+        "offline instead of regenerating the cohort once per candidate predicate.",
+    )
     args = ap.parse_args()
 
     if args.one:
-        print(json.dumps(measure_one(args.one, args.timeout)))
+        print(json.dumps(measure_one(args.one, args.timeout, args.dump_xyz)))
         return 0
 
     if not args.cohort:
@@ -298,6 +364,7 @@ def main() -> int:
             args.timeout,
             args.workers,
             hard_cap,
+            args.dump_xyz,
         )
         s = summarize(rows, label)
         print(f"\n  {label}: {json.dumps(s)}")
@@ -309,11 +376,23 @@ def main() -> int:
 
     print("\n--- ARM A: default (independent confirm ON) ---")
     a = run_arm(
-        cohort, "A-default", {"OIN_ACCEPT_SCORED": "0"}, args.timeout, args.workers, hard_cap
+        cohort,
+        "A-default",
+        {"OIN_ACCEPT_SCORED": "0"},
+        args.timeout,
+        args.workers,
+        hard_cap,
+        args.dump_xyz,
     )
     print("\n--- ARM B: OIN_ACCEPT_SCORED=1 ---")
     b = run_arm(
-        cohort, "B-scored", {"OIN_ACCEPT_SCORED": "1"}, args.timeout, args.workers, hard_cap
+        cohort,
+        "B-scored",
+        {"OIN_ACCEPT_SCORED": "1"},
+        args.timeout,
+        args.workers,
+        hard_cap,
+        args.dump_xyz,
     )
 
     sa, sb = summarize(a, "A-default"), summarize(b, "B-scored")
