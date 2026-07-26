@@ -33,10 +33,15 @@ loop. Do not add the two ratios.
 ## Headline
 
 **The 20 000-candidate search is not merely buying a guess — on every molecule measured it is
-buying the *same* guess it already had after a few hundred candidates.** `best_BO` reaches its
-final value early and is then overwritten hundreds of times with an identical matrix, because
-the update predicate is `BO.sum() >= best_BO.sum()` (note `>=`, so ties overwrite) and the
-maximum attainable sum is found near the front of the lazy product order.
+buying the *same* guess it already had after ~100 candidates.** `best_BO` reaches its final value
+early and is then overwritten hundreds of times with an identical matrix, because the update
+predicate is `BO.sum() >= best_BO.sum()` (note `>=`, so ties overwrite) and the maximum attainable
+sum is found near the front of the lazy product order.
+
+**The answer in one line:** the ~15 s-per-arm floor is real and is reducible by ~100x, but for
+**0.2% of the corpus**, and the reduction rescues **2 molecules** while leaving 4 of the 8 known
+over-cap molecules exactly where they were. Cost: **0 changed OIN strings out of 14 molecules
+where both arms completed**, and no possible comparison for the 2 it rescues.
 
 ## Q1 — how often does the search actually fail?
 
@@ -227,6 +232,28 @@ Both levers are **default OFF** and `main`'s output is byte-unchanged:
   fall back to the default rather than silently collapsing every over-cap perception.
 * `OIN_VALENCE_MATCHER` — unset is `nx.max_weight_matching`.
 
+### Sub-cap control, measured — 12 molecules, `tries` 20 000 vs 200
+
+The by-construction argument was checked against reality rather than trusted:
+
+| result | count |
+|---|---|
+| OIN identical | **12 / 12** |
+| `best_BO` identical | **12 / 12** |
+| `REPEAT-OK` (20 000 arm repeated) | **12 / 12** |
+| OIN changed | **0** |
+
+14 were requested; the run was stopped on the 13th. Every completed molecule examined only
+**3 to 8 candidates** — sub-cap ligands never approach 200, let alone 20 000, so `tries` is
+unreachable for them exactly as the code structure implies.
+
+**The 13th molecule is worth more than the 12 that passed.** `XIRMER_comp_0` is *sub-cap*, and it
+did not finish a single encode in 35 minutes — and it forks a child mid-encode, the signature of
+the v0.4.4 SL5 resonance wrapper. Since it cannot reach the valence-search fallback at all, its
+cost is something else entirely. **A slow encode is not evidence of an over-cap ligand**, and any
+future attempt to size "encoder slowness" by this lane's mechanism would be measuring the wrong
+thing.
+
 **Cost of the instrumentation itself, measured rather than waved through.** `_maximum_matching`
 reads `os.environ` on the encoder's hottest loop, so it was benchmarked instead of assumed:
 `os.environ.get` is 1.403 µs against 482.6 µs for one matching call — **0.291%**, i.e. ~84 ms
@@ -319,8 +346,8 @@ against. The molecules that benefit most from the budget cut are exactly the one
 under it cannot be verified. Their OIN shas are recorded above so a future run on a quiet host,
 with a cap long enough to complete the 20 000 arm, can settle it.
 
-So the byte-identity claim is precisely this and no wider: **0 OIN strings changed out of 16
-molecules where both arms completed** — 14 sub-cap plus `QIDKUL_comp_0` and `QIDKIZ_comp_0`. Of
+So the byte-identity claim is precisely this and no wider: **0 OIN strings changed out of 14
+molecules where both arms completed** — 12 sub-cap plus `QIDKUL_comp_0` and `QIDKIZ_comp_0`. Of
 the remaining six over-cap molecules, two changed from *no string at all* to a string, and four
 produce no comparison in either direction. Nobody should read "0 changed" as covering the
 over-cap class; it covers two of its eight known members.
@@ -361,6 +388,18 @@ Also open:
   enumerated.** A full static scan is cheap in CPU (~33 s per 2000 molecules unloaded) and was
   started, but at load 40 it projected to ~3.6 h and was killed to avoid starving the release
   sweep. Worth running on a quiet host to turn the estimate into an exact list.
+
+## Suite and lint
+
+`discover tests/unit`: **618 tests OK** (3 skipped, 3 expected failures) in 2256 s at load ~35.
+That is the documented 605-test baseline plus this lane's 13 new tests, with **identical** skipped
+and expected-failure counts. `tests/unit/test_regression_stability.py` is inside that run and
+green on the default path. `uvx ruff@0.15.20 check` and `format` clean.
+
+Honest gap: **I did not run a pre-change baseline myself.** A full run cost 2256 s under this
+load, and a second one would have taken cores the release sweep needs. The evidence that nothing
+regressed is the arithmetic (605 + 13 = 618) together with the unchanged skip/xfail counts, not a
+paired before/after run on this host.
 
 ## Instrument defects found (this release keeps producing them)
 
