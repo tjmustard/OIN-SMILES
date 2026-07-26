@@ -153,5 +153,53 @@ class TestForkedResonanceRecovery(unittest.TestCase):
             xyz2mol._RESONANCE_CPU_BUDGET_S = orig
 
 
+class TestStuckRingRescuePermissive(unittest.TestCase):
+    """v0.4.5 encode_fail: ``OIN_RESCUE_STUCK_RING`` opt-in lever.
+
+    ``_rescue_unusable_perception``'s charge-sweep loop rejected any candidate with a
+    "stuck" (unkekulizable-as-aromatic) ring outright, even when ``_perception_is_usable``
+    -- which already repairs a stuck ring via ``kekulize_safe_sanitize`` -- says the
+    candidate is fine. ``ASISAX`` (a Ni tetraaza-macrocycle) has exactly one usable ligand
+    charge (0); at that charge the ring is stuck but de-aromatizes cleanly, so the old
+    unconditional check discarded it and every other charge in -4..4 fails outright,
+    exhausting the sweep with nothing to return. Default OFF: byte-identical until an
+    operator opts in. See docs/ENCODE_FAIL_v0.4.5.md.
+    """
+
+    FIXTURE = _fixture("ASISAX_comp_0.xyz")
+
+    def setUp(self):
+        self._env_backup = os.environ.pop("OIN_RESCUE_STUCK_RING", None)
+
+    def tearDown(self):
+        if self._env_backup is not None:
+            os.environ["OIN_RESCUE_STUCK_RING"] = self._env_backup
+        else:
+            os.environ.pop("OIN_RESCUE_STUCK_RING", None)
+
+    @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
+    def test_default_off_still_fails(self):
+        # Lever unset -> byte-identical to pre-fix behaviour: ASISAX still can't encode.
+        with self.assertRaises(ValueError):
+            XYZToSMILES().convert(self.FIXTURE)
+
+    @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
+    def test_lever_on_recovers_asisax(self):
+        os.environ["OIN_RESCUE_STUCK_RING"] = "1"
+        try:
+            oin = XYZToSMILES().convert(self.FIXTURE)
+        finally:
+            os.environ.pop("OIN_RESCUE_STUCK_RING", None)
+        self.assertTrue(oin, "expected ASISAX to encode with the lever on")
+        self.assertIn("[Ni", oin)
+        # Deterministic across a repeat -- the rescue always returns the same charge/form.
+        os.environ["OIN_RESCUE_STUCK_RING"] = "1"
+        try:
+            oin2 = XYZToSMILES().convert(self.FIXTURE)
+        finally:
+            os.environ.pop("OIN_RESCUE_STUCK_RING", None)
+        self.assertEqual(oin, oin2)
+
+
 if __name__ == "__main__":
     unittest.main()
