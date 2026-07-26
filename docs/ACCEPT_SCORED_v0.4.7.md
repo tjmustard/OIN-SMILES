@@ -454,6 +454,83 @@ presentation artifacts of a fussy encoder — they are loss of detected metal–
 in 6 cases, a donor reassignment in 1, and a detached hydrogen in 1. G2's FAIL stands on
 strengthened evidence, not weakened.
 
+---
+
+## 4.6 NAMED FINDING — vdW clash count is not a sufficient proxy for structure quality
+
+**Independent of `OIN_ACCEPT_SCORED`. Consequences for `clash.VDW_ACCEPTANCE_ENABLED`, which is
+default-ON and ranks conformers by exactly this metric.**
+
+`POVPIA_comp_0` is the counterexample, and it is unusually clean because the same molecule
+maximises one metric and breaks the other:
+
+| | arm A default | arm B scored |
+|---|---|---|
+| `clash_vdw` | **16** | **0** |
+| `clash_severe` | **7** | **0** |
+| `worst_overlap` | **0.4344** | **0.75** |
+| independent re-perception | **byte-identical to the input** | **`[H]` detached, C–N read as C=N** |
+
+By vdW contact, arm B's structure is the single largest quality improvement in the entire
+cohort — it is what takes the paired aggregate from `severe 7` to `severe 0`. By re-perception,
+arm B's structure has **lost a hydrogen atom** and the amine has become an imine.
+
+**The two metrics do not merely disagree in emphasis; they rank the same pair of structures in
+opposite orders.** A conformer can be free of steric overlap and still be chemically wrong, and
+`vdw_clash_count` is blind to that class of wrongness by construction: it measures *distances
+between atoms*, never *which atoms are bonded to what*.
+
+This matters beyond this lever because `_select_by_geometry` ranks clash-first with
+`VDW_ACCEPTANCE_ENABLED` ON by default. On any molecule where the two criteria disagree, the
+default ranking prefers the sterically clean structure — which on POVPIA is the broken one.
+**Not investigated further in this lane; recorded because the metric is load-bearing across the
+project and this is a documented counterexample to it.**
+
+---
+
+## 4.7 NAMED FINDING — the harness's success metric cannot see a detached haptic ligand
+
+**Independent of whether this lever ever ships. This affects every accuracy figure the project
+reports.**
+
+`tools/test_dataset_roundtrip.py` scores with
+
+```
+smiles_2 = get_oin_string(gen_result.mol, coords)
+```
+
+`gen_result.mol` carries **the generator's own bond graph**. So `smiles_2` describes the
+connectivity the generator intended, annotated with the coordinates it produced — the two are
+never cross-checked against each other. A conformer whose Cp ring has drifted out of the
+coordination sphere still carries the metal–ring bonds in `gen_result.mol`, so it re-encodes
+with all five slots and its winding marker intact, and **scores as a pass**.
+
+KAQDOV is the demonstration, and both facts are measured in this lane:
+
+- `sha256(smiles_2)` is **identical in both arms** (`bc968079864b73da`) — the harness sees no
+  difference whatsoever;
+- independent re-perception of the same arm-B coordinates returns `[Ru_TPL]. ... .c1cccc1` — the
+  Cp ring is a **free molecule** and the metal has one donor fewer.
+
+Both are true simultaneously because they ask different questions. `passed` was 19/22 in **both**
+arms across the whole cohort while `indep_passed` fell 15/20 → 7/20. The harness reported
+nothing.
+
+**The consequence is not about this lever.** Any reported round-trip pass rate is, for haptic
+molecules, a statement about the generator's *intent* rather than about the *structure it
+produced*. A ligand can leave the metal without the metric noticing. That is a measurement
+defect in the instrument this project uses to judge accuracy, and it is orthogonal to
+`OIN_ACCEPT_SCORED` — the lever made it *visible* by producing more such structures; it did not
+create it.
+
+Two things follow, neither of them this lane's to do:
+
+1. Any accuracy figure for eta molecules (≈23% of the corpus) currently carries an unquantified
+   false-positive rate of this shape. Nobody knows how large it is with the lever OFF.
+2. A cheap geometric attachment check would close it — see §6.
+
+---
+
 #### ⚠ `indep` is NOT a pristine oracle — read `indep=False` carefully
 
 This belongs next to the number above, because `indep=False` is easy to over-read as "the
@@ -537,7 +614,15 @@ Reasoning, in the order it actually weighed:
 - G4 shows a near-zero regression rate on the guard population **and** the project explicitly
   adopts Reading A.
 
-**A new consideration this surfaced:** the 6 haptic failures matter more than their count
+**The deepest consequence, and it is not about the lever (§4.7):** the harness's success metric
+**cannot see a detached haptic ligand**, because it re-encodes through `gen_result.mol` — the
+generator's own bond graph. A structure whose Cp ring has left the metal still scores as a pass.
+This is a measurement defect in the instrument the project uses to judge accuracy, it affects
+every reported figure for the ~23% of the corpus that is haptic, and **it exists whether or not
+this lever ships**. The lever made it visible by producing more such structures; it did not
+create it. Nobody currently knows the false-positive rate with the lever OFF.
+
+**A related consideration:** the 6 haptic failures matter more than their count
 suggests, because eta is ~23% of molecules and 35.6% of generator CPU. A lever whose cost
 concentrates on haptic coordination is a lever whose cost concentrates on the hardest and most
 expensive part of the corpus — the same part it delivers its biggest speedups on. Speedup and
@@ -553,6 +638,87 @@ the cheap prefilter vetoes conformers the strict test would accept, **and the ha
 with the cheap path**. `AROHIA_comp_0` is recorded as a round-trip FAILURE while independent
 re-perception says it round-trips. That is a reported-accuracy defect in the pessimistic
 direction, affecting an unknown number of molecules corpus-wide. See §2.
+
+---
+
+## 6. Proposal assessed: a cheap attachment check. **Feasible, and it would recover 6-7 of the 8.**
+
+Assessed by reading the code plus a micro-benchmark. **Not built** — this is a feasibility
+verdict, not an implementation.
+
+### 6.1 The trap that must be avoided
+
+`metallogen_adapter._coordination_vectors` (line 1195) derives donors from
+`contract_mol.GetAtomWithIdx(metal_idx).GetBonds()` — **the generator's own bond graph**. A
+ligand that has physically left the coordination sphere *keeps its bond object*, so this path
+reports the ligand as attached no matter where it drifted. **Any attachment check built on
+`GetBonds()` is blind by construction and would certify exactly the structures it was written to
+catch.** The check must be built on coordinates.
+
+### 6.2 It would work — and this is provable by reading, not by hoping
+
+`XYZToSMILES().convert()` determines coordination through a specific, coordinate-only path:
+
+```
+get_basic_mol()  ->  xyz2AC_obabel(atoms, xyz_coords, tolerance=0.5)   # "Modified tolerance
+                                                                       #  to capture haptic bonds"
+_get_tmc_mol_impl:  coordinating_atoms = np.nonzero(GetAdjacencyMatrix(mol)[tmc_idx, :])[0]
+```
+
+The metal's donor set *is* the nonzero row of that adjacency matrix. So the six haptic `indep`
+failures **are, definitionally, a change in that donor set** — that is the computation that
+produced the observed `[Ru_TET]. ... .[cH]{3>}1...` → `[Ru_TPL]. ... .c1cccc1`. A predicate that
+checks that same donor set therefore separates arm A's accepted conformers from arm B's on those
+six **by construction**, not by conjecture. No experiment is needed to establish that much.
+
+### 6.3 Cost: affordable, by three orders of magnitude
+
+Measured `xyz2AC_obabel` cost on the eight regressed molecules' own inputs:
+
+| molecule | atoms | detected donors | metal–donor d range (Å) | AC cost |
+|---|---|---|---|---|
+| MEDZUR | 47 | 10 | 2.12 – 2.40 | **11 ms** |
+| HIDCIH | 57 | 10 | 1.81 – 2.50 | 24 ms |
+| DAKGON | 66 | 6 | 2.01 – 2.13 | 29 ms |
+| FEXYOZ | 61 | 8 | 2.05 – 2.41 | 35 ms |
+| POVPIA | 77 | 5 | 1.92 – 2.28 | 47 ms |
+| ZITSIE | 85 | 12 | 2.46 – 2.60 | 53 ms |
+| RATPEK | 105 | 5 | 1.97 – 2.18 | 71 ms |
+| KAQDOV | 109 | 8 | 1.99 – 2.30 | **81 ms** |
+
+**11–81 ms, versus the 48–57 s that the dropped strict `_reencode_oin` costs on an eta
+conformer.** Roughly a 1000× saving, so the check is affordable per conformer even against a
+48-slot pool. All eight known-good crystal inputs detect a full donor set with every metal–donor
+distance in **1.8–2.6 Å**, so the predicate does not reject real structures.
+
+### 6.4 What it would and would NOT recover — stated precisely
+
+| failure mode | n | caught by an attachment check? |
+|---|---|---|
+| haptic coordination lost | 6 | **YES** — by construction (§6.2) |
+| donor atom reassigned (DAKGON, C→N) | 1 | **only if the check compares the donor SET, not the donor COUNT** — the count may be unchanged while the identity moves |
+| hydrogen detached, C–N→C=N (POVPIA) | 1 | **NO** — the metal donor set is intact; this is a ligand-internal valence defect |
+
+So the honest ceiling is **6 of 8 with a count-based check, 7 of 8 with a set-based one, never
+8 of 8.** The proposal would substantially reduce the measured cost, not eliminate it, and the
+lever would still ship with a known residual.
+
+### 6.5 Verdict and the one test still outstanding
+
+**Feasible and worth building** — as `OIN_ACCEPT_SCORED`'s missing safety condition rather than
+as a separate lever: *"accept the first conformer the score credits **that still has its ligands
+attached.**"* It preserves the speedup exactly where the speedup lives (haptic molecules) instead
+of scoping the lever away from them.
+
+**The outstanding test, which needs compute and is deferred behind G4:** run the prototype
+against arm A's and arm B's *accepted conformers* for the six and confirm it separates them in
+practice, not only in principle. §6.2 makes the outcome near-certain, but "near-certain by
+reading" is exactly the confidence level this project has been burned by — and the falsifying
+observation is cheap. **If the predicate cannot separate them, this section is wrong and the
+proposal dies.**
+
+Independently valuable: the same check would close the §4.7 measurement defect, which exists
+whether or not the lever ships.
 
 ---
 
