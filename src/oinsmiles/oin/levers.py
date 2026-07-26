@@ -94,6 +94,22 @@ _HELD_OFF = {
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "
         "it between buckets rather than fixing it."
     ),
+    "OIN_BORON_CAGE": (
+        "DECIDED TO PROMOTE, NOT YET PROMOTED -- listed here so it is off by RECORD rather than "
+        "by omission, which is how it shipped in v0.4.5. Measured encoder-only on the 936-molecule "
+        "re-baseline: 34 of the 36 `XYZToSMILES failed` rows are `electron-deficient boron "
+        "cluster`, and this lever takes them from 0/36 encoding to 34/36, in 0.2-4.2s each. That "
+        "is 3.6% of that cohort, the single largest evidenced accuracy lever left. The boron lane "
+        "separately measured 48/48 round-tripping (docs/BORON_CAGE_v0.4.5.md).\n"
+        "        The reason it is a product call and not a free win: it moves 14 molecules that "
+        "were SCORED AS PASSING to failing. That is correct -- those 14 were passing while "
+        "describing the wrong graph (VEJXOZ invents a C=B double bond) -- but it trades 14 silent "
+        "false passes for 14 loud honest failures, so the headline pass rate can move either way "
+        "depending on the sweep. Promote in v0.4.6 with a full sweep, not mid-release: the "
+        "harness runs a subprocess per molecule, so flipping a code default while a sweep is in "
+        "flight yields a MIXED-CONFIG measurement -- the config asymmetry that manufactured "
+        "v0.4.4's 11 phantom regressions."
+    ),
 }
 
 
