@@ -151,8 +151,19 @@ seconds are therefore not clean. Two measurements, both honest about that:
 
 * Single runs: **49.43 s at load 2.4 (before)** vs **24.82 s at load 12.2 (after)**. The
   after-run was faster despite 5x the load, so the improvement is real and understated.
-* Interleaved paired A/B (alternating arms so contention averages across both), load ~22:
-  see the table in `spec/handoffs/v0.4.5/PROGRESS-encspeed.md` §2.
+* **Interleaved paired A/B** — the load-robust measurement. Arms alternate
+  BASE/NEW/BASE/NEW so host contention averages across both rather than favouring
+  whichever ran first. Load 22–38 throughout, which roughly doubles both arms' absolute
+  seconds; the *ratio* is what this establishes.
+
+  | molecule | BASE | NEW | speedup |
+  |---|---|---|---|
+  | `QIDKUL_comp_0` (eta, 59 atoms) | 104.94 s, 107.10 s | 66.02 s, 64.66 s | **1.62x** |
+  | `QIDKIZ_comp_0` (non-eta, 39 atoms) | 123.98 s, 128.13 s | 54.09 s, 62.38 s | **2.16x** |
+
+  All eight runs re-confirmed byte-identity: `QIDKUL` sha `0d428d9dfc56` and `QIDKIZ` sha
+  `796221298c6c` on every arm and repetition. That is a third independent confirmation,
+  after the 24-molecule manifest and the 3-convert warm-memo check.
 
 ### Cross-encode reuse
 

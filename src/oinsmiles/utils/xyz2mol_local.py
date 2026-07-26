@@ -621,7 +621,11 @@ def _ac2bo_memo_anchor(AC):
         return
 
     tag = (AC.shape, AC.dtype.str, AC.tobytes())
-    for other_key, other in _AC2BO_SLOTS.items():
+    # Snapshot the items: this loop deletes from the mapping it walks. Nothing in the
+    # library calls AC2BO from more than one thread today (the only ThreadPoolExecutor is
+    # around xtb optimisation, which does not perceive), but a snapshot makes the walk
+    # immune to a concurrent anchor resizing the dict, and at <= 6 slots it is free.
+    for other_key, other in list(_AC2BO_SLOTS.items()):
         if other["tag"] == tag:
             # Same connectivity, different array object (a re-perceived conformer, or the
             # charge sweep rebuilding its AC): adopt the entries and re-anchor the identity
