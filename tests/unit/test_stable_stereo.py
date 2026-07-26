@@ -151,13 +151,26 @@ def _cip_labels(oin):
 class TestStereoIsStableUnderRenumbering(unittest.TestCase):
     """With the lever ON, atom numbering must not change the configuration."""
 
-    SEEDS = (1, 2, 3, 5, 8)
+    # A WIDE seed set, deliberately. The two assertions below are asymmetric: stability
+    # must hold for EVERY seed, while "the fixture really is unstable" needs only ONE seed
+    # to drift. So widening strengthens the first and de-flakes the second at once.
+    #
+    # It was originally (1, 2, 3, 5, 8) and that was too narrow: none of those five happens
+    # to trigger this molecule's drift, so `test_lever_off_reproduces_the_defect` failed even
+    # though the molecule genuinely IS unstable -- `canonicality_probe.py --only
+    # ROGYAO_comp_0 --trials 5`, which draws its own permutations, sees 5 of 15
+    # transform-trials drift (subclass `rdkit_canonical`, key-level too). A five-sample miss
+    # on a ~1-in-3 event is unremarkable; hardcoding five seeds was the bug, not the fixture.
+    SEEDS = tuple(range(12))
 
     def test_lever_off_reproduces_the_defect(self):
         """Guard against a vacuous suite: the fixture must really be unstable.
 
-        If this stops failing the fixture no longer exercises the bug, and the
-        stability assertion below has quietly become worthless.
+        If this stops failing, the fixture no longer exercises the bug and the stability
+        assertion below has quietly become worthless. Keep this test -- it is what stops
+        the lane from proving nothing -- but note it asserts over the whole seed set, not
+        any particular seed, because which permutations trigger the drift is not a
+        property worth pinning.
         """
         path = _fixture(_UNSTABLE)
         base = _encode(path, stable=False)
@@ -169,8 +182,11 @@ class TestStereoIsStableUnderRenumbering(unittest.TestCase):
             ]
         self.assertTrue(
             drifted,
-            f"{_UNSTABLE} no longer drifts under renumbering with {_LEVER} unset; "
-            "replace it with a fixture that does, or this lane proves nothing",
+            f"{_UNSTABLE} did not drift under any of {len(self.SEEDS)} renumberings with "
+            f"{_LEVER} unset. Either the defect was fixed elsewhere (good -- then retire this "
+            "fixture and say so) or the fixture no longer exercises it, in which case the "
+            "stability assertion below proves nothing. Cross-check with: "
+            "tools/canonicality_probe.py --only ROGYAO_comp_0 --trials 5",
         )
 
     def test_lever_on_is_byte_stable_under_renumbering(self):
@@ -225,7 +241,21 @@ class TestStableStereoIsCorrect(unittest.TestCase):
         A descriptor made stable by being constant passes every stability test above
         and fails this one.
         """
-        for name in _RR_FIXTURES + (_UNSTABLE,):
+        # _UNSTABLE (ROGYAO_comp_0) is deliberately NOT in this list. It carries two @@ tags
+        # and looks like an obvious enantiomer test, but it is ACHIRAL: the corrected
+        # torsion-aware oracle superimposes its mirror at 0.423 A with only 4 automorphisms
+        # (RIGID_ACHIRAL, threshold 0.5). Demanding that its mirror differ asserts something
+        # false. It stays in the renumbering-stability tests above, where its instability is
+        # real and measured -- an unstable fixture and a chiral fixture are different jobs.
+        #
+        # Worth knowing WHY it looked chiral: the older rigid oracle
+        # (tools/injectivity/oracle.py) reported "distinct, mirror RMSD 2.586 A,
+        # ENCODER-BLIND (total)" -- a false positive from hitting its 4000-automorphism cap.
+        # It enumerates on the H-EXPLICIT graph, where this molecule's four methyls starve
+        # the budget, which inflates rigid RMSD on methyl-rich species. That instrument
+        # defect is recorded in the Lane 7 write-up; it changes no curated fixture verdict
+        # but it will send you chasing bugs that do not exist. Use torsion_oracle.py.
+        for name in _RR_FIXTURES:
             with self.subTest(fixture=name):
                 path = _fixture(name)
                 base = _encode(path, stable=True)
@@ -242,6 +272,26 @@ class TestStableStereoIsCorrect(unittest.TestCase):
                 for i, (b, m) in enumerate(zip(_tags(base), _tags(mirror))):
                     with self.subTest(tag=i):
                         self.assertNotEqual(b, m, "every stereocentre must invert")
+
+    def test_achiral_fixture_mirror_is_IDENTICAL(self):
+        """The other direction: an achiral molecule's mirror MUST encode identically.
+
+        This is the over-sensitivity guard, and it is the one a naive "mirrors must always
+        differ" rule gets backwards. ROGYAO_comp_0 is achiral by the torsion-aware oracle
+        (RIGID_ACHIRAL, mirror superimposes at 0.423 A over 4 automorphisms), so an encoder
+        that distinguished it would be manufacturing stereochemistry that is not there --
+        a false positive, which the round trip would then fail on forever.
+        """
+        path = _fixture(_UNSTABLE)
+        base = _encode(path, stable=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            mirror = _encode(_mirrored(path, tmp), stable=True)
+        self.assertEqual(
+            base,
+            mirror,
+            f"{_UNSTABLE} is achiral (oracle: RIGID_ACHIRAL, 0.423 A) so its mirror must "
+            "encode identically; a difference here means the encoder invented chirality",
+        )
 
     def test_mirror_of_an_rr_fixture_is_ss(self):
         for name in _RR_FIXTURES:
@@ -269,10 +319,27 @@ class TestLeverIsOffByDefault(unittest.TestCase):
         with mock.patch.dict(os.environ, env, clear=True):
             unset = XYZToSMILES().convert(path)
         self.assertEqual(unset, _encode(path, stable=False))
-        self.assertNotEqual(
-            unset,
+
+    def test_lever_does_not_change_the_ORIGINAL_ordering(self):
+        """On the input's own atom order the lever should be a no-op.
+
+        This replaces an assertion that required ON != OFF here, which had the lever's
+        contract backwards. The lever re-derives a chiral tag whose parity was recorded
+        against a neighbour ordering the fragment rebuild destroyed -- so it changes the
+        answer for *renumbered* presentations, and on the original ordering there is
+        usually nothing to correct. ON == OFF here is the desirable property: no
+        gratuitous change to the string everyone already has.
+
+        Non-inertness is proved where it actually lives, by
+        test_lever_off_reproduces_the_defect plus
+        test_lever_on_is_byte_stable_under_renumbering.
+        """
+        path = _fixture(_UNSTABLE)
+        self.assertEqual(
+            _encode(path, stable=False),
             _encode(path, stable=True),
-            "if these agree the lever is inert on this fixture and proves nothing",
+            "the lever changed the encoding of the ORIGINAL atom ordering; it is meant to "
+            "repair renumbered presentations, not to rewrite the canonical answer",
         )
 
 
