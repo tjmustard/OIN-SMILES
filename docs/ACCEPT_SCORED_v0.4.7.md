@@ -1,6 +1,6 @@
 # `OIN_ACCEPT_SCORED` — promotion gates (v0.4.7, lane L2-promote)
 
-**Status: MEASURING.** Results sections are filled as runs land. Method and mechanism are
+**Status: G1, G2, G3 MEASURED. G4 in flight.** Results sections are filled as runs land. Method and mechanism are
 settled and are recorded here first, deliberately: they are the part that does not survive an
 interrupted session otherwise.
 
@@ -428,7 +428,75 @@ wrong.
 
 ## 5. Recommendation
 
-*(pending all four gates)*
+### 5.1 Gate scorecard
+
+| gate | question | result | verdict |
+|---|---|---|---|
+| **G3** | does `smiles_2` stay byte-identical? | 20 comparable, **20 identical, 0 different**; 2 DEAD-class unmeasurable | **PASS** |
+| **G1** | does structure quality degrade? | paired clash 16→2, **severe 7→0**, worst overlap 0.4344→0.7283; B worse 4 / better 8 / identical 8 | **PASS (net improvement)** |
+| **G2** | what does dropping independent re-perception cost? | `indep` **15/20 → 7/20**, **8 regressions, 0 fixes** | **FAIL** |
+| **G4** | does any currently-passing molecule stop passing? | *(pending — `l2-guard100`)* | pending |
+
+### 5.2 The trade, stated in one line
+
+**Byte-identical notation, changed geometry.** The lever never alters the emitted OIN string
+(G3, 20/20). It does alter which conformer is returned, and when it does, that conformer stops
+surviving independent re-perception (G2, 8/8).
+
+### 5.3 Two readings, and they genuinely differ
+
+**Reading A — the OIN string is a canonical 1D identifier.**
+Then G3 settles it. The notation is provably unchanged on every measurable molecule, structure
+quality improves in aggregate (including repairing a 16-clash default-path defect), the harness
+metric is unchanged, and the runtime win is large. `indep` becomes a diagnostic about geometry,
+not about the identifier. **Promote.**
+
+**Reading B — the round trip must also reproduce *the* geometry.**
+Then the GAP class is a real regression: 8 molecules that survived an independent, connectivity-
+blind re-derivation no longer do, and the project's own metric is structurally incapable of
+noticing. Losslessness claims that lean on round-tripping would be resting on a test that now
+shares the generator's bond graph. **Do not promote.**
+
+These are not two spins on one number. They are different definitions of what the round trip is
+*for*, and the measurements cannot choose between them.
+
+### 5.4 My recommendation: **promote-with-scope — default-OFF for correctness work, opt-in for throughput. Do NOT flip the global default on this evidence.**
+
+Reasoning, in the order it actually weighed:
+
+1. **G2 failed, and a failed gate is a result, not an obstacle to route around.** 8 regressions,
+   0 fixes, and the direction is perfectly one-way: 8/8 conformer changes lost `indep`. This
+   project has nine refuted hypotheses in one release, every one produced by a measurement that
+   only exercised the easy case. G3 passing is not a licence to discount G2.
+2. **The cost is invisible to the metric that would police it.** `passed` is 19/22 in both arms.
+   If this ships default-ON, no existing sweep will ever report the regression. A cost that the
+   monitoring cannot see should not be taken by default.
+3. **But the lever is genuinely good at what it does.** G3 is clean at a 20/22 denominator, G1
+   is a net improvement, and the latency win is order-of-magnitude on the GAP class. Burying it
+   as "held off" would waste a real result.
+4. **The honest scope is the trade itself.** Throughput and metric-fidelity work (large sweeps,
+   generator benchmarking, timeout-bound cohorts) should turn it on and say so. Correctness and
+   losslessness work should leave it off, because the independent re-perception is the only test
+   in the predicate that does not share the generator's connectivity.
+
+**Conditions that would change this to full promotion:**
+- G4 shows a near-zero regression rate on the guard population **and** the project explicitly
+  adopts Reading A; or
+- the GAP-class `indep` failures are shown to be presentation instabilities of the full encoder
+  (the `ODEWID` slot-renumbering failure mode) rather than genuine geometry differences. That is
+  directly testable and is the highest-value follow-up: diff `oin_indep` against `oin_in` on the
+  8 regressed molecules and classify each difference.
+
+**This is a product call and it is not mine to make unilaterally.** Recorded with both readings,
+the reasoning, and the exact evidence, for an explicit decision.
+
+### 5.5 Separate finding worth its own lane — PREFILTER_VETO
+
+Not caused by the lever, not fixed by it, and arguably more valuable than the lever question:
+the cheap prefilter vetoes conformers the strict test would accept, **and the harness scores
+with the cheap path**. `AROHIA_comp_0` is recorded as a round-trip FAILURE while independent
+re-perception says it round-trips. That is a reported-accuracy defect in the pessimistic
+direction, affecting an unknown number of molecules corpus-wide. See §2.
 
 ---
 
