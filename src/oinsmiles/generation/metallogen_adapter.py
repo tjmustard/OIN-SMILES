@@ -25,6 +25,7 @@ from ..oin.compare import canonical_roundtrip_key
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from ..oin.levers import lever_enabled
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
+from ..utils.xyz2mol import _has_boron_cage
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -109,6 +110,94 @@ class UncoordinatedFragmentError(ValueError):
     Subclasses ``ValueError`` so existing callers that catch ``ValueError``
     keep working.
     """
+
+
+class BoronCageGenerationUnsupportedError(ValueError):
+    """A ligand fragment carries a deltahedral boron cage MetalloGen cannot embed.
+
+    ``OIN_BORON_CAGE`` (default-ON since v0.4.6) fixed a genuine ENCODER ceiling: a
+    closo/nido borane or carborane cage now encodes as a correct, single-bonded,
+    fully-coordinated graph instead of failing. But it exposed a GENERATOR ceiling
+    that the encode failure had been hiding: assembling a 3D structure from that
+    cage is a distance-geometry + bond-order-perception problem this pipeline
+    cannot solve, and it does not fail fast finding that out (see
+    ``docs/BORON_GEN_CEILING_v0.4.7.md``). Measured on all 34 ``BORON_CAGE_v0.4.5``
+    encode_fail molecules: 0/34 produce a 3D structure; the ones that do not
+    instant-fail on an unsupported geometry code burn their entire embed budget
+    (up to ~2.3x over, see ``UncoordinatedFragmentError``'s sibling finding on the
+    embed-time-budget bug) discovering this. Subclasses ``ValueError`` so existing
+    ``except ValueError`` callers keep working; distinguished from
+    ``UncoordinatedFragmentError`` (a topology problem -- no binding slot) because
+    this fragment IS correctly coordinated, it just cannot be embedded.
+    """
+
+
+#: Geometries this predicate will NOT fast-fail on even when a coordinated boron
+#: cage is present, because a measured example in that geometry DOES generate.
+#: ``RAWJEG_comp_0`` ([Hg_LIN], a monodentate cage + Cl-, no haptic anything)
+#: produces a 3D structure in 2.5s -- the ONLY success found across the 34+14
+#: molecule sample (docs/BORON_GEN_CEILING_v0.4.7.md SS5). ``LIN`` (2-coordinate)
+#: is the sole geometry in that sample where a coordinated cage succeeded; every
+#: other geometry checked (TPL, TPY, TET, SPL/SQP, OCT, PBP, SQA -- CN 3 through 7)
+#: failed 100% of the time. A single success is thin evidence for a general rule,
+#: so this is deliberately an EXCLUSION list scoped to the one confirmed-safe case
+#: rather than an inclusion list of "geometries known to fail" -- erring toward
+#: under-firing (a missed fast-fail is a cost regression only) rather than
+#: over-firing (a false positive would BREAK a molecule that works today).
+_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES = frozenset({"LIN"})
+
+
+def _parsed_oin_has_boron_cage(parsed: ParsedOIN) -> bool:
+    """Does a COORDINATED fragment carry a boron cage on a geometry safe to fast-fail?
+
+    Reads ONLY ``parsed.fragments``/``parsed.vectors``/``parsed.geo_code`` -- the
+    OIN STRING's own text and structured slot data, re-derived fresh right here.
+    This is the encoder's own output, before any generator-side object exists: no
+    metal complex, no embedded conformer, no dummy-metal graph. That distinction
+    matters -- a predicate that reads connectivity the GENERATOR constructed (e.g.
+    ``metal_complex.GetBonds()``) can certify exactly the defect it exists to
+    catch, because a mis-attached or detached fragment still owns a bond object in
+    that graph. Reusing ``_has_boron_cage`` (the same B-B-B triangle motif
+    ``OIN_BORON_CAGE`` itself gates on, ``utils/xyz2mol.py``) keeps the motif test
+    answering "did the ENCODER emit a cage" rather than "did the GENERATOR decide
+    to build one".
+
+    Two additional gates, both earned by a measured counter-example
+    (``docs/BORON_GEN_CEILING_v0.4.7.md`` SS5) to the naive "motif present ->
+    fast-fail" rule:
+
+    1. **The cage fragment must be COORDINATED** (>=1 entry in ``parsed.vectors``
+       for that fragment index). ``MODZUA``/``RANCIU`` carry the motif on an
+       outer-sphere counterion (0 vectors) and already hit the existing, more
+       precise ``UncoordinatedFragmentError`` in ``_prepare_ligand_fragments`` --
+       just as fast, and correctly labelled. Firing here too would not slow
+       anything down, but it WOULD relabel an already-correct fast failure under
+       the wrong exception, which risks reclassifying these molecules into a
+       different bucket in any tooling keyed on the message. Checking this
+       upstream, on data the generator has not touched yet, avoids that.
+    2. **The geometry must not be in** ``_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES``
+       (see its docstring) -- excludes ``RAWJEG``, the one confirmed success.
+
+    Deliberately does NOT gate on hapticity or fragment/complex size: both were
+    tried as candidate discriminators and refuted by a counter-example in the
+    same sample (``HAXJOG`` is monodentate like RAWJEG but fails; ``PEKQII``/
+    ``SEMTOV``/``VEJXOZ`` are smaller than every failing molecule in the 34-set
+    but still fail) -- see docs/BORON_GEN_CEILING_v0.4.7.md SS5 for the full
+    negative-result account. Geometry code is the only discriminator that has
+    not been refuted by a counter-example in this sample.
+    """
+    geo = OIN_TO_METALLOGEN_GEO.get(parsed.geo_code, "")
+    if not geo or parsed.geo_code in _BORON_GEN_FASTFAIL_SAFE_GEOMETRIES:
+        return False
+    for i, frag_smiles in enumerate(parsed.fragments):
+        if i == parsed.metal_fragment_idx:
+            continue
+        mol = Chem.MolFromSmiles(frag_smiles, sanitize=False)
+        if mol is None or not _has_boron_cage(mol):
+            continue
+        if any(v.fragment_idx == i for v in parsed.vectors):
+            return True
+    return False
 
 
 def _prepare_ligand_fragments(parsed: ParsedOIN):
@@ -1837,6 +1926,27 @@ class MetalloGenAdapter:
 
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
+        # Fail fast on a boron-cage ligand (OIN_BORON_GEN_FASTFAIL, default OFF --
+        # see levers.py and docs/BORON_GEN_CEILING_v0.4.7.md). Measured 0/32 for a
+        # COORDINATED cage on a non-LIN geometry: no such molecule produces a 3D
+        # structure today, whether via this direct-DG path or the m-SMILES fallback
+        # below -- both eventually reach the same unbounded PuLP/CBC bond-order
+        # solve inside the embed attempt loop's alt-cache priming (SS2 of the doc).
+        # _parsed_oin_has_boron_cage carries the two safety exclusions earned by
+        # counter-examples in that sample (uncoordinated cage; the one CN=2 success)
+        # -- see its docstring, do not simplify this call to a bare motif check.
+        # Runs BEFORE either path below, on the parsed OIN's own fragment text (no
+        # generator-side object exists yet), so it can never fire on output the
+        # GENERATOR produced -- only on what the encoder already wrote.
+        if lever_enabled("OIN_BORON_GEN_FASTFAIL") and _parsed_oin_has_boron_cage(parsed):
+            raise BoronCageGenerationUnsupportedError(
+                "MetalloGen failed to generate any conformers via OIN-direct assembly "
+                f"(geometry {getattr(parsed, 'geo_code', None)!r}): fast-failed on a "
+                "coordinated boron-cage ligand fragment (B-B-B triangle motif) that "
+                "this pipeline cannot embed (OIN_BORON_GEN_FASTFAIL; measured 0/32, "
+                "see docs/BORON_GEN_CEILING_v0.4.7.md). "
+                f"OIN={getattr(parsed, 'original_oin', None)!r}"
+            )
         if self._oin_direct_enabled():
             direct = self._maybe_generate_oin_direct(parsed)
             if direct is not None:
