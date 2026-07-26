@@ -112,6 +112,47 @@ adapter prepared  : C[C@@]1(O)c2ccccn2C(c2[c-]csc2)=[C:1]1    H = 10
 its carbons are already `[cH]` brackets (`NoImplicit` set), so the charge cannot change their
 H count; only a bare aromatic carbon is vulnerable.
 
+## 4b. Is the encoder's 0-H reading correct? Geometry says yes, 763 times out of 766
+
+Cause A rests on the encoder recording carbons and heteroatoms with **0 H**, and the whole
+class turns on whether that reading is right. If those inputs were simply missing their
+hydrogens -- ordinary in CSD-derived data -- then the generator adding them would be
+chemically *correct*, the notation would be fine, and there would be no defect to fix. That
+had to be settled before touching the encoder, and the input geometry settles it without any
+chemistry model (`tools/atomcount/hybridization_probe.py`):
+
+* a 3-coordinate 0-H carbon that is **planar** is sp2 -- a double bond perception missed --
+  and legitimately carries no hydrogen;
+* the same carbon **pyramidal** is sp3, so the hydrogen was never located and the input is
+  incomplete;
+* a 2-coordinate 0-H carbon at ~180 deg is sp/nitrile (0 H correct), at ~109 deg is sp3
+  (two hydrogens absent).
+
+Over all 74 molecules, every ambiguous 0-H carbon:
+
+| verdict | sites | reading |
+|---|---|---|
+| 3-coordinate **sp2**, out-of-plane <= 0.07 A, angle sums 359.3-360.0 deg | **727** | 0 H is CORRECT |
+| 2-coordinate **sp** (alkyne / nitrile) | **36** | 0 H is CORRECT |
+| 2-coordinate **sp3**, angle ~112 deg | **3** | 2 H genuinely **missing from the input** |
+
+**763 of 766.** Not one pyramidal 3-coordinate carbon in the entire class. The encoder's 0-H
+reading is right and the *string* is what is wrong, which is what makes cause A a genuine
+losslessness defect rather than a disagreement about chemistry.
+
+### The three that are not defects
+
+`GOFTUQ_comp_0` (C7, neighbours Rh and O), `INENOF_comp_0` (C18, neighbours C and N) and
+`TESFIH_comp_0` (C14, neighbours N and C) each have one sp3 carbon at ~112 deg with **no
+hydrogen in the input file** -- a CH2 whose hydrogens the crystal structure never located.
+For these the generator's extra hydrogens are *chemically correct* and the input XYZ is the
+incomplete artifact. Their deltas (+2, +2, +1) are consistent with exactly that.
+
+They can still be made to *pass*, because encoding the input faithfully means encoding a 0-H
+carbon, and then the counts agree -- but the molecule the notation then describes is a carbene
+rather than a methylene. That is lossless with respect to the input and wrong with respect to
+chemistry, and it is worth saying so plainly rather than counting them as wins.
+
 ## 5. Root-cause histogram over the 74
 
 | cause | molecules | evidence |
