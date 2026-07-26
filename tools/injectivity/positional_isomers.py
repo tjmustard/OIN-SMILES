@@ -152,7 +152,7 @@ def _prefilter(path: Path) -> tuple | None:
     return (metals[0], "".join(f"{k}{v}" for k, v in sorted(Counter(syms).items())))
 
 
-def scan(dataset: Path, limit: int = 0) -> dict:
+def scan(dataset: Path, limit: int = 0, checkpoint: Path | None = None) -> dict:
     """Find real positional-isomer pairs: same constitution, different trans-pair signature."""
     files = sorted(p for sub in ("cat", "photo") for p in (dataset / sub).glob("*.xyz"))
     if limit:
@@ -174,32 +174,63 @@ def scan(dataset: Path, limit: int = 0) -> dict:
         flush=True,
     )
 
-    # pass 2 -- perceive only the shortlist, group by constitution
+    # pass 2 -- perceive only the shortlist, group by constitution.
+    #
+    # Checkpointed to a JSONL sidecar and resumable, because pass 2 is hours of perception on a
+    # loaded machine and the whole result used to be written only at the very end: two runs were
+    # lost at 2200/3116 and 150/300 to a harness task timeout, each discarding every perception
+    # it had done. One append per structure costs nothing and makes a restart free.
     groups: dict[str, list[dict]] = defaultdict(list)
     perceive_fail = 0
-    for i, p in enumerate(shortlist, 1):
-        if i % 200 == 0:
-            print(f"  pass 2: {i}/{len(shortlist)}", flush=True)
-        try:
-            with _silence_fds():
-                mol, coords = load_mol(p)
-                Chem.SanitizeMol(mol)
-                ck = constitution_key(mol)
-                ladder = signature_ladder(mol, coords)
-        except Exception:
-            perceive_fail += 1
-            continue
-        if not ladder[1]:
-            continue
-        groups[ck].append(
-            {
-                "path": str(p),
-                "name": p.stem,
-                "refcode": p.stem.split("_")[0],
-                "signature": [list(s) for s in ladder[1]],
-                "ladder": [[list(s) for s in sig] for sig in ladder],
-            }
-        )
+    done: dict[str, dict] = {}
+    if checkpoint and checkpoint.exists():
+        for line in checkpoint.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:  # a torn final line from a hard kill
+                continue
+            done[rec["path"]] = rec
+        print(f"  pass 2: resuming, {len(done)} structures already perceived", flush=True)
+    fh = checkpoint.open("a") if checkpoint else None
+    try:
+        for i, p in enumerate(shortlist, 1):
+            if i % 200 == 0:
+                print(f"  pass 2: {i}/{len(shortlist)}", flush=True)
+            rec = done.get(str(p))
+            if rec is None:
+                try:
+                    with _silence_fds():
+                        mol, coords = load_mol(p)
+                        Chem.SanitizeMol(mol)
+                        ck = constitution_key(mol)
+                        ladder = signature_ladder(mol, coords)
+                except Exception:
+                    rec = {"path": str(p), "failed": True}
+                else:
+                    rec = {
+                        "path": str(p),
+                        "name": p.stem,
+                        "refcode": p.stem.split("_")[0],
+                        "constitution": ck,
+                        "signature": [list(s) for s in ladder[1]],
+                        "ladder": [[list(s) for s in sig] for sig in ladder],
+                    }
+                if fh:
+                    fh.write(json.dumps(rec) + "\n")
+                    fh.flush()
+            if rec.get("failed"):
+                perceive_fail += 1
+                continue
+            if not rec["signature"]:
+                continue
+            groups[rec["constitution"]].append(
+                {k: rec[k] for k in ("path", "name", "refcode", "signature", "ladder")}
+            )
+    finally:
+        if fh:
+            fh.close()
 
     pairs, rejected = [], 0
     for ck, members in groups.items():
@@ -385,7 +416,8 @@ def main(argv=None) -> int:
     compared: list[dict] = []
     cache = args.out / "positional_isomer_scan.json"
     if args.scan or not cache.exists():
-        scan_res = scan(args.dataset, args.limit)
+        args.out.mkdir(parents=True, exist_ok=True)
+        scan_res = scan(args.dataset, args.limit, checkpoint=args.out / "pass2_checkpoint.jsonl")
         args.out.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(scan_res, indent=2) + "\n")
     else:
