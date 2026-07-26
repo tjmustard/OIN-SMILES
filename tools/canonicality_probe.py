@@ -248,14 +248,36 @@ def main():
             uniq.append(p)
     files = uniq
 
+    # Fail LOUD on an empty corpus. The dataset dir is gitignored, so it exists in the main
+    # checkout but not in a fresh worktree -- and the old behaviour was to report a serene
+    # "0/0 byte-stable, 0/0 drifted", which reads like a clean result rather than a
+    # misconfiguration. That cost a full A/B run today.
+    if not files:
+        sys.exit(
+            f"error: no .xyz found under {os.path.abspath(args.dataset)}/{{{args.subdirs}}}\n"
+            "  The dataset is gitignored, so a git worktree does NOT have it. Pass\n"
+            "  --dataset /path/to/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset explicitly."
+        )
+
     if args.only:
         want = {m.strip().removesuffix(".xyz") for m in args.only.split(",") if m.strip()}
         files = [p for p in files if os.path.basename(p)[: -len(".xyz")] in want]
+        missing = want - {os.path.basename(p)[: -len(".xyz")] for p in files}
+        if missing:
+            print(
+                f"warning: --only named {len(missing)} molecule(s) not in the corpus: "
+                f"{sorted(missing)}",
+                file=sys.stderr,
+            )
+        if not files:
+            sys.exit("error: --only matched NOTHING; nothing was measured")
     elif args.n and args.n > 0:
         files = sorted(random.Random(SEED).sample(files, min(args.n, len(files))))
     if args.shard:
         i, n = (int(x) for x in args.shard.split(":"))
         files = files[i - 1 :: n]
+        if not files:
+            sys.exit(f"error: --shard {args.shard} selected no molecules")
 
     conv = XYZToSMILES()
     rng = random.Random(SEED)
