@@ -69,8 +69,11 @@ def main():
     gap_set = set(coh.get("gap", []))
     guard_set = set(coh.get("guard", []))
 
-    # `pending_g-xtb` means tier 2 never ran (no xtb binary). It is NOT a failure and NOT a
-    # pass -- counting it either way would be dishonest, so it gets its own column.
+    # `pending_g-xtb` means the tier-2 g-xTB refinement is QUEUED OR STILL RUNNING -- not that
+    # xtb is absent (xtb 6.7.1 is installed; an earlier version of this comment said otherwise
+    # and that error was published as a premature pass rate once already). It is NOT a failure
+    # and NOT a pass, so it gets its own column. While any row is `pending`, the sweep is still
+    # in flight: check `systemctl --user is-active v045-rebaseline`, never the report count.
     def verdict(status):
         if status == "success":
             return "pass"
@@ -138,8 +141,10 @@ def main():
 
     pend = sum(v for k, v in tally.items() if k.endswith(":pending"))
     if pend:
-        print(f"\nNOTE: {pend} molecules are `pending_g-xtb` — tier 2 never ran (no xtb binary).")
+        print(f"\nNOTE: {pend} molecules are `pending_g-xtb` — tier-2 g-xTB queued or IN FLIGHT.")
         print("      Counted separately: calling them passes OR failures would be dishonest.")
+        print("      The sweep is NOT finished while this is non-zero — poll the systemd unit,")
+        print("      not the report count, before quoting any number from this run.")
 
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
