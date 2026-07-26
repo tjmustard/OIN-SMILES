@@ -40,122 +40,183 @@ correct contract for a *performance* wave whose job is "did the string change," 
 the chemistry still right." But a future reader should not read "byte-exact round trip"
 as a stronger, structure-level guarantee than it is.
 
-## 2. Provisional cohort construction
+## 2. Cohort construction
 
-Built from the two available v0.4.5 result dirs (the live `results-v0.4.6-sweep` was
-explicitly excluded from cohort construction — it is incomplete and mid-config-change):
+### Revision note — the first build of this cohort was wrong, and here is why
 
-| label | dir | total reports | passed byte-exact predicate |
-|---|---|---:|---:|
-| A | `results-v0.4.5-sweep-partial-2697mols` | 2697 | 2253 |
-| C | `results-v0.4.5-rebaseline` | 936 | 564 |
+The first pass at this section intersected two results dirs
+(`results-v0.4.5-sweep-partial-2697mols`, 2697 mols, and `results-v0.4.5-rebaseline`, 936
+mols) under a "slow in both independent runs screens out single-run contention flukes"
+rule, on the assumption that both dirs were repeat measurements of the *same* population.
+**They are not.** `results-v0.4.5-rebaseline` is the "gap ∪ guard" cohort from the v0.4.5
+re-baseline; `results-v0.4.5-sweep-partial-2697mols` is a partial of the frozen seed-42 5k
+cohort. They are different draws that happen to overlap by only ~100 names (consistent
+with two uncorrelated random samples of sizes 2697 and 936 out of a 25,197-name universe:
+`2697 * 936 / 25197 ≈ 100.1`, and 100 is exactly what was found). Intersecting them was
+therefore a near-total sample destruction, not a robustness filter: it produced a
+62-molecule cohort with 57/62 members under 100s and a fastest member at 1.8s — useless
+for a wave whose entire purpose is the slow tail. The selection *arithmetic* was correct
+and the overlap finding was correctly reported; the two-dir design itself was the mistake,
+caught and corrected before this cohort was used by any other lane.
 
-**Dataset-level overlap is small: only 100 of the 25,197-unique-basename dataset were
-independently re-measured in both A and C.** This is not a bug — two uncorrelated random
-draws of sizes 2697 and 936 from a 25,197-name universe are *expected* to share
-`2697 * 936 / 25197 ≈ 100.1` names, and 100 is exactly what was found. `A` and `C` are
-genuinely independent samples, not nested subsets of one frozen cohort.
+### Corrected method: top-N from ONE dir, corroboration only where it happens to exist
 
-Of those 100 shared names, **62 pass the byte-exact predicate in both A and C**
-(the other 38 failed, errored, or landed on a different tier in at least one run). The
-cohort is built from `min(elapsed_A, elapsed_C)` over those 62 — the "slow in both
-independent runs" rule that screens out single-run contention flukes. Because only 62
-candidates exist at all, every one of them clears a top-100 cutoff trivially: **there is
-no 100th name to cut.**
+**The cohort is the top 100 molecules by `metrics.elapsed_s`, byte-exact selection
+predicate, from `results-v0.4.5-sweep-partial-2697mols` ALONE:**
 
-**Cohort size actually achieved: 62, not 100.** This is reported honestly rather than
-padded with single-run-only "slow" molecules pulled from outside the 100-name overlap —
-doing so would reintroduce exactly the contention-fluke risk the both-runs rule exists to
-remove, and would silently misrepresent what was actually double-confirmed.
+```
+PYTHONPATH=src .venv/bin/python tools/select_slow_byte_exact.py \
+    --results-dir tmCAT-tmPHOTO_xyz_dataset/results-v0.4.5-sweep-partial-2697mols \
+    --n 100 \
+    --corroborate-with tmCAT-tmPHOTO_xyz_dataset/results-v0.4.5-rebaseline
+```
 
-**eta cross-check:** the haptic flag (computed from `smiles_1`) agreed between A and C
-for all 62 overlapping molecules — 0 mismatches.
+| source | total reports | passed byte-exact predicate | top-100 cutoff | max |
+|---|---:|---:|---:|---:|
+| `results-v0.4.5-sweep-partial-2697mols` (primary) | 2697 | 2253 | **93.06 s** | 299.44 s |
 
-**Overlap with the live, still-growing `results-v0.4.6-sweep`** (1963/5000 done at time
-of check): 50 of the 62 cohort molecules already have a report there. Informational only
-— not used to build the cohort, since that sweep is mid-config-change.
+`results-v0.4.5-rebaseline` is used **only** as an optional corroboration column
+(`--corroborate-with`, added to `tools/select_slow_byte_exact.py` in this revision) — for
+a name that *happens* to also have a passing report there, its `elapsed_s` is recorded
+alongside as a second observation; absence is expected and unremarkable, and it is never
+a requirement for inclusion. Of the 100 selected, **5 have a corroborating observation**
+in the rebaseline dir (`FUXMAN_comp_0`, `KELQOI_comp_0`, `IJOSOP_comp_0`, `FIBQAK_comp_0`,
+`JIVFOK_comp_0`) — all 5 agree in relative order-of-magnitude with the primary
+measurement, and all 5 have byte-identical `smiles_1` between the two sources (an
+encoder-determinism sanity check the tool also performs: 0 mismatches, `eta` flag also
+agrees on all 5).
 
-### Band / eta split (on the cohort's selection `elapsed_s` = `min(elapsed_A, elapsed_C)`)
+### This is provisional — the live v0.4.6 sweep is the SAME frozen cohort as the primary source
+
+`results-v0.4.6-sweep` (still running, 5000 mols) draws from the **same frozen seed-42 5k
+cohort** as `results-v0.4.5-sweep-partial-2697mols` — not an independent draw. At 2440/5000
+reports it already gives a top-100 cutoff of **97.4 s**, close to this build's 93.06 s, and
+the two lists are expected to largely agree once it completes. **This build is therefore
+explicitly provisional**: the quiet phase should re-derive the cohort from the completed
+5000-molecule sweep and diff the resulting top-100 against this one (names and the 93.06 s
+cutoff) rather than silently replacing it — a large divergence would itself be a finding
+worth chasing, not just noise to overwrite.
+
+### Band / eta split
 
 | band | definition | count |
 |---|---|---:|
-| A | > 200 s | 2 |
-| B | 100-200 s | 3 |
-| C | < 100 s | 57 |
+| A | > 200 s | 27 |
+| B | 100-200 s | 67 |
+| C | < 100 s | 6 |
 
-eta fraction: **15 / 62 (24.2%)**.
+eta fraction: **60 / 100 (60%)**. This is the shape the wave was planned around: overwhelmingly
+slow-tail molecules (94/100 at or above 100s), not a speed-agnostic sample.
 
-**Caveat worth flagging plainly:** because the cohort is capped by the small
-double-measured overlap rather than by an absolute speed floor, band C spans the full
-range down to ~1.8 s — some cohort members are not "slow" by any absolute standard, only
-slow-and-double-confirmed relative to what little overlap exists. See open questions.
+### Full cohort (100 molecules), sorted by `elapsed_s` DESC
 
-### Full cohort (62 molecules), sorted by selection `elapsed_s` DESC
+`elapsed_s` is from the primary source (`results-v0.4.5-sweep-partial-2697mols`) and is
+the value the cohort was selected and banded on. `corroboration_s` is the optional second
+observation from `results-v0.4.5-rebaseline` where one exists (`-` otherwise) — reported,
+never filtered on.
 
-| molecule | elapsed_A (s) | elapsed_C (s) | selection elapsed_s = min | band | eta |
-|---|---:|---:|---:|:-:|:-:|
-| FUXMAN_comp_0 | 299.440 | 243.193 | 243.193 | A | yes |
-| KELQOI_comp_0 | 227.559 | 276.877 | 227.559 | A | - |
-| IJOSOP_comp_0 | 186.884 | 180.807 | 180.807 | B | - |
-| JIVFOK_comp_0 | 167.199 | 209.020 | 167.199 | B | yes |
-| FIBQAK_comp_0 | 184.385 | 127.646 | 127.646 | B | yes |
-| GULPAG_comp_0 | 64.374 | 93.503 | 64.374 | C | yes |
-| IJAXIB_comp_0 | 70.724 | 58.355 | 58.355 | C | - |
-| AKOXII_comp_0 | 82.660 | 56.305 | 56.305 | C | yes |
-| MIKDOA_comp_0 | 42.560 | 46.205 | 42.560 | C | yes |
-| CIGLAI_comp_0 | 35.179 | 35.767 | 35.179 | C | - |
-| IFIHAI_comp_0 | 30.787 | 42.441 | 30.787 | C | yes |
-| FOJWOR_comp_0 | 26.575 | 29.695 | 26.575 | C | yes |
-| GACTAG_comp_0 | 35.847 | 25.798 | 25.798 | C | yes |
-| IHOCUE_comp_0 | 25.727 | 26.423 | 25.727 | C | yes |
-| FILVON_comp_0 | 23.939 | 40.419 | 23.939 | C | - |
-| DEZPUV_comp_0 | 23.939 | 22.094 | 22.094 | C | - |
-| FOGCIN_comp_0 | 32.572 | 21.593 | 21.593 | C | - |
-| DIJDAD_comp_0 | 19.932 | 19.864 | 19.864 | C | - |
-| HORJAB_comp_0 | 14.835 | 15.014 | 14.835 | C | - |
-| FIVKIG_comp_0 | 11.828 | 11.579 | 11.579 | C | - |
-| HEBBAS_comp_0 | 10.846 | 23.037 | 10.846 | C | - |
-| GUKDAS_comp_0 | 9.259 | 9.727 | 9.259 | C | - |
-| BARVUO_comp_0 | 11.685 | 8.786 | 8.786 | C | - |
-| FOJHIW_comp_0 | 12.397 | 8.708 | 8.708 | C | yes |
-| MEKWEE_comp_0 | 8.558 | 12.781 | 8.558 | C | - |
-| MUQLIV_comp_0 | 6.462 | 8.188 | 6.462 | C | - |
-| AGELIJ_comp_0 | 15.422 | 6.442 | 6.442 | C | - |
-| HINFOC_comp_0 | 8.621 | 6.259 | 6.259 | C | - |
-| LOWXAW_comp_0 | 5.593 | 5.407 | 5.407 | C | yes |
-| MULDAZ_comp_0 | 5.391 | 8.229 | 5.391 | C | - |
-| CEYKOH_comp_0 | 5.920 | 5.373 | 5.373 | C | - |
-| MAQYEL_comp_0 | 5.129 | 5.853 | 5.129 | C | - |
-| MABKOQ_comp_0 | 5.035 | 4.835 | 4.835 | C | - |
-| ETORIQ_comp_0 | 4.820 | 5.014 | 4.820 | C | - |
-| FAHXUI_comp_0 | 6.966 | 4.730 | 4.730 | C | - |
-| IKIJIX_comp_0 | 10.348 | 4.662 | 4.662 | C | - |
-| BOLGIU_comp_0 | 5.564 | 4.595 | 4.595 | C | - |
-| ECEXIU_comp_0 | 5.547 | 4.564 | 4.564 | C | - |
-| JIMMAU_comp_0 | 4.761 | 4.558 | 4.558 | C | - |
-| JEMVED_comp_0 | 4.485 | 4.816 | 4.485 | C | - |
-| HAGKAD_comp_1 | 7.268 | 4.438 | 4.438 | C | - |
-| LUVMIA_comp_0 | 5.779 | 4.161 | 4.161 | C | - |
-| CUJJOH_comp_0 | 6.169 | 3.797 | 3.797 | C | - |
-| CERQAT_comp_0 | 3.669 | 5.948 | 3.669 | C | - |
-| JEGKEM_comp_1 | 3.288 | 3.358 | 3.288 | C | yes |
-| LIMRIJ_comp_0 | 3.165 | 6.725 | 3.165 | C | - |
-| HAZCIX_comp_0 | 3.119 | 4.044 | 3.119 | C | - |
-| KOVXIE_comp_0 | 3.086 | 3.180 | 3.086 | C | - |
-| NIKSUY_comp_0 | 5.907 | 3.066 | 3.066 | C | - |
-| JANVUQ_comp_0 | 2.965 | 3.713 | 2.965 | C | yes |
-| HIXJEF_comp_0 | 2.952 | 7.816 | 2.952 | C | - |
-| IQEGEQ_comp_0 | 2.923 | 2.928 | 2.923 | C | - |
-| COHJEQ_comp_0 | 5.374 | 2.771 | 2.771 | C | - |
-| HIKJIW_comp_0 | 4.385 | 2.634 | 2.634 | C | - |
-| BIMDOQ_comp_0 | 2.399 | 3.032 | 2.399 | C | - |
-| DIPZAD_comp_0 | 2.379 | 2.885 | 2.379 | C | - |
-| NOVMAO_comp_0 | 2.250 | 3.857 | 2.250 | C | - |
-| JABDEW_comp_0 | 2.367 | 2.246 | 2.246 | C | - |
-| LECSUJ_comp_0 | 2.240 | 2.216 | 2.216 | C | - |
-| CAJROV_comp_0 | 2.057 | 2.605 | 2.057 | C | yes |
-| FEJFAD_comp_0 | 2.009 | 2.019 | 2.009 | C | - |
-| MUTYEG_comp_0 | 1.817 | 3.394 | 1.817 | C | - |
+| molecule | elapsed_s (s) | corroboration_s (s) | band | eta |
+|---|---:|---:|:-:|:-:|
+| FUXMAN_comp_0 | 299.440 | 243.193 | A | yes |
+| CAHQEJ_comp_0 | 296.549 | - | A | yes |
+| GAVSED_comp_0 | 288.116 | - | A | yes |
+| BOMNOJ_comp_0 | 286.945 | - | A | yes |
+| LUSBEI_comp_0 | 284.478 | - | A | - |
+| EBUFOX_comp_0 | 274.977 | - | A | yes |
+| KAQDEL_comp_0 | 264.796 | - | A | yes |
+| DILZOQ_comp_2 | 264.126 | - | A | yes |
+| MIQWEO_comp_0 | 257.492 | - | A | yes |
+| CIMZAZ_comp_0 | 250.978 | - | A | yes |
+| AHUKIZ_comp_0 | 247.294 | - | A | yes |
+| KUJGEC_comp_0 | 243.326 | - | A | yes |
+| FUWMAN_comp_0 | 235.510 | - | A | - |
+| LUZDAL_comp_0 | 233.048 | - | A | yes |
+| MECXEY_comp_0 | 231.608 | - | A | yes |
+| DEMSOG_comp_0 | 228.478 | - | A | - |
+| KELQOI_comp_0 | 227.559 | 276.877 | A | - |
+| LIRFOJ_comp_0 | 223.991 | - | A | - |
+| JOCWOP_comp_0 | 221.211 | - | A | - |
+| KADVER_comp_1 | 214.444 | - | A | yes |
+| AJOKIV_comp_0 | 213.951 | - | A | yes |
+| ICUYUC_comp_0 | 213.361 | - | A | yes |
+| OROJUB_comp_0 | 211.477 | - | A | - |
+| EZURIB_comp_0 | 210.799 | - | A | - |
+| DAWBOT_comp_0 | 207.944 | - | A | - |
+| DIPPAW_comp_0 | 205.147 | - | A | - |
+| MUHGIG_comp_0 | 202.427 | - | A | yes |
+| LUMDON_comp_0 | 199.711 | - | B | - |
+| HIJPUM_comp_0 | 198.136 | - | B | yes |
+| CINWUT_comp_0 | 190.243 | - | B | - |
+| DEFPOW_comp_0 | 189.616 | - | B | - |
+| PIXGIP_comp_0 | 188.347 | - | B | yes |
+| IJOSOP_comp_0 | 186.884 | 180.807 | B | - |
+| JUXPID_comp_0 | 186.494 | - | B | yes |
+| FIBQAK_comp_0 | 184.385 | 127.646 | B | yes |
+| HEXFAS_comp_0 | 184.034 | - | B | yes |
+| BIKRUL_comp_0 | 181.859 | - | B | yes |
+| BOPZOX_comp_0 | 180.918 | - | B | - |
+| KAHNEO_comp_0 | 180.404 | - | B | yes |
+| IFICAD_comp_0 | 176.215 | - | B | yes |
+| IBIZUP_comp_0 | 176.081 | - | B | - |
+| COMXUY_comp_0 | 175.401 | - | B | yes |
+| CISDUF_comp_0 | 174.046 | - | B | yes |
+| MOCHAN_comp_0 | 172.745 | - | B | yes |
+| MUBNAY_comp_0 | 171.242 | - | B | yes |
+| DERMIX_comp_0 | 169.092 | - | B | yes |
+| LOMFUQ_comp_0 | 168.169 | - | B | - |
+| JIVFOK_comp_0 | 167.199 | 209.020 | B | yes |
+| NEDCII_comp_0 | 161.650 | - | B | yes |
+| ERATIA_comp_0 | 159.460 | - | B | - |
+| FOJJUM_comp_0 | 159.435 | - | B | - |
+| DOKROM_comp_0 | 156.323 | - | B | - |
+| APAGOO_comp_0 | 156.114 | - | B | yes |
+| FIXDAS_comp_0 | 155.923 | - | B | yes |
+| OTIGIJ_comp_0 | 154.065 | - | B | - |
+| IBAZIW_comp_0 | 153.445 | - | B | yes |
+| DOGQEX_comp_0 | 152.639 | - | B | - |
+| JEDPIU_comp_0 | 151.087 | - | B | yes |
+| NICWUS_comp_0 | 150.539 | - | B | - |
+| OCUKAA_comp_0 | 147.456 | - | B | yes |
+| CISCUE_comp_0 | 144.896 | - | B | - |
+| EYOCEC_comp_0 | 143.125 | - | B | - |
+| NONGAA_comp_0 | 141.422 | - | B | yes |
+| KIPBAP_comp_1 | 140.749 | - | B | - |
+| HAMGEH_comp_0 | 137.409 | - | B | - |
+| HIPQIH_comp_0 | 135.617 | - | B | yes |
+| NOYREA_comp_0 | 134.689 | - | B | - |
+| FOKQOM_comp_0 | 134.472 | - | B | yes |
+| EHORID_comp_0 | 133.332 | - | B | - |
+| HAMGAD_comp_0 | 127.861 | - | B | - |
+| HOHTAB_comp_0 | 126.838 | - | B | yes |
+| EWUQOC_comp_0 | 125.671 | - | B | yes |
+| DIYWAM_comp_0 | 124.374 | - | B | yes |
+| EZUROH_comp_0 | 124.321 | - | B | - |
+| AGIKUW_comp_0 | 122.149 | - | B | yes |
+| LARQED_comp_0 | 121.851 | - | B | yes |
+| KIRVOY_comp_0 | 119.818 | - | B | yes |
+| NOVYUU_comp_0 | 116.933 | - | B | yes |
+| ENUGAX_comp_0 | 116.627 | - | B | - |
+| DIDROZ_comp_0 | 116.237 | - | B | - |
+| JAFFOL_comp_0 | 115.815 | - | B | yes |
+| DERMET_comp_0 | 115.005 | - | B | yes |
+| GIZQEN_comp_0 | 113.276 | - | B | - |
+| IZIMOU_comp_0 | 112.933 | - | B | yes |
+| IHOYAH_comp_0 | 112.389 | - | B | - |
+| OVUFUI_comp_0 | 112.306 | - | B | yes |
+| GIMWAA_comp_0 | 111.422 | - | B | yes |
+| BITREE_comp_0 | 110.029 | - | B | - |
+| GAMFOS_comp_0 | 106.674 | - | B | - |
+| LUZGIY_comp_0 | 106.547 | - | B | yes |
+| ADANEB_comp_0 | 105.927 | - | B | yes |
+| KIKGAP_comp_0 | 105.890 | - | B | - |
+| NISHAZ_comp_0 | 105.703 | - | B | yes |
+| CAZXIM_comp_0 | 104.442 | - | B | - |
+| MEVFAU_comp_0 | 99.925 | - | C | yes |
+| CAHQAF_comp_0 | 99.676 | - | C | yes |
+| INUWUL_comp_0 | 99.495 | - | C | yes |
+| IXUTAW_comp_0 | 94.627 | - | C | yes |
+| ILUDID_comp_0 | 93.848 | - | C | - |
+| AJIJUY_comp_0 | 93.060 | - | C | yes |
 
 ## 3. Cohort materialization
 
@@ -175,12 +236,18 @@ PYTHONPATH=src .venv/bin/python tools/build_sweep_cohort.py \
     --overlap-with tmCAT-tmPHOTO_xyz_dataset/results-v0.4.5-rebaseline
 ```
 
-Result: **62/62 symlinks created**, 0 missing, at
+Result: **100/100 symlinks created**, 0 missing, at
 `tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/` (gitignored, like all dataset dirs). A
 symlink dir is used, not the raw tree, because the raw dataset has 1,033 basenames
 duplicated across `cat/` and `photo/` — the established fix for the resulting
 report-write race (same pattern as `cohort-v0.4.5-5k` and the v0.4.4
 `regression_inputs/` cohort).
+
+Overlap report from the same command: **100/100** with the primary source (by
+construction), **92/100** with the live `results-v0.4.6-sweep` (confirms it is drawing
+from the same frozen cohort as the primary source, not an independent population), and
+**5/100** with `results-v0.4.5-rebaseline` (the corroboration-only source, consistent
+with the ~100-name total overlap between the two v0.4.5 dirs discussed in §2).
 
 `tools/perf_attribute.py::find_xyz` previously searched only
 `<dataset>/{cat,photo}` and could not see cohort symlink dirs. It now also globs
@@ -205,7 +272,7 @@ output, never gated on.
 `sha256(smiles_1)` AND `sha256(smiles_2)` per molecule, keyed by name, columns 2 and 3
 respectively (`name<TAB>sha1<TAB>sha2<TAB>len1<TAB>len2<TAB>eta`) — a lane whose own
 arm produces no output for some molecules can diff its own two arms' shas against this
-manifest without re-deriving anything, and the frozen 62-name list
+manifest without re-deriving anything, and the frozen 100-name list
 (`docs/COHORT_v0.4.7.md` §2 table) is exactly the population the byte-exact selection
 predicate already vetted, so it doubles as a denominator check for "did my arm produce
 output at all" as well as "is the string unchanged."
@@ -235,32 +302,40 @@ sorted by name, plus the `# MANIFEST_SHA256=...` and `#DONE 61` lines). A future
 `tools/gate_v047.sh arm1` run diffs against this file and fails loudly on any
 byte difference, in either the manifest hash or any individual row.
 
-### ARM 2 — round trip, the frozen 62-molecule cohort
+### ARM 2 — round trip, the frozen 100-molecule cohort
 
 `tools/gate_arm2_roundtrip_one.py` replicates the exact UFF_1-tier pipeline
 (`optimizer=None, ensemble_size=1, ff_params=None`, the tier every cohort molecule is
-known to have passed at, byte-exact, in two independent runs) for ONE molecule per
-subprocess invocation. `gate_v047.sh arm2` loops over the cohort, invoking a fresh
-interpreter per molecule — several `OIN_*` levers and module-level caches
+known to have passed at, byte-exact) for ONE molecule per subprocess invocation.
+`gate_v047.sh arm2` loops over the cohort, invoking a fresh interpreter per molecule —
+several `OIN_*` levers and module-level caches
 (`generator3d/clash.py:VDW_ACCEPTANCE_ENABLED`, PuLP's topology memo, etc.) are frozen at
 import time or live for the process's lifetime, so a fresh interpreter per molecule is
 the only isolation guarantee that does not depend on enumerating every such cache
 correctly.
 
-**The ARM 2 golden manifest was NOT built by running the full round trip for all 62
+**The ARM 2 golden manifest was NOT built by running the full round trip for all 100
 molecules today** (`tools/gate_v047_build_arm2_golden.py`) — that would cost the exact
 wall-clock this cohort was selected to be expensive at, which is the *quiet-phase sweep's*
 job, not this lane's (env rule: keep any generation to a handful of molecules). Instead
-the golden values are read directly from the two already-completed v0.4.5 sweep JSON
-reports (`smiles_1`/`smiles_2`), re-asserting byte-exact agreement between A and C rather
-than re-trusting the selection step blindly — 62/62 agreed, 0 mismatches.
+the golden values are read directly from the primary source's already-completed v0.4.5
+sweep JSON reports (`smiles_1`/`smiles_2`) — this tool now takes ONE required primary
+source (must pass the full predicate for every cohort name, or the build fails loudly)
+and an OPTIONAL corroboration source (informational only, never blocking): 100/100
+resolved from the primary, 5/100 additionally cross-checked against the corroboration
+source, 0 mismatches. Frozen at `tools/gate_v047_arm2_golden.tsv`
+(`# MANIFEST_SHA256=6f61359bc61af48943e773031f913698005c9c02ef2d893511e36325fc4ab794`,
+`#DONE 100`).
 
-**Mechanics smoke-tested on 3/62 molecules** (`MUTYEG_comp_0`, `CAJROV_comp_0`,
-`FEJFAD_comp_0` — the three fastest in the cohort, ~2 s each): a fresh
-`gate_arm2_roundtrip_one.py` invocation reproduced `sha256(smiles_1)` and
-`sha256(smiles_2)` **byte-identical to the golden manifest** for all three. This proves
-the gate mechanics (encode → generate → re-encode → hash) and the "golden sourced from
-existing JSON" approach agree with an actual fresh re-run.
+**Mechanics smoke-tested on 2/100 molecules** (`AJIJUY_comp_0`, `ILUDID_comp_0` — the two
+fastest in the cohort, ~93 s each — kept to 2 rather than 3 this time since every cohort
+member now genuinely costs ~93-300s, unlike the earlier mis-built cohort's ~2s fastest
+members): a fresh `gate_arm2_roundtrip_one.py` invocation reproduced `sha256(smiles_1)`
+and `sha256(smiles_2)` **byte-identical to the golden manifest for both**
+(`AJIJUY_comp_0` -> `76aa9bde...0108d`; `ILUDID_comp_0` -> `3b88e003...9965`, both
+matching sha1==sha2==golden exactly). This proves the gate mechanics (encode → generate →
+re-encode → hash) and the "golden sourced from existing JSON" approach agree with an
+actual fresh re-run.
 
 ### Mandatory discipline built into both arms (each learned the hard way on this project)
 
@@ -276,15 +351,21 @@ existing JSON" approach agree with an actual fresh re-run.
 
 ## 5. Open questions / risks for the wave
 
-- **62, not 100.** If a fuller "Slow-100" cohort is wanted, the only path is more
-  independent-run overlap — re-run this selection once `results-v0.4.6-sweep` completes
-  (5000 molecules; 50/62 of the current cohort already appear there), either as a third
-  arm or in place of one of the two v0.4.5 arms.
-- **Band C is not uniformly slow.** 57/62 cohort members are `< 100s` by the selection
-  metric, and the fastest are only ~2s. The double-confirmation constraint, not an
-  absolute speed floor, is what capped this cohort — worth a product decision on whether
-  band C should be trimmed to only genuinely slow members (at the cost of a smaller
-  cohort) once more overlap is available.
+- **This is a provisional cohort, and it says so explicitly (see §2).** The primary
+  source (`results-v0.4.5-sweep-partial-2697mols`, 2697/5000 of the frozen seed-42
+  cohort) is a partial view; the live `results-v0.4.6-sweep` is the SAME frozen cohort,
+  further along (2440/5000 at time of writing, top-100 cutoff already 97.4s vs. this
+  build's 93.06s). **Action for the quiet phase:** once `results-v0.4.6-sweep` completes,
+  re-run `tools/select_slow_byte_exact.py --results-dir results-v0.4.6-sweep --n 100` and
+  diff its name list and cutoff against this one (§2 table, 93.06s). Expected to largely
+  agree; a large divergence would be a finding, not noise to silently overwrite this
+  cohort with.
+- **`results-v0.4.5-rebaseline` corroborates only 5/100 molecules.** This is expected and
+  fine — it is a different, smaller, differently-drawn cohort (see the revision note in
+  §2) and was never going to cover most of a top-100-by-elapsed_s drawn from a different,
+  much larger population. The 5 that do overlap all agree (elapsed order-of-magnitude,
+  byte-identical `smiles_1`, matching `eta`), which is the corroboration this column
+  exists to provide — not a claim that the other 95 are somehow less trustworthy.
 - **ARM 2's golden manifest certifies stability from today forward, not correctness
   against an independent oracle** — it was built from this project's own prior sweep
   output, not validated externally. A "gate passes" result means "unchanged since v0.4.5",
