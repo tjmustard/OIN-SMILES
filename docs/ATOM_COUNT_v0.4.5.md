@@ -220,6 +220,37 @@ carrying a phantom implicit H, so "faithful" preserves the error being removed. 
 eta indenyl and every LOSS fixture. Ground truth lives upstream, in the encoder, where counts
 come from the input geometry.
 
+## 5c. Blast radius, measured
+
+A change that can only affect molecules which currently **fail** cannot regress a passing
+one -- but that has to be measured, not asserted. A passing round trip means the generated
+structure had exactly as many atoms as the input, so for any passing molecule the
+adapter-implied count computed with the current code must still equal its input count. The
+frozen sweep's own `status: success` verdict is therefore the "before" arm, with no second
+checkout needed.
+
+100 currently-passing capstone molecules, seed 42 — **60 carrying the exact population Fix B
+changes** (a 5-membered aromatic ring with a heteroatom: thiophene, pyrrole, furan, pyrazole,
+imidazole — the rings it stops charging) and 40 controls with no such ring:
+
+| arm | regressions |
+|---|---|
+| lever OFF (Fix B only) | **0 / 100** |
+| lever ON (Fix B + Fix A's adapter half) | **0 / 100** |
+
+Fix A's *encoder* half needs a re-encode to exercise, since the scan above reuses the stored
+OIN strings; `tools/atomcount/passing_reencode_ab.py` does that in both arms and asserts the
+built count still equals the input.
+
+### Guards
+
+- `tests/unit/test_regression_stability.py` (the four goldens): **green with the lever both
+  off and on**.
+- `tests/unit/test_haptic_carbon_hcount.py`, `tests/unit/test_bare_donor_hydrogens.py`,
+  `tests/unit/test_atom_count_hydrogen.py`: 28 tests, **green in both arms**.
+- Unit-suite baseline at `b23decb4`: `Ran 605 tests, OK (skipped=3, expected failures=3)`.
+- Ruff `check` and `format`: clean.
+
 ## 6. Reproduction
 
 ```bash
