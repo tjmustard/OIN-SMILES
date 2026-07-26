@@ -196,9 +196,9 @@ canonical key, the RMSD mapping and the atom count all passing, not merely the c
 | | molecules | status |
 |---|---|---|
 | LOSS, cause B | 14 | **13/13 run end-to-end pass.** Default-on. |
-| GAIN, cause A | 60 | **10/12 sampled pass end-to-end** behind the lever. Not extrapolated to the other 48. |
+| GAIN, cause A | 60 | **11/12 sampled pass end-to-end** behind the lever. Not extrapolated to the other 48. |
 | of which not really defects | 3 | `GOFTUQ`, `INENOF`, `TESFIH` — the input is missing hydrogens (Sec 4b) |
-| residual, undiagnosed | 2 of the sample | `LOCGAL_comp_0` (+2), `MEGZIH_comp_0` (+1) |
+| residual, open | 1 of the sample | `LOCGAL_comp_0` (+2) — diagnosed, left open as a notation question |
 
 ### Fix A — behind `OIN_H_FAITHFUL`, default OFF
 
@@ -216,8 +216,9 @@ the real harness in one session, with the lever as the **only** difference:
 
 | arm | result |
 |---|---|
-| `OIN_H_FAITHFUL` unset | **0 pass** — every one fails on the exact atom-count mismatch |
+| `OIN_H_FAITHFUL` unset | **0 of 12 pass** — every one fails, 11 on the exact atom-count mismatch and `LOCGAL` on a 300 s timeout |
 | `OIN_H_FAITHFUL=1` | **10 of 12 `status: success`** |
+| `OIN_H_FAITHFUL=1` + the bare-P strip branch | **11 of 12** — `MEGZIH_comp_0` also passes, tier `UFF_1`, `oin1 == oin2` byte-identical |
 
 `status: success` is the full contract, not an atom count: the canonical round-trip key
 matched, the RMSD mapping succeeded, *and* the atom count agreed. Passing: CIDDAU, FABPEG,
