@@ -395,28 +395,32 @@ $V -m unittest tests.unit.test_boron_cage tests.unit.test_regression_stability
 | `tests/unit/test_boron_cage.py` | **19/19 OK** | final |
 | 4 cage molecules x 5 encodes in one process | no crash, all deterministic, no `[B@` in output | final |
 | all 6 corpus molecules with >=3 B and no cage motif | **6/6 byte-identical** with the lever ON | final |
-| pre-existing tests (non-boron), full discovery | **605, all OK** | final src |
-| tests collected on the final tree | **624** = 605 pre-existing + 19 new; **0 load failures** | final |
+| **full `discover tests/unit`** | **624 tests, OK (skipped=3, expected failures=3)** — the full collected count, one clean invocation | **final tree** (`tools/suite_clean.txt`) |
+| ├─ pre-existing tests (non-boron) | **605, all OK** — exactly the pre-change baseline | final |
+| └─ new lever tests | **19, all OK**; 0 load failures | final |
 | 120-molecule regression A/B (§5a) | 120/120 OFF==frozen, 119/120 OFF==ON | **final src** (re-run; bit-identical to the earlier arm) |
 
-### A measurement of mine that was not clean, and what it does and does not support
+### A measurement of mine that was not clean, kept on the record
 
-The full-suite run against the final src reported **`Ran 623 tests, OK (skipped=3, expected
-failures=3)`** — but 623 is one short of the 624 the loader collects, and the reason is my own
-error: **I edited `tests/unit/test_boron_cage.py` while that run was in flight**, so it executed
-605 pre-existing tests plus 18 of what are now 19 boron tests. A mixed-state count.
+Before the clean run above, the suite reported **`Ran 623 tests, OK`** against the same src — one
+short of the 624 the loader collects. The cause was mine: **I edited
+`tests/unit/test_boron_cage.py` while that run was in flight**, so it executed 605 pre-existing
+tests plus 18 of what are now 19 boron tests. `discover` imports at collection time, so an
+in-flight edit yields a count matching neither tree, and the discrepancy is a *single digit* —
+exactly the size that gets rounded away rather than chased.
 
-What it still supports, because these are separable:
+It is superseded by the clean 624/OK run and is recorded only for the lesson: **do not edit a test
+file while a suite run is in flight in the same worktree.** Check the reported count against
+`TestLoader().discover(...)` rather than trusting it.
 
-* the run was `OK` with zero failures and it *did* execute all **605 pre-existing** tests, and the
-  src tree has not changed since (only tests and docs), so **the pre-existing suite is green on
-  the final src**;
-* explicit collection on the stable tree returns **624 tests, 605 of them non-boron — exactly the
-  pre-change baseline — and 0 load failures**, so no test was removed or silently unimportable;
-* the 19 boron tests were run directly against the final tree: **19/19 OK**.
-
-What it does not support: a single clean invocation covering all 624 at once. That re-run is
-`tools/suite_clean.txt`.
+The **120-molecule A/B was never affected by this** — it imports `src`, not `tests`. It was re-run
+against the final src and came back bit-for-bit identical to the earlier arm: 120/120 OFF==frozen,
+119/120 OFF==ON (`VEJXOZ` again), same donor-H histogram
+`{-4: 2, 0: 29, 1: 22, 2: 37, 3: 13, 4: 8, 5: 5, 6: 4}`. Confirmed by
+`git diff <crash-fix commit> HEAD -- src` being empty, so the src the A/B imported is the src
+shipped here. That the numbers did not move is expected — `clear_boron_cage_stereo` is gated on
+both the lever and the B-B-B motif, so it cannot reach the OFF arm — but it is now measured rather
+than argued from the gate.
 
 The **120-molecule A/B is not affected by any of this** — it was re-run against the final src and
 came back bit-for-bit identical to the earlier arm: 120/120 OFF==frozen, 119/120 OFF==ON
