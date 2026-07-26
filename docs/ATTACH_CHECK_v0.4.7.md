@@ -1,6 +1,16 @@
 # `OIN_ATTACH_CHECK` — the attachment check for `OIN_ACCEPT_SCORED` (v0.4.7, lane L5-attach)
 
-**Status: falsification PASSED, check BUILT and default-OFF, four gates RE-RUN. Recommendation in §5.**
+**Status: falsification PASSED · check BUILT, default-OFF · four gates RE-RUN.**
+**Verdict: 2 of the 4 bar criteria met. DO NOT PROMOTE to default-ON (§5.1) — but never run
+`OIN_ACCEPT_SCORED` without it (§5.2). The product call is left explicit in §5.3.**
+
+| | bare lever | **lever + check** |
+|---|---|---|
+| **G3** bytes | 98/98 identical | **97/97 identical** ✅ |
+| **G1** structure | clash 77→**105**, severe 5→**14** ❌ | **77→82, severe 5→5** ✅ |
+| **G2** independent re-perception | 88/98→62/98, **26 regressions** ❌ | **87/97→78/97, 9 regressions** ⚠ |
+| **G4** pass rate | 0 regressions ✅ | 1 regression (timeout-shaped) ⚠ |
+| speedup vs default | **3.33×** | **1.43×** (43% retained) ⚠ |
 
 This lane exists because `docs/ACCEPT_SCORED_v0.4.7.md` §5.4 named exactly one route from
 `DO NOT PROMOTE` to promotion: *build the attachment check of §6 as the lever's missing safety
@@ -331,3 +341,224 @@ hands the runtime straight back.
 **This cohort was selected to exhibit the acceptance gap**, so it is the worst case for speedup
 retention by construction, in the same way it was the wrong cohort to estimate G1 from (§4.8).
 The population number is §3.5 and it is the one to quote.
+
+### 3.5 Guard population (n=100) — **G1 stops failing. G2 does not.**
+
+The gate that inverted the promote lane's verdict (§4.8), re-run. Arm C compared against that
+lane's stored arms A and B, same cohort, same `--timeout 150 --hard-cap 240`. `sha_in` control
+OK on every molecule.
+
+| gate | A → B (bare lever) | **A → C (lever + check)** | verdict |
+|---|---|---|---|
+| **G3** | 98/98 identical, 0 divergent | **97/97 identical, 0 divergent** | **PASS** |
+| **G1** | clash 77→**105**, severe 5→**14**, worse 23 / better 13 | **clash 77→82, severe 5→5, worst_overlap min unmoved at 0.5101, worse 8 / better 5 / identical 84** | **no longer fails** |
+| **G2** | 88/98 → 62/98, **26 regressions**, 0 fixes | **87/97 → 78/97, 9 regressions, 0 fixes** | **still fails** |
+| **G4** | 98/100 → 99/100, **0 regressions** | 98/100 → 98/100, **1 regression** (`DURPAH`), 1 fix (`CUCBUZ`) | **marginal** |
+
+Against the bare lever directly, arm C is a strict improvement on every structural axis:
+**`indep` 61/98 → 78/98 — 17 fixes, 0 regressions**; **clash 106 → 83**; **severe 14 → 5**;
+per-molecule **better 15 / worse 9 / identical 74**.
+
+**Recovery: 17 of the 26 molecules the bare lever broke.** 65%, against 6/8 on the gap cohort.
+
+#### The sharpest cut, in the same form §4.8 used
+
+The lever can only cost something where it changes the returned conformer.
+
+| | bare lever | **lever + check** |
+|---|---|---|
+| molecules whose conformer changed vs arm A | **35** of 98 | **13** of 98 |
+| among those: `clash_vdw` | 13 → **41** (×3.2) | 1 → **6** |
+| among those: `clash_severe` | 0 → **9** | **0 → 0** |
+| among those: independent re-perception lost | **26 / 35 (74%)** | **9 / 13 (69%)** |
+
+**This is the honest reading and it cuts both ways.** The check does not make the lever's
+divergences safer — conditioned on still changing the answer, the damage rate is essentially
+unchanged (74% → 69%). What it does is **cut the number of divergences from 35 to 13**. The
+population-level G2 rate falls from **29.5% to 11.4%** because the check stops the lever acting
+on 22 molecules where it would have acted badly, not because the 13 remaining divergences are
+any better than before.
+
+#### G4's single regression is timeout-shaped, and it is real
+
+`DURPAH_comp_0`: arm A passes in 198.0 s, arm B in 112.5 s, **arm C is SIGKILLed at the 240 s
+hard cap.** It is not a wrong answer — it is a molecule pushed past the budget by the extra pool
+filling. This project has a documented history of reading timeout-shaped deltas as correctness
+deltas (v0.4.4: 11 "regressions", all 300 s timeouts, 0 correctness), so the shape is named
+explicitly. It is still a molecule that used to pass and no longer does, at a fixed budget.
+
+#### Cost at population scale
+
+| guard population, n=100 | A default | B bare lever | **C lever + check** |
+|---|---|---|---|
+| total_s | 2480.1 | **745.0** | 1734.7 |
+| median_s | 10.51 | **4.70** | 7.23 |
+| `>30s` | 20 | **1** | **14** |
+| speedup vs A | — | **3.33×** | **1.43×** |
+
+**43.0% of the bare lever's saving survives** — better than the gap cohort's 32.9%, exactly as
+expected since the lever is a no-op on most of the population. But `>30s` goes **1 → 14**, which
+matters more than the totals for a sweep with a per-molecule budget: that is the mechanism behind
+`DURPAH` and it will recur at any cap.
+
+### 3.6 L1's eta-concentrated frozen cohort — **ATTEMPTED, NOT COMPLETED, and the reason is a result**
+
+§6.5 directed this test at L1's frozen slow-100 (`MANIFEST_SHA256=6f61359b…ab794`, `#DONE 100`,
+**eta 60/100**) because the attachment claim is specifically about haptic coordination and that
+cohort concentrates it.
+
+**It could not be completed in both arms, and the reason is the finding itself.** Arm C on the
+slow-100 completed **1 molecule in the time arm B completed 3**, projecting to roughly **25 h at
+this machine's load**. Restricted to the first 24 eta molecules of the frozen list, arm C still
+completed only 2 of 24 before it had to be stopped to let the population gate finish. **A safety
+condition whose cost makes the eta cohort unaffordable to measure is itself evidence about the
+speedup question**, and it points the same way as §3.4.
+
+What the two completed pairs show — reported as anecdote, with n=2 stated plainly:
+
+| molecule | B `indep` | **C `indep`** | B s | **C s** | B clash/worst | C clash/worst |
+|---|---|---|---|---|---|---|
+| ADANEB | ✗ | ✗ | 4.9 | **81.8** (17×) | 0 / 0.8155 | 0 / 0.7519 |
+| AGIKUW | ✗ | **✓** | 16.5 | **72.1** (4.4×) | 0 / 0.7563 | **1 / 0.6883** |
+
+One recovery, one not; both several-fold slower; and on the recovered one the vdW numbers got
+**worse** (0 → 1 clash, worst overlap 0.7563 → 0.6883), which is a reminder that `indep` and
+clash are genuinely different axes (the promote lane's §4.6 named finding).
+
+> **A separate observation from the same run, and it needs its caveat stated louder than the
+> number:** the bare lever failed independent re-perception on **11 of 11** completed slow-eta
+> molecules. That is far worse than the guard population's rate — but **arm A was never measured
+> on this cohort**, and the promote lane's §3 already established that the *default* path also
+> ships `indep` failures on hard molecules. So this is **not** attributable to the lever. It is a
+> flag that the eta tail may be in poor shape generally, and it is not evidence about
+> `OIN_ACCEPT_SCORED` either way.
+
+---
+
+## 4. SCORECARD — the bar, and whether it was met
+
+The brief set the bar explicitly: **"G2 and G1 must stop failing while G3 keeps passing and most
+of the speedup survives."**
+
+| criterion | result | met? |
+|---|---|---|
+| **G1 stops failing** | clash 77→82 (was 77→105), severe 5→5 (was 5→14), worst_overlap min unmoved | **YES** |
+| **G2 stops failing** | 9 regressions, 0 fixes (was 26, 0). Population rate 29.5% → **11.4%** | **NO** — reduced by 61%, not eliminated |
+| **G3 keeps passing** | 97/97 byte-identical, 0 divergent; 117/117 across both cohorts | **YES** |
+| **most of the speedup survives** | **43.0%** retained; 3.33× → **1.43×**; `>30s` 1 → 14 | **NO** |
+| *(G4, not in the bar)* | 1 pass regression (`DURPAH`, timeout-shaped), 1 fix | marginal |
+
+**Two of four criteria met.** The check is a large, one-directional improvement on the bare
+lever — 17 `indep` fixes and 0 regressions against it, clashes and severe clashes both down —
+and it does not reach the bar that was set for promotion.
+
+### 4.1 This is neither a clean win nor a null result, and it should not be rounded to either
+
+- **Not a null result.** The check recovers 17 of 26 population regressions and 6 of 8 on the
+  gap cohort, returning arm A's *exact* structure on the recovered ones. G1's population failure
+  is genuinely erased. Reporting this as "the check does nothing" would be false — and is
+  precisely what the first, broken implementation reported (§2.2).
+- **Not a clean win.** G2 still fails, still perfectly one-way (0 fixes against arm A in either
+  cohort, across 122 molecules and now three arms). More than half the speedup is gone, `>30s`
+  goes 1 → 14, and one currently-passing molecule stops passing at a fixed budget.
+
+### 4.2 What the residual costs, mechanically
+
+The 9 remaining population regressions and the 2 on the gap cohort are not one problem:
+
+1. **Ligand-internal defects** (`POVPIA`) — invisible to any metal-centred predicate. Named in
+   advance by §6.4, confirmed here.
+2. **Attachment intact, `indep` still disagrees** (`MEDZUR`) — the check is not the binding
+   constraint. **This class was not predicted by anyone** and its size is unmeasured.
+3. **The unguarded fallback** (`GAVSED`) — when acceptance rejects every conformer, the pool
+   fills and `_select_by_geometry` returns a geometry-ranked structure that **never consults the
+   check**. Demonstrated: GAVSED's returned conformer *fails* the attachment check and shipped
+   anyway.
+
+Class 3 is the only one with an obvious next move, and it is deliberately **not** taken here:
+applying the check inside `_select_by_geometry`'s final ranking would change **arm A's** behaviour
+too, which is a different change with its own gate, outside this lane's scope.
+
+---
+
+## 5. RECOMMENDATION
+
+### 5.1 On the combined lever: **do not promote to default-ON. Keep both opt-in.**
+
+Two of the four bar criteria are unmet, and the two that fail are the two the promotion case
+needed: G2 still regresses independent re-perception on 11.4% of the molecules that survive it
+with the lever off, and only 43% of the speedup — the lever's entire reason to exist — survives.
+A lever that is 1.43× faster than the default and still loses structure on one molecule in nine
+is not obviously worth a default-path behaviour change, and the cost remains **invisible to the
+metric that would police it** (`passed` moved by exactly one molecule, in the wrong direction).
+
+`OIN_ATTACH_CHECK` is registered in `_HELD_OFF` with this evidence.
+
+### 5.2 On the pairing, which is a separate and clearer call: **never run `OIN_ACCEPT_SCORED` without it**
+
+This is the one unambiguous finding of the lane. Against the bare lever the check is
+**one-directional**: 17 `indep` fixes and **0** regressions, clash 106→83, severe 14→5, byte
+identity untouched. Anyone who opts into `OIN_ACCEPT_SCORED` today for throughput work is taking
+a structure cost they could largely avoid for 24 ms a conformer and roughly half the speedup.
+
+**Suggested disposition:** make `OIN_ATTACH_CHECK` default-ON *whenever `OIN_ACCEPT_SCORED` is
+on* — i.e. the check becomes part of what that lever means — while both stay off by default. That
+is a smaller decision than promotion and the evidence for it is not mixed.
+
+### 5.3 The product call, stated so it can be made by someone else
+
+**The choice is not "is the check good" — it is what the round trip is for**, which is the same
+fork §5.3 of the promote lane identified, now with the check priced.
+
+- **If the OIN string is the product** (Reading A), the bare lever was already adequate — G3 is
+  117/117 byte-identical with or without the check — and the check buys nothing you value while
+  costing 57% of the speedup. **Then: ship the bare lever opt-in, skip the check.**
+- **If the round trip must reproduce the geometry** (Reading B), the check is what makes the
+  lever defensible at all: it erases G1's population failure and recovers two thirds of G2. But
+  it does not finish the job, and at 1.43× the default the remaining speedup may not justify a
+  second lever. **Then: keep both opt-in and fix the fallback (§4.2 class 3) before revisiting.**
+
+**I am not making this call.** Both readings are priced above with the same measurements.
+
+### 5.4 What would change the recommendation
+
+1. **Close the fallback gap (§4.2 class 3).** `_select_by_geometry` returns structures the check
+   rejects. Guarding the *return* rather than only *acceptance* is a bounded change with a
+   measurable target, and GAVSED is the fixture.
+2. **Size class 2.** `MEDZUR` passes the attachment check and still fails `indep`. Nobody knows
+   how many molecules are in that class; until someone does, the ceiling on this approach is
+   unknown rather than "7/8".
+3. **Recover the speedup.** The cost is entirely pool-filling: rejecting the first conformer
+   means paying arm A's embed budget. A cheaper path would be to make the check inform
+   *generation* (place ligands that stay attached) rather than filter after the fact.
+4. **Re-run on L1's slow-100 in both arms** once (1) or (3) makes arm C affordable there. §3.6
+   could not complete, and the eta tail is where both the speedup and the damage live.
+
+---
+
+## 6. Reproduce
+
+```
+# falsification (§1): dump both arms' accepted conformers, then score offline
+tools/ab_accept_scored.py --cohort spec/handoffs/v0.4.7/cohort_attach21.json \
+  --out spec/handoffs/v0.4.7/runs/attach21.json \
+  --dump-xyz spec/handoffs/v0.4.7/dump21 --timeout 300 --hard-cap 500 --workers 2
+tools/attach_probe.py --dump spec/handoffs/v0.4.7/dump21 --json runs/attach_probe21.json
+tools/attach_probe.py --inputs spec/handoffs/v0.4.7/cohort_attach21.json   # crystal-input control
+
+# arm C (§3): the lever PLUS the check, as a single arm
+OIN_ATTACH_CHECK=1 tools/ab_accept_scored.py --cohort <cohort>.json \
+  --single-arm 1 --label C-lever+check --out runs/c<n>.json
+
+# the scorecard, no re-running
+tools/attach_gate_report.py --baseline runs/attach21.json --armc runs/c21.json
+tools/attach_gate_report.py --baseline runs/guard100.json --armc runs/cguard100.json
+```
+
+All runs under `systemd-run --user -p OOMPolicy=continue -p MemoryMax=6G`, 1–2 workers, on a box
+at load 40–65 of 12 cores. **Every second in this document is ADVISORY**; within-cohort ratios
+are meaningful because both arms met the same conditions, absolute values are not portable.
+
+Artefacts: `spec/handoffs/v0.4.7/runs/` — `attach21.json`, `c21.json`, `cguard100.json`,
+`attach_probe21.json`, `inputs_control.json`, `gates_c21.txt`, `gates_guard100.txt`, and
+`INVALID_c21_noop.json` (§2.2, **not** used for any number here).
