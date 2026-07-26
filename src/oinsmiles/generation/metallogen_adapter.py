@@ -23,6 +23,7 @@ from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalv
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
+from ..oin.levers import lever_enabled
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
@@ -1499,6 +1500,39 @@ def _select_by_geometry_impl(
             target_key = canonical_roundtrip_key(getattr(parsed, "original_oin", "") or "")
         except Exception:
             target_key = None
+        # Opt-in: let an ETA molecule short-circuit on the criterion that ACTUALLY judges it.
+        #
+        # MEASURED (pool.attempts_spent): Ferrocene spends 32 attempts / 32 pool slots and never
+        # short-circuits, while non-eta CisPlatin accepts on attempt 0. Yet Ferrocene is a GOLDEN --
+        # it round-trips fine, via _select_by_geometry(honor_winding=True) matching
+        # `_eta_winding_multiset(oin) == target_windings` at the end. So the cheap predicate that
+        # could stop the loop (canonical_roundtrip_key equality) is STRICTER than the one that
+        # ultimately decides success, and eta molecules pay the full widened pool for nothing.
+        #
+        # With this lever on, an eta molecule may also accept on the winding criterion itself --
+        # strictly the same test the final selection applies, so it cannot accept anything the
+        # pipeline would have rejected.
+        #
+        # ⚠ MEASURED INEFFECTIVE FOR RUNTIME, and the reason is structural. A/B on Ferrocene:
+        # lever off -> 32 attempts, eta accept 0; lever on -> 32 attempts, eta accept 1. It FIRES,
+        # but the attempt count does not move, because `generate_3d_structures` fills the ENTIRE
+        # pool before `_select_by_geometry` is ever called. A selection-side early exit can only
+        # shorten the selection scan, which is cheap beside 32 embeds.
+        #
+        # The site that can actually stop pool filling is the `accept_fn` passed INTO
+        # generate_3d_structures and consulted per conformer by `_try_accept`. Adding the winding
+        # criterion THERE is the real fix; this one is kept because it is harmless, correct, and
+        # documents where the boundary is.
+        #
+        # DEFAULT OFF and therefore byte-identical: `_eta_early_targets` is None unless the lever is
+        # set, and None disables the branch. Promotion gate: a corpus A/B answering "does any
+        # molecule that currently passes stop passing?" -- two fixtures is the sample size that
+        # produced four wrong answers about this tail already.
+        _eta_early_targets = (
+            _eta_winding_multiset(getattr(parsed, "original_oin", None))
+            if lever_enabled("OIN_ETA_EARLY_EXIT")
+            else None
+        )
         if target_key is not None:
             require_no_stretch = clash.STRETCHED_BOND_ENABLED
             for m in mols:
@@ -1526,6 +1560,12 @@ def _select_by_geometry_impl(
                     logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
                     _telemetry.record("adapter.early_exit_hit")
                     return m, cmol
+                if _eta_early_targets:
+                    _oin = _reencode_oin_fast(cmol) or _reencode_oin(m)
+                    if _oin and _eta_winding_multiset(_oin) == _eta_early_targets:
+                        logger.debug("accept-first(eta): conformer matched the requested winding")
+                        _telemetry.record("adapter.early_exit_hit_eta")
+                        return m, cmol
             _telemetry.record("adapter.early_exit_miss", n_mols=len(mols))
 
     target = _norm_geo_code(parsed.geo_code)

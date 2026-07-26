@@ -117,6 +117,20 @@ _HELD_OFF = {
         "write order is fixed. Guarded by "
         "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
     ),
+    "OIN_ETA_EARLY_EXIT": (
+        "lets an ETA molecule short-circuit the conformer pool on the winding criterion that "
+        "actually judges it. MEASURED (pool.attempts_spent): Ferrocene "
+        "spends 32 attempts / 32 pool "
+        "slots and never short-circuits, while non-eta CisPlatin accepts on attempt 0 -- but "
+        "Ferrocene is a golden and round-trips via _select_by_geometry(honor_winding=True). So the "
+        "cheap early-exit predicate (canonical_roundtrip_key) is STRICTER than the one that "
+        "decides success, so eta molecules pay the full widened pool for nothing. Eta is 63.5% "
+        "of the >30s runtime tail vs 19.8% of the fast set, so this is the runtime lever. It "
+        "cannot accept anything the pipeline would reject: it applies the final selection's "
+        "own test earlier. Promotion gate: a corpus A/B answering 'does any molecule that "
+        "currently passes stop passing?', plus the attempts-spent distribution. Two fixtures "
+        "is the sample size that produced four wrong answers about this tail already."
+    ),
     "OIN_H_FAITHFUL": (
         "The OIN_CANONICAL_BODY interaction that blocked this in v0.4.5 is FIXED: both of "
         "canonical_body_emit's MolToSmiles writes now go through h_faithful_smiles, so the "

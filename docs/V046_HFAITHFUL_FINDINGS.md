@@ -595,3 +595,28 @@ NOT implemented here: it changes acceptance semantics in the selection path, whi
 (does any molecule that currently passes stop passing?) and that is not something to land on the
 strength of two molecules. Two fixtures is exactly the sample size that produced the four wrong
 answers above.
+
+## Where the eta cost actually lives: the POOL FILL, not selection
+
+Implemented the predicate-alignment fix behind `OIN_ETA_EARLY_EXIT` (default OFF) and A/B'd it on
+Ferrocene:
+
+| lever | attempts | eta early-exit fired |
+|---|---|---|
+| OFF | 32 | 0 |
+| ON | **32** | **1** |
+
+**It fires and the attempt count does not move.** The reason is structural, and it is the thing to
+carry forward: `generate_3d_structures` fills the **entire** pool before `_select_by_geometry` is
+ever called. A selection-side early exit can only shorten the selection *scan*, which is cheap
+beside 32 embeds.
+
+**The site that can stop pool filling is the `accept_fn` passed INTO `generate_3d_structures`**, which
+`_try_accept` consults per conformer. Adding the eta-winding criterion *there* is the real fix. The
+lever as implemented is kept because it is correct, harmless, default-OFF, and marks exactly where
+the boundary between the two mechanisms lies — which is the part I kept getting wrong.
+
+Fifth wrong turn on this single item, and the counter caught it in one A/B. Sequence, for anyone
+tempted to shortcut it: low-acceptance-rate → pool widening (refuted by early-exit-exists) →
+cost-per-attempt (inferred from a slope, refuted by the counter) → attempt-driven (correct) →
+selection-side predicate alignment (correct but ineffective) → **fill-loop accept_fn (untried)**.
