@@ -1887,7 +1887,7 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
     # See docs/BORON_CAGE_v0.4.5.md and docs/RENUMBERING_INSTABILITY_v0.4.5.md.
     # Both default OFF; with neither set this loop is byte-identical to pre-v0.4.5.
     exempt = set()
-    if os.environ.get("OIN_BORON_CAGE"):
+    if _lever_enabled("OIN_BORON_CAGE"):
         atomic_nums = [mol.GetAtomWithIdx(i).GetAtomicNum() for i in range(num_atoms)]
         exempt = boron_cage_vertices(atomic_nums, AC)
 

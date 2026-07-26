@@ -123,13 +123,13 @@ stamped, ``recover()``'s restore loop finds nothing, and output is byte-identica
 
 from __future__ import annotations
 
-import os
 from typing import NamedTuple
 
 import numpy as np
 from rdkit import Chem
 
 from ..core.constants import TRANSITION_METALS_NUM
+from .levers import lever_enabled as _lever_enabled
 
 #: Environment lever. Default OFF -> byte-identical output.
 ENV_LEVER = "OIN_EMIT_LOCKED_DONOR"
@@ -178,8 +178,13 @@ _EMPTY_PLAN = LockedDonorPlan((), ())
 
 
 def lever_enabled() -> bool:
-    """True when the ``OIN_EMIT_LOCKED_DONOR`` lever is set."""
-    return bool(os.environ.get(ENV_LEVER))
+    """True when the ``OIN_EMIT_LOCKED_DONOR`` lever is enabled.
+
+    Routed through the central registry so ``OIN_EMIT_LOCKED_DONOR=0`` DISABLES it. The
+    bare ``bool(os.environ.get(...))`` this replaced did the opposite -- "0" is a non-empty
+    string, so opting out the obvious way switched the descriptor on.
+    """
+    return _lever_enabled(ENV_LEVER)
 
 
 def plan_locked_donors(parent: Chem.Mol) -> LockedDonorPlan:

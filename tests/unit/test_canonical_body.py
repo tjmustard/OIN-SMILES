@@ -71,7 +71,12 @@ _APABAV_KEKULE = "O=C1[CH]=[CH]C(=O)O1"
 
 
 def _lever(name, value):
-    """Set an env lever; returns the callable that restores the previous state."""
+    """Set an env lever explicitly in both directions; returns the restore callable.
+
+    ``value=False`` writes ``"0"`` rather than deleting the variable. Deleting it means
+    "take the default", and these levers were promoted to default-ON in v0.4.5 -- so the
+    old spelling turned every lever-OFF test into a second lever-ON test.
+    """
     prev = os.environ.get(name)
 
     def restore():
@@ -80,16 +85,30 @@ def _lever(name, value):
         else:
             os.environ[name] = prev
 
-    if value:
-        os.environ[name] = "1"
-    else:
-        os.environ.pop(name, None)
+    os.environ[name] = "1" if value else "0"
     return restore
 
 
 def _flag(value):
     """``OIN_CANONICAL_BODY`` lever; returns its restore callable."""
     return _lever("OIN_CANONICAL_BODY", value)
+
+
+def _all_promoted_levers_off(testcase):
+    """Hold EVERY v0.4.5 default-ON lever off, and register the restores.
+
+    The pre-v0.4.5 goldens below are bytes from a build with none of this release's levers
+    present. Reproducing them therefore requires all six off, not just this module's own --
+    otherwise Lane 2's canonical slot order (correctly) changes the string and a test about
+    ``OIN_CANONICAL_BODY`` fails for a reason that has nothing to do with bodies.
+
+    Enumerated from ``levers.default_on()`` rather than hardcoded, so promoting a seventh
+    lever does not silently reintroduce the same confusion.
+    """
+    from oinsmiles.oin.levers import default_on
+
+    for name in sorted(default_on()):
+        testcase.addCleanup(_lever(name, False))
 
 
 def _bodies(oin):
@@ -129,10 +148,15 @@ def _slot_donor_pairs(oin):
 
 
 class TestFlagOffIsByteIdentical(unittest.TestCase):
-    """Unset lever -> pristine output. The whole opt-in contract rests on this."""
+    """All v0.4.5 levers off -> pristine pre-release output, byte for byte.
+
+    This is the guard that no lane changed the opt-out path. It was written when every lever
+    was off by default and so only needed to clear its own; after promotion it has to clear
+    all of them to make the same claim.
+    """
 
     def setUp(self):
-        self.addCleanup(_flag(False))
+        _all_promoted_levers_off(self)
 
     def test_goldens_unchanged(self):
         conv = XYZToSMILES()
@@ -161,7 +185,9 @@ class TestFlagOffIsByteIdentical(unittest.TestCase):
             "XYZToSMILES().convert(%r);"
             "print('oinsmiles.oin.canonical_body' in sys.modules)"
         ) % (str(_ROOT / "src"), str(FIX / "CisPlatin.xyz"))
-        env = {k: v for k, v in os.environ.items() if k != "OIN_CANONICAL_BODY"}
+        # Explicitly "0": the lever is default-ON since v0.4.5, so removing the key from the
+        # child's env would test the ON path and assert it does not import the ON module.
+        env = dict(os.environ, OIN_CANONICAL_BODY="0")
         out = subprocess.run(
             [sys.executable, "-c", code], capture_output=True, text=True, env=env
         ).stdout
@@ -345,8 +371,8 @@ class TestCanonicalPerception(unittest.TestCase):
     """
 
     def setUp(self):
-        self.addCleanup(_lever("OIN_CANONICAL_PERCEPTION", False))
-        self.addCleanup(_flag(False))
+        # Baseline is "no v0.4.5 lever active"; individual tests re-enable what they measure.
+        _all_promoted_levers_off(self)
 
     @staticmethod
     def _renumbered(path, seed):

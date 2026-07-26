@@ -353,18 +353,45 @@ class TestPorphyrinMesoAxesAreNotPerAxisStereogenic(unittest.TestCase):
     """
 
     def test_yeskoz_emits_no_token(self):
+        """No token, under BOTH aromaticity perceptions.
+
+        The conclusion is asserted twice on purpose. ``_is_atropisomer_candidate`` gates its
+        steric wall on ``not oo.GetIsAromatic()``, so ``OIN_CANONICAL_PERCEPTION`` -- default-ON
+        since v0.4.5 -- changes how many of these axes count as *hindered*: measured 2 with it
+        off, 1 with it on, because canonical perception reads more of the macrocycle aromatic
+        and one porphyrin wall stops qualifying. The token is empty either way, since both axes
+        are non-stereogenic, which is the claim that matters here.
+
+        ⚠ The hindrance count itself is pinned with perception OFF because that is the
+        perception the Y2 axial cohort (single-axis 22/22, corpus mirror audit 37/37) was
+        measured under. Promoting ``OIN_EMIT_AXIAL`` therefore requires re-measuring those two
+        numbers with perception ON first -- ``axial.py``'s safety argument covers the generator
+        reading FEWER atoms aromatic, not the encoder reading more. Recorded in
+        ``levers.py::_HELD_OFF``.
+        """
+        from unittest import mock
+
         from oinsmiles.oin.axial import axial_token, detect_axial_axes
         from tools.injectivity.config_oracle import load_mol
 
-        mol = load_mol(str(FIX / "YESKOZ.xyz"))
-        axes = detect_axial_axes(mol)
-        self.assertEqual(len(axes), 2, "the two meso-aryl axes must still be DETECTED")
-        self.assertTrue(all(a.hindered for a in axes), "both are sterically hindered")
-        self.assertFalse(
-            any(a.stereogenic for a in axes),
-            "neither meso-aryl axis is stereogenic on its own",
-        )
-        self.assertEqual(axial_token(mol), "")
+        for perception, expected_hindered in (("0", 2), ("1", 1)):
+            with (
+                self.subTest(OIN_CANONICAL_PERCEPTION=perception),
+                mock.patch.dict(os.environ, {"OIN_CANONICAL_PERCEPTION": perception}),
+            ):
+                mol = load_mol(str(FIX / "YESKOZ.xyz"))
+                axes = detect_axial_axes(mol)
+                self.assertEqual(len(axes), 2, "the two meso-aryl axes must still be DETECTED")
+                self.assertEqual(
+                    sum(1 for a in axes if a.hindered),
+                    expected_hindered,
+                    "hindrance reads the aromatic flag, so it moves with the perception lever",
+                )
+                self.assertFalse(
+                    any(a.stereogenic for a in axes),
+                    "neither meso-aryl axis is stereogenic on its own",
+                )
+                self.assertEqual(axial_token(mol), "")
 
 
 class TestNotOverSensitive(unittest.TestCase):

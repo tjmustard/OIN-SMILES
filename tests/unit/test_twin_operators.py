@@ -20,6 +20,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
@@ -150,6 +151,18 @@ class TestDistinctnessIsHonestBothWays(unittest.TestCase):
 
 
 class TestInvertAxial(unittest.TestCase):
+    # YESKOZ is this operator's two-axis test article, and "two axes" is perception-dependent:
+    # OIN_CANONICAL_PERCEPTION (default-ON since v0.4.5) reads more of the porphyrin aromatic,
+    # so one meso wall stops satisfying _is_atropisomer_candidate's `not GetIsAromatic()` gate
+    # and the hindered count measures 1 instead of 2. Pinned OFF here because the operator's
+    # job is "flip exactly one of several axes" -- with one axis there is nothing to isolate.
+    # Neither count changes any emitted string: both YESKOZ axes are non-stereogenic and the
+    # token is empty either way (test_axial_emit asserts that under both perceptions).
+    def setUp(self):
+        patcher = mock.patch.dict(os.environ, {"OIN_CANONICAL_PERCEPTION": "0"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_flips_exactly_one_axis(self):
         from oinsmiles.oin.axial import detect_axial_axes
 

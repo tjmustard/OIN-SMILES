@@ -14,7 +14,6 @@ stack (MetalloGen, MACE, ...). The round-trip harness and the interactive verifi
 both use it.
 """
 
-import os
 import re
 
 from rdkit import Chem
@@ -28,6 +27,7 @@ from .canonical_slots import (
     lexmin_vertex_signature,
 )
 from .inline import OINInlineHandler
+from .levers import lever_enabled as _lever_enabled
 
 # Sanitize everything EXCEPT kekulization. A slot-stripped chelate fragment can be a
 # neutral all-carbon eta-Cp/Cp* ring or a bare-``n`` 5-membered azole/pyridyl donor
@@ -70,7 +70,7 @@ def _parse_fragment(smiles: str):
     # to the order-dependent ``RAW:`` string. Without this, a cage fragment's
     # contribution to the key is the literal input SMILES, so two orderings of the
     # same cage get different keys and the key stops meaning what it claims.
-    if os.environ.get("OIN_BORON_CAGE"):
+    if _lever_enabled("OIN_BORON_CAGE"):
         for ops in (_NO_VALENCE, _NO_VALENCE_NO_KEKULIZE):
             retry = Chem.MolFromSmiles(smiles, sanitize=False)
             if retry is None:

@@ -35,8 +35,12 @@ _BINAP_XYZ = os.path.join(_FIXTURES_DIR, "PdCl2-R-BINAP.xyz")
 _CISPLATIN_XYZ = os.path.join(_FIXTURES_DIR, "CisPlatin.xyz")
 _FERROCENE_XYZ = os.path.join(_FIXTURES_DIR, "Ferrocene.xyz")
 
+# Updated 2026-07-26 (v0.4.5): backbone tags flipped @@/@ -> @/@@ when OIN_STABLE_STEREO was
+# promoted to default-ON. This test asserts the Zone-A degradation path is byte-identical to
+# the NORMAL path, so the golden has to track the normal path -- it is shared with
+# test_chiral_p._EXPECTED_OIN, and the geometry check there is what pins it to reality.
 _BDPP_EXPECTED_OIN = (
-    "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
+    "[Pd_SPL].C[C@H](C[C@@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
 )
 
 

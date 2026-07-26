@@ -16,9 +16,9 @@ ligand's other, well-behaved rings. Clearing aromaticity on *only* the stuck rin
 preserves correct alternating bond orders everywhere else.
 """
 
-import os
-
 from rdkit import Chem
+
+from ..oin.levers import lever_enabled as _lever_enabled
 
 
 class OINEncodeError(ValueError):
@@ -112,7 +112,7 @@ def _boron_cage_relaxation_applies(mol):
     ``xyz2mol_local`` pulls in the heavy perception stack and this module is
     imported by it in turn.
     """
-    if not os.environ.get("OIN_BORON_CAGE"):
+    if not _lever_enabled("OIN_BORON_CAGE"):
         return False
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     if sum(1 for z in atoms if z == 5) < 3:

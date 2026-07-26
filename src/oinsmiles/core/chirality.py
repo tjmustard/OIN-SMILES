@@ -18,12 +18,12 @@ implements.
 from __future__ import annotations
 
 import logging
-import os
 import warnings
 
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
+from ..oin.levers import lever_enabled as _lever_enabled
 from ..oin.locked_donor import restore_locked_donor_tags
 from ..utils.aromaticity import sanitize_allowing_boron_cage
 from .constants import TRANSITION_METALS_NUM
@@ -426,7 +426,7 @@ def clear_boron_cage_stereo(mol):
 
     No-op unless the lever is set and the mol carries the B-B-B triangle motif.
     """
-    if not os.environ.get("OIN_BORON_CAGE"):
+    if not _lever_enabled("OIN_BORON_CAGE"):
         return
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     if sum(1 for z in atoms if z == 5) < 3:

@@ -112,10 +112,13 @@ def _mirrored(path, tmpdir):
 
 
 def _encode(path, stable):
+    # Set the lever EXPLICITLY in both directions. Unsetting it used to mean "off", but it
+    # was promoted to default-ON in v0.4.5 -- at which point `stable=False` silently became
+    # `stable=True`, and the two "the defect still reproduces" guards below began asserting
+    # the defect against the *fixed* path. They failed loudly, which is the only reason this
+    # was caught; a guard that goes vacuous usually just goes green.
     env = dict(os.environ)
-    env.pop(_LEVER, None)
-    if stable:
-        env[_LEVER] = "1"
+    env[_LEVER] = "1" if stable else "0"
     with mock.patch.dict(os.environ, env, clear=True):
         return XYZToSMILES().convert(path)
 

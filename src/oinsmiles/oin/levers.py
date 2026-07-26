@@ -61,9 +61,28 @@ _HELD_OFF = {
     "OIN_EMIT_AXIAL": (
         "emits a new atropisomer token the generator must reproduce; promoting converts a "
         "silent false positive into a loud false negative. Evidence to promote is recorded, "
-        "and the key's _AXIAL_TOKEN_RE fold must be removed in the same commit."
+        "and the key's _AXIAL_TOKEN_RE fold must be removed in the same commit. ALSO INTERACTS "
+        "with OIN_CANONICAL_PERCEPTION, now default-ON: the Y2 cohort numbers backing that "
+        "evidence (single-axis 22/22, corpus mirror audit 37/37) were measured with perception "
+        "OFF. Perception feeds _is_atropisomer_candidate, which gates its steric wall on "
+        "`not GetIsAromatic()` -- measured on YESKOZ, hindered axes go 2 -> 1 under canonical "
+        "perception because more of the macrocycle reads aromatic. No emitted string moves "
+        "today (YESKOZ's axes are non-stereogenic, so its token is empty either way; BINAP is "
+        "unaffected at 1 hindered / 1 emitting), but axial.py's safety argument covers only the "
+        "GENERATOR reading FEWER aromatic atoms, not the encoder reading more. Re-measure both "
+        "cohorts with perception ON before promoting."
     ),
-    "OIN_EMIT_LOCKED_DONOR": ("same trade for metal-locked N/P donor configuration (P3)."),
+    "OIN_EMIT_LOCKED_DONOR": (
+        "same trade for metal-locked N/P donor configuration (P3), AND currently INCOMPATIBLE "
+        "with OIN_CANONICAL_BODY, which is default-ON: canonical_body_emit reparses the body, "
+        "and sanitizing the metal-free fragment clears the [N@] on a 2-degree amine -- RDKit "
+        "sees a freely inverting amine, the very behaviour this descriptor works around. So "
+        "with both on, the tag is stamped and then discarded. P3 therefore works only with "
+        "OIN_CANONICAL_BODY=0 today (which is how tests/unit/test_locked_donor.py runs). The "
+        "fix is to stamp inside canonical_body_emit before its final MolToSmiles, which also "
+        "re-derives donor marker positions -- deferred to v0.4.6, not rushed, because a "
+        "misplaced marker silently mislabels coordination."
+    ),
     "OIN_H_FAITHFUL": (
         "INTERACTS with OIN_CANONICAL_BODY, which is now default-ON: canonical_body_emit "
         "reparses the body through MolFromSmiles/MolToSmiles, the exact round trip that "

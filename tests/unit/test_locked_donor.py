@@ -27,6 +27,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
@@ -100,11 +101,31 @@ def _write_atoms(dst: Path, head, atoms) -> str:
 
 
 class _LeverBase(unittest.TestCase):
-    """Set/restore ``OIN_EMIT_LOCKED_DONOR`` around each test."""
+    """Set/restore ``OIN_EMIT_LOCKED_DONOR`` around each test.
+
+    ⚠ Also pins ``OIN_CANONICAL_BODY`` OFF, because the two levers are INCOMPATIBLE and
+    ``OIN_CANONICAL_BODY`` is default-ON as of v0.4.5. ``canonical_body_emit`` reparses the
+    ligand body through ``MolFromSmiles``/``MolToSmiles``, and sanitizing a *metal-free*
+    fragment clears the ``[N@]`` on a 2-degree amine -- RDKit sees a freely inverting amine,
+    which is the exact behaviour this descriptor exists to work around and the reason the tag
+    has to be restored from the parent geometry in the first place. So with both levers on the
+    descriptor is stamped and then thrown away, and all seven assertions below see a bare ``N``.
+
+    Consequence, stated plainly rather than hidden behind this setUp: **P3 is not usable in the
+    shipped default configuration.** It is built, oracle-validated and passing here, but only
+    with ``OIN_CANONICAL_BODY=0``. Making it work alongside the canonical body means stamping
+    the tag *inside* ``canonical_body_emit``, before its final ``MolToSmiles`` -- which also
+    re-derives the donor marker positions, the machinery whose corruption silently mislabels
+    coordination. Deferred to v0.4.6 rather than rushed; recorded in ``oin/levers.py::_HELD_OFF``
+    alongside the identical ``OIN_H_FAITHFUL`` interaction.
+    """
 
     def setUp(self):
         self._prev = os.environ.get(ENV_LEVER)
         self.addCleanup(self._restore)
+        body = mock.patch.dict(os.environ, {"OIN_CANONICAL_BODY": "0"})
+        body.start()
+        self.addCleanup(body.stop)
 
     def _restore(self):
         if self._prev is None:
@@ -113,10 +134,10 @@ class _LeverBase(unittest.TestCase):
             os.environ[ENV_LEVER] = self._prev
 
     def _set(self, on: bool):
-        if on:
-            os.environ[ENV_LEVER] = "1"
-        else:
-            os.environ.pop(ENV_LEVER, None)
+        # "0" rather than unset: OIN_EMIT_LOCKED_DONOR is still default-OFF so both spellings
+        # agree today, but being explicit is what stops this from silently inverting if the
+        # lever is ever promoted -- the trap that hit five other test modules in v0.4.5.
+        os.environ[ENV_LEVER] = "1" if on else "0"
 
     def _encode(self, path: str) -> str:
         return XYZToSMILES().convert(path)

@@ -133,7 +133,9 @@ class TestLeverOffIsByteIdentical(unittest.TestCase):
     """
 
     def test_goldens(self):
-        env = {k: v for k, v in os.environ.items() if k != "OIN_CANONICAL_SLOTS"}
+        # "0", not absent: the lever is default-ON since v0.4.5, so deleting the key would
+        # exercise the ON path and then assert it produced the OFF bytes.
+        env = dict(os.environ, OIN_CANONICAL_SLOTS="0")
         with mock.patch.dict(os.environ, env, clear=True):
             conv = XYZToSMILES()
             self.assertEqual(
@@ -177,9 +179,8 @@ class TestLeverOnGoldens(unittest.TestCase):
 
     @staticmethod
     def _encode(name, lever_on):
-        env = {k: v for k, v in os.environ.items() if k != "OIN_CANONICAL_SLOTS"}
-        if lever_on:
-            env["OIN_CANONICAL_SLOTS"] = "1"
+        # Both directions explicit -- see TestLeverOffIsByteIdentical.test_goldens.
+        env = dict(os.environ, OIN_CANONICAL_SLOTS="1" if lever_on else "0")
         with mock.patch.dict(os.environ, env, clear=True):
             return XYZToSMILES().convert(os.path.join(_FIXTURES, name))
 

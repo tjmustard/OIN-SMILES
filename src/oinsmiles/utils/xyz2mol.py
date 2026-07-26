@@ -569,7 +569,7 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
     if best_res_mol is not None and _perception_is_usable(best_res_mol):
         return best_res_mol, charge
 
-    _permissive_stuck_ring = bool(os.environ.get("OIN_RESCUE_STUCK_RING"))
+    _permissive_stuck_ring = lever_enabled("OIN_RESCUE_STUCK_RING")
 
     ordered = sorted(range(-4, 5), key=lambda q: (abs(q - charge), q))
     for trial_charge in ordered:
@@ -692,7 +692,7 @@ def get_lig_mol(mol, charge, coordinating_atoms):
     # Boron-cage bypass (OIN_BORON_CAGE, default OFF). Must precede
     # ``_select_lig_mol``: for a cage fragment, AC2BO exits the process rather
     # than returning, so there is nothing to fall back from.
-    if os.environ.get("OIN_BORON_CAGE") and _has_boron_cage(mol):
+    if lever_enabled("OIN_BORON_CAGE") and _has_boron_cage(mol):
         cage = _cage_frag_mol(mol)
         if cage is not None:
             return cage, 0
@@ -915,7 +915,7 @@ def _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=False):
     # default), and with the valence check skipped only for a fragment that
     # carries a cage vertex. A fragment that fails even the relaxed sanitize is
     # left as-is for ``get_lig_mol`` to reject as before.
-    if os.environ.get("OIN_BORON_CAGE") and _has_boron_cage(frags):
+    if lever_enabled("OIN_BORON_CAGE") and _has_boron_cage(frags):
         frag_mols = []
         for f in rdmolops.GetMolFrags(frags, asMols=True, sanitizeFrags=False):
             try:
