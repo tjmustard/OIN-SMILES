@@ -221,6 +221,97 @@ per-boron hydrogen count is exact 34/34. Charging it to the cage work would be w
 primary criteria are the heavy-atom multiset, the heavy-bond multiset, and boron-H — the three
 things a shattered cage would fail immediately.
 
+## 5a. The blast radius is not 34 — 14 "passing" molecules are silently wrong
+
+This came out of the regression A/B, and it is the most consequential finding in the spike.
+
+The A/B (`tools/boron_regression_ab.py`, 120 passing molecules, seed 0) returned:
+
+| | result |
+|---|---|
+| lever OFF vs the frozen capstone OIN | **120/120 byte-identical** — the change is inert when off |
+| lever ON vs lever OFF | **119/120 identical**, **1 differs** |
+
+The one difference is `VEJXOZ_comp_0` — and it is not a regression, it is an **additional fix**
+that exposes a second, worse failure mode:
+
+| | B–B cage bonds | spurious bonds | key |
+|---|---|---|---|
+| geometry (truth) | 12 | — | — |
+| lever OFF | **6** (50% deleted) | invents a **C=B double bond** to balance valences | falls back to `RAW:` |
+| lever ON | **12** | none | canonical |
+
+`VEJXOZ` was scored as a *pass*. Its OIN round-trips. It describes the wrong molecule. The
+round-trip key cannot see this, because the corrupted encode is compared against **its own
+corrupted mol** — the same "a lossy key must never be the acceptance predicate for an axis it
+folds" trap this release has hit before.
+
+So the 34 `encode_fail` molecules are only the subset where amputating the cage happened to
+produce something `get_lig_mol` could not perceive *at all*. Where the debris happens to remain
+perceivable, the encoder silently emits a plausible, self-consistent, wrong graph.
+
+Corpus scan for the actual population (`tools/boron_blast_radius.py`, no encoding, no
+generation — a text filter to ≥3 boron, then adjacency on those 192 files):
+
+| | count |
+|---|---:|
+| xyz files in `cat/` + `photo/` | 26,230 |
+| with ≥3 boron | 192 |
+| carrying a real deltahedral cage motif | **186** |
+| of those, cage bonds **deleted** by the pruning loop | **186 — every single one** |
+| ├─ known `encode_fail` 34 | 34 |
+| ├─ **counted as PASSING in the frozen capstone reports** | **14** |
+| └─ not covered by the capstone arm (unmeasured) | 138 |
+| boron but no cage motif (borates etc., correctly untouched) | 6 |
+
+The 14 silently-corrupted passers lose **133 of 269 cage bonds (49.4%)**:
+
+`PEKQUU` (17/34 deleted) · `RAJNEY` (12/21) · `ULOFIK` (11/21) · `DUDTIG` (10/18) ·
+`KIXXOF` (10/18) · `RAJNOI` (10/21) · `XIQKOY` (10/18) · `UYEJAK` (9/21) · `XIQLAL` (9/18) ·
+`PEKQII` (8/16) · `VOFHUW` (8/21) · `CIDHAY` (7/18) · `SEMTOV` (6/12) · `VEJXOZ` (6/12)
+
+Read plainly: **the pruning defect reaches 186 corpus molecules. 34 fail loudly, 14 fail
+silently while being scored correct, and 138 were never measured.** The "34 permanent ceiling"
+number was both a misdiagnosis and an undercount, and the accuracy metric was reporting 14
+wrong answers as right.
+
+## 5b. The one genuinely nasty obstacle: a cage chiral tag is a native crash
+
+Worth its own section because it is the only thing in this spike that could not have been
+predicted from reading code, and because "it raises an exception" would have been the wrong
+answer.
+
+`AssignAtomChiralTagsFromStructure` stamps a permutation tag on a 5-/6-connected cage vertex,
+because its 3D neighbourhood *is* asymmetric. RDKit's stereo machinery has no permutation table
+for that shape, and it does not report the problem — it corrupts the heap. Observed, all with
+`OIN_BORON_CAGE=1` before the fix:
+
+| molecule | symptom |
+|---|---|
+| `KIXXOF` (Rh thiaborane) | `RuntimeError: basic_string::_M_create` from `Chem.AssignStereochemistry` |
+| `KIXXOF`, encoded twice in one process | `free(): invalid pointer`, `Fatal Python error: Aborted`, inside `FindPotentialStereo` |
+| `DUDTIG` (Rh thiaborane) | `free(): invalid size` → SIGABRT; separately SIGSEGV |
+
+Three things about this that matter:
+
+1. **It manifests on the *second* encode.** The first encode of `KIXXOF` succeeded and returned a
+   correct OIN. The abort came on the next one. That is latent heap corruption, so a
+   single-molecule test would have passed and the corpus sweep would have died at a random point
+   with no attributable cause.
+2. **`except Exception` cannot help.** A `SIGABRT` is not catchable, so the only correct fix is to
+   never set the tag. `clear_boron_cage_stereo` (`core/chirality.py`) clears it in *both*
+   `CIPAssigner.assign_all` and `ChiralityRecoveryUtility.recover` — `recover` is entered from
+   `get_oin_string` on a mol `CIPAssigner` never touched, so neither can rely on the other.
+3. **It is not a boron problem, it is a *cage vertex* problem.** The tag that aborted
+   `FindPotentialStereo` on `KIXXOF` was on the thiaborane's **cage sulfur**. Clearing only boron
+   would have left the crash in place. Cage heteroatom vertices (carborane C, thiaborane S) are
+   identified as atoms bonded to ≥3 cage-vertex borons — a bound an exocyclic substituent
+   (bonded to one) cannot reach.
+
+Clearing loses nothing: a cage vertex's "handedness" is the polyhedron, and the polyhedron is
+already carried by the cage's bond graph. Verified by encoding four cage molecules five times
+each in one process — no crash, all deterministic, and no `[B@` anywhere in the output.
+
 ## 6. What this does *not* claim
 
 Being precise, because the encode is real but bounded:
@@ -242,7 +333,12 @@ Being precise, because the encode is real but bounded:
   builds its probe with a full sanitize and so fails on a cage, emitting the existing
   `OINStereoWarning` and falling back to today's clearing behaviour. Graceful, already-designed
   degradation, not a crash — but on MODZUA it means the phosphine lone-pair CIP is not computed.
-  A fourth call site to route through `sanitize_allowing_boron_cage` if anyone wants it closed.
+  A further call site to route through `sanitize_allowing_boron_cage` if anyone wants it closed.
+- **No stereo is carried on the cage itself.** Per §5b every cage-vertex chiral tag is cleared,
+  which is correct (RDKit cannot represent that shape, and trying corrupts memory) but does mean
+  a genuine cage-substitution diastereomer would not be distinguished by an `@` on the vertex.
+  Whether the cage bond graph plus the slot markers already separate such isomers is untested —
+  it would need a mirror-twin collision probe of the kind Y1 built, and this spike did not do one.
 
 ## 7. Ruled out, with evidence
 
