@@ -155,14 +155,19 @@ chemistry, and it is worth saying so plainly rather than counting them as wins.
 
 ## 5. Root-cause histogram over the 74
 
+All **74** are now audited (the first version of the probe reported 15 as "unparseable"
+purely because a carbonyl written `[C]#O` is a carbon radical no sanitize accepts — a probe
+limitation, since fixed, that would have read as 15 unexplained molecules).
+
 | cause | molecules | evidence |
 |---|---|---|
-| B — kekulize rescue destroys a bare aromatic C–H | **13** (all 13 auditable LOSS rows) | new aromatic `[c-]` present in the adapter fragment and absent from the OIN fragment, in 13/13 |
-| A — bare-symbol write/read asymmetry (aligner and/or `inline.py`) | **46** (all auditable GAIN rows) | adapter-implied count == reported generated count in 46/46; per-site traces close the delta exactly |
-| not yet audited (probe limitation, not a finding) | **15** | my re-parse helper cannot count fragments like `[C]#O`; the molecules are not exonerated, just unmeasured |
+| B — kekulize rescue destroys a bare aromatic C–H | **14** — every LOSS row | a new aromatic `[c-]` in the adapter fragment that is absent from the OIN fragment, in 14/14; and with the fix the adapter-implied count equals the input in exactly those 14 |
+| A — bare-symbol write/read asymmetry | **60** — every GAIN row | adapter-implied count == reported generated count in 60/60; per-site traces close each delta exactly |
 
-The 16 GAIN rows where the rescue *also* fires are still cause A: the rescue only ever
-*removes* hydrogen, so it cannot be the source of a net gain.
+The split is exactly the GAIN/LOSS split measured in §1 — 60 and 14 — which is the strongest
+evidence that the two causes are disjoint and that nothing in the class is unaccounted for.
+The GAIN rows where the rescue also fires are still cause A: the rescue only ever *removes*
+hydrogen, so it can never be the source of a net gain.
 
 **Neither cause is a generator defect.** Cause B lives in the generator's front-end SMILES
 preparation but is pure bookkeeping — it never reaches the 3D machinery. Cause A is an

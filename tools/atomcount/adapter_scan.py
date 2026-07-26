@@ -42,19 +42,35 @@ RESULTS = Path(
 
 
 def reparse(s):
+    """Parse a fragment for counting, never returning None for a real fragment.
+
+    Full sanitize, then no-kekulize sanitize, then a bare parse plus
+    ``UpdatePropertyCache(strict=False)``. The last tier matters: a carbonyl written
+    ``[C]#O`` is a carbon radical that no sanitize accepts, and the first version of this
+    probe reported 15 of the 74 molecules as "unparseable" purely because of it -- a probe
+    limitation that would otherwise read as 15 unexplained molecules.
+    """
     m = Chem.MolFromSmiles(s)
+    if m is not None:
+        return m
+    m = Chem.MolFromSmiles(s, sanitize=False)
     if m is None:
-        m = Chem.MolFromSmiles(s, sanitize=False)
-        if m is None:
-            return None
-        try:
-            Chem.SanitizeMol(
-                m,
-                sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE,
-            )
-        except Exception:
-            return None
-    return m
+        return None
+    try:
+        Chem.SanitizeMol(
+            m,
+            sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE,
+        )
+        return m
+    except Exception:
+        pass
+    m = Chem.MolFromSmiles(s, sanitize=False)
+    try:
+        m.UpdatePropertyCache(strict=False)
+        Chem.FastFindRings(m)
+        return m
+    except Exception:
+        return None
 
 
 def totals(m):
