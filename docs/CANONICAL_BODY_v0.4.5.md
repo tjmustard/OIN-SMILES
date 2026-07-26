@@ -201,3 +201,48 @@ Permuting its atom lines changes the emitted string **and** the comparison key:
   body is generally *not* equal to its own `canonical_fragment_body` — the acceptance
   predicate has to be applied to the pre-inline body, which is what
   `canonical_body_emit` guarantees by construction.
+- **`YOYBIY_comp_0`** is the one molecule the perception lever makes worse: for one
+  numbering the canonical valence walk lands on an all-single-bond perception of a
+  bis(pyridylamidine) ligand. The result is *usable*, so the `get_tmc_mol` retry does not
+  fire. Net effect of the lever on key stability is still −8 (9 fixed, 1 broken).
+
+## 6. API for other lanes
+
+```python
+from oinsmiles.oin.compare import canonical_fragment_body   # Lane 2's vertex colors
+canonical_fragment_body(slot_stripped_body_smiles) -> str   # "RAW:<input>" if unparseable
+
+from oinsmiles.oin.canonical_body import canonical_body     # same function, encoder-side name
+from oinsmiles.oin.canonical_body import canonical_body_emit  # the encoder seam
+canonical_body_emit(mol, donor_indices)
+    -> (smiles, {donor_index_in_mol: position_in_smiles}, reparsed_mol) | None
+```
+
+`canonical_body_emit` returns `None` — never a partial result — whenever any guard trips,
+and the caller must then keep its existing body for the **whole** fragment.
+
+## 7. Reproducing
+
+```bash
+cd <worktree>; export PYTHONPATH=$PWD/src
+V=/home/tjmustard/Documents/GitHub/OIN-SMILES/.venv/bin/python   # rdkit pinned; never uv sync
+
+# Step-0 attribution (seconds, generator-free)
+$V tools/diagnose_body_drift.py --bucket-report <capstone>/bucket_report.json
+
+# one arm of the canonicality A/B (5 shards, ~40 min under load)
+for i in 1 2 3 5 6; do OIN_CANONICAL_BODY=1 OIN_CANONICAL_PERCEPTION=1 \
+  $V tools/canonicality_probe.py --dataset <dataset> --n 300 --trials 3 \
+     --shard $i:6 --out <arm-dir> & done; wait
+
+# guards -- run the suite BOTH ways; the levers-off run cannot see either
+# regression fixed in §3
+$V -m unittest discover tests/unit
+OIN_CANONICAL_BODY=1 OIN_CANONICAL_PERCEPTION=1 $V -m unittest \
+    tests.unit.test_canonical_body tests.unit.test_encoder_perception \
+    tests.unit.test_aromatic_reencode tests.unit.test_regression_stability \
+    tests.unit.test_facmer_key tests.unit.test_chelate_locked_ez \
+    tests.unit.test_canonical_donor_binding tests.unit.test_encoder_robustness
+OIN_CANONICAL_BODY=1 OIN_CANONICAL_PERCEPTION=1 $V -m unittest \
+    tests.integration.test_isomer_divergence      # over-folding guard
+```
