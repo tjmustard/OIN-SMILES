@@ -168,7 +168,49 @@ off the iron, and the molecule is recorded as a successful round trip.**
    least alongside, closing the remaining failure classes — otherwise the closing work is graded
    by a ruler that credits detached ligands.
 
-## 5. Recommended fix
+## 5. BUILT — `src/oinsmiles/oin/coordination.py` (commit `5118f1ef`)
+
+The recommendation in §5.1 below has been **implemented and validated**. `coordination_report()`
+compares metal-contact multisets computed from **distances only** — no perception, no re-encode,
+and it consults **neither** bond graph, so it cannot be fooled the way the metric is.
+
+| | result |
+|---|---|
+| FLAG on the 61 known false positives | **55/61 = 90.2 %** |
+| false alarm on the 572 genuine passes | **21/572 = 3.7 %** |
+| cost | **2.2 ms/molecule** |
+
+Wired into `tools/test_dataset_roundtrip.py` as `report["coordination"]`, recorded *before* the key
+comparison returns so it is present on mismatches too. **A diagnostic, never a gate.** End-to-end
+through the real harness:
+
+```
+ADAMAT_comp_0    status=success  coordination.intact=True
+FIYHUT_comp_0    status=success  coordination.intact=False  Fe: lost {'C': 10} (10 -> 0)
+```
+
+FIYHUT still scores `success` — no gate changed — but the report now carries the evidence.
+
+**The `MARGINAL_BAND` refinement was forced by measurement.** A raw loss verdict flagged 45 genuine
+passes; 36 of those had a contact within 0.10 Å of the cutoff, the worst being η⁶ arenes (Ru 9→3,
+Cr 9→4) where a per-atom covalent criterion is stricter than the encoder's ring perception.
+Reporting a loss made *entirely* of boundary contacts as `boundary_only` rather than degraded cut
+false alarms 7.9 % → 3.7 % for one point of recall. FIYHUT is unaffected — 0.33 Å beyond cutoff is
+over 3× the band.
+
+**Two scope limits, measured and recorded in the module:**
+1. The verdict is **loss**-based, so gain-driven over-coordination is invisible — 4 of the 61
+   *gained* contacts (6→11, 7→12) and changed geometry tag without losing any. No threshold is
+   asserted, because a genuine pass in the same corpus gained 2 (Mo 6→8).
+2. **Same-count hapticity rearrangement** is invisible — OGARAP goes η³→η² with the carbon count
+   unchanged, which an aggregate per-element multiset cannot see.
+
+Together these account for 5 of the 6 misses. Closing them needs slot→atom correspondence, which is
+deliberately out of scope here (see the module docstring).
+
+---
+
+## 5.1 The recommendation, as originally written
 
 Add a **coordination-integrity check** to the harness, next to the existing key comparison, and
 record it per molecule rather than gating on it at first:
