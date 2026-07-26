@@ -27,6 +27,19 @@ on an empty input corpus or on 0 rows passing the predicate.
 Bands are fixed on the *selection* `elapsed_s`: **A** > 200 s, **B** 100-200 s,
 **C** < 100 s. `eta` flags a haptic OIN (`re.search(r"\{\d+[<>]\}", smiles_1)`).
 
+**What this predicate certifies, and what it does not.** `smiles_1 == smiles_2` is a
+**notation-level** guarantee: the two OIN *strings* are byte-identical. It does **not**
+certify that the generator reproduced the same conformer, nor that a full re-perception
+of the generated structure would still see the same coordination. A sibling v0.4.7 lane
+measured exactly this gap: `OIN_ACCEPT_SCORED` can accept a *different* conformer that
+happens to emit a byte-identical OIN string, and on 6 molecules a full re-perception of
+that generated structure no longer sees the haptic ligand as coordinated at all. This
+cohort's selection predicate — and the gate built on it — is deliberately notation-level
+(matching this project's own round-trip contract, `oin/compare.py`), and that is the
+correct contract for a *performance* wave whose job is "did the string change," not "is
+the chemistry still right." But a future reader should not read "byte-exact round trip"
+as a stronger, structure-level guarantee than it is.
+
 ## 2. Provisional cohort construction
 
 Built from the two available v0.4.5 result dirs (the live `results-v0.4.6-sweep` was
@@ -276,6 +289,12 @@ existing JSON" approach agree with an actual fresh re-run.
   against an independent oracle** — it was built from this project's own prior sweep
   output, not validated externally. A "gate passes" result means "unchanged since v0.4.5",
   not "was independently verified."
+- **The gate is notation-level, not structure-level** (see §1) — a sibling lane found
+  `OIN_ACCEPT_SCORED` can accept a different conformer under a byte-identical OIN string,
+  and on 6 molecules a full re-perception of the generated structure no longer sees the
+  haptic ligand as coordinated at all. A "PASS" on this gate means the string this lane
+  emits is unchanged; it does not mean the 3D structure behind it is. That is the correct,
+  deliberately-scoped contract for this performance wave, not a gap in this gate.
 - `tests/fixtures/BENVOG_comp_0.xyz` (one of the 61 ARM 1 fixtures) is a known slow
   encode — resonance search bounded by a CPU-time `RLIMIT_CPU` fallback (not wall-clock),
   so ARM 1's wall-clock runtime is load-dependent even though its byte-identity outcome
