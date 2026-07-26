@@ -6,6 +6,7 @@ from functools import lru_cache
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from ..oin.canonical_slots import derive_rotation_group
 from ..oin.winding import signed_circulation
 
 logger = logging.getLogger(__name__)
@@ -1596,27 +1597,36 @@ class OINDiscreteAligner:
         return signed_circulation(grp_coords, star_local_idx, axis_mol)
 
     def _brute_force_symmetries(self, vectors):
-        n = len(vectors)
-        valid = set()
-        steps = [0, 90, 120, 180, 240, 270]
-        for rx, ry, rz in itertools.product(steps, repeat=3):
-            R = Rotation.from_euler("xyz", [rx, ry, rz], degrees=True)
-            rot = R.apply(vectors)
-            perm = [-1] * n
-            matches = 0
+        """Proper-rotation vertex permutations of this coordination template.
 
-            # Check if this rotation maps the template to itself
-            # Each vector in 'rot' must match a vector in 'vectors'
+        v0.4.5 Lane 2: delegates to ``oin.canonical_slots.derive_rotation_group``, now the
+        single source of truth for the polyhedron rotation groups -- the encoder here, the
+        comparison key in ``compare.py`` and the canonical-slot post-pass all read one
+        table and one group derivation (open debt TD-005).
 
-            for i in range(n):
-                dists = np.linalg.norm(vectors - rot[i], axis=1)
-                best = np.argmin(dists)
-                if dists[best] < 0.1:
-                    perm[i] = best
-                    matches += 1
-            if matches == n:
-                valid.add(tuple(perm))
-        return sorted(list(valid))
+        This used to brute-force Euler triples from the fixed grid
+        ``[0, 90, 120, 180, 240, 270]``. That grid **cannot express a 72-degree five-fold
+        rotation**, so on PBP it found 2 of the 10 proper rotations and the encoder could
+        not canonicalize a pentagonal-bipyramidal equatorial labeling at all. Measured
+        against the derived group it agreed on the other 10 geometries and never invented
+        a non-rotation, so unifying is a no-op everywhere except PBP, where it is a fix.
+        ``tests/unit/test_canonical_slots.py`` pins both halves of that statement.
+
+        The name is kept because it is what the call site and the tests already say;
+        nothing is brute-forced any more.
+        """
+        key = tuple(tuple(np.round(np.asarray(v, dtype=float), 6)) for v in vectors)
+        return _cached_rotation_group(key)
+
+
+@lru_cache(maxsize=64)
+def _cached_rotation_group(vectors_key):
+    """``derive_rotation_group`` memoized on a rounded vertex tuple.
+
+    ``_permute_and_serialize`` asks for the group on every molecule, always for one of the
+    eleven fixed templates, so the derivation runs once per geometry per process.
+    """
+    return derive_rotation_group([list(v) for v in vectors_key])
 
 
 def classify_coordination_geometry(donor_vectors):

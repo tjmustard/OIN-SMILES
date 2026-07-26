@@ -922,6 +922,72 @@ def _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=False):
     return tmc_mol, xyz_coords
 
 
+def _canonical_pivot(candidates, coords, masses):
+    """Pick the PAI pivot atom by molecular content, never by input index (v0.4.5 Lane 2).
+
+    ``candidates`` are the atoms tied for maximum distance from the metal. The original
+    code broke that tie with ``np.min(candidates)`` -- the lowest *file* index -- so
+    permuting the XYZ lines could pivot on a different atom and rotate the molecule into a
+    different frame. That is not hypothetical: ``DUDREA_comp_0`` flips its geometry
+    classification ``[Y_SPY]`` -> ``[Y_TET]`` under pure renumbering.
+
+    The replacement key is invariant under BOTH transforms the canonicality probe applies:
+
+    * ``-mass`` -- an atomic property, so renumbering cannot move it;
+    * the sorted multiset of interatomic distances from the candidate to every atom --
+      a rigid-motion invariant, and a multiset, so it does not care about atom order.
+
+    Distances are rounded to 1e-6 A before sorting so float noise from the rotation cannot
+    reorder two coincident shells. A tie that survives both terms means the candidates are
+    genuinely geometrically equivalent, and pivoting on either lands in an equivalent
+    frame; ``min`` then keeps the choice deterministic within one presentation.
+    """
+    cand = [int(i) for i in candidates]
+    if len(cand) == 1:
+        return cand[0]
+    best_key, best_idx = None, cand[0]
+    for i in cand:
+        d = np.round(np.linalg.norm(coords - coords[i], axis=1), 6)
+        key = (-float(masses[i]), tuple(np.sort(d)))
+        if best_key is None or key < best_key:
+            best_key, best_idx = key, i
+    return best_idx
+
+
+def _canonical_z_sign(coords, masses):
+    """Order-invariant replacement for the ``sum(z_i * (i+1)**3)`` Z-sign metric.
+
+    Returns a scalar with the same contract as the original: negative means "flip z (and y,
+    to stay right-handed)". The PAI eigenvectors have an arbitrary sign, so *something*
+    must choose between ``+z`` and ``-z``; the original chose with a weight built from the
+    atom's position in the file, which makes the emitted frame -- and through it the
+    template fit and the slot assignment -- a function of the input ordering.
+
+    These are mass-weighted **odd** moments in z, tried in order and each a plain sum over
+    atoms, so they are unchanged by renumbering (addition commutes) and by rotation
+    (computed in the already-aligned frame). Odd is what matters: an even moment is equal
+    for ``z`` and ``-z`` and so decides nothing.
+
+    Falling through every term means every odd moment vanishes, i.e. the structure is
+    (to this resolution) mirror-symmetric across the xy-plane -- the two orientations are
+    genuinely equivalent, so returning 0.0 (no flip) is correct rather than a punt.
+    """
+    c = np.asarray(coords, dtype=float)
+    m = np.asarray(masses, dtype=float)
+    z = c[:, 2]
+    r_xy_sq = c[:, 0] ** 2 + c[:, 1] ** 2
+    for moment in (
+        float(np.sum(m * z)),
+        float(np.sum(m * z**3)),
+        float(np.sum(m * z * r_xy_sq)),
+        float(np.sum(z)),
+        float(np.sum(z**3)),
+    ):
+        if abs(moment) > 1e-6:
+            return moment
+    return 0.0
+
+
 def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     """Canonicalize the orientation of the molecule.
 
@@ -1007,9 +1073,17 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     tolerance = 1e-5
     candidates = np.where(dists_sq >= max_dist_sq - tolerance)[0]
 
-    # Tie-breaker: Choose lowest index among candidates
-    # Relies on input atom order being preserved (which it is)
-    pivot_idx = np.min(candidates)
+    if os.environ.get("OIN_CANONICAL_SLOTS"):
+        # v0.4.5 Lane 2: settle the tie on the CONTENT of the candidate atoms instead of
+        # their file position. `np.min(candidates)` below is a raw input atom index, so
+        # two presentations of one structure can pivot on different atoms and land in
+        # different frames -- measured live on DUDREA_comp_0, which changes its geometry
+        # classification [Y_SPY] -> [Y_TET] under pure renumbering.
+        pivot_idx = _canonical_pivot(candidates, new_coords, masses)
+    else:
+        # Tie-breaker: Choose lowest index among candidates
+        # Relies on input atom order being preserved (which it is)
+        pivot_idx = np.min(candidates)
 
     # Verify pivot is not on Z-axis (unlikely for max-dist atoms in 3D, unless linear)
     # If it is, we need to pick the next shell?
@@ -1037,9 +1111,16 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     # Metric: sum(z_i * (i+1)**3) - Super-linear weighting to break symmetry
     # If negative, flip Z (and Y to maintain right-hand).
 
-    z_moment_idx = 0.0
-    for i in range(len(canonical_coords)):
-        z_moment_idx += canonical_coords[i][2] * (i + 1) ** 3
+    if os.environ.get("OIN_CANONICAL_SLOTS"):
+        # v0.4.5 Lane 2: the (i+1)**3 weighting below is a function of the FILE, not the
+        # molecule -- renumber the atoms and the sign of the moment can flip, mirroring
+        # the whole frame in y/z. Replace it with mass-weighted odd moments in z, which
+        # are plain sums and therefore invariant under both renumbering and rotation.
+        z_moment_idx = _canonical_z_sign(canonical_coords, masses)
+    else:
+        z_moment_idx = 0.0
+        for i in range(len(canonical_coords)):
+            z_moment_idx += canonical_coords[i][2] * (i + 1) ** 3
 
     if z_moment_idx < 0:
         # Flip Z -> -Z
@@ -1553,8 +1634,27 @@ def get_oin_string(tmc_mol, xyz_coords):
     # Metal is Rank 0 (First).
 
     def get_input_order_key(item):
+        canonical = bool(os.environ.get("OIN_CANONICAL_SLOTS"))
         if item["is_metal"]:
-            return -1  # Metal first
+            # Metal first. Typed to match the branch below so the two never meet in one
+            # comparison: () sorts before every non-empty tuple, -1 before every index.
+            return () if canonical else -1
+
+        if canonical:
+            # v0.4.5 Lane 2: the raw XYZ atom index is the single most order-dependent
+            # quantity in the encoder, and it is used here only to separate fragments that
+            # already tied on mass, binder mass and body SMILES -- i.e. two copies of the
+            # same ligand. Replace it with WHERE each copy binds inside its own canonical
+            # SMILES (``s_idx``, read off ``_smilesAtomOutputOrder``), which distinguishes
+            # a ligand bound through one arm from the same ligand bound through another
+            # without ever consulting the file.
+            #
+            # A residual tie here is two fragments that are identical in body AND in donor
+            # position, i.e. genuinely interchangeable; ``list.sort`` is stable, and which
+            # of them ends up first cannot survive the canonical-slot post-pass, which
+            # re-derives fragment order from the canonical slot integers.
+            return tuple(sorted(b[3] for b in item.get("binding_atoms", [])))
+
         # Find min original index to ensure deterministic input order
         valid_indices = [atom_map_to_xyz.get(idx, idx) for idx in item["indices"]]
         return min(valid_indices) if valid_indices else float("inf")
@@ -1709,6 +1809,33 @@ def get_oin_string(tmc_mol, xyz_coords):
     from ..oin.inline import OINInlineHandler
 
     inline_oin = OINInlineHandler.generate_inline_string(sidecar_oin)
+
+    # v0.4.5 Lane 2 (opt-in, OIN_CANONICAL_SLOTS): make the {n} slot integers a graph
+    # invariant instead of a property of how the input XYZ was numbered.
+    #
+    # Deliberately a post-pass on the FINISHED inline string rather than a change inside
+    # _permute_and_serialize's lex-max loop. The inline string is exactly the
+    # representation compare._parse_vertex_colors reads, so the encoder and the comparison
+    # key canonicalize the same bytes through the same function and cannot drift apart --
+    # and the geometric fit, the eta RC1 content swap and the heading-atom tiers, all of
+    # which read item["slot"], run untouched beforehand. Default OFF -> byte-identical.
+    #
+    # DOWNSTREAM CONSUMERS (Lane 5 metal Delta/Lambda, Lane 6 metal-bound amine): this is
+    # where the canonical slot labeling is computed, and the way to ask for it is
+    #
+    #     from oinsmiles.oin.canonical_slots import canonical_slot_map
+    #     canonical_slot = canonical_slot_map(oin_string)[slot_in_that_string]
+    #
+    # on the string this function returns. That helper re-derives the same relabeling from
+    # the same bytes through the same `compare._parse_vertex_colors`, so it agrees with this
+    # post-pass by construction and is the IDENTITY once the lever is on -- a caller written
+    # against it is correct with the lever either way, and stays correct after promotion.
+    # Do NOT call `canonical_slot_permutation(geo, vcolor)` for that question; see its
+    # docstring warning (its tie-break is a property of the incoming labeling).
+    if os.environ.get("OIN_CANONICAL_SLOTS"):
+        from ..oin.canonical_slots import canonicalize_oin_slots
+
+        inline_oin = canonicalize_oin_slots(inline_oin)
 
     return inline_oin + _axial_suffix
 
