@@ -426,3 +426,40 @@ caller, which the current signature does not carry.
 The honest read: the lane has a working achirality test and a working pseudoscalar, neither of which
 is yet a Δ/Λ descriptor. Eighth refutation of this release, and the only one that invalidated the
 *input* rather than the method.
+
+---
+
+# One untried idea for the eta tail: REPAIR the winding, don't constrain the embed
+
+The eta tail's cost is a low acceptance rate — the embed seldom produces the requested ring face, so
+the loop runs toward `reject_budget` / `embed_time_budget` instead of exiting early. The obvious
+remedy is to make the embed produce the right face (constrained embedding, ring-face seeding), and
+that is *construction over selection*, for which this project already carries three negative results.
+
+**But there is a third option that is neither, and it has not been tried: post-hoc repair.** Take a
+conformer whose topology and geometry are already acceptable but whose eta ring is on the WRONG face,
+and rotate that ring to the requested face, then relax locally. The eta winding is a rotational
+degree of freedom about the metal–ring axis; flipping which face is presented is a bounded geometric
+edit, not a re-embed.
+
+Why this is not the refuted category: the three prior negative results are about *constructing* a
+geometry to satisfy a constraint from the start. This accepts whatever the embed produced and edits
+one degree of freedom afterwards — the same shape as the `invert_stereocenter` / `swap_donor` twin
+operators Lane 7 already built in `tools/injectivity/twin_operators.py`, which perform structural
+edits and then filter through the existing vdW clash gate rather than trusting the edit.
+
+What it would need, in order:
+
+1. measure the acceptance-rate distribution for eta molecules — how many attempts before the
+   requested face appears? **This is a COUNT, not a timing, so it is load-independent** and can be
+   taken while a sweep runs. Do not defer it for load reasons; that error was already made twice in
+   this release, in both directions.
+2. if the distribution is long-tailed, implement the ring-face rotation as a twin-operator-style
+   edit, gate it through `generator3d/clash.py`, and re-encode to confirm the winding actually
+   changed — never trust the edit.
+3. A/B on the eta subpopulation only, comparing attempts-to-acceptance rather than wall-clock.
+
+Recorded rather than built because step 1 has not been run, and this release contains eight
+hypotheses that looked obvious and died to precisely the measurement that got skipped. The idea's
+value is that it sits outside the category the project has already disproved — not that it is likely
+to work.
