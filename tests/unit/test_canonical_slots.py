@@ -401,5 +401,67 @@ class TestCanonicalSlotMap(unittest.TestCase):
         self.assertEqual(len(outs), 1)
 
 
+#: ``AGUKOD_comp_0``, the corpus case that pins the residual class. A COD ligand spans two
+#: cis vertices of a square plane; the drifted presentation differs ONLY in which alkene arm
+#: carries which slot integer. Bodies are byte-identical.
+_AGUKOD_A = (
+    "[Rh_SPL].[CH]{1}1=[CH]{1>}CC[CH]{0>}=[CH]{0}CC1"
+    ".CC(C)(C)c1cc2c(c(C(C)(C)C)c1)OC{2}N2c1ccccc1.[Cl]{3}"
+)
+_AGUKOD_B = (
+    "[Rh_SPL].[CH]{0}1=[CH]{0>}CC[CH]{1>}=[CH]{1}CC1"
+    ".CC(C)(C)c1cc2c(c(C(C)(C)C)c1)OC{2}N2c1ccccc1.[Cl]{3}"
+)
+
+
+class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
+    """Pins the measured LIMIT of this post-pass, so nobody claims it closed without a fix.
+
+    Measured over 150 corpus molecules (see ``docs/CANONICAL_SLOTS_v0.4.5.md`` section 7a):
+    **32/32** residual ``slot_renumber`` pairs have an *identical* colored-vertex map. The
+    post-pass derives its relabeling from that map alone, so it computes the identical
+    permutation for both strings and the difference survives it. That is not a bug in the
+    relabeling -- it is a limit of its input, and it means the lane's original acceptance
+    target (``slot_renumber -> ~0``) is not reachable at this seam.
+
+    Why the map is identical: ``compare._parse_vertex_colors`` colors *every* donor of a
+    ligand with that ligand's whole body and no chelate grouping, deliberately, so that a
+    swap between two same-colored donors is invisible -- which is what lets true conformers
+    collapse in the comparison KEY while fac/mer stay distinct. Correct for a key;
+    insufficient for an encoder, which must decide which donor atom holds which integer.
+
+    The transposition relating the two is also NOT in the geometry's rotation group (SPL's
+    D4 contains ``(1 3)``, ``(0 2)``, ``(0 1)(2 3)`` but not ``(0 1)`` alone), so widening
+    the group-theoretic fold cannot reach it either -- and widening it is exactly the
+    over-folding this lane must not do.
+
+    When a fix lands (fold same-symmetry-class, same-color donors WITHIN one fragment, with
+    its own Delta/Lambda guards), this test should be inverted, not deleted.
+    """
+
+    def test_the_two_presentations_have_an_identical_vertex_coloring(self):
+        _m1, g1, c1 = _parse_vertex_colors(normalize_oin_for_comparison(_AGUKOD_A))
+        _m2, g2, c2 = _parse_vertex_colors(normalize_oin_for_comparison(_AGUKOD_B))
+        self.assertEqual(g1, g2)
+        self.assertEqual(c1, c2, "if these ever differ, the post-pass CAN reach this class")
+
+    def test_and_therefore_the_post_pass_cannot_converge_them(self):
+        self.assertNotEqual(
+            canonicalize_oin_slots(_AGUKOD_A),
+            canonicalize_oin_slots(_AGUKOD_B),
+            "the residual class is now reachable -- update section 7a and invert this test",
+        )
+
+    def test_the_relating_transposition_is_not_a_proper_rotation_of_the_square(self):
+        self.assertNotIn((1, 0, 2, 3), geometry_rotation_group("SPL"))
+
+    def test_but_the_comparison_key_folds_them_so_no_isomer_is_at_risk(self):
+        """Which is why the residual class costs 0 key-level defects (measured 18 -> 18)."""
+        self.assertEqual(
+            canonical_roundtrip_key(_AGUKOD_A),
+            canonical_roundtrip_key(_AGUKOD_B),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

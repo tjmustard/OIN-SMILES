@@ -1780,6 +1780,19 @@ def get_oin_string(tmc_mol, xyz_coords):
     # key canonicalize the same bytes through the same function and cannot drift apart --
     # and the geometric fit, the eta RC1 content swap and the heading-atom tiers, all of
     # which read item["slot"], run untouched beforehand. Default OFF -> byte-identical.
+    #
+    # DOWNSTREAM CONSUMERS (Lane 5 metal Delta/Lambda, Lane 6 metal-bound amine): this is
+    # where the canonical slot labeling is computed, and the way to ask for it is
+    #
+    #     from oinsmiles.oin.canonical_slots import canonical_slot_map
+    #     canonical_slot = canonical_slot_map(oin_string)[slot_in_that_string]
+    #
+    # on the string this function returns. That helper re-derives the same relabeling from
+    # the same bytes through the same `compare._parse_vertex_colors`, so it agrees with this
+    # post-pass by construction and is the IDENTITY once the lever is on -- a caller written
+    # against it is correct with the lever either way, and stays correct after promotion.
+    # Do NOT call `canonical_slot_permutation(geo, vcolor)` for that question; see its
+    # docstring warning (its tie-break is a property of the incoming labeling).
     if os.environ.get("OIN_CANONICAL_SLOTS"):
         from ..oin.canonical_slots import canonicalize_oin_slots
 
