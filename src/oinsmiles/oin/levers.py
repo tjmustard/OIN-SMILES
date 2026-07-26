@@ -55,6 +55,18 @@ import os
 #: 14 loud honest failures, so a headline pass rate can move either way. Promoted here because a
 #: notation that emits nothing for 34 molecules is worse than one that fails audibly for 14, and
 #: because correctness is the point of a lossless notation.
+#:
+#: ⚠ A THIRD cost, measured 2026-07-26 and missing from the original pricing: the 34 molecules do
+#: not GENERATE. Sample of 10 (docs/BORON_CAGE_v0.4.5.md §10, tools/boron_gen_times.jsonl): 0/10
+#: produce a 3D structure, 3 fail instantly on an unsupported geometry code, and 6 burn the entire
+#: generation cap producing nothing. XIQKOY_comp_0 is the two-point proof -- lever OFF it fails in
+#: 0.87s with UncoordinatedFragmentError on a disconnected cage fragment; lever ON it encodes a
+#: correct coordinated B10 cage and then runs past 340s. So the promotion moves this class from
+#: failing INSTANTLY to failing SLOWLY: ~34 molecules x up to the 300s budget, roughly 2.8 CPU-hours
+#: added per full sweep for zero additional passes. Still the right call -- the 34/34 encoder table
+#: is real and a right-graph loud failure beats a wrong-graph silent pass -- but anyone reading
+#: "34 now encode and round-trip" should know that "round-trip" there is NOTATION-level, and that
+#: assembling a polyhedral borane cage is an open generator3d problem.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",

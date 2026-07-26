@@ -2,8 +2,15 @@
 
 Spike verdict on the largest declared "permanent ceiling" of the `encode_fail` triage:
 **34 of 48 `encode_fail` molecules are boron/carborane cages, documented as permanently
-unfixable.** They are not. All 34 now encode and round-trip behind `OIN_BORON_CAGE`
-(default OFF).
+unfixable.** They are not. All 34 now encode, and re-encode consistently, behind
+`OIN_BORON_CAGE` (promoted default-ON in v0.4.6).
+
+> ⚠ **"round-trip" in this document means the NOTATION round trip, not the pipeline one.**
+> Every check in §5's 34/34 table is encoder-side — encodes, byte-identical repeat encode,
+> fragments re-parse, atom and bond multisets, key computable, key stable. **Not one invokes
+> the 3D generator.** The original summary line here read "encode and round-trip", which a
+> reader takes as OIN → XYZ → OIN; that was never measured, so the wording is corrected.
+> §9 measures the pipeline arm. It is a runtime **cost**, not a win.
 
 ---
 
@@ -449,10 +456,78 @@ charge (currently 0) is a decision nobody has made. Neither blocks a canonical, 
 hash, which is what OIN actually requires.
 
 **Addressable count for the `encode_fail` cohort: 34 of 48 move from "permanent ceiling" to
-"encodes and round-trips behind a default-OFF lever."** Combined with §7 of
+"encodes, and re-encodes consistently, behind a lever."** Combined with §7 of
 `ENCODE_FAIL_v0.4.5.md` (4 already work, 1 fixed, 3 deferred, 7 timeout-bound), the
-"confirmed unfixable" row of that table is now **0**.
+"confirmed unfixable" row of that table is now **0** — *for encoding*.
 
 And the correct total is **48 molecules, not 34**: the 34 loud failures plus the 14 silent ones
-from §5a, all 48 now encoding and round-tripping (34/34 and 14/14 `ROUNDTRIP_OK`). The 14 are
-the more interesting half, because they were being counted as *successes*.
+from §5a, all 48 now encoding and notation-round-tripping (34/34 and 14/14 `ROUNDTRIP_OK`).
+The 14 are the more interesting half, because they were being counted as *successes*.
+
+⚠ Read §10 before quoting any of this as a round-trip result. Encoding was the ceiling this
+spike set out to break, and it broke it. The **generator** is a separate ceiling, it was not
+measured here, and it is not passing.
+
+---
+
+## 10. The pipeline arm, measured (2026-07-26) — the lever's unpriced runtime cost
+
+§5's table is nine encoder-side checks. This is the arm nobody ran: does a boron molecule that
+now *encodes* also **generate a 3D structure**? Sample of 10 of the 34, `optimizer=None`,
+`ensemble_size=1`, generation cap 60 s (`scratchpad/boron_gen_times.jsonl`):
+
+| outcome | n | detail |
+|---|---|---|
+| instant, loud failure | 3 | `ValueError: Geometry code 'NON' not supported by MetalloGen mapping` at 0.00–0.01 s |
+| **burned the whole cap, produced nothing** | 6 | 60.7 / 62.4 / 63.3 / 64.1 / 95.4 / 137.9 s, all `failed to generate any conformers via OIN-direct assembly` |
+| produced a structure | **0** | — |
+
+**0 of 10 produce a 3D structure.** So the promotion does not move these molecules from fail to
+pass; it moves them **from failing instantly to failing slowly.**
+
+`XIQKOY_comp_0` is the clean two-point demonstration, same molecule, one lever:
+
+| `OIN_BORON_CAGE` | encode | generate | total |
+|---|---|---|---|
+| `0` | 0.86 s → OIN keeps the cage as a **disconnected** fragment | `UncoordinatedFragmentError` in **0.01 s** | **0.87 s** |
+| `1` | 1.12 s → OIN is a correct, fully-coordinated B₁₀ cage (5 slots) | never returns | **>340 s** |
+
+The lever is doing its job perfectly: with it on, the encoder emits a *better* string — a
+genuinely coordinated closo-borane cage instead of an amputated fragment. The generator then
+cannot assemble that cage, and it does not fail fast; it spends the entire per-molecule budget
+discovering this.
+
+### Why this matters beyond boron
+
+1. **It works directly against the <30 s per-molecule goal.** At the sweep's 300 s budget, 34
+   molecules that previously cost ~1 s now cost up to 300 s each — roughly **2.8 CPU-hours
+   added to a full sweep for zero additional passes.** `levers.py` prices the promotion at "14
+   molecules move from scored-passing to failing"; the runtime line was missing, and it is now
+   in that entry.
+2. **`timeout` is not a hard bound.** Every capped molecule overran: 60 s requested, 60.7–137.9 s
+   spent (GOHWOQ 2.3×). `embed_time_budget=self.timeout` bounds the embed attempt loop, not the
+   OIN-direct assembly path around it. What actually enforces the budget in a sweep is the
+   harness's per-molecule SIGKILL subprocess — so **any timing measured without that watchdog
+   understates the tail**, and any caller relying on `timeout` as a wall-clock guarantee is
+   wrong.
+3. **This does not argue for reverting the promotion.** A notation that describes the right
+   molecule and fails loudly in the generator is still better than one that silently describes
+   the wrong graph (§5a's 14). The honest framing is: `OIN_BORON_CAGE` fixed the **encoder**
+   ceiling and exposed a **generator** ceiling that was previously hidden behind an encode
+   failure. Assembling a polyhedral borane cage from m-SMILES is the open problem, and it is a
+   generator3d problem, not a notation one.
+
+**Reproduce:**
+
+```bash
+V=.venv/bin/python; export PYTHONPATH=$PWD/src
+# the two-point demonstration
+for v in 0 1; do OIN_BORON_CAGE=$v timeout 340 $V -u -c "
+import sys,time; from oinsmiles import XYZToSMILES
+from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as G
+t=time.monotonic(); o=XYZToSMILES().convert(sys.argv[1]); print('encode',round(time.monotonic()-t,2),o)
+t=time.monotonic()
+try: G(optimizer=None,ensemble_size=1,timeout=300,ff_params=None).generate(o); print('gen ok')
+except Exception as e: print('gen fail',round(time.monotonic()-t,2),type(e).__name__)
+" tmCAT-tmPHOTO_xyz_dataset/cat/XIQKOY_comp_0.xyz; done
+```
