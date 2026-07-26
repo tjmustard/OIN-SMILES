@@ -1971,8 +1971,13 @@ class MetalloGenAdapter:
                 _via = f"OIN-direct assembly (geometry {getattr(parsed, 'geo_code', None)!r})"
             else:
                 _via = f"m-SMILES {msmiles!r}"
+            # Keep the substrings "MetalloGen failed" AND "failed to generate any conformers":
+            # tools/classify_failures.py (-> "no_conformers") and tools/triage_hard_fails.py both
+            # key on them, so this message is a de-facto INTERFACE. An earlier reword to
+            # "produced no conformers via ..." silently stopped both classifiers matching, which
+            # would have mis-bucketed this whole population in the next sweep triage.
             raise ValueError(
-                f"MetalloGen produced no conformers via {_via}; "
+                f"MetalloGen failed to generate any conformers via {_via}; "
                 f"OIN={getattr(parsed, 'original_oin', None)!r}, pool={pool_n}, "
                 f"timeout={self.timeout}s"
             )

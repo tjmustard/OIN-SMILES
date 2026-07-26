@@ -38,7 +38,8 @@ orientation-invariance was already sound and is preserved.
 
 **The key-instability number is the one that matters most.** The comparison key is the harness's
 acceptance predicate and the basis of every accuracy figure this project reports. It goes from
-unstable on **1 molecule in 5** to **1 in 25**.
+unstable on **1 molecule in 5** to **1 in 19**.  
+*(Corrected: an earlier revision said "1 in 25". 16 unstable of 298 is 1 in 18.6, so ~1 in 19. `docs/CANONICAL_OIN_v0.4.5.md` already carried the correct figure.)*
 
 ### Why `slot_renumber` rising is not a regression
 
@@ -115,7 +116,7 @@ generator throughput, not the notation, is the dominant accuracy lever.
 What it buys is that the number becomes **meaningful**. Before these levers, 13% of molecules
 encoded a different absolute stereochemistry depending on the input file's atom order, and the key
 moved for 1 in 5 — so "round-trip success" was partly a property of how the XYZ happened to be
-numbered. That is now 1 in 25.
+numbered. That is now 1 in 19 (16 of 298).
 
 ---
 

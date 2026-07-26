@@ -263,7 +263,7 @@ def generate_3d_structures(
             metal_complex = om.get_om_from_modified_smiles(m_smiles)
         except Exception as e:
             logger.debug(f"Failed to parse m-SMILES: {e}")
-        return []
+            return []
 
     clean_ff_params = {
         k: v

@@ -31,7 +31,7 @@ plain ``MolToSmiles``.
 
 from __future__ import annotations
 
-import os
+from .levers import lever_enabled as _lever_enabled
 
 try:
     from rdkit import Chem
@@ -42,11 +42,18 @@ __all__ = ["h_faithful_smiles", "hydrogen_faithfulness_enabled"]
 
 
 def hydrogen_faithfulness_enabled() -> bool:
-    """True when the ``OIN_H_FAITHFUL`` lever is set.
+    """True when the ``OIN_H_FAITHFUL`` lever is enabled.
+
+    Routed through the central registry, so ``OIN_H_FAITHFUL=0`` DISABLES it. The bare
+    ``bool(os.environ.get(...))`` this replaced did the opposite -- ``"0"`` is a non-empty string,
+    so opting out the obvious way switched the repair ON. This site was MISSED by the v0.4.5
+    migration that fixed locked_donor, OIN_BORON_CAGE (five sites) and OIN_RESCUE_STUCK_RING, and
+    it was missed again by ``test_levers.py::TestNoTestUnsetsAPromotedLever`` because that lint
+    scans ``tests/unit/test_*.py`` only -- it cannot see a truthiness read in ``src/``.
 
     Read on every call rather than cached at import, so a test can toggle it.
     """
-    return bool(os.environ.get("OIN_H_FAITHFUL"))
+    return _lever_enabled("OIN_H_FAITHFUL")
 
 
 def _reparse(smiles: str):
