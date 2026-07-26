@@ -359,7 +359,7 @@ are over-cap; only the ones whose per-candidate cost is survivable actually bene
 ## Open, not chased — and one lead that looks better than what this lane shipped
 
 **The over-cap branch does not merely cap the search; it disables the heuristic that makes the
-search succeed.** Measuring 14 sub-cap molecules to confirm the by-construction claim produced an
+search succeed.** Measuring sub-cap molecules to confirm the by-construction claim produced an
 unplanned observation: a sub-cap ligand examines **3 to 8 candidates** before finding a valid
 Lewis structure — never dozens, let alone thousands. That is `_ordered_valences`, the O/N/C/P/S
 grouping heuristic, doing its job: it puts chemically sensible assignments at the front.
