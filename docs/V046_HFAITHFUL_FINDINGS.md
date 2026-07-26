@@ -526,3 +526,34 @@ before a 15 h one, given how many assumptions in this release turned out false.
 
 Do NOT retrofit this onto the currently running sweep; it needs a code change the running processes
 have already imported past.
+
+## The eta telemetry measurement RAN, and returned a null result
+
+Cohort: 10 eta + 10 non-eta molecules, size-matched to 50–120 atoms (the band where the eta penalty
+is 3–6×), run with `OIN_TELEMETRY=1` through the newly instrumented harness.
+
+**Result: telemetry captured on 16/16 completed molecules, and NO degradation site fired for either
+group.** `adapter.early_exit_hit` / `early_exit_miss` — the counters I had called "the discriminating
+signal, already in the code" — are both zero.
+
+**Why: `_select_by_geometry(..., early_exit=False)` is the default in both signatures** (adapter
+lines ~1443 and ~1678), so unless a caller passes it explicitly that block never executes and the
+counters never fire. So "the signal already exists, it just needs collecting" was **wrong** — the
+site is unreachable on this path as configured. Fourth wrong turn on this one item.
+
+What the null result *is* worth: **the eta penalty is not a degradation path.** None of the
+generator's instrumented fallbacks fire for eta molecules any more than for size-matched non-eta
+ones, which means the extra 3–6× is being spent in *ordinary* embed / relax / selection work rather
+than in a retry or recovery branch. That is consistent with cost-per-attempt, but by **absence of
+evidence** rather than by measurement, so it should not be quoted as a positive finding.
+
+What would actually settle it, stated without the confidence I had before:
+1. add an explicit attempt counter to `generator3d`'s fill loop (not a degradation site — a plain
+   counter incremented per embed attempt), and log it per molecule;
+2. re-run this same size-matched cohort;
+3. flat attempts across eta / non-eta ⇒ cost-per-attempt (profiling target); higher attempts for eta
+   ⇒ acceptance-limited.
+
+**What IS confirmed:** the harness telemetry plumbing works end to end in a real sweep — captured on
+16/16, absent when the env var is unset. That part is reusable for step 1 above and cost nothing to
+verify.
