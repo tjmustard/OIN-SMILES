@@ -150,6 +150,25 @@ _HELD_OFF = {
         "one molecule (YIYGAP, where both predicates fire at index 0) already shows the gap is "
         "molecule-dependent."
     ),
+    "OIN_ATTACH_CHECK": (
+        "OIN_ACCEPT_SCORED's missing safety condition -- 'accept the first conformer the score "
+        "credits THAT STILL HAS ITS LIGANDS ATTACHED'. Coordinate-only: every coordination SITE "
+        "the generator claims must retain at least one atom inside bonding distance, measured on "
+        "_get_tmc_mol_impl's own donor set (xyz2AC_obabel tolerance 0.5, THEN the "
+        "aromatic-ring-carbon filter). It NEVER reads a bond object as evidence of attachment -- "
+        "a detached ligand keeps its bond, so any GetBonds()-based check certifies exactly what "
+        "it exists to catch. Falsified before it was built (docs/ATTACH_CHECK_v0.4.7.md §1) on 21 "
+        "molecules / 40 accepted conformers in BOTH arms: separates 7 of the 8 known indep "
+        "regressions with 0 false positives over 22 round-tripping conformers. The two predicates "
+        "the promote lane proposed BOTH fail -- count-based wrongly rejects 11 of 22, set-based 3 "
+        "-- because the raw donor-ATOM count is not conserved against the encoder's perception "
+        "even on good structures (MEDZUR claims 10, the coordinate path perceives 7, and it "
+        "round-trips). Known residual, ship it honestly: POVPIA is NOT caught (metal sphere "
+        "intact; a hydrogen detaches and C-N reads as C=N), so this is 7/8, never 8/8. Cost 7-81 "
+        "ms/conformer against the 48-57 s strict test it replaces. Held OFF because it is only "
+        "meaningful WITH OIN_ACCEPT_SCORED, which is itself held off -- promote the pair or "
+        "neither; see docs/ATTACH_CHECK_v0.4.7.md §3 for the re-run gate scorecard."
+    ),
     "OIN_ETA_EARLY_EXIT": (
         "lets an ETA molecule short-circuit the conformer pool on the winding criterion that "
         "actually judges it. MEASURED (pool.attempts_spent): Ferrocene "

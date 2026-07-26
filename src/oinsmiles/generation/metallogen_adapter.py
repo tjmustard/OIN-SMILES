@@ -26,6 +26,7 @@ from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from ..oin.levers import lever_enabled
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
 from . import _telemetry
+from .attach_check import conformer_ligands_attached
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
 
@@ -1409,8 +1410,16 @@ def _reencode_key_matches(
         #     a required arm of any promotion A/B, alongside pass-rate and runtime.
         # A `fast is None` (perception failed) still falls through to step 2 rather than
         # accepting blind -- an unperceivable conformer is not a scored success.
+        # OIN_ATTACH_CHECK (v0.4.7, L5-attach): the lever's missing safety condition --
+        # "accept the first conformer the score credits THAT STILL HAS ITS LIGANDS ATTACHED."
+        # Only reachable on the lever's own branch, so with OIN_ACCEPT_SCORED off this is dead
+        # code and the default path is byte-identical. See generation/attach_check.py for the
+        # predicate, its falsification (7/8 separation, 0/22 false positives) and its residual
+        # (POVPIA: metal sphere intact, defect is ligand-internal).
         if not independent_confirm and fast is not None:
             if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
+                return False
+            if lever_enabled("OIN_ATTACH_CHECK") and not conformer_ligands_attached(m):
                 return False
             return True
         if cache is not None and id(m) in cache:
