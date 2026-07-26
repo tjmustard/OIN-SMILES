@@ -1195,7 +1195,7 @@ def _reencode_oin(mol):
                 pass
 
 
-def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False):
+def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False, cache=None):
     """True when conformer ``m`` INDEPENDENTLY re-encodes to ``target_key`` (SL1 accept stamp).
 
     The honest round-trip acceptance test for the generate-until-key-exact early-exit
@@ -1213,6 +1213,20 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
 
     When ``require_no_stretch`` (i.e. ``clash.STRETCHED_BOND_ENABLED``) is set, a conformer that
     round-trips but carries any stretched bond is rejected. Returns ``False`` on any failure.
+
+    ``cache``: optional dict, keyed on ``id(m)``, memoizing the expensive step-2 re-encode
+    (measured 48-57s per call on an eta/haptic conformer -- a full ``XYZToSMILES().convert()``
+    round trip). This function is called on the SAME mol object from two sites that can both
+    run within one ``MetalloGenAdapter.generate()`` call: the pool-fill loop's ``accept_fn``
+    (``generator3d/__init__.py``) and ``_select_by_geometry_impl``'s own early-exit re-scan
+    below. Every mol reaching the second site already had this exact predicate evaluated once
+    at the first (a mol only skips that first test when it comes from the untested
+    ``stereo_rejects`` fallback, or when ``accept_fn`` itself was never constructed -- both
+    leave no cache entry, so the lookup simply misses and this recomputes exactly as before).
+    ``m``'s geometry is immutable between the two sites, so a cache hit reproduces the prior
+    result byte-for-byte; this changes only which of two call sites pays the cost, never the
+    verdict. Default ``None`` -> no cache is consulted or written -> identical to pristine for
+    any caller that does not pass one.
     """
     try:
         if cmol is None:
@@ -1220,7 +1234,12 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
         fast = _reencode_oin_fast(cmol)
         if fast is not None and canonical_roundtrip_key(fast) != target_key:
             return False
-        full = _reencode_oin(m)
+        if cache is not None and id(m) in cache:
+            full = cache[id(m)]
+        else:
+            full = _reencode_oin(m)
+            if cache is not None:
+                cache[id(m)] = full
         if full is None or canonical_roundtrip_key(full) != target_key:
             return False
         if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
@@ -1280,7 +1299,9 @@ def _axial_report_miss(n_candidates, n_blind, target_axial, *, key):
     _telemetry.record("adapter.axial_miss", n_blind=n_blind, **{key: n_candidates})
 
 
-def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False):
+def _select_by_geometry_impl(
+    parsed, mols, honor_winding=True, early_exit=False, reencode_cache=None
+):
     """Choose the conformer that best realizes the requested coordination geometry.
 
     Falls back to the lowest-energy conformer. Three levels of preference over
@@ -1307,6 +1328,11 @@ def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False)
     template, when no pooled conformer classifies as the target, or on any
     perception failure. The winding pass likewise falls back to the best-geometry
     (then lowest-energy) conformer when no winding is requested or none matches.
+
+    ``reencode_cache``: forwarded to :func:`_reencode_key_matches` (see its docstring) so the
+    early-exit re-scan below reuses whatever the pool-fill loop's ``accept_fn`` already
+    computed for a mol, instead of paying the expensive re-encode a second time. ``None``
+    (default) -> no caching, byte-identical to pristine.
     """
     from ..utils.oin_aligner import classify_and_fit
 
@@ -1334,7 +1360,12 @@ def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False)
                 if cmol is None:
                     continue
                 if _reencode_key_matches(
-                    parsed, m, target_key, cmol=cmol, require_no_stretch=require_no_stretch
+                    parsed,
+                    m,
+                    target_key,
+                    cmol=cmol,
+                    require_no_stretch=require_no_stretch,
+                    cache=reencode_cache,
                 ) and (target_axial is None or mol_axial_token(cmol) == target_axial):
                     logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
                     _telemetry.record("adapter.early_exit_hit")
@@ -1488,14 +1519,21 @@ def _verify_axial_honored(parsed, chosen_mol, cmol):
     _telemetry.record("adapter.axial_not_honored", requested=target, got=got)
 
 
-def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
+def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False, reencode_cache=None):
     """Conformer choice (see :func:`_select_by_geometry_impl`) plus an axial self-check.
 
     Kept as the module's entry point so every caller -- including the tests and
     ``tools/benchmark_generation.py``, which monkeypatch this name -- gets the verification.
+
+    ``reencode_cache``: forwarded as-is; see :func:`_select_by_geometry_impl` and
+    :func:`_reencode_key_matches`. ``None`` (default) -> byte-identical to pristine.
     """
     chosen, cmol = _select_by_geometry_impl(
-        parsed, mols, honor_winding=honor_winding, early_exit=early_exit
+        parsed,
+        mols,
+        honor_winding=honor_winding,
+        early_exit=early_exit,
+        reencode_cache=reencode_cache,
     )
     try:
         _verify_axial_honored(parsed, chosen, cmol)
@@ -1652,6 +1690,18 @@ class MetalloGenAdapter:
         else:
             early_exit = os.environ.get("OIN_EARLY_EXIT", "1") != "0"
         accept_fn = None
+        # Per-generation memo for the expensive step-2 re-encode inside
+        # _reencode_key_matches (a full XYZToSMILES().convert() round trip -- measured
+        # 48-57s/call on an eta/haptic conformer). accept_fn below and
+        # _select_by_geometry's own early-exit re-scan test the SAME mol objects against
+        # the SAME predicate: every mol _select_by_geometry sees either already ran
+        # through accept_fn during the pool-fill loop (a miss there is why the loop kept
+        # going) or arrived via the never-tested stereo_rejects fallback -- the cache
+        # handles both correctly (a genuine miss just recomputes once, same as before).
+        # Fresh dict per generate() call -- no cross-molecule staleness, same pattern as
+        # generator3d's alt_cache/PuLP memos. Harmless (empty, unused) when early_exit is
+        # off, since accept_fn is never built and nothing ever writes to it.
+        _reencode_cache: dict = {}
         if early_exit:
             try:
                 _target_key = canonical_roundtrip_key(getattr(parsed, "original_oin", "") or "")
@@ -1668,11 +1718,19 @@ class MetalloGenAdapter:
                 # a no-op for every OIN encoded without the flag.
                 _target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
 
-                def accept_fn(mg_mol, _pk=_target_key, _rns=_require_no_stretch, _ax=_target_axial):
+                def accept_fn(
+                    mg_mol,
+                    _pk=_target_key,
+                    _rns=_require_no_stretch,
+                    _ax=_target_axial,
+                    _cache=_reencode_cache,
+                ):
                     if _ax is None:
                         # byte-identical to the pre-axial predicate for every OIN that
                         # carries no token -- i.e. everything, absent OIN_EMIT_AXIAL.
-                        return _reencode_key_matches(parsed, mg_mol, _pk, require_no_stretch=_rns)
+                        return _reencode_key_matches(
+                            parsed, mg_mol, _pk, require_no_stretch=_rns, cache=_cache
+                        )
                     # Perceive on the CONTRACT mol (raw pool conformers are unsanitized, so
                     # axial perception throws on them); build it once and share it with the
                     # key check rather than letting each build its own.
@@ -1681,7 +1739,7 @@ class MetalloGenAdapter:
                         return False
                     return (
                         _reencode_key_matches(
-                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns
+                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns, cache=_cache
                         )
                         and mol_axial_token(cmol) == _ax
                     )
@@ -1717,7 +1775,9 @@ class MetalloGenAdapter:
         # early-exit on, the accept-first pass inside also short-circuits to a key-exact
         # conformer (belt-and-suspenders with the engine's accept_fn: the returned pool may be
         # size 1 already, but a full-pool fallback still gets the honest accept-first pick).
-        chosen_mol, mol = _select_by_geometry(parsed, mols, early_exit=early_exit)
+        chosen_mol, mol = _select_by_geometry(
+            parsed, mols, early_exit=early_exit, reencode_cache=_reencode_cache
+        )
 
         xyz_str = get_xyz_string(chosen_mol)
         # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.
