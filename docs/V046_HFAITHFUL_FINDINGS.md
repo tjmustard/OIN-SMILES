@@ -620,3 +620,33 @@ Fifth wrong turn on this single item, and the counter caught it in one A/B. Sequ
 tempted to shortcut it: low-acceptance-rate → pool widening (refuted by early-exit-exists) →
 cost-per-attempt (inferred from a slope, refuted by the counter) → attempt-driven (correct) →
 selection-side predicate alignment (correct but ineffective) → **fill-loop accept_fn (untried)**.
+
+## STOP CONDITION on the fill-loop fix: find out WHY key equality fails first
+
+The named remaining fix is to add the eta-winding criterion to the `accept_fn` passed into
+`generate_3d_structures` — the predicate `_try_accept` consults per conformer, and the only one that
+can stop pool filling. Before implementing it, there is a soundness question that must be answered,
+and it is cheap:
+
+**Why does key equality never succeed for Ferrocene?** The pool runs to 32/32 because `accept_fn`
+never returns True, yet Ferrocene is a golden and round-trips via the winding branch of
+`_select_by_geometry`. So `canonical_roundtrip_key` equality is stricter than winding-match in some
+**other** dimension — slot labels, the `>` heading character, or connectivity.
+
+Until that dimension is identified, adding winding-match as an acceptance path is **not obviously
+sound**: it would accept conformers the key rejects for a reason nobody has named, and acceptance
+runs before any of the geometry scoring that the final selection's winding branch benefits from.
+`_select_by_geometry` applies its winding test to already-`scored` candidates; `accept_fn` would
+apply it to raw pool conformers. Those are not the same population.
+
+The measurement to take, in order:
+1. for Ferrocene, print the requested `canonical_roundtrip_key` beside the key of a pool conformer
+   that the winding branch *does* accept, and diff them. That names the strict dimension.
+2. if the difference is cosmetic (slot labelling, heading char), the winding path is safe to add to
+   `accept_fn` and the eta tail collapses from 32 attempts to ~1.
+3. if the difference is connectivity, do NOT add it — the widened pool is doing real work and the
+   runtime cost is the price of correctness.
+
+This is where the item genuinely stops: not for want of a fix, but because step 1 has not been run
+and the fix is unsound without it. Sixth attempt on this tail would otherwise be a guess about
+acceptance semantics, and five of five previous guesses here were wrong.
