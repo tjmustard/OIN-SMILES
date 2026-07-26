@@ -342,12 +342,19 @@ $V tools/valorder_encode_ab.py --dataset <dir> --mols JIQBET_comp_0,… \
 
 ## Suite and lint
 
-`discover tests/unit` at `0790946d`: **632 tests OK** (3 skipped, 3 expected failures) in 890 s.
-That is the `valsearch` baseline of **618** plus this lane's **14** tests, with **identical**
-skipped and expected-failure counts. A second full run covers the two later commits (the
-transition-metal guard added 2 more tests); the interval between them is confined to code inside
-`if over_cap:` that only executes with a lever on, plus a behaviour-preserving refactor.
-`uvx ruff@0.15.20 check` and `format --check` clean across `src`, `tools` and `tests`.
+Two full `discover tests/unit` runs, one per tree state, because the tree moved mid-run:
+
+| tree | tests | result | wall |
+|---|---|---|---|
+| `0790946d` (14 lane tests) | **632** | OK, 3 skipped, 3 expected failures | 890 s |
+| final, `7fd10555` (16 lane tests) | **634** | OK, 3 skipped, 3 expected failures | 975 s |
+
+632 = the `valsearch` baseline of **618** + 14; 634 = 618 + 16, the transition-metal guard having
+added two. **Skipped and expected-failure counts are identical in both runs and identical to the
+baseline**, which is the check that matters: a new xfail or skip is how a regression hides in a
+green suite. `tests/unit/test_regression_stability.py` is inside both runs and green on the
+default path. `uvx ruff@0.15.20 check` and `format --check` clean across `src`, `tools` and
+`tests`.
 
 Honest gap, same one the sibling lane recorded: **no pre-change baseline was run on this host.**
 The 618 figure is `valsearch`'s measurement on the branch this one is based on, and the evidence
