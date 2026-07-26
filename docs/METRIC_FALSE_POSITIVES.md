@@ -1,0 +1,193 @@
+# The success metric's false-positive rate — measured
+
+**9.6 % of harness-scored successes do not survive independent re-perception with their
+coordination intact. For haptic molecules it is 28.1 %.**
+
+Measured 2026-07-26 on `results-v0.4.5-rebaseline` (633 scored successes, generator-free).
+Tool: `tools/haptic_false_positive.py`. Data: `docs/metric_false_positives.json`.
+
+---
+
+## ELI5
+
+The project grades itself by turning a 3D structure back into a string and checking the string
+matches. But the grader asks the *generator* which atoms are bonded, instead of working it out
+from the coordinates. So if the generator builds a ferrocene whose two rings have drifted almost
+an ångström away from the iron, the generator still believes they are attached — and the grader
+believes the generator. The molecule is scored as a perfect round trip.
+
+We measured how often that happens. About 1 in 10 of all "successes", and **more than 1 in 4** of
+the sandwich-type (haptic) molecules, are structures whose coordination has actually fallen apart.
+
+This does not mean the notation is broken. It means the **ruler** is short, and every accuracy
+number the project has reported is measured with it.
+
+---
+
+## The shape of the measurement
+
+```
+   report says status == "success"
+              │
+              ├─ re-encode the INPUT xyz        with the CURRENT encoder → oin_in
+              └─ re-encode the STORED GENERATED xyz, same encoder        → oin_indep
+                    (full XYZToSMILES().convert -- bonds perceived from
+                     COORDINATES ALONE, blind to the generator's beliefs)
+              │
+              ▼
+        compare, and classify by WHAT changed -- not by whether the string changed
+              │
+     ┌────────┴─────────────────────────────────────────────┐
+     │ KEY_MATCH            565   independent re-perception agrees → genuine pass
+     │ KEY_DIFF_COORD_OK     13   string drifted, coordination intact → NOT charged
+     ├──────────────────────────────────────────────────────┤
+     │ GEO_DEGRADED          57 ┐                            │
+     │ HAPTIC_LOST            6 │ coordination NOT supported │ → FALSE POSITIVES
+     │ HAPTICITY_REDUCED      4 │ by the geometry            │    61 / 633 = 9.6%
+     │ DENTICITY_LOST         2 ┘                            │
+     └──────────────────────────────────────────────────────┘
+              │
+     concentrated exactly where predicted:
+       haptic inputs      48/171 = 28.1%
+       non-haptic inputs  13/462 =  2.8%     ← a 10x concentration
+```
+
+---
+
+## 1. Why this was worth measuring
+
+`docs/ACCEPT_SCORED_v0.4.7.md` §4.7 established the mechanism: `tools/test_dataset_roundtrip.py`
+scores a round trip with
+
+```python
+oin2_string = get_oin_string(mol_gen_bonded, xyz_coords)   # mol_gen_bonded = gen_result.mol
+```
+
+`gen_result.mol` carries the **generator's own bond graph**. A haptic ring that has drifted off the
+metal is still bonded *in that graph*, so the re-encode reproduces the input's coordination and the
+key matches. That document named the consequence and left it open:
+
+> *"Nobody currently knows the false-positive rate with the lever OFF."*
+
+That question outranks every lever in the release. A lever changes a few percent of runtime; this
+sets whether the reported accuracy **is** the accuracy. Chasing "100 % round-trip" on an instrument
+with an unmeasured false-positive rate is chasing a number that may not be real.
+
+## 2. Method, and the two confounds it avoids
+
+Both sides are re-encoded with the **current** encoder. The report's stored `smiles_1` is *not*
+used, so a difference cannot be a version artifact between the code that produced the sweep and the
+code reading it.
+
+Classification is by **what changed structurally**, not by whether the string changed. This matters
+because `[[reencode-vs-harness-smiles2]]` already showed this path inflates `structural` ~19× via
+harmless presentation drift (slot renumbering, fragment order). Charging that to the metric would
+have produced a large and completely wrong number. `KEY_DIFF_COORD_OK` isolates it: 13 molecules,
+not counted as false positives.
+
+The four charged classes are coordination failures:
+
+| class | test | n |
+|---|---|---|
+| `GEO_DEGRADED` | the `[El_GEO]` metal geometry tag changed | 57 |
+| `HAPTIC_LOST` | a haptic slot present in the input is absent | 6 |
+| `HAPTICITY_REDUCED` | a haptic slot survives but binds fewer atoms (η⁵→η²) | 4 |
+| `DENTICITY_LOST` | fewer distinct slots overall — a donor detached | 2 |
+
+`HAPTICITY_REDUCED` exists because the winding head `{n>}` and the slot number both survive a ring
+slip, so the slot-set checks cannot see it. Without it, four genuine failures read as clean.
+
+## 3. Results
+
+```
+scored successes measured : 633
+FALSE POSITIVES           : 61/633 = 9.6%
+  of HAPTIC inputs        : 48/171 = 28.1%
+  of NON-haptic inputs    : 13/462 =  2.8%
+```
+
+### 3.1 The `GEO_DEGRADED` transitions are coordination-number LOSS, not classifier noise
+
+The obvious objection is that the geometry classifier flipped between two similar polyhedra. It did
+not. Almost every transition **lowers the coordination number**:
+
+| transition | CN | n |
+|---|---|---|
+| TET → TPL | 4 → 3 | 13 |
+| TET → LIN | 4 → 2 | 11 |
+| TPL → LIN | 3 → 2 | 10 |
+| TPY → LIN | 5 → 2 | 3 |
+| SPY → LIN | 5 → 2 | 3 |
+| SPY → TPL | 5 → 3 | 2 |
+| OCT → TBP / TPL / SPL | 6 → 5 / 3 / 4 | 3 |
+| SPL → LIN, TBP → LIN, TBP → TPL, TPY → TPL, SPY → SPL | all lower | 5 |
+
+There is no CN-preserving reassignment in the whole table. Ligands are leaving.
+
+### 3.2 The haptic cases, with distances — the verification that settles it
+
+Perception near the covalent-radius + 0.45 Å cutoff can be marginal, so "the encoder no longer sees
+a bond" is not by itself proof of detachment. Measured metal–carbon distances:
+
+| molecule | metal | input M–C (nearest 10) | generated M–C | C within cutoff |
+|---|---|---|---|---|
+| **FIYHUT_comp_0** | Fe | **2.02 – 2.05 Å** | **2.84 – 2.96 Å** | **10 → 0** |
+| ATUROX_comp_0 | Zr | 2.48 – 2.61 Å | 2.91 – 3.47 Å | 10 → 2 |
+| FOJWOR_comp_0 | Hf | 2.45 – 2.53 Å | 2.46 – 3.27 Å | 10 → 6 |
+| XEVPEU_comp_0 | Ti | 2.13 – 2.48 Å | 2.53 – 2.94 Å | 7 → 4 |
+
+FIYHUT is decisive. Textbook ferrocene Fe–C is ≈ 2.05 Å, and the input matches it to 0.03 Å. The
+generated structure puts all ten ring carbons at **2.84–2.96 Å — roughly 0.85 Å too far**. That is
+not a threshold judgement; at 2.9 Å there is no Fe–C bond. **Both cyclopentadienyl rings have come
+off the iron, and the molecule is recorded as a successful round trip.**
+
+## 4. What this means
+
+1. **Reported accuracy is inflated, and the inflation is structured, not random.** It concentrates
+   10× on haptic molecules — which are ~23 % of the corpus and 35.6 % of generator CPU. Any figure
+   quoted for the haptic population should be read as **~72 % of its face value**.
+2. **The instrument cannot detect its own failure mode.** No existing sweep, bucket report, or
+   promotion gate will ever surface these, because they all consume `smiles_2`, which is computed
+   from the generator's bond graph. This is why the rate had to be measured out-of-band.
+3. **It is independent of `OIN_ACCEPT_SCORED`.** These 61 molecules are the **default** path.
+   The lever makes the population larger; it did not create it. The v0.4.7 lane's G2 result (indep
+   re-perception 15/20 → 7/20 with the lever on) and this 9.6 % baseline are the same phenomenon
+   measured from two directions.
+4. **It reframes the "100 % round-trip" goal.** The gap to 100 % is not only molecules that fail;
+   it includes molecules that *pass and should not*. Fixing the metric must come before, or at
+   least alongside, closing the remaining failure classes — otherwise the closing work is graded
+   by a ruler that credits detached ligands.
+
+## 5. Recommended fix
+
+Add a **coordination-integrity check** to the harness, next to the existing key comparison, and
+record it per molecule rather than gating on it at first:
+
+- for each slot in the input OIN, confirm the corresponding atom(s) in the **generated
+  coordinates** are within the covalent-radius contact criterion of the metal;
+- report hapticity per haptic slot (η-order in, η-order out).
+
+This is the same "cheap attachment check" assessed as feasible in `ACCEPT_SCORED_v0.4.7.md` §6
+(11–81 ms per molecule, 6–7 of 8 recoverable). This measurement is independent corroboration that
+it is worth building, and it supplies the corpus-wide baseline that proposal lacked: **9.6 %
+overall, 28.1 % haptic.**
+
+Record it as a diagnostic first, exactly as v0.4.4 did with RMSD. Gating on it immediately would
+move ~61 molecules from pass to fail in one step and make the change indistinguishable from a
+regression — the confound this project has already been caught by twice.
+
+## 6. Reproduce
+
+```bash
+export PYTHONPATH=$PWD/src; V=.venv/bin/python
+D=tmCAT-tmPHOTO_xyz_dataset/results-v0.4.5-rebaseline
+for i in 1 2 3; do
+  $V tools/haptic_false_positive.py --results-dir "$D" --shard $i:3 --json fp$i.json &
+done; wait
+# haptic subpopulation only
+$V tools/haptic_false_positive.py --results-dir "$D" --haptic-only
+```
+
+Generator-free: it reads stored `structures/*_generated.xyz` and runs no 3D generation, so it is
+unaffected by machine load and by the timeout confound that dogs every pass-rate comparison in
+this project.
