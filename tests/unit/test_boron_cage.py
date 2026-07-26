@@ -45,6 +45,13 @@ KIXXOF = FIXTURES / "KIXXOF_comp_0.xyz"
 #: invents a C=B double bond to balance the valences.
 VEJXOZ = FIXTURES / "VEJXOZ_comp_0.xyz"
 
+#: A boron-rich molecule with NO cage: an Ir boroxine, three borons in a B-O-B-O-B-O
+#: ring, zero B-B bonds. The end-to-end control for the motif gate.
+ASUVIV = FIXTURES / "ASUVIV_comp_0.xyz"
+#: An Fe complex carrying [BH3-] / [BH-] / borane groups -- boron at several
+#: coordination numbers, still no deltahedron.
+AROTAE = FIXTURES / "AROTAE_comp_0.xyz"
+
 LEVER = "OIN_BORON_CAGE"
 
 
@@ -238,14 +245,32 @@ class TestNonCageMoleculesUnaffected(_LeverMixin):
 
     GOLDENS = ["CisPlatin.xyz", "Ferrocene.xyz", "fac-Ir(ppy)3.xyz", "Cis-PtCl2(en).xyz"]
 
+    def _both_arms(self, path):
+        self.set_lever(False)
+        off = XYZToSMILES().convert(str(path))
+        self.set_lever(True)
+        on = XYZToSMILES().convert(str(path))
+        return off, on
+
     def test_goldens_byte_identical_across_the_lever(self):
         for name in self.GOLDENS:
-            path = str(FIXTURES / name)
-            self.set_lever(False)
-            off = XYZToSMILES().convert(path)
-            self.set_lever(True)
-            on = XYZToSMILES().convert(path)
+            off, on = self._both_arms(FIXTURES / name)
             self.assertEqual(off, on, f"{name} changed when OIN_BORON_CAGE was set")
+
+    def test_boron_rich_non_cage_molecules_byte_identical(self):
+        """The sharpest control: boron everywhere, no deltahedron, must not move.
+
+        A golden fixture has no boron at all, so it cannot show whether the gate is
+        the *motif* or merely the *element*. These two can. ASUVIV is a boroxine
+        (three borons, zero B-B bonds); AROTAE carries borohydride/borane groups at
+        several coordination numbers. Both are byte-identical across the lever, which
+        is what makes "scoped to the B-B-B triangle" a measurement rather than a
+        claim about the code.
+        """
+        for path in (ASUVIV, AROTAE):
+            off, on = self._both_arms(path)
+            self.assertTrue(off, f"{path.name} did not encode at all")
+            self.assertEqual(off, on, f"{path.name} changed when OIN_BORON_CAGE was set")
 
 
 if __name__ == "__main__":
