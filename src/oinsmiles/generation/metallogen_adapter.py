@@ -274,6 +274,22 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
                     # Bare chalcogen donor = anionic alkoxide / thiolate / oxo -> 0 H.
                     # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
                     strip = True
+                elif sym == "P":
+                    # Same argument as the N branch below, and for the same reason it is
+                    # exact rather than a heuristic: `replace_map` in oin/inline.py
+                    # de-brackets a binding atom only when the bracket content is a bare
+                    # organic-subset symbol, so `[PH]`/`[PH2]` keeps its bracket and takes
+                    # the explicit branch above. A BARE `P{n}` therefore always means 0 H.
+                    #
+                    # Without this branch a bare P donor keeps a phantom implicit H, and
+                    # the phantom only exists when perception gave the phosphorus valence
+                    # 4 (a phosphaalkene C=P, an ylide) -- RDKit then climbs to P's next
+                    # allowed valence, 5, with one hydrogen. A tertiary phosphine sits at
+                    # valence 3 with 0 implicit H already, so PPh3/PMe3/dppe are
+                    # untouched and this cannot move the many phosphine complexes that
+                    # already round-trip. MEGZIH_comp_0 (73 -> 74) is the phosphaalkene
+                    # case: `C=P{1}` re-read as `[PH]`.
+                    strip = heavy >= 1
                 elif sym == "N":
                     # A bare N with any heavy neighbour is a 0-H anionic X-type
                     # donor: amido, anilide, silylamide, azide, phosphinimide

@@ -221,9 +221,44 @@ the real harness in one session, with the lever as the **only** difference:
 
 `status: success` is the full contract, not an atom count: the canonical round-trip key
 matched, the RMSD mapping succeeded, *and* the atom count agreed. Passing: CIDDAU, FABPEG,
-HIKDIR, INENOF, JAPCOT, JOTJEK, KIKROO, KILQAZ, UQUXAG, XAJBIW. Still failing: `LOCGAL_comp_0`
-(+2) and `MEGZIH_comp_0` (+1) — the lever does not reach them and their cause is not yet
-diagnosed.
+HIKDIR, INENOF, JAPCOT, JOTJEK, KIKROO, KILQAZ, UQUXAG, XAJBIW.
+
+### The two residuals, diagnosed
+
+Both are genuine — the adapter-implied count is wrong for each in *both* arms (+2, +1), so
+neither is an artifact of `LOCGAL`'s 300 s timeout masking its gate.
+
+**`MEGZIH_comp_0` (+1) — a bare phosphorus donor had no strip branch. Now fixed.**
+The adapter's bare-donor reconciliation had branches for C, O/S and N and **none for P**, so a
+bare `P{n}` kept a phantom implicit H. Added one, on exactly the N branch's argument:
+`replace_map` de-brackets a binding atom only when the bracket content is a bare
+organic-subset symbol, so `[PH]`/`[PH2]` keeps its bracket and takes the explicit branch —
+therefore a bare `P{n}` always means 0 H. Exact, not a heuristic.
+
+The phantom only exists when perception gave the phosphorus valence 4 (a phosphaalkene `C=P`,
+an ylide) and RDKit climbed to P's next allowed valence, 5, with one hydrogen. A tertiary
+phosphine sits at valence 3 with 0 implicit H already, so PPh3/PMe3/dppe are untouched and the
+many phosphine complexes that already round-trip cannot move. Measured: 0/100 regressions.
+
+This one needs the lever **and** the branch together, and the reason is worth recording. With
+the lever off the encoder writes `[PH]{1}` — the phantom has been **promoted into an explicit
+bracket**, which the adapter is right to treat as authoritative, so nothing downstream can
+recover it. With the lever on the encoder keeps `[P]`, `replace_map` renders it `P{1}`, and the
+new branch strips it: **73 = input**.
+
+**`LOCGAL_comp_0` (+2) — still open.** A Ru allenylidene, `C{2}=C=C(c1ccccc1)c1ccccc1`. The
+donor carbon is bare with a double bond and **one** heavy neighbour, and the adapter's carbon
+branch only strips a non-aromatic sigma-carbon at `heavy >= 2`, so it keeps two phantom
+hydrogens. Not fixed here on purpose: a bare `C{n}=` with one heavy neighbour is genuinely
+ambiguous between a 0-H carbene/vinylidene and a `=CH2` methylene ligand, so resolving it is
+an OIN notation question like the nitride/ammine case, not a heuristic to guess at.
+
+### A methodology note that cost real time
+
+`tools/atomcount/adapter_scan.py` replays the OIN strings the **frozen sweep** recorded, so it
+is blind to encoder-side improvements — it kept reporting `MEGZIH_comp_0` at +1 after the fix,
+because the frozen string still carries the old encoder's `[PH]` phantom. Anything that
+changes the encoder has to be measured with `encode_adapter_scan.py`, which re-encodes.
 
 ### The measurement that saved the fix from being cosmetic
 
