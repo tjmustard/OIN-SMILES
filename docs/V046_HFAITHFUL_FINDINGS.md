@@ -331,3 +331,46 @@ about to add may already be there.**
 **The boron promotion now has no unmeasured risk.** What remains before it can be called an
 accuracy delta is arithmetic, not safety: the 5k sweep has to publish a clean v0.4.5 baseline to
 diff against on identical molecules.
+
+---
+
+# Lane 5, second measurement: the MAGNITUDE THRESHOLD is refuted
+
+The permutation-invariant chirality index (commit `c72fbc1b`) genuinely solved the ordering
+blocker — 6 random donor permutations give an identical value where the ordered descriptor flipped
+1 → −1. That part stands.
+
+But I also claimed "achirality falls out of the index rather than needing a planarity test", on the
+strength of two synthetic controls returning **exactly** `+0.000e+00` (a perfect square, an ideal
+octahedron). That claim is **wrong on real structures.** Re-measured with donors taken from
+perception rather than a distance cutoff — which fixes the donor-set half of blocker 2:
+
+| fixture | index |
+|---|---|
+| ZUMNEC — genuinely chiral Δ/Λ | **−4.807e-04** |
+| JEGKOW — achiral square planar, only puckered | **−3.287e-04** |
+| ideal square (synthetic) | +0.000e+00 |
+
+**The two real structures are the same order of magnitude, 1.5× apart.** Crystallographic pucker in
+an *achiral* complex produces a chirality index comparable to genuine helicity, so **no threshold
+separates them** and any `_CHIRALITY_EPS` is arbitrary. The exact-zero cancellation is a property
+of idealized coordinates only, and reading two clean synthetic controls as evidence of a general
+property is the same mistake as every other refutation in this release: **a measurement that only
+exercises the easy case confirmed a wrong belief.**
+
+## What Lane 5 now needs
+
+Not a better threshold. A **symmetry test**: does an improper operation map the complex onto itself
+within tolerance? That is point-group detection with a distortion tolerance, which is a real piece
+of work and the honest remaining scope of the lane.
+
+## Lane 5 status, precisely
+
+| property | state |
+|---|---|
+| permutation / relabelling invariance | **SOLVED** (index form, measured over 8 permutations) |
+| invariance under proper rotation | **PROVEN** |
+| inversion under reflection | **PROVEN** (exact negation) |
+| donor SET determination | **SOLVED** — take perception's metal-incident bonds, not a distance ratio |
+| chiral vs achiral DECISION | **OPEN** — needs symmetry detection, not a magnitude threshold |
+| wired to the emit path | **NO** — and it must not be until the decision above is sound |
