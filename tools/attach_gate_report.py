@@ -150,6 +150,31 @@ def main() -> int:
     if A is not None:
         compare("A default", A, "C lever+check", C, mols)
     compare("B lever only", B, "C lever+check", C, mols)
+
+    if A is not None:
+        # The question the whole lane turns on, per molecule: on the molecules the bare lever
+        # BROKE, does the check give the structure back, and what does it charge for it?
+        broke = [m for m in mols if A[m].get("indep_passed") and not B[m].get("indep_passed")]
+        if broke:
+            print(
+                f"\n{'=' * 78}\n  RECOVERY vs COST on the {len(broke)} molecules the bare lever "
+                f"broke\n{'=' * 78}"
+            )
+            print(
+                f"{'molecule':18s}{'A_ind':>6s}{'B_ind':>6s}{'C_ind':>6s}   "
+                f"{'A_s':>8s}{'B_s':>8s}{'C_s':>8s}   verdict"
+            )
+            rec = 0
+            for m in sorted(broke):
+                ci = C[m].get("indep_passed")
+                rec += bool(ci)
+                print(
+                    f"{m:18s}{str(A[m].get('indep_passed')):>6s}{str(B[m].get('indep_passed')):>6s}"
+                    f"{str(ci):>6s}   {str(A[m].get('elapsed_s')):>8s}"
+                    f"{str(B[m].get('elapsed_s')):>8s}{str(C[m].get('elapsed_s')):>8s}   "
+                    f"{'RECOVERED' if ci else 'still broken'}"
+                )
+            print(f"\n  recovered {rec}/{len(broke)}")
     return 0
 
 
