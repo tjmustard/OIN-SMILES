@@ -23,6 +23,7 @@ from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalv
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
+from ..oin.metal_config import parse_metal_config_token, token_for_mol
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -1480,6 +1481,12 @@ def _select_by_geometry_impl(
     # function stays byte-identical to pristine for them.
     target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
 
+    # The metal-centred Delta/Lambda helicity requested by the OIN, if any (Y1 P1). None for every
+    # OIN encoded without OIN_EMIT_METAL_CONFIG -- i.e. the whole corpus by default -- which
+    # disables the helicity-aware branch below by construction, so selection stays byte-identical
+    # to pristine. Same contract as target_axial above.
+    target_mc = parse_metal_config_token(getattr(parsed, "original_oin", None))
+
     # SL1 accept-first (opt-in, OIN_EARLY_EXIT / ff_params["early_exit"]): accept the first
     # conformer that INDEPENDENTLY re-encodes to the requested OIN's fac/mer key, short-
     # circuiting AHEAD of the geometry-classification gate below. The round-trip key is the
@@ -1498,14 +1505,24 @@ def _select_by_geometry_impl(
                 cmol = build_contract_mol(parsed, m)
                 if cmol is None:
                     continue
-                if _reencode_key_matches(
-                    parsed,
-                    m,
-                    target_key,
-                    cmol=cmol,
-                    require_no_stretch=require_no_stretch,
-                    cache=reencode_cache,
-                ) and (target_axial is None or mol_axial_token(cmol) == target_axial):
+                if (
+                    _reencode_key_matches(
+                        parsed,
+                        m,
+                        target_key,
+                        cmol=cmol,
+                        require_no_stretch=require_no_stretch,
+                        cache=reencode_cache,
+                    )
+                    and (target_axial is None or mol_axial_token(cmol) == target_axial)
+                    and (
+                        # Reproduce the requested Delta/Lambda, not merely the fac/mer key.
+                        # compare.py FOLDS |mc:| (_METAL_CONFIG_TOKEN_RE), so a key match says
+                        # nothing about helicity: accepting on the key alone would hand back
+                        # the wrong enantiomer while reporting success.
+                        target_mc is None or token_for_mol(cmol) == target_mc
+                    )
+                ):
                     logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
                     _telemetry.record("adapter.early_exit_hit")
                     return m, cmol
@@ -1904,8 +1921,20 @@ class MetalloGenAdapter:
                 metal_complex=prebuilt_complex,
             )
         if not mols:
+            # Name the assembly path that was actually used. `msmiles` is populated ONLY when
+            # direct assembly failed and we fell back (see the `if prebuilt_complex is None`
+            # above), so on the default OIN-direct path it is None -- and the old message
+            # interpolated it anyway, reporting "m-SMILES None" for every direct-path failure.
+            # All 19 molecules in this class read that way, which points a debugger at a phantom
+            # None in the m-SMILES builder instead of at the embed that actually came up empty.
+            if prebuilt_complex is not None:
+                _via = f"OIN-direct assembly (geometry {getattr(parsed, 'geo_code', None)!r})"
+            else:
+                _via = f"m-SMILES {msmiles!r}"
             raise ValueError(
-                f"MetalloGen failed to generate any conformers for m-SMILES {msmiles!r}"
+                f"MetalloGen produced no conformers via {_via}; "
+                f"OIN={getattr(parsed, 'original_oin', None)!r}, pool={pool_n}, "
+                f"timeout={self.timeout}s"
             )
 
         # Prefer the conformer whose re-perceived coordination geometry matches the

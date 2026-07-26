@@ -1380,6 +1380,21 @@ def get_oin_string(tmc_mol, xyz_coords):
         if _tok:
             _axial_suffix = f" |ax:{_tok}|"
 
+    # 0a. Opt-in metal-centred configuration token (Y1 P1: Delta/Lambda helicity). Computed HERE,
+    # beside the axial token and for the same reason: _align_to_pai below may REFLECT the
+    # coordinates, and a reflection inverts a chirality descriptor. Default OFF -> byte-identical.
+    #
+    # A trailing sidecar like |ax:|, so it moves no {n} slot marker and leaves [El_GEO] untouched.
+    # Held opt-in because it ADDS information the generator must reproduce -- promoting it
+    # turns a silent collapse of Delta/Lambda enantiomers into a loud round-trip failure.
+    _metal_config_suffix = ""
+    if lever_enabled("OIN_EMIT_METAL_CONFIG"):
+        from ..oin.metal_config import token_for_mol
+
+        _mc_tok = token_for_mol(tmc_mol)
+        if _mc_tok:
+            _metal_config_suffix = f" {_mc_tok}"
+
     # 0b. Opt-in metal-locked donor stereo (Y1 P3: the bound secondary amine, and the
     # trivalent P donor whose tag the Zone-A rule clears before Lane 8's restamp can
     # correct it). Eligibility is computed ONCE here, on the metal-present mol and its
@@ -2020,7 +2035,7 @@ def get_oin_string(tmc_mol, xyz_coords):
 
         inline_oin = canonicalize_oin_slots(inline_oin)
 
-    return inline_oin + _axial_suffix
+    return inline_oin + _axial_suffix + _metal_config_suffix
 
 
 # Re-export necessary components

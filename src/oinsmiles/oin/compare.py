@@ -70,7 +70,23 @@ def _parse_fragment(smiles: str):
     # to the order-dependent ``RAW:`` string. Without this, a cage fragment's
     # contribution to the key is the literal input SMILES, so two orderings of the
     # same cage get different keys and the key stops meaning what it claims.
-    if _lever_enabled("OIN_BORON_CAGE"):
+    #
+    # SCOPED TO FRAGMENTS THAT ACTUALLY CONTAIN BORON. Skipping SANITIZE_PROPERTIES is a
+    # valence-RULE bypass, and applying it to every fragment makes the lever change chemistry it
+    # was never justified on: ``C#O`` fails the valence check and NOTHING else, so an unscoped
+    # rung parses carbon monoxide -- among the commonest ligands in transition-metal chemistry --
+    # instead of letting it reach the ``RAW:`` fallback. Measured the moment OIN_BORON_CAGE was
+    # promoted to default-ON, as test_canonical_body::test_unparseable_body_gets_stable_raw_token
+    # failing with ``'C#O' != 'RAW:C#O'``.
+    #
+    # A fragment with no boron cannot be a deltahedral cage, so this guard costs the boron
+    # population nothing -- its 34 recovered molecules all contain B by construction -- while
+    # confining the bypass to the case it was measured on. Deliberately a cheap substring test
+    # rather than a parse: this runs before any mol exists, and boron's presence in the SMILES is
+    # a necessary condition for a cage. A false POSITIVE (a `B` inside e.g. `Br`) merely restores
+    # the previous unscoped behaviour for that one fragment, which is the lever's intent anyway;
+    # a false negative is impossible, since a cage cannot be written without a boron symbol.
+    if _lever_enabled("OIN_BORON_CAGE") and ("B" in smiles or "b" in smiles):
         for ops in (_NO_VALENCE, _NO_VALENCE_NO_KEKULIZE):
             retry = Chem.MolFromSmiles(smiles, sanitize=False)
             if retry is None:
@@ -86,6 +102,19 @@ def _parse_fragment(smiles: str):
 _METAL_STEREO_RE = re.compile(r"\[([A-Z][a-z]?)@[A-Z0-9]+_([A-Z]{3})\]")
 #: opt-in axial / atropisomer suffix ` |ax:+-|` (OIN_EMIT_AXIAL); folded out of the key.
 _AXIAL_TOKEN_RE = re.compile(r"\s*\|ax:[+\-]*\|")
+#: opt-in metal-centred Delta/Lambda suffix ` |mc:+|` (OIN_EMIT_METAL_CONFIG); folded out too.
+#:
+#: FOLDED, not compared, and deliberately so for now. The token is a NEW descriptor: the generator
+#: cannot yet reproduce a requested helicity, so comparing it would turn every emitting molecule
+#: into a round-trip failure the moment the lever is switched on -- converting a silent collapse
+#: into a loud one without fixing anything. Folding keeps lever-ON round trips honest about
+#: everything else while the generator side is built.
+#:
+#: ⚠ The fold must be REMOVED in the same commit that promotes OIN_EMIT_METAL_CONFIG, exactly as
+#: recorded for _AXIAL_TOKEN_RE. A key that folds an axis is not a valid acceptance predicate for
+#: that axis -- the Y2 lesson, and the reason P1 was a blind spot in the first place: the key has
+#: always folded metal stereo, so no round-trip measurement could ever have revealed the collapse.
+_METAL_CONFIG_TOKEN_RE = re.compile(r"\s*\|mc:[+\-]\|")
 
 
 def normalize_oin_for_comparison(oin_string: str) -> str:
@@ -127,6 +156,7 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     # harness is unaffected whether or not the emit flag is set. Y2 P2; see
     # docs/INJECTIVITY_Y2_FEASIBILITY.md.
     s = _AXIAL_TOKEN_RE.sub("", oin_string)
+    s = _METAL_CONFIG_TOKEN_RE.sub("", s)
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")

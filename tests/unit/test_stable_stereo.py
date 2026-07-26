@@ -314,14 +314,37 @@ class TestStableStereoIsCorrect(unittest.TestCase):
                 )
 
 
-class TestLeverIsOffByDefault(unittest.TestCase):
-    def test_unset_env_is_byte_identical_to_explicit_off(self):
+class TestLeverIsOnByDefault(unittest.TestCase):
+    """Renamed and inverted in v0.4.6. It used to be ``TestLeverIsOffByDefault``.
+
+    The old assertion was ``unset == explicit OFF``, which was true only while the lever
+    defaulted off. ``OIN_STABLE_STEREO`` was promoted to default-ON in v0.4.5, making the premise
+    false — and the test kept passing anyway, because on the fixture's ORIGINAL atom ordering the
+    lever is a no-op (that is what ``test_lever_does_not_change_the_ORIGINAL_ordering`` below
+    pins). So it asserted a false claim and went green: a vacuous guard, not a broken one.
+
+    Found by ``test_levers.py::TestNoTestUnsetsAPromotedLever``, which exists because this
+    "unset means off" pattern has cost 23 test failures across two promotions — and this
+    instance was invisible to all of them.
+    """
+
+    def test_unset_env_matches_explicit_ON(self):
         path = _fixture(_UNSTABLE)
         env = dict(os.environ)
-        env.pop(_LEVER, None)
+        env.pop(_LEVER, None)  # lever-lint: intentional-unset -- the unset state IS the subject
         with mock.patch.dict(os.environ, env, clear=True):
             unset = XYZToSMILES().convert(path)
-        self.assertEqual(unset, _encode(path, stable=False))
+        self.assertEqual(
+            unset,
+            _encode(path, stable=True),
+            "unset must take the promoted default (ON); if this fails the lever was demoted "
+            "and levers.py::_DEFAULT_ON is the place to check",
+        )
+
+    def test_registry_agrees_that_the_lever_ships_on(self):
+        from oinsmiles.oin.levers import default_on
+
+        self.assertIn(_LEVER, default_on())
 
     def test_lever_does_not_change_the_ORIGINAL_ordering(self):
         """On the input's own atom order the lever should be a no-op.

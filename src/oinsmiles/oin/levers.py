@@ -43,8 +43,21 @@ import os
 #: shows no churn. Levers that ADD information to the string (``OIN_EMIT_AXIAL``,
 #: ``OIN_EMIT_LOCKED_DONOR``) are a different kind of change — the generator must then be able
 #: to reproduce what they emit — and stay opt-in.
+#: OIN_BORON_CAGE joined this set in v0.4.6. It is the one lever in the release with a directly
+#: measured accuracy gain: on the 36 `XYZToSMILES failed` molecules of the 936-molecule
+#: re-baseline, 34 are `electron-deficient boron cluster` and the lever takes them from **0/36
+#: encoding to 34/36**, at 0.2-4.2s each. The boron lane separately measured 48/48 round-tripping
+#: (docs/BORON_CAGE_v0.4.5.md).
+#:
+#: It is NOT a free win and was held back through v0.4.5 for a real reason: it moves 14 molecules
+#: that were SCORED AS PASSING to failing. That is correct -- those 14 passed while describing the
+#: WRONG GRAPH (VEJXOZ invents a C=B double bond) -- but it trades 14 silent false positives for
+#: 14 loud honest failures, so a headline pass rate can move either way. Promoted here because a
+#: notation that emits nothing for 34 molecules is worse than one that fails audibly for 14, and
+#: because correctness is the point of a lossless notation.
 _DEFAULT_ON = frozenset(
     {
+        "OIN_BORON_CAGE",
         "OIN_CANONICAL_BODY",
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
@@ -72,43 +85,55 @@ _HELD_OFF = {
         "GENERATOR reading FEWER aromatic atoms, not the encoder reading more. Re-measure both "
         "cohorts with perception ON before promoting."
     ),
+    "OIN_EMIT_METAL_CONFIG": (
+        "Y1 P1 metal-centred Delta/Lambda helicity, as a trailing |mc:+|/|mc:-| sidecar. The "
+        "descriptor is BUILT and validated (oin/metal_config.py, 16 tests): it detects "
+        "Delta/Lambda on ZUMNEC (chiral tris-catecholato -- emits, and INVERTS under "
+        "reflection) and correctly emits nothing for JEGKOW (square planar, achiral). Held "
+        "opt-in for the standard information-ADDING reason: the generator must reproduce what "
+        "is emitted, so promoting converts a silent collapse of Delta/Lambda enantiomers into "
+        "a loud round-trip failure. Promote only with generator support plus a corpus "
+        "population measurement. Note that compare.py's key does not know the token yet, so "
+        "lever-ON round trips will report mismatches until it does."
+    ),
     "OIN_EMIT_LOCKED_DONOR": (
         "same trade for metal-locked N/P donor configuration (P3), AND currently INCOMPATIBLE "
         "with OIN_CANONICAL_BODY, which is default-ON: canonical_body_emit reparses the body, "
         "and sanitizing the metal-free fragment clears the [N@] on a 2-degree amine -- RDKit "
         "sees a freely inverting amine, the very behaviour this descriptor works around. So "
         "with both on, the tag is stamped and then discarded. P3 therefore works only with "
-        "OIN_CANONICAL_BODY=0 today (which is how tests/unit/test_locked_donor.py runs). The "
-        "fix is to stamp inside canonical_body_emit before its final MolToSmiles, which also "
-        "re-derives donor marker positions -- deferred to v0.4.6, not rushed, because a "
-        "misplaced marker silently mislabels coordination."
+        "OIN_CANONICAL_BODY=0 today (which is how tests/unit/test_locked_donor.py runs). "
+        "⚠ THE OBVIOUS FIX IS WRONG -- tried in v0.4.6 and MEASURED wrong, do not repeat it. "
+        "Copying the chiral tag onto the reparsed donor (the correspondence is available; "
+        "_reparse_once's Guard 2 already proves same element and same heavy degree) does make P3 "
+        "emit under OIN_CANONICAL_BODY, and POJJOP passes. But setting a tag AFTER the sanitize "
+        "introduces a stereocentre the canonical ranker did not account for, which moves the "
+        "canonical WRITE ORDER -- and @/@@ is a parity relative to that order. On RIFGUJ_comp_2 "
+        "the three ring-CARBON tags then flip between a structure and its mirror, and the "
+        "geometry says they must not: those carbons are pseudo-asymmetric (lowercase `s`, a "
+        "RELATIVE all-cis descriptor) and read identically for the structure and its reflection. "
+        "A correct fix must preserve the tag WITHOUT perturbing the ranking -- keep the donor "
+        "bracketed through the sanitize, or re-derive parity from the parent geometry once the "
+        "write order is fixed. Guarded by "
+        "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
     ),
     "OIN_H_FAITHFUL": (
-        "INTERACTS with OIN_CANONICAL_BODY, which is now default-ON: canonical_body_emit "
-        "reparses the body through MolFromSmiles/MolToSmiles, the exact round trip that "
-        "re-reads a bare 0-H symbol one hydrogen heavier. Do not promote until "
-        "canonical_body_emit is H-faithful too, or the two are reordered. See "
-        "docs/ATOM_COUNT_v0.4.5.md."
+        "The OIN_CANONICAL_BODY interaction that blocked this in v0.4.5 is FIXED: both of "
+        "canonical_body_emit's MolToSmiles writes now go through h_faithful_smiles, so the "
+        "canonical body no longer discards the repair. It stays off for a DIFFERENT and better "
+        "reason -- promoting it buys NOTHING measurable. A/B over the 45-molecule `Atom count "
+        "mismatch` population: match 8 / mismatch 37 with the lever off, and match 8 / mismatch "
+        "37 with it on. Identical. That class is not a write/read-fidelity defect; the divergence "
+        "sits between the perceived parent and the emitted string (perceived_H == input_H in "
+        "36/45) and is heterogeneous -- 28/45 at dH +1..+3, 4 at dH 0 where hydrogen is not the "
+        "issue, and three large losses (-14, -16, -36) with no shared explanation. Two aggregate "
+        "hypotheses have already been refuted (see docs/V046_HFAITHFUL_FINDINGS.md); the next "
+        "step is per-ATOM provenance, not another aggregate. Promote only with evidence that it "
+        "moves a real population."
     ),
     "OIN_RESCUE_STUCK_RING": (
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "
         "it between buckets rather than fixing it."
-    ),
-    "OIN_BORON_CAGE": (
-        "DECIDED TO PROMOTE, NOT YET PROMOTED -- listed here so it is off by RECORD rather than "
-        "by omission, which is how it shipped in v0.4.5. Measured encoder-only on the 936-molecule "
-        "re-baseline: 34 of the 36 `XYZToSMILES failed` rows are `electron-deficient boron "
-        "cluster`, and this lever takes them from 0/36 encoding to 34/36, in 0.2-4.2s each. That "
-        "is 3.6% of that cohort, the single largest evidenced accuracy lever left. The boron lane "
-        "separately measured 48/48 round-tripping (docs/BORON_CAGE_v0.4.5.md).\n"
-        "        The reason it is a product call and not a free win: it moves 14 molecules that "
-        "were SCORED AS PASSING to failing. That is correct -- those 14 were passing while "
-        "describing the wrong graph (VEJXOZ invents a C=B double bond) -- but it trades 14 silent "
-        "false passes for 14 loud honest failures, so the headline pass rate can move either way "
-        "depending on the sweep. Promote in v0.4.6 with a full sweep, not mid-release: the "
-        "harness runs a subprocess per molecule, so flipping a code default while a sweep is in "
-        "flight yields a MIXED-CONFIG measurement -- the config asymmetry that manufactured "
-        "v0.4.4's 11 phantom regressions."
     ),
 }
 
