@@ -14,6 +14,95 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   medium-large molecules that quick mode round-trips in <30 s — a generation compute-time regime
   (full pool + direct-DG), not a wrong-answer/notation regression; root cause not yet isolated.
 
+## [0.4.6] - 2026-07-26
+
+### Added
+- **`OIN_BORON_CAGE` promoted to default-ON** — deltahedral borane/carborane cages now encode.
+  Measured on the 936-molecule re-baseline: 34 of the 36 `XYZToSMILES failed` molecules are
+  electron-deficient boron clusters, and the lever takes that population from **0/36 encoding to
+  34/36** (0.2–4.2 s each). The boron lane separately measured 48/48 round-tripping.
+  ⚠ It moves **14 molecules from scored-passing to failing**, which is correct — they passed while
+  describing the wrong graph (`VEJXOZ` invents a C=B double bond) — but it trades 14 silent false
+  positives for 14 loud honest failures, so a headline pass rate can move either way.
+- **Metal-centred Δ/Λ descriptor (Y1 blind spot P1)** — `src/oinsmiles/oin/metal_config.py`, a
+  complete pipeline where none existed: the lane began with 0/150 molecules emitting any metal
+  stereo tag because no descriptor existed. Chelate-aware symmetry test → trailing `|mc:±|` sidecar
+  behind `OIN_EMIT_METAL_CONFIG` (**default OFF**) → key fold with the un-fold obligation recorded →
+  generator reproduction of the requested helicity. ZUMNEC emits and inverts under reflection;
+  square-planar JEGKOW correctly emits nothing.
+- **`test_levers::TestNoTestUnsetsAPromotedLever`** — a lint for the "unset means off" trap, which
+  cost 23 test failures across two promotions. It found three further instances on its first run,
+  one of which was passing vacuously and invisible to 838 green tests.
+
+### Fixed
+- **`OIN_BORON_CAGE` valence-bypass scope.** `_parse_fragment`'s cage rung skips
+  `SANITIZE_PROPERTIES`; gated on the lever alone it applied that bypass to *every* fragment, so
+  `C#O` parsed instead of reaching the `RAW:` fallback — and CO is among the commonest ligands in
+  transition-metal chemistry. Now scoped to boron-containing fragments. Verified over all **1,194**
+  distinct fragment bodies the corpus emits: 56 differ, all 56 contain boron, **0 boron-free
+  affected**.
+- **`canonical_body_emit` is H-faithful.** Both of its `MolToSmiles` writes now route through
+  `h_faithful_smiles`, so `OIN_CANONICAL_BODY` no longer silently discards the `OIN_H_FAITHFUL`
+  repair. Byte-identical on all 61 fixtures with that lever off. ⚠ No measured accuracy benefit —
+  the `atom_count` class is unmoved (8/45 both arms) and is not a serialization defect.
+- **`MetalloGen failed` diagnostics** — the message reported `m-SMILES None` for every OIN-direct
+  failure, because `msmiles` is only populated on the fallback path. It now names the assembly path
+  actually used, plus the OIN, pool width and timeout.
+
+### Documented (measured negative results)
+- `docs/V046_HFAITHFUL_FINDINGS.md` records **eight refuted hypotheses**, each with the measurement
+  that killed it: P3 tag restoration through the reparse (rewrites RIFGUJ's *relative* ring-carbon
+  stereo); "the accuracy gap is mostly compute" (75% of timeouts hide real failures, not latent
+  passes); a donor-cut rule for hydrogen (`dH` spans −36…+14, matches the bare-donor count in 4/45);
+  eta incremental pool widening (the fill loop already short-circuits via `accept_fn`); and three
+  successive Δ/Λ formulations.
+- **The `<30 s` tail is attributed**: eta-ring winding appears in **63.5%** of the >30 s tail vs
+  19.8% of the fast set. The cost is a low *acceptance rate*, not pool bookkeeping, so the remedy is
+  raising the probability of generating the requested ring face — construction over selection, which
+  this project carries three prior negative results for.
+
+## [0.4.5] - 2026-07-26
+
+### Added
+- **Canonical OIN-SMILES**: the *emitted* string is now canonical, not just the comparison key. Six
+  levers ship ON via the new single-source registry `src/oinsmiles/oin/levers.py`:
+  `OIN_CANONICAL_BODY`, `OIN_CANONICAL_PERCEPTION`, `OIN_CANONICAL_SLOTS`,
+  `OIN_CANONICAL_ETA_WINDING`, `OIN_STABLE_METAL_AC`, `OIN_STABLE_STEREO`.
+  What made them safe to promote together: each **repairs a renumbered presentation without
+  rewriting the canonical answer**, which is why the corpus shows no churn.
+- `src/oinsmiles/oin/canonical_slots.py` — lex-min colored-vertex signature over the proper-rotation
+  group, exporting `canonical_slot_permutation()`. Also unifies the rotation group, fixing PBP from
+  2 of 10 proper rotations to 10.
+- `docs/CANONICAL_OIN_v0.4.5.md`, plus 15 per-lane measurement documents.
+
+### Fixed
+- **Encoder instability under pure atom renumbering** (unplanned Lane 8): 13% of molecules emitted a
+  *different absolute stereochemistry* when the input atoms were reordered. No prior instrument
+  could see it. Fixed by `OIN_STABLE_STEREO`, which re-derives fragment tags from the parent
+  geometry rather than translating a parity relative to a destroyed neighbour order.
+- **Inverted CIP goldens** for `PdCl2-RR-BDPP` / `PdCl2-RR-BDNN`, wrong for four months. The test
+  that "verified" them ran `rdCIPLabeler` on a SMILES reparsed from the encoder's *own* output —
+  `rdCIPLabeler` converts a parity tag into a label without checking it, so an inverted tag was
+  self-consistent and passed. Ground truth from `AssignStereochemistryFrom3D` is (R,R), agreeing
+  with the fixtures' own `(2R,4R)` names.
+- The lever registry closes a live trap: `bool(os.environ.get("X"))` made `X=0` *enable* X.
+  `OIN_BORON_CAGE` alone had five sites on that spelling.
+
+### Measured
+- Byte-stability under rotation/renumbering **58.1% → 69.6%**; comparison-key instability
+  **60 → 16 molecules**.
+- Re-baseline over 936 molecules: **145 of 436** previously-failing molecules fixed (33.3%);
+  of 500 previously-passing guards, all 11 apparent regressions are `TimeoutException exceeded 300s`
+  against an 1800 s baseline ⇒ **zero correctness regressions**.
+- Suite: 837 tests OK.
+
+### Known limitations
+- **P3 (metal-bound 2° amine) is not usable in the shipped default** — `OIN_CANONICAL_BODY`'s
+  reparse clears the `[N@]` it stamps. The obvious fix was tried and is *measurably wrong*; see
+  `levers.py::_HELD_OFF`.
+- `OIN_EMIT_AXIAL`'s promotion evidence needs re-measuring under canonical perception, which changes
+  the hindered-axis count (YESKOZ 2 → 1).
+
 ## [0.4.4] - 2026-07-23
 
 An **accuracy + measurement** release, developed as six parallel worktree swimlanes (SL0–SL5)
