@@ -366,8 +366,17 @@ def main() -> int:
         m = r["molecule"]
         ra = by.get(m, {})
         sa_o, sb_o = ra.get("sha_out"), r.get("sha_out")
-        ctrl = "OK" if ra.get("sha_in") == r.get("sha_in") else "*** MOVED ***"
-        if ra.get("sha_in") != r.get("sha_in"):
+        # Only a control VIOLATION when both arms actually produced an input hash. A
+        # SIGKILLed molecule yields a synthesized row with no `oin_in` at all (exit -9), and
+        # comparing None against a real hash reports "MOVED" for what is merely a missing
+        # measurement. That false positive would condemn the whole run as confounded.
+        ia, ib = ra.get("sha_in"), r.get("sha_in")
+        if ia is None or ib is None:
+            ctrl = "n/a (one arm produced no input hash)"
+        elif ia == ib:
+            ctrl = "OK"
+        else:
+            ctrl = "*** MOVED ***"
             ctrl_moved.append(m)
         if sa_o and sb_o:
             eq = "YES" if sa_o == sb_o else "NO"

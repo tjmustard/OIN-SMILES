@@ -207,9 +207,16 @@ imperfect ones. Per-molecule: **B worse 3, B better 7, identical 7.**
 zero clashes either way. Counted as worse only because `worst_overlap` is continuous and the
 comparison is strict.)*
 
-**Pass rate, same run:** A **16/22**, B **18/22**. **No regressions.** Two fixes —
-`GAVSED_comp_0` and `QIDKUL_comp_0`, both A-killed-at-cap → B-passes. Under a wall-clock budget
-the speedup *is* a pass-rate effect.
+**Pass rate, same run:** A **16/22**, B **18/22**. **No regressions.** Two fixes:
+`GAVSED_comp_0` and `QIDKUL_comp_0`.
+
+> ⚠ **Both "fixes" are BUDGET-LIMITED, not correctness.** Arm A was **SIGKILLed at the hard
+> cap** on both molecules (`exit -9`); it did not compute a wrong answer, it did not finish.
+> The honest statement is "A did not complete within the budget and B did," not "the lever
+> fixed a correctness bug." Both arms had an identical cap, so the comparison is fair — but
+> this project has a documented history of timeout-shaped pass deltas being misread as
+> correctness deltas (v0.4.4's 11 "regressions" were all 300s timeouts, 0 correctness). The
+> +2 is real and it is worth having; it is a *throughput* result.
 
 Per-molecule detail (14 molecules visible in the partial log, retained for the record):
 
@@ -277,9 +284,54 @@ This does **not** discharge the blocking control — any molecule whose `sha_out
 arms still gets an explicit A-vs-A′ `--single-arm` re-run before a G3 verdict is stated. It does
 mean generator nondeterminism is an unlikely explanation for any difference that appears.
 
-### 4.3 G3 / G2 on the 22-molecule cohort
+### 4.3 G3 — the wave's gate. **PASSES on the 17 molecules where it is measurable.**
 
-*(pending — run `l2-ab22` in flight)*
+`sha256` of `oin_out` (= `smiles_2` = `get_oin_string(gen.mol, coords)`), arm A vs arm B, from
+the completed `ab_v2.json`.
+
+**17 comparable · 17 byte-identical · 0 different · 5 not comparable.**
+
+| molecule | sha256(smiles_2) both arms | | molecule | sha256(smiles_2) both arms |
+|---|---|---|---|---|
+| AROHIA | `596fde4bb73155a7` | | POVPIA | `1c7ad422d5a60e3a` |
+| DAKGON | `39ee1454f510da71` | | QESRUE | `a1286fbfa0d7af53` |
+| FEXYOZ | `3d8095e19b48bfcc` | | RATPEK | `019faa066340a873` |
+| HEJXIF | `169084c2a24843a9` | | WIWRIE | `ec9b6c3cbdcd07be` |
+| KAQDOV | `bc968079864b73da` | | XUPTAF | `4514bdf2e19e867f` |
+| LIYXEY | `7dea5d722d62a792` | | YIYGAP | `816ebda751edf06d` |
+| MEDZUR | `a9ab9e1b834acd88` | | YIZHIY | `9527102647c15d81` |
+| NOMMOU | `5d8208fcbb9313c2` | | ZITSIE | `684fb92c4a00f1ae` |
+| ODEWID | `f00fdf52371f5cdb` | | | |
+
+> ⚠ **The denominator is 17 of 22, not 22 of 22. The gate is UNMEASURED on 23% of the cohort.**
+> The five: **GAVSED**, **QIDKUL** (arm A SIGKILLed at the hard cap, so no arm-A string exists);
+> **XIQKOY** (arm A is the DEAD class — `MetalloGen failed to generate any conformers via
+> OIN-direct` — and arm B was SIGKILLed); **YENDUS** (SIGKILLed in both arms); **DEJHEF** (both
+> arms fail identically at parse with `UncoordinatedFragmentError: Fragment 3 ('II') has no
+> binding slot`, which is lever-independent and produces no bytes on either side).
+>
+> Do not round this to "22/22". Notably, the unmeasured five are exactly the expensive and
+> pathological molecules — the ones most likely to behave differently if they could be measured.
+
+**`sha_in` control: holds.** On every molecule where both arms produced an input hash, it is
+identical. An earlier version of this check reported "MOVED" on GAVSED/QIDKUL/XIQKOY; that was
+a **false positive** — a SIGKILLed molecule yields a synthesized row with no `oin_in` at all
+(`exit -9`), and comparing `None` against a real hash is a missing measurement, not a moved
+value. Fixed in both `ab_accept_scored.py` and `promote_gate_report.py`, because that false
+positive would have condemned a clean run as confounded.
+
+**What this does to the determinism risk.** It defuses it rather than answering it. The risk was
+"if shas differ, is that the lever or a nondeterministic generator?" — no sha differs, so the
+question does not arise. The A-vs-A′ control still runs, but it is now a confirmation, not a
+blocker.
+
+**Byte-exactness against the INPUT** (a different question from A-vs-B): **A 16/17 produced,
+B 18/19 produced.** The one non-byte-exact molecule in each arm is AROHIA — the PREFILTER_VETO
+case of §2. So the lever does not degrade byte-exactness relative to input either.
+
+### 4.4 G2 — the independent re-perception arm
+
+*(pending — `l2-ab22` in flight; `ab_v2.json` predates the `indep` field)*
 
 ### 4.4 G4 — guard population
 

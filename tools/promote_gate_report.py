@@ -54,8 +54,16 @@ def gate3(a: list[dict], b: list[dict], control: list[dict] | None) -> None:
         else:
             eq = "neither"
             neither += 1
-        ctrl = "ok" if ra.get("sha_in") == rb.get("sha_in") else "**MOVED**"
-        if ra.get("sha_in") != rb.get("sha_in"):
+        # A SIGKILLed molecule yields a row with no `oin_in` at all, so a None-vs-hash
+        # comparison reports "MOVED" for a missing measurement and would wrongly condemn the
+        # run as confounded. Only compare when both arms produced an input hash.
+        ia, ib = ra.get("sha_in"), rb.get("sha_in")
+        if ia is None or ib is None:
+            ctrl = "n/a"
+        elif ia == ib:
+            ctrl = "ok"
+        else:
+            ctrl = "**MOVED**"
             moved.append(m)
         row = f"| {m} | {_cell(sa)} | {_cell(sb)} | {eq} | {ctrl} |"
         if C:
