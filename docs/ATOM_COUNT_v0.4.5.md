@@ -304,6 +304,10 @@ built count still equals the input.
 - `tests/unit/test_haptic_carbon_hcount.py`, `tests/unit/test_bare_donor_hydrogens.py`,
   `tests/unit/test_atom_count_hydrogen.py`: 28 tests, **green in both arms**.
 - Unit-suite baseline at `b23decb4`: `Ran 605 tests, OK (skipped=3, expected failures=3)`.
+  Final code including the bare-P strip branch: **`Ran 611 tests, OK (skipped=3, expected
+  failures=3)`, 0 failures** — the baseline plus the 6 new fixtures, nothing regressed.
+- Key guards re-run in **both** lever arms after the P branch (four goldens, haptic carbon
+  H-count, bare-donor hydrogens, atom-count fixtures, trivalent P): **31/31 OK in each arm**.
 - Ruff `check` and `format`: clean.
 
 ## 5d. Two things the re-encode A/B turned up that are worth keeping
