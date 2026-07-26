@@ -170,11 +170,48 @@ nothing ever is.
 
 ## 4. Results
 
-### 4.1 G1 — structure quality. Measured for the first time, and the cost is not zero.
+### 4.1 G1 — structure quality. Measured for the first time. **B is better in aggregate and worse on two molecules.**
 
-Independent replicate on the original 22-molecule cohort with the corrected
-`vdw_clash_count` (`spec/handoffs/v0.4.7/rescued/ab_v2_partial.log`). 14 molecules paired
-across both arms.
+> ⚠ **CORRECTION.** An earlier revision of this file (commit `9f6ba5ba`) concluded from a
+> **partial** log that "the quality cost is one clash on one molecule." That was wrong, and it
+> was wrong in the project's signature way: the partial log had arm A's `POVPIA_comp_0`
+> (`clash=16, severe=7, worst=0.4344`) but had not yet reached arm B's pair for it. Arm B fixes
+> POVPIA to `0 / 0.75`. Reading a comparison before both arms have landed is the same error as
+> reading a metric before checking its denominator. The completed run is below.
+
+Full run on the original 22-molecule cohort with the corrected `vdw_clash_count`
+(`spec/handoffs/v0.4.7/rescued/ab_v2.json`). **17 molecules paired** — both arms returned
+coordinates. Aggregates over the paired set only, so the denominators match:
+
+| metric (paired, n=17) | A default | B scored |
+|---|---|---|
+| `clash_vdw` total | **16** | **2** |
+| `clash_severe` total | **7** | **0** |
+| molecules with any clash | 1 | **2** |
+| `worst_overlap` min | **0.4344** | **0.7283** |
+
+**The two directions do not agree, and both are real:**
+
+- **Aggregate severity improves sharply.** B removes all 7 severe clashes and lifts the worst
+  overlap in the whole cohort from 0.4344 (deep inside the 0.60 severe cutoff) to 0.7283 (above
+  even the 0.75 contact cutoff). That is entirely POVPIA: A returns a 16-clash structure, B
+  returns a clean one.
+- **B spreads a single clash onto two molecules that had none.** DAKGON `0/0.8164` → `1/0.7283`
+  and RATPEK `0/0.7599` → `1/0.7461`. Neither is severe.
+
+So bypassing `_select_by_geometry`'s clash-first ranking is **not** uniformly worse, which is
+what the gate was written to catch. It trades one catastrophic structure for two mildly
+imperfect ones. Per-molecule: **B worse 3, B better 7, identical 7.**
+
+*(The third "B worse" is HEJXIF, `0/0.7632` → `0/0.7562` — a slightly tighter worst contact with
+zero clashes either way. Counted as worse only because `worst_overlap` is continuous and the
+comparison is strict.)*
+
+**Pass rate, same run:** A **16/22**, B **18/22**. **No regressions.** Two fixes —
+`GAVSED_comp_0` and `QIDKUL_comp_0`, both A-killed-at-cap → B-passes. Under a wall-clock budget
+the speedup *is* a pass-rate effect.
+
+Per-molecule detail (14 molecules visible in the partial log, retained for the record):
 
 | molecule | A default `clash_vdw / worst_overlap` | B scored `clash_vdw / worst_overlap` | verdict |
 |---|---|---|---|
@@ -192,21 +229,17 @@ across both arms.
 | KAQDOV_comp_0 | 0 / 0.7504 | 0 / 0.7629 | B better |
 | ZITSIE_comp_0 | 0 / 0.7526 | 0 / 0.7532 | B better |
 | GAVSED_comp_0 | KILLED at 330s cap | 0 / 0.7611 | B produces a structure where A produced none |
+| **POVPIA_comp_0** | **16 / 0.4344 (7 severe)** | **0 / 0.75** | **B fixes a catastrophic structure** |
+| **DAKGON_comp_0** | 0 / 0.8164 | **1 / 0.7283** | **B gains a vdW clash** |
+| LIYXEY_comp_0 | 0 / 0.7513 | 0 / 0.7513 | identical |
+| XUPTAF_comp_0 | 0 / 0.8072 | 0 / 0.8072 | identical |
+| QIDKUL_comp_0 | KILLED at 330s cap | 0 / 0.7517 | B produces a structure where A produced none |
 
-**The honest framing is "measured, small, one molecule."** Not "no cost" — that was the
-degenerate metric's answer and it was wrong. Not "large" either: one molecule of fourteen gains
-a single vdW clash, and more molecules improve than degrade. Bypassing `_select_by_geometry`'s
-clash-first ranking does cost something, and now there is a number for it.
-
-**A pre-existing defect the fixed metric also surfaced, unrelated to the lever:**
-`POVPIA_comp_0` in the **default** arm reports `clash=16 worst=0.4344` — sixteen vdW clashes
-and a worst overlap well below the 0.60 *severe* cutoff. Recorded separately, the same way
-HEJXIF's `indep=False` in arm A is: it is a structure-quality defect of the default path, and it
-was invisible while `mol_clash_count` was silently returning 0.
-
-**The lever converts at least one hard-cap timeout into a pass.** GAVSED_comp_0: arm A killed
-at the 330s cap (no structure at all), arm B 5.41s `pass=True`. Under a wall-clock budget the
-speedup *is* a pass-rate effect.
+**`POVPIA_comp_0` is where the fixed metric earns its keep.** The default arm returns a
+structure with 16 vdW clashes, 7 of them severe, worst overlap 0.4344. That defect was
+completely invisible for as long as `mol_clash_count` was silently returning 0 on an
+`AttributeError` — it would have shipped unnoticed. The lever happens to fix it, but the
+finding that matters is that the *default* path produces it at all.
 
 **Runtime (ADVISORY — load 40+ on 12 cores, wall-clock is meaningless here):** KAQDOV
 242.5→7.5, ZITSIE 134.2→5.5, HEJXIF 194.6→13.0, WIWRIE 74.6→6.3, NOMMOU 39.9→4.1, RATPEK
