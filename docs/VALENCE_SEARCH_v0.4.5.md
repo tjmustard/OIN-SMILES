@@ -205,6 +205,13 @@ And the resulting perception:
   trade this release has repeatedly caught, and it buys a component cost that Q2 has already
   eliminated.
 
+The cost model checks out bottom-up, which is worth stating because it is what licenses the
+"call count, not complexity" claim rather than merely asserting it. One
+`nx.max_weight_matching` on a 16-node graph is **482.6 µs**; `docs/ENCODER_PERF_v0.4.5.md`
+counted **60 001** calls. 60 001 x 482.6 µs = **29.0 s**, against that lane's independently
+measured `get_UA_pairs` inclusive time of **28.31 s**. The whole cost is accounted for by the
+call count on tiny graphs, with nothing left over for an asymptotic effect to explain.
+
 **Q3 is moot once Q2 lands, and that is the real answer.** Matching was ~28 s of a 49 s encode
 only because it ran 60 001 times; at 200 candidates per arm it runs ~600 times and costs ~0.3 s.
 The budget cut and the matcher swap attack the *same* seconds — and the budget cut takes them
@@ -220,11 +227,134 @@ Both levers are **default OFF** and `main`'s output is byte-unchanged:
   fall back to the default rather than silently collapsing every over-cap perception.
 * `OIN_VALENCE_MATCHER` — unset is `nx.max_weight_matching`.
 
+**Cost of the instrumentation itself, measured rather than waved through.** `_maximum_matching`
+reads `os.environ` on the encoder's hottest loop, so it was benchmarked instead of assumed:
+`os.environ.get` is 1.403 µs against 482.6 µs for one matching call — **0.291%**, i.e. ~84 ms
+added to a ~29 s loop. The per-candidate counter increments are two dict operations against
+milliseconds of real work per candidate. Small, but stated, because "surely negligible" is how
+default paths get slower.
+
 A structural point that makes the blast radius provable rather than sampled: `_fallback_tries()`
 is read **only inside `if over_cap:`**. Sub-cap ligands — which Q1 measures as **99.8%** of the
 corpus — cannot reach it, so they are byte-identical *by construction*, not by A/B. What needs
 measuring is only the over-cap population, and that population is small enough to test
 exhaustively rather than sampled.
+
+## What is being shipped, and what is only recommended
+
+**Shipped:** the instrumentation (`AC2BO_STATS`, `possible_valences`, `valence_combo_size`,
+`tools/valsearch_scan.py`, `tools/valsearch_budget_ab.py`) and two levers, **both default OFF**.
+`main`'s output is byte-unchanged.
+
+**Recommended, not taken:** promote `OIN_VALENCE_FALLBACK_TRIES` to **200** as the default.
+Recorded as a recommendation rather than applied, following the precedent of the Y2 axial gate —
+a change to perceived bond orders is a product call, and this lane should not make it silently.
+
+The case for 200:
+
+* Sub-cap ligands cannot reach the lever at all (it is read only inside `if over_cap:`), so
+  **99.8% of the corpus is byte-identical by construction**, not by sampling.
+* Every over-cap molecule whose 20 000 and 200 arms both completed returned an **identical OIN**.
+* The measured convergence point is 100 candidates, so 200 carries 2x margin.
+
+The case for caution, which is why it is not applied here:
+
+* **The margin is 2x, measured on one ligand.** The fine sweep that located convergence at 100
+  was affordable on the 37-atom ligand only. A different over-cap ligand could converge later.
+  A second fine sweep on `LIYFAA`'s or `HICLAG`'s ligand should precede promotion.
+* **The stability is empirical, not structural.** `BO.sum() >= best_BO.sum()` means ties
+  overwrite, and the 50-candidate row (`facbe31d0ae9`, right sum, wrong matrix) proves the
+  mechanism *can* return a different equal-sum answer. Nothing in the code forbids a late tie
+  from carrying a different matrix.
+* The affected population is ~0.2% of the corpus, so the upside is concentrated in a handful of
+  molecules while the risk is a silent perception change. That ratio argues for an explicit
+  decision, not a default flip.
+
+## Verdict on the floor
+
+**The ~15 s-per-arm floor is real, is reducible by roughly 100x for the class it was measured
+on, and costs zero changed strings there — but it is not the floor for the largest over-cap
+ligands, and reducing it rescues fewer molecules than it first appears.**
+
+Three distinct classes, which the `encspeed` lane could not separate because it measured one
+ligand:
+
+| class | example | effect of cutting to 200 |
+|---|---|---|
+| sub-cap (99.8% of corpus) | everything else | **no effect at all** — cannot reach the lever |
+| over-cap, ~37-atom ligand | `QIDKUL`, `QIDKIZ` | **161–253x less wall, OIN byte-identical.** The floor collapses from ~15 s/arm to ~0.3 s/arm |
+| over-cap, 147–220-atom ligand | `KESWUB`, `BENVOG`, `HICLAG`, `HOHKUL` | **partial at best** — see below |
+
+For the largest ligands the candidate *count* is not the binding constraint: **the per-candidate
+cost is**. Every over-cap molecule from the wider scan, each arm its own subprocess under a 200 s
+cap:
+
+| molecule | ligand atoms | `tries=200` |
+|---|---|---|
+| `KESWUB_comp_0` | 188 | TIMEOUT |
+| `BENVOG_comp_0` | 148 | TIMEOUT |
+| `HICLAG_comp_0` | 147 | **145.74 s**, 401 cands, `found_valid=1`, OIN `02b9b4e59da5` |
+| `HOHKUL_comp_0` | 220 | TIMEOUT |
+| `LIYFAA_comp_0` | 92 | **34.43 s**, 801 cands, `found_valid=1`, OIN `c5c84be56a0c` |
+| `ZAZREZ_comp_0` | 144 | TIMEOUT |
+
+**2 of 6 complete at 200 tries; 4 of 6 time out even there.** `HICLAG` spent 145.74 s on **401**
+candidates — 0.36 s each, against roughly 0.005 s each for the 37-atom ligand, a ~70x difference
+in per-candidate cost. Cutting the count cannot fix a molecule whose 200 candidates already
+exceed the time budget. So the honest claim is: **this lever removes the valence-search floor for
+the medium over-cap class and leaves the large one roughly where it was.** The remaining cost
+there is per-candidate work on a 150–220 atom graph, which is a different problem from the one
+this lane attacked.
+
+### The caveat that matters most, stated plainly
+
+`HICLAG` and `LIYFAA` complete at 200 tries and do **not** complete at 20 000 within the same cap.
+They are therefore the two molecules the cut most clearly helps — and they are also **the two for
+which no byte-identity check is possible**, because the 20 000 baseline never produces a string to
+compare against. The molecules that benefit most from the budget cut are exactly the ones whose
+fidelity under it cannot be verified. Their OIN shas are recorded above so a future run on a quiet
+host, with a long enough cap to complete the 20 000 arm, can settle it.
+
+So the byte-identity claim is precisely this and no wider: **0 OIN strings changed out of 16
+molecules where both arms completed** — 14 sub-cap plus `QIDKUL_comp_0` and `QIDKIZ_comp_0`. The
+other four over-cap molecules produce no comparison in either direction.
+
+That also corrects an inference the reader might otherwise draw from Q1: the 4-of-7 enrichment in
+the unresolved encoder cohort does **not** mean this lever fixes 4 molecules. It means those 4
+are over-cap; only the ones whose per-candidate cost is survivable actually benefit.
+
+## Open, not chased — and one lead that looks better than what this lane shipped
+
+**The over-cap branch does not merely cap the search; it disables the heuristic that makes the
+search succeed.** Measuring 14 sub-cap molecules to confirm the by-construction claim produced an
+unplanned observation: a sub-cap ligand examines **3 to 8 candidates** before finding a valid
+Lewis structure — never dozens, let alone thousands. That is `_ordered_valences`, the O/N/C/P/S
+grouping heuristic, doing its job: it puts chemically sensible assignments at the front.
+
+The over-cap branch **skips that heuristic entirely** and iterates the *unsorted*
+`itertools.product`. So the two facts sit together: sorted ligands succeed in under 10 candidates;
+unsorted ones fail in 20 000. `found_valid = 0` on the over-cap arms is then not obviously a
+statement about the ligand being unperceivable — it may be a statement about search *order*.
+
+If that is right, the better fix is not a smaller budget but **applying the ordering heuristic to
+a bounded prefix of the product** — keeping what makes the search work instead of grinding more of
+what does not. That could turn `found_valid = 0` into a real Lewis structure rather than a
+cheaper guess, which is an accuracy result rather than a performance one. It is a hypothesis, not
+a measurement: `_ordered_valences` materialises the full product today, so it would need to be
+reworked to run on a prefix, and whether a prefix preserves the ordering's value is untested.
+
+Also open:
+
+* `_rescue_unusable_perception` sweeps up to eight further charges through `AC2mol`. On an
+  over-cap ligand that is 8 more full searches. Not triggered by anything measured here.
+* `KESWUB`/`BENVOG`/`HOHKUL` time out at **both** budgets, so no OIN comparison exists for them.
+  They spawn a forked child during the encode, consistent with the v0.4.4 SL5 resonance wrapper
+  and with their `resonance_timeout` classification — their dominant cost may not be `AC2BO` at
+  all. Untested.
+* The corpus-wide over-cap population is **estimated from a 1992-molecule sample (~0.2%), not
+  enumerated.** A full static scan is cheap in CPU (~33 s per 2000 molecules unloaded) and was
+  started, but at load 40 it projected to ~3.6 h and was killed to avoid starving the release
+  sweep. Worth running on a quiet host to turn the estimate into an exact list.
 
 ## Instrument defects found (this release keeps producing them)
 
