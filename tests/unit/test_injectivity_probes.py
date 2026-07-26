@@ -102,6 +102,16 @@ class TestAspirationalDivergence(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_metal_bound_amine_should_diverge_in_raw_string(self):
+        """Still an expected failure, and that is now a statement about the DEFAULT.
+
+        The v0.4.5 Lane 6 plan expected this xfail to flip to passing. It does not, and
+        should not: the fix is gated behind ``OIN_EMIT_LOCKED_DONOR`` (default OFF, like
+        every other v0.4.5 lever), and "levers-OFF output is byte-identical" is a harder
+        acceptance requirement than flipping this marker. The capability itself is guarded
+        permanently in ``tests/unit/test_locked_donor.py``, which asserts divergence with
+        the lever on plus the full three-property test. Flip this marker if and when the
+        lever is promoted to default-ON.
+        """
         o = probe_mirror(POJJOP)
         self.assertFalse(o.raw_equal, "metal-bound 2° amine enantiomers should not encode alike")
 

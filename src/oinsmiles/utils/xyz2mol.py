@@ -18,6 +18,9 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 from ..core.chirality import ChiralityRecoveryUtility
 from ..core.constants import TRANSITION_METALS, TRANSITION_METALS_NUM  # noqa: F401
+from ..oin import locked_donor
+from ..oin.hydrogen import h_faithful_smiles
+from ..oin.levers import lever_enabled
 from .aromaticity import (  # noqa: F401
     OINEncodeError,
     kekulize_safe_sanitize,
@@ -26,8 +29,10 @@ from .aromaticity import (  # noqa: F401
 from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
 from .xyz2mol_local import (
     AC2mol,
+    boron_cage_vertices,
     chiral_stereo_check,
     read_xyz_file,
+    suppress_canonical_perception,
     xyz2AC_obabel,
 )
 
@@ -476,7 +481,48 @@ def lig_checks(lig_mol, coordinating_atoms):
                 negative_atoms.append(a.GetIdx())
 
         possible_lig_mols.append((res_mol, len(positive_atoms), len(negative_atoms), N_aromatic))
+
+    # v0.4.5 Lane 1 (opt-in, OIN_CANONICAL_PERCEPTION): put the candidates in a canonical
+    # order. Every consumer of this list -- `_select_lig_mol`'s three accumulate loops and
+    # `_rescue_unusable_perception`'s `max` -- selects on (most aromatic, fewest formal
+    # charges) and resolves a TIE by taking whichever candidate came FIRST. First is
+    # currently ResonanceMolSupplier's enumeration order, which depends on the input atom
+    # numbering, so permuting the atoms in the XYZ file silently picks a different
+    # resonance form: an amidinate flips `N=C(N-)` to `N-C(=N)`, a 2-iminopyridine flips
+    # its C=N. That is the single largest source of `rdkit_canonical` drift the
+    # rotation/renumbering probe finds, and it changes the comparison KEY, not merely the
+    # string. Sorting here fixes every consumer at once and changes no selection LOGIC --
+    # only which member of an exact tie wins, and now that is decided by the candidate's
+    # own canonical SMILES rather than by atom numbering.
+    if lever_enabled("OIN_CANONICAL_PERCEPTION"):
+        possible_lig_mols.sort(key=_resonance_candidate_key)
     return possible_lig_mols
+
+
+def _resonance_candidate_key(item):
+    """Total order on ``lig_checks`` candidates, used only to make TIES reproducible.
+
+    ``(-N_aromatic, N_pos + N_neg)`` restates the preference every consumer already
+    applies, so sorting cannot change which candidate wins on the merits. Two tie-breaks
+    follow, in this order:
+
+    1. **usable before unusable.** ``_select_lig_mol`` keeps the first candidate at the
+       best (aromatic, charge) score, and the old first-wins order happened to reach a
+       usable one. Re-ordering a tie can otherwise surface a form with, say, a pentavalent
+       carbon that ``kekulize_safe_sanitize`` rejects, turning a working encode into an
+       ``OINEncodeError`` (AGUFEN, the PPN counter-cation). Usability is the codebase's own
+       notion of "a perception that can be made into a molecule", so deferring to it here
+       preserves the outcome the accidental order used to give -- deliberately, this time.
+    2. **the candidate's own canonical SMILES**, a property of the molecule rather than of
+       the input file, replacing ``ResonanceMolSupplier`` enumeration order. A form RDKit
+       cannot write sorts last, so it can never win a tie by being unwritable.
+    """
+    res_mol, n_pos, n_neg, n_aromatic = item
+    try:
+        form = Chem.MolToSmiles(Chem.Mol(res_mol))
+    except Exception:
+        form = chr(0xFFFF)  # sorts after every real SMILES
+    return (-n_aromatic, n_pos + n_neg, 0 if _perception_is_usable(res_mol) else 1, form)
 
 
 def _perception_is_usable(candidate):
@@ -507,9 +553,23 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
 
     Deliberately additive: a ligand whose current perception is usable never enters
     this path, so nothing that already round-trips can move.
+
+    ``OIN_RESCUE_STUCK_RING`` (opt-in, default OFF): the loop below used to reject any
+    candidate with a "stuck" (unkekulizable-as-aromatic) ring outright, even when
+    ``_perception_is_usable`` -- which already calls ``kekulize_safe_sanitize`` and can
+    repair a stuck ring by de-aromatizing it -- says the candidate is fine. That made this
+    rescue loop *stricter* than the encoder's own repair path for no documented reason, and
+    it is why ``ASISAX`` (a Ni tetraaza-macrocycle whose only usable ligand charge, 0, has
+    stuck rings that de-aromatize cleanly) fell through to a hard `encode_fail` although a
+    usable perception existed. See ``docs/ENCODE_FAIL_v0.4.5.md``. Off by default: flipping it can
+    change which charge/candidate an *already-rescued* ligand lands on (the loop returns the
+    first hit in Huckel-distance order), so it is not proven byte-identical for every ligand
+    that currently reaches this loop -- only for ones that currently return nothing.
     """
     if best_res_mol is not None and _perception_is_usable(best_res_mol):
         return best_res_mol, charge
+
+    _permissive_stuck_ring = lever_enabled("OIN_RESCUE_STUCK_RING")
 
     ordered = sorted(range(-4, 5), key=lambda q: (abs(q - charge), q))
     for trial_charge in ordered:
@@ -522,7 +582,9 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
             continue
         if any(a.GetNumRadicalElectrons() for a in candidate.GetAtoms()):
             continue
-        if stuck_ring_atoms(candidate) or not _perception_is_usable(candidate):
+        if not _permissive_stuck_ring and stuck_ring_atoms(candidate):
+            continue
+        if not _perception_is_usable(candidate):
             continue
         logger.debug("re-perceived ligand at charge %d (was %d)", trial_charge, charge)
         resonance_forms = lig_checks(candidate, coordinating_atoms)
@@ -559,12 +621,82 @@ def _is_electron_deficient_cluster(frag_mol):
     return False
 
 
+def _has_boron_cage(frag_mol):
+    """Whether this fragment contains a deltahedral boron cage vertex.
+
+    Uses the same B-B-B triangle motif as the ``xyz2AC_obabel`` pruning exemption
+    (``boron_cage_vertices``), so the two halves of the ``OIN_BORON_CAGE`` lever
+    agree on what a cage is. Deliberately stricter than
+    ``_is_electron_deficient_cluster`` (>=3 B and >=1 B-B bond), which would also
+    match a linear B-B-B chain that is not a cage and perceives normally.
+    """
+    atoms = [a.GetAtomicNum() for a in frag_mol.GetAtoms()]
+    if sum(1 for z in atoms if z == 5) < 3:
+        return False
+    AC = Chem.rdmolops.GetAdjacencyMatrix(frag_mol)
+    return bool(boron_cage_vertices(atoms, AC))
+
+
+def _cage_frag_mol(frag_mol):
+    """Perceive a boron-cage ligand fragment directly, bypassing ``AC2BO``.
+
+    ``AC2BO`` cannot serve a cage for two independent reasons, both measured:
+    a cage vertex's connectivity (5-6) exceeds every entry in
+    ``atomic_valence[5] == [3, 4]``, which makes ``possible_valence`` empty and
+    drives ``AC2BO`` into a bare ``sys.exit()`` (a ``SystemExit``, not catchable by
+    ``except Exception``); and even given a wider table there is no bond-order
+    assignment that saturates a 3c-2e vertex under 2c-2e rules.
+
+    So do not search for bond orders at all. The cage graph *is* the answer: every
+    cage edge is a plain single bond, hydrogens are explicit as the geometry gives
+    them, formal charges are zero. This is the "graph as the geometry presents it"
+    reading -- it deliberately does **not** claim a Lewis structure, and it does
+    not claim the chemically-correct cage charge (a dicarbollide is really 2-,
+    closo-B12H12 is 2-); it claims only a canonical, round-trippable graph.
+
+    The one thing RDKit objects to is its **valence rule**, so sanitize with
+    ``SANITIZE_ALL ^ SANITIZE_PROPERTIES``: everything else (ring perception,
+    aromaticity, adjust-Hs, kekulize) still runs. Measured on real cages from the
+    corpus, the result serializes with ``MolToSmiles`` and re-parses to a
+    graph-identical mol with an idempotent canonical SMILES, which the DATIVE and
+    zero-order alternatives do not (SMILES cannot carry a zero-order bond: it
+    round-trips ``~`` back as a mix of SINGLE and UNSPECIFIED).
+
+    Returns:
+        (mol, 0) on success, or ``None`` if even the relaxed sanitize fails.
+    """
+    m = Chem.RWMol(frag_mol)
+    for a in m.GetAtoms():
+        a.SetFormalCharge(0)
+        a.SetNoImplicit(True)
+        a.SetNumExplicitHs(0)
+    for b in m.GetBonds():
+        b.SetBondType(Chem.BondType.SINGLE)
+    out = m.GetMol()
+    try:
+        Chem.SanitizeMol(
+            out,
+            sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+        )
+    except Exception:  # noqa: BLE001 - a cage that will not sanitize stays a failure
+        return None
+    return out
+
+
 def get_lig_mol(mol, charge, coordinating_atoms):
     """Create a sanitizable mol object for the ligand.
 
     Runs the charge/carbene ladder in ``_select_lig_mol``, then re-perceives at
     another charge if the result is a molecule no sanitize can rescue.
     """
+    # Boron-cage bypass (OIN_BORON_CAGE, default OFF). Must precede
+    # ``_select_lig_mol``: for a cage fragment, AC2BO exits the process rather
+    # than returning, so there is nothing to fall back from.
+    if lever_enabled("OIN_BORON_CAGE") and _has_boron_cage(mol):
+        cage = _cage_frag_mol(mol)
+        if cage is not None:
+            return cage, 0
+
     lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
@@ -697,6 +829,35 @@ def _select_lig_mol(mol, charge, coordinating_atoms):
 
 
 def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
+    """Get TMC mol object from given xyz file, retrying if canonical perception fails.
+
+    ``OIN_CANONICAL_PERCEPTION`` reorders the valence walk so the perceived bond orders
+    stop depending on the input atom numbering. Reordering can surface a DIFFERENT but
+    equally valid Lewis structure, and "valid" to ``AC2BO`` is not the same as "usable"
+    once the ligands are assembled around the metal: on ``tests/fixtures/AGUFEN.xyz``
+    (a PPN counter-cation) the canonical order draws a ``P=c`` ylide with a pentavalent
+    ipso carbon that survives the free-ligand usability check and only fails when the
+    dative bonds go on, raising ``OINEncodeError``.
+
+    So: perceive canonically, and if the encode raises, perceive again in input order.
+    The retry is triggered by the canonical attempt alone, never by comparing it against
+    the input-order result -- comparing would re-import the very order-dependence the
+    lever removes. Only molecules that take the retry stay order-dependent, which is the
+    right trade: a right answer that drifts beats a reproducible wrong one.
+
+    With the lever off this is a plain call with one dead branch.
+    """
+    if not lever_enabled("OIN_CANONICAL_PERCEPTION"):
+        return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+    try:
+        return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+    except Exception:
+        logger.debug("canonical perception unusable for %s; retrying in input order", xyz_file)
+        with suppress_canonical_perception():
+            return _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=with_stereo)
+
+
+def _get_tmc_mol_impl(xyz_file, overall_charge, with_stereo=False):
     """Get TMC mol object from given xyz file.
 
     Args:
@@ -747,7 +908,30 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     mdis = rdMolStandardize.MetalDisconnector(params)
     mdis.SetMetalNon(Chem.MolFromSmarts(MetalNon_Hg))
     frags = mdis.Disconnect(mol)
-    frag_mols = rdmolops.GetMolFrags(frags, asMols=True)
+    # ``GetMolFrags(asMols=True)`` full-sanitizes every fragment, so a cage
+    # fragment dies here -- before ``get_lig_mol`` is ever reached. Under
+    # OIN_BORON_CAGE, split unsanitized and then sanitize each fragment
+    # individually: normally for every ordinary ligand (byte-identical to the
+    # default), and with the valence check skipped only for a fragment that
+    # carries a cage vertex. A fragment that fails even the relaxed sanitize is
+    # left as-is for ``get_lig_mol`` to reject as before.
+    if lever_enabled("OIN_BORON_CAGE") and _has_boron_cage(frags):
+        frag_mols = []
+        for f in rdmolops.GetMolFrags(frags, asMols=True, sanitizeFrags=False):
+            try:
+                if _has_boron_cage(f):
+                    Chem.SanitizeMol(
+                        f,
+                        sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL
+                        ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+                    )
+                else:
+                    Chem.SanitizeMol(f)
+            except Exception:  # noqa: BLE001 - keep the unsanitized fragment
+                pass
+            frag_mols.append(f)
+    else:
+        frag_mols = rdmolops.GetMolFrags(frags, asMols=True)
 
     total_lig_charge = 0
     tm_idx = None
@@ -851,6 +1035,72 @@ def get_tmc_mol(xyz_file, overall_charge, with_stereo=False):
     return tmc_mol, xyz_coords
 
 
+def _canonical_pivot(candidates, coords, masses):
+    """Pick the PAI pivot atom by molecular content, never by input index (v0.4.5 Lane 2).
+
+    ``candidates`` are the atoms tied for maximum distance from the metal. The original
+    code broke that tie with ``np.min(candidates)`` -- the lowest *file* index -- so
+    permuting the XYZ lines could pivot on a different atom and rotate the molecule into a
+    different frame. That is not hypothetical: ``DUDREA_comp_0`` flips its geometry
+    classification ``[Y_SPY]`` -> ``[Y_TET]`` under pure renumbering.
+
+    The replacement key is invariant under BOTH transforms the canonicality probe applies:
+
+    * ``-mass`` -- an atomic property, so renumbering cannot move it;
+    * the sorted multiset of interatomic distances from the candidate to every atom --
+      a rigid-motion invariant, and a multiset, so it does not care about atom order.
+
+    Distances are rounded to 1e-6 A before sorting so float noise from the rotation cannot
+    reorder two coincident shells. A tie that survives both terms means the candidates are
+    genuinely geometrically equivalent, and pivoting on either lands in an equivalent
+    frame; ``min`` then keeps the choice deterministic within one presentation.
+    """
+    cand = [int(i) for i in candidates]
+    if len(cand) == 1:
+        return cand[0]
+    best_key, best_idx = None, cand[0]
+    for i in cand:
+        d = np.round(np.linalg.norm(coords - coords[i], axis=1), 6)
+        key = (-float(masses[i]), tuple(np.sort(d)))
+        if best_key is None or key < best_key:
+            best_key, best_idx = key, i
+    return best_idx
+
+
+def _canonical_z_sign(coords, masses):
+    """Order-invariant replacement for the ``sum(z_i * (i+1)**3)`` Z-sign metric.
+
+    Returns a scalar with the same contract as the original: negative means "flip z (and y,
+    to stay right-handed)". The PAI eigenvectors have an arbitrary sign, so *something*
+    must choose between ``+z`` and ``-z``; the original chose with a weight built from the
+    atom's position in the file, which makes the emitted frame -- and through it the
+    template fit and the slot assignment -- a function of the input ordering.
+
+    These are mass-weighted **odd** moments in z, tried in order and each a plain sum over
+    atoms, so they are unchanged by renumbering (addition commutes) and by rotation
+    (computed in the already-aligned frame). Odd is what matters: an even moment is equal
+    for ``z`` and ``-z`` and so decides nothing.
+
+    Falling through every term means every odd moment vanishes, i.e. the structure is
+    (to this resolution) mirror-symmetric across the xy-plane -- the two orientations are
+    genuinely equivalent, so returning 0.0 (no flip) is correct rather than a punt.
+    """
+    c = np.asarray(coords, dtype=float)
+    m = np.asarray(masses, dtype=float)
+    z = c[:, 2]
+    r_xy_sq = c[:, 0] ** 2 + c[:, 1] ** 2
+    for moment in (
+        float(np.sum(m * z)),
+        float(np.sum(m * z**3)),
+        float(np.sum(m * z * r_xy_sq)),
+        float(np.sum(z)),
+        float(np.sum(z**3)),
+    ):
+        if abs(moment) > 1e-6:
+            return moment
+    return 0.0
+
+
 def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     """Canonicalize the orientation of the molecule.
 
@@ -936,9 +1186,17 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     tolerance = 1e-5
     candidates = np.where(dists_sq >= max_dist_sq - tolerance)[0]
 
-    # Tie-breaker: Choose lowest index among candidates
-    # Relies on input atom order being preserved (which it is)
-    pivot_idx = np.min(candidates)
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
+        # v0.4.5 Lane 2: settle the tie on the CONTENT of the candidate atoms instead of
+        # their file position. `np.min(candidates)` below is a raw input atom index, so
+        # two presentations of one structure can pivot on different atoms and land in
+        # different frames -- measured live on DUDREA_comp_0, which changes its geometry
+        # classification [Y_SPY] -> [Y_TET] under pure renumbering.
+        pivot_idx = _canonical_pivot(candidates, new_coords, masses)
+    else:
+        # Tie-breaker: Choose lowest index among candidates
+        # Relies on input atom order being preserved (which it is)
+        pivot_idx = np.min(candidates)
 
     # Verify pivot is not on Z-axis (unlikely for max-dist atoms in 3D, unless linear)
     # If it is, we need to pick the next shell?
@@ -966,9 +1224,16 @@ def _align_to_pai(tmc_mol, xyz_coords, metal_idx):
     # Metric: sum(z_i * (i+1)**3) - Super-linear weighting to break symmetry
     # If negative, flip Z (and Y to maintain right-hand).
 
-    z_moment_idx = 0.0
-    for i in range(len(canonical_coords)):
-        z_moment_idx += canonical_coords[i][2] * (i + 1) ** 3
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
+        # v0.4.5 Lane 2: the (i+1)**3 weighting below is a function of the FILE, not the
+        # molecule -- renumber the atoms and the sign of the moment can flip, mirroring
+        # the whole frame in y/z. Replace it with mass-weighted odd moments in z, which
+        # are plain sums and therefore invariant under both renumbering and rotation.
+        z_moment_idx = _canonical_z_sign(canonical_coords, masses)
+    else:
+        z_moment_idx = 0.0
+        for i in range(len(canonical_coords)):
+            z_moment_idx += canonical_coords[i][2] * (i + 1) ** 3
 
     if z_moment_idx < 0:
         # Flip Z -> -Z
@@ -1101,13 +1366,35 @@ def get_oin_string(tmc_mol, xyz_coords):
     # 0. Opt-in axial / atropisomer token (Y2 P2). Computed HERE from the pristine input
     # conformer -- before _align_to_pai, whose principal-axis alignment may reflect the
     # coordinates and would corrupt the dihedral sign. Default OFF -> byte-identical output.
+    #
+    # Read as "0"-means-off rather than as a bare truthiness test: the plain test treated
+    # OIN_EMIT_AXIAL=0 as ON (a non-empty string), so the obvious way to spell "leave this
+    # opt-in lever alone" silently turned it on. This is the mirror of the on-by-default
+    # spelling used for OIN_EARLY_EXIT (`get(..., "1") != "0"`); default OFF is preserved and
+    # guarded by tests/unit/test_axial_emit.py::TestDefaultOff.
     _axial_suffix = ""
-    if os.environ.get("OIN_EMIT_AXIAL"):
+    if os.environ.get("OIN_EMIT_AXIAL", "0") != "0":
         from ..oin.axial import axial_token
 
         _tok = axial_token(tmc_mol)
         if _tok:
             _axial_suffix = f" |ax:{_tok}|"
+
+    # 0b. Opt-in metal-locked donor stereo (Y1 P3: the bound secondary amine, and the
+    # trivalent P donor whose tag the Zone-A rule clears before Lane 8's restamp can
+    # correct it). Eligibility is computed ONCE here, on the metal-present mol and its
+    # PRISTINE conformer -- _align_to_pai below can reflect the coordinates, which would
+    # invert the recovered sign. Default OFF -> nothing is stamped -> byte-identical.
+    _locked_plan = None
+    _locked_donor_conf = None
+    if locked_donor.lever_enabled():
+        try:
+            _locked_plan = locked_donor.plan_locked_donors(tmc_mol)
+            if _locked_plan:
+                _locked_donor_conf = tmc_mol.GetConformer()
+        except Exception:  # noqa: BLE001 - guarded: degrade to today's behaviour
+            _locked_plan = None
+            _locked_donor_conf = None
 
     # 1. Identify Metal and Connections
     metal_idx = -1
@@ -1313,6 +1600,20 @@ def get_oin_string(tmc_mol, xyz_coords):
                     new_bond.SetStereoAtoms(a0, a1)
                     new_bond.SetStereo(bond.GetStereo())
 
+        # v0.4.5 Lane 8: the chiral tags AddAtom copied above are parities relative
+        # to the PARENT's neighbour order, and this rebuild changed that order --
+        # hydrogens were folded into SetNumExplicitHs and bonds were re-added by
+        # ascending parent index. Both are functions of the input atom numbering,
+        # so the same stereocentre can emit @ or @@ depending only on how the XYZ
+        # happened to be numbered. Re-derive the tags from the geometry instead.
+        # Default OFF -> byte-identical output.
+        if lever_enabled("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():
+            from ..oin.stable_stereo import restamp_fragment_chirality
+
+            restamp_fragment_chirality(
+                mw, {v: k for k, v in old_to_new.items()}, mol.GetConformer()
+            )
+
         frag_mol = mw.GetMol()
         # Materialize single-bond directions from the carried E/Z stereo *now*,
         # before the downstream recover()/AssignStereochemistry(cleanIt=True):
@@ -1325,6 +1626,21 @@ def get_oin_string(tmc_mol, xyz_coords):
             pass
 
         frag_mol = _repair_mixed_aromaticity(frag_mol)
+
+        # Record the metal-locked donor configuration on the rebuilt fragment (Y1 P3).
+        # A PROPERTY, not a tag: the sanitising steps between here and the final
+        # MolToSmiles clear a trivalent nitrogen's tag by design, and property values
+        # survive them. ChiralityRecoveryUtility.recover() converts it back to a tag as
+        # its last action. Runs AFTER _repair_mixed_aromaticity, which may return a
+        # rebuilt mol. No-op unless OIN_EMIT_LOCKED_DONOR is set.
+        if _locked_plan and _locked_donor_conf is not None:
+            locked_donor.stamp_locked_donor_stereo(
+                frag_mol,
+                tmc_mol,
+                _locked_donor_conf,
+                old_to_new,
+                plan=_locked_plan,
+            )
 
         # Canonicalize which atom of a resonance-/symmetry-equivalent donor set
         # carries the binding slot (gap 1: carboxylate O{n}C(=O) vs OC(=O{n})).
@@ -1369,6 +1685,10 @@ def get_oin_string(tmc_mol, xyz_coords):
 
         sanitized_smiles = ""
         sanitized_mol = frag_mol  # Default fallback
+        # v0.4.5 Lane 1: donor -> SMILES-position map produced by the canonical-body
+        # reparse. None means the reparse did not run (flag off) or bailed, in which case
+        # the position map is derived from `sanitized_mol` exactly as before.
+        canonical_body_positions = None
         if not is_metal:
             sanitized_smiles, sanitized_mol = OINSanitizer.generate_robust_smiles(
                 frag_mol, frag_binding_indices_local
@@ -1378,7 +1698,42 @@ def get_oin_string(tmc_mol, xyz_coords):
             # Derive the single-bond directions from the carried E/Z stereo so the
             # canonical SMILES writes the '/' and '\' cis/trans markers.
             Chem.SetDoubleBondNeighborDirections(sanitized_mol)
-            sanitized_smiles = Chem.MolToSmiles(sanitized_mol, isomericSmiles=True, canonical=True)
+            # h_faithful_smiles, not MolToSmiles: this call DISCARDS the string
+            # generate_robust_smiles just built and re-derives it from the recovered
+            # mol, so the hydrogen bookkeeping that function froze has to survive the
+            # writer a second time. It does not on its own -- a 0-H atom whose valence
+            # sits between two allowed values serializes BARE and re-reads one hydrogen
+            # heavier. This is the site that actually produces the sidecar fragment, so
+            # it is the one that decides the OIN's atom count. Default-OFF lever
+            # (OIN_H_FAITHFUL); with it unset this is exactly MolToSmiles. See
+            # oin/hydrogen.py.
+            sanitized_smiles = h_faithful_smiles(sanitized_mol, isomericSmiles=True, canonical=True)
+
+            # v0.4.5 Lane 1: canonicalize the ligand BODY. The graph perceived from 3D
+            # distances is not unique -- max_weight_matching picks one of several Kekule
+            # structures and AC2BO one of several resonance forms -- so two geometries of
+            # the same molecule serialize differently even though MolToSmiles is canonical
+            # for each. Round-trip the body through MolFromSmiles/MolToSmiles (the compare
+            # layer's own fix, promoted upstream) and clear chelate-locked E/Z. Slot
+            # identity is carried through the reparse by atom map number, never re-derived.
+            #
+            # MERGE NOTE (Lane 1 x atom_count): these two levers touch the same write and
+            # they INTERACT. canonical_body_emit reparses through MolFromSmiles/MolToSmiles,
+            # which is precisely the round trip that re-reads a bare 0-H symbol one hydrogen
+            # heavier -- the defect OIN_H_FAITHFUL exists to prevent. So with BOTH on, the
+            # reparse can undo the H-faithful fix.
+            #
+            # Safe in the shipped configuration (OIN_CANONICAL_BODY ON, OIN_H_FAITHFUL OFF):
+            # h_faithful_smiles then behaves as plain MolToSmiles and nothing is lost. Do
+            # NOT promote OIN_H_FAITHFUL until canonical_body_emit is H-faithful too, or the
+            # two are reordered so the reparse runs first, with a both-levers-on test over
+            # the atom_count GAIN fixtures. Recorded in oin/levers.py::_HELD_OFF.
+            if lever_enabled("OIN_CANONICAL_BODY"):
+                from ..oin.canonical_body import canonical_body_emit
+
+                _canon = canonical_body_emit(sanitized_mol, frag_binding_indices_local)
+                if _canon is not None:
+                    sanitized_smiles, canonical_body_positions, sanitized_mol = _canon
         else:
             sanitized_smiles = f"[{mol.GetAtomWithIdx(metal_idx).GetSymbol()}]"
 
@@ -1398,14 +1753,23 @@ def get_oin_string(tmc_mol, xyz_coords):
         # the deprotonated X-type carbon and the string drifts c{N} -> [cH]{N}.
         frag_to_smiles_idx = {}
         output_order = None
-        if sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder"):
+        if canonical_body_positions is None and (
+            sanitized_mol is not None and sanitized_mol.HasProp("_smilesAtomOutputOrder")
+        ):
             try:
                 raw = sanitized_mol.GetProp("_smilesAtomOutputOrder")
                 output_order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
             except Exception:
                 output_order = None
 
-        if output_order is not None:
+        if canonical_body_positions is not None:
+            # Lane 1 already carried each donor's identity through the reparse by atom map
+            # number and read the output order off the REPARSED mol, so its positions are
+            # authoritative -- and neither branch below may run, since both would rebuild
+            # the map from a mol whose output order describes the PRE-reparse string.
+            # Donors are the only keys, which is all the lookup below asks for.
+            frag_to_smiles_idx = dict(canonical_body_positions)
+        elif output_order is not None:
             # output_order[pos] = fragment-atom index emitted at SMILES position pos
             for s_idx, f_idx in enumerate(output_order):
                 frag_to_smiles_idx[f_idx] = s_idx
@@ -1453,8 +1817,27 @@ def get_oin_string(tmc_mol, xyz_coords):
     # Metal is Rank 0 (First).
 
     def get_input_order_key(item):
+        canonical = bool(lever_enabled("OIN_CANONICAL_SLOTS"))
         if item["is_metal"]:
-            return -1  # Metal first
+            # Metal first. Typed to match the branch below so the two never meet in one
+            # comparison: () sorts before every non-empty tuple, -1 before every index.
+            return () if canonical else -1
+
+        if canonical:
+            # v0.4.5 Lane 2: the raw XYZ atom index is the single most order-dependent
+            # quantity in the encoder, and it is used here only to separate fragments that
+            # already tied on mass, binder mass and body SMILES -- i.e. two copies of the
+            # same ligand. Replace it with WHERE each copy binds inside its own canonical
+            # SMILES (``s_idx``, read off ``_smilesAtomOutputOrder``), which distinguishes
+            # a ligand bound through one arm from the same ligand bound through another
+            # without ever consulting the file.
+            #
+            # A residual tie here is two fragments that are identical in body AND in donor
+            # position, i.e. genuinely interchangeable; ``list.sort`` is stable, and which
+            # of them ends up first cannot survive the canonical-slot post-pass, which
+            # re-derives fragment order from the canonical slot integers.
+            return tuple(sorted(b[3] for b in item.get("binding_atoms", [])))
+
         # Find min original index to ensure deterministic input order
         valid_indices = [atom_map_to_xyz.get(idx, idx) for idx in item["indices"]]
         return min(valid_indices) if valid_indices else float("inf")
@@ -1609,6 +1992,33 @@ def get_oin_string(tmc_mol, xyz_coords):
     from ..oin.inline import OINInlineHandler
 
     inline_oin = OINInlineHandler.generate_inline_string(sidecar_oin)
+
+    # v0.4.5 Lane 2 (opt-in, OIN_CANONICAL_SLOTS): make the {n} slot integers a graph
+    # invariant instead of a property of how the input XYZ was numbered.
+    #
+    # Deliberately a post-pass on the FINISHED inline string rather than a change inside
+    # _permute_and_serialize's lex-max loop. The inline string is exactly the
+    # representation compare._parse_vertex_colors reads, so the encoder and the comparison
+    # key canonicalize the same bytes through the same function and cannot drift apart --
+    # and the geometric fit, the eta RC1 content swap and the heading-atom tiers, all of
+    # which read item["slot"], run untouched beforehand. Default OFF -> byte-identical.
+    #
+    # DOWNSTREAM CONSUMERS (Lane 5 metal Delta/Lambda, Lane 6 metal-bound amine): this is
+    # where the canonical slot labeling is computed, and the way to ask for it is
+    #
+    #     from oinsmiles.oin.canonical_slots import canonical_slot_map
+    #     canonical_slot = canonical_slot_map(oin_string)[slot_in_that_string]
+    #
+    # on the string this function returns. That helper re-derives the same relabeling from
+    # the same bytes through the same `compare._parse_vertex_colors`, so it agrees with this
+    # post-pass by construction and is the IDENTITY once the lever is on -- a caller written
+    # against it is correct with the lever either way, and stays correct after promotion.
+    # Do NOT call `canonical_slot_permutation(geo, vcolor)` for that question; see its
+    # docstring warning (its tie-break is a property of the incoming labeling).
+    if lever_enabled("OIN_CANONICAL_SLOTS"):
+        from ..oin.canonical_slots import canonicalize_oin_slots
+
+        inline_oin = canonicalize_oin_slots(inline_oin)
 
     return inline_oin + _axial_suffix
 

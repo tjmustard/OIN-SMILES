@@ -246,6 +246,11 @@ def hunt(dataset: Path, n: int) -> dict:
         "n_candidates": len(candidates),
         "n_residue_ambiguous": len(residue),
         "residue_examples": residue[:25],
+        # The FULL ambiguous residue, not a sample: the torsion-aware configurational oracle
+        # (``config_split.py``) consumes this list to split conformational from
+        # jointly-blind. ``residue_examples`` stays capped so the rendered markdown does not
+        # grow unboundedly.
+        "residue": residue,
         "n_candidates_rigid": len(rigid_candidates),
         "rigidity_threshold_rotb": RIGID_ROTB_MAX,
         "candidates": candidates[:60],

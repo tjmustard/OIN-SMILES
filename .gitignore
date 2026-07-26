@@ -109,3 +109,8 @@ docs/social_media/
 # Injectivity audit (Y1/Y2/Y3) -- regenerable probe output
 /results-injectivity-y1/
 /results-injectivity-y2/
+/results-injectivity-y3/
+tools/*_final.txt
+tools/suite_after*.txt
+tools/rt*.txt
+tools/blast.txt

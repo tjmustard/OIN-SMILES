@@ -1,0 +1,28 @@
+{
+  "summary": {
+    "sampled": 120,
+    "off_arm_encode_failed": 0,
+    "off_matches_frozen": 120,
+    "off_differs_from_frozen": 0,
+    "off_equals_on": 119,
+    "off_differs_from_on": 1,
+    "donor_H_delta_histogram": {
+      "-4": 2,
+      "0": 29,
+      "1": 22,
+      "2": 37,
+      "3": 13,
+      "4": 8,
+      "5": 5,
+      "6": 4
+    }
+  },
+  "diffs": [
+    {
+      "mol": "VEJXOZ_comp_0",
+      "kind": "off_vs_on",
+      "off": "[Ru_TPL].[BH]{1}=[CH]{1}[BH]{1<}[B@H]1B[B@H]2[CH]{0}=C{0}(c3ccc(C#C)cc3)[BH]{0>}[B@@H]12.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1",
+      "on": "[Ru_TPL].[CH]CC1[CH][CH]C(C{1}2[CH]{1}[BH]345[BH]{0}6[CH]{0}[BH]{0<}78[BH]{1<}29[BH]3[BH]479[BH]568)[CH][CH]1.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1"
+    }
+  ]
+}

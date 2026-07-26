@@ -1,0 +1,1870 @@
+{
+  "tally": {
+    "cage_amputated__other_status": 138,
+    "boron_but_no_cage_motif": 6,
+    "cage_amputated__known_encode_fail": 34,
+    "cage_amputated__COUNTED_AS_PASSING": 14
+  },
+  "rows": [
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 14,
+      "BB_deleted": 11,
+      "mol": "AFOGEK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "AHIKAD",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "AQUHOL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "AQUJIH",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "ARORII",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "AROROO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 17,
+      "BB_deleted": 19,
+      "mol": "AVOFIB",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "BAFWAI",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "BAFWOW",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "BAFWUC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "BAFXAJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 19,
+      "BB_deleted": 17,
+      "mol": "BEKLOU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 18,
+      "BB_deleted": 18,
+      "mol": "BEKLUA",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 19,
+      "BB_deleted": 17,
+      "mol": "BEKMAH",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 18,
+      "BB_deleted": 18,
+      "mol": "BEKMIP",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "BELBAX",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "BELBEB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "BIWJID",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "BOYVIV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 17,
+      "BB_deleted": 19,
+      "mol": "BUQXUG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "CAJZET",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "CAJZIX",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "CAJZOD",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "CAKBAS",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "CAKBEW",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "CAKBIA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "CAKBOG",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "CEQWAY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "CEQWEC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "CEQWIG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "CEQWOM",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "CEQWUS",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "CIDHAY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "CIDHEC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 8,
+      "BB_raw": 16,
+      "BB_pruned": 8,
+      "BB_deleted": 8,
+      "mol": "CIDHOM",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "COZCEZ",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 8,
+      "BB_deleted": 10,
+      "mol": "DUDTIG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "EGISES",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "EKIVEB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "FAMHEH",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 13,
+      "BB_deleted": 12,
+      "mol": "FARFAI",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 24,
+      "BB_deleted": 18,
+      "mol": "GANYEZ",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 14,
+      "BB_deleted": 11,
+      "mol": "GATHIT",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "GETBAK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "GIFVUN",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "GOHWEG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "GOHWIK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "GOHWOQ",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "GOHWUW",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "GOHXAD",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 19,
+      "BB_deleted": 17,
+      "mol": "GUHMOL_comp_1",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "GUNZUK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "GURJUA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "HAPCUY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "HAXJAS",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "HAXJEW",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "HAXJIA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "HAXJOG",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 20,
+      "BB_deleted": 16,
+      "mol": "HIMFAM",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 26,
+      "BB_deleted": 16,
+      "mol": "HIMQIF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "HIMQOL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ICEZIC",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ICEZUO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ICOXEG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "ICOXIK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 15,
+      "BB_deleted": 10,
+      "mol": "IJUZAO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 19,
+      "BB_deleted": 17,
+      "mol": "ILELOA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "JABGAX",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 24,
+      "BB_deleted": 18,
+      "mol": "JAFMIP",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "JAFSER",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 28,
+      "BB_deleted": 14,
+      "mol": "JAFSIV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "JAFTAO",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 28,
+      "BB_deleted": 14,
+      "mol": "JAFTES",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 8,
+      "BB_deleted": 10,
+      "mol": "KIXXOF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 14,
+      "BB_deleted": 11,
+      "mol": "LETXOY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 13,
+      "BB_deleted": 12,
+      "mol": "LETYAL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "MIMGAR",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "MIMGEV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 15,
+      "BB_deleted": 10,
+      "mol": "MODZUA",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 24,
+      "BB_pruned": 10,
+      "BB_deleted": 14,
+      "mol": "NEGVOL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "NIGCIP",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "OLUYOJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "OLUZIE",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "OLUZOK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "OLUZUQ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "OMABAF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "OMABEJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "OMABIN",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 20,
+      "BB_pruned": 12,
+      "BB_deleted": 8,
+      "mol": "OSENOR",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "OTOLAL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 12,
+      "n_cage_vertices": 12,
+      "BB_raw": 30,
+      "BB_pruned": 15,
+      "BB_deleted": 15,
+      "mol": "OZAREO",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "PAQBOZ",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "PAQBUF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "PAQCAM",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 8,
+      "BB_raw": 16,
+      "BB_pruned": 8,
+      "BB_deleted": 8,
+      "mol": "PEKQII",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 8,
+      "BB_raw": 16,
+      "BB_pruned": 8,
+      "BB_deleted": 8,
+      "mol": "PEKQOO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 17,
+      "BB_raw": 34,
+      "BB_pruned": 17,
+      "BB_deleted": 17,
+      "mol": "PEKQUU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 8,
+      "BB_raw": 16,
+      "BB_pruned": 7,
+      "BB_deleted": 9,
+      "mol": "PEKRAB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "QAMJAP",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 30,
+      "n_cage_vertices": 30,
+      "BB_raw": 63,
+      "BB_pruned": 34,
+      "BB_deleted": 29,
+      "mol": "QAQVOU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "QEJCEP",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "QIBGAL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "QIDHEQ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 6,
+      "BB_deleted": 12,
+      "mol": "QIDHIU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "QODDOF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 18,
+      "BB_deleted": 18,
+      "mol": "QUKJAJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 9,
+      "BB_deleted": 12,
+      "mol": "RAJNEY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "RAJNIC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "RAJNOI",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 21,
+      "BB_deleted": 21,
+      "mol": "RAJNUO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 14,
+      "BB_deleted": 11,
+      "mol": "RANCIU",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "RANMUR",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "RAWJEG",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 20,
+      "BB_pruned": 12,
+      "BB_deleted": 8,
+      "mol": "RAWJIK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 20,
+      "BB_pruned": 10,
+      "BB_deleted": 10,
+      "mol": "RAYCAY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 20,
+      "BB_pruned": 10,
+      "BB_deleted": 10,
+      "mol": "RAYCEC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "RHCABO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "RIWKAK",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "RIWKEO",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 14,
+      "BB_deleted": 7,
+      "mol": "RIWKIS",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "RIWKOY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "RIWKUE",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 19,
+      "n_cage_vertices": 19,
+      "BB_raw": 39,
+      "BB_pruned": 22,
+      "BB_deleted": 17,
+      "mol": "RONNOA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 19,
+      "n_cage_vertices": 19,
+      "BB_raw": 39,
+      "BB_pruned": 25,
+      "BB_deleted": 14,
+      "mol": "RONPES",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "RONQAP",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 25,
+      "BB_deleted": 17,
+      "mol": "RONQET",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 24,
+      "BB_deleted": 18,
+      "mol": "RONQET_comp_1",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 29,
+      "BB_deleted": 13,
+      "mol": "RONQOD",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 20,
+      "BB_pruned": 14,
+      "BB_deleted": 6,
+      "mol": "RULBOP",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 40,
+      "BB_pruned": 26,
+      "BB_deleted": 14,
+      "mol": "RULBUV",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 20,
+      "BB_deleted": 16,
+      "mol": "RULMOA_comp_2",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 22,
+      "BB_deleted": 14,
+      "mol": "RULMUG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 19,
+      "BB_deleted": 17,
+      "mol": "RULNAN",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 6,
+      "BB_deleted": 6,
+      "mol": "SEMTOV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 6,
+      "BB_deleted": 6,
+      "mol": "SEMTUB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 6,
+      "BB_deleted": 6,
+      "mol": "SEMVAJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 5,
+      "BB_deleted": 7,
+      "mol": "SEMVEN",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 6,
+      "BB_deleted": 6,
+      "mol": "SEMVIR",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 5,
+      "BB_deleted": 7,
+      "mol": "SEMVUD",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 11,
+      "BB_deleted": 10,
+      "mol": "SOQKEQ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "TENBAR",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "TENBEV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "TPRCBN",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "TUBBEX",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "UFUCUU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "UFUDAB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ULODUU",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ULOFAC",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ULOFEG",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "ULOFIK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "ULOFUW",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "UYEJAK",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 23,
+      "BB_deleted": 19,
+      "mol": "UYESUO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "UZUYAQ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 4,
+      "n_cage_vertices": 4,
+      "BB_raw": 5,
+      "BB_pruned": 2,
+      "BB_deleted": 3,
+      "mol": "VADCEI",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "VALPON",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "VASWES",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 7,
+      "n_cage_vertices": 7,
+      "BB_raw": 12,
+      "BB_pruned": 6,
+      "BB_deleted": 6,
+      "mol": "VEJXOZ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 12,
+      "n_cage_vertices": 12,
+      "BB_raw": 30,
+      "BB_pruned": 17,
+      "BB_deleted": 13,
+      "mol": "VIKDIF",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "VOFHUW",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 13,
+      "BB_deleted": 12,
+      "mol": "VOGHUX",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 8,
+      "n_cage_vertices": 8,
+      "BB_raw": 15,
+      "BB_pruned": 8,
+      "BB_deleted": 7,
+      "mol": "XIDPAD",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 8,
+      "n_cage_vertices": 8,
+      "BB_raw": 16,
+      "BB_pruned": 7,
+      "BB_deleted": 9,
+      "mol": "XIDPEH",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 8,
+      "BB_deleted": 10,
+      "mol": "XIQKOY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 9,
+      "BB_deleted": 9,
+      "mol": "XIQLAL",
+      "in_encode_fail_34": false,
+      "counted_as_passing": true
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 18,
+      "BB_deleted": 18,
+      "mol": "XOJKEM",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 11,
+      "n_cage_vertices": 11,
+      "BB_raw": 25,
+      "BB_pruned": 14,
+      "BB_deleted": 11,
+      "mol": "XOJLIR",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 12,
+      "BB_deleted": 9,
+      "mol": "XUKRIF",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "YEKZEU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 10,
+      "BB_deleted": 8,
+      "mol": "YEKZIY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "YIVLAQ",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "YIVQAV",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 13,
+      "BB_deleted": 8,
+      "mol": "YIVQOJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 18,
+      "n_cage_vertices": 18,
+      "BB_raw": 36,
+      "BB_pruned": 20,
+      "BB_deleted": 16,
+      "mol": "ZECFEU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 24,
+      "BB_deleted": 18,
+      "mol": "CEMTIZ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 10,
+      "n_cage_vertices": 10,
+      "BB_raw": 21,
+      "BB_pruned": 10,
+      "BB_deleted": 11,
+      "mol": "EGETOB",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 26,
+      "BB_deleted": 16,
+      "mol": "GORNUY",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 26,
+      "BB_deleted": 16,
+      "mol": "MAFRUJ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 26,
+      "BB_deleted": 16,
+      "mol": "MAFSAQ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 23,
+      "BB_deleted": 19,
+      "mol": "MAFSEU",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 23,
+      "BB_deleted": 19,
+      "mol": "MAFSIY",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 22,
+      "BB_deleted": 20,
+      "mol": "MOLXAO",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 9,
+      "n_cage_vertices": 9,
+      "BB_raw": 18,
+      "BB_pruned": 11,
+      "BB_deleted": 7,
+      "mol": "PAYTUH",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 24,
+      "BB_deleted": 18,
+      "mol": "POVVAZ",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 28,
+      "BB_deleted": 14,
+      "mol": "RUJSIA",
+      "in_encode_fail_34": false,
+      "counted_as_passing": false
+    },
+    {
+      "nB": 20,
+      "n_cage_vertices": 20,
+      "BB_raw": 42,
+      "BB_pruned": 27,
+      "BB_deleted": 15,
+      "mol": "YIBZIV",
+      "in_encode_fail_34": true,
+      "counted_as_passing": false
+    }
+  ]
+}

@@ -6,9 +6,23 @@ from functools import lru_cache
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from ..oin.canonical_slots import derive_rotation_group
+from ..oin.hydrogen import h_faithful_smiles
+from ..oin.levers import lever_enabled
 from ..oin.winding import signed_circulation
 
 logger = logging.getLogger(__name__)
+
+#: Canonicalize the winding character across interchangeable, automorphic eta groups
+#: (`OINDiscreteAligner._canonical_eta_winding`). Default OFF: it is the one Lane 3
+#: change that is NOT byte-identical, because it rewrites the emitted winding for the
+#: meso arrangement of a symmetric ansa-metallocene -- two spellings of one achiral
+#: compound that the encoder currently picks between by geometry.
+#: Read at import, so a test must patch this attribute rather than the environment.
+#: The DEFAULT now lives in oin.levers (promoted to ON in v0.4.5) rather than being
+#: spelled here -- the old inline `"0") != "0"` form is exactly the drift lever_enabled
+#: exists to prevent, since a sibling site used bare truthiness where "0" ENABLED a lever.
+CANONICAL_ETA_WINDING = lever_enabled("OIN_CANONICAL_ETA_WINDING")
 
 try:
     from rdkit import Chem
@@ -352,8 +366,16 @@ class OINSanitizer:
 
         # 2. Generate Canonical SMILES
         # isomericSmiles=True ensures we keep stereochem info if present
+        #
+        # h_faithful_smiles, not MolToSmiles: everything above this line works to get
+        # each atom's hydrogen count right, and the writer can still throw it away. A
+        # 0-H atom whose valence sits between two allowed values -- a 3-valent thiophene
+        # sulfur, between sulfur's 2 and 4 -- serializes BARE, and a bare symbol
+        # re-reads as "fill to the next allowed valence with H", so the count step 1
+        # just froze comes back one too high. Step 1b above is a narrower, per-motif
+        # version of the same repair. Default-OFF lever; see oin/hydrogen.py.
         kmol = rw_mol.GetMol()
-        smiles = Chem.MolToSmiles(kmol, isomericSmiles=True, canonical=True)
+        smiles = h_faithful_smiles(kmol, isomericSmiles=True, canonical=True)
         return smiles, kmol
 
     @staticmethod
@@ -1390,15 +1412,20 @@ class OINDiscreteAligner:
                     if grp_coords is None or len(grp_coords) < 2:
                         continue
 
-                    if self._item_orientation_free(item):
-                        # The heading of a free ring must never come from geometry:
-                        # its constituent indices may have been remapped onto a
-                        # canonical automorphic ring (see
-                        # OINSanitizer.canonical_eta_set_representative), and even
-                        # when they have not, the geometric pick tracks the embedding.
-                        canonical_idx = self._topological_heading_atom(smiles, constituent_indices)
-                    else:
-                        canonical_idx = self._canonical_heading_atom(smiles, constituent_indices)
+                    # The heading of an eta group must never come from geometry, whether
+                    # or not the ring is orientation-free. For a free ring the
+                    # constituent indices may have been remapped onto a canonical
+                    # automorphic ring (see
+                    # OINSanitizer.canonical_eta_set_representative); for any ring the
+                    # geometric pick tracks the embedding, so it lands on a different
+                    # ring atom in an input structure than in its regenerated twin and
+                    # the star wanders (GIPDEQ: a boron ylide whose fragment will not
+                    # kekulize, so the strict rank is unavailable and the old code fell
+                    # straight through to geometry). `_topological_heading_atom` has its
+                    # own three tiers -- strict canonical rank, the valence-tolerant
+                    # symmetry graph, then the lowest constituent index -- and every one
+                    # of them is a function of the graph alone.
+                    canonical_idx = self._topological_heading_atom(smiles, constituent_indices)
                     if canonical_idx is None:
                         continue
 
@@ -1491,6 +1518,19 @@ class OINDiscreteAligner:
                         f"Forced Heading Atom for Symmetric Ligand {smiles}: Index {forced_idx}"
                     )
 
+        # 4c. Canonical winding across interchangeable automorphic eta groups (Lane 3).
+        # Gated OFF by default: it rewrites the emitted winding character for the meso
+        # arrangement of a symmetric ansa-metallocene, so it is not byte-identical.
+        winding_override = {}
+        if CANONICAL_ETA_WINDING and geometry_name in TEMPLATE_SPECS:
+            winding_override = self._canonical_eta_winding(
+                best_final_map,
+                heading_local_indices,
+                geometry_name,
+                tmpl_vectors,
+                alignment_rotation,
+            )
+
         # 5. Serialize Index-Based Format: w:Rank.Idx:Slot
         parts = []
         for x in best_final_map:
@@ -1533,12 +1573,249 @@ class OINDiscreteAligner:
                             slot_x_ref=np.array(slot_def["ref"]),
                             alignment_rotation=alignment_rotation,
                         )
+                        direction_char = winding_override.get((rank, slot, idx), direction_char)
 
                     tag += direction_char
 
                 parts.append(tag)
 
         return ";".join(parts)
+
+    @classmethod
+    def _eta_automorphism_class(cls, smiles, constituent_indices):
+        """Identity shared by eta groups related by a ligand-graph automorphism.
+
+        The canonical SMILES of the fragment with every constituent atom carrying the
+        SAME atom-map number: two eta groups get the same id exactly when some
+        automorphism of the fragment graph carries one constituent set onto the other.
+        Two eta rings on *different* fragments compare equal when the fragment strings
+        are identical and the rings sit at corresponding positions, which is what makes
+        an unbridged bis(indenyl) (two separate, identical fragments) come out as one
+        class alongside a silane-bridged one (two rings inside a single fragment).
+
+        Sanitization is deliberately skipped -- an unkekulizable borate or boron ylide
+        must still get an id -- so this is a *string* identity, deterministic for a
+        given fragment SMILES, which is all an equality test needs. Returns None when
+        it cannot be computed, and a None id never joins any class.
+        """
+        if not smiles or not constituent_indices:
+            return None
+        try:
+            mol = Chem.MolFromSmiles(smiles, sanitize=False)
+            if mol is None or mol.GetNumAtoms() <= max(constituent_indices):
+                return None
+            rw = Chem.RWMol(mol)
+            for atom in rw.GetAtoms():
+                atom.SetAtomMapNum(0)
+            for idx in constituent_indices:
+                rw.GetAtomWithIdx(int(idx)).SetAtomMapNum(1)
+            return Chem.MolToSmiles(rw.GetMol(), canonical=True)
+        except Exception:
+            return None
+
+    def _canonical_eta_winding(
+        self,
+        best_final_map,
+        heading_local_indices,
+        geometry_name,
+        tmpl_vectors,
+        alignment_rotation,
+    ):
+        """Canonical winding assignment across interchangeable, automorphic eta groups.
+
+        Returns ``{(rank, slot, heading_idx): winding_char}`` -- overrides only, empty
+        when nothing needs canonicalizing.
+
+        WHY THIS IS NEEDED
+        ------------------
+        Two OIN spellings denote the SAME compound exactly when they are related by a
+        proper rotation of the coordination polyhedron composed with a graph automorphism
+        of the ligand assembly. Both operations carry each ring's winding character along
+        **unchanged**: a proper rotation preserves handedness, and an automorphism
+        mapping one eta ring onto another preserves the cyclic sense (an automorphism
+        that *reverses* it is precisely the orientation-free case, which is already
+        forced to a fixed ``'>'`` and is excluded here). So the pair
+        ``(ring identity, winding char)`` travels as a unit and the only freedom left is
+        WHICH interchangeable slot each unit is written at. Today geometry decides that,
+        which is why a symmetric ansa-metallocene's meso diastereomer encodes as
+        ``{0<}...{1>}`` from one structure and ``{0>}...{1<}`` from its regenerated twin.
+
+        WHY IT CANNOT DESTROY STEREOCHEMISTRY
+        -------------------------------------
+        No reflection is ever applied -- only proper rotations and graph automorphisms,
+        the two operations that preserve molecular identity by definition. Concretely,
+        on an ansa-metallocene: the **rac** diastereomer carries the same character on
+        both rings, so sorting is a no-op and its mirror image (the other character on
+        both rings) stays a different string; only **meso**, whose two mirror-related
+        spellings really are one achiral compound, collapses. A Cp/fluorenyl pair is not
+        automorphic, so each sits in a singleton orbit and nothing moves -- correctly,
+        because for an unsymmetrical bridge the two spellings are genuine enantiomers.
+        This is the guard the v0.4.4 axial wave lacked when it sorted a token by sign and
+        silently made it reflection-invariant.
+        """
+        template_spec = TEMPLATE_SPECS[geometry_name]
+
+        # 1. The eta groups whose winding is load-bearing, with their geometric sign.
+        eta = {}
+        for x in best_final_map:
+            slot = x["slot"]
+            cons = sorted(x.get("constituent_indices") or [])
+            if len(cons) < 2 or slot not in template_spec:
+                continue
+            if self._item_orientation_free(x):
+                continue  # winding is notation, already a fixed character
+            heading = next((idx for idx in cons if (x["rank"], idx) in heading_local_indices), None)
+            if heading is None or x.get("group_coords") is None:
+                continue
+            slot_def = template_spec[slot]
+            eta[slot] = {
+                "rank": x["rank"],
+                "heading": heading,
+                "cons": cons,
+                "smiles": x["chem_id"][1],
+                "class": self._eta_automorphism_class(x["chem_id"][1], cons),
+                "winding": self._determine_winding(
+                    grp_coords=x["group_coords"],
+                    star_idx=heading,
+                    constituent_indices=cons,
+                    slot_z=np.array(slot_def["pos"]),
+                    slot_x_ref=np.array(slot_def["ref"]),
+                    alignment_rotation=alignment_rotation,
+                ),
+            }
+        if len(eta) < 2:
+            return {}
+
+        # 2. Colour every occupied slot. Winding is deliberately NOT part of the colour:
+        # we are asking which slots may be *relabelled*, and the answer must not depend
+        # on the very characters we are about to reassign.
+        colour = {}
+        for x in best_final_map:
+            slot = x["slot"]
+            cons = sorted(x.get("constituent_indices") or [])
+            colour[slot] = (x["chem_id"], self._eta_automorphism_class(x["chem_id"][1], cons))
+
+        # 3. The proper rotations of this polyhedron that preserve every slot colour.
+        # `_brute_force_symmetries` is built from `Rotation.from_euler`, so every element
+        # is proper -- no reflection can enter here.
+        allowed = [
+            perm
+            for perm in self._brute_force_symmetries(tmpl_vectors)
+            if all(colour.get(perm[s]) == c for s, c in colour.items())
+        ]
+        if not allowed:
+            return {}
+
+        # 4. Orbits of eta slots under that group.
+        orbit_of = {}
+        for slot in eta:
+            reachable = frozenset(perm[slot] for perm in allowed if perm[slot] in eta) | frozenset(
+                [slot]
+            )
+            orbit_of[slot] = reachable
+        orbits = {frozenset().union(*(orbit_of[s] for s in orbit_of[slot])) for slot in orbit_of}
+
+        override = {}
+        for orbit in orbits:
+            members = sorted(orbit)
+            # Scoped to a 2-orbit: that is every case the corpus presents (a metallocene's
+            # two eta slots), and for a larger orbit the rotation group may realize only
+            # SOME rearrangements, so the reachability argument below would need the full
+            # induced-group computation. Fail safe to today's behaviour instead.
+            if len(members) != 2:
+                continue
+            classes = {eta[s]["class"] for s in members}
+            if len(classes) != 1 or None in classes:
+                continue  # not automorphic -- these spellings are NOT interchangeable
+
+            s0, s1 = members
+            a, b = eta[s0], eta[s1]
+            eps = self._eta_swap_sense(a, b)
+            if eps is None:
+                continue
+
+            # Is this arrangement ACHIRAL -- i.e. does the mirror spelling denote the same
+            # compound? Reflecting the structure flips BOTH characters. Applying the
+            # slot-swapping proper rotation together with the ligand automorphism maps
+            # (w0, w1) to (eps*w1, eps*w0), so that composite equals the mirror spelling
+            # (-w0, -w1) exactly when:
+            #     eps == +1  and  w0 != w1      (two separate but identical fragments:
+            #                                    each ring is canonically ordered the same
+            #                                    way, so the swap preserves cyclic sense)
+            #     eps == -1  and  w0 == w1      (two rings inside ONE bridged fragment:
+            #                                    the canonical SMILES traverses out along
+            #                                    one ring and back along the other, so the
+            #                                    swap reverses cyclic sense)
+            # When that holds the mirror is reachable by proper operations alone, the
+            # compound is achiral, and its two spellings must collapse to one. When it
+            # does NOT hold the two spellings are genuine ENANTIOMERS and folding them
+            # would destroy exactly the stereochemistry the winding marker exists to carry
+            # -- an ansa-metallocene's rac/meso pair. Both branches were checked against
+            # the independent geometric oracle in `tools/eta_core_chirality.py`
+            # (agreement 4/4); the naive "sort the two characters" rule this replaces got
+            # every bridged case backwards.
+            same = a["winding"] == b["winding"]
+            achiral = (eps == 1 and not same) or (eps == -1 and same)
+            if not achiral:
+                continue
+
+            flip = {">": "<", "<": ">"}
+            current = (a["winding"], b["winding"])
+            mirrored = (flip[a["winding"]], flip[b["winding"]])
+            if mirrored < current:  # '<' precedes '>': deterministic canonical choice
+                for slot, char in zip(members, mirrored):
+                    override[(eta[slot]["rank"], slot, eta[slot]["heading"])] = char
+        return override
+
+    @classmethod
+    def _eta_swap_sense(cls, a, b):
+        """+1/-1: does swapping these two eta groups preserve or reverse cyclic sense?
+
+        The winding character is read off each ring's OWN ascending-index (canonical
+        SMILES) order, so an automorphism carrying one ring onto the other does not
+        simply hand the character over -- it hands it over *possibly reversed*, and which
+        it is decides whether the achiral arrangement is the same-sign or the
+        opposite-sign one. Getting this backwards silently makes the encoder
+        reflection-invariant, which is the v0.4.4 axial wave's failure exactly.
+
+        Two eta groups on *different* fragments with the same fragment SMILES are two
+        copies of one ligand, canonically ordered identically, so the swap is
+        sense-preserving: +1. Two groups inside ONE fragment need the real automorphism.
+        Returns None when the groups are not automorphic at all (a Cp/fluorenyl ansa
+        pair), which means their spellings are not interchangeable and nothing may move.
+        """
+        if a["smiles"] != b["smiles"] or not a["smiles"]:
+            return None
+        if a["rank"] != b["rank"]:
+            return 1  # two separate, identical fragments
+
+        A, B = list(a["cons"]), list(b["cons"])
+        if len(A) != len(B):
+            return None
+        try:
+            mol = Chem.MolFromSmiles(a["smiles"], sanitize=False)
+            if mol is None or mol.GetNumAtoms() <= max(A + B):
+                return None
+            mol.UpdatePropertyCache(strict=False)
+            Chem.FastFindRings(mol)
+            n = len(B)
+            rev = B[::-1]
+            for match in mol.GetSubstructMatches(
+                mol, uniquify=False, useChirality=False, maxMatches=20000
+            ):
+                if len(match) != mol.GetNumAtoms():
+                    continue
+                image = [match[i] for i in A]
+                if set(image) != set(B):
+                    continue
+                for k in range(n):
+                    if image == B[k:] + B[:k]:
+                        return 1
+                    if image == rev[k:] + rev[:k]:
+                        return -1
+        except Exception:
+            return None
+        return None
 
     def _determine_winding(
         self, grp_coords, star_idx, constituent_indices, slot_z, slot_x_ref, alignment_rotation=None
@@ -1596,27 +1873,36 @@ class OINDiscreteAligner:
         return signed_circulation(grp_coords, star_local_idx, axis_mol)
 
     def _brute_force_symmetries(self, vectors):
-        n = len(vectors)
-        valid = set()
-        steps = [0, 90, 120, 180, 240, 270]
-        for rx, ry, rz in itertools.product(steps, repeat=3):
-            R = Rotation.from_euler("xyz", [rx, ry, rz], degrees=True)
-            rot = R.apply(vectors)
-            perm = [-1] * n
-            matches = 0
+        """Proper-rotation vertex permutations of this coordination template.
 
-            # Check if this rotation maps the template to itself
-            # Each vector in 'rot' must match a vector in 'vectors'
+        v0.4.5 Lane 2: delegates to ``oin.canonical_slots.derive_rotation_group``, now the
+        single source of truth for the polyhedron rotation groups -- the encoder here, the
+        comparison key in ``compare.py`` and the canonical-slot post-pass all read one
+        table and one group derivation (open debt TD-005).
 
-            for i in range(n):
-                dists = np.linalg.norm(vectors - rot[i], axis=1)
-                best = np.argmin(dists)
-                if dists[best] < 0.1:
-                    perm[i] = best
-                    matches += 1
-            if matches == n:
-                valid.add(tuple(perm))
-        return sorted(list(valid))
+        This used to brute-force Euler triples from the fixed grid
+        ``[0, 90, 120, 180, 240, 270]``. That grid **cannot express a 72-degree five-fold
+        rotation**, so on PBP it found 2 of the 10 proper rotations and the encoder could
+        not canonicalize a pentagonal-bipyramidal equatorial labeling at all. Measured
+        against the derived group it agreed on the other 10 geometries and never invented
+        a non-rotation, so unifying is a no-op everywhere except PBP, where it is a fix.
+        ``tests/unit/test_canonical_slots.py`` pins both halves of that statement.
+
+        The name is kept because it is what the call site and the tests already say;
+        nothing is brute-forced any more.
+        """
+        key = tuple(tuple(np.round(np.asarray(v, dtype=float), 6)) for v in vectors)
+        return _cached_rotation_group(key)
+
+
+@lru_cache(maxsize=64)
+def _cached_rotation_group(vectors_key):
+    """``derive_rotation_group`` memoized on a rounded vertex tuple.
+
+    ``_permute_and_serialize`` asks for the group on every molecule, always for one of the
+    eleven fixed templates, so the derivation runs once per geometry per process.
+    """
+    return derive_rotation_group([list(v) for v in vectors_key])
 
 
 def classify_coordination_geometry(donor_vectors):

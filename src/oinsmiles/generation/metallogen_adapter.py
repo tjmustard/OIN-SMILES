@@ -22,6 +22,7 @@ from rdkit import Chem
 from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
+from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from . import _telemetry
 from .oin_parser import OINParser, ParsedOIN
 from .structure import GeneratedStructure
@@ -153,16 +154,52 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
 
         mol.UpdatePropertyCache(strict=False)
 
+        # Which atoms did the OIN string itself bracket? A bracket atom is parsed with
+        # NoImplicit set, so its hydrogen count is what the encoder wrote rather than
+        # what RDKit would guess -- and that is the only H information in this molecule
+        # that is trustworthy. Recorded HERE, before the strip heuristics and the
+        # kekulization rescue start setting NoImplicit for their own reasons.
+        authoritative = {a.GetIdx() for a in mol.GetAtoms() if a.GetNoImplicit()}
+
         # Fix kekulization for neutral radicals (like Cp)
         try:
             Chem.Kekulize(mol)
         except Exception:
             # If it fails to kekulize, it's likely an aromatic ring missing a charge (like Cp)
             # Try adding a -1 charge to one atom in each 5-membered aromatic ring
+            #
+            # Restricted to ALL-CARBON rings. The charge exists for the Cp/indenyl/
+            # fluorenyl case: a 5-membered aromatic ring of five carbons cannot be
+            # kekulized neutral, and the -1 is what makes it a legal aromatic anion. A
+            # 5-ring carrying a heteroatom -- thiophene, pyrrole, furan, pyrazole --
+            # kekulizes perfectly well as it stands and never needed charging. Charging
+            # it anyway is not harmless: a -1 on a BARE aromatic carbon flips its
+            # implicit-H count from 1 to 0, so the hydrogen is destroyed silently, the
+            # generator builds a molecule one atom smaller than the input, and the round
+            # trip fails its final gate. QOBFOF_comp_0 (31 -> 30) is a thiophene riding
+            # along on a ligand whose carbene donor is the actual kekulization culprit;
+            # AJODEI_comp_0 (97 -> 95) is the same story on a pyrrole, once per ligand.
+            # 13 of the 13 auditable atom-count LOSS rows in the v0.4.5 capstone class --
+            # see docs/ATOM_COUNT_v0.4.5.md Sec 4.
+            #
+            # Deliberately NOT done here: preserving the H count of the atom that *does*
+            # get charged. On an all-carbon haptic ring, that charge is load-bearing in a
+            # second, undocumented way -- it is what strips the phantom implicit H off a
+            # bare 0-H eta ipso/fusion carbon written `c{n}`, which the explicit lock
+            # below only catches once GetTotalNumHs() has already reached 0. An eta
+            # indenyl depends on it (tests/unit/test_haptic_carbon_hcount.py). So the
+            # rings that need the charge keep exactly the old behaviour; the only change
+            # is that rings which never needed it are left alone.
             ring_info = mol.GetRingInfo()
             for ring in ring_info.AtomRings():
-                if len(ring) == 5 and all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring):
-                    mol.GetAtomWithIdx(ring[0]).SetFormalCharge(-1)
+                if len(ring) != 5:
+                    continue
+                atoms = [mol.GetAtomWithIdx(idx) for idx in ring]
+                if not all(a.GetIsAromatic() for a in atoms):
+                    continue
+                if not all(a.GetAtomicNum() == 6 for a in atoms):
+                    continue
+                mol.GetAtomWithIdx(ring[0]).SetFormalCharge(-1)
             try:
                 Chem.Kekulize(mol)
             except Exception:
@@ -237,6 +274,22 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
                     # Bare chalcogen donor = anionic alkoxide / thiolate / oxo -> 0 H.
                     # (A dative aqua/hydroxo/alcohol keeps its H via the explicit branch.)
                     strip = True
+                elif sym == "P":
+                    # Same argument as the N branch below, and for the same reason it is
+                    # exact rather than a heuristic: `replace_map` in oin/inline.py
+                    # de-brackets a binding atom only when the bracket content is a bare
+                    # organic-subset symbol, so `[PH]`/`[PH2]` keeps its bracket and takes
+                    # the explicit branch above. A BARE `P{n}` therefore always means 0 H.
+                    #
+                    # Without this branch a bare P donor keeps a phantom implicit H, and
+                    # the phantom only exists when perception gave the phosphorus valence
+                    # 4 (a phosphaalkene C=P, an ylide) -- RDKit then climbs to P's next
+                    # allowed valence, 5, with one hydrogen. A tertiary phosphine sits at
+                    # valence 3 with 0 implicit H already, so PPh3/PMe3/dppe are
+                    # untouched and this cannot move the many phosphine complexes that
+                    # already round-trip. MEGZIH_comp_0 (73 -> 74) is the phosphaalkene
+                    # case: `C=P{1}` re-read as `[PH]`.
+                    strip = heavy >= 1
                 elif sym == "N":
                     # A bare N with any heavy neighbour is a 0-H anionic X-type
                     # donor: amido, anilide, silylamide, azide, phosphinimide
@@ -254,9 +307,95 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
                     atom.SetNoImplicit(True)
                     atom.SetNumExplicitHs(0)
 
+            # A saturated (sp3, non-conjugated) neutral donor whose valence is
+            # ALREADY fully satisfied without the metal bond -- a
+            # fully-substituted tertiary/secondary amine N, a bracket aqua O --
+            # has no valence room left for the coming metal->donor bond, and
+            # RDKit's sanitizer rejects the assembled complex with e.g.
+            # "Explicit valence for atom # k N, 4, is greater than permitted":
+            # the confirmed dominant `no_conformers` root cause
+            # (docs/KNOWN_LIMITATIONS.md "Group 1 -- neutral L-donor
+            # over-valence": GEZKAZ's aqua O, VIBRIK's tertiary-amine N; same
+            # shape in FEJFAD/FEJFOR/LECSUJ/MUTYEG/VIBROQ/VIRWOJ/WIQRIA's
+            # N,N-chelate + dihalide complexes).
+            #
+            # Measured (not assumed) to be geometry- AND hybridization-specific:
+            # an aromatic donor (pyridine n) or an sp2 donor with a double bond
+            # (an imine C=N) is ALSO at "full" integer valence pre-metal-bond by
+            # this same count, yet embeds fine on every geometry tried,
+            # including 4_tetrahedral -- only a saturated sp3 donor
+            # (amine/aqua) on 4_tetrahedral specifically crashes (verified with
+            # a decision-table probe: aqua/amine + halides embeds fine on
+            # 3_trigonal_planar, 4_square_planar, 5_square_pyramidal,
+            # 5_trigonal_bipyramidal and 6_octahedral, and crashes ONLY on
+            # 4_tetrahedral; an aromatic/imine donor never crashes, even on
+            # 4_tetrahedral). 4_tetrahedral is the only geometry in this table
+            # with a stereogenic metal centre, so its embed path evidently adds
+            # an explicit (valence-counted) bond that the others do not. Gating
+            # on both conditions keeps this from ever touching a donor shape
+            # that is not already reproducibly broken -- an untargeted version
+            # of this fix bumped charge on 15/15 sampled unrelated PASSING
+            # donors (pyridine, imine, phosphine, aqua-on-non-tetrahedral,
+            # haptic arene) before this gate was added; do not widen it without
+            # re-running that A/B.
+            #
+            # Give the donor the same +1-formal-charge escape
+            # ``_charge_fix_promotion`` (generator3d/embed.py) already uses,
+            # ungated, for an over-valent double-bond promotion: an ammonium-/
+            # oxonium-like reading of the dative bond, with the H count frozen
+            # so RDKit does not also insert a phantom H now that a bond's worth
+            # of "room" exists. This never reaches the output OIN -- the round
+            # trip re-encodes from the generated 3D geometry, not from this
+            # internal RDKit bookkeeping -- so net charge does not need to
+            # balance.
+            if (
+                geo == "4_tetrahedral"
+                and atom.GetFormalCharge() == 0
+                and not atom.GetIsAromatic()
+                and not any(
+                    b.GetBondType() in (Chem.BondType.DOUBLE, Chem.BondType.TRIPLE)
+                    for b in atom.GetBonds()
+                )
+            ):
+                mol.UpdatePropertyCache(strict=False)
+                default_valence = Chem.GetPeriodicTable().GetDefaultValence(atom.GetAtomicNum())
+                if 0 < default_valence <= atom.GetTotalValence():
+                    atom.SetFormalCharge(1)
+                    atom.SetNoImplicit(True)
+                    atom.SetNumExplicitHs(atom.GetTotalNumHs())
+
             # MetalloGen map numbers are 1-based (slot index + 1).
             atom.SetAtomMapNum(mg_slot_idx + 1)
 
+        # Re-bracket the atoms the OIN string had already bracketed.
+        #
+        # This is the LAST serialization before MetalloGen, so it decides the built atom
+        # count -- and left alone it discards what the encoder said. A `[C]` that arrived
+        # bracketed from the string is written back out as a bare `C` and re-reads as
+        # `CH2`. Patching the three encoder-side serializations without this one moved 45
+        # of the 74 atom_count OIN strings and changed the built atom count for exactly
+        # none of them.
+        #
+        # Scoped to `authoritative`: atoms that were bracketed IN THE STRING (NoImplicit
+        # set at parse) and are not binding atoms. That is information the encoder
+        # deliberately wrote, so echoing it is preservation, not a guess -- and it is why
+        # h_faithful_smiles is NOT used here. That helper makes a string faithful to the
+        # molecule it is handed, and this molecule's H counts are not ground truth: a
+        # bare `c{n}` haptic ipso carbon arrives carrying a phantom implicit H, and being
+        # "faithful" to that phantom preserves the very error we are removing (it breaks
+        # the eta indenyl in tests/unit/test_haptic_carbon_hcount.py and every LOSS
+        # fixture). Ground truth lives upstream, in the encoder, where the counts come
+        # from the input geometry.
+        #
+        # An unpaired electron is only a lever to force RDKit to bracket the atom: SMILES
+        # has no radical syntax, so nothing about it reaches the string, and `mol` is not
+        # handed to MetalloGen -- only `mapped_smiles` is.
+        if hydrogen_faithfulness_enabled():
+            binder_indices = {v.atom_in_fragment_idx for v in frag_vectors}
+            for idx in authoritative - binder_indices:
+                atom = mol.GetAtomWithIdx(idx)
+                if atom.GetNumRadicalElectrons() == 0 and atom.GetTotalNumHs() == 0:
+                    atom.SetNumRadicalElectrons(1)
         mapped_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
         # RDKit records the canonical output ordering as a side effect of
         # MolToSmiles: output_order[canonical_pos] = original fragment atom index.
@@ -1195,7 +1334,7 @@ def _reencode_oin(mol):
                 pass
 
 
-def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False):
+def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False, cache=None):
     """True when conformer ``m`` INDEPENDENTLY re-encodes to ``target_key`` (SL1 accept stamp).
 
     The honest round-trip acceptance test for the generate-until-key-exact early-exit
@@ -1213,6 +1352,20 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
 
     When ``require_no_stretch`` (i.e. ``clash.STRETCHED_BOND_ENABLED``) is set, a conformer that
     round-trips but carries any stretched bond is rejected. Returns ``False`` on any failure.
+
+    ``cache``: optional dict, keyed on ``id(m)``, memoizing the expensive step-2 re-encode
+    (measured 48-57s per call on an eta/haptic conformer -- a full ``XYZToSMILES().convert()``
+    round trip). This function is called on the SAME mol object from two sites that can both
+    run within one ``MetalloGenAdapter.generate()`` call: the pool-fill loop's ``accept_fn``
+    (``generator3d/__init__.py``) and ``_select_by_geometry_impl``'s own early-exit re-scan
+    below. Every mol reaching the second site already had this exact predicate evaluated once
+    at the first (a mol only skips that first test when it comes from the untested
+    ``stereo_rejects`` fallback, or when ``accept_fn`` itself was never constructed -- both
+    leave no cache entry, so the lookup simply misses and this recomputes exactly as before).
+    ``m``'s geometry is immutable between the two sites, so a cache hit reproduces the prior
+    result byte-for-byte; this changes only which of two call sites pays the cost, never the
+    verdict. Default ``None`` -> no cache is consulted or written -> identical to pristine for
+    any caller that does not pass one.
     """
     try:
         if cmol is None:
@@ -1220,7 +1373,12 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
         fast = _reencode_oin_fast(cmol)
         if fast is not None and canonical_roundtrip_key(fast) != target_key:
             return False
-        full = _reencode_oin(m)
+        if cache is not None and id(m) in cache:
+            full = cache[id(m)]
+        else:
+            full = _reencode_oin(m)
+            if cache is not None:
+                cache[id(m)] = full
         if full is None or canonical_roundtrip_key(full) != target_key:
             return False
         if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
@@ -1280,7 +1438,9 @@ def _axial_report_miss(n_candidates, n_blind, target_axial, *, key):
     _telemetry.record("adapter.axial_miss", n_blind=n_blind, **{key: n_candidates})
 
 
-def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False):
+def _select_by_geometry_impl(
+    parsed, mols, honor_winding=True, early_exit=False, reencode_cache=None
+):
     """Choose the conformer that best realizes the requested coordination geometry.
 
     Falls back to the lowest-energy conformer. Three levels of preference over
@@ -1307,6 +1467,11 @@ def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False)
     template, when no pooled conformer classifies as the target, or on any
     perception failure. The winding pass likewise falls back to the best-geometry
     (then lowest-energy) conformer when no winding is requested or none matches.
+
+    ``reencode_cache``: forwarded to :func:`_reencode_key_matches` (see its docstring) so the
+    early-exit re-scan below reuses whatever the pool-fill loop's ``accept_fn`` already
+    computed for a mol, instead of paying the expensive re-encode a second time. ``None``
+    (default) -> no caching, byte-identical to pristine.
     """
     from ..utils.oin_aligner import classify_and_fit
 
@@ -1334,7 +1499,12 @@ def _select_by_geometry_impl(parsed, mols, honor_winding=True, early_exit=False)
                 if cmol is None:
                     continue
                 if _reencode_key_matches(
-                    parsed, m, target_key, cmol=cmol, require_no_stretch=require_no_stretch
+                    parsed,
+                    m,
+                    target_key,
+                    cmol=cmol,
+                    require_no_stretch=require_no_stretch,
+                    cache=reencode_cache,
                 ) and (target_axial is None or mol_axial_token(cmol) == target_axial):
                     logger.debug("accept-first: conformer re-encodes to the requested fac/mer key")
                     _telemetry.record("adapter.early_exit_hit")
@@ -1488,14 +1658,21 @@ def _verify_axial_honored(parsed, chosen_mol, cmol):
     _telemetry.record("adapter.axial_not_honored", requested=target, got=got)
 
 
-def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False):
+def _select_by_geometry(parsed, mols, honor_winding=True, early_exit=False, reencode_cache=None):
     """Conformer choice (see :func:`_select_by_geometry_impl`) plus an axial self-check.
 
     Kept as the module's entry point so every caller -- including the tests and
     ``tools/benchmark_generation.py``, which monkeypatch this name -- gets the verification.
+
+    ``reencode_cache``: forwarded as-is; see :func:`_select_by_geometry_impl` and
+    :func:`_reencode_key_matches`. ``None`` (default) -> byte-identical to pristine.
     """
     chosen, cmol = _select_by_geometry_impl(
-        parsed, mols, honor_winding=honor_winding, early_exit=early_exit
+        parsed,
+        mols,
+        honor_winding=honor_winding,
+        early_exit=early_exit,
+        reencode_cache=reencode_cache,
     )
     try:
         _verify_axial_honored(parsed, chosen, cmol)
@@ -1652,6 +1829,18 @@ class MetalloGenAdapter:
         else:
             early_exit = os.environ.get("OIN_EARLY_EXIT", "1") != "0"
         accept_fn = None
+        # Per-generation memo for the expensive step-2 re-encode inside
+        # _reencode_key_matches (a full XYZToSMILES().convert() round trip -- measured
+        # 48-57s/call on an eta/haptic conformer). accept_fn below and
+        # _select_by_geometry's own early-exit re-scan test the SAME mol objects against
+        # the SAME predicate: every mol _select_by_geometry sees either already ran
+        # through accept_fn during the pool-fill loop (a miss there is why the loop kept
+        # going) or arrived via the never-tested stereo_rejects fallback -- the cache
+        # handles both correctly (a genuine miss just recomputes once, same as before).
+        # Fresh dict per generate() call -- no cross-molecule staleness, same pattern as
+        # generator3d's alt_cache/PuLP memos. Harmless (empty, unused) when early_exit is
+        # off, since accept_fn is never built and nothing ever writes to it.
+        _reencode_cache: dict = {}
         if early_exit:
             try:
                 _target_key = canonical_roundtrip_key(getattr(parsed, "original_oin", "") or "")
@@ -1668,11 +1857,19 @@ class MetalloGenAdapter:
                 # a no-op for every OIN encoded without the flag.
                 _target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
 
-                def accept_fn(mg_mol, _pk=_target_key, _rns=_require_no_stretch, _ax=_target_axial):
+                def accept_fn(
+                    mg_mol,
+                    _pk=_target_key,
+                    _rns=_require_no_stretch,
+                    _ax=_target_axial,
+                    _cache=_reencode_cache,
+                ):
                     if _ax is None:
                         # byte-identical to the pre-axial predicate for every OIN that
                         # carries no token -- i.e. everything, absent OIN_EMIT_AXIAL.
-                        return _reencode_key_matches(parsed, mg_mol, _pk, require_no_stretch=_rns)
+                        return _reencode_key_matches(
+                            parsed, mg_mol, _pk, require_no_stretch=_rns, cache=_cache
+                        )
                     # Perceive on the CONTRACT mol (raw pool conformers are unsanitized, so
                     # axial perception throws on them); build it once and share it with the
                     # key check rather than letting each build its own.
@@ -1681,7 +1878,7 @@ class MetalloGenAdapter:
                         return False
                     return (
                         _reencode_key_matches(
-                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns
+                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns, cache=_cache
                         )
                         and mol_axial_token(cmol) == _ax
                     )
@@ -1717,7 +1914,9 @@ class MetalloGenAdapter:
         # early-exit on, the accept-first pass inside also short-circuits to a key-exact
         # conformer (belt-and-suspenders with the engine's accept_fn: the returned pool may be
         # size 1 already, but a full-pool fallback still gets the honest accept-first pick).
-        chosen_mol, mol = _select_by_geometry(parsed, mols, early_exit=early_exit)
+        chosen_mol, mol = _select_by_geometry(
+            parsed, mols, early_exit=early_exit, reencode_cache=_reencode_cache
+        )
 
         xyz_str = get_xyz_string(chosen_mol)
         # Contract mol: MetalloGen connectivity+coords, OIN bond orders + 3D stereo.

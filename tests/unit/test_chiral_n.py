@@ -1,13 +1,15 @@
-"""N-chiral fixture tests: stability + RDKit CIP oracle.
+"""N-chiral fixture tests: stability + a CIP check anchored on the 3D geometry.
 
 Fixture: tests/fixtures/PdCl2-RR-BDNN.xyz  (64 atoms, K:1,2;)
   Complex: cis-[PdCl2(BDNN)] where BDNN = (2R,4R)-pentane-2,4-diyl-bis(diphenylamine)
-  Chiral centres: C2 and C4 of the pentanediyl backbone (both R in IUPAC, S by CIP
-  priority because of Ph substituents). N atoms are NOT CIP stereocentres — both carry
-  two identical phenyl groups (and are tertiary amines without inversion barrier).
+  Chiral centres: C2 and C4 of the pentanediyl backbone, **both R**. N atoms are NOT CIP
+  stereocentres — both carry two identical phenyl groups (and are tertiary amines without an
+  inversion barrier).
 
-Candidate OIN (2026-03-04):
-  [Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}
+⚠ Same correction as ``test_chiral_p`` — read that module's docstring for the full account.
+In short: the old ``["S", "S"]`` assertion ran CIP on a SMILES reparsed from the encoder's own
+output, which relabels a tag rather than checking it, so an inverted tag passed. The geometry
+is the arbiter and says R at both centres, agreeing with the ``(2R,4R)`` in the filename.
 """
 
 import os
@@ -30,9 +32,12 @@ _BDNN_XYZ = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../fixtures/PdCl2-RR-BDNN.xyz")
 )
 
-# Human-reviewed expected OIN string (2026-03-04, generated from above XYZ)
+# Expected OIN. Updated 2026-07-26 (v0.4.5 Lane 8): both backbone tags flipped when
+# OIN_STABLE_STEREO was promoted to default-ON; the previous golden encoded the inverted
+# configuration. Both spellings describe R at both centres -- the per-atom symbol differs from
+# the label because parity is relative to neighbour write order.
 _EXPECTED_OIN = (
-    "[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
+    "[Pd_SPL].C[C@H](C[C@@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}"
 )
 
 
@@ -56,33 +61,51 @@ class TestChiralN(unittest.TestCase):
         self.assertNotIn("[N@@]", oin)
 
     @unittest.skipUnless(_RDKIT_AVAILABLE, "rdkit not installed")
-    def test_n_cip_oracle(self):
-        """RDKit CIP oracle: backbone C stereocentres are both S.
+    def test_n_cip_from_geometry(self):
+        """Ground truth, from coordinates: both backbone C stereocentres are R.
 
-        The N atoms in BDNN are tertiary amines with two identical phenyl
-        groups and are not CIP stereocentres. The @/@@  encoding on the two
-        backbone carbon atoms (C2, C4 of the pentanediyl chain) captures the
-        chirality; both are assigned S by RDKit CIP.
+        The N atoms in BDNN are tertiary amines with two identical phenyl groups and are not
+        CIP stereocentres; the @/@@ on the two backbone carbons carries the configuration.
+        Labelled with ``rdCIPLabeler`` from ``AssignStereochemistryFrom3D``, independent of the
+        emitted string -- see the module docstring.
         """
-        oin = self._oin()
-        ligand_smiles = extract_ligand_smiles(oin)
+        from rdkit.Chem import rdCIPLabeler
 
-        mol = Chem.MolFromSmiles(ligand_smiles)
-        self.assertIsNotNone(mol, f"RDKit could not parse: {ligand_smiles}")
+        from oinsmiles.utils.xyz2mol import get_tmc_mol
 
-        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
-
+        parent = get_tmc_mol(_BDNN_XYZ, 0, with_stereo=True)
+        if isinstance(parent, tuple):
+            parent = parent[0]
+        Chem.AssignStereochemistryFrom3D(parent)
+        rdCIPLabeler.AssignCIPLabels(parent)
         chiral_codes = [
-            a.GetPropsAsDict().get("_CIPCode")
-            for a in mol.GetAtoms()
-            if a.GetPropsAsDict().get("_CIPCode")
+            a.GetPropsAsDict()["_CIPCode"]
+            for a in parent.GetAtoms()
+            if a.HasProp("_CIPCode") and a.GetSymbol() == "C"
         ]
-        # Both backbone carbons must be S (verified by RDKit CIP on 2026-03-04)
         self.assertEqual(
             sorted(chiral_codes),
-            ["S", "S"],
-            f"Expected [S, S] CIP codes, got {sorted(chiral_codes)} "
-            f"from ligand SMILES: {ligand_smiles}",
+            ["R", "R"],
+            f"Expected [R, R] from the 3D geometry, got {sorted(chiral_codes)}. "
+            "The fixture is (2R,4R); if this fails the fixture or the perception changed, "
+            "NOT the golden string -- do not 'fix' it by editing the expectation.",
+        )
+
+    @unittest.skipUnless(_RDKIT_AVAILABLE, "rdkit not installed")
+    def test_emitted_string_agrees_with_the_geometry(self):
+        """The emitted tags must denote the configuration the coordinates do."""
+        from rdkit.Chem import rdCIPLabeler
+
+        mol = Chem.MolFromSmiles(extract_ligand_smiles(self._oin()))
+        self.assertIsNotNone(mol, "emitted ligand body must be parseable")
+        rdCIPLabeler.AssignCIPLabels(mol)
+        emitted = sorted(
+            a.GetPropsAsDict()["_CIPCode"]
+            for a in mol.GetAtoms()
+            if a.HasProp("_CIPCode") and a.GetSymbol() == "C"
+        )
+        self.assertEqual(
+            emitted, ["R", "R"], f"emitted string says {emitted}, geometry says [R, R]"
         )
 
 

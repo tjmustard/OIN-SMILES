@@ -9,6 +9,7 @@ Candidate OIN artifact: tests/candidate_outputs/binap_oin.txt (2026-03-04)
 """
 
 import os
+import re
 import sys
 import unittest
 
@@ -36,11 +37,19 @@ class TestBinapStability(unittest.TestCase):
         self.assertIn("_SPL", result)
 
     def test_binap_contains_phosphorus_slots(self):
-        """Both P donor atoms appear as slot-tagged fragments."""
+        """Both P donor atoms appear as slot-tagged fragments.
+
+        Asserted index-AGNOSTICALLY on purpose. The claim is that BINAP binds through two P
+        donors; *which* slot indices those are is Lane 2's business. ``OIN_CANONICAL_SLOTS``
+        (default-ON since v0.4.5) labels vertices by lex-min colour, and ``"[Cl]" < "c1ccc..."``
+        bytewise, so the chlorides now take 0,1 and the phosphines 2,3. Hardcoding P{0}/P{1}
+        made this test fail for a correct relabeling.
+        """
         result = XYZToSMILES().convert(_BINAP_XYZ)
-        # BINAP is bidentate — two P{N} slot markers expected
-        self.assertIn("P{0}", result)
-        self.assertIn("P{1}", result)
+        p_slots = re.findall(r"P\{(\d+)\}", result)
+        self.assertEqual(
+            len(set(p_slots)), 2, f"BINAP is bidentate: expected two P donor slots in {result}"
+        )
 
 
 if __name__ == "__main__":

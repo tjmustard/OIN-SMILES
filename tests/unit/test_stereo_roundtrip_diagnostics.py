@@ -33,14 +33,22 @@ class TestEtaRingCanonicalization(unittest.TestCase):
     def test_non_eta_fragment_order_is_inert(self):
         """Test 2 (RT-5): complexes with zero haptic (eta) donor groups have
         no fragment eligible for RC1/RC2, so encoding must stay byte-
-        identical to each fixture's pre-existing pinned regression golden."""
+        identical to each fixture's pinned regression golden.
+
+        Re-pinned 2026-07-26: five of these goldens moved when v0.4.5 promoted its canonicality
+        levers. ``OIN_CANONICAL_SLOTS`` relabels slots by lex-min vertex colour (CisPlatin,
+        TransPlatin, fac-Ir(ppy)3, BINAP -- all four verified ``canonical_roundtrip_key``
+        IDENTICAL, so the isomer is untouched), and ``OIN_STABLE_STEREO`` corrects the BDPP/BDNN
+        backbone tags, whose key legitimately changes because the old ones were inverted. What
+        this test asserts is unchanged: RC1/RC2 must not fire on a non-eta complex.
+        """
         cases = [
-            ("CisPlatin.xyz", "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"),
-            ("TransPlatin.xyz", "[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}"),
+            ("CisPlatin.xyz", "[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}"),
+            ("TransPlatin.xyz", "[Pt_SPL].N{0}.[Cl]{1}.N{2}.[Cl]{3}"),
             ("Cis-PtCl2(en).xyz", "[Pt_SPL].[NH2]{0}CC[NH2]{1}.[Cl]{2}.[Cl]{3}"),
             (
                 "fac-Ir(ppy)3.xyz",
-                "[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
+                "[Ir_OCT].c{0}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{1}1.c{4}1ccccc1-c1ccccn{3}1",
             ),
             (
                 "mer-Ir(ppy)3.xyz",
@@ -48,18 +56,18 @@ class TestEtaRingCanonicalization(unittest.TestCase):
             ),
             (
                 "PdCl2-RR-BDPP.xyz",
-                "[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)"
+                "[Pd_SPL].C[C@H](C[C@@H](C)P{0}(c1ccccc1)c1ccccc1)"
                 "P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
             ),
             (
                 "PdCl2-RR-BDNN.xyz",
-                "[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)"
+                "[Pd_SPL].C[C@H](C[C@@H](C)N{0}(c1ccccc1)c1ccccc1)"
                 "N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
             ),
             (
                 "PdCl2-R-BINAP.xyz",
-                "[Pd_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}"
-                "(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
+                "[Pd_SPL].[Cl]{0}.[Cl]{1}.c1ccc(P{2}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{3}"
+                "(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1",
             ),
         ]
         for filename, expected in cases:

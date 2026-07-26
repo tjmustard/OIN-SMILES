@@ -86,7 +86,7 @@ class XYZToSMILES:
         from rdkit import Chem
 
         from ..core.chirality import CIPAssigner
-        from ..utils.aromaticity import OINEncodeError
+        from ..utils.aromaticity import OINEncodeError, sanitize_allowing_boron_cage
         from ..utils.xyz2mol import get_oin_string, get_tmc_mol
 
         charge = 0  # Default
@@ -104,7 +104,7 @@ class XYZToSMILES:
 
         # Assign 3D-derived CIP codes to P/N stereocenters before fragmentation.
         # tmc_mol from get_tmc_mol() is already sanitized and has a valid 3D conformer.
-        Chem.SanitizeMol(tmc_mol)
+        sanitize_allowing_boron_cage(tmc_mol)
 
         # Perceive C=C (cis/trans) stereo from the 3D geometry so get_oin_string can
         # carry it into the OIN string (its E/Z carry reads bond.GetStereo() on this

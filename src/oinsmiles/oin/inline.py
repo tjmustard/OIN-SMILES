@@ -1,6 +1,14 @@
 import re
 from typing import List, NamedTuple, Optional, Tuple
 
+from . import locked_donor
+from .hydrogen import h_faithful_smiles
+
+#: A metal-locked nitrogen descriptor in a fragment SMILES (``[N@H]`` / ``[N@@H]``).
+#: Only nitrogen needs the guard below: RDKit keeps a trivalent phosphorus tag through
+#: sanitisation, and clears nitrogen's unconditionally.
+_LOCKED_N_TAG_RE = re.compile(r"\[N@")
+
 
 def _count_smiles_atoms_before(smiles: str, pos: int) -> int:
     """Return the 0-based index of the last SMILES atom seen before *pos*.
@@ -218,6 +226,19 @@ class OINInlineHandler:
                         # Fallback to simple replace
                         raise ValueError("Invalid SMILES")
 
+                    # A metal-locked amine descriptor (Y1 P3) would be deleted right
+                    # here. MolFromSmiles(sanitize=False) DOES read `[N@H]`, but the
+                    # MolToSmiles below re-runs assignStereochemistry(cleanIt=True)
+                    # whenever the mol has no `_StereochemDone`, and that call clears
+                    # trivalent-nitrogen chirality unconditionally -- correct for a free
+                    # amine, wrong for one the metal is holding. Mark perception done so
+                    # the tag the previous step deliberately set is carried through the
+                    # slot-marker round trip. Gated twice over: the lever must be on AND
+                    # this fragment must actually carry an N descriptor, so no other
+                    # fragment's serialization changes.
+                    if _LOCKED_N_TAG_RE.search(frag_smiles) and locked_donor.lever_enabled():
+                        mol.SetIntProp("_StereochemDone", 1)
+
                     # Apply Map Numbers = Slot + 1000 (normal) or + 2000
                     # (heading >) or + 3000 (heading <)
                     for atom_idx, slot, heading_char in binders:
@@ -232,7 +253,19 @@ class OINInlineHandler:
                             mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(slot + offset)
 
                     # Generate SMILES with maps
-                    mapped_smiles = Chem.MolToSmiles(mol, canonical=False)
+                    #
+                    # This re-write is not the round trip it looks like. RDKit's writer
+                    # re-decides bracketing from scratch, and it silently DE-BRACKETS a
+                    # correctly-written 0-H atom: the encoder's
+                    # `CCCCN1[C]N([C]c2c3ccccc3cc3ccccc23)C=C1` (20 H) comes back out as
+                    # `CCCCN1CN(Cc2c3ccccc3cc3ccccc23)C=C1`, which re-reads as 24 H --
+                    # both carbene brackets destroyed. The `{slot}` markers give the
+                    # generator's donor-strip heuristics a chance to recover the binding
+                    # atoms; a non-binding one (a benzylic carbon whose hydrogens the
+                    # input never had) has nothing to save it, and the generator builds
+                    # a molecule with extra atoms (INENOF_comp_0, 58 -> 60).
+                    # Default-OFF lever; see oin/hydrogen.py.
+                    mapped_smiles = h_faithful_smiles(mol, canonical=False)
                     # canonical=False to hopefully preserve atom order if input was canonical?
                     # Ideally we want output to match input structure but with tags.
                     # RDKit might reorder.

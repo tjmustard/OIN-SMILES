@@ -462,11 +462,13 @@ support before a token can be emitted safely).
   default. The axis is recovered from the signed biaryl dihedral (`src/oinsmiles/oin/axial.py`);
   behind `OIN_EMIT_AXIAL` (default OFF) the encoder appends a *canonical* axial-sign token so the
   two diverge (`|ax:-|` vs `|ax:+|`), the round-trip key folds it (batch unaffected), and the
-  generator honours it (axial-aware conformer selection + acceptance): measured **2/2 vs 1/2
-  baseline**, so the axis survives the round trip. A stereogenicity gate keeps the encoder from
-  claiming chirality for achiral symmetric-end biaryls. Still opt-in pending a broader A/B than
-  one fixture pair. Guards: `tests/unit/test_axial_emit.py`,
-  `tests/integration/test_axial_roundtrip.py`. Detail: `docs/INJECTIVITY_Y1_P2_AXIAL.md`.
+  generator honours it (axial-aware conformer selection + acceptance): measured **22/22 vs 8/22
+  baseline** on the single-axis cohort, so the axis survives the round trip. A stereogenicity gate
+  keeps the encoder from claiming chirality for achiral symmetric-end biaryls. **Still opt-in --
+  see "Axial token: what is decided and what is not" below** for the v0.4.5 product call, the
+  key-folding decision and the staged promotion recommendation. Guards:
+  `tests/unit/test_axial_emit.py`, `tests/integration/test_axial_roundtrip.py`. Detail:
+  `docs/INJECTIVITY_Y1_P2_AXIAL.md`, `docs/AXIAL_v0.4.5_LANE4.md`.
 - **Trivalent-N amine inversion on binding -- ENCODER-BLIND (recoverable, deferred to v0.4.5).** A
   *metal-bound* secondary amine is stereogenic only because the metal locks its 4th position; the
   encoder strips the metal, leaving a trivalent N that Zone-A clears (`core/chirality.py:722-727`; N
@@ -479,3 +481,125 @@ support before a token can be emitted safely).
 `PYTHONPATH=$PWD/src python -m tools.injectivity.report --probes`. Guards:
 `tests/unit/test_injectivity_probes.py`, `tests/unit/test_config_oracle.py`,
 `tests/unit/test_axial_emit.py`.
+
+## Axial token: what is decided and what is not (v0.4.5, Lane 4)
+
+Three decisions were taken deliberately. They are recorded here because each is a
+false-positive / false-negative trade, and the whole injectivity programme is about not making
+those silently.
+
+### 1. `OIN_EMIT_AXIAL` stays **default OFF** in v0.4.5 — with a staged recommendation to flip
+
+**Decision.** Injectivity levers stay opt-in for this release. Guarded by
+`tests/unit/test_axial_emit.py::TestDefaultOff::test_emit_gate_is_off_unless_the_env_var_is_set`,
+so an accidental promotion is caught. (`OIN_EMIT_AXIAL=0` now also means off; it used to mean on,
+because the gate was a bare truthiness test on a non-empty string.)
+
+**The evidence to promote already exists**, and it is strong:
+
+| measurement | with the token | baseline |
+|---|---|---|
+| cohort A/B, single-axis structures (`axial_cohort_ab.py --limit 12`) | **22/22 (100%)** | **8/22 (36.4%)** |
+| corpus sign-convention audit (`axial_population.py --mirror-check`) | every emitting structure's token flips for its mirror | — |
+| fixture pair (`axial_roundtrip_ab.py`) | 2/2 | 1/2 |
+
+Without the token, the correct atropisomer appears **by chance about a third of the time**, and
+nothing anywhere reports that the other two thirds are the wrong enantiomer — the round-trip key
+folds the token, so those runs pass. That is the silent false positive this whole section is about.
+
+**Recommendation for v0.4.6: turn it on by default**, mirroring how `OIN_EARLY_EXIT` was promoted
+in v0.4.4 (`metallogen_adapter.py`, the `ff_params` membership test plus
+`os.environ.get(..., "1") != "0"`, with the A/B artifact path named in-code). The known cost is
+accepted and instrumented: the emitting population is small, and a structure whose axis the
+generator fails to reproduce becomes a **loud, correctly-attributed false negative**
+(`adapter.axial_not_honored` telemetry plus a `logger.warning`) in place of a silent false
+positive. That is the right direction of error.
+
+**Do not promote it without also settling item 2** — on-by-default plus a folding key means the
+round trip asserts nothing about the axis.
+
+### 2. The round-trip key still folds the token — and should **stop** folding it when the lever is promoted
+
+`_AXIAL_TOKEN_RE` (`src/oinsmiles/oin/compare.py:57`) strips ` |ax:±|` before comparison, so the
+batch harness is unaffected by whether the flag is set.
+
+**This is no longer hypothetical.** Lane 7's `invert_stereocenter` twin operator
+(`tools/injectivity/twin_collision.py`, `report.py --operators`) flips a *single* axis of a
+multi-axis molecule — something mirroring cannot do — and run on `YESKOZ` it reports:
+
+| setting | verdict |
+|---|---|
+| default (token off) | `encoder_blind` — the raw strings are identical |
+| `OIN_EMIT_AXIAL=1` | **`key_blind`** — the raw strings **differ**; `_AXIAL_TOKEN_RE` is the only thing folding them |
+
+So with the lever on, the key's fold is precisely what turns a *distinguished* pair of genuine
+diastereomers back into a collapsed one. **That fold is correct today and wrong tomorrow**, and the
+reason is worth stating precisely:
+
+- **Today (lever OFF)** essentially no OIN carries a token, so the fold is a no-op that keeps the
+  harness immune to a developer running with the flag set. Keep it.
+- **Once the lever is ON**, folding makes the round trip structurally unable to verify the one
+  thing the token exists to encode. The generator would be free to return the wrong atropisomer and
+  the key would still match — the failure would live only in telemetry, which is exactly the "silent
+  pass" the Y1 audit was built to eliminate.
+
+**Decision: when `OIN_EMIT_AXIAL` is promoted, `_AXIAL_TOKEN_RE` must stop folding and the token
+must become part of the key.** Not changed in v0.4.5, because changing it while the lever is off
+would be inert, and changing it *with* the lever off but a token present would silently tighten the
+key for anyone experimenting with the flag. The two changes belong in the same commit.
+
+### 3. Multi-axis (porphyrin) structures: the token is now correctly **not** emitted
+
+This overturns the v0.4.5 lane premise, which held that multi-axis structures failed because "the
+generator cannot hold two hindered biaryl axes at once". Measured on `YESKOZ`
+(`tools/injectivity/axial_pool_histogram.py`), every pooled conformer holds **both** twists inside
+the hindered window, and the pool spans several sign combinations. The generator was never the
+problem; the descriptor could not see the axes, and then could not see that it could not see them.
+
+Two distinct defects were behind it, both now fixed (`src/oinsmiles/oin/axial.py`):
+
+- **Perception dependence.** Axis selection keyed on `GetIsAromatic()`, and the encoder and the
+  generator perceive a metalloporphyrin differently (aromatic pyrrolide core on Zn(II) vs a neutral
+  localized tautomer). A meso carbon was aromatic on one side and aliphatic on the other, so the
+  axis existed for the encoder and not for the generator. Now judged from connectivity alone, and
+  swept corpus-wide by `tools/injectivity/axial_perception_sweep.py`.
+- **A false-positive stereogenicity call.** The old gate ranked atoms on the molecule *as
+  perceived*, and the arbitrary resonance form `AC2BO` returns broke the porphyrin's symmetry, which
+  made a meso-aryl axis look stereogenic. It is not, and the raw signs measured across four
+  variants of `YESKOZ` show why:
+
+  | variant | raw signs | canonical up to global inversion |
+  |---|---|---|
+  | deposited (anti) | `--` | `++` |
+  | z-mirror of deposited | `++` | `++` |
+  | single-axis flip (syn) | `-+` | `+-` |
+  | z-mirror of the flip | `+-` | `+-` |
+
+  Each configuration's mirror is its exact **complement**, so both are reflection-invariant: the
+  structures are **achiral** about these axes and the per-axis sign carries no handedness. The
+  porphyrin's symmetry inverts *both* signs at once — the signs are **coupled**. The old
+  `|ax:+-|` therefore claimed chirality that is not there, and it passed the corpus mirror audit
+  only because the mirror produces the complement, which the audit scores as "flipped correctly".
+  The audit was confirming the false positive, not catching it. This is also why the multi-axis
+  cohort measured 0/2 in *both* A/B arms: a generator limitation would have separated the arms; a
+  request that is not well-posed does not.
+
+**Residual, genuinely open — and it is real information.** The same table shows the *pair* of signs
+still separates the diastereomers (`++` anti vs `+-` syn), which is exactly what Lane 7's
+`invert_stereocenter` probe found from the other direction. Only the **absolute** per-axis sign is
+ill-defined; the **relative** sign is meaningful. The conservative gate shipped here drops both, so
+the OIN currently encodes syn and anti meso-arylporphyrins identically.
+
+The fix that is now precisely specified: canonicalize the sign vector over the orbit of the
+automorphism group's action on it — for a coupled pair, `min(token, complement)`, which is
+simultaneously reflection-invariant (correct: achiral) and syn/anti-separating (correct: real
+diastereomers). It requires distinguishing **coupled** ambiguity (one automorphism inverts every
+sign; quotient by global inversion, information survives) from **independent** ambiguity (each axis
+has its own local C2; quotient by independent flips, nothing survives). Per-axis rank comparison
+cannot express that distinction — it needs the automorphism group's action on the sign vector, with
+a blow-up guard and a conservative fallback. Shipping a guess here would re-create the class of bug
+this section exists to record, so the gate stays conservative until the analysis is built.
+
+**Layer:** encoder injectivity. Guards: `tests/unit/test_axial_emit.py`
+(`TestPerceptionInvariance`, `TestPorphyrinMesoAxesAreNotPerAxisStereogenic`,
+`TestSymmetryEquivalentAxesStillFlip`).

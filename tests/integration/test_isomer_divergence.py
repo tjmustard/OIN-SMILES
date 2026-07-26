@@ -138,15 +138,31 @@ class TestIsomerComparisonLayer(unittest.TestCase):
         still is). v0.4.4 replaced the renumber with a symmetry-canonical vertex signature, so
         the key now diverges too. The raw ``convert()`` output also distinguishes them (and
         equals the byte-identical test_regression_stability goldens).
+
+        v0.4.5 Lane 2: the two byte-golden anchors are now scoped to the DEFAULT path. A slot
+        canonicalization lever renumbers slots -- that is its whole job -- so anchoring bytes
+        while one is set would assert the lever does nothing. The **divergence** assertions,
+        which are what makes this an over-folding guard, are deliberately left unconditional,
+        so they now run with the levers on as well as off; they did not before.
+
+        Measured with `OIN_CANONICAL_SLOTS` + Lane 1's levers on: fac becomes
+        ``...n{5}1.c{2}...n{1}1.c{4}...n{3}1``, and
+        ``canonical_roundtrip_key(fac_on) == canonical_roundtrip_key(fac_golden)`` -- the
+        lever relabels, it does not change the isomer. mer is already canonical and does not
+        move. See ``docs/CANONICAL_SLOTS_v0.4.5.md``.
         """
         conv = XYZToSMILES()
         with _silence_fds():
             fac = conv.convert(str(REPO / "tests" / "fixtures" / "fac-Ir(ppy)3.xyz"))
             mer = conv.convert(str(REPO / "tests" / "fixtures" / "mer-Ir(ppy)3.xyz"))
-        # anchor to the committed goldens (guards an encoder regression too)
-        self.assertEqual(fac, FAC_IRPPY3, "fac encoding drifted from the pinned golden")
-        self.assertEqual(mer, MER_IRPPY3, "mer encoding drifted from the pinned golden")
-        # the divergence guarantee: distinct canonical strings
+        if not any(
+            os.environ.get(lever)
+            for lever in ("OIN_CANONICAL_SLOTS", "OIN_CANONICAL_BODY", "OIN_CANONICAL_PERCEPTION")
+        ):
+            # anchor to the committed goldens (guards an encoder regression too)
+            self.assertEqual(fac, FAC_IRPPY3, "fac encoding drifted from the pinned golden")
+            self.assertEqual(mer, MER_IRPPY3, "mer encoding drifted from the pinned golden")
+        # the divergence guarantee: distinct canonical strings -- ALWAYS checked
         self.assertNotEqual(fac, mer)
         # v0.4.4: the fac/mer-aware vertex signature diverges at the key layer too
         self.assertNotEqual(_key(fac), _key(mer))
