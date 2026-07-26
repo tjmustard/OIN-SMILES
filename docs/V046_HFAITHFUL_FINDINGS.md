@@ -237,3 +237,29 @@ Recorded rather than fixed because the deciding measurement (a boron-ON vs boron
 A/B over the fixture set and a CO-containing cohort) has not been run, and this release already
 contains four hypotheses that looked obvious and were refuted by exactly the measurement that was
 skipped.
+
+## Merge readiness for the boron promotion — what actually gates it
+
+Two things were conflated. Separating them:
+
+**NOT a gate: the byte-identity A/B.** I deferred it as "needs an idle machine once the 5k sweep
+frees the cores". That was wrong. String equality is **deterministic** — the same input produces
+the same OIN whether the box is idle or at load 30. Only *wall-clock* is unusable under load.
+Deferring a load-independent measurement on load-dependent grounds cost real time, and it is the
+mirror image of the earlier mistake of running a timing probe *during* the sweep.
+
+**IS a gate: the merge itself.** The 5k sweep runs one subprocess per molecule, each importing
+from the main checkout's `src`. Merging this branch mid-run would mean the early molecules were
+measured under v0.4.5 and the later ones under v0.4.6 — a mixed-config sweep, the exact asymmetry
+that manufactured v0.4.4's 11 phantom regressions. So the merge waits for the sweep regardless of
+what the A/B says.
+
+Correct sequencing, therefore:
+
+1. run the byte-identity A/B **now** (done — load-independent);
+2. let the 5k sweep finish and publish the clean v0.4.5 absolute number;
+3. merge, then re-sweep to diff the boron gain against that baseline on identical molecules.
+
+Step 2 is not optional cost: without a clean v0.4.5 number there is nothing to diff the boron
+promotion against, and "34 molecules now encode" would be an unanchored claim rather than a
+measured delta.
