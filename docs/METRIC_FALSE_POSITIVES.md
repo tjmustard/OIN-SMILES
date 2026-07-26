@@ -38,14 +38,15 @@ number the project has reported is measured with it.
         compare, and classify by WHAT changed -- not by whether the string changed
               │
      ┌────────┴─────────────────────────────────────────────┐
-     │ KEY_MATCH            565   independent re-perception agrees → genuine pass
-     │ KEY_DIFF_COORD_OK     13   string drifted, coordination intact → NOT charged
+     │ KEY_MATCH            562   independent re-perception agrees → genuine pass
+     │ KEY_DIFF_COORD_OK     10   string drifted, coordination intact → NOT charged
      ├──────────────────────────────────────────────────────┤
-     │ GEO_DEGRADED          57 ┐                            │
-     │ HAPTIC_LOST            6 │ coordination NOT supported │ → FALSE POSITIVES
-     │ HAPTICITY_REDUCED      4 │ by the geometry            │    61 / 633 = 9.6%
-     │ DENTICITY_LOST         2 ┘                            │
+     │ GEO_DEGRADED          54 ┐                            │
+     │ HAPTIC_LOST            4 │ coordination NOT supported │ → FALSE POSITIVES
+     │ HAPTICITY_REDUCED      2 │ by the geometry            │    61 / 633 = 9.6%
+     │ DENTICITY_LOST         1 ┘                            │
      └──────────────────────────────────────────────────────┘
+              (54 + 4 + 2 + 1 = 61; all seven classes sum to 633)
               │
      concentrated exactly where predicted:
        haptic inputs      48/171 = 28.1%
@@ -82,17 +83,24 @@ code reading it.
 Classification is by **what changed structurally**, not by whether the string changed. This matters
 because `[[reencode-vs-harness-smiles2]]` already showed this path inflates `structural` ~19× via
 harmless presentation drift (slot renumbering, fragment order). Charging that to the metric would
-have produced a large and completely wrong number. `KEY_DIFF_COORD_OK` isolates it: 13 molecules,
+have produced a large and completely wrong number. `KEY_DIFF_COORD_OK` isolates it: 10 molecules,
 not counted as false positives.
 
 The four charged classes are coordination failures:
 
 | class | test | n |
 |---|---|---|
-| `GEO_DEGRADED` | the `[El_GEO]` metal geometry tag changed | 57 |
-| `HAPTIC_LOST` | a haptic slot present in the input is absent | 6 |
-| `HAPTICITY_REDUCED` | a haptic slot survives but binds fewer atoms (η⁵→η²) | 4 |
-| `DENTICITY_LOST` | fewer distinct slots overall — a donor detached | 2 |
+| `GEO_DEGRADED` | the `[El_GEO]` metal geometry tag changed | 54 |
+| `HAPTIC_LOST` | a haptic slot present in the input is absent | 4 |
+| `HAPTICITY_REDUCED` | a haptic slot survives but binds fewer atoms (η⁵→η²) | 2 |
+| `DENTICITY_LOST` | fewer distinct slots overall — a donor detached | 1 |
+
+> **Counting note, because this project's rule is "measure counts, don't trust quotes."** An
+> earlier revision of this file quoted 57/6/4/2 and `KEY_MATCH` 565. Those came from grepping the
+> shard **logs** for class names — which also matched the class names printed in each shard's own
+> summary block, inflating every class by a few. The counts above are recomputed from
+> `docs/metric_false_positives.json` and sum exactly to 633. The headline rates (9.6 % / 28.1 % /
+> 2.8 %) were computed from the archived rows and never moved.
 
 `HAPTICITY_REDUCED` exists because the winding head `{n>}` and the slot number both survive a ring
 slip, so the slot-set checks cannot see it. Without it, four genuine failures read as clean.
@@ -113,6 +121,8 @@ not. Almost every transition **lowers the coordination number**:
 
 | transition | CN | n |
 |---|---|---|
+*(top 14 transitions of 54; the remaining 5 are a one-each tail, all also CN-lowering.)*
+
 | TET → TPL | 4 → 3 | 13 |
 | TET → LIN | 4 → 2 | 11 |
 | TPL → LIN | 3 → 2 | 10 |
