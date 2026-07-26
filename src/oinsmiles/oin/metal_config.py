@@ -81,6 +81,8 @@ __all__ = [
     "metal_config_sign",
     "metal_config_sign_symmetry",
     "metal_config_token",
+    "metal_config_token_chelate",
+    "token_for_mol",
 ]
 
 
@@ -357,3 +359,51 @@ def metal_config_token_chelate(donor_positions, groups) -> str:
     if index == 0.0:
         return ""
     return "|mc:+|" if index > 0 else "|mc:-|"
+
+
+def token_for_mol(mol) -> str:
+    """The Δ/Λ sidecar for a metal-PRESENT mol with a conformer, or ``""``.
+
+    Derives both inputs the descriptor needs — donor positions and the chelate partition — from the
+    mol itself, so the encoder's call site stays a single line. Donors are the metal's perceived
+    neighbours; the partition is the connected components left after deleting the metal, which is
+    what makes a bidentate's two donors one chelate.
+
+    Must be called on the PRISTINE input conformer, before ``_align_to_pai``: principal-axis
+    alignment may reflect the coordinates, and a reflection inverts the descriptor. That is the same
+    ordering constraint the axial token documents at its own call site.
+
+    Returns ``""`` on anything unexpected rather than raising — this runs inside the encoder's
+    serialization path, where an exception would reroute rather than surface.
+    """
+    try:
+        from rdkit import Chem
+
+        from ..core.constants import TRANSITION_METALS_NUM
+
+        if mol is None or mol.GetNumConformers() == 0:
+            return ""
+        metal = next(
+            (a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() in TRANSITION_METALS_NUM),
+            None,
+        )
+        if metal is None:
+            return ""
+        conf = mol.GetConformer()
+        idxs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(metal).GetNeighbors()]
+        if len(idxs) < 4:
+            return ""
+        pts = np.array([list(conf.GetAtomPosition(i)) for i in idxs])
+
+        stripped = Chem.RWMol(mol)
+        stripped.RemoveAtom(metal)
+        comp = {a: fi for fi, f in enumerate(Chem.GetMolFrags(stripped.GetMol())) for a in f}
+        groups: dict[int, list[int]] = {}
+        for pos, atom_idx in enumerate(idxs):
+            key = comp.get(atom_idx - 1 if atom_idx > metal else atom_idx)
+            if key is None:
+                return ""
+            groups.setdefault(key, []).append(pos)
+        return metal_config_token_chelate(pts, [tuple(v) for v in groups.values()])
+    except Exception:
+        return ""

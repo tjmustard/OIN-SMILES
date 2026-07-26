@@ -85,6 +85,17 @@ _HELD_OFF = {
         "GENERATOR reading FEWER aromatic atoms, not the encoder reading more. Re-measure both "
         "cohorts with perception ON before promoting."
     ),
+    "OIN_EMIT_METAL_CONFIG": (
+        "Y1 P1 metal-centred Delta/Lambda helicity, as a trailing |mc:+|/|mc:-| sidecar. The "
+        "descriptor is BUILT and validated (oin/metal_config.py, 16 tests): it detects "
+        "Delta/Lambda on ZUMNEC (chiral tris-catecholato -- emits, and INVERTS under "
+        "reflection) and correctly emits nothing for JEGKOW (square planar, achiral). Held "
+        "opt-in for the standard information-ADDING reason: the generator must reproduce what "
+        "is emitted, so promoting converts a silent collapse of Delta/Lambda enantiomers into "
+        "a loud round-trip failure. Promote only with generator support plus a corpus "
+        "population measurement. Note that compare.py's key does not know the token yet, so "
+        "lever-ON round trips will report mismatches until it does."
+    ),
     "OIN_EMIT_LOCKED_DONOR": (
         "same trade for metal-locked N/P donor configuration (P3), AND currently INCOMPATIBLE "
         "with OIN_CANONICAL_BODY, which is default-ON: canonical_body_emit reparses the body, "
