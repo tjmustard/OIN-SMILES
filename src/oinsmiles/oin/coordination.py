@@ -285,10 +285,31 @@ def coordination_report(input_xyz_text: str, generated_xyz_text: str, slack: flo
                 if i != mg and 0 <= (gen_d[i] - gen_cut[i]) < MARGINAL_BAND
             )
         )
+        # The band must be TWO-SIDED. A contact 0.007 A INSIDE the cutoff is exactly as ambiguous
+        # as one 0.007 A outside, and the first version only looked outward -- so a structure
+        # holding its ligand by 0.007 A was reported as cleanly intact.
+        #
+        # OGARAP_comp_0 is the case that exposed it, and it was the last unexplained miss in the
+        # validation set. Its input is a comfortable eta3 allyl (Pd-C margins +0.31/+0.42/+0.47);
+        # the generated structure still has 3 Pd-C contacts, but at margins +0.084/+0.028/+0.007.
+        # The encoder's OpenBabel perception saw only 2 of them, which is why the string-level
+        # ground truth called it HAPTICITY_REDUCED while this check called it intact. NEITHER was
+        # wrong about the distances -- the structure is genuinely on the boundary, and the honest
+        # verdict is "inconclusive", not "clean" and not "degraded".
+        at_boundary = int(
+            sum(
+                1
+                for i in range(len(gen_syms))
+                if i != mg and 0 < (gen_cut[i] - gen_d[i]) <= MARGINAL_BAND
+            )
+        )
 
         if lost and beyond > 0:
             intact = False
-        elif lost:
+        elif lost or at_boundary:
+            # `lost` -> every lost contact was within the band (see `beyond`).
+            # `at_boundary` -> nothing was lost, but a contact is held by <= MARGINAL_BAND, so the
+            # coordination is one thermal fluctuation from being lost and must not read as clean.
             boundary_only = True
         out["metals"].append(
             {
@@ -303,6 +324,7 @@ def coordination_report(input_xyz_text: str, generated_xyz_text: str, slack: flo
                 "lost_beyond_band": beyond,
                 "gained": gained,
                 "marginal_gen": marginal,
+                "at_boundary_gen": at_boundary,
                 "denticity_in": list(denticity_signature(in_syms, in_xyz, mi, slack)),
                 "denticity_gen": list(denticity_signature(gen_syms, gen_xyz, mg, slack)),
                 "nearest_in": [(s, round(d, 3)) for _i, s, d, _c in in_contacts[:12]],
@@ -320,13 +342,23 @@ def coordination_report(input_xyz_text: str, generated_xyz_text: str, slack: flo
             if m["lost"] and m["lost_beyond_band"]
         )
     elif out["boundary_only"]:
-        # Contacts were lost, but every one of them sits within MARGINAL_BAND of the cutoff. Not
-        # charged as a degradation and not called clean either -- see the note above `beyond`.
-        out["reason"] = "; ".join(
-            f"{m['metal']}: {sum(m['lost'].values())} contact(s) at the cutoff boundary"
-            for m in out["metals"]
-            if m["lost"]
-        )
+        # Either contacts were lost but all within MARGINAL_BAND of the cutoff, or nothing was lost
+        # yet a contact is held by <= MARGINAL_BAND. Both are inconclusive: not charged as a
+        # degradation, and not called clean. Name whichever applies -- the first version only
+        # described the `lost` case and emitted an EMPTY reason for the held-by-a-hair case, which
+        # is the more common one (OGARAP_comp_0, 3 Pd-C contacts held by 0.007-0.084 A).
+        parts = []
+        for m in out["metals"]:
+            if m["lost"]:
+                parts.append(
+                    f"{m['metal']}: {sum(m['lost'].values())} contact(s) just past the cutoff"
+                )
+            if m.get("at_boundary_gen"):
+                parts.append(
+                    f"{m['metal']}: {m['at_boundary_gen']} contact(s) held within "
+                    f"{MARGINAL_BAND} A of the cutoff"
+                )
+        out["reason"] = "; ".join(parts)
     # KNOWN SCOPE LIMIT, measured rather than assumed. This verdict is LOSS-based, so two real
     # failure modes are invisible to it and are left to the caller via `gained` / `counts_*`:
     #   1. over-coordination -- 4 of 61 known false positives GAINED contacts (6->11, 7->12) and

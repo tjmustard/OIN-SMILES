@@ -174,3 +174,32 @@ class TestDenticitySignatureIsDataNotVerdict(unittest.TestCase):
         self.assertIsNot(
             rep["intact"], False, "signature change alone must not degrade the verdict"
         )
+
+
+class TestBoundaryBandIsTwoSided(unittest.TestCase):
+    """A contact held by 0.007 A is as ambiguous as one lost by 0.007 A.
+
+    OGARAP_comp_0 is why. Its input is a comfortable eta3 allyl (Pd-C margins +0.31/+0.42/+0.47);
+    the generated structure still has 3 Pd-C contacts but at +0.084/+0.028/+0.007, and the
+    encoder's own perception saw only 2. With a one-sided band that read as cleanly intact. Making
+    the band two-sided took the count of false positives passing with NO signal from 6 to 2, and
+    left the FLAG verdict's recall and false-alarm rate exactly unchanged.
+    """
+
+    def test_a_contact_held_by_a_hair_is_boundary_not_clean(self):
+        from oinsmiles.oin.coordination import MARGINAL_BAND, metal_contacts, parse_xyz
+
+        cutoff = metal_contacts(*parse_xyz(ferrocene_like(2.05)), 0)[1][0][3]
+        held = ferrocene_like(cutoff - MARGINAL_BAND * 0.1)  # just INSIDE
+        rep = coordination_report(ferrocene_like(2.05), held)
+        self.assertIsNot(rep["intact"], False, "nothing was lost, so this is not a degradation")
+        self.assertTrue(rep["boundary_only"], "...but it must not read as clean either")
+        self.assertGreater(rep["metals"][0]["at_boundary_gen"], 0)
+        self.assertTrue(rep["reason"], "a boundary verdict must SAY why, not emit an empty reason")
+
+    def test_a_comfortable_contact_is_clean(self):
+        s = ferrocene_like(2.05)
+        rep = coordination_report(s, s)
+        self.assertTrue(rep["intact"])
+        self.assertFalse(rep["boundary_only"])
+        self.assertEqual(rep["metals"][0]["at_boundary_gen"], 0)
