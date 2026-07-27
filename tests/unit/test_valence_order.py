@@ -29,7 +29,7 @@ from unittest import mock
 
 import numpy as np
 
-from oinsmiles.utils import xyz2mol_local as xl
+from oinsmiles.utils import perception_core as xl
 
 
 def chain_ac(n, atomic_num=6):

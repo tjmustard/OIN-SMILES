@@ -65,7 +65,7 @@ Six parallel sessions, each in its own git worktree, each owning a **disjoint se
 |---|---|---|---|
 | S1 | donor-H | `metallogen_adapter.py` → `convert_parsed_to_msmiles` | **DONE** — `ac3a689` on `main` |
 | S2 | eta-diene | `metallogen_adapter.py` → `_flatten_template`, `build_contract_mol`, `_oin_fragment_templates` | **DONE** — `bbe567e` on `main` |
-| S3 | aromatic-perception | `utils/xyz2mol.py`, `generator3d/process.py` | **DONE** — `d96fd03` on `main` |
+| S3 | aromatic-perception | `utils/perception_tmc.py`, `generator3d/process.py` | **DONE** — `d96fd03` on `main` |
 | S4 | eta-winding | `utils/oin_aligner.py`, `oin/compare.py` | **DONE** — `882cefb` on `main` |
 | S5 | metrics | `tests/integration/rmsd_utils.py`, `tools/*` | **DONE** — `2e6e8a2` on `main` |
 | S6 | stereo | `generator3d/{ligand,embed,chem,clean_geometry,__init__}.py`, `core/translator.py` | **DONE** — `9d026e2` on `main` |
@@ -167,7 +167,7 @@ Result: **`eta_diene_localization` 78 → 0**, 72/78 of the bucket pass. Residua
 - **Closed follow-up (`118b82c`)** — TiCat1/3 eta `[Ti_TET]`↔`[Ti_TPY]` string drift. Extended geometry-fit selection to haptic ligands: `_coordination_vectors` now reduces hapticity to centroid donors (`_reduce_haptic_positions`, <1.6 Å clustering, only when the group count equals the expected coordination number), so TiCat (14→4) / ferrocene (10→2) / Zeise η²-alkene (5→4) become eligible instead of falling back to lowest-energy. Non-regressive; TiCat1/3 now hold `[Ti_TET]` deterministically (8/8 FF).
 
 ### v0.3.0 Stereo Round-Trip Arc (2026-07-02 → 07-04)
-- **OIN v3.7 descriptor-free metal token** — fixed a stale `is_metal` bug that leaked RDKit's `@SP1` into the metal token (`xyz2mol.py`).
+- **OIN v3.7 descriptor-free metal token** — fixed a stale `is_metal` bug that leaked RDKit's `@SP1` into the metal token (`perception_tmc.py`).
 - **Winding preservation (Phase 1)** — `{n>}`/`{n<}` markers now parse through to `ParsedOIN.winding_by_slot` (`oin/inline.py`, `generation/oin_parser.py`).
 - **Haptic-face control (Phase 3)** — winding marker steers the generated ring face; per-ring signed-circulation mirror correction (`generation/molassembler_adapter.py`, `oin/winding.py`).
 - **Zone-A P encoding + SPL enforcement (Phase 4 / MiniPRD-C)** — `[P@]`/`[P@@]` on metal-bound P; dummy-metal embed makes both enantiomers reachable on square-planar (`core/chirality.py`, `generation/molassembler_adapter.py`).

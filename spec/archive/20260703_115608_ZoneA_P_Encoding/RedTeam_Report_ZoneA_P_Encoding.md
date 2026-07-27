@@ -19,7 +19,7 @@
 ### Clarifying Questions
 1. **Metal predicate ownership.** "Metal-bound P (P bonded to a metal atom)" —
    which predicate defines *metal*? `TRANSITION_METALS_NUM` lives in
-   `utils/xyz2mol.py:30`; `core/chirality.py` has no metal list and `mod_core`
+   `utils/perception_tmc.py:30`; `core/chirality.py` has no metal list and `mod_core`
    does not currently import it. Will `CIPAssigner` import from `xyz2mol`,
    duplicate the list (a new TD-005-style duplication), or should a shared
    constants module finally be created? Note the project has a *known* stale
@@ -219,8 +219,8 @@
    decision doc. Minor, but the MiniPRD will be executed by a cheaper model that
    takes line numbers literally.
 4. **Downstream index mapping (verify-unchanged list is right, but name the
-   mechanism):** after `recover()`, `xyz2mol.py:949` re-serializes and
-   `xyz2mol.py:957` re-parses with `sanitize=False` to rebuild the
+   mechanism):** after `recover()`, `perception_tmc.py:949` re-serializes and
+   `perception_tmc.py:957` re-parses with `sanitize=False` to rebuild the
    fragment→SMILES atom map, and `_count_smiles_atoms_before`
    (`oin/inline.py:5`) counts atoms by token scanning. Both handle bracket atoms,
    so `P{0}` → `[P@]{0}` should be transparent — but has the token change been

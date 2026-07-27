@@ -401,7 +401,7 @@ class TestCanonicalPerception(unittest.TestCase):
 
         import numpy as np
 
-        from oinsmiles.utils.xyz2mol_local import _canonical_atom_permutation
+        from oinsmiles.utils.perception_core import _canonical_atom_permutation
 
         base = Chem.AddHs(Chem.MolFromSmiles("CC(N)=NC"))
         n = base.GetNumAtoms()

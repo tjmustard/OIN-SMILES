@@ -811,7 +811,7 @@ def build_contract_mol(parsed: ParsedOIN, mg_mol) -> "Chem.Mol | None":
     from rdkit.Geometry import Point3D
 
     from ..core.chirality import _LP_CIP_PROP, _SP3_CIP_PROP
-    from ..utils.xyz2mol import TRANSITION_METALS_NUM
+    from ..utils.perception_tmc import TRANSITION_METALS_NUM
 
     try:
         syms = [a.get_element() for a in mg_mol.atom_list]
@@ -1202,7 +1202,7 @@ def _coordination_vectors(contract_mol, expected_n=None):
     raw donors reduce to 4 centroid donors. If reduction still can't reach
     ``expected_n`` the sphere has no discrete template and None is returned.
     """
-    from ..utils.xyz2mol import TRANSITION_METALS_NUM
+    from ..utils.perception_tmc import TRANSITION_METALS_NUM
 
     metal_idx = next(
         (
@@ -1283,7 +1283,7 @@ def _reencode_oin_fast(contract_mol):
     which makes a wide winding-selection pool affordable. Returns None on
     failure (caller falls back to the full XYZ re-encode).
     """
-    from ..utils.xyz2mol import get_oin_string
+    from ..utils.perception_tmc import get_oin_string
 
     if contract_mol is None:
         return None

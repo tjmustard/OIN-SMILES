@@ -209,7 +209,7 @@ OIN string → parse_inline_string [regex-only, @/@@ passes through — no chang
   (`generation/molassembler_adapter.py`); possibly `atom_oin3d_generator`
   (`generation/engine.py`) if verify-and-reflect sits at engine level.
 - **Deleted:** `atom_pseudo_atom_strategy`.
-- **Verify-unchanged (audit, not edit):** `atom_xyz2mol` (call site `xyz2mol.py:947`),
+- **Verify-unchanged (audit, not edit):** `atom_xyz2mol` (call site `perception_tmc.py:947`),
   `translator.py:35` (`CIPAssigner` call), `atom_oin_sanitizer` (property
   pass-through), `atom_oin_inline_handler` / `atom_oin_parser_gen` (regex parse
   passes `@/@@` through).

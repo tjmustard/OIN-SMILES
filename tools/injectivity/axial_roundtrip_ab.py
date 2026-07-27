@@ -84,7 +84,7 @@ def _generated_token(oin: str, timeout: int):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "gen.xyz"
             p.write_text(xyz)
-            from oinsmiles.utils.xyz2mol import get_tmc_mol
+            from oinsmiles.utils.perception_tmc import get_tmc_mol
 
             try:
                 with _silence():

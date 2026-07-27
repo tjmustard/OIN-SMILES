@@ -118,7 +118,7 @@ formal-charge bug. **Recommendation:** open an **R5-stereo** session owning
 - **`geometry_NON` (DEKQAN).** Encoder emitted `[Y_NON]` with three radical
   nitrates `[O]N([O])=O` — the Y–O(nitrate) bonds were never perceived, so the
   coordination number is wrong and no geometry template matched. Root cause is
-  bond perception (`utils/xyz2mol.py`, S3), not the encoder/adapter. Route to S3.
+  bond perception (`utils/perception_tmc.py`, S3), not the encoder/adapter. Route to S3.
 - **Atom-count *decrease* rows in `donor_H_atom_count`** (ESOSOU 86→85, HOSXUJ
   33→31, IWAZAJ 44→43, NOBYOU 37→35, QOXPAU 49→47, RUWZIS 63→62). These *lose*
   atoms on generation — a generator/perception atom-loss defect, not encoder

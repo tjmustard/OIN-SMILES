@@ -365,11 +365,11 @@ nodes:
 - id: atom_xyz2mol
   dimension: Atomic
   status: dirty
-  associated_file: src/oinsmiles/utils/xyz2mol.py
-  description: 'xyz2mol: Graph generation from 3D coordinates using Jensen Group algorithm;
-    produces RDKit mol with 3D conformer. get_tmc_mol() and _repair_mixed_aromaticity()
-    call into the new utils/aromaticity.py (dearomatize_stuck_rings) to de-aromatize
-    rings stuck in a kekulization-hostile state before sanitization'
+  associated_file: src/oinsmiles/utils/perception_tmc.py
+  description: 'perception_tmc (formerly xyz2mol.py): Graph generation from 3D coordinates
+    using Jensen Group algorithm; produces RDKit mol with 3D conformer. get_tmc_mol()
+    and _repair_mixed_aromaticity() call into the new utils/aromaticity.py (dearomatize_stuck_rings)
+    to de-aromatize rings stuck in a kekulization-hostile state before sanitization'
   inputs:
   - data_type: xyz_block
     source_id: user_code
@@ -798,7 +798,7 @@ metadata:
   last_discover_notes: "/hyper-discover added the entire MetalloGen 3D-generation subsystem, which had zero graph representation despite being the default OIN3DGenerator engine since v0.3.4/v0.3.5: new mod_generator3d module (9 atomic nodes covering generator3d/), plus atom_metallogen_adapter (generation/metallogen_adapter.py), atom_oin_compare (oin/compare.py, test/verification-only canonical round-trip comparator), atom_aromaticity (utils/aromaticity.py), and atom_clear_chelate_locked_bond_stereo (core/translator.py, shared encode/decode helper) -- 14 new nodes, all clean. Edges/descriptions on 10 pre-existing nodes were updated to reflect engine=\"metallogen\"|\"legacy\" selection, the new mod_core/mod_utils/mod_generator3d dependencies on mod_generation, and the R3/R4/R5 round-trip fixes (terminal-nitride 0-H bracket, non-binding chalcogen charge-deficit, _OIN_CIPCode_SP3 stamp/recover); those 10 were then marked dirty via hypergraph_updater.py's blast-radius propagator (per the skill's Final Action), cascading needs_review to atom_api_exports/atom_metallogen_adapter/atom_oin_compare/atom_oin_parser_gen. Semantic reconciliation of the 12 dirty + 4 needs_review nodes back to clean is deferred to a future /hyper-audit pass, consistent with this project's discover-then-audit workflow. The 2 pre-existing dirty nodes (atom_direct_parser_ast, atom_direct_parser_masm) remain untouched/out of scope."
   description: "OIN-SMILES system consists of 7 core modules (API, Core, Generation,\
     \ Generation3D/MetalloGen, OIN, Utils, CLI) with 30 atomic components (classes/functions)\
-    \ distributed across two main pipelines. XYZ\u2192OIN pipeline (7 steps): xyz2mol\
+    \ distributed across two main pipelines. XYZ\u2192OIN pipeline (7 steps): perception_tmc\
     \ graph generation \u2192 CIP assignment \u2192 sanitization \u2192 geometry alignment\
     \ \u2192 winding detection \u2192 inline serialization. OIN\u2192XYZ pipeline: OIN\
     \ parsing (OINParser \u2192 ParsedOIN) \u2192 OIN3DGenerator \u2192 MetalloGen\

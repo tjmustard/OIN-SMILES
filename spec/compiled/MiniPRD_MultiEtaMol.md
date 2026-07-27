@@ -22,7 +22,7 @@ Red Team raised 10 findings (F1–F10) + missing NFRs. All are resolved:
 | **F8** | The degrade `logger.warning` states **both** the mol *and* the bridge coordinates are unreliable for a non-SiMe2 bridge. |
 | **F9** | A 999 RMSD sentinel on TiCat1/3/4 is a **flagged observation**, never folded into "measured not gated"; assert gen-side sphere count == 12. |
 | **F10** | Downgrade the ~12 `print(…, file=sys.stderr)` in the touched function to `logger.debug`; **no new `print()`**. |
-| **NFR-a** | Unit baseline frozen at **127** (post-Phase-0; the 124→127 delta is `tests/unit/test_xyz2mol_errors.py` + `tests/unit/test_oin_sanitizer_aromaticity.py`). WS-3 pins add on top; enumerate names. |
+| **NFR-a** | Unit baseline frozen at **127** (post-Phase-0; the 124→127 delta is `tests/unit/test_perception_tmc_errors.py` + `tests/unit/test_oin_sanitizer_aromaticity.py`). WS-3 pins add on top; enumerate names. |
 | **NFR-b** | Add a unit test asserting the documented **5-tuple** return shape (guards a future second caller). |
 | **D-1** (carried) | **Full** aromatic restoration (atom `IsAromatic` + `AROMATIC` bond types) from `mol` (`:650`). Makes WS-2 (`oin_aligner.py:50-58`) a provable no-op. |
 | **D-2** (carried) | Soft degrade: return `(positions, symbols, None, decisions, [])` + `logger.warning` (never `warnings.warn`/`OINStereoWarning`, never bare `None`). |
@@ -101,7 +101,7 @@ skipping it forfeits the confidence basis for TiCat3/4.
   *coordinates*, not just dative bonds.
   *AC:* (1) `gen.mol.GetNumAtoms() == len(all_pos)`. (2) A known ring carbon's `gen.mol`
   conformer position equals its `all_pos` entry (identity coord mapping holds, since
-  `get_oin_string` has no `__origIdx` and falls back to identity, `xyz2mol.py:819-825`).
+  `get_oin_string` has no `__origIdx` and falls back to identity, `perception_tmc.py:1472-1478`).
   (3) `renumber_order` is a **complete permutation** of `range(mol_h.GetNumAtoms())`
   (set-equality guard); any miss → `mol=None` + warning.
 
@@ -212,7 +212,7 @@ WS-2 fix are **read-only** (WS-2 is a committed precondition).
   post-Phase-3 `all_positions` as the geometry source.
 * **DO NOT** add the multi-eta fragment to `eta_frag_ranges` (`:2092-2095`).
 * **DO NOT** modify the single-eta path, the DG worker, or the encoder side
-  (`oin_aligner.py`, `xyz2mol.py` are read-only; WS-2 is a committed precondition).
+  (`oin_aligner.py`, `perception_tmc.py` are read-only; WS-2 is a committed precondition).
 * **DO NOT** shift any existing golden: the **25 pass-1 encode strings**
   (`verify_xyz_to_oin.py`), `test_regression_stability`, the winding-inertness goldens,
   and Ferrocene's round-trip must stay byte-identical (compare **after** WS-2 is merged, so

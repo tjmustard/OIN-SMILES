@@ -152,7 +152,7 @@ Files modified:
 | File | Change Type | Rationale |
 |------|-------------|-----------|
 | `src/oinsmiles/utils/oin_aligner.py` | Modified | `OINSanitizer.generate_robust_smiles()` gets Zone A CIP preservation logic; `recover_chirality_tag()` called post-sanitization |
-| `src/oinsmiles/utils/xyz2mol.py` | Modified | Pre-fragmentation `CIPAssigner.assign_all()` call added; `_CIPCode` stored per atom |
+| `src/oinsmiles/utils/perception_tmc.py` | Modified | Pre-fragmentation `CIPAssigner.assign_all()` call added; `_CIPCode` stored per atom |
 | `src/oinsmiles/core/translator.py` | Modified | `XYZToSMILES.convert()` wired to `CIPAssigner`; `SMILESToXYZ.convert()` wired to `MolassemblerAdapter` |
 | `src/oinsmiles/generation/engine.py` | Modified | `OIN3DGenerator` wired exclusively to `MolassemblerAdapter`; all Architector references removed |
 | `src/oinsmiles/generation/oin_parser.py` | Modified | Verify @/@@ markers survive `parse_inline_string()` and `MolToSmiles()` calls |

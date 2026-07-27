@@ -45,7 +45,7 @@ def main():
     args = ap.parse_args()
 
     xyz = find_xyz(args.dataset, args.molecule)
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
 
     S = {
         "uap_total": 0,

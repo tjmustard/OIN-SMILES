@@ -55,7 +55,7 @@ missing fixture or an absent capability.
 | `test_axial_chiral.py`, `test_chiral_p.py`, `test_chiral_n.py` (rdkit-gated cases) | `skipUnless(_RDKIT_AVAILABLE, ...)` | `rdkit` is importable. |
 | `test_encoder_robustness.py::test_get_tmc_mol_raises_typed_error`, `::test_convert_propagates_typed_error` | `skipUnless(os.path.exists(FIXTURE), ...)` | `tests/fixtures/RAWJEG_comp_0.xyz` exists. |
 | `test_encoder_robustness.py::test_benvog_recovers_via_cpu_budget_fallback` | `skipUnless(fixture exists and hasattr(os, "fork"), ...)` | `tests/fixtures/BENVOG_comp_0.xyz` exists **and** `os.fork` is available (POSIX). |
-| `test_xyz2mol_errors.py::test_get_tmc_mol_raises_valueerror_on_unbuildable_ligand` | `skipUnless(_FIXTURE.exists(), ...)` | `tests/fixtures/ticat3_generated_broken.xyz` exists. |
+| `test_perception_tmc_errors.py::test_get_tmc_mol_raises_valueerror_on_unbuildable_ligand` | `skipUnless(_FIXTURE.exists(), ...)` | `tests/fixtures/ticat3_generated_broken.xyz` exists. |
 
 Since these fixtures are checked into `tests/fixtures/`, these tests should run in any
 normal checkout; a skip here signals a missing fixture (or a non-POSIX host for the

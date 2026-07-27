@@ -48,11 +48,11 @@ being given handedness it does not have.
  THE FIX: A RESTORE AFTER THE LOOP, NOT A NARROWED PREDICATE
  ===========================================================
 
-   xyz2mol.py:1398-1412   plan_locked_donors(tmc_mol)  <- ONCE per molecule, on the
+   perception_tmc.py:1398-1412   plan_locked_donors(tmc_mol)  <- ONCE per molecule, on the
         │                   4-condition gate            metal-PRESENT mol + PRISTINE conformer
         │                                               (before _align_to_pai, which may REFLECT)
         ▼
-   xyz2mol.py:1651-1658   stamp_locked_donor_stereo(frag, ...)
+   perception_tmc.py:1651-1658   stamp_locked_donor_stereo(frag, ...)
         │                   sets an atom PROPERTY (_OIN_LOCKED_STEREO = "CW"/"CCW")
         │                   NOT a tag: properties survive sanitisation; N tags do not
         ▼
@@ -239,7 +239,7 @@ Five commits on `swimlane/v045-lane6`, merged into `release/v0.4.5` as `df7417a9
 ### The carve-out: metal-bonded N (and P) ONLY
 
 `src/oinsmiles/oin/locked_donor.py` is new; the touched existing files are
-`src/oinsmiles/core/chirality.py`, `src/oinsmiles/utils/xyz2mol.py` and
+`src/oinsmiles/core/chirality.py`, `src/oinsmiles/utils/perception_tmc.py` and
 `src/oinsmiles/oin/inline.py`.
 
 **The general clearing rule is left UNCONDITIONAL on purpose**, and this is the load-bearing
@@ -500,8 +500,8 @@ the opposite, because `"0"` is a non-empty string.
 | stage | location |
 |---|---|
 | eligibility + descriptor | `src/oinsmiles/oin/locked_donor.py` — `plan_locked_donors`, `_reference_neighbours`, `_tag_name_from_geometry`, `stamp_locked_donor_stereo`, `restore_locked_donor_tags` |
-| plan computed once, on the **pristine** conformer | `src/oinsmiles/utils/xyz2mol.py:1398-1412` (before `_align_to_pai`, which can reflect the coordinates and would invert the recovered sign) |
-| property stamped during fragment rebuild | `src/oinsmiles/utils/xyz2mol.py:1651-1658`, carrying `LOCKED_TAG_PROP = "_OIN_LOCKED_STEREO"` (`"CW"`/`"CCW"`) |
+| plan computed once, on the **pristine** conformer | `src/oinsmiles/utils/perception_tmc.py:1398-1412` (before `_align_to_pai`, which can reflect the coordinates and would invert the recovered sign) |
+| property stamped during fragment rebuild | `src/oinsmiles/utils/perception_tmc.py:1651-1658`, carrying `LOCKED_TAG_PROP = "_OIN_LOCKED_STEREO"` (`"CW"`/`"CCW"`) |
 | property → tag, as `recover()`'s LAST action | `src/oinsmiles/core/chirality.py:828` |
 | survive the slot-marker round trip | `src/oinsmiles/oin/inline.py:239` — `_StereochemDone` marked, **gated twice** (lever on **AND** the fragment actually contains `[N@`) so no other fragment's serialization changes |
 

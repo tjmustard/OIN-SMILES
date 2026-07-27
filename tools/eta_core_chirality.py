@@ -316,7 +316,7 @@ def core_is_rigid(mol, coords, core_idx, metal_idx):
 def analyze(xyz_path):
     from pathlib import Path
 
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     with _silence_fds():
         mol, _ = get_tmc_mol(Path(xyz_path), 0, with_stereo=False)

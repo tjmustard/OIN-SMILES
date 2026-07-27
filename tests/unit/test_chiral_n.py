@@ -71,7 +71,7 @@ class TestChiralN(unittest.TestCase):
         """
         from rdkit.Chem import rdCIPLabeler
 
-        from oinsmiles.utils.xyz2mol import get_tmc_mol
+        from oinsmiles.utils.perception_tmc import get_tmc_mol
 
         parent = get_tmc_mol(_BDNN_XYZ, 0, with_stereo=True)
         if isinstance(parent, tuple):

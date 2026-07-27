@@ -71,8 +71,8 @@ def build_cage_frag(mol_name, dataset_dir, tolerance=0.5):
     """
     from rdkit import Chem
 
-    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
-    from oinsmiles.utils.xyz2mol_local import read_xyz_file
+    from oinsmiles.utils.perception_core import read_xyz_file
+    from oinsmiles.utils.perception_tmc import TRANSITION_METALS_NUM
 
     path = find_xyz(mol_name, dataset_dir)
     atoms, _c, xyz = read_xyz_file(path)

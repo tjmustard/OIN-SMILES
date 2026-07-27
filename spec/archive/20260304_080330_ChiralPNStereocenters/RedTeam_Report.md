@@ -37,7 +37,7 @@ The PRD incorporates the major architectural decision from Pass 1 (Molassembler 
 | **M-2** | Medium | §5.5 | `scine-molassembler` PyPI package name is unconfirmed. Actual package may be `scine_molassembler` (underscore) or require the full SCINE meta-package. Spike must confirm before `pyproject.toml` is modified. |
 | **M-3** | Medium | §5.5 | xTB (LGPL-3.0) may violate §6's "BSD/MIT/Apache only" constraint. LGPL is not in the permitted list. Either the constraint must be updated or xTB's licensing status clarified. |
 | **M-4** | Medium | §8 | Success Metric 6 (120s SLA) has no regression baseline against retired Architector. A 3× slowdown passes the metric. No performance regression criterion defined. |
-| **M-5** | Medium | §7 | `chiral_stereo_check()` in `xyz2mol_local.py` sets stereo flags before `CIPAssigner.assign_all()` runs. Both modify stereo on the same Mol. Precedence rule undefined; absent from blast radius. |
+| **M-5** | Medium | §7 | `chiral_stereo_check()` in `perception_core.py` sets stereo flags before `CIPAssigner.assign_all()` runs. Both modify stereo on the same Mol. Precedence rule undefined; absent from blast radius. |
 | **L-1** | Low | §5.4 | `GeneratedStructure.get_xyz_string()` has no format spec. Callers cannot depend on this without knowing: standard XYZ? Angstroms? atom count header? |
 | **L-2** | Low | §5.4 | CLI missing `--seed`, `--no-xtb`, `--version`, and `--charge` for the `generate` subcommand (charge needed for xTB; seed for reproducibility). |
 | **L-3** | Low | §4 | US-005 does not specify stdin support. `oin-smiles convert -` reading from stdin is standard UNIX CLI practice for computational chemistry pipelines. |
@@ -238,7 +238,7 @@ Without these, `AssignStereochemistry()` silently returns without setting `_CIPC
 
 2. `pyproject.toml` change: "remove `architector` if it is a direct dep." This is a conditional. The Spike must confirm whether `architector` is listed in `pyproject.toml`; the removal should be **mandatory if present**, not conditional.
 
-3. `atom_chiral_stereo_check` in `xyz2mol_local.py` sets stereo flags during `AC2mol` → before `CIPAssigner.assign_all()` runs. If both set conflicting stereo information on the same Mol, the second caller wins — but which caller is authoritative? This interaction is not in the blast radius.
+3. `atom_chiral_stereo_check` in `perception_core.py` sets stereo flags during `AC2mol` → before `CIPAssigner.assign_all()` runs. If both set conflicting stereo information on the same Mol, the second caller wins — but which caller is authoritative? This interaction is not in the blast radius.
 
 ### What-If Scenarios
 
@@ -249,7 +249,7 @@ Without these, `AssignStereochemistry()` silently returns without setting `_CIPC
 ### Points for Improvement
 
 - **P5.2.1 (Medium):** Correct the blast radius table: move the "@/@@ survival" modification entry from `generation/oin_parser.py` to `oin/inline.py`.
-- **P5.2.2 (Medium):** Add `src/oinsmiles/utils/xyz2mol_local.py` to blast radius (read impact: define precedence between `chiral_stereo_check` and `CIPAssigner.assign_all()`).
+- **P5.2.2 (Medium):** Add `src/oinsmiles/utils/perception_core.py` to blast radius (read impact: define precedence between `chiral_stereo_check` and `CIPAssigner.assign_all()`).
 - **P5.2.3 (Medium):** Add `src/oinsmiles/oin/parser.py` to blast radius as a downstream dependency of `OINInlineHandler`.
 - **P5.2.4 (Low):** Change `pyproject.toml` "if it is a direct dep" to "confirm in Spike; removal is mandatory if present."
 
@@ -423,8 +423,8 @@ Nodes transitioning `clean → dirty` due to this PRD:
 |---|---|---|---|
 | `atom_OINSanitizer` | clean | `oin_aligner.py` | Zone A CIP recovery logic added; `recover_chirality_tag()` called post-sanitization |
 | `atom_OINDiscreteAligner` | clean | `oin_aligner.py` | Must pass `@`/`@@` through to serialization without corruption |
-| `atom_get_tmc_mol` | clean | `xyz2mol.py` | `CIPAssigner.assign_all()` inserted; mol sanitization required pre-call |
-| `atom_get_oin_string` | clean | `xyz2mol.py` | Must preserve `@`/`@@` through inline generation path |
+| `atom_get_tmc_mol` | clean | `perception_tmc.py` | `CIPAssigner.assign_all()` inserted; mol sanitization required pre-call |
+| `atom_get_oin_string` | clean | `perception_tmc.py` | Must preserve `@`/`@@` through inline generation path |
 | `atom_OIN3DGenerator` | clean | `generation/engine.py` | Rewired exclusively to `MolassemblerAdapter` |
 | `atom_OINInlineHandler` | dirty | `oin/inline.py` | C-2 fix required: `@`/`@@` preservation through RDKit round-trip |
 | `atom_XYZToSMILES` | dirty | `core/translator.py` | Wired to `CIPAssigner` (already dirty TD-001) |
@@ -432,7 +432,7 @@ Nodes transitioning `clean → dirty` due to this PRD:
 
 Blast radius table in §5.2 is missing these nodes (gap M-1):
 - `atom_OINParser_oin` (`oin/parser.py`) — downstream of `OINInlineHandler`
-- `atom_chiral_stereo_check` (`xyz2mol_local.py`) — precedence conflict with `CIPAssigner`
+- `atom_chiral_stereo_check` (`perception_core.py`) — precedence conflict with `CIPAssigner`
 
 Nodes removed (must be deleted from architecture graph):
 - `atom_ArchitectorAdapter` (`generation/architector_adapter.py`)

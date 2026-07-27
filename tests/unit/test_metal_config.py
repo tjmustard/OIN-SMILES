@@ -41,7 +41,7 @@ from oinsmiles.oin.metal_config import (  # noqa: E402
     metal_config_token,
     metal_config_token_chelate,
 )
-from oinsmiles.utils.xyz2mol import get_tmc_mol  # noqa: E402
+from oinsmiles.utils.perception_tmc import get_tmc_mol  # noqa: E402
 
 FIXTURES = _ROOT / "tests" / "fixtures"
 ZUMNEC = FIXTURES / "ZUMNEC.xyz"

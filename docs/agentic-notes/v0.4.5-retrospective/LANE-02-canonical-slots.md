@@ -28,14 +28,14 @@ mirror would merge a molecule with its non-superimposable twin.
                                         │
                                         ▼
         ┌─────────── frame-level order dependence, neutralized together ───────────┐
-        │  xyz2mol.py::_align_to_pai                                               │
+        │  perception_tmc.py::_align_to_pai                                               │
         │    pivot     : np.min(candidates)  ── FILE index ──┐                      │
         │                → _canonical_pivot: (-mass, sorted multiset of            │
         │                  interatomic distances)             │ atomic property   │
         │    z-sign    : sum(z_i * (i+1)**3) ── FILE position ─┤ + rigid-motion    │
         │                → _canonical_z_sign: mass-weighted    │ invariant         │
         │                  ODD moments in z (plain sums)      ─┘                   │
-        │  xyz2mol.py::get_input_order_key                                         │
+        │  perception_tmc.py::get_input_order_key                                         │
         │    min(original atom indices) → donor position inside the fragment's own │
         │    canonical SMILES (s_idx, off _smilesAtomOutputOrder)                  │
         └──────────────────────────────────────────────────────────────────────────┘
@@ -238,7 +238,7 @@ the whole picture.
 **`compare.py` re-based, not copied.** `compare._polyhedron_signature` is now a thin wrapper over
 `lexmin_vertex_signature` that drops the permutation — one derivation, two consumers.
 
-**Where the post-pass is applied, and why there.** `utils/xyz2mol.get_oin_string` (~line 2033), as
+**Where the post-pass is applied, and why there.** `utils/perception_tmc.get_oin_string` (~line 2033), as
 a post-pass on the **finished inline string**, *not* inside `_permute_and_serialize`'s lex-max loop.
 The inline string is exactly the representation `compare._parse_vertex_colors` already reads, so
 reusing that function **verbatim** makes the encoder's canonicalization and the key's agree *by
@@ -289,10 +289,10 @@ untouched beforehand.
   geometry can *over*-split (miss a benign rotation) but can never wrongly merge two isomers, so it
   cannot reintroduce fac/mer blindness.
 
-**The three frame seams**, all behind the lever: `xyz2mol._canonical_pivot` (key
+**The three frame seams**, all behind the lever: `perception_tmc._canonical_pivot` (key
 `(-mass, tuple(sorted(rounded interatomic distances)))` — an atomic property plus a rigid-motion
 invariant, distances rounded to 1e-6 Å so float noise from the rotation cannot reorder coincident
-shells); `xyz2mol._canonical_z_sign` (mass-weighted **odd** moments in z, tried in order:
+shells); `perception_tmc._canonical_z_sign` (mass-weighted **odd** moments in z, tried in order:
 `Σm·z`, `Σm·z³`, `Σm·z·r_xy²`, `Σz`, `Σz³` — plain sums, so renumbering-invariant, and odd, so they
 actually decide between `+z` and `−z`; falling through all five means every odd moment vanishes,
 i.e. the structure is mirror-symmetric across the xy-plane and either orientation is correct);
@@ -321,7 +321,7 @@ and `get_input_order_key` as above.
   **298 molecules: 0 string changes, 0 `[M_XXX]` changes, 0 coordination-number changes**.
 - **Code:** `src/oinsmiles/oin/canonical_slots.py`; `src/oinsmiles/oin/compare.py`
   (`_polyhedron_signature` now a wrapper, imports from `canonical_slots`);
-  `src/oinsmiles/utils/xyz2mol.py` (`_canonical_pivot` line 1038, `_canonical_z_sign` line 1070,
+  `src/oinsmiles/utils/perception_tmc.py` (`_canonical_pivot` line 1038, `_canonical_z_sign` line 1070,
   their call sites in `_align_to_pai` at 1195 / 1232, `get_input_order_key` at 1834, post-pass at
   2033); `src/oinsmiles/utils/oin_aligner.py::_brute_force_symmetries` (delegates to
   `derive_rotation_group`).

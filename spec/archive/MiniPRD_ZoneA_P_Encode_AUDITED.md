@@ -10,8 +10,8 @@ document and output a Confidence Score (1-10). If the score is below 9, list
 strictly the clarifying questions needed to reach 10.
 
 Context an executor must load: `src/oinsmiles/core/chirality.py` (whole file),
-`src/oinsmiles/utils/xyz2mol.py:30` (`TRANSITION_METALS_NUM`) and the
-`recover()` call site at `xyz2mol.py:947-957`, SuperPRD §5.1 (dummy-copy recipe
+`src/oinsmiles/utils/perception_tmc.py:30` (`TRANSITION_METALS_NUM`) and the
+`recover()` call site at `perception_tmc.py:947-957`, SuperPRD §5.1 (dummy-copy recipe
 + data flow) and §6 (constraints).
 
 ## 2. Atomic User Stories
@@ -39,7 +39,7 @@ Context an executor must load: `src/oinsmiles/core/chirality.py` (whole file),
 ## 3. Implementation Plan (Task List)
 - [ ] Task 1: Define `class OINStereoWarning(UserWarning)` in
       `core/chirality.py`; export it from the package namespace.
-- [ ] Task 2: Import `TRANSITION_METALS_NUM` from `utils/xyz2mol.py` into
+- [ ] Task 2: Import `TRANSITION_METALS_NUM` from `utils/perception_tmc.py` into
       `core/chirality.py` (import only — do NOT copy the list). If a circular
       import arises, move the constant to a new `core/constants.py` and import
       it from BOTH files (single source retained).

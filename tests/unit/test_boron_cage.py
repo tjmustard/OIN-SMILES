@@ -25,7 +25,7 @@ from oinsmiles import XYZToSMILES
 from oinsmiles.core.constants import TRANSITION_METALS_NUM
 from oinsmiles.oin.compare import canonical_roundtrip_key
 from oinsmiles.utils.aromaticity import OINEncodeError
-from oinsmiles.utils.xyz2mol_local import boron_cage_vertices, read_xyz_file, xyz2AC_obabel
+from oinsmiles.utils.perception_core import boron_cage_vertices, read_xyz_file, xyz2AC_obabel
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -215,7 +215,7 @@ class TestSilentCorruptionOfAPassingMolecule(_LeverMixin):
     """
 
     def _cage_bond_count(self, path):
-        from oinsmiles.utils.xyz2mol import get_tmc_mol
+        from oinsmiles.utils.perception_tmc import get_tmc_mol
 
         mol, _xyz = get_tmc_mol(str(path), 0, with_stereo=False)
         bb = sum(

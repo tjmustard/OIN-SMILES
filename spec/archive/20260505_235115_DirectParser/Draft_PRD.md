@@ -100,7 +100,7 @@ Internal: The `OIN3DGenerator.generate()` method and downstream 3D conformation 
 - `src/oinsmiles/generation/engine.py::OIN3DGenerator.generate()` — **Calls new parser (internal interface only)**
 
 **No Changes Required:**
-- `src/oinsmiles/utils/xyz2mol.py` (XYZ→OIN pipeline)
+- `src/oinsmiles/utils/perception_tmc.py` (XYZ→OIN pipeline)
 - `src/oinsmiles/oin/parser.py` (sidecar-format parser)
 - `src/oinsmiles/generation/engine.py` public API (return type already `GeneratedStructure`)
 

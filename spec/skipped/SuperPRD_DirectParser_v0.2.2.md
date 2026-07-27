@@ -302,7 +302,7 @@ SUPPORTED_GEOMETRY_CODES: Set[str] = {"SPL", "TBP", "OCT", ...}  # R9
 - **DO NOT** remove existing entries from `oinsmiles.__all__` (additions only) (P6.3).
 - **DO NOT** swallow exceptions from direct backend; all failures must propagate with the input OIN string truncated to 200 chars and a recommendation to try `backend='legacy'` (P6.5).
 - **DO NOT** raise the cross-backend RMSD threshold above 1.0Å mean unilaterally; divergences route to `_exclusions.yml` with justification (P7.2).
-- **DO NOT** modify `xyz2mol.py` or `core/chirality.py` while in this MiniPRD chain (W6.1; XYZ→OIN side-effects out of scope).
+- **DO NOT** modify `perception_tmc.py` or `core/chirality.py` while in this MiniPRD chain (W6.1; XYZ→OIN side-effects out of scope).
 
 ---
 

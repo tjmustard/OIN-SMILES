@@ -21,7 +21,7 @@ from rdkit import Chem
 
 from oinsmiles.generation.engine import OIN3DGenerator
 from oinsmiles.oin.compare import canonical_roundtrip_key
-from oinsmiles.utils.xyz2mol import get_oin_string
+from oinsmiles.utils.perception_tmc import get_oin_string
 
 # KAPCEM_comp_0's own forward encode: a Co complex whose tetradentate
 # bis(hydroxylamine)diamine ligand carries NO sp3 '@' (the centres are left

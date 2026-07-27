@@ -126,7 +126,7 @@ up to *global inversion*. That single fact explains every prior observation:
   mirror audit only because the mirror produces the complement, which the audit scores as "flipped
   correctly". The audit was confirming a false positive, not catching one;
 - the absolute signs came from whichever arbitrary resonance form `AC2BO` returned
-  (`xyz2mol_local.py:800` says so in as many words), so they were never reproducible;
+  (`perception_core.py:1319` says so in as many words), so they were never reproducible;
 - multi-axis structures scored 0/2 in *both* A/B arms. A generator limitation would have shown a
   difference between the arms. A request that is not well-posed shows none, which is what was
   observed.

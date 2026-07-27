@@ -54,7 +54,8 @@ STATUS — WIRED END TO END, LEVER DEFAULT OFF
 Superseded an earlier "descriptor and validation only, NOT wired to emit" note that stayed in this
 docstring after the wiring landed. The current state is:
 
-* emit — :func:`token_for_mol` is called from ``xyz2mol.py`` (the ``OIN_EMIT_METAL_CONFIG`` block,
+* emit — :func:`token_for_mol` is called from ``perception_tmc.py`` (the
+  ``OIN_EMIT_METAL_CONFIG`` block,
   around line 1391), computed from the PRISTINE input conformer beside the axial token and for the
   same reason: ``_align_to_pai`` below may REFLECT the coordinates, and a reflection inverts a
   chirality descriptor. Appended as a trailing sidecar at the single return site.

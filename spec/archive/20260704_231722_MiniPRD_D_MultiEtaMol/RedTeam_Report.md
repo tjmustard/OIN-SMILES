@@ -3,7 +3,7 @@
 - **Target PRD:** `spec/active/Draft_PRD_MiniPRD_D_MultiEtaMol.md` (v0.1.0 Draft)
 - **Blast-radius source:** `spec/compiled/architecture.yml`
 - **Method:** Every `file:line` claim in the Draft PRD was cross-checked against the
-  live source (`molassembler_adapter.py`, `xyz2mol.py`, `oin_aligner.py`,
+  live source (`molassembler_adapter.py`, `perception_tmc.py`, `oin_aligner.py`,
   `verify_roundtrip.py`, `rmsd_utils.py`). Findings below are code-verified, not
   prose-only. Verdicts: **CONFIRMED** = I reproduced the claim in source;
   **HAZARD** = a real gap the PRD under-weights or misses.
@@ -28,7 +28,7 @@
 | Blast-radius node ids exist in `architecture.yml` | **CONFIRMED** | `atom_molassembler_adapter:290`, `atom_generated_structure:334`, `atom_oin3d_generator:244`, `atom_xyz2mol:499`, `haptic_face_correction:265` all present |
 | Zone-A-P loop creates no `normal_frag_meta` for the ansa fragment | **CONFIRMED — but incomplete** | multi-eta branch `:2078-2100` never touches `normal_frag_meta`; **however the two Ti-methyls do** via the normal path `:2198`, so the loop at `:2306` now runs (see F4) |
 | Step-2 re-encode uses `get_oin_string`, else falls back to `convert()` | **CONFIRMED — fallback is SILENT** | `verify_roundtrip.py:288` then `except …:292` prints only a `Note:` and reverts to `convert()` (see F1) |
-| `get_oin_string` maps atoms→coords by `__origIdx`, else identity | **CONFIRMED — reconstructed mol has no `__origIdx` → identity** | `xyz2mol.py:819-825`; identity mapping makes the emission bijection load-bearing for *coordinates* (see F2) |
+| `get_oin_string` maps atoms→coords by `__origIdx`, else identity | **CONFIRMED — reconstructed mol has no `__origIdx` → identity** | `perception_tmc.py:819-825`; identity mapping makes the emission bijection load-bearing for *coordinates* (see F2) |
 | Coordination sphere uses bonds for gen, distance for orig | **CONFIRMED** | `rmsd_utils.py:62` (`use_bonds=False` orig), `:77` (`use_bonds=True` gen); DATIVE counts as a neighbor `:195` (see F10) |
 
 **Net:** the PRD's factual spine is accurate and unusually well-pinned. The
@@ -129,7 +129,7 @@ weaknesses are not wrong facts — they are **silent-failure surfaces**, an
    (ring H via `output_idx+local_i`, methyls via pairing) understood to be
    **new code**, not a reuse of `heavy_atom_map`?
 2. Out-of-scope explicitly excludes the encoder side (`oin_aligner.py`,
-   `xyz2mol.py`) as "read-only." But WS-3's success **depends on** WS-2's
+   `perception_tmc.py`) as "read-only." But WS-3's success **depends on** WS-2's
    re-aromatizer already being merged (`oin_aligner.py:50-58`). Is WS-2 a hard
    *precondition* dependency (must be committed/verified first), and is that
    ordering pinned anywhere the executor will see?
@@ -264,7 +264,7 @@ weaknesses are not wrong facts — they are **silent-failure surfaces**, an
 - **W-9 (`atom_xyz2mol` re-encode path swap is under-tested).** The blast radius
   correctly flags that `get_oin_string` becomes the active re-encode path for
   TiCat1/3/4. But `get_oin_string` rebuilds each fragment **heavy-atom-only** with
-  H counts derived by counting explicit-H neighbors (`xyz2mol.py:882-893,911-912`)
+  H counts derived by counting explicit-H neighbors (`perception_tmc.py:882-893,911-912`)
   and copies bond types verbatim (`:925`). This path has **never** been exercised
   on a mol whose ring bonds are AROMATIC-but-never-kekulized. It is a genuine new
   code path in a node the PRD marks "behavior shift, not source-modified."
@@ -313,7 +313,7 @@ weaknesses are not wrong facts — they are **silent-failure surfaces**, an
 1. **R1 is under-scoped.** The PRD frames miswired binding indices as corrupting
    "the re-encode string and the RMSD coordination sphere." Verified deeper:
    `get_oin_string` maps atoms→coordinates by **identity** for the reconstructed
-   mol (no `__origIdx`, `xyz2mol.py:819-825`), so a bad emission bijection also
+   mol (no `__origIdx`, `perception_tmc.py:819-825`), so a bad emission bijection also
    feeds **wrong coordinates into PAI alignment** (`:773`) and slot geometry —
    corrupting OIN2 *even if* the dative bonds happened to land right. Should R1's
    blast be expanded to "coordinate mapping," not just "dative bonds + sphere"?
@@ -424,8 +424,8 @@ The PRD's own five seed items are answered here, with verdicts:
 
 | ID | Sev | Finding | Anchor | Fix posture |
 | :-- | :-- | :-- | :-- | :-- |
-| **F1** | **Critical** | Harness silently reverts to `convert()` on `get_oin_string` failure → a kekulize/sanitize failure on the reconstructed aromatic mol fails the test *exactly as today* but looks like the mol path ran. DoD US-005.1 has no enforced check. | `verify_roundtrip.py:289-292`; `xyz2mol.py:801` | Unit pin: `get_oin_string(gen.mol)` must not raise + emits aromatic; harness `mol_reencode_failed` metric. |
-| **F2** | **Critical** | Emission-order bijection feeds `get_oin_string`'s **identity** atom→coord mapping (no `__origIdx`), so a bad permutation corrupts coordinates/PAI/slots, not just dative bonds. Broadens R1. | `xyz2mol.py:819-825,773`; `rmsd_utils.py:200` | Assert a known ring-C's `gen.mol` coord == its `all_pos` entry; total-permutation guard. |
+| **F1** | **Critical** | Harness silently reverts to `convert()` on `get_oin_string` failure → a kekulize/sanitize failure on the reconstructed aromatic mol fails the test *exactly as today* but looks like the mol path ran. DoD US-005.1 has no enforced check. | `verify_roundtrip.py:289-292`; `perception_tmc.py:801` | Unit pin: `get_oin_string(gen.mol)` must not raise + emits aromatic; harness `mol_reencode_failed` metric. |
+| **F2** | **Critical** | Emission-order bijection feeds `get_oin_string`'s **identity** atom→coord mapping (no `__origIdx`), so a bad permutation corrupts coordinates/PAI/slots, not just dative bonds. Broadens R1. | `perception_tmc.py:819-825,773`; `rmsd_utils.py:200` | Assert a known ring-C's `gen.mol` coord == its `all_pos` entry; total-permutation guard. |
 | **F3** | **High** | "Provably correct" is verified for **Cp only**; TiCat3/4 (indenyl) atom count, aromatic-model agreement, and 12-bond count are unproven yet gated by US-001/003/005. | §1.1 measured GT (Cp); `_bfs_atoms:686` pulls benzo | Probe an indenyl fragment; split confidence; consider de-scoping TiCat3/4 to a follow-up if the probe is red. |
 | **F4** | **High** | Enabling `combined_mol` for TiCat1 newly exercises the normal-path methyl assembly **and** the Zone-A-P loop (`:2306`, non-empty via the two `[CH3]` metas at `:2198`) — paths dead for this complex today. Blast radius says only "inert." | `:2078-2100` vs `:2197-2207,2306` | Dedicated TiCat1 assembly pin; verify `_verify_zone_a_p` tolerates the aromatic ansa atoms in `combined_mol`. |
 | **F5** | **High** | `_assemble_combined_mol` swallows all exceptions → guard-passing-but-assembly-failing reconstruction degrades to `None` **with no log**, defeating D-2 "never silent." | `molassembler_adapter.py:587-588` | Pre-validate counts; log in `except`. |

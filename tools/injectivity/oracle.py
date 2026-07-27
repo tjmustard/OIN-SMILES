@@ -35,7 +35,7 @@ import numpy as np
 from rdkit import Chem
 
 from oinsmiles.core.constants import TRANSITION_METALS_NUM
-from oinsmiles.utils.xyz2mol import get_tmc_mol
+from oinsmiles.utils.perception_tmc import get_tmc_mol
 
 #: min proper-rotation mirror RMSD (Å) above which a rigid structure is called chiral.
 #: Validated separation on the Y1 fixtures: achiral controls ~0.05, chiral 3-4.

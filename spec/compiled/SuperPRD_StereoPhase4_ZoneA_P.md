@@ -120,7 +120,7 @@ All four Draft-PRD open questions are resolved or converted into MiniPRD tasks:
 **MiniPRD-A — Encode side (`core/chirality.py`):**
 1. **Zone-A eligibility (formal, shared by both MiniPRDs — B7):** a P atom bonded
    to **exactly one** metal atom, where "metal" is decided by the single existing
-   predicate source (`TRANSITION_METALS_NUM`, `utils/xyz2mol.py:30`) imported —
+   predicate source (`TRANSITION_METALS_NUM`, `utils/perception_tmc.py:20`) imported —
    never duplicated. P bonded to ≥2 metals (bridging phosphide): store nothing +
    `OINStereoWarning` → degrades to today's clearing behaviour.
 2. `CIPAssigner.assign_all()`: for each eligible P, build the **dummy-metal copy**
@@ -304,7 +304,7 @@ OIN string → parse_inline_string [regex-only, @/@@ passes through — no chang
   (pathological-runtime note, RISK-10).
 - **B6–B10 + NFR package (Medium/Low).** *Resolution:* standard defaults
   approved as a group — recompute-per-flip (≤2 passes); exactly-one-metal
-  eligibility guard with the predicate imported from `utils/xyz2mol.py`
+  eligibility guard with the predicate imported from `utils/perception_tmc.py`
   (no duplicate list); 3-attempt re-embed budget with mol=None paths
   skip+warn; `_LP`-before-degree branch precedence + `assign_all()` idempotence;
   `OINStereoWarning(UserWarning)` with atom index in-message and
@@ -323,7 +323,7 @@ The following nodes in `spec/compiled/architecture.yml` are affected:
 - **Deleted:** `atom_pseudo_atom_strategy` **and** the dangling edge
   `atom_chirality_recovery.edges.depends_on → atom_pseudo_atom_strategy`.
 - **Verify-unchanged (audit, not edit):** `atom_xyz2mol` (call site
-  `xyz2mol.py:947`; re-serialize/re-parse at `xyz2mol.py:949/957`),
+  `perception_tmc.py:947` UNVERIFIED; re-serialize/re-parse at `perception_tmc.py:949/957` UNVERIFIED),
   `translator.py:35` (`CIPAssigner` call), `atom_oin_sanitizer` (property
   pass-through), `atom_oin_inline_handler` — specifically
   `oin/inline.py::parse_inline_string` and `_count_smiles_atoms_before`
@@ -422,7 +422,7 @@ No new package dependencies (`rdCIPLabeler`, `warnings` already available).
 - RDKit (existing, version pinned by `uv.lock`) — `rdCIPLabeler`,
   `AssignAtomChiralTagsFromStructure`, `AssignStereochemistryFrom3D`,
   `EmbedMolecule`.
-- `utils/xyz2mol.py::TRANSITION_METALS_NUM` — the single metal predicate source.
+- `utils/perception_tmc.py::TRANSITION_METALS_NUM` — the single metal predicate source.
 - No new third-party dependencies.
 
 ---
@@ -433,7 +433,7 @@ No new package dependencies (`rdCIPLabeler`, `warnings` already available).
   BDPP/BDNN goldens must stay byte-identical AND their emitted SMILES asserted tag-free.
 - **DO NOT** store `_OIN_CIPCode_LP` on a P bonded to ≥2 metals — warn and skip.
 - **DO NOT** duplicate the metal predicate — import `TRANSITION_METALS_NUM` from
-  `utils/xyz2mol.py` (no second list; TD-005 lesson).
+  `utils/perception_tmc.py` (no second list; TD-005 lesson).
 - **DO NOT** apply a mirror or any improper transform to a fragment — correction
   is re-embed-only (B2/B3).
 - **DO NOT** compare CIP labels across conventions: the diagnostic oracle runs on

@@ -29,7 +29,7 @@ input file.
                                                                 │
   ┌─────────────────── PERCEPTION (OIN_CANONICAL_PERCEPTION) ────┴────────────────┐
   │                                                                               │
-  │   utils/xyz2mol_local.py::AC2BO            utils/xyz2mol.py::lig_checks        │
+  │   utils/perception_core.py::AC2BO            utils/perception_tmc.py::lig_checks        │
   │   "returns an arbitrary resonance form"    ranks candidates by                │
   │   ├─ _ordered_valences → itertools.product │   (most aromatic, fewest charges) │
   │   │     ⚠ walks per-atom lists in INPUT    │   and settled a tie by "whichever │
@@ -175,7 +175,7 @@ the defect. Permuting its atom lines:
   key, encoder, Lane 2's vertex colours), so they cannot drift apart. Returns `"RAW:<input>"` for
   an unparseable body.
 - `canonical_body_emit(mol, donor_indices) -> (smiles, {donor_idx: position}, reparsed_mol) | None`
-  — the encoder seam, hooked in `utils/xyz2mol.py` at the `lever_enabled("OIN_CANONICAL_BODY")`
+  — the encoder seam, hooked in `utils/perception_tmc.py` at the `lever_enabled("OIN_CANONICAL_BODY")`
   branch (~line 1746) that overwrites `sanitized_smiles` / `sanitized_mol` and sets
   `canonical_body_positions`.
 - Helpers: `_reparse_once`, `_composition`, `_n_aromatic`, `_clear_chelate_locked_stereo`,
@@ -229,7 +229,7 @@ the defect. Permuting its atom lines:
 
 **v0.4.6 aftermath (consistency fix only, no accuracy claim).** `canonical_body_emit` had **two**
 `MolToSmiles` writes, and the **final** one — whose output becomes the emitted body — silently
-discarded the `OIN_H_FAITHFUL` repair applied upstream at `utils/xyz2mol.py`. Both now route
+discarded the `OIN_H_FAITHFUL` repair applied upstream at `utils/perception_tmc.py`. Both now route
 through `oin/hydrogen.py::h_faithful_smiles`. **This has no measured accuracy benefit:** an A/B
 over the 45-molecule `Atom count mismatch` population gave **match 8 / mismatch 37 in both arms,
 identical**. It is kept because two writes of one body should not disagree, and because it makes
@@ -258,9 +258,9 @@ re-read one hydrogen heavier failed `_composition` and lost canonicalization ent
   `docs/agentic-notes/v0.4.5/PROMOTION_GATE_v0.4.5.md` — all six canonicality levers together took byte-stability under
   rotation/renumbering from **58.1% (173/298) to 69.6% (208/299)** and comparison-key instability
   from **60 molecules to 16** on a 300-molecule seed-42 sample; `rotate` drift 0 in both arms.
-- **Code:** `src/oinsmiles/oin/canonical_body.py`; hooks in `src/oinsmiles/utils/xyz2mol.py`
+- **Code:** `src/oinsmiles/oin/canonical_body.py`; hooks in `src/oinsmiles/utils/perception_tmc.py`
   (`lig_checks` sort ~line 497, `AC2BO` conjugation ~line 850, `canonical_body_emit` ~line 1746);
-  `src/oinsmiles/utils/xyz2mol_local.py::AC2BO`.
+  `src/oinsmiles/utils/perception_core.py::AC2BO`.
 - **Guards:** `tests/unit/test_canonical_body.py` —
   `TestFlagOffIsByteIdentical::{test_goldens_unchanged, test_module_not_imported_when_flag_unset}`,
   `TestCanonicalBodyFunction::{test_kekule_and_aromatic_converge, test_is_idempotent_on_its_own_output, test_unparseable_body_gets_stable_raw_token}`,

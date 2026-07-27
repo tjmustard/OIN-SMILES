@@ -35,7 +35,7 @@ limitation can be told apart from a bug.
    │            THREE INDEPENDENT SUPER-POLYNOMIAL STAGES, each revealed            │
    │            only after bounding the previous one                                │
    │                                                                                │
-   │  ① AC2BO valence-order sort            utils/xyz2mol_local.py                  │
+   │  ① AC2BO valence-order sort            utils/perception_core.py                  │
    │     materialised the FULL Cartesian product of per-atom valences just to        │
    │     sort candidate assignments — exponential in the number of multivalent       │
    │     atoms.                                                                     │
@@ -46,7 +46,7 @@ limitation can be told apart from a bug.
    │     ✔ PROVABLY byte-identical: a >cap ligand HANGS on unbounded main, so no     │
    │       currently-encodable molecule can reach the fallback                       │
    │                                                                                │
-   │  ② ResonanceMolSupplier                utils/xyz2mol.py::lig_checks             │
+   │  ② ResonanceMolSupplier                utils/perception_tmc.py::lig_checks             │
    │     builds the conjugation-electron GROUPS in a C++ call BEFORE any             │
    │     enumeration, so maxStructs cannot bound it (even maxStructs=2 hangs).       │
    │     ⚠ IT HOLDS THE GIL ⇒ a watchdog THREAD cannot interrupt it.                 │
@@ -63,7 +63,7 @@ limitation can be told apart from a bug.
    │                              form ⇒ the molecule RECOVERS                      │
    │       gate: _resonance_needs_isolation — >=50 heavy OR >=35 aromatic atoms      │
    │                                                                                │
-   │  ③ get_UA_pairs → networkx max_weight_matching   xyz2mol_local.py               │
+   │  ③ get_UA_pairs → networkx max_weight_matching   perception_core.py               │
    │     O(V³) in the unsaturated-atom graph.                                        │
    │     ✘ NOT BOUNDED.  Documented residual (FAQYUU, HICLAG).                       │
    └────────────────────────────────────────────────────────────────────────────────┘
@@ -104,7 +104,7 @@ discovered (the handoff hypothesis named only ②).
 5. **"The reported failure site is the causal site."** False for the boron cohort (reported
    `get_lig_mol`, caused in `xyz2AC_obabel`) and it is the general reason this cohort was
    mis-triaged.
-6. **"`tests/unit/test_xyz2mol_errors.py` tests the error path."** It had stopped doing so
+6. **"`tests/unit/test_perception_tmc_errors.py` tests the error path."** It had stopped doing so
    entirely — see below. Nobody had assumed to check.
 
 ## What was actually found
@@ -159,7 +159,7 @@ re-running encode+generate per molecule and was out of this lane's scope.
 
 `ASISAX` is a Ni tetraaza-macrocycle. Direct diagnosis: at ligand charge **0** the encoder's own
 `AC2mol` perceives it fine; **every other charge in −6..+6 returns `None`**.
-`get_lig_mol`'s charge-rescue loop (`_rescue_unusable_perception`, `xyz2mol.py:498`) rejected the
+`get_lig_mol`'s charge-rescue loop (`_rescue_unusable_perception`, `perception_tmc.py:544`) rejected the
 charge-0 candidate anyway, because it tested
 `stuck_ring_atoms(candidate) or not _perception_is_usable(candidate)` — treating *any* stuck
 (unkekulizable-as-aromatic) ring as an automatic reject, even though `_perception_is_usable`
@@ -226,7 +226,7 @@ QIDKUL's 37-atom ligand exactly **16 of 1,259,712** candidates can satisfy `AC2B
 predicate, and the earliest sits at **rank 209,858** — so no prefix of 20,000, *in any order*, could
 ever have reached one. The bound stops the hang; the filter is what finds the answer.
 
-### Confirmed — `test_xyz2mol_errors` was SILENTLY TESTING NOTHING
+### Confirmed — `test_perception_tmc_errors` was SILENTLY TESTING NOTHING
 
 The lane's cleanest process finding, and it has nothing to do with the 48.
 
@@ -244,7 +244,7 @@ Rewritten as **fault injection**:
 # (None, charge): get_lig_mol returns a 2-TUPLE that the call site unpacks BEFORE the
 # `if not lig_mol` guard, so injecting a bare None would fail in the unpack -- which is
 # the very TypeError this contract exists to prevent, raised from the wrong place.
-with mock.patch.object(xyz2mol_module, "get_lig_mol", return_value=(None, 0)):
+with mock.patch.object(perception_module, "get_lig_mol", return_value=(None, 0)):
     with self.assertRaises(ValueError) as ctx:
         get_tmc_mol(_FIXTURE, 0, with_stereo=False)
 self.assertIn("get_lig_mol failed", str(ctx.exception))
@@ -284,7 +284,7 @@ backstop is **not measured**.
 
 ### `OIN_RESCUE_STUCK_RING` — one-line permissive rescue, opt-in, default OFF
 
-`utils/xyz2mol.py::_rescue_unusable_perception`. Split the combined boolean so the stuck-ring
+`utils/perception_tmc.py::_rescue_unusable_perception`. Split the combined boolean so the stuck-ring
 rejection is skipped when the lever is set, leaving `_perception_is_usable` (which already subsumes
 ring repair) as the sole gate. Lever unset ⇒ byte-identical to the pre-fix code, by the same
 short-circuit.
@@ -300,7 +300,7 @@ corpus sweep, so it went behind a default-OFF lever.
 
 ### `_VALENCE_COMBO_CAP` — the AC2BO valence-order bound (SL5, default behaviour)
 
-`utils/xyz2mol_local.py`. `_VALENCE_COMBO_CAP = 500_000`; above it, skip the sort and iterate the
+`utils/perception_core.py`. `_VALENCE_COMBO_CAP = 500_000`; above it, skip the sort and iterate the
 lazy product bounded to `_VALENCE_FALLBACK_TRIES = 20_000` (overridable with
 `OIN_VALENCE_FALLBACK_TRIES=<int>`); the main loop early-returns on the first valid assignment.
 
@@ -314,7 +314,7 @@ fallback.
 
 ### Forked, CPU-time-bounded `ResonanceMolSupplier` (SL5, default behaviour)
 
-`utils/xyz2mol.py::_resonance_candidates_isolated`. `os.fork` + pipe + `select`; child sets
+`utils/perception_tmc.py::_resonance_candidates_isolated`. `os.fork` + pipe + `select`; child sets
 `RLIMIT_CPU = _RESONANCE_CPU_BUDGET_S = 120` CPU-seconds; parent's `select` has a
 `_RESONANCE_WALL_SAFETY_S = 900` wall-clock backstop for a starved child that never even runs. Only
 large ligands take this path — `_resonance_needs_isolation`: `_RESONANCE_ISOLATION_HEAVY = 50` heavy
@@ -368,7 +368,7 @@ vs 3c-2e argument is individually true and was never exercised by the failure at
 re-baseline and was promoted to default-ON in v0.4.6 (`d799de1f`).
 
 **Why the wrong answer was believable:** the *reported* failure site (`get_lig_mol` →
-`OINEncodeError`, `xyz2mol.py:775`) and the *causal* site (`xyz2AC_obabel`'s pruning loop, which
+`OINEncodeError`, `perception_tmc.py:959`) and the *causal* site (`xyz2AC_obabel`'s pruning loop, which
 raises nothing) are different stages. Confirming that no charge in −6..+6 helps is a true
 measurement — of the wrong stage. **A confirmed negative on the wrong stage is how a misdiagnosis
 acquires evidence.**
@@ -402,7 +402,7 @@ The stock tool's `PER_MOL_TIMEOUT_S = 90` is **shorter than SL5's own
 the fork *would* recover. Re-run with a 200 s wall-clock cap instead. Anyone re-running this triage
 must raise the cap or they will reproduce the wrong histogram.
 
-### "`test_xyz2mol_errors` tests the error path" — REFUTED
+### "`test_perception_tmc_errors` tests the error path" — REFUTED
 
 **Killed by reading what the fixture now does under `OIN_STABLE_METAL_AC`:** perception *succeeds*
 on the deliberately-broken input, returning 48 atoms in 8 fragments with seven bare `[H+]` and a
@@ -436,12 +436,12 @@ chemistry", not "one permissive valence entry."**
 
 | change | lever | default | where |
 |---|---|---|---|
-| stuck-ring rescue permissiveness | `OIN_RESCUE_STUCK_RING` | **OFF** (held) | `utils/xyz2mol.py::_rescue_unusable_perception` |
-| AC2BO valence-combo bound | none (SL5) | **ON** | `utils/xyz2mol_local.py`, `_VALENCE_COMBO_CAP` / `_VALENCE_FALLBACK_TRIES` |
-| forked CPU-bounded resonance | none (SL5) | **ON** | `utils/xyz2mol.py::_resonance_candidates_isolated` |
+| stuck-ring rescue permissiveness | `OIN_RESCUE_STUCK_RING` | **OFF** (held) | `utils/perception_tmc.py::_rescue_unusable_perception` |
+| AC2BO valence-combo bound | none (SL5) | **ON** | `utils/perception_core.py`, `_VALENCE_COMBO_CAP` / `_VALENCE_FALLBACK_TRIES` |
+| forked CPU-bounded resonance | none (SL5) | **ON** | `utils/perception_tmc.py::_resonance_candidates_isolated` |
 | typed encode ceiling | none (SL5) | **ON** | `utils/aromaticity.py::OINEncodeError` |
 | boron cage encoding | `OIN_BORON_CAGE` | **ON since v0.4.6** | see `LANE-boron-cage.md` |
-| valence charge filter (the NHC fix) | `OIN_VALENCE_CHARGE_FILTER` | **OFF** | `utils/xyz2mol_local.py` (`swimlane/v045-valorder`) |
+| valence charge filter (the NHC fix) | `OIN_VALENCE_CHARGE_FILTER` | **OFF** | `utils/perception_core.py` (`swimlane/v045-valorder`) |
 | `get_UA_pairs` / `max_weight_matching` O(V³) | — | **unbounded** | documented residual |
 
 `OIN_RESCUE_STUCK_RING`'s held-off reason is recorded verbatim in
@@ -453,7 +453,7 @@ into the integration merge **`1450b5ce`** and the v0.4.5 release commit **`0d165
 
 | commit | what |
 |---|---|
-| `b9143ac1` | `WIP(encodefail): encode_fail triage + ASISAX rescue -- histogram tally PENDING` — the substantive commit: `xyz2mol.py` lever split, 4 fixtures, `test_encoder_robustness.py` +48 lines. ⚠ Its message carries the "34 boron are PERMANENTLY unfixable" claim, now refuted. |
+| `b9143ac1` | `WIP(encodefail): encode_fail triage + ASISAX rescue -- histogram tally PENDING` — the substantive commit: `perception_tmc.py` lever split, 4 fixtures, `test_encoder_robustness.py` +48 lines. ⚠ Its message carries the "34 boron are PERMANENTLY unfixable" claim, now refuted. |
 | `e7d58ca8` | `docs(v0.4.5): finalize the encode_fail histogram -- 14/48 addressable, 34/48 a correct ceiling` — the final 48/48 tally, the `encodes_now` 3, the OOM-misbucketing finding, the `BENVOG` profile |
 
 SL5's own work (`_VALENCE_COMBO_CAP`, the forked resonance, `OINEncodeError`) landed on `main` in
@@ -470,8 +470,8 @@ v0.4.4, **before** this branch forked.
 | `TestAc2boCapIsByteIdentical::test_ordered_valences_matches_unsorted_content` | the extracted sorter is a **permutation** of the raw product — same members, so the sort cannot change *which* candidates exist |
 | `TestForkedResonanceRecovery::test_benvog_recovers_via_cpu_budget_fallback` | monkeypatches `_RESONANCE_CPU_BUDGET_S = 2` so `SIGXCPU` fires fast; `BENVOG` encodes via the fallback, leads with `[Ni`, and is deterministic across a repeat |
 | `TestStuckRingRescuePermissive` | lever unset ⇒ `ASISAX` still raises `ValueError`; lever on ⇒ encodes, leads with `[Ni`, deterministic |
-| `tests/unit/test_xyz2mol_errors.py::test_get_tmc_mol_raises_valueerror_when_get_lig_mol_fails` | the fault-injected error-path contract, with the 2-tuple caveat in a comment |
-| `tests/unit/test_xyz2mol_errors.py::test_broken_fixture_perceives_a_degenerate_graph_under_stable_metal_ac` | pins the degenerate perception (>1 fragment, >0 bare protons) so it cannot drift unobserved |
+| `tests/unit/test_perception_tmc_errors.py::test_get_tmc_mol_raises_valueerror_when_get_lig_mol_fails` | the fault-injected error-path contract, with the 2-tuple caveat in a comment |
+| `tests/unit/test_perception_tmc_errors.py::test_broken_fixture_perceives_a_degenerate_graph_under_stable_metal_ac` | pins the degenerate perception (>1 fragment, >0 bare protons) so it cannot drift unobserved |
 
 Assertions are deliberately rdkit-version robust — a non-empty encode led by the correct metal
 token plus forward-encode stability, no exact bond-direction strings.
@@ -490,7 +490,7 @@ changed file.
 | `docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md` §7 | the summary table's *"confirmed unfixable — 34"* row, and *"34 of 48 (70.8%) are an honest, correct ceiling"*. That row is now **0**; the correct total addressed is **48**, not 14 (34 loud + 14 silent, all round-tripping). This is the row a planner reads when deciding what to work on, which makes it the most costly stale sentence in the docs tree. |
 | `docs/agentic-notes/v0.4.4/ENCODER_ROBUSTNESS_v0.4.4_SL5.md` §W1 and its "Net effect" bullet | *"34/48 encode-fails now fail with a typed, classified `OINEncodeError`"* as the terminal state. |
 | `tests/unit/test_encoder_robustness.py` module docstring | **already corrected** — it now carries `⚠ NO LONGER A CEILING IN THE DEFAULT CONFIGURATION` and explains that W1 pins the opt-out contract. Use this as the template for the doc fixes above. |
-| `src/oinsmiles/utils/xyz2mol.py::_is_electron_deficient_cluster` docstring | *"a permanent representational ceiling of the RDKit valence model"*. |
+| `src/oinsmiles/utils/perception_tmc.py::_is_electron_deficient_cluster` docstring | *"a permanent representational ceiling of the RDKit valence model"*. |
 | `docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md` §9 reproduce block | `tools/sl5_triage.py` still ships `PER_MOL_TIMEOUT_S = 90`, shorter than the 120 CPU-second fork budget. Running it as written reproduces a wrong histogram. |
 
 ## Open questions / for the next agent

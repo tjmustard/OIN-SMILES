@@ -14,7 +14,7 @@ generator did anything.
 
 ## Headline: the cost is one function, and half of it is redundant
 
-`xyz2mol_local.AC2BO` is **99.8 %** of a slow encode. Not "dominant" — essentially all of it.
+`perception_core.AC2BO` is **99.8 %** of a slow encode. Not "dominant" — essentially all of it.
 
 | | `QIDKUL_comp_0` (eta, 59 atoms) | `QIDKIZ_comp_0` (non-eta, 39 atoms) |
 |---|---|---|
@@ -30,7 +30,7 @@ ligand's valence combinatorics.
 
 ### The mechanism
 
-`xyz2mol.py::_select_lig_mol` is a **charge/carbene ladder**: it calls `AC2mol` → `AC2BO`
+`perception_tmc.py::_select_lig_mol` is a **charge/carbene ladder**: it calls `AC2mol` → `AC2BO`
 up to five times on the *same* adjacency matrix, varying only `charge` and `allow_carbenes`.
 (`_rescue_unusable_perception` can add eight more arms on an AC of its own.)
 
@@ -60,7 +60,7 @@ and recomputes bit-identical results. Measured redundancy:
 
 ## What changed
 
-All in `src/oinsmiles/utils/xyz2mol_local.py`. Ungated: dead-work removal and memoization
+All in `src/oinsmiles/utils/perception_core.py`. Ungated: dead-work removal and memoization
 are the two classes this codebase has previously proved byte-identical, and the byte-identity
 A/B below covers 24 molecules.
 

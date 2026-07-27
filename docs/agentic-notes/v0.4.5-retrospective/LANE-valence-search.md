@@ -17,7 +17,7 @@ answer or merely a slower one.
 
 Primary sources: `docs/agentic-notes/v0.4.5/VALENCE_SEARCH_v0.4.5.md`, `docs/agentic-notes/v0.4.5/VALENCE_ORDER_v0.4.5.md`,
 `docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md`, `docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md`,
-`src/oinsmiles/utils/xyz2mol_local.py`, `tests/unit/test_valence_search_levers.py`,
+`src/oinsmiles/utils/perception_core.py`, `tests/unit/test_valence_search_levers.py`,
 `tests/unit/test_valence_order.py`, `tools/valsearch_scan.py`,
 `tools/valsearch_budget_ab.py`, `tools/valorder_probe.py`,
 `tools/valorder_feasibility.py`, `tools/valorder_encode_ab.py`.
@@ -51,12 +51,12 @@ into a 0.87-second correct one.
    xyz2AC_obabel  ->  AC (adjacency matrix)      atoms = [C, C, N, O, B, ...]
                         |
                         v
-   possible_valences(AC_valence, atoms, allow_carbenes)      [xyz2mol_local.py:884]
+   possible_valences(AC_valence, atoms, allow_carbenes)      [perception_core.py:911]
         atom0: [4]     atom1: [4,2,3]     atom2: [3,2]   ...   atom36: [2,1]
                        \______ per-atom candidate valence lists (vll) ______/
                         |
                         v
-   valence_combo_size(vll)  =  PRODUCT of the list lengths     [xyz2mol_local.py:920]
+   valence_combo_size(vll)  =  PRODUCT of the list lengths     [perception_core.py:947]
         cisplatin / ferrocene scale ligand ......... a few dozen
         QIDKUL / QIDKIZ  37-atom ligand ............ 1 259 712
         ZAZREZ          144-atom ligand ............ 8 503 056
@@ -464,35 +464,35 @@ default paths get slower.
 
 ## What was done
 
-All source changes are in **`src/oinsmiles/utils/xyz2mol_local.py`** unless noted.
+All source changes are in **`src/oinsmiles/utils/perception_core.py`** unless noted.
 
 ### Instrumentation (ungated, shipped)
 
 | thing | where | why |
 |---|---|---|
-| `possible_valences(AC_valence, atoms, allow_carbenes=True)` | `:884` | lifted **verbatim** out of `AC2BO`, which now calls it, so the two cannot drift. Makes the over-cap population answerable in ~0.04 s/molecule instead of ~50 s |
-| `valence_combo_size(vll, cap=_VALENCE_COMBO_CAP)` | `:920` | mirrors `AC2BO`'s own early break, so the returned number is exactly what the encoder compares against the cap: the true product at or below the cap, "greater than the cap" above it |
-| `AC2BO_STATS` + `reset_ac2bo_stats()` | `:861`, `:878` | 13 deterministic counters. Wall clock is unusable on this host (release sweep holds load above 12), so **every claim in the lane docs is a counter or a sha**, never a second |
-| `_HEURISTIC_ELEMENTS = (8, 7, 6, 15, 16)` | `:939` | the O/N/C/P/S grouping constant, named so `iter_ordered_valences` and `_ordered_valences` cannot drift apart silently |
-| `iter_ordered_valences(vll, atoms)` | `:949` | `_ordered_valences`' order, lazily, in O(1) memory — six nested products over the element groups |
-| `iter_charge_feasible_valences(vll, atoms, charge, ac_valence)` | `:1036` | the C1/C2 suffix DP as a generator over the raw product |
-| `charge_filter_supported(atoms)` | used at `:1421` | all 30 transition metals have an `atomic_valence` entry (`[20]`) and **no** `atomic_valence_electrons` entry, so `get_atomic_charge` is a `KeyError` for them. The filter declines such fragments and takes the historical path rather than crashing *earlier* than the default would |
+| `possible_valences(AC_valence, atoms, allow_carbenes=True)` | `:911` | lifted **verbatim** out of `AC2BO`, which now calls it, so the two cannot drift. Makes the over-cap population answerable in ~0.04 s/molecule instead of ~50 s |
+| `valence_combo_size(vll, cap=_VALENCE_COMBO_CAP)` | `:947` | mirrors `AC2BO`'s own early break, so the returned number is exactly what the encoder compares against the cap: the true product at or below the cap, "greater than the cap" above it |
+| `AC2BO_STATS` + `reset_ac2bo_stats()` | `:888`, `:905` | 13 deterministic counters. Wall clock is unusable on this host (release sweep holds load above 12), so **every claim in the lane docs is a counter or a sha**, never a second |
+| `_HEURISTIC_ELEMENTS = (8, 7, 6, 15, 16)` | `:966` | the O/N/C/P/S grouping constant, named so `iter_ordered_valences` and `_ordered_valences` cannot drift apart silently |
+| `iter_ordered_valences(vll, atoms)` | `:976` | `_ordered_valences`' order, lazily, in O(1) memory — six nested products over the element groups |
+| `iter_charge_feasible_valences(vll, atoms, charge, ac_valence)` | `:1063` | the C1/C2 suffix DP as a generator over the raw product |
+| `charge_filter_supported(atoms)` | used at `:1448` | all 30 transition metals have an `atomic_valence` entry (`[20]`) and **no** `atomic_valence_electrons` entry, so `get_atomic_charge` is a `KeyError` for them. The filter declines such fragments and takes the historical path rather than crashing *earlier* than the default would |
 
-`_ordered_valences` itself (`:1098`) is a named function precisely so the sorted walk can be
+`_ordered_valences` itself (`:1125`) is a named function precisely so the sorted walk can be
 tested, and the property that matters is that **the extracted sorter is a PERMUTATION of the
 raw `itertools.product` — same members, different order**. That is pinned by
 `tests/unit/test_encoder_robustness.py::TestAc2boCapIsByteIdentical::test_ordered_valences_matches_unsorted_content`.
 
 ### Constants
 
-* **`_VALENCE_COMBO_CAP = 500_000`** (`:818`) — above this, `AC2BO` skips the materialising
+* **`_VALENCE_COMBO_CAP = 500_000`** (`:845`) — above this, `AC2BO` skips the materialising
   sort and takes the bounded lazy product. **It must stay ≥ 100 000.** A
   cisplatin/ferrocene-scale ligand's valence product is only a few dozen, so a materially
   lower cap would push **real** ligands onto the fallback branch and break byte-identity for
   molecules that are perceived correctly today. Pinned by
   `tests/unit/test_encoder_robustness.py::TestAc2boCapIsByteIdentical::test_cap_is_large`
   (`assertGreaterEqual(_VALENCE_COMBO_CAP, 100_000)`).
-* **`_VALENCE_FALLBACK_TRIES = 20_000`** (`:826`) — how many candidates the over-cap fallback
+* **`_VALENCE_FALLBACK_TRIES = 20_000`** (`:853`) — how many candidates the over-cap fallback
   grinds before returning `best_BO`. Far smaller than the sort cap because each iteration runs
   the full BO/charge check.
 
@@ -505,12 +505,12 @@ raw `itertools.product` — same members, different order**. That is pinned by
 | filter | `OIN_VALENCE_CHARGE_FILTER` (`_CHARGE_FILTER_ENV`) | prefix contains only C1/C2-feasible candidates | **recommended ON**, not applied |
 | (measurement only) | `OIN_VALENCE_MATCHER` (`_MATCHER_ENV`) | `nx` / `maxcard` / `greedy` | both alternatives **rejected**; kept only for reproducibility |
 
-Dispatch is at `:1413-1448`: the filter wins if both enumeration levers are set (it subsumes
+Dispatch is at `:1440-1475`: the filter wins if both enumeration levers are set (it subsumes
 the question), `over_cap_filter_unsupported` records a declined fragment, and
 `itertools.islice(candidate_source, _fallback_tries())` applies the budget to whichever source
 was chosen.
 
-`_fallback_tries()` (`:838`) hardens the parse deliberately: garbage or non-positive values log
+`_fallback_tries()` (`:865`) hardens the parse deliberately: garbage or non-positive values log
 a warning and **fall back to 20 000** rather than silently collapsing every over-cap perception
 to one candidate. A typo in an env var must not change perception.
 
@@ -520,7 +520,7 @@ to one candidate. A typo in an env var must not change perception.
    it never reorders them. So *the first valid candidate found is the one an unbounded raw
    search would have found*. Confirmed empirically: on `BENVOG` and `ZAZREZ` all three arms
    return the **same `best_BO` sha** (`f4e60eba2807`, `fddae6872a0b`).
-2. **When the feasible set is empty it falls back to the historical enumeration** (`:1429-1440`).
+2. **When the feasible set is empty it falls back to the historical enumeration** (`:1456-1467`).
    `best_BO` is assembled from candidates the filter drops — its own charge test is on the
    *BO*, not on the candidate — so without this the lever could turn one guess into a
    *different* guess. With it, the lever's entire blast radius is "a guess becomes a real Lewis
@@ -717,7 +717,7 @@ Lane commits, oldest first:
 registered in `src/oinsmiles/oin/levers.py::_DEFAULT_ON` (which holds `OIN_BORON_CAGE`,
 `OIN_CANONICAL_BODY`, `OIN_CANONICAL_PERCEPTION`, `OIN_CANONICAL_SLOTS`,
 `OIN_CANONICAL_ETA_WINDING`, `OIN_STABLE_METAL_AC`, `OIN_STABLE_STEREO`). Note that the
-valence levers are read through a **local** `_lever_enabled` in `xyz2mol_local.py` with
+valence levers are read through a **local** `_lever_enabled` in `perception_core.py` with
 semantics identical to the registry: `0/""/false/no/off` disable. That forward compatibility
 was checked rather than hoped for — dropping the registry file in and importing from both the
 package root and the submodule resolves to `oinsmiles.oin.levers` with **no circular import**

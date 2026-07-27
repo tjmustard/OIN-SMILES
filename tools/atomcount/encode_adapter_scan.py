@@ -23,7 +23,7 @@ RDLogger.DisableLog("rdApp.*")
 
 from oinsmiles.generation import metallogen_adapter as MA  # noqa: E402
 from oinsmiles.generation.oin_parser import OINParser  # noqa: E402
-from oinsmiles.utils.xyz2mol import get_oin_string, get_tmc_mol  # noqa: E402
+from oinsmiles.utils.perception_tmc import get_oin_string, get_tmc_mol  # noqa: E402
 
 
 def reparse(s):

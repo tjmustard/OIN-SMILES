@@ -33,7 +33,7 @@ from rdkit import Chem, RDLogger
 
 from oinsmiles.core.translator import XYZToSMILES
 from oinsmiles.oin.compare import canonical_roundtrip_key
-from oinsmiles.utils.xyz2mol import _repair_mixed_aromaticity, get_oin_string, get_tmc_mol
+from oinsmiles.utils.perception_tmc import _repair_mixed_aromaticity, get_oin_string, get_tmc_mol
 
 RDLogger.DisableLog("rdApp.*")
 

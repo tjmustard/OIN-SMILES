@@ -45,7 +45,7 @@ from oinsmiles.oin.compare import (  # noqa: E402
     winding_canonical_key,
 )
 from oinsmiles.oin.locked_donor import ENV_LEVER, plan_locked_donors  # noqa: E402
-from oinsmiles.utils.xyz2mol import get_tmc_mol  # noqa: E402
+from oinsmiles.utils.perception_tmc import get_tmc_mol  # noqa: E402
 
 FIX = _ROOT / "tests" / "fixtures"
 

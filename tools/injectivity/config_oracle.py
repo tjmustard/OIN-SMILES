@@ -39,7 +39,7 @@ from rdkit import Chem
 from oinsmiles.core.constants import TRANSITION_METALS_NUM
 from oinsmiles.oin.axial import AxialAxis
 from oinsmiles.oin.axial import detect_axial_axes as axial_axes
-from oinsmiles.utils.xyz2mol import get_tmc_mol
+from oinsmiles.utils.perception_tmc import get_tmc_mol
 
 #: RDKit non-tetrahedral chiral tags that carry a metal Δ/Λ permutation.
 _NONTET_TAGS = {

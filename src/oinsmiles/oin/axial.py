@@ -55,7 +55,7 @@ def _skeleton(mol: Chem.Mol) -> Chem.Mol:
     **Why the ranks must not come from the molecule as perceived.** The descriptor is only
     useful if the token an encoder computes from the deposited geometry can be compared
     against the token a *generated* conformer yields. Those two mols are built by different
-    routes -- ``xyz2mol`` bond-order perception from distances on one side,
+    routes -- ``perception_core`` bond-order perception from distances on one side,
     ``build_contract_mol``'s per-fragment transfer on the other -- and for a metalloporphyrin
     they disagree about the macrocycle: the encoder reads an aromatic pyrrolide core on
     Zn(II), the generated mol a neutral localized tautomer with dative bonds pointing the

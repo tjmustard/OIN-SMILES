@@ -21,7 +21,7 @@ from oinsmiles.utils.oin_aligner import (
     coordination_geometry_fit,
     metal_d_electron_count,
 )
-from oinsmiles.utils.xyz2mol import get_tmc_mol
+from oinsmiles.utils.perception_tmc import get_tmc_mol
 
 FIX = Path(__file__).resolve().parents[1] / "fixtures"
 

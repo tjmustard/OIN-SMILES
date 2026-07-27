@@ -15,7 +15,7 @@ OS-level timeout (a Python `signal.alarm` cannot interrupt the C-level hangs the
 | bucket | count | root cause |
 |---|---:|---|
 | `boron_cluster` | **34** | electron-deficient carborane / closo-nido borane cage; RDKit's 2-center-2-electron valence model has no Lewis structure for a 3c-2e cage |
-| `resonance_timeout` | **10** | large conjugated ligand hangs in xyz2mol perception |
+| `resonance_timeout` | **10** | large conjugated ligand hangs in perception_tmc perception |
 | aromatic-perception | 3 | quinoid/ylide ring stays invalid after de-aromatizing (`KAXVOX`, `KAXWAK`, `LEZWAO`) |
 | `perception_charge_gap` | 1 | `ASISAX`: fused azacage, charge sweep exhausted |
 
@@ -31,10 +31,10 @@ This classifies **34/48** of the cohort (it does not *encode* boron cages — ou
 
 ## W3 — the timeout cohort: three hang stages, two bounded
 
-The timeout cohort hangs at **three** independent super-polynomial stages of xyz2mol perception,
+The timeout cohort hangs at **three** independent super-polynomial stages of perception_tmc perception,
 each revealed only after bounding the previous (the handoff hypothesis named only the second):
 
-### 1. `AC2BO` valence-order sort (`xyz2mol_local.py`) — bounded, byte-identical
+### 1. `AC2BO` valence-order sort (`perception_core.py`) — bounded, byte-identical
 It materialised the full Cartesian product of per-atom valences to sort candidate assignments —
 exponential for dozens of multivalent atoms. `_VALENCE_COMBO_CAP` (500k) skips the sort above the
 cap and iterates the lazy product bounded to `_VALENCE_FALLBACK_TRIES`; the main loop early-returns
@@ -71,7 +71,7 @@ the perceived form of passing molecules whose resonance completes quickly (e.g. 
 resonance finds the aromatic form, the skip kept the localized tautomer). The forked bound keeps the
 completer's real resonance result and falls back only on a *genuine* hang.
 
-### 3. `get_UA_pairs` → networkx `max_weight_matching` (`xyz2mol_local.py`) — not bounded
+### 3. `get_UA_pairs` → networkx `max_weight_matching` (`perception_core.py`) — not bounded
 O(V³) in the unsaturated-atom graph; dominates on a few large charged conjugated ligands (`FAQYUU`,
 `HICLAG`). Some of the cohort hang here rather than in resonance and are not recovered — documented
 residual, a candidate for the same fork-timeout treatment if warranted.

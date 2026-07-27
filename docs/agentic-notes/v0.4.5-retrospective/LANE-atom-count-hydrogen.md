@@ -43,7 +43,7 @@ precisely where the two instruments disagree, by design, and the atom count is t
           │
           │   serialization, three encoder-side writes + one emit:
           │   ┌─ utils/oin_aligner.py:378        h_faithful_smiles(...)   ── site 1
-          │   ├─ utils/xyz2mol.py:1725           h_faithful_smiles(...)   ── site 2
+          │   ├─ utils/perception_tmc.py:1725           h_faithful_smiles(...)   ── site 2
           │   ├─ oin/inline.py:268               h_faithful_smiles(...)   ── site 3
           │   │     MolToSmiles(canonical=False) silently DE-BRACKETS `[C]` → `C`
           │   └─ oin/canonical_body.py:193, :278 h_faithful_smiles(...)   ── site 4
@@ -256,7 +256,7 @@ JAPCOT, JOTJEK, KIKROO, KILQAZ, UQUXAG, XAJBIW (+ MEGZIH with the P branch).
 
 The v0.4.5 blocker was real and it was fixed: `canonical_body_emit` had two plain
 `Chem.MolToSmiles` writes — the intermediate that feeds the reparse, and the **final emit whose
-output becomes the body** — so `xyz2mol.py:1725` computed an H-faithful string and the canonical
+output becomes the body** — so `perception_tmc.py:1725` computed an H-faithful string and the canonical
 body then overwrote it. That is exactly how `OIN_CANONICAL_BODY` (default-**ON**) "undid"
 `OIN_H_FAITHFUL`. Both writes now route through `h_faithful_smiles`
 (`oin/canonical_body.py:193` and `:278`), verified **byte-identical on all 61 fixtures**.
@@ -349,7 +349,7 @@ Two guards inside `_repair` that are load-bearing and easy to remove by accident
 
 - **The atom ORDER must not move.** `if _output_order(candidate_mol) != _output_order(mol): return
   smiles`. Callers read `_smilesAtomOutputOrder` off the molecule they passed in —
-  `xyz2mol.get_oin_string` uses it to decide which character position each `{slot}` marker attaches
+  `perception_tmc.get_oin_string` uses it to decide which character position each `{slot}` marker attaches
   to — and that property records the FIRST serialization. An unpaired electron can in principle
   change the canonical ranking, and if it did, **every slot marker would land on the wrong atom**.
   Coverage lost by declining is visible as a still-failing molecule; a mis-slotted string would not
@@ -360,7 +360,7 @@ Two guards inside `_repair` that are load-bearing and easy to remove by accident
   silently reroute the encoder.
 
 **Wired into four writes** — three encoder-side plus the emit: `utils/oin_aligner.py:378`,
-`utils/xyz2mol.py:1725`, `oin/inline.py:268`, and (v0.4.6) `oin/canonical_body.py:193` + `:278`.
+`utils/perception_tmc.py:1725`, `oin/inline.py:268`, and (v0.4.6) `oin/canonical_body.py:193` + `:278`.
 Plus a narrower bracket-preserving step in the adapter.
 
 **Default off because it changes OIN strings.** Verified byte-identical with the lever unset, and
@@ -603,7 +603,7 @@ explicitly, e.g. in a test that wants both arms.
 
 ### 3. A stale comment says the v0.4.6 fix has not happened
 
-`src/oinsmiles/utils/xyz2mol.py` (~line 1741) still reads *"Do NOT promote `OIN_H_FAITHFUL` until
+`src/oinsmiles/utils/perception_tmc.py` (~line 1741) still reads *"Do NOT promote `OIN_H_FAITHFUL` until
 `canonical_body_emit` is H-faithful too"*. It **is** H-faithful, as of `d799de1f`. The comment's
 advice happens to remain correct for a different reason, which is exactly how a stale comment
 survives review.

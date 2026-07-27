@@ -165,7 +165,7 @@ promoted in Wave D).
 New module `src/oinsmiles/oin/canonical_body.py` — `canonical_body()` (a re-export of
 `compare.canonical_fragment_body`, deliberately *not* a copy, so the comparison key, the encoder and
 Lane 2's vertex colours cannot drift apart) and `canonical_body_emit(mol, donor_indices)`, hooked in
-`src/oinsmiles/utils/xyz2mol.py` at the `lever_enabled("OIN_CANONICAL_BODY")` branch (~line 1746).
+`src/oinsmiles/utils/perception_tmc.py` at the `lever_enabled("OIN_CANONICAL_BODY")` branch (~line 1746).
 Slot identity is carried through the reparse **by atom map number, never re-derived** — the obvious
 `GetSubstructMatch` alternative can return a wrong automorphism and put the marker on a CH instead of
 the deprotonated X-type carbon (`c{N}` → `[cH]{N}`). Three load-bearing guards (composition, donor
@@ -279,7 +279,7 @@ rotation, i.e. a built-in negative control.
 ### The unplanned lanes, in one line each
 
 [Lane 8](LANE-08-stable-stereo-renumbering.md) · `src/oinsmiles/oin/stable_stereo.py` plus a 14-line
-`xyz2mol.py` hook: do not translate a chiral tag through the fragment rebuild, **re-derive** it from
+`perception_tmc.py` hook: do not translate a chiral tag through the fragment rebuild, **re-derive** it from
 the parent conformer's coordinates with `AssignAtomChiralTagsFromStructure`, because geometry is not
 a function of atom numbering. Measured over 10 of the 29 flip molecules: byte-stable **0/10 → 8/10**,
 key-level defects **10 → 1**; permanent guard `tests/unit/test_stable_stereo_mirror.py` (10/10 mirrors

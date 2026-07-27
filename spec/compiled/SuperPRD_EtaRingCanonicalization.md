@@ -72,7 +72,7 @@ directives; the byte-identical golden set is the objective acceptance gate.
 ## 4. User Stories (Atomic)
 | ID | User Story | Acceptance Criteria | Priority |
 | :--- | :--- | :--- | :--- |
-| US-001 | Substituted-eta-ring FRAGMENTS ordered by content-canonical key, independent of xyz2mol arrival order. | 1. Two content-distinct eta rings order identically for fixture and generated inputs.<br>2. Key = heading-independent canonical ring SMILES; winding tiebreak only for content-identical rings.<br>3. ONLY same-mass eta fragments reorder; only within the rank slots they already occupy; every non-eta rank byte-identical; metal stays rank 0. | High |
+| US-001 | Substituted-eta-ring FRAGMENTS ordered by content-canonical key, independent of perception_tmc arrival order. | 1. Two content-distinct eta rings order identically for fixture and generated inputs.<br>2. Key = heading-independent canonical ring SMILES; winding tiebreak only for content-identical rings.<br>3. ONLY same-mass eta fragments reorder; only within the rank slots they already occupy; every non-eta rank byte-identical; metal stays rank 0. | High |
 | US-002 | Heading atom of a substituted eta ring chosen from ring TOPOLOGY (lowest canonical rank), not 3D orientation. | 1. Heading identical for fixture and generated structures of the same ring.<br>2. `SYMMETRIC_LIGANDS` path untouched (first-wins).<br>3. Winding character still from `_determine_winding`/`signed_circulation`. | High |
 | US-003 | The golden round-trip closes. | 1. `test_haptic_face_golden_match` un-`expectedFailure`d and PASSES byte-for-byte.<br>2. `discover tests/unit` → skipped=3, **expected failures=0**.<br>3. Every pre-existing golden byte-identical. | High |
 | US-004 | Canonicalization never masks a real reflection. | 1. Start-invariance proven: character identical for every star choice on the fixture ring.<br>2. A reflected ring still yields a winding-flipped marker (live assertion).<br>3. R2 skip stays present, skipped, and meaningful. | Critical |
@@ -81,7 +81,7 @@ directives; the byte-identical golden set is the objective acceptance gate.
 
 ### 5.1 Architecture & Resolved Trade-offs
 
-**Data flow (unchanged):** `xyz2mol.get_tmc_mol()` → `CIPAssigner.assign_all()` →
+**Data flow (unchanged):** `perception_tmc.get_tmc_mol()` → `CIPAssigner.assign_all()` →
 `OINDiscreteAligner._reduce_hapticity()` (builds virtual-atom dicts, sets `"rank": i`) →
 `_permute_and_serialize()` (homogeneous sort + heading selection + winding) → V3.6 string.
 

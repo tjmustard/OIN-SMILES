@@ -30,7 +30,7 @@ new chemistry was needed at any point.
   crystal XYZ (62 atoms, closo-B12H12 amide on Rh)
         │
         ▼
-┌──────────────────────── utils/xyz2mol_local.py::xyz2AC_obabel ─────────────────────────┐
+┌──────────────────────── utils/perception_core.py::xyz2AC_obabel ─────────────────────────┐
 │                                                                                        │
 │  STEP 1  covalent-radius distance criterion   d(i,j) <= Rcov_i + Rcov_j + tolerance     │
 │          ───────────────────────────────────────────────────────────────────────────    │
@@ -62,7 +62,7 @@ new chemistry was needed at any point.
         │                                                                        │
         ├─► PATH A (34 mols) get_lig_mol charge sweep -4..+4 on DEBRIS           │
         │      → OINEncodeError "electron-deficient boron cluster"               │
-        │        REPORTED SITE xyz2mol.py:775 · NO OIN STRING                    │
+        │        REPORTED SITE perception_tmc.py:959 · NO OIN STRING                    │
         │                                                                        │
         └─► PATH B (14 mols) the debris happens to stay perceivable              │
                → encoder INVENTS a C=B double bond to balance valences           │
@@ -100,7 +100,7 @@ recorded that way twice, in prose that is individually true and collectively a n
   needs a different bonding model entirely (multi-center bonds), out of scope for a valence-graph
   encoder. The typed `OINEncodeError` (already landed) is the correct, honest terminus: **an
   encoder that refuses this input is correct**, not a bug."*
-- The same belief is still in code, in `xyz2mol.py::_is_electron_deficient_cluster`'s docstring:
+- The same belief is still in code, in `perception_tmc.py::_is_electron_deficient_cluster`'s docstring:
   *"this is a permanent representational ceiling of the RDKit valence model, not a missed charge
   guess."*
 
@@ -154,7 +154,7 @@ Failure-site histogram over the 34 (`tools/boron_characterize.py`): the *reporte
 |---|---:|---|
 | `xyz2AC_obabel` pruning loop | **34/34** | **causal site.** 7–19 cage bonds silently deleted. Raises nothing. |
 | `MetalDisconnector` + `GetMolFrags` | 34/34 | the amputated cage falls into sub-cages plus loose `[H]B`, each treated as its own ligand |
-| `get_lig_mol` → `OINEncodeError` | **34/34** | **reported site**, `xyz2mol.py:775`. The charge sweep is asked to find a charge for debris. |
+| `get_lig_mol` → `OINEncodeError` | **34/34** | **reported site**, `perception_tmc.py:959`. The charge sweep is asked to find a charge for debris. |
 | `AC2BO` | 0 | never reached with an intact cage — and with one it does not raise, it calls `sys.exit()` |
 | `SanitizeMol` / `MolToSmiles` | 0 | never reached |
 
@@ -305,7 +305,7 @@ Everything is behind `OIN_BORON_CAGE`, and **every gate additionally requires th
 contain the motif** — so the lever is not "relax valence checking", it is "relax valence checking
 on deltahedral cage vertices".
 
-**The motif is a B–B–B triangle** — `utils/xyz2mol_local.py::boron_cage_vertices(atoms, AC) ->
+**The motif is a B–B–B triangle** — `utils/perception_core.py::boron_cage_vertices(atoms, AC) ->
 set[int]`, the deltahedral face signature. Every closo/nido vertex sits on at least one triangular
 face; nothing else in this corpus does. Chosen over "contains ≥3 boron" so the relaxation cannot
 reach ordinary boron chemistry, and it is **stricter than the pre-existing
@@ -323,16 +323,16 @@ Negative controls, each a unit test in `tests/unit/test_boron_cage.py::TestCageM
 
 Six code changes:
 
-1. **`utils/xyz2mol_local.py::xyz2AC_obabel` — the pruning exemption.**
+1. **`utils/perception_core.py::xyz2AC_obabel` — the pruning exemption.**
    `exempt = boron_cage_vertices(atomic_nums, AC)` is computed from the **pre-pruning** AC, so the
    exemption cannot be triggered by pruning itself, and the loop does `if i in exempt: continue`.
    This is the causal fix; the other five make the rest of the pipeline survive an intact cage.
 
-2. **`utils/xyz2mol.py::_cage_frag_mol(frag_mol)` — perceive the cage directly.**
+2. **`utils/perception_tmc.py::_cage_frag_mol(frag_mol)` — perceive the cage directly.**
    Called from `get_lig_mol` *before* `_select_lig_mol`, gated on
    `lever_enabled("OIN_BORON_CAGE") and _has_boron_cage(mol)`. Every cage edge single, hydrogens as
    the geometry gives them, formal charges zero, `SANITIZE_ALL ^ SANITIZE_PROPERTIES`.
-   `_has_boron_cage` (`xyz2mol.py:624`) is the fragment-level wrapper around the same
+   `_has_boron_cage` (`perception_tmc.py:624`) is the fragment-level wrapper around the same
    `boron_cage_vertices` motif, so both halves of the lever agree on what a cage is.
 
    **Why `AC2BO` is bypassed rather than taught about boron.** The tempting one-liner is
@@ -558,9 +558,9 @@ the pre-change baseline) + 19 new, 0 load failures.
 | `docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md` | says "default OFF" throughout, and §4's opening *"Everything is behind `OIN_BORON_CAGE`, default OFF"*. True for v0.4.5, **false since `d799de1f`**. |
 | `docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md` §5 + §7 | *"Confirmed unfixable: 34 boron clusters"*, *"needs a different bonding model entirely"*, *"34 of 48 (70.8%) are an honest, correct ceiling"*. **Refuted by this lane** — the doc's own §7 header row "confirmed unfixable" should read 0. |
 | `docs/agentic-notes/v0.4.4/ENCODER_ROBUSTNESS_v0.4.4_SL5.md` §W1 | the "irreducible ceiling" framing. Its test module docstring was corrected at promotion; the doc was not. |
-| `src/oinsmiles/utils/xyz2mol.py::_is_electron_deficient_cluster` docstring | *"this is a permanent representational ceiling of the RDKit valence model"*. False for the default configuration. |
-| `src/oinsmiles/utils/xyz2mol_local.py::xyz2AC_obabel` comment | closes with *"Both default OFF; with neither set this loop is byte-identical to pre-v0.4.5"* — both `OIN_BORON_CAGE` and `OIN_STABLE_METAL_AC` are now default-ON. |
-| `src/oinsmiles/utils/xyz2mol.py::_cage_frag_mol` docstring | *"Returns: (mol, 0) on success"* — it returns the bare mol; the caller adds the `, 0`. |
+| `src/oinsmiles/utils/perception_tmc.py::_is_electron_deficient_cluster` docstring | *"this is a permanent representational ceiling of the RDKit valence model"*. False for the default configuration. |
+| `src/oinsmiles/utils/perception_core.py::xyz2AC_obabel` comment | closes with *"Both default OFF; with neither set this loop is byte-identical to pre-v0.4.5"* — both `OIN_BORON_CAGE` and `OIN_STABLE_METAL_AC` are now default-ON. |
+| `src/oinsmiles/utils/perception_tmc.py::_cage_frag_mol` docstring | *"Returns: (mol, 0) on success"* — it returns the bare mol; the caller adds the `, 0`. |
 | checked-in artifacts | `tools/boron_roundtrip.json` (2 rows) and `tools/boron_characterize.json` (2 rows: AVOFIB, BEKLUA) are **small samples**, not the 34-molecule results. The 34-molecule round-trip artifact is `tools/boron_roundtrip_34.json`; the 14 passers are in `tools/boron_roundtrip_14passing.json`; the AC probe's 34 rows are in `tools/boron_ac_probe.json`. Do not cite the 2-row files as cohort evidence. |
 
 ## Open questions / for the next agent

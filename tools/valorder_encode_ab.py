@@ -37,8 +37,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from rdkit import Chem, RDLogger  # noqa: E402
 
 from oinsmiles import XYZToSMILES  # noqa: E402
-from oinsmiles.utils import xyz2mol_local  # noqa: E402
-from oinsmiles.utils.xyz2mol_local import _CHARGE_FILTER_ENV  # noqa: E402
+from oinsmiles.utils import perception_core  # noqa: E402
+from oinsmiles.utils.perception_core import _CHARGE_FILTER_ENV  # noqa: E402
 
 RDLogger.DisableLog("rdApp.*")
 
@@ -120,7 +120,7 @@ def encode(path, filter_on, cap):
         os.environ[_CHARGE_FILTER_ENV] = "1"
     else:
         os.environ.pop(_CHARGE_FILTER_ENV, None)
-    xyz2mol_local.reset_ac2bo_stats()
+    perception_core.reset_ac2bo_stats()
     t0 = time.time()
     oin, error = None, None
     try:
@@ -130,7 +130,7 @@ def encode(path, filter_on, cap):
         error = f"TIMEOUT after {cap}s"
     except Exception as exc:  # noqa: BLE001 - a failed arm is a result
         error = f"{type(exc).__name__}: {exc}"
-    stats = dict(xyz2mol_local.AC2BO_STATS)
+    stats = dict(perception_core.AC2BO_STATS)
     return {
         "filter": "ON" if filter_on else "OFF",
         "oin": oin,

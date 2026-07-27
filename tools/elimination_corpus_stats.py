@@ -96,7 +96,7 @@ def partition(rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
     buckets = Counter(classify_bucket(r) for r in failed)
 
     # Within bucket A, separate a timeout from a genuine perception failure:
-    # they have different owners (budget vs xyz2mol) and must not be merged.
+    # they have different owners (budget vs perception) and must not be merged.
     a_rows = [r for r in failed if classify_bucket(r) == "A_encoder"]
     a_split = Counter(
         "encode_timeout" if "imeout" in (r.get("error") or "") else "encode_perception"

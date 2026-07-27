@@ -26,16 +26,16 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import rdmolops
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
-from oinsmiles.utils.xyz2mol import (
+from oinsmiles.utils.perception_core import (
+    _VALENCE_COMBO_CAP,
+    possible_valences,
+    valence_combo_size,
+)
+from oinsmiles.utils.perception_tmc import (
     TRANSITION_METALS_NUM,
     MetalNon_Hg,
     get_basic_mol,
     params,
-)
-from oinsmiles.utils.xyz2mol_local import (
-    _VALENCE_COMBO_CAP,
-    possible_valences,
-    valence_combo_size,
 )
 
 RDLogger.DisableLog("rdApp.*")

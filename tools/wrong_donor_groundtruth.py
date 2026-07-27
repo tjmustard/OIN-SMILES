@@ -79,7 +79,7 @@ from canonicality_probe import read_xyz, write_xyz  # noqa: E402
 from oinsmiles import XYZToSMILES  # noqa: E402
 from oinsmiles.oin import canonical_slots as CS  # noqa: E402
 from oinsmiles.utils import oin_aligner as OA  # noqa: E402
-from oinsmiles.utils import xyz2mol as X2M  # noqa: E402
+from oinsmiles.utils import perception_tmc as X2M  # noqa: E402
 
 #: The 7 molecules Lane 2's classifier flagged ``DISTINCT_donors`` in its stacked arm.
 DEFAULT_MOLS = [

@@ -23,7 +23,7 @@ from oinsmiles import OINStereoWarning, XYZToSMILES
 from oinsmiles.core import chirality as chirality_module
 from oinsmiles.core.chirality import ChiralityRecoveryUtility, CIPAssigner
 from oinsmiles.oin.inline import OINInlineHandler, SlotAssignment
-from oinsmiles.utils.xyz2mol import get_tmc_mol
+from oinsmiles.utils.perception_tmc import get_tmc_mol
 
 _FIXTURES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../fixtures"))
 _CANDIDATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../candidate_outputs"))

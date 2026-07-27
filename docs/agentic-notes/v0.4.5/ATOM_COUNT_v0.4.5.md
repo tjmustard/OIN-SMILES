@@ -205,7 +205,7 @@ canonical key, the RMSD mapping and the atom count all passing, not merely the c
 `oin/hydrogen.py::h_faithful_smiles` writes a fragment, reads it back, compares hydrogen
 counts atom by atom against RDKit's own `_smilesAtomOutputOrder`, and forces a bracket on any
 atom that came back different. Applied at the three **encoder-side** serializations
-(`oin_aligner`, `xyz2mol`, `oin/inline.py`), plus a narrower bracket-preserving step in the
+(`oin_aligner`, `perception_tmc`, `oin/inline.py`), plus a narrower bracket-preserving step in the
 adapter.
 
 Default off because it changes OIN strings. Verified byte-identical with the lever unset, and

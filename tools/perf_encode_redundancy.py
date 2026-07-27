@@ -2,7 +2,7 @@
 
 Deterministic, contention-robust: counts distinct argument keys vs total calls for
 the two pure functions the encode profile identified as dominant --
-``xyz2mol_local.AC2BO`` and ``xyz2mol_local.get_UA_pairs``. If distinct << total,
+``perception_core.AC2BO`` and ``perception_core.get_UA_pairs``. If distinct << total,
 memoization removes the difference and is byte-identical by construction.
 
 Usage:
@@ -44,7 +44,7 @@ def main():
     with open(xyz) as f:
         natoms = int(f.readline().strip())
 
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
 
     stats = {
         "ac2bo_calls": 0,

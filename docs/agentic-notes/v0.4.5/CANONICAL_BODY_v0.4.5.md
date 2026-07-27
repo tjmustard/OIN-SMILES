@@ -4,8 +4,8 @@ Two opt-in levers, both default **OFF** (unset → byte-identical output):
 
 | lever | what it canonicalizes | code |
 |---|---|---|
-| `OIN_CANONICAL_BODY` | the **serialization** of a ligand body: round-trip it through `MolFromSmiles`/`MolToSmiles` and clear chelate-locked E/Z | `src/oinsmiles/oin/canonical_body.py`, hooked at `utils/xyz2mol.py` |
-| `OIN_CANONICAL_PERCEPTION` | the **graph** the serializer is handed: resonance-form tie-breaks and the `AC2BO` valence walk / Kekulé matching | `utils/xyz2mol.py::lig_checks`, `utils/xyz2mol_local.py::AC2BO` |
+| `OIN_CANONICAL_BODY` | the **serialization** of a ligand body: round-trip it through `MolFromSmiles`/`MolToSmiles` and clear chelate-locked E/Z | `src/oinsmiles/oin/canonical_body.py`, hooked at `utils/perception_tmc.py` |
+| `OIN_CANONICAL_PERCEPTION` | the **graph** the serializer is handed: resonance-form tie-breaks and the `AC2BO` valence walk / Kekulé matching | `utils/perception_tmc.py::lig_checks`, `utils/perception_core.py::AC2BO` |
 
 The reusable entry point Lane 2 should call for its vertex colors is
 **`oinsmiles.oin.compare.canonical_fragment_body`** (re-exported as

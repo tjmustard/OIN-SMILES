@@ -1,13 +1,13 @@
 """Shared constants for the OIN-SMILES core and utils packages.
 
 Single source of truth for the transition-metal atomic-number predicate used
-by both the XYZ->OIN encode pipeline (``utils/xyz2mol.py``) and the
+by both the XYZ->OIN encode pipeline (``utils/perception_tmc.py``) and the
 chirality module (``core/chirality.py``).
 
-This module exists specifically to avoid a circular import: ``xyz2mol.py``
+This module exists specifically to avoid a circular import: ``perception_tmc.py``
 imports ``ChiralityRecoveryUtility`` from ``core/chirality.py``, so
 ``core/chirality.py`` cannot import ``TRANSITION_METALS_NUM`` back out of
-``utils/xyz2mol.py`` directly. Both modules import from here instead (TD-005:
+``utils/perception_tmc.py`` directly. Both modules import from here instead (TD-005:
 never duplicate the metal list -- that multiplies the stale-``is_metal``
 failure surface).
 """

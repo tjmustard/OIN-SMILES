@@ -85,7 +85,7 @@ def characterize(mol_name: str, dataset_dir: str) -> dict:
 
     RDLogger.DisableLog("rdApp.*")
 
-    from oinsmiles.utils.xyz2mol import (
+    from oinsmiles.utils.perception_tmc import (
         TRANSITION_METALS_NUM,
         MetalNon_Hg,
         get_basic_mol,

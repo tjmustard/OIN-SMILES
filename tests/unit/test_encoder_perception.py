@@ -1,6 +1,6 @@
 """Unit tests for bond-order / charge perception crashes in the XYZ->OIN encoder.
 
-Three round-trip failure classes traced to ``xyz2mol``'s input-side perception:
+Three round-trip failure classes traced to ``perception_tmc``'s input-side perception:
 
 * ``xyz2mol_none_crash`` -- ``lig_checks`` called ``len(res_mols)`` on a
   ``ResonanceMolSupplier`` and then iterated it. The supplier is a stateful
@@ -36,7 +36,7 @@ from oinsmiles.utils.aromaticity import (
     kekulize_safe_sanitize,
     stuck_ring_atoms,
 )
-from oinsmiles.utils.xyz2mol import _perception_is_usable, lig_checks
+from oinsmiles.utils.perception_tmc import _perception_is_usable, lig_checks
 
 RDLogger.DisableLog("rdApp.*")
 

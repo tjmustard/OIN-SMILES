@@ -87,7 +87,7 @@ class XYZToSMILES:
 
         from ..core.chirality import CIPAssigner
         from ..utils.aromaticity import OINEncodeError, sanitize_allowing_boron_cage
-        from ..utils.xyz2mol import get_oin_string, get_tmc_mol
+        from ..utils.perception_tmc import get_oin_string, get_tmc_mol
 
         charge = 0  # Default
         path = Path(xyz_file_path)
@@ -100,7 +100,7 @@ class XYZToSMILES:
             # known ceiling from an unexpected failure. It is already a ValueError.
             raise
         except Exception as e:
-            raise ValueError(f"xyz2mol failed: {e}")
+            raise ValueError(f"perception_tmc failed: {e}")
 
         # Assign 3D-derived CIP codes to P/N stereocenters before fragmentation.
         # tmc_mol from get_tmc_mol() is already sanitized and has a valid 3D conformer.

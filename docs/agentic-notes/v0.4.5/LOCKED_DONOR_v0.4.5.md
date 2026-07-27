@@ -7,7 +7,7 @@
 > inverted and nothing else changed. Lever **default OFF**; levers-OFF output is byte-identical.
 
 Lane: `swimlane/v045-lane6`. Code: `src/oinsmiles/oin/locked_donor.py`,
-`src/oinsmiles/core/chirality.py`, `src/oinsmiles/utils/xyz2mol.py`,
+`src/oinsmiles/core/chirality.py`, `src/oinsmiles/utils/perception_tmc.py`,
 `src/oinsmiles/oin/inline.py`. Tests: `tests/unit/test_locked_donor.py`.
 
 ---

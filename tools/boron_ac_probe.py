@@ -53,7 +53,7 @@ def probe(mol_name: str, dataset_dir: str, tolerance: float = 0.5) -> dict:
     from rdkit import RDLogger
 
     RDLogger.DisableLog("rdApp.*")
-    from oinsmiles.utils.xyz2mol_local import read_xyz_file, xyz2AC_obabel
+    from oinsmiles.utils.perception_core import read_xyz_file, xyz2AC_obabel
 
     path = find_xyz(mol_name, dataset_dir)
     if path is None:

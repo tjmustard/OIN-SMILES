@@ -49,7 +49,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import numpy as np  # noqa: E402
 
-from oinsmiles.utils.xyz2mol_local import (  # noqa: E402
+from oinsmiles.utils.perception_core import (  # noqa: E402
     _HEURISTIC_ELEMENTS,
     BO_is_OK,
     atomic_valence_electrons,

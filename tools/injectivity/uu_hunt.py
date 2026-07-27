@@ -145,7 +145,7 @@ def _known_causes(mol: Chem.Mol) -> list[str]:
 
 def probe(path: Path) -> dict | None:
     from oinsmiles import XYZToSMILES
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     with tempfile.TemporaryDirectory() as d:
         mirror = _mirror_file(path, Path(d) / "mirror.xyz")

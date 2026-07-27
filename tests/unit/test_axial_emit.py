@@ -294,7 +294,7 @@ class TestSymmetryEquivalentAxesStillFlip(unittest.TestCase):
 class TestPerceptionInvariance(unittest.TestCase):
     """The token must not depend on which bond-order model perceived the molecule.
 
-    The encoder perceives bond orders from interatomic distances (``xyz2mol``); the generator
+    The encoder perceives bond orders from interatomic distances (``perception_core``); the generator
     transfers them from the OIN fragment SMILES (``build_contract_mol``). The two disagree
     for a metalloporphyrin -- the encoder reads an aromatic pyrrolide core on Zn(II), the
     generated mol a neutral localized tautomer. A descriptor keyed on ``GetIsAromatic()``

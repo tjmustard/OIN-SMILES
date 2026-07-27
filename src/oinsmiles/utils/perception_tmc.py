@@ -1,4 +1,4 @@
-"""Module for the xyz2mol functionality for TMCs."""
+"""TMC-specific driver for the perception pipeline (XYZ -> OIN)."""
 
 import argparse
 import logging
@@ -27,7 +27,7 @@ from .aromaticity import (  # noqa: F401
     stuck_ring_atoms,
 )
 from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
-from .xyz2mol_local import (
+from .perception_core import (
     AC2mol,
     boron_cage_vertices,
     chiral_stereo_check,
@@ -38,7 +38,7 @@ from .xyz2mol_local import (
 
 # TRANSITION_METALS / TRANSITION_METALS_NUM single source of truth:
 # ../core/constants.py (imported above). Re-exported here (not copied) so
-# existing call sites and external importers of xyz2mol.TRANSITION_METALS*
+# existing call sites and external importers of perception_tmc.TRANSITION_METALS*
 # keep working unchanged.
 
 
@@ -1467,7 +1467,7 @@ def get_oin_string(tmc_mol, xyz_coords):
     # Let's verify: get_tmc_mol returns tmc_mol, xyz_coords.
     # The atom index in tmc_mol should map to xyz_coords index if no hydrogens added implicitly?
     # AC2mol might add H? "use_atom_maps=False".
-    # Usually xyz2mol structures match input XYZ atoms unless H added.
+    # Usually perception_core structures match input XYZ atoms unless H added.
     # We can rely on __origIdx if available.
 
     atom_map_to_xyz = {}

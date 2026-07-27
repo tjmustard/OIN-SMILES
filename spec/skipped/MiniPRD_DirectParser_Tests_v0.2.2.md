@@ -92,7 +92,7 @@
 
 ## 4. The Negative Space (Constraints)
 
-- **DO NOT** modify `MolassemblerAdapter`, `OINParser.parse()`, `xyz2mol.py`, or `core/chirality.py` — all out of perimeter (P6.1, P6.4).
+- **DO NOT** modify `MolassemblerAdapter`, `OINParser.parse()`, `perception_tmc.py`, or `core/chirality.py` — all out of perimeter (P6.1, P6.4).
 - **DO NOT** change `OIN3DGenerator.timeout` default of 60 seconds (P6.2).
 - **DO NOT** remove existing entries from `oinsmiles.__all__` (P6.3).
 - **DO NOT** ship if `verify_roundtrip.py --backend direct` fails on any current fixture.

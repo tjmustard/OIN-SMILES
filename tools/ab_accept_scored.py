@@ -56,7 +56,7 @@ def measure_one(xyz_path: str, timeout: float) -> dict:
     from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen
     from oinsmiles.generator3d import clash
     from oinsmiles.oin.compare import canonical_roundtrip_key
-    from oinsmiles.utils.xyz2mol import get_oin_string
+    from oinsmiles.utils.perception_tmc import get_oin_string
 
     out: dict = {"molecule": os.path.splitext(os.path.basename(xyz_path))[0]}
     t0 = time.monotonic()

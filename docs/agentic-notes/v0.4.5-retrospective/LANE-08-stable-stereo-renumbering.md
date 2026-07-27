@@ -53,7 +53,7 @@ not a configuration.
   ⇒ a tag is only meaningful TOGETHER WITH the ordering it was recorded against.
 
 
-PART 2 — WHERE THE REBUILD BREAKS IT   (get_oin_string, src/oinsmiles/utils/xyz2mol.py)
+PART 2 — WHERE THE REBUILD BREAKS IT   (get_oin_string, src/oinsmiles/utils/perception_tmc.py)
 
   get_oin_string does NOT use Chem.PathToSubmol or RWMol.RemoveAtom.
   It REBUILDS every ligand fragment from scratch, in three steps:
@@ -299,7 +299,7 @@ a property of the input file's atom order.
 | entry point | `restamp_fragment_chirality(frag_rw, frag_to_parent, parent_conf) -> int` (count of tags flipped) |
 | helper | `_tag_from_geometry(mol, conf, idx)` |
 | constants | `_TETRAHEDRAL = (CHI_TETRAHEDRAL_CW, CHI_TETRAHEDRAL_CCW)`; `_PLANARITY_TOL = 0.05` |
-| hook | `src/oinsmiles/utils/xyz2mol.py:1625` — `if lever_enabled("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():` (a 14-line block inside the per-fragment rebuild, placed after the E/Z stereo-atom carry and before `frag_mol = mw.GetMol()`) |
+| hook | `src/oinsmiles/utils/perception_tmc.py:1625` — `if lever_enabled("OIN_STABLE_STEREO") and not is_metal and mol.GetNumConformers():` (a 14-line block inside the per-fragment rebuild, placed after the E/Z stereo-atom carry and before `frag_mol = mw.GetMol()`) |
 
 ### `restamp_fragment_chirality`, decision by decision
 
@@ -585,7 +585,7 @@ Final state:
 | lever | `OIN_STABLE_STEREO` |
 | default | **ON** (`levers.py::_DEFAULT_ON`, alongside `OIN_BORON_CAGE`, `OIN_CANONICAL_BODY`, `OIN_CANONICAL_PERCEPTION`, `OIN_CANONICAL_SLOTS`, `OIN_CANONICAL_ETA_WINDING`, `OIN_STABLE_METAL_AC`) |
 | opt out | `OIN_STABLE_STEREO=0` — and it now genuinely means off; `_FALSEY = {"0", "", "false", "no", "off"}` |
-| src files | `src/oinsmiles/oin/stable_stereo.py` (new), `src/oinsmiles/utils/xyz2mol.py` (+14-line hook at `:1625`) |
+| src files | `src/oinsmiles/oin/stable_stereo.py` (new), `src/oinsmiles/utils/perception_tmc.py` (+14-line hook at `:1625`) |
 | guard modules | `tests/unit/test_stable_stereo.py`, `tests/unit/test_stable_stereo_mirror.py` |
 | fixtures added | `tests/fixtures/EJUJUP_comp_0.xyz`, `tests/fixtures/OCUGIC_comp_0.xyz` (`8fdccb55`), `tests/fixtures/ROGYAO_comp_0.xyz` (`b7355cfa`) |
 | suite | `b7355cfa` closed **5 errors** in the integrated suite (729 tests, 717 OK, 5 errors, **all one root cause**: `ROGYAO_comp_0.xyz` was referenced but never `git add`ed — it existed only in the gitignored dataset, so every test in the file errored with `FileNotFoundError`). These two modules are now **14 OK**. |
@@ -602,7 +602,7 @@ PYTHONPATH=src .venv/bin/python tools/canonicality_probe.py --only ROGYAO_comp_0
 
 > ⚠ **Stale docstrings to fix on a clean tree.** `tests/unit/test_stable_stereo.py`'s module
 > docstring still says *"`OIN_STABLE_STEREO` (default OFF)"*, and the in-code comment at
-> `xyz2mol.py:1625` still says *"Default OFF -> byte-identical output."* Both predate the Wave-D
+> `perception_tmc.py:1625` still says *"Default OFF -> byte-identical output."* Both predate the Wave-D
 > promotion and are now wrong. `TestLeverIsOnByDefault`'s own docstring dates the rename to
 > v0.4.6 while the promotion it responds to landed in the v0.4.5 release commit — read the commit,
 > not the docstring, for the date.
@@ -618,7 +618,7 @@ PYTHONPATH=src .venv/bin/python tools/canonicality_probe.py --only ROGYAO_comp_0
 2. **The 8 aromaticity-collapse molecules (3.6%) are untouched.** `CEBVIR_comp_0` survives all
    four canonicality levers. Suspect named in the doc: `AC2BO`'s arbitrary resonance form and
    `get_UA_pairs`' non-unique `nx.max_weight_matching` being atom-order dependent
-   (`utils/xyz2mol_local.py:800`, `:542`).
+   (`utils/perception_core.py:1319`, `:1323`).
 3. **Only 10 of the 29 known stereo-flip molecules were measured.** A full 29-molecule arm was
    never run; the promotion decision rests on the 300-molecule aggregate instead.
 4. **Absolute accuracy figures across the project's history still carry an unaccounted error

@@ -271,7 +271,7 @@ harness cannot confirm the descriptor. Only the raw string can.**
 is `OIN_EMIT_LOCKED_DONOR`. Same lever.)
 
 **Code:** `src/oinsmiles/oin/locked_donor.py` (new) · `src/oinsmiles/core/chirality.py` (the restore
-after `recover()`'s main loop) · `src/oinsmiles/utils/xyz2mol.py` (stamps the property during the
+after `recover()`'s main loop) · `src/oinsmiles/utils/perception_tmc.py` (stamps the property during the
 fragment rebuild) · `src/oinsmiles/oin/inline.py`. Guards: `tests/unit/test_locked_donor.py`.
 Design document: `docs/agentic-notes/v0.4.5/LOCKED_DONOR_v0.4.5.md`.
 
@@ -336,7 +336,7 @@ documented. ([Lane 2](LANE-02-canonical-slots.md) hit the same shape of contradi
 **Not started in v0.4.5. Built in v0.4.6.** Lever `OIN_EMIT_METAL_CONFIG`, default **OFF**, emitting
 a trailing `|mc:+|` / `|mc:-|` sidecar.
 
-**Code:** `src/oinsmiles/oin/metal_config.py` (new, ~429 lines) · `src/oinsmiles/utils/xyz2mol.py`
+**Code:** `src/oinsmiles/oin/metal_config.py` (new, ~429 lines) · `src/oinsmiles/utils/perception_tmc.py`
 (the emit hook) · `src/oinsmiles/oin/compare.py` (`_METAL_CONFIG_TOKEN_RE`, the fold) ·
 `src/oinsmiles/generation/metallogen_adapter.py` (the generator reproduction check).
 Guards: `tests/unit/test_metal_config.py` (16 tests). Functions of record:

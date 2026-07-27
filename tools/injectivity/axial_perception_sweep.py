@@ -1,6 +1,6 @@
 """Is the axial token invariant to how the molecule's bond orders were PERCEIVED?
 
-The encoder and the generator build their mols by different routes -- ``xyz2mol`` bond-order
+The encoder and the generator build their mols by different routes -- ``perception_core`` bond-order
 perception from interatomic distances on one side, ``build_contract_mol``'s per-fragment
 transfer from the OIN fragment SMILES on the other -- and for a metalloporphyrin the two
 disagree about the macrocycle. Comparing a requested token against a generated one is only
@@ -81,7 +81,7 @@ def delocalize(mol: Chem.Mol) -> Chem.Mol:
 
 
 def check(path: Path) -> dict:
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     with _silence():
         mol, _ = get_tmc_mol(path, 0, with_stereo=False)

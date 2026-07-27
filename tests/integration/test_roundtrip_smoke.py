@@ -30,7 +30,7 @@ import numpy as np
 
 from oinsmiles.generation.engine import OIN3DGenerator
 from oinsmiles.oin.compare import normalize_oin_for_comparison, winding_canonical_key
-from oinsmiles.utils.xyz2mol import get_oin_string
+from oinsmiles.utils.perception_tmc import get_oin_string
 
 SEED = 42
 
