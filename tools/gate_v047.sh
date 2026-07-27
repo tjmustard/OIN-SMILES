@@ -19,7 +19,7 @@
 # The golden may also carry NO_STRUCTURE@Ns / NO_ENCODE@Ns sentinels in place of a hash --
 # see the SENTINELS comment in run_arm2 for why those must not be compared as hashes.
 #
-# ARM 1 (encoder, 61 fixtures): tools/gate_arm1_encode.py, one process, memo-cleared
+# ARM 1 (encoder, 62 fixtures): tools/gate_arm1_encode.py, one process, memo-cleared
 #   between molecules (see that script's docstring). Fast -- runs to completion here.
 #
 # ARM 2 (round trip, the frozen slow-cohort): tools/gate_arm2_roundtrip_one.py, ONE
@@ -147,8 +147,10 @@ run_arm1() {
         return 1
     fi
     n_done="$(echo "$done_line" | awk '{print $2}')"
-    if [ "$n_done" -ne 61 ]; then
-        echo "[gate/arm1] FAIL: #DONE $n_done, expected 61 -- short run, refusing to trust it" >&2
+    # 61 -> 62 in v0.4.10 with the golden re-freeze; see gate_arm1_encode.py's
+    # EXPECTED_FIXTURE_COUNT for why the two counts are asserted independently.
+    if [ "$n_done" -ne 62 ]; then
+        echo "[gate/arm1] FAIL: #DONE $n_done, expected 62 -- short run, refusing to trust it" >&2
         return 1
     fi
     echo "[gate/arm1] sentinel OK: #DONE $n_done" >&2
