@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from functools import lru_cache
 
 from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
@@ -83,7 +84,13 @@ def _fill_open_valence_with_h(mol: Chem.Mol) -> None:
         pass
 
 
-def _reparse_cip_label_once(smiles: str, probe: int, fill_deficit: bool) -> "str | None":
+#: Bound on the CIP re-parse memo (v0.4.10, ``OIN_MEMO_CIP_REPARSE``). Keys are ligand-fragment
+#: SMILES, so the live set is per-molecule and small; the bound exists only so that a long sweep
+#: sharing one interpreter cannot grow it without limit.
+_CIP_REPARSE_MEMO_MAX = 2048
+
+
+def _reparse_cip_label_once_uncached(smiles: str, probe: int, fill_deficit: bool) -> "str | None":
     """One rdCIPLabeler pass over *smiles*, optionally H-filling open valences first."""
     try:
         m = Chem.MolFromSmiles(smiles, sanitize=False)
@@ -103,6 +110,54 @@ def _reparse_cip_label_once(smiles: str, probe: int, fill_deficit: bool) -> "str
         return None
     except Exception:  # noqa: BLE001 - guarded
         return None
+
+
+@lru_cache(maxsize=_CIP_REPARSE_MEMO_MAX)
+def _reparse_cip_label_cached(smiles: str, probe: int, fill_deficit: bool) -> "str | None":
+    """Memo slot for :func:`_reparse_cip_label_once_uncached`.
+
+    Split out rather than decorating the worker directly so the un-memoised path stays
+    reachable when the lever is off, and so ``cache_info()`` measures only real traffic.
+    """
+    return _reparse_cip_label_once_uncached(smiles, probe, fill_deficit)
+
+
+def _reparse_cip_label_once(smiles: str, probe: int, fill_deficit: bool) -> "str | None":
+    """One rdCIPLabeler pass over *smiles*, memoised under ``OIN_MEMO_CIP_REPARSE``.
+
+    WHY A MEMO IS BYTE-IDENTICAL HERE, in the form v0.4.10 requires of every change:
+    the result is a pure function of the key. All three arguments are immutable scalars;
+    the body builds a **fresh** mol from *smiles* on every call, touches no module or
+    global state, and returns an interned ``str`` or ``None``. So a hit returns exactly
+    what a miss would have computed -- only the wall-clock changes. That is the same
+    sentence ``compute_chg_and_bo_pulp``'s topology memo is justified by.
+
+    WHY IT HITS. Both callers key on a SMILES derived from the OIN *template*
+    (``metallogen_adapter._template_sp3_label``) or from a metal-free fragment
+    (``_reparse_aromatic_cip_label``) -- neither carries coordinates, so every conformer
+    of a molecule produces the SAME key. ``accept_fn`` runs per conformer, so the
+    repeat traffic is structural rather than incidental. Measured on VAFMIA_comp_0
+    (``[Cu_LIN]``, bis-adamantyl NHC): 32 calls at 2.43 s each = 77.8 s, **99% of that
+    molecule's generation**, and the in-flight one of these is what sets v0.4.9's
+    epsilon (+32.8 s on a 30 s budget).
+
+    Default OFF. Cross-molecule retention is safe by the purity argument above, but
+    ``_reparse_cip_memo_clear()`` exists so per-molecule gates can guarantee isolation
+    the same way ``_ac2bo_memo_clear()`` does for perception.
+    """
+    if _lever_enabled("OIN_MEMO_CIP_REPARSE"):
+        return _reparse_cip_label_cached(smiles, probe, fill_deficit)
+    return _reparse_cip_label_once_uncached(smiles, probe, fill_deficit)
+
+
+def _reparse_cip_memo_clear():
+    """Drop every memoised CIP label. Used by tests and per-molecule gates."""
+    _reparse_cip_label_cached.cache_clear()
+
+
+def _reparse_cip_memo_info():
+    """``functools`` cache statistics for the CIP memo -- hits/misses/currsize."""
+    return _reparse_cip_label_cached.cache_info()
 
 
 def _reparse_aromatic_cip_label(mol: Chem.Mol, idx: int) -> "str | None":
