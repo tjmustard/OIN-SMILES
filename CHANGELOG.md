@@ -5,6 +5,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-07-27
+
+> ### Speed becomes measurable — and this release refutes its own premise.
+>
+> v0.4.9 was chartered on one number: *"759.9 s against a 300 s budget. That single number is this
+> release's justification: the budget is not a budget."* **That number is arithmetic on a sum.**
+> `metrics.elapsed_s` accumulates up to three separately SIGKILLed harness attempts. Split by
+> `tier_passed`, all **4658** single-attempt rows in the 5000-molecule sweep finish within
+> **0.2 s** of their 300 s cap — the harness enforces to ε ≈ 0.2 s.
+>
+> The advisory-timeout defect is real; it is in the code and two direct-call probes measure it
+> (60 s asked, 137.9 s and 172.8 s spent). The corpus number was simply never evidence for it.
+>
+> **What replaces it is a stronger argument.** The `≥ 300 s` band is 291 molecules burning
+> **27.3 CPU-h — 49.8% of the entire 54.8 CPU-h sweep — for three honest passes.** And 93.1% of
+> all honest passes already finish under 30 s, so a per-molecule cap is far cheaper than assumed:
+> 30 s recovers **37.8 CPU-h** and costs **251 passes (5.02 points of `byte_exact`)**; 300 s
+> recovers 3.1 CPU-h for 3 passes.
+
+**Accuracy: unchanged.** `byte_exact` is **72.46%**, the honest v0.4.8 baseline, confirmed here by
+a live 300-molecule run: **296/300 per-molecule agreement** with the offline re-score and
+**0/300 encoder drift**. No encoder, generator, or notation behaviour changed by default.
+
+### Added
+- **`OIN_ENFORCE_BUDGET` (default OFF)** — makes `OIN3DGenerator(timeout=)` a bound instead of a
+  hint. Checked in three places, because there is no single cost sink: inside `get_embedding`'s
+  nested loops, before each `accept_fn` re-encode, and before `_select_by_geometry`.
+- **`BudgetExhaustedError`** — budget exhaustion is now typed and distinguishable from an assembly
+  failure, so the next release can tell its own regressions from this release's intent.
+- **A frozen, stratified runtime benchmark** — `tools/gate_v049_arm2_golden.tsv`, 328 molecules
+  across four runtime bands × eta/non-eta plus a fast control, drawn from one source by a
+  deterministic rule, every row labelled with its honest round-trip class. **Reproduces to 0.28%**
+  (277.01 s vs 277.79 s, byte-identical rows) — the noise floor every later runtime claim must clear.
+- `tools/select_runtime_strata.py`, `tools/budget_bound_ab.py`, `tools/budget_bound_report.py`.
+- `--gen-timeout` on the sweep harness, and `--hard-timeout` / `--shard` / `--band` on the gate.
+
+### Fixed
+- **`--mol-timeout` never reached the generator.** The harness hardcoded the generator's budget, so
+  the two were fully decoupled and a bound could not be A/B-ed through the harness at all.
+  Behaviour-identical for every invocation this project has run.
+- **The v0.4.7 gate silently resolved to an arbitrary interpreter** — from a worktree it selected an
+  unrelated project's venv, once with rdkit 2025.09.2 against the pinned 2025.9.3. A byte-identity
+  gate on a different rdkit reports MISMATCHes that read as code regressions.
+- **The gate itself was unbounded**, the same defect it was measuring.
+
+### Measured, not delivered
+- **`max(elapsed_s) < 30 s` is NOT delivered.** With the bound on, ε = **+32.8 s** on a 30 s
+  budget and the same **11** molecules exceed it in every arm. The bound compresses the tail
+  (2.63× → 2.09×); it does not remove it. ε is one *in-flight* `accept_fn` re-encode, ~24 s of
+  `chirality._reparse_cip_label_once`.
+- **The honest gap reorders the roadmap.** `structural` was 9 molecules / 0.18 points when scored
+  dishonestly; honestly it is **417 / 8.34 points — the second-largest block in the gap**, ahead of
+  `hard_fail`, and the ladder parks it at v0.4.16 as "knowledge, not points".
+- **A 22% win, found and deliberately not taken** — `get_embedding`'s outer loop calls
+  `alternative_ace_mol_list.index(...)` and discards the result: 3711 calls, 198
+  eigendecompositions, 22% of an eta generation. It belongs to v0.4.10.
+
 ## [0.4.8] - 2026-07-27
 
 > ### ⚠ The headline accuracy figure goes DOWN, on purpose. `byte_exact` is **72.46%**, not 82.80%.
