@@ -215,6 +215,49 @@ not what is *accepted*.**
 `src/oinsmiles/` behaviour is unchanged apart from the lever registry entry; §4 is the proof
 rather than the assertion.
 
+## 7a. The bounded live arm — the one check offline cannot make
+
+Offline re-scoring never runs a generator, so it cannot see a generator regression. A
+seed-42 stratified cohort of **300 molecules** (69 haptic / 231 non-haptic, matching the corpus
+23.0% haptic fraction) was re-run end to end under this tree, `--mol-timeout 300`, 6 shards:
+`tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-live300/`.
+
+**Check 1 — deterministic: does the promoted harness compute the same honest string as the
+offline instrument?** Same stored conformer, no stochasticity, so this must be exact.
+
+```
+harness `smiles_2_indep` == tools/honest_rescore.py, same conformer:  275/275 byte-identical
+```
+
+The offline re-baseline is exactly what the live harness would have produced. Not "consistent
+with" — identical.
+
+**Check 2 — distributional: has the generator moved?** Same 300 molecules, honest scoring,
+freshly generated here versus their stored v0.4.6 conformers:
+
+| bucket | v0.4.6 conformers | freshly generated | delta |
+|---|---:|---:|---:|
+| `byte_exact` | 214 | 213 | −1 |
+| `key_equal` | 33 | 33 | ±0 |
+| `facmer_divergent` | 1 | 1 | ±0 |
+| `structural` | 28 | 27 | −1 |
+| `hard_fail` | 24 | 26 | +2 |
+
+Flat. Read this as a coarse regression check and nothing more — the generator is stochastic, so
+a molecule can change bucket on a re-run for reasons unrelated to any code change, and at n=300
+the sampling error is several points either way. What it rules out is a *gross* generator
+regression under v0.4.7, which is exactly what it was run to rule out.
+
+**Check 3, unplanned but the most useful of the three:** the live arm's own scored→honest delta
+is **246 → 213 on 300 = −11.0 points**, against the corpus's −10.34, and its honest `byte_exact`
+is **71.0%** against the corpus 72.46%. A fresh generation run, scored honestly end to end,
+independently reproduces the correction this release reports from stored geometry.
+
+⚠ **Operational note for anyone re-running this:** the harness's `--shard` is **1-based**
+(`1:6`…`6:6`). `--shard 0:6` exits 2 with "index out of range", so launching shards `0..5`
+silently drops one sixth of the cohort — the parent shell reports the failure and the remaining
+shards carry on looking healthy.
+
 ## 8. Artifacts
 
 | what | where |
