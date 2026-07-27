@@ -41,10 +41,19 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 LEVER = "OIN_BORON_GEN_FASTFAIL"
 CAGE_LEVER = "OIN_BORON_CAGE"
 
-#: A Rh thiaborane cage on a TET (CN=4) metal -- one of the 34 encode_fail class,
-#: confirmed (tools/boron_gen_sweep34.sh) to burn its whole embed budget with
-#: nothing produced.
+#: A Rh thiaborane cage -- one of the 34 encode_fail class, confirmed
+#: (tools/boron_gen_sweep34.sh) to burn its whole embed budget with nothing produced.
+#: ⚠ Its geometry is ``SQA`` (CN=8), not the TET this comment claimed when the lane
+#: landed. Measured, not assumed: ``[Rh_SQA]``. Nothing rested on the wrong label --
+#: SQA is outside the safe set either way -- but the TET exclusion needs a real TET
+#: molecule to test it, which is what ULODUU below is for.
 KIXXOF = FIXTURES / "KIXXOF_comp_0.xyz"
+#: A Zr metallocene + closo-B12 carborane cage on ``[Zr_TET]`` that DOES generate --
+#: 61.8s, got_mol true (tools/boron_gen_times.jsonl, main 71443eda). It is the
+#: counter-example that put TET in _BORON_GEN_FASTFAIL_SAFE_GEOMETRIES, and it is
+#: invisible to this lane's own 30s-cap sweep, which is why the lane concluded 1/48
+#: where the 60s measurement finds 2/33.
+ULODUU = FIXTURES / "ULODUU_comp_0.xyz"
 #: A nido-C2B7 cage on a TPL (CN=3) Ru -- one of the 14 "silently wrong before"
 #: molecules (docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md SS5a); also confirmed 0/1 with the cage
 #: lever on (tools/boron_gen_sweep_14silent.sh).
@@ -98,8 +107,9 @@ class _LeverMixin(unittest.TestCase):
 class TestPredicateFiresOnConfirmedFailures(_LeverMixin):
     """The predicate matches every confirmed-slow cage molecule checked so far."""
 
-    def test_kixxof_tet_cage_flagged(self):
+    def test_kixxof_sqa_cage_flagged(self):
         parsed, _ = _parsed(KIXXOF)
+        self.assertEqual(parsed.geo_code, "SQA")
         self.assertTrue(_parsed_oin_has_boron_cage(parsed))
 
     def test_vejxoz_tpl_cage_flagged(self):
@@ -117,6 +127,26 @@ class TestPredicateSpecificityControls(_LeverMixin):
 
     def test_no_cage_motif_at_all_is_never_flagged(self):
         parsed, _ = _parsed(ASUVIV)
+        self.assertFalse(_parsed_oin_has_boron_cage(parsed))
+
+    def test_uloduu_tet_cage_not_flagged(self):
+        """The counter-example that refuted the geometry rule.
+
+        ``ULODUU_comp_0`` carries a coordinated closo-B12 cage on ``[Zr_TET]`` and DOES
+        produce a 3D structure -- 61.8 s (``tools/boron_gen_times.jsonl``, main 71443eda).
+        Flagging it would break a molecule that works today, which is the one failure mode
+        this predicate must never have.
+
+        It also cost the rule: TET is not a geometry where cages fail, so geometry does
+        not separate assembling cages from non-assembling ones (LIN 1 success / 3
+        failures, TET 1 / 4). The lever is default-OFF for that reason, not for caution.
+
+        This test could not have been written from the lane's own 30 s-cap sweep -- a
+        61.8 s success reads as a cap-burner there. If it ever starts failing, check
+        whether the safe set was narrowed on correlation again.
+        """
+        parsed, _ = _parsed(ULODUU)
+        self.assertEqual(parsed.geo_code, "TET")
         self.assertFalse(_parsed_oin_has_boron_cage(parsed))
 
     def test_boron_at_several_coordination_numbers_no_deltahedron(self):

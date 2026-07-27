@@ -121,12 +121,15 @@ class BoronCageGenerationUnsupportedError(ValueError):
     fully-coordinated graph instead of failing. But it exposed a GENERATOR ceiling
     that the encode failure had been hiding: assembling a 3D structure from that
     cage is a distance-geometry + bond-order-perception problem this pipeline
-    cannot solve, and it does not fail fast finding that out (see
-    ``docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md``). Measured on all 34
-    ``BORON_CAGE_v0.4.5`` encode_fail molecules: 0/34 produce a 3D structure; the ones that do not
-    instant-fail on an unsupported geometry code burn their entire embed budget
-    (up to ~2.3x over, see ``UncoordinatedFragmentError``'s sibling finding on the
-    embed-time-budget bug) discovering this. Subclasses ``ValueError`` so existing
+    cannot solve for MOST of this class, and it does not fail fast finding that out
+    (see ``docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md``). Measured across the
+    34 ``BORON_CAGE_v0.4.5`` encode_fail molecules, 33 of them at a 60 s cap
+    (``tools/boron_gen_times.jsonl``): **2/33 DO produce a 3D structure** -- ``RAWJEG``
+    (LIN, 1.2 s) and ``ULODUU`` (TET, 61.8 s). 25 burn the entire embed budget, 6 fail
+    instantly. The ones that burn it run up to ~2.3x over the requested cap (see
+    ``UncoordinatedFragmentError``'s sibling finding on the embed-time-budget bug).
+    ⚠ An earlier 10-molecule read of this class said 0/10 and was used to argue for a
+    blanket fast-fail; the full measurement refutes that. Subclasses ``ValueError`` so existing
     ``except ValueError`` callers keep working; distinguished from
     ``UncoordinatedFragmentError`` (a topology problem -- no binding slot) because
     this fragment IS correctly coordinated, it just cannot be embedded.
@@ -135,17 +138,36 @@ class BoronCageGenerationUnsupportedError(ValueError):
 
 #: Geometries this predicate will NOT fast-fail on even when a coordinated boron
 #: cage is present, because a measured example in that geometry DOES generate.
-#: ``RAWJEG_comp_0`` ([Hg_LIN], a monodentate cage + Cl-, no haptic anything)
-#: produces a 3D structure in 2.5s -- the ONLY success found across the 34+14
-#: molecule sample (docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md SS5). ``LIN``
-#: (2-coordinate) is the sole geometry in that sample where a coordinated cage succeeded; every
-#: other geometry checked (TPL, TPY, TET, SPL/SQP, OCT, PBP, SQA -- CN 3 through 7)
-#: failed 100% of the time. A single success is thin evidence for a general rule,
-#: so this is deliberately an EXCLUSION list scoped to the one confirmed-safe case
-#: rather than an inclusion list of "geometries known to fail" -- erring toward
-#: under-firing (a missed fast-fail is a cost regression only) rather than
-#: over-firing (a false positive would BREAK a molecule that works today).
-_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES = frozenset({"LIN"})
+#:
+#: ⚠ GEOMETRY IS A REFUTED DISCRIMINATOR. This lane originally set the exclusion to
+#: ``{"LIN"}`` on the strength of ``RAWJEG_comp_0`` ([Hg_LIN], 1.2 s) being the only
+#: success in its 48-molecule sweep, and its docstring named TET among the geometries
+#: that "failed 100% of the time". Both claims are superseded by the fuller measurement
+#: on main (71443eda, ``tools/boron_gen_times.jsonl``, 60 s cap). Cross-tabulated:
+#:
+#:     geo                        generates   fails
+#:     LIN                            1          3
+#:     TET                            1          4
+#:     OCT / SPL / SPY / TPL / TPY    0         15
+#:     (no OIN recorded)              0          9
+#:
+#: ``ULODUU_comp_0`` is ``[Zr_TET]`` and generates in 61.8 s. So EVERY geometry with a
+#: success also has failures: geometry separates nothing. The earlier lane missed ULODUU
+#: because its sweep capped at 30 s soft / 120 s hard, which puts a 61.8 s success in the
+#: "burned the cap" bucket -- ULODUU's success is BUDGET-DEPENDENT, and that is the
+#: finding, not an error in either measurement.
+#:
+#: TET is therefore excluded as well. This is not a repair of the rule; it is an
+#: admission that the rule does not exist. Priced exactly: the exclusion gives up the 4
+#: TET cap-burners (``PAQBOZ``, ``PAQCAM``, ``RIWKAK``, ``RONQOD``, all 60-64 s) -- 4 of
+#: the 25 recoverable molecules. The LIN exclusion costs nothing at all: its 3 failures
+#: (``MODZUA``, ``RANCIU``, ``RULBUV``) fail in 0.00-0.01 s on the pre-existing
+#: uncoordinated-fragment path, so there was never any budget there to reclaim.
+#: That trade follows the asymmetry the original comment named: a missed fast-fail is a
+#: cost regression, a false positive BREAKS a molecule that works today. What it means
+#: for promotion is in levers.py -- with no discriminator, there is no gate worth
+#: promoting.
+_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES = frozenset({"LIN", "TET"})
 
 
 def _parsed_oin_has_boron_cage(parsed: ParsedOIN) -> bool:
@@ -177,15 +199,22 @@ def _parsed_oin_has_boron_cage(parsed: ParsedOIN) -> bool:
        different bucket in any tooling keyed on the message. Checking this
        upstream, on data the generator has not touched yet, avoids that.
     2. **The geometry must not be in** ``_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES``
-       (see its docstring) -- excludes ``RAWJEG``, the one confirmed success.
+       (see its docstring) -- excludes ``RAWJEG`` (LIN) and ``ULODUU`` (TET), the
+       two confirmed successes.
 
     Deliberately does NOT gate on hapticity or fragment/complex size: both were
     tried as candidate discriminators and refuted by a counter-example in the
     same sample (``HAXJOG`` is monodentate like RAWJEG but fails; ``PEKQII``/
     ``SEMTOV``/``VEJXOZ`` are smaller than every failing molecule in the 34-set
     but still fail) -- see docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md SS5 for the full
-    negative-result account. Geometry code is the only discriminator that has
-    not been refuted by a counter-example in this sample.
+    negative-result account.
+
+    ⚠ Geometry has since joined them. It was the last discriminator standing when this
+    lane wrote the sentence above; the fuller 60 s-cap measurement on main refuted it too
+    (LIN 1 success / 3 failures, TET 1 / 4). What survives is a predicate that fires on
+    the geometries where nothing has YET been seen to generate -- an absence of evidence,
+    not a rule. Hence default-OFF, and see levers.py for why the promotion gate is not
+    close.
     """
     geo = OIN_TO_METALLOGEN_GEO.get(parsed.geo_code, "")
     if not geo or parsed.geo_code in _BORON_GEN_FASTFAIL_SAFE_GEOMETRIES:
@@ -1945,12 +1974,14 @@ class MetalloGenAdapter:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
         # Fail fast on a boron-cage ligand (OIN_BORON_GEN_FASTFAIL, default OFF --
         # see levers.py and docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md).
-        # Measured 0/32 for a COORDINATED cage on a non-LIN geometry: no such molecule produces a 3D
-        # structure today, whether via this direct-DG path or the m-SMILES fallback
-        # below -- both eventually reach the same unbounded PuLP/CBC bond-order
-        # solve inside the embed attempt loop's alt-cache priming (SS2 of the doc).
-        # _parsed_oin_has_boron_cage carries the two safety exclusions earned by
-        # counter-examples in that sample (uncoordinated cage; the one CN=2 success)
+        # No molecule on a non-LIN, non-TET geometry has YET been seen to produce a
+        # structure, whether via this direct-DG path or the m-SMILES fallback below --
+        # both eventually reach the same unbounded PuLP/CBC bond-order solve inside the
+        # embed attempt loop's alt-cache priming (SS2 of the doc). That is an absence of
+        # evidence, not a rule: geometry was REFUTED as a discriminator by the 60 s-cap
+        # measurement (LIN 1 success / 3 failures, TET 1 / 4), which is why this stays OFF.
+        # _parsed_oin_has_boron_cage carries the safety exclusions earned by
+        # counter-examples (uncoordinated cage; RAWJEG at CN=2; ULODUU at CN=4)
         # -- see its docstring, do not simplify this call to a bare motif check.
         # Runs BEFORE either path below, on the parsed OIN's own fragment text (no
         # generator-side object exists yet), so it can never fire on output the
@@ -1960,7 +1991,8 @@ class MetalloGenAdapter:
                 "MetalloGen failed to generate any conformers via OIN-direct assembly "
                 f"(geometry {getattr(parsed, 'geo_code', None)!r}): fast-failed on a "
                 "coordinated boron-cage ligand fragment (B-B-B triangle motif) that "
-                "this pipeline cannot embed (OIN_BORON_GEN_FASTFAIL; measured 0/32, "
+                "this pipeline has not been seen to embed (OIN_BORON_GEN_FASTFAIL; 2/33 "
+                "of this class DO generate, both excluded by geometry -- "
                 "see docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md). "
                 f"OIN={getattr(parsed, 'original_oin', None)!r}"
             )

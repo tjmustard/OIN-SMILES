@@ -1,5 +1,55 @@
 # Boron cage generation ceiling — v0.4.7 (L4-boronfast)
 
+> ## ⚠ CORRECTION — read before §5
+>
+> **The blanket fast-fail this document argues for is REFUTED, and the geometry rule it falls
+> back on is refuted too.** Corrected at merge time against `main` `71443eda`, which measured
+> 33 of the 34 at a **60 s** cap (`tools/boron_gen_times.jsonl`). Everything below was measured
+> at a **30 s soft / 120 s hard** cap and is honest at that budget — the two sweeps do not
+> disagree, the *class boundary moves with the compute you give it*.
+>
+> | | this document (30 s cap) | `main` `71443eda` (60 s cap) |
+> | :--- | ---: | ---: |
+> | produce a 3D structure | 1 / 48 (`RAWJEG`) | **2 / 33** (`RAWJEG`, `ULODUU`) |
+>
+> `ULODUU_comp_0` is `[Zr_TET]` and generates in **61.8 s** — invisible to a 30 s cap. Its
+> success is **budget-dependent**, which is the actual finding here.
+>
+> **Geometry separates nothing.** Cross-tabulating the 33:
+>
+> | geo | generates | fails |
+> | :--- | ---: | ---: |
+> | LIN | 1 (`RAWJEG`, 1.2 s) | 3 |
+> | TET | 1 (`ULODUU`, 61.8 s) | 4 |
+> | OCT / SPL / SPY / TPL / TPY | 0 | 15 |
+> | *(no OIN recorded)* | 0 | 9 |
+>
+> Every geometry with a success also has failures. So §5's claim that "geometry code is the only
+> signal not refuted by a counter-example" no longer holds — all four candidate discriminators
+> (hapticity, size, denticity, geometry) are now refuted.
+>
+> **What changed in the code**, and what did not:
+>
+> - `_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES` is `{"LIN", "TET"}`, not `{"LIN"}`. Priced exactly: it
+>   gives up **4** of the 25 recoverable cap-burners — `PAQBOZ`, `PAQCAM`, `RIWKAK`, `RONQOD`, all
+>   TET, all 60–64 s. The LIN exclusion costs **nothing**: its three failures (`MODZUA`, `RANCIU`,
+>   `RULBUV`) already fail in 0.00–0.01 s on the uncoordinated-fragment path, so there was never
+>   any budget there to reclaim.
+> - A `ULODUU_comp_0` fixture and `test_uloduu_tet_cage_not_flagged` pin the counter-example
+>   directly, rather than resting the exclusion on a JSONL row.
+> - ⚠ §5 and `tests/unit/test_boron_gen_fastfail.py` both described `KIXXOF_comp_0` as a **TET**
+>   molecule. Measured, it is `[Rh_SQA]` (CN=8). Nothing rested on the wrong label — SQA is
+>   outside the safe set either way — but it is why the TET exclusion needed `ULODUU` to test it,
+>   and it is a reminder that the geometry labels in this document were read off prose, not
+>   re-derived.
+> - The lever stays **default-OFF** and its promotion gate now requires a *mechanism*, not more
+>   correlation. Correlation at n=1 per cell is what produced the refuted rule.
+> - The waste is real and correctly sized: 25 cap-burners ≈ **2.1 CPU-h** per 5,000-molecule
+>   sweep at the 300 s budget. v0.4.9's enforced generation bound recovers it without needing a
+>   discriminator that does not exist.
+>
+> The measurement below stands. The recommendation built on it does not.
+
 `OIN_BORON_CAGE` (promoted default-ON in v0.4.6, `docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md`) fixed a genuine
 **encoder** ceiling: 34 boron-cluster molecules that used to fail to encode at all now emit a
 correct, coordinated, single-bonded deltahedral cage. §10 of that document (added 2026-07-26,
