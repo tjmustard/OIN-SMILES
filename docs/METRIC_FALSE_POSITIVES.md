@@ -119,10 +119,10 @@ FALSE POSITIVES           : 61/633 = 9.6%
 The obvious objection is that the geometry classifier flipped between two similar polyhedra. It did
 not. Almost every transition **lowers the coordination number**:
 
-| transition | CN | n |
-|---|---|---|
 *(top 14 transitions of 54; the remaining 5 are a one-each tail, all also CN-lowering.)*
 
+| transition | CN | n |
+|---|---|---|
 | TET → TPL | 4 → 3 | 13 |
 | TET → LIN | 4 → 2 | 11 |
 | TPL → LIN | 3 → 2 | 10 |
