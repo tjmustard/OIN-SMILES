@@ -369,6 +369,35 @@ _HELD_OFF = {
         "default is whatever the release that OWNS the accuracy/compute trade decides, with the "
         "cap-vs-cost curve in front of it -- not this one, which only makes the trade expressible."
     ),
+    "OIN_MEMO_CIP_REPARSE": (
+        "memoises core.chirality._reparse_cip_label_once on its own arguments. v0.4.10 is a "
+        "byte-identical-by-construction release and this is the change that fits its rule most "
+        "exactly: the function's three arguments are immutable scalars (smiles, probe, "
+        "fill_deficit), its body builds a FRESH rdkit mol from the SMILES on every call, it "
+        "touches no module or global state, and it returns a str or None. So a memo returns "
+        "precisely what the function would have computed -- only the wall-clock changes. That is "
+        "the same sentence compute_chg_and_bo_pulp's topology memo is justified by. "
+        "WHY IT HITS RATHER THAN MERELY BEING SAFE: both call sites key on a SMILES derived from "
+        "the OIN template (metallogen_adapter._template_sp3_label, reached per conformer through "
+        "accept_fn -> _reencode_key_matches -> build_contract_mol) or from a metal-free fragment "
+        "(_reparse_aromatic_cip_label). Neither string carries coordinates, so every conformer of "
+        "a molecule generates the SAME key and the repeat traffic is structural, not incidental. "
+        "MEASURED (docs/agentic-notes/v0.4.9/BUDGET_BOUND_v0.4.9.md §2): on VAFMIA_comp_0 "
+        "([Cu_LIN], bis-adamantyl NHC) this function is 77.78 s of SELF time across 32 calls at "
+        "2.43 s each -- 99% of that molecule's generation. It is also what sets v0.4.9's epsilon: "
+        "OIN_ENFORCE_BUDGET can decline to START the next accept_fn call but cannot interrupt the "
+        "one in flight, and that in-flight call is ~24 s of this function, which is why the bound "
+        "holds to 2.09x rather than 1.0x. "
+        "⚠ THE COST IS BIMODAL BY MOLECULE, which is the trap this release inherited from v0.4.9: "
+        "the same accept_fn re-encode is 62% of VAFMIA and 0.8% of FOSNEI_comp_0. A lever aimed "
+        "at whichever function profiled expensive last optimises one molecule class and measures "
+        "nothing on the corpus -- v0.4.9 shipped that mistake once (epsilon barely moved) and "
+        "recorded it. Do not read a VAFMIA number as a corpus number. "
+        "Cross-molecule retention is safe by the purity argument above; the cache is bounded at "
+        "_CIP_REPARSE_MEMO_MAX so a long single-interpreter sweep cannot grow it without limit, "
+        "and _reparse_cip_memo_clear() lets a per-molecule gate guarantee isolation the way "
+        "_ac2bo_memo_clear() does for perception."
+    ),
 }
 
 
