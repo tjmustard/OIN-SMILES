@@ -476,14 +476,29 @@ measured here, and it is not passing.
 now *encodes* also **generate a 3D structure**? Sample of 10 of the 34, `optimizer=None`,
 `ensemble_size=1`, generation cap 60 s (`scratchpad/boron_gen_times.jsonl`):
 
+> ⚠ **CORRECTED 2026-07-26 — the first version of this section reported a 10-molecule sample as
+> "0 of 10 produce a 3D structure". With 33 of the 34 measured, it is 2/33: two DO assemble.** The
+> sample was not representative, and the error mattered — it was the basis of a proposed "boron
+> fast-fail", which this measurement REFUTES, because a blanket fast-fail would cost those 2 real
+> passes. Same lesson as the rest of this wave: a sample that only exercises the common case
+> confirms whatever you already believed.
+
 | outcome | n | detail |
 |---|---|---|
-| instant, loud failure | 3 | `ValueError: Geometry code 'NON' not supported by MetalloGen mapping` at 0.00–0.01 s |
-| **burned the whole cap, produced nothing** | 6 | 60.7 / 62.4 / 63.3 / 64.1 / 95.4 / 137.9 s, all `failed to generate any conformers via OIN-direct assembly` |
-| produced a structure | **0** | — |
+| **produced a 3D structure** | **2** | `RAWJEG` (LIN, 2 slots), `ULODUU` (TET, 4 slots) |
+| **burned the whole cap, produced nothing** | 25 | 60.0 – 172.8 s, all `failed to generate any conformers via OIN-direct assembly` |
+| instant, loud failure | 3 | `Geometry code 'NON' not supported by MetalloGen mapping`, 0.00–0.01 s |
+| instant, loud failure | 3 | `UncoordinatedFragmentError` |
 
-**0 of 10 produce a 3D structure.** So the promotion does not move these molecules from fail to
-pass; it moves them **from failing instantly to failing slowly.**
+**2 of 33 assemble.** So the promotion moves most — not all — of this class from failing instantly
+to failing slowly. The 25 cap-burners cost **~2.1 CPU-hours per full 5,000-molecule sweep at the
+300 s budget, for zero passes**, which is a real waste; but it cannot be reclaimed by a blanket
+fast-fail without losing the 2 that work, and no clean discriminator between the two groups was
+found (both span small and large cages; the 2 successes are low-denticity LIN/TET, the failures
+run to OCT/SPY at 5-6 slots, which is suggestive but n=2).
+
+A precise gate — fast-fail only above some denticity or cage size — needs the mechanism, not this
+correlation. Deferred to v0.4.6+.
 
 `XIQKOY_comp_0` is the clean two-point demonstration, same molecule, one lever:
 
