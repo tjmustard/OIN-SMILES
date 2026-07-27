@@ -699,7 +699,19 @@ def main():
         default=0,
         help="Hard wall-clock timeout in seconds per molecule per tier (0 to disable). "
         "Non-zero runs each attempt in a subprocess that is SIGKILLed on expiry, so a "
-        "hang inside native code cannot wedge the run. Costs a few seconds per tier.",
+        "hang inside native code cannot wedge the run. Costs a few seconds per tier. "
+        "⚠ This is the OUTER kill, and metrics.elapsed_s SUMS it across up to three tiers "
+        "-- a 300s cap yields rows up to ~900s. It also now sets the generator's own "
+        "advisory budget unless --gen-timeout says otherwise.",
+    )
+    parser.add_argument(
+        "--gen-timeout",
+        type=int,
+        default=None,
+        help="OIN3DGenerator(timeout=) in seconds, the generator's own advisory budget. "
+        "Defaults to --mol-timeout when that is set (else 30 with --quick, else 300). "
+        "Set it BELOW --mol-timeout when testing an enforced bound, so the generator has "
+        "room to return a typed failure instead of being SIGKILLed mid-return.",
     )
     args = parser.parse_args()
 
@@ -804,8 +816,34 @@ def main():
 
     xyz_to_smiles = XYZToSMILES()
 
-    # Determine quick settings
-    timeout_val = 30 if args.quick else 300
+    # The generator's OWN budget -- distinct from --mol-timeout, which is the outer SIGKILL.
+    #
+    # Until v0.4.9 this line read `30 if args.quick else 300` and `--mol-timeout` reached only
+    # `_supervise()`. The two budgets were therefore fully decoupled: asking for
+    # `--mol-timeout 60` still handed the generator 300 s, so the kill ALWAYS won and the
+    # generator's own budget was never the thing under test. That made a bound un-A/B-able
+    # through the harness -- you could only ever measure the SIGKILL.
+    #
+    # Behaviour-identical for every invocation this project has actually run:
+    #   --quick                       -> 30   (unchanged; quick's cap is deliberate and wins)
+    #   --mol-timeout 300 (the sweeps)-> 300  (unchanged)
+    #   --mol-timeout 0   (default)   -> 300  (unchanged)
+    #   --mol-timeout 60              -> 60   (CHANGED, and this is the fix)
+    # `--gen-timeout` overrides all of it, for arms that want the two budgets to differ --
+    # e.g. a generator asked for 30 s under a 60 s kill, so a bound has room to return a typed
+    # failure instead of being killed mid-return.
+    if args.gen_timeout is not None:
+        timeout_val = args.gen_timeout
+    elif args.quick:
+        timeout_val = 30
+    elif args.mol_timeout > 0:
+        timeout_val = args.mol_timeout
+    else:
+        timeout_val = 300
+    print(
+        f"Budgets: generator={timeout_val}s (advisory), mol_timeout={args.mol_timeout}s (SIGKILL)"
+    )
+    RUN_ENV["gen_timeout"] = timeout_val
     ff_params_fast = {"uff_pool_size": 2, "max_attempts": 10} if args.quick else None
 
     print("\n--- PASS 1: UFF FAST-PASS ---")

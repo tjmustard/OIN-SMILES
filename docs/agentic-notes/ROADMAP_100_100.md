@@ -35,28 +35,71 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | 82.80% *(dishonest)* | **100%** |
-| **B — speed** | `max(elapsed_s)` against an **enforced** budget | 759.9 s; **994/5000 = 19.88%** over 30 s | **< 30 s, p100** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **72.46%** *(honest, v0.4.8)* | **100%** |
+| **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
 
-⚠ `metrics.elapsed_s` is **nested**; read from the top level it silently yields `0`.
+⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
+silently yields `0` — **and it is a SUM** over up to three separately SIGKILLed harness attempts.
+The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
+rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − 82.80 = 17.20` points
+## The gap — `100 − 72.46 = 27.54` points (honest, re-derived v0.4.9)
 
 | block | n | pts | nature | release |
 |---|---:|---:|---|---|
-| `key_equal` → `slot_renumber` | 459 | 9.18 | canonicality, encoder-side | v0.4.14 |
-| `key_equal` → `rdkit_canonical` | 61 | 1.22 | canonicality, encoder-side | v0.4.15 |
-| `hard_fail` | 315 | 6.30 | compute (mostly) | v0.4.9 – v0.4.13 |
+| `key_equal` → `slot_renumber` | 496 | 9.92 | canonicality, encoder-side | v0.4.14 |
+| **`structural`** | **417** | **8.34** | wrong isomer / lost coordination | **⚠ see below** |
+| `hard_fail` | 319 | 6.38 | compute (mostly) | v0.4.9 – v0.4.13 |
+| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.15 |
+| `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.16 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.11 |
-| `structural` | 9 | 0.18 | wrong isomer | v0.4.16 |
-| `facmer_divergent` | 1 | 0.02 | wrong isomer | v0.4.16 |
-| **sum** | **860** | **17.20** ✓ | | |
+| **sum** | **1377** | **27.54** ✓ | | |
 
-Plus, outside the table: **the ~5.7-point metric over-statement**, owned by v0.4.9's predecessor.
+### 🔴 The honest number REORDERED the ladder
 
-Runtime, recomputed from the primary reports: overall n = 5000, median **7.19 s**, `> 30 s` **994
-(19.88%)**, max **759.9 s**; **eta** n = 1146, median 24.08 s, `> 30 s` 528 (46.1%) — **53.1% of the
-whole tail**; non-eta n = 3854, median 6.18 s, `> 30 s` 466 (12.1%).
+`structural` was **9 molecules / 0.18 points** under the scored metric and was parked at v0.4.16 as
+*"knowledge, not points"*. Honestly scored it is **417 molecules / 8.34 points — the second-largest
+block in the gap**, ahead of `hard_fail`. It is not a rounding change: 350 of them came directly
+from `byte_exact`, molecules whose generated structure re-perceives with different coordination
+than the OIN claims.
+
+**v0.4.16 is therefore mis-sized and mis-ordered in the ladder below, and the "wrong isomer" label
+is doing too much work** — a molecule that loses a haptic contact is not an isomer problem. A
+release that owns 8.34 points cannot sit behind two canonicality releases worth 12.20 combined
+without someone having decided that deliberately. **Re-sequence before planning v0.4.11.**
+
+Runtime, from the primary reports: overall n = 5000, median **7.19 s**, `> 30 s` **994 (19.88%)**;
+**eta** n = 1146, median 24.08 s, `> 30 s` 528 (46.1%) — **53.1% of the whole tail**; non-eta
+n = 3854, median 6.18 s, `> 30 s` 466 (12.1%).
+
+### What the tail actually costs, and what bounding it costs (v0.4.9)
+
+| band | n | CPU-h | % of sweep | honest passes |
+|---|---:|---:|---:|---:|
+| `< 30 s` | 4006 | 8.67 | 15.8% | 3380 (84.4%) |
+| `30–60 s` | 292 | 3.45 | 6.3% | 136 (46.6%) |
+| `60–300 s` | 411 | 15.36 | 28.0% | 112 (27.3%) |
+| **`≥ 300 s`** | **291** | **27.31** | **49.8%** | **3 (1.0%)** |
+| total | 5000 | **54.8** | | 3631\* |
+
+**Half the sweep's compute buys three molecules.** And **93.1% of all honest passes already finish
+under 30 s**, so the two goals are far more separable than thesis 3 below assumed:
+
+| per-molecule cap | CPU-h recovered | passes lost | `byte_exact` cost |
+|---:|---:|---:|---:|
+| 300 s | 3.06 | 3 | 0.06 pts |
+| 120 s | 21.33 | 52 | 1.04 pts |
+| 60 s | 30.97 | 115 | 2.30 pts |
+| **30 s** | **37.84** | **251** | **5.02 pts** |
+
+A 5k sweep under a 30 s bound costs **~17 CPU-h instead of 55**, which makes live sweeping an
+affordable instrument again rather than something v0.4.8 had to route around with an offline
+re-score.
+
+\* 3631 counts string equality; the frozen report says **3623**. The eight-molecule difference is
+the **atom-count gate** — molecules that encode byte-identically to their input while having lost
+atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.py`, never an ad-hoc
+`honest_class.endswith("->byte")`.
 
 ---
 
@@ -68,6 +111,10 @@ whole tail**; non-eta n = 3854, median 6.18 s, `> 30 s` 466 (12.1%).
 2. **Bound before optimize.** A p100 target against an unbounded budget is not a target.
 3. **Compute is the accuracy work** for the failure side — but only when honestly scored, or it
    manufactures phantom passes at a measured rate of 2 in 3.
+   ⚠ **Weakened by v0.4.9's measurement.** More compute is *worth less* than this thesis implies:
+   the `≥ 300 s` band spends half the sweep's CPU for a **1.0%** honest pass rate, and 93.1% of all
+   passes already land under 30 s. Compute buys the tail very little. Re-read thesis 3 as "compute
+   is *some* of the accuracy work, and the cheapest part of it is already bought."
 4. **Canonicality is the larger axis and is generator-independent** — 520 molecules / 10.40 points vs
    340 failures / 6.80 points.
 5. **Information-adding tokens go last.** P1/P2/P3 convert silent collapses into loud failures;
@@ -81,8 +128,8 @@ whole tail**; non-eta n = 3854, median 6.18 s, `> 30 s` 466 (12.1%).
 |---|---|---|
 | **v0.4.7** | close-out: land the 5 finished swimlanes; tag `v0.4.7`; bump `pyproject` 0.4.6 → 0.4.7 | flat |
 | **v0.4.8** | **the honest number** — promote `OIN_INDEP_SCORE` to *the* score; 5k honest sweep; + the atom-count gate | **DOWN ~5.7 pts, planned** |
-| **v0.4.9** | **speed becomes measurable** — enforce the budget; freeze a stratified runtime benchmark | pass flat; tail bounded |
-| **v0.4.10** | **cost per attempt**, byte-identical — SVD in `_finalize_positions`; redundant per-attempt work | pass flat *by construction*; median down |
+| **v0.4.9** ✅ | **speed becomes measurable** — `OIN_ENFORCE_BUDGET` (default OFF); 328-molecule stratified benchmark frozen. **Refuted its own premise:** `elapsed_s` is a sum, the harness already enforces to ε ≈ 0.2 s | pass flat ✓; benchmark reproduces to **0.28%** |
+| **v0.4.10** | **cost per attempt**, byte-identical. ⚠ **Start here, it is measured:** `get_embedding`'s outer loop calls `alternative_ace_mol_list.index(...)` and **discards the result** — 3711 calls / 198 eigendecompositions / **22% of an eta generation** on a thrown-away value. Then `_finalize_positions` (10.4 s of 72 s on CAHQEJ) | pass flat *by construction*; median down |
 | **v0.4.11** | **encode floor R3** — memoize the forked-resonance timeout verdict per ligand graph | `encode_fail` down |
 | **v0.4.12** | **honest acceptance** — harden `OIN_ATTACH_CHECK`; the `OIN_ETA_EARLY_EXIT` corpus A/B | biggest tail move; **pass must not move — that is the gate** |
 | **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |
@@ -136,6 +183,29 @@ explicitly what the new numbers refuted. **v0.4.19 and beyond never need to be w
 - **"Unset means off" is a trap.** `os.environ.get("OIN_EMIT_AXIAL")` returns `"0"`, a non-empty
   string, and *enables* the lever. Always go through `oin/levers.py::lever_enabled`.
 - **The shared checkout moves under you** — one `.git/index` across ~33 worktrees.
+- 🔴 **`metrics.elapsed_s` is a SUM, not a duration** (v0.4.9). Up to three separately SIGKILLed
+  harness attempts are added into one field, so the ceiling is `3 × mol_timeout`. The "759.9 s
+  against a 300 s budget" figure that chartered a whole release is `300 + 300 + 160`; split by
+  `tier_passed`, all 4658 single-attempt rows finish within **0.2 s** of their cap. This is the
+  **second** trap in the same field, and it survived one audit because everyone was busy
+  remembering the first one (it is nested).
+- 🔴 **A string-equality count is not a pass count** (v0.4.9). Comparing `smiles_1` to the honest
+  round-trip string gives 3631 passes; the bucket report gives 3623, because it applies the
+  `status` gate first. The eight are exactly the **atom-count gate** population — byte-identical
+  strings with atoms missing. Use `tools/roundtrip_bucket_report.py`, never an ad-hoc
+  `honest_class.endswith("->byte")`.
+- 🔴 **A gate can silently run on the wrong interpreter** (v0.4.9). `gate_v047.sh` globbed
+  `$(dirname $REPO)/*/.venv/bin/python` because worktrees have no `.venv`; from a worktree it
+  selected an unrelated project's venv, then one with rdkit **2025.09.2** against the pinned
+  **2025.9.3**. A byte-identity gate on a different rdkit reports MISMATCHes that read as code
+  regressions. Resolve via `git rev-parse --git-common-dir` and refuse on version drift.
+- 🔴 **`grep -c '[p]rocess_name'` matches your own shell** (v0.4.9). A wait-loop built on it never
+  exits — twice in one session, once in a leftover watcher from an earlier session that had been
+  spinning for hours. Match on something the watcher's own command line cannot contain.
+- **Profile before bounding.** v0.4.9's charter named the unbounded CBC solve and the 48–57 s
+  `accept_fn` re-encode as the cost sinks. Measured: **2.1%** and **0.8%**. The sink is
+  `embed.get_embedding` (61.5 s of *self* time in an 82.4 s generation). Bounding either suspect
+  would have measured as "no change" and shipped nothing while looking like a fix.
 
 ---
 
