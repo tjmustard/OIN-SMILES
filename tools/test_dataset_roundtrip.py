@@ -68,6 +68,8 @@ from oinsmiles import XYZToSMILES
 from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as OIN3DGenerator
 from oinsmiles.generator3d.clash import vdw_clash_count
 from oinsmiles.generator3d.ml_optimizer import resolve_xtb_binary
+from oinsmiles.oin.coordination import coordination_report
+from oinsmiles.oin.levers import lever_enabled
 
 # Environment fields stamped into every report alongside commit_id, so each row
 # in summary_roundtrip.json can be attributed to the code + env that produced it.
@@ -191,6 +193,41 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
 
         report["smiles_2"] = oin2_string
 
+        # OIN_INDEP_SCORE -- record the INDEPENDENT verdict alongside the scored one.
+        #
+        # `oin2_string` above comes from `get_oin_string(mol_gen_bonded, ...)`, i.e. the GENERATOR's
+        # own molecule, and that single shortcut causes BOTH reporting errors at once, measured over
+        # the 936-molecule results-v0.4.5-rebaseline cohort (docs/METRIC_FALSE_POSITIVES.md):
+        #
+        #   gen_result.mol ASSERTS bonds the geometry does not support -> 61 FALSE POSITIVES
+        #       (FIYHUT: both Cp rings 0.85 A off the Fe, scored a pass)
+        #   gen_result.mol LACKS stereo the geometry does support       ->  8 FALSE NEGATIVES
+        #       (YOSXIP: `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch)
+        #
+        # Net: passes inflated by 61, deflated by 8 -- ~53 molecules, 5.7 points of over-statement.
+        # A full `XYZToSMILES().convert()` of the generated XYZ re-perceives bonds AND stereo from
+        # coordinates alone, so one call fixes both directions.
+        #
+        # RECORDED, NOT SCORED. `status` still comes from the comparison below, unchanged. Flipping
+        # the scored predicate would move ~53 molecules in one step -- indistinguishable from a
+        # regression, and the confound that produced v0.4.4's 11 phantom "regressions". This makes
+        # the honest number available at corpus scale, so the switch becomes a decision backed by a
+        # full sweep rather than by a 936-molecule sample.
+        #
+        # Default OFF because it is not free: a second full encode, ~0.4-1.5 s/molecule against
+        # ~10 ms for report["coordination"]. On for an accuracy audit, off for a throughput run.
+        if lever_enabled("OIN_INDEP_SCORE"):
+            try:
+                oin2_indep = XYZToSMILES().convert(gen_xyz_path)
+                report["smiles_2_indep"] = oin2_indep
+                report["indep_key_match"] = canonical_roundtrip_key(
+                    oin1_string
+                ) == canonical_roundtrip_key(oin2_indep)
+            except Exception as _e:
+                report["smiles_2_indep"] = None
+                report["indep_key_match"] = None
+                report["indep_error"] = f"{type(_e).__name__}: {_e}"
+
         # Verification: compare by structure-level canonical key (collapses
         # chemically-meaningless notation drift -- implicit-H, carbene, symmetric
         # donor, fragment order -- while still catching genuinely different
@@ -198,6 +235,31 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         # are kept only for the human-readable diagnostic message.
         s1 = normalize_oin_for_comparison(oin1_string.strip())
         s2 = normalize_oin_for_comparison(oin2_string.strip())
+
+        # Coordination integrity -- a reported DIAGNOSTIC, never a gate. Recorded BEFORE the key
+        # comparison returns, so it is present on mismatches too.
+        #
+        # Why it is here at all: the key comparison below CANNOT see a detached ligand.
+        # ``oin2_string`` comes from ``get_oin_string(mol_gen_bonded, ...)`` -- the GENERATOR's own
+        # bond graph -- so a Cp ring that drifted 0.85 A off the metal is still "bonded" there and
+        # the key matches. Measured over the 633 scored successes of results-v0.4.5-rebaseline:
+        # 9.6% of passes overall, and 28.1% of HAPTIC passes, carry coordination the geometry does
+        # not support (docs/METRIC_FALSE_POSITIVES.md). This field is the only thing in the report
+        # that can see it, because it reads distances from the two geometries and consults neither
+        # bond graph.
+        #
+        # Validated against that population: FLAG catches 55/61 known false positives (90.2%) at a
+        # 3.7% false-alarm rate, ~2.2 ms/molecule. NOT a gate, deliberately -- gating would move
+        # ~61 molecules pass->fail in one step, indistinguishable from a regression, which is the
+        # confound that produced v0.4.4's 11 phantom "regressions".
+        try:
+            with open(xyz_path) as _fh:
+                report["coordination"] = coordination_report(_fh.read(), last_gen_xyz_content or "")
+        except Exception as _e:  # a diagnostic must never break the run it describes
+            report["coordination"] = {
+                "intact": None,
+                "reason": f"probe failed: {type(_e).__name__}",
+            }
 
         if canonical_roundtrip_key(oin1_string) != canonical_roundtrip_key(oin2_string):
             report["error"] = f"String mismatch at {tier_name}. Exp: {s1}, Got: {s2}"

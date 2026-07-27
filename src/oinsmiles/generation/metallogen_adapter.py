@@ -1336,7 +1336,15 @@ def _reencode_oin(mol):
                 pass
 
 
-def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=False, cache=None):
+def _reencode_key_matches(
+    parsed,
+    m,
+    target_key,
+    cmol=None,
+    require_no_stretch=False,
+    cache=None,
+    independent_confirm=True,
+):
     """True when conformer ``m`` INDEPENDENTLY re-encodes to ``target_key`` (SL1 accept stamp).
 
     The honest round-trip acceptance test for the generate-until-key-exact early-exit
@@ -1375,6 +1383,36 @@ def _reencode_key_matches(parsed, m, target_key, cmol=None, require_no_stretch=F
         fast = _reencode_oin_fast(cmol)
         if fast is not None and canonical_roundtrip_key(fast) != target_key:
             return False
+        # OIN_ACCEPT_SCORED: accept on the predicate the SCORE uses, skipping step 2.
+        #
+        # The harness decides success with `get_oin_string(gen_result.mol, coords)` -- which is
+        # exactly what `_reencode_oin_fast` computes above. Step 2's independent re-perception is
+        # therefore STRICTER than the metric this project reports, and the gap is not small.
+        # Measured on HIDCIH_comp_1 (tools/probe_accept_gap.py, forced full pool fill):
+        #
+        #     conformers seen 48 | cheap match 46/48, FIRST AT INDEX 0 (t=1.66s)
+        #                        | strict match 2/48, first at INDEX 25 (t=49.4s)
+        #
+        # i.e. 44 conformers were scored-successes that acceptance rejected, and the unpatched
+        # run spent 96s filling the pool to reach the one conformer step 2 would take. Accepting
+        # the first scored-success cuts that to seconds.
+        #
+        # NOT free, and the trade is the point:
+        #   * step 2 is the only test here that does not share the generator's own connectivity.
+        #     Dropping it makes acceptance circular in exactly the way the SCORE already is --
+        #     so this buys latency and reported-accuracy fidelity, NOT genuine losslessness.
+        #     Independent re-perception succeeding on only 2/48 conformers is a real finding
+        #     about the geometry, and it stays visible via the strict path when this is off.
+        #   * accepting earlier bypasses `_select_by_geometry`'s clash-first ranking
+        #     (clash.VDW_ACCEPTANCE_ENABLED defaults ON), so the returned structure may carry
+        #     more vdW clashes than the selected one would have. Structure quality is therefore
+        #     a required arm of any promotion A/B, alongside pass-rate and runtime.
+        # A `fast is None` (perception failed) still falls through to step 2 rather than
+        # accepting blind -- an unperceivable conformer is not a scored success.
+        if not independent_confirm and fast is not None:
+            if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
+                return False
+            return True
         if cache is not None and id(m) in cache:
             full = cache[id(m)]
         else:
@@ -1905,6 +1943,10 @@ class MetalloGenAdapter:
                 _target_key = None
             if _target_key is not None:
                 _require_no_stretch = clash.STRETCHED_BOND_ENABLED
+                # Accept on the scored predicate rather than the stricter independent
+                # re-perception (see _reencode_key_matches). Default OFF: it is a latency /
+                # structure-quality trade, and its promotion gate is a corpus A/B, not a fixture.
+                _confirm = not lever_enabled("OIN_ACCEPT_SCORED")
                 # The round-trip key deliberately FOLDS the axial token (so the batch
                 # harness is unaffected by OIN_EMIT_AXIAL). That makes the key alone an
                 # unsound acceptance test once an axial token is requested: it would accept
@@ -1920,12 +1962,18 @@ class MetalloGenAdapter:
                     _rns=_require_no_stretch,
                     _ax=_target_axial,
                     _cache=_reencode_cache,
+                    _ic=_confirm,
                 ):
                     if _ax is None:
                         # byte-identical to the pre-axial predicate for every OIN that
                         # carries no token -- i.e. everything, absent OIN_EMIT_AXIAL.
                         return _reencode_key_matches(
-                            parsed, mg_mol, _pk, require_no_stretch=_rns, cache=_cache
+                            parsed,
+                            mg_mol,
+                            _pk,
+                            require_no_stretch=_rns,
+                            cache=_cache,
+                            independent_confirm=_ic,
                         )
                     # Perceive on the CONTRACT mol (raw pool conformers are unsanitized, so
                     # axial perception throws on them); build it once and share it with the
@@ -1935,7 +1983,13 @@ class MetalloGenAdapter:
                         return False
                     return (
                         _reencode_key_matches(
-                            parsed, mg_mol, _pk, cmol=cmol, require_no_stretch=_rns, cache=_cache
+                            parsed,
+                            mg_mol,
+                            _pk,
+                            cmol=cmol,
+                            require_no_stretch=_rns,
+                            cache=_cache,
+                            independent_confirm=_ic,
                         )
                         and mol_axial_token(cmol) == _ax
                     )

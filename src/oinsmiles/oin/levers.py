@@ -55,6 +55,18 @@ import os
 #: 14 loud honest failures, so a headline pass rate can move either way. Promoted here because a
 #: notation that emits nothing for 34 molecules is worse than one that fails audibly for 14, and
 #: because correctness is the point of a lossless notation.
+#:
+#: ⚠ A THIRD cost, measured 2026-07-26 and missing from the original pricing: the 34 molecules do
+#: not GENERATE. Sample of 10 (docs/BORON_CAGE_v0.4.5.md §10, tools/boron_gen_times.jsonl): 0/10
+#: produce a 3D structure, 3 fail instantly on an unsupported geometry code, and 6 burn the entire
+#: generation cap producing nothing. XIQKOY_comp_0 is the two-point proof -- lever OFF it fails in
+#: 0.87s with UncoordinatedFragmentError on a disconnected cage fragment; lever ON it encodes a
+#: correct coordinated B10 cage and then runs past 340s. So the promotion moves this class from
+#: failing INSTANTLY to failing SLOWLY: ~34 molecules x up to the 300s budget, roughly 2.8 CPU-hours
+#: added per full sweep for zero additional passes. Still the right call -- the 34/34 encoder table
+#: is real and a right-graph loud failure beats a wrong-graph silent pass -- but anyone reading
+#: "34 now encode and round-trip" should know that "round-trip" there is NOTATION-level, and that
+#: assembling a polyhedral borane cage is an open generator3d problem.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -116,6 +128,74 @@ _HELD_OFF = {
         "bracketed through the sanitize, or re-derive parity from the parent geometry once the "
         "write order is fixed. Guarded by "
         "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
+    ),
+    "OIN_INDEP_SCORE": (
+        "harness diagnostic: record an INDEPENDENT round-trip verdict beside the scored one. The "
+        "harness scores with `get_oin_string(gen_result.mol, coords)` -- the GENERATOR's own "
+        "molecule -- and that single shortcut causes BOTH reporting errors at once, measured over "
+        "the 936-molecule results-v0.4.5-rebaseline cohort (docs/METRIC_FALSE_POSITIVES.md): it "
+        "ASSERTS bonds the geometry does not support (61 FALSE POSITIVES -- FIYHUT ships both Cp "
+        "rings 0.85A off the Fe and scores a pass) and LACKS stereo the geometry does support (8 "
+        "FALSE NEGATIVES -- YOSXIP's `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch). "
+        "Net: passes inflated by 61, deflated by 8, so ~53 molecules / 5.7 points over-stated. A "
+        "full `XYZToSMILES().convert()` of the generated XYZ re-perceives bonds AND stereo from "
+        "coordinates alone, fixing both directions with one call, and is written to "
+        "`smiles_2_indep` / `indep_key_match`. "
+        "OFF for two separate reasons. (1) COST: a second full encode, ~0.4-1.5s per molecule "
+        "against ~10ms for report['coordination'], so a 5k sweep pays 1-2 CPU-hours. (2) It is a "
+        "DIAGNOSTIC, not the score -- `status` is untouched. Switching the scored predicate "
+        "would move ~53 molecules in one step, which is indistinguishable from a regression and is "
+        "the exact confound that produced v0.4.4's 11 phantom 'regressions'. Turn it ON for an "
+        "accuracy audit; the point is to make the honest number available at CORPUS scale so that "
+        "switch becomes a decision backed by a full sweep instead of a 936-molecule sample. Note "
+        "the cost is already characterised from the other side: it is the same re-perception "
+        "`accept_fn`'s strict step performs, which docs/ACCEPT_SCORED_v0.4.7.md measured as the "
+        "runtime the OIN_ACCEPT_SCORED lever buys back."
+    ),
+    "OIN_ACCEPT_SCORED": (
+        "makes pool acceptance use the predicate the SCORE uses -- "
+        "`get_oin_string(gen.mol, coords)`, i.e. `_reencode_oin_fast` -- instead of also "
+        "requiring the independent `XYZToSMILES().convert` re-perception. This is the mechanism "
+        "behind OIN_ETA_EARLY_EXIT's 'fires but ineffective' result: the eta early targets do "
+        "fire, and then step 2 rejects the conformer anyway. MEASURED on HIDCIH_comp_1 with a "
+        "forced full pool fill (tools/probe_accept_gap.py): of 48 conformers, the scored "
+        "predicate matched 46 -- the FIRST at pool index 0, t=1.66s -- while independent "
+        "re-perception matched only 2, first at index 25, t=49.4s. The unpatched run spends 96s "
+        "reaching that conformer. So 44 conformers were scored-successes that acceptance threw "
+        "away. Held OFF for two reasons that are the whole substance of the trade: (1) step 2 is "
+        "the ONLY test in the predicate that does not share the generator's own connectivity, so "
+        "dropping it makes acceptance circular in the same way the reported metric already is -- "
+        "it buys latency, not genuine losslessness, and 2/48 independent re-perception is itself "
+        "a finding worth keeping visible; (2) accepting earlier bypasses _select_by_geometry's "
+        "clash-first ranking (clash.VDW_ACCEPTANCE_ENABLED is ON), so structure quality must be "
+        "an arm of the promotion A/B next to pass-rate and runtime. "
+        "MEASURED, 22-molecule stratified cohort, two runs (tools/ab_accept_scored.py):\n"
+        "  run 1, no hard cap -- pass 18/22 BOTH arms, ZERO regressions, zero fixes; median "
+        "16.01s -> 3.63s; total 1980.7s -> 626.0s; >30s 10 -> 3.\n"
+        "  run 2, hard cap + honest clash metric -- median 13.87s -> 5.54s; total 1202.9s -> "
+        "351.3s; >30s 8 -> 2; clash 16 over 1/17 mols (7 SEVERE, worst_overlap 0.4344) -> 2 over "
+        "2/19 mols (0 severe, worst 0.7283). Its '2 fixes' (GAVSED, QIDKUL) are arm-A cap "
+        "truncations, not real fixes -- both passed uncapped in run 1 at 302.5s / 390.3s.\n"
+        "So all three gate arms hold, and the structure-quality concern above was REFUTED on this "
+        "cohort: arm B is better, not worse (severe clashes 7 -> 0). That is consistent with "
+        "_select_by_geometry's own comment that clash-minimising selection can splay donors to the "
+        "edge of the gate; arm A picked a 16-clash POVPIA conformer that arm B never reached for. "
+        "⚠ THE 'PROMOTE' READING OF THE ABOVE IS SUPERSEDED -- see docs/ACCEPT_SCORED_v0.4.7.md "
+        "(v0.4.7 lane L2-promote), which added the three arms this cohort A/B lacked. Its G2 gate "
+        "shows the pass-rate arm above is CIRCULAR: `passed` is computed with "
+        "`get_oin_string(gen.mol, coords)` -- the same predicate the lever accepts on -- so "
+        "'18/22 both arms, zero regressions' cannot detect what dropping step 3 costs, and is not "
+        "evidence of no loss. Measured with a genuinely independent arm (full "
+        "`XYZToSMILES().convert()` vs the input OIN): indep 15/20 -> 7/20, **8 regressions, 0 "
+        "fixes**, one-way. And they are NOT cosmetic -- 6 of the 8 lose haptic coordination "
+        "outright with the metal geometry tag degrading in lockstep, 1 reassigns the donor atom, 1 "
+        "detaches a hydrogen. Its G3 gate does PASS (emitted `smiles_2` byte-identical 20/20), and "
+        "G1 confirms the quality improvement above. So: byte-identical notation, CHANGED GEOMETRY. "
+        "Standing recommendation from that lane is PROMOTE-WITH-SCOPE -- opt in for throughput and "
+        "metric-fidelity work, leave OFF for correctness/losslessness work, do NOT flip the global "
+        "default on this evidence, because the cost is invisible to the very metric that would "
+        "police it. Runtime numbers above were taken on a contended box (a 5k sweep alongside), so "
+        "read them as ratios within a run, not absolutes."
     ),
     "OIN_ETA_EARLY_EXIT": (
         "lets an ETA molecule short-circuit the conformer pool on the winding criterion that "
