@@ -1286,7 +1286,19 @@ def get_embedding(
         if deadline is not None and time.monotonic() > deadline:
             logger.debug("embed budget reached before an alternative molecule; abandoning attempt")
             return None
-        alternative_ace_mol_list.index(alternative_ace_mol)
+        # v0.4.10: `alternative_ace_mol_list.index(alternative_ace_mol)` stood here and its
+        # result was DISCARDED. It is not a no-op -- list.index compares with Molecule.__eq__
+        # -> is_same_molecule -> get_c_eig_list -> numpy.linalg.eig, so it eigendecomposed a
+        # Coulomb matrix per candidate per outer iteration. On CAHQEJ_comp_0 that measured
+        # 3711 index calls / 198 eigendecompositions / 15.99 s of a 72.02 s generation (22%).
+        #
+        # Removing it is byte-identical BY CONSTRUCTION, and the reason is worth keeping: the
+        # whole call graph is side-effect-free. get_c_eig_list, get_matrix, get_adj_matrix,
+        # get_z_list and get_chg all `return` a freshly computed value and never assign it back
+        # to self -- get_c_eig_list even guards on `self.c_eig_list is None` and then never
+        # populates it. So no caller downstream can observe a warmed cache that this line used
+        # to prime. It also cannot raise: list.index over an element drawn from that same list
+        # short-circuits on identity, so ValueError is unreachable.
         rd_mol = alternative_ace_mol.get_rd_mol()
         # Carried stereo persists across the repeated EmbedMolecule calls below
         # (both are atom/bond properties, not cleared by embedding), so set once here.
