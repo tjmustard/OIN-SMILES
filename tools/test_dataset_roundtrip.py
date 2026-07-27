@@ -69,6 +69,7 @@ from oinsmiles.generation.metallogen_adapter import OIN3DGeneratorMetallogen as 
 from oinsmiles.generator3d.clash import vdw_clash_count
 from oinsmiles.generator3d.ml_optimizer import resolve_xtb_binary
 from oinsmiles.oin.coordination import coordination_report
+from oinsmiles.oin.levers import lever_enabled
 
 # Environment fields stamped into every report alongside commit_id, so each row
 # in summary_roundtrip.json can be attributed to the code + env that produced it.
@@ -191,6 +192,41 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
             oin2_string = xyz_to_smiles.convert(gen_xyz_path)
 
         report["smiles_2"] = oin2_string
+
+        # OIN_INDEP_SCORE -- record the INDEPENDENT verdict alongside the scored one.
+        #
+        # `oin2_string` above comes from `get_oin_string(mol_gen_bonded, ...)`, i.e. the GENERATOR's
+        # own molecule, and that single shortcut causes BOTH reporting errors at once, measured over
+        # the 936-molecule results-v0.4.5-rebaseline cohort (docs/METRIC_FALSE_POSITIVES.md):
+        #
+        #   gen_result.mol ASSERTS bonds the geometry does not support -> 61 FALSE POSITIVES
+        #       (FIYHUT: both Cp rings 0.85 A off the Fe, scored a pass)
+        #   gen_result.mol LACKS stereo the geometry does support       ->  8 FALSE NEGATIVES
+        #       (YOSXIP: `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch)
+        #
+        # Net: passes inflated by 61, deflated by 8 -- ~53 molecules, 5.7 points of over-statement.
+        # A full `XYZToSMILES().convert()` of the generated XYZ re-perceives bonds AND stereo from
+        # coordinates alone, so one call fixes both directions.
+        #
+        # RECORDED, NOT SCORED. `status` still comes from the comparison below, unchanged. Flipping
+        # the scored predicate would move ~53 molecules in one step -- indistinguishable from a
+        # regression, and the confound that produced v0.4.4's 11 phantom "regressions". This makes
+        # the honest number available at corpus scale, so the switch becomes a decision backed by a
+        # full sweep rather than by a 936-molecule sample.
+        #
+        # Default OFF because it is not free: a second full encode, ~0.4-1.5 s/molecule against
+        # ~10 ms for report["coordination"]. On for an accuracy audit, off for a throughput run.
+        if lever_enabled("OIN_INDEP_SCORE"):
+            try:
+                oin2_indep = XYZToSMILES().convert(gen_xyz_path)
+                report["smiles_2_indep"] = oin2_indep
+                report["indep_key_match"] = canonical_roundtrip_key(
+                    oin1_string
+                ) == canonical_roundtrip_key(oin2_indep)
+            except Exception as _e:
+                report["smiles_2_indep"] = None
+                report["indep_key_match"] = None
+                report["indep_error"] = f"{type(_e).__name__}: {_e}"
 
         # Verification: compare by structure-level canonical key (collapses
         # chemically-meaningless notation drift -- implicit-H, carbene, symmetric
