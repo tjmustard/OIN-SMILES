@@ -468,6 +468,19 @@ def generate_3d_structures(
         nonlocal early_hit
         accepted = _try_accept(positions, scale)
         if accept_fn is not None and accepted is not None and early_hit is None:
+            # OIN_ENFORCE_BUDGET: do not START an accept_fn call we cannot afford.
+            #
+            # ⚠ THE SECOND MEASUREMENT CORRECTED THE FIRST. On FOSNEI_comp_0 this predicate
+            # is 0.63 s of 82.4 s (0.8%) and looked like noise. On VAFMIA_comp_0 with a 30 s
+            # budget it is 48.5 s of 78.6 s -- the single largest consumer -- because
+            # build_contract_mol -> _template_sp3_label lands in
+            # chirality._reparse_cip_label_once at ~2.4 s a call. The cost is BIMODAL, not
+            # small: which function dominates is a property of the molecule, not of the
+            # pipeline. A bound threaded only into whichever function profiled expensive
+            # last is not a bound, which is exactly what the first version of this lever was.
+            if embed_deadline is not None and time.monotonic() > embed_deadline:
+                logger.debug("budget reached; skipping the accept_fn re-encode")
+                return False
             try:
                 if accept_fn(accepted):
                     early_hit = accepted

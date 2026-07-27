@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import sys
+import time
 
 import numpy as np
 from rdkit import Chem
@@ -1982,6 +1983,16 @@ class MetalloGenAdapter:
 
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
+        # OIN_ENFORCE_BUDGET: the WHOLE-generation deadline, started here rather than
+        # inside generate_3d_structures, because the two most expensive things this method
+        # does on some molecules -- the accept_fn re-encode and _select_by_geometry -- sit
+        # outside that function. None (lever off, or no timeout) leaves every check below a
+        # single `is not None`, so the default path is byte-identical.
+        _gen_deadline = (
+            time.monotonic() + self.timeout
+            if (self.timeout and lever_enabled("OIN_ENFORCE_BUDGET"))
+            else None
+        )
         # Fail fast on a boron-cage ligand (OIN_BORON_GEN_FASTFAIL, default OFF --
         # see levers.py and docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md).
         # No molecule on a non-LIN, non-TET geometry has YET been seen to produce a
@@ -2211,8 +2222,26 @@ class MetalloGenAdapter:
         # early-exit on, the accept-first pass inside also short-circuits to a key-exact
         # conformer (belt-and-suspenders with the engine's accept_fn: the returned pool may be
         # size 1 already, but a full-pool fallback still gets the honest accept-first pick).
+        # OIN_ENFORCE_BUDGET: selection runs OUTSIDE generate_3d_structures, so the
+        # deadline inside it cannot reach here. On VAFMIA_comp_0 under a 30 s budget this
+        # call is 39.1 s -- half the whole 78.6 s generation -- and it is the reason the
+        # first version of this lever measured eps = +48.4 s and changed almost nothing.
+        # With the budget already spent, take the cheap pick (lowest energy, the same
+        # fallback _select_by_geometry uses when nothing matches) rather than paying for a
+        # full re-encode search we have no time for.
+        #
+        # `early_exit=False` disables ONLY the accept-first re-scan; the winding/geometry
+        # selection still runs, so this degrades the pick rather than skipping selection.
+        _budget_spent = (
+            _gen_deadline is not None and time.monotonic() > _gen_deadline  # noqa: SIM108
+        )
+        if _budget_spent:
+            logger.debug("budget spent before selection; taking the cheap pick")
         chosen_mol, mol = _select_by_geometry(
-            parsed, mols, early_exit=early_exit, reencode_cache=_reencode_cache
+            parsed,
+            mols,
+            early_exit=(early_exit and not _budget_spent),
+            reencode_cache=_reencode_cache,
         )
 
         xyz_str = get_xyz_string(chosen_mol)

@@ -1,12 +1,22 @@
 # v0.4.9 · Lane 1 — making the budget a bound, and where the time actually is
 
-> **The charter named two suspects. Profiling indicts neither.**
+> ## 🔴 There is no single sink. Three molecules, three different dominant costs.
 >
-> The unbounded PuLP/CBC solve is **2.1%** of a generation. The 48–57 s `accept_fn`
-> re-encode is **0.8%**. The sink is `embed.get_embedding` — **61.5 s of *self* time out of
-> 82.4 s** — and because it is a nested **Python** loop over `AllChem.EmbedMolecule` rather
-> than one long native call, a deadline checked inside it is real enforcement. No
-> `fork`/`RLIMIT_CPU` machinery is needed, and none was added.
+> | molecule | dominant cost | share |
+> |---|---|---:|
+> | `FOSNEI_comp_0` (non-eta, boron) | `embed.get_embedding` | 75% |
+> | `CAHQEJ_comp_0` (eta, 2 haptic) | `embed.get_embedding` + `numpy.linalg.eig` | 77% |
+> | `VAFMIA_comp_0` (`[Cu_LIN]`, adamantyl NHC) | **`chirality._reparse_cip_label_once`** | **99%** |
+>
+> **This is the release's most transferable finding, and it was learned the expensive way.**
+> The first version of this lever threaded the deadline into `get_embedding` alone — the
+> function two profiles had indicted — and measured **ε = +48.4 s on a 30 s budget: it
+> changed almost nothing.** A bound threaded into whichever function profiled expensive last
+> is not a bound.
+>
+> The charter's suspects were not wrong so much as **partial**: the CBC solve really is 2.1%
+> and the `accept_fn` re-encode really is 0.8% *on `FOSNEI`* — and the same `accept_fn` is
+> **62%** on `VAFMIA`. The cost is bimodal by molecule, not small.
 
 ## 1. What was wrong, precisely
 
@@ -25,7 +35,7 @@ completion. Two independent probes measured the consequence, both without an out
 harness attempts, and all 4658 single-attempt rows in the 5k sweep finish within **0.2 s**
 of their 300 s cap. Full refutation: `ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## 2. The attribution — two molecules, two populations
+## 2. The attribution — three molecules, three cost regimes
 
 `tools/profile_eta.py`, replicating the harness `UFF_1` tier (`optimizer=None`,
 `ensemble_size=1`) at a 300 s budget, on a quiet box.
@@ -52,11 +62,23 @@ Generated **successfully in 72.02 s**.
 | `numpy.linalg.eig` via `chem.get_c_eig_list` | 15.99 s | **15.11 s** | 198 |
 | `embed._finalize_positions` | 10.35 s | — | 90 |
 
-**Both populations agree on the sink.** CBC and the `accept_fn` re-encode are noise in both.
-The "48–57 s per re-encode call" figure that made `accept_fn` a suspect does not generalise —
-15 calls here cost 0.63 s in total.
+### `VAFMIA_comp_0` — `[Cu_LIN]`, bis-adamantyl NHC, profiled **with the bound ON at 30 s**
 
-### Why that settles the mechanism
+Spent **78.60 s** — 2.6× over — and this is the profile that broke the first design.
+
+| sink | cumtime | **tottime** | ncalls |
+|---|---:|---:|---:|
+| **`chirality._reparse_cip_label_once`** | 77.78 s | **77.78 s** | 32 (2.43 s each) |
+| ↳ via `accept_fn` → `_reencode_key_matches` → `build_contract_mol` → `_template_sp3_label` | 48.49 s | — | — |
+| ↳ via `_select_by_geometry` (**outside** `generate_3d_structures`) | 39.06 s | — | — |
+| `generate_3d_structures` (the only thing the first bound covered) | 39.53 s | — | 1 |
+| CBC | 0.35 s | — | 3 |
+
+`get_embedding` does not even appear. **Half the wall-clock is in `_select_by_geometry`, which
+runs in the adapter, after `generate_3d_structures` has returned** — a deadline living inside
+that function cannot reach it by construction.
+
+### Why the sink structure settles the mechanism
 
 `get_embedding` is not one long native call. It is
 
@@ -66,12 +88,22 @@ for alternative_ace_mol in alternative_ace_mol_list:      # outer
         ... rc = AllChem.EmbedMolecule(rd_mol, params)    # several per iteration
 ```
 
-— a nested **Python** loop. A deadline checked at the top of each loop makes the longest
-un-interruptible unit **one scale sweep**, not one `get_embedding` (6.5 s mean on FOSNEI) and
-certainly not one whole attempt. The charter's worry — *"a deadline checked around a single
-90-second CBC subprocess is not enforcement, it is the current advisory behaviour with more
-code"* — was the right question to ask and the answer is no: nothing here is a 90-second
-un-interruptible call.
+— a nested **Python** loop, so a deadline checked at the top of each loop makes the
+un-interruptible unit **one scale sweep**, not one whole attempt. The charter's worry —
+*"a deadline checked around a single 90-second CBC subprocess is not enforcement"* — was the
+right question, and for this sink the answer is no: nothing here is one long native call.
+
+**But it was the wrong question to ask only once.** The same reasoning applied to
+`VAFMIA` gives a different answer: its cost is one `accept_fn` re-encode, ~24 s, and that call
+*is* effectively atomic — the deadline can stop the next one from starting, not the one in
+flight. **That is what sets ε**, and it is why the bound is checked at three places rather than
+threaded into one function:
+
+| checkpoint | covers | why it exists |
+|---|---|---|
+| inside `get_embedding`'s two loops | FOSNEI/CAHQEJ regime | the dominant cost when the embed is hard |
+| before each `accept_fn` call | VAFMIA regime, in-loop half | 48.5 s of 78.6 s on VAFMIA; **0.63 s of 82.4 s on FOSNEI** |
+| before `_select_by_geometry` | VAFMIA regime, post-loop half | 39.1 s, and structurally unreachable from inside `generate_3d_structures` |
 
 ## 3. What shipped
 
@@ -82,9 +114,16 @@ pristine — the deadline is `None` and each check is one `is not None`.
 |---|---|
 | deadline threaded into `get_embedding`, checked at the top of **both** nested loops; returns `None` on expiry | `generator3d/embed.py` |
 | `enforce_budget` parameter; reads `lever_enabled("OIN_ENFORCE_BUDGET")` when `None` | `generator3d/__init__.py` |
+| **do not START an `accept_fn` call the budget cannot afford** | `generator3d/__init__.py` |
+| **whole-generation deadline**, started in the adapter so it covers what sits outside `generate_3d_structures` | `generation/metallogen_adapter.py` |
+| **budget spent before selection → take the cheap pick** (`early_exit=False`, the existing lowest-energy fallback) rather than pay for a re-encode search | `generation/metallogen_adapter.py` |
 | empty pool at the deadline → **`BudgetExhaustedError`** instead of `[]` | `generator3d/__init__.py` |
 | the new typed error, re-exported alongside its two siblings | `generation/metallogen_adapter.py` |
 | `--gen-timeout`, and `--mol-timeout` now sets the generator budget | `tools/test_dataset_roundtrip.py` |
+
+The last three rows are the **second** design. The first shipped only the `get_embedding`
+check, measured **ε = +48.4 s** on a 30 s budget, and is recorded here rather than quietly
+replaced — see §7.
 
 Three design choices worth stating:
 
@@ -157,10 +196,52 @@ $V -m unittest discover tests/unit -q               # 930 OK
 
 ## 7. The A/B — asked for 30 s, how long did it take?
 
-32 molecules, 8 evenly spaced by rank from each of the four runtime strata (5 haptic in each
-of the two slowest bands), one fresh interpreter per (molecule, arm) because several `OIN_*`
-levers and the PuLP/embed caches are frozen at import time. Both arms run under the **same**
-120 s outer SIGKILL, so they are measured under identical outer conditions — an arm measured
-without a kill is not comparable to one measured with it.
+32 molecules, 8 evenly spaced by rank from each of the four runtime strata (5 haptic in each of
+the two slowest bands), one fresh interpreter per (molecule, arm) because several `OIN_*` levers
+and the PuLP/embed caches are frozen at import time. Both arms run under the **same** 120 s outer
+SIGKILL — an arm measured without a kill is not comparable to one measured with it.
 
-*(Results table, ε, and the byte-identity check: see `LANE-budget-bound.md`.)*
+| arm | n | killed | median | max | **max ratio** | `>` budget |
+|---|---:|---:|---:|---:|---:|---:|
+| OFF | 32 | 1 | 14.5 s | 78.8 s | **2.63×** | 11 |
+| **ON** (design 1 — `get_embedding` only) | 32 | 1 | 14.9 s | 78.4 s | **2.61×** | 11 |
+| **ON** (design 2 — three checkpoints) | 32 | 1 | 14.9 s | **62.8 s** | **2.09×** | 11 |
+
+| | design 1 | design 2 |
+|---|---:|---:|
+| **ε = max(spent) − budget** | **+48.4 s** | **+32.8 s** |
+| CPU over the cohort | −8.2% | **−9.7%** |
+
+### What this says, without varnish
+
+**The bound works, and it is not tight.**
+
+- **ε = +32.8 s on a 30 s budget.** The worst case is `VAFMIA_comp_0` at 62.8 s. Design 1
+  measured +48.4 s, so covering `accept_fn` and `_select_by_geometry` bought **a third of the
+  overrun** — but the remainder is one **in-flight** `accept_fn` re-encode, ~24 s of
+  `_reparse_cip_label_once` at 2.4 s a call. **The deadline can decline to start the next call.
+  It cannot interrupt the one running.** That is ε, and that is the un-interruptible operation
+  the charter asked to have named.
+- **The tail is compressed, not removed.** `11` molecules exceed the budget in *both* arms — the
+  same 11. The bound reduces *how far* over they go (2.63× → 2.09×), not *how many* go over. Any
+  claim that this release delivers `max(elapsed_s) < 30 s` would be false.
+- **Byte-identity holds: 28/28.** Every molecule that finished in both arms produced an
+  identical generated structure. The bound changes *which* molecules finish, never *what* a
+  finishing molecule produces.
+- **Zero converted late-successes.** At a 30 s budget on this cohort, no molecule that produced a
+  structure with the lever OFF failed to with it ON, and the 4 that fail do so in both arms. The
+  "a tighter bound will look like a regression" warning did not materialise here — which is a
+  fact about *this* cohort at *this* budget, not a general result.
+- **The CPU figure is a floor.** The OFF arm ran under a 120 s outer kill, so its true cost is a
+  lower bound and the real saving is larger than 9.7%.
+
+### Handed on
+
+Making the bound tight means bounding **inside the CIP/perception layer** —
+`chirality._reparse_cip_label_once` and the `_template_sp3_label` loop in `build_contract_mol`.
+That is a change to *perception* behaviour, not to *when work stops*, so it does not belong in
+this release. `build_contract_mol` already documents `None` as a legitimate failure return
+("callers fall back to coordinate re-perception"), so the degradation path exists.
+
+**v0.4.10 gets two measured targets, then**: the discarded `.index()` scan (§5, 22% of an eta
+generation) and CIP re-parse cost (99% of `VAFMIA`).
