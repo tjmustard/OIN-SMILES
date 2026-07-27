@@ -371,6 +371,26 @@ def main():
 
     rows = _load_reports(indiv_dir, only, args.sample, shard, args.limit)
 
+    # A results dir predating OIN_INDEP_SCORE carries no `smiles_2_indep`, and asking for the
+    # honest table over it would classify EVERY row as hard_fail and print a plausible-looking
+    # table of near-total failure. Refuse instead: a measurement that silently measures nothing
+    # is the failure mode this project has paid for more than once.
+    if args.score in ("honest", "both"):
+        n_indep = sum(1 for r in rows if r.get("smiles_2_indep") is not None)
+        if not n_indep:
+            sys.exit(
+                f"--score {args.score}: not one of {len(rows)} reports carries `smiles_2_indep`.\n"
+                "This sweep predates the honest verdict. Re-score it first:\n"
+                f"    python tools/honest_rescore.py --results-dir {results_dir} \\\n"
+                "        --output-dir <twin> --fill-coordination"
+            )
+        if n_indep < len(rows) * 0.5:
+            print(
+                f"⚠ only {n_indep}/{len(rows)} reports carry `smiles_2_indep` -- the honest "
+                "column is mostly unscoreable and its buckets are not comparable.",
+                file=sys.stderr,
+            )
+
     primary = "scored" if args.score == "scored" else "honest"
     results, lines, summary = build_report(rows, indiv_dir, primary)
 

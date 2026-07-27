@@ -194,9 +194,9 @@ That is what the bounded live arm covers (§7).
 
 4 molecules re-encode to nothing: `AFIROW_comp_0`, `MUZZUC_comp_0` (quinoid de-aromatization
 leaves an invalid molecule), `HOBBUY_comp_0` (cannot kekulize, no quinoid ring to relax),
-`RIPDEA_comp_0` (`N` valence 5). 0.08% of the corpus. They move `byte_exact → hard_fail` and are
-counted as such rather than quietly dropped — an encoder that raises on a generated geometry is
-a real limitation, not a scoring choice.
+`RIPDEA_comp_0` (`N` valence 5). 0.08% of the corpus — 3 fall out of `byte_exact` and 1 out of
+`key_equal`, and all 4 land in `hard_fail`. They are counted there rather than quietly dropped:
+an encoder that raises on a generated geometry is a real limitation, not a scoring choice.
 
 ## 7. Scope: what changed, and what deliberately did not
 
