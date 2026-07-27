@@ -1,4 +1,4 @@
-"""v0.4.7 gate ARM 1: encoder byte-identity over the fixed 61-file `tests/fixtures/` set.
+"""v0.4.7 gate ARM 1: encoder byte-identity over the fixed `tests/fixtures/` set.
 
 For each ``tests/fixtures/*.xyz`` file: encode and emit one line
 
@@ -7,13 +7,18 @@ For each ``tests/fixtures/*.xyz`` file: encode and emit one line
 sorted by name, then a ``# MANIFEST_SHA256=<...>`` line over the joined manifest text,
 then a ``#DONE <n>`` sentinel.
 
-WHY 61, NOT A NAME LIST
-========================
-The fixture set is asserted to be *exactly* 61 files at runtime (not hardcoded as a
-name list, unlike ``tools/enc_byte_identity_ab.py``'s curated subset) -- a fixture
-added or removed is itself gate-relevant drift, so the count check fails loudly
-rather than silently covering a different corpus than the frozen manifest was built
-against.
+WHY A COUNT, NOT A NAME LIST
+=============================
+The fixture set is asserted to be *exactly* ``EXPECTED_FIXTURE_COUNT`` files at runtime
+(not hardcoded as a name list, unlike ``tools/enc_byte_identity_ab.py``'s curated
+subset) -- a fixture added or removed is itself gate-relevant drift, so the count check
+fails loudly rather than silently covering a different corpus than the frozen manifest
+was built against.
+
+That guard works, and v0.4.10 is the proof: it refused to run for a whole release cycle
+after ``ULODUU_comp_0`` was added without a golden row. The cost of the refusal was that
+a SECOND drift rode along unseen for just as long -- so when this fires, re-freeze
+promptly and diff the pre-existing rows before you do.
 
 MEMO-CLEARING DISCIPLINE (copied from ``tools/enc_byte_identity_ab.py``)
 =========================================================================
@@ -55,7 +60,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 HAPTIC = re.compile(r"\{\d+[<>]\}")
 
-EXPECTED_FIXTURE_COUNT = 61
+# v0.4.10: 61 -> 62. ULODUU_comp_0 landed as a fixture in dd51a515 (the boron TET
+# correction) and the golden was never extended, so this guard has been hard-refusing
+# ever since -- ARM 1 was simply not runnable through the whole of v0.4.9, which is how
+# a second, unrelated drift (the v0.4.7 xyz2mol -> perception_tmc rename, visible in
+# ASISAX_comp_0's ERROR text) also went unseen. Both are re-frozen in the golden; the
+# other 60 rows were verified byte-identical first, so the encoder itself has not moved.
+# Keep this count hardcoded rather than derived from the golden's row count: the two are
+# asserted INDEPENDENTLY on purpose, and a fixture added without a matching golden row
+# is exactly the drift this is here to catch.
+EXPECTED_FIXTURE_COUNT = 62
 
 
 def main():
