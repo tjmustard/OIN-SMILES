@@ -218,7 +218,7 @@ def main():
             # If we have a bonded mol from the generator, use it instead of inferring
             if gen_result.mol is not None:
                 try:
-                    from oinsmiles.utils.xyz2mol import get_oin_string
+                    from oinsmiles.utils.perception_tmc import get_oin_string
 
                     # Extract coordinates from XYZ
                     with open(gen_xyz_path, "r") as f:
@@ -233,8 +233,8 @@ def main():
                     xyz_coords = np.array(xyz_coords)
                     oin2_string = get_oin_string(gen_result.mol, xyz_coords)
                 except Exception as e:
-                    # Fall back to xyz2mol if get_oin_string fails
-                    print(f"    Note: get_oin_string failed ({e}), falling back to xyz2mol")
+                    # Fall back to the full XYZToSMILES re-encode if get_oin_string fails
+                    print(f"    Note: get_oin_string failed ({e}), falling back to full re-encode")
                     oin2_string = xyz_to_smiles.convert(gen_xyz_path)
             else:
                 oin2_string = xyz_to_smiles.convert(gen_xyz_path)
@@ -282,7 +282,7 @@ def main():
                 # instead of inferring bonding from coordinates (which can fail for ansa-metallocenes)
                 if gen_result.mol is not None:
                     try:
-                        from oinsmiles.utils.xyz2mol import get_oin_string
+                        from oinsmiles.utils.perception_tmc import get_oin_string
 
                         # Extract coordinates from XYZ
                         with open(gen_xyz_path, "r") as f:
@@ -297,8 +297,10 @@ def main():
                         xyz_coords = np.array(xyz_coords)
                         oin2_string = get_oin_string(gen_result.mol, xyz_coords)
                     except Exception as e:
-                        # Fall back to xyz2mol if get_oin_string fails
-                        print(f"    Note: get_oin_string failed ({e}), falling back to xyz2mol")
+                        # Fall back to the full XYZToSMILES re-encode if get_oin_string fails
+                        print(
+                            f"    Note: get_oin_string failed ({e}), falling back to full re-encode"
+                        )
                         oin2_string = xyz_to_smiles.convert(gen_xyz_path)
 
                 if mol_orig and mol_gen_xyz:

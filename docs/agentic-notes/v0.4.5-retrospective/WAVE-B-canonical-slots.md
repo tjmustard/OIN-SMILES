@@ -55,7 +55,7 @@ string rather than surgically inside the code that built it.
   ║    get_input_order_key ─ min(atom index)    ─► donor position in canon. SMILES ║
   ║                                                                              ║
   ║  STEP 3  the relabel is a POST-PASS on the FINISHED inline string              ║
-  ║    utils/xyz2mol.get_oin_string  ──►  canonicalize_oin_slots(oin)              ║
+  ║    utils/perception_tmc.get_oin_string  ──►  canonicalize_oin_slots(oin)              ║
   ║    NOT inside the aligner: leaves the lex-MAX loop, the eta RC1 content        ║
   ║    swap and the heading-atom tiers (all read item["slot"]) untouched           ║
   ║                                                                              ║
@@ -244,7 +244,7 @@ functions, keeping `compare.py → canonical_slots.py` acyclic.
 
 ### Where the relabel is applied, and why there
 
-**As a post-pass on the finished inline string**, in `utils/xyz2mol.get_oin_string` — **not** inside
+**As a post-pass on the finished inline string**, in `utils/perception_tmc.get_oin_string` — **not** inside
 `_permute_and_serialize`'s lex-**max** loop. This is a deliberate blast-radius decision and it is
 worth understanding rather than re-litigating:
 
@@ -429,8 +429,8 @@ residuals are `unparsable` (borane class), classified by nobody.
   `src/oinsmiles/oin/compare.py::_polyhedron_signature` (refactored onto the shared helper, key
   behaviour byte-identical) · `src/oinsmiles/utils/oin_aligner.py`
   (`_brute_force_symmetries` now delegates; `_canonical_pivot`, `_canonical_z_sign`) ·
-  `src/oinsmiles/utils/xyz2mol.py::get_oin_string` (the post-pass) ·
-  `src/oinsmiles/utils/xyz2mol_local.py` (the capping-order fix).
+  `src/oinsmiles/utils/perception_tmc.py::get_oin_string` (the post-pass) ·
+  `src/oinsmiles/utils/perception_core.py` (the capping-order fix).
 - **Guards:** `tests/unit/test_canonical_slots.py` (20 new tests, incl.
   `TestAlignerSymmetriesAreUnified` and `TestLeverOnGoldens`) ·
   `tests/unit/test_canonical_slot_invariance.py` (permute the input, demand byte-identity) ·

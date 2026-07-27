@@ -158,7 +158,7 @@ This document attacks each section and proposes hardening actions.
 - **Q6.4:** "DO NOT introduce a third backend or pluggable backend registry." But the Sequential MiniPRDs include separate atom nodes (`polydentate`, `permutation`). Are those "internal pluggable" or just structured code? Define.
 
 ### What-If Scenarios
-- **W6.1 — Constraint omission:** No constraint forbids modifying `xyz2mol.py` or `core/chirality.py`. A MiniPRD author might "improve" them while in the engine.py blast radius. Boom: hidden side-effect on XYZ→OIN pipeline.
+- **W6.1 — Constraint omission:** No constraint forbids modifying `perception_tmc.py` or `core/chirality.py`. A MiniPRD author might "improve" them while in the engine.py blast radius. Boom: hidden side-effect on XYZ→OIN pipeline.
 - **W6.2 — DG worker timeout regression:** No constraint preserves the existing 60s default timeout. A MiniPRD might lower it to 10s "for snappier UX" and break long-running fixtures.
 - **W6.3 — Legacy import path removed:** A MiniPRD author renames `MolassemblerAdapter.generate()` → `MolassemblerAdapter.legacy_generate()` for "clarity," breaking the legacy backend even though the *file* wasn't modified.
 - **W6.4 — `__all__` accidental contraction:** Adding `parse_oin_direct` to `__all__` could push the list onto a single line, accidentally dropping `XYZToSMILES` or `SMILESToXYZ`. No constraint protects existing exports.

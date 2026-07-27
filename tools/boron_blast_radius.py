@@ -52,7 +52,7 @@ def boron_count_fast(path: str) -> int:
 def analyse(path: str, tolerance: float = 0.5) -> dict | None:
     from rdkit import Chem
 
-    from oinsmiles.utils.xyz2mol_local import boron_cage_vertices, read_xyz_file, xyz2AC_obabel
+    from oinsmiles.utils.perception_core import boron_cage_vertices, read_xyz_file, xyz2AC_obabel
 
     atoms, _charge, xyz = read_xyz_file(path)
     pt = Chem.GetPeriodicTable()

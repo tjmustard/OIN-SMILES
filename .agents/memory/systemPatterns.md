@@ -9,7 +9,7 @@ Documents the "How" — architectural decisions, design patterns, tech stack, an
 ### XYZ → OIN (Forward)
 ```
 XYZToSMILES.convert()
-  → xyz2mol.get_tmc_mol()         # Jensen Group graph algorithm
+  → perception_tmc.get_tmc_mol()  # Jensen Group graph algorithm
   → CIPAssigner.assign_all()      # 3D-derived CIP codes for P/N atoms
   → OINDiscreteAligner            # slot assignment & geometry template
   → OINSanitizer                  # SMILES canonicalization
@@ -40,7 +40,7 @@ The metal center is **always `fragments[0]`** in both pipelines. This is a load-
 - **Package manager**: `uv` (`uv sync`, `uv run`)
 - **3D generation**: vendored MetalloGen engine (`oinsmiles.generator3d`); dummy-metal + RDKit `CoordMap` embed
 - **Graph operations**: RDKit (`Chem`, `AllChem`)
-- **Graph construction**: xyz2mol (Jensen Group algorithm, vendored)
+- **Graph construction**: perception_core (Jensen Group xyz2mol algorithm, vendored)
 - **Build**: `uv build`, entry point `oin-smiles` registered in `pyproject.toml`
 
 ## Key API (v0.2.0+)

@@ -9,7 +9,7 @@ Both directions of the round trip hit this:
 
 * OIN -> XYZ: ``generator3d.process.get_ace_mol_from_rd_mol`` needs Kekule bond
   orders to build its bond-order matrix.
-* XYZ -> OIN: ``utils.xyz2mol.get_tmc_mol`` sanitizes the assembled TMC.
+* XYZ -> OIN: ``utils.perception_tmc.get_tmc_mol`` sanitizes the assembled TMC.
 
 The blanket fallback -- treat every aromatic bond as single -- also degrades the
 ligand's other, well-behaved rings. Clearing aromaticity on *only* the stuck rings
@@ -109,7 +109,7 @@ def _boron_cage_relaxation_applies(mol):
 
     Two conditions, both required: the lever is set, and the mol actually contains
     a B-B-B triangle (the deltahedral 3c-2e cage motif). Imported lazily because
-    ``xyz2mol_local`` pulls in the heavy perception stack and this module is
+    ``perception_core`` pulls in the heavy perception stack and this module is
     imported by it in turn.
     """
     if not _lever_enabled("OIN_BORON_CAGE"):
@@ -117,7 +117,7 @@ def _boron_cage_relaxation_applies(mol):
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     if sum(1 for z in atoms if z == 5) < 3:
         return False
-    from .xyz2mol_local import boron_cage_vertices
+    from .perception_core import boron_cage_vertices
 
     return bool(boron_cage_vertices(atoms, Chem.rdmolops.GetAdjacencyMatrix(mol)))
 

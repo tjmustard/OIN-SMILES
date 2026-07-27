@@ -16,7 +16,7 @@ Two modes, both on one molecule:
                        contention-robust. Counts the encoder's plausible hot spots:
                        RDKit ``SanitizeMol`` / ``MolToSmiles`` / ring perception /
                        ``GetSubstructMatches``, ``ResonanceMolSupplier``,
-                       xyz2mol_local's ``AC2BO`` / ``get_UA_pairs`` /
+                       perception_core's ``AC2BO`` / ``get_UA_pairs`` /
                        ``nx.max_weight_matching``, the aligner's ``_map_to_template``
                        / ``_brute_force_symmetries``, and the eta canonicalizers.
 
@@ -127,8 +127,8 @@ def instrument(counters, timings):
     from rdkit.Chem import rdCIPLabeler, rdmolops
 
     from oinsmiles.utils import oin_aligner as al_mod
-    from oinsmiles.utils import xyz2mol as x2m_mod
-    from oinsmiles.utils import xyz2mol_local as loc_mod
+    from oinsmiles.utils import perception_core as loc_mod
+    from oinsmiles.utils import perception_tmc as x2m_mod
 
     restores = []
 
@@ -166,7 +166,7 @@ def instrument(counters, timings):
     except (AttributeError, TypeError):
         pass
 
-    # --- xyz2mol_local (bond-order perception) ---
+    # --- perception_core (bond-order perception) ---
     for fn in (
         "AC2BO",
         "get_UA_pairs",
@@ -186,10 +186,10 @@ def instrument(counters, timings):
     ):
         add(_wrap_timed(counters, fn, loc_mod, fn, timings))
     add(_wrap_timed(counters, "max_weight_matching", nx, "max_weight_matching", timings))
-    # nx.max_weight_matching may be imported by name inside xyz2mol_local
+    # nx.max_weight_matching may be imported by name inside perception_core
     add(_wrap_timed(counters, "max_weight_matching", loc_mod, "max_weight_matching", timings))
 
-    # --- xyz2mol (encoder driver) ---
+    # --- perception_tmc (encoder driver) ---
     for fn in ("get_oin_string", "get_tmc_mol"):
         add(_wrap_timed(counters, fn, x2m_mod, fn, timings))
 

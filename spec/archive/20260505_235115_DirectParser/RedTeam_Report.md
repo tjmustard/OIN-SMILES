@@ -454,7 +454,7 @@ The Draft PRD proposes replacing RDKit-based ETKDG 3D generation with a direct M
    ```python
    # In spec: when is unsanitized mol acceptable?
    # Example:
-   # - xyz2mol.py: sanitizes with Chem.SanitizeMol() — expects valid valence
+   # - perception_tmc.py: sanitizes with Chem.SanitizeMol() — expects valid valence
    # - OINInlineHandler: calls Chem.MolToSmiles() — expects sanitized for canonical SMILES
    # - ChiralityRecoveryUtility: reads _OIN_CIPCode property — expects property set by CIPAssigner
    #

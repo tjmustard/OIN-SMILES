@@ -181,7 +181,7 @@ S6b closes them on the shared encode path (`ChiralityRecoveryUtility.recover`, w
 
 ## Borane and carborane clusters (`carborane_unsupported`)
 
-`get_lig_mol` (`utils/xyz2mol.py:426`, calling `AC2mol` at `:451-462`) cannot perceive
+`get_lig_mol` (`utils/perception_tmc.py:686`, calling `AC2mol` at `:726-744`) cannot perceive
 bond orders for electron-deficient polyhedral cages (`OSENOR`, and the
 `carborane_unsupported` bucket). It fails in the **forward** encode with a specific
 message (`get_lig_mol failed for ligand fragment #... (SMILES: '[H]B1[B-]2...')`), and

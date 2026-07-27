@@ -45,8 +45,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import numpy as np  # noqa: E402
 
-from oinsmiles.utils import xyz2mol_local  # noqa: E402
-from oinsmiles.utils.xyz2mol_local import (  # noqa: E402
+from oinsmiles.utils import perception_core  # noqa: E402
+from oinsmiles.utils.perception_core import (  # noqa: E402
     _CHARGE_FILTER_ENV,
     _ORDERED_FALLBACK_ENV,
     _VALENCE_COMBO_CAP,
@@ -114,7 +114,7 @@ def capture_over_cap_inputs(path, cache=None):
     from oinsmiles import XYZToSMILES
 
     grabbed = {}
-    original = xyz2mol_local.AC2BO
+    original = perception_core.AC2BO
 
     def wrapped(AC, atoms, charge, **kwargs):
         allow_carbenes = kwargs.get("allow_carbenes", True)
@@ -130,12 +130,12 @@ def capture_over_cap_inputs(path, cache=None):
             raise _Captured()
         return original(AC, atoms, charge, **kwargs)
 
-    xyz2mol_local.AC2BO = wrapped
+    perception_core.AC2BO = wrapped
     try:
         with contextlib.suppress(Exception), _silence_fds():
             XYZToSMILES().convert(str(path))
     finally:
-        xyz2mol_local.AC2BO = original
+        perception_core.AC2BO = original
 
     if not grabbed:
         return None
@@ -160,13 +160,13 @@ def run_arm(inputs, arm, tries, cap):
         os.environ[_CHARGE_FILTER_ENV] = "1"
     os.environ["OIN_VALENCE_FALLBACK_TRIES"] = str(tries)
 
-    xyz2mol_local.reset_ac2bo_stats()
+    perception_core.reset_ac2bo_stats()
     t0 = time.time()
     timed_out = False
     BO = None
     try:
         with _time_limit(cap):
-            BO, _ = xyz2mol_local.AC2BO(
+            BO, _ = perception_core.AC2BO(
                 inputs["AC"],
                 inputs["atoms"],
                 inputs["charge"],
@@ -177,7 +177,7 @@ def run_arm(inputs, arm, tries, cap):
     except _ArmTimeout:
         timed_out = True
     wall = time.time() - t0
-    stats = dict(xyz2mol_local.AC2BO_STATS)
+    stats = dict(perception_core.AC2BO_STATS)
     cands = stats["candidates"]
     return {
         "arm": arm,

@@ -15,7 +15,7 @@ from unittest import mock
 import networkx as nx
 import numpy as np
 
-from oinsmiles.utils import xyz2mol_local as xl
+from oinsmiles.utils import perception_core as xl
 
 
 class TestFallbackTriesLever(unittest.TestCase):

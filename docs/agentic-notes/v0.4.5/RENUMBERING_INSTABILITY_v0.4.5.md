@@ -70,7 +70,7 @@ set of atoms is recorded as coordinated:
 BASE : [Y_SPY]. ... .[BH3]{2}.[H]{3}.[BH3]{4}.[H]
 RENUM: [Y_TET]. ... .[BH3]{2}.[BH3]{3}.[H].[H]
 ```
-Most likely route: the `(i+1)**3` Z-moment weighting at `xyz2mol.py:971` flips Y/Z under
+Most likely route: the `(i+1)**3` Z-moment weighting at `perception_tmc.py:1236` flips Y/Z under
 renumbering, and the geometric template fit then selects a different polyhedron. The v0.4.5
 plan called this seam "latent"; it is not latent.
 
@@ -107,10 +107,10 @@ canonicality drift v0.4.5 set out to fix, so it is being investigated as an adde
 than deferred. Suspects, in order:
 
 1. `AC2BO` / `get_UA_pairs` order-dependence changing perceived bond orders, hence CIP
-   priorities (`utils/xyz2mol_local.py:800`, `:542`) — shared root with Lane 1 step 2.
+   priorities (`utils/perception_core.py:1319`, `:746`) — shared root with Lane 1 step 2.
 2. `core/chirality.py` `CIPAssigner` / `ChiralityRecoveryUtility` ordering assumptions.
-3. `_align_to_pai`'s index-dependent pivot and `(i+1)**3` Z-sign (`utils/xyz2mol.py:941`,
-   `:971`) — confirmed live by `DUDREA_comp_0`.
+3. `_align_to_pai`'s index-dependent pivot and `(i+1)**3` Z-sign (`utils/perception_tmc.py:1199`,
+   `:1236`) — confirmed live by `DUDREA_comp_0`.
 
 ## Follow-up, measured 2026-07-25 (later the same day)
 
@@ -119,7 +119,7 @@ than deferred. Suspects, in order:
 **`DUDREA_comp_0` — CLOSED behind `OIN_STABLE_METAL_AC`** (`swimlane/v045-lane2` @ `8bf9df61`).
 It was never a slot-labelling problem, which is why Lane 2's slot post-pass could not touch it.
 
-`xyz2AC_obabel`'s distance pass (`utils/xyz2mol_local.py:1194-1202`) is order-**free**: a symmetric
+`xyz2AC_obabel`'s distance pass (`utils/perception_core.py:1875-1883`) is order-**free**: a symmetric
 comparison of the distance matrix against the covalent-radius sum. The **only** order-dependent
 step in AC perception is the valence-capping loop that follows, which iterated
 `for i in range(num_atoms)` — in input atom order. Capping atom *i* removes a bond, lowering some

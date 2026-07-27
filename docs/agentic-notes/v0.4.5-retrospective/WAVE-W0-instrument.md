@@ -613,8 +613,8 @@ git log --oneline e8b603d5..swimlane/v045-perf   # W0 tools + the perf lane, bas
    `FEQFIS_comp_0`'s stereo flip is closed for 8/10 of the sampled stereo class by
    `OIN_STABLE_STEREO`; `CEBVIR_comp_0`'s aromaticity collapse survives all four levers tested and
    has no owner. Suspects, in the order recorded: `AC2BO`/`get_UA_pairs` order-dependence
-   (`utils/xyz2mol_local.py:800`, `:542`), `core/chirality.py`'s ordering assumptions, and
-   `_align_to_pai`'s index-dependent pivot and `(i+1)**3` Z-sign (`utils/xyz2mol.py:941`, `:971`).
+   (`utils/perception_core.py:1319`, `:1323`), `core/chirality.py`'s ordering assumptions, and
+   `_align_to_pai`'s index-dependent pivot and `(i+1)**3` Z-sign (`utils/perception_tmc.py:1038`, `:1070`).
 3. **The residual 16 key-broken molecules are characterized but not closed.** Lane 2 showed
    **32/32 of its residual pairs are `same_vcolor_identical`**, so no relabeling at that seam can
    close them (`docs/agentic-notes/v0.4.5/CANONICAL_SLOTS_v0.4.5.md` §7a), plus the 7 wrong-donor molecules Lane 9 owns.

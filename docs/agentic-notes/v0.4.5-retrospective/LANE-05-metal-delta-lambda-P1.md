@@ -119,7 +119,7 @@ donor atoms sit, but in *which donors belong to the same ligand*.
       │
       ▼  get_tmc_mol()   <- donors = metal's PERCEIVED neighbours (NOT a distance cutoff)
       │                     chelate partition = connected components after deleting the metal
-      ▼  token_for_mol(tmc_mol)                          xyz2mol.py:1390-1396
+      ▼  token_for_mol(tmc_mol)                          perception_tmc.py:1390-1396
       │    computed BEFORE _align_to_pai, because PAI alignment may REFLECT
       │    the coordinates and a reflection INVERTS a chirality descriptor
       ▼
@@ -315,7 +315,7 @@ Constants and why they are not tuned numbers:
   made by symmetry rather than magnitude. Its first value, `1e-3`, was **larger than the real
   signal** (4.81e-4) and would have called ZUMNEC achiral.
 
-### Emit — `src/oinsmiles/utils/xyz2mol.py`
+### Emit — `src/oinsmiles/utils/perception_tmc.py`
 
 Behind `OIN_EMIT_METAL_CONFIG`, **default OFF** (block at `:1390-1396`; registered in
 `levers.py::_HELD_OFF`). Appended at the **single** return site, `:2038`:
@@ -504,7 +504,7 @@ un-fold obligation recorded) → generator reproduction.
 |---|---|---|
 | descriptor | `src/oinsmiles/oin/metal_config.py` | chelate-aware symmetry test (formulation 4) |
 | donors + chelate partition | `token_for_mol` via `get_tmc_mol` perception | from perception, not coordinates |
-| emit | `src/oinsmiles/utils/xyz2mol.py:1390-1396`, appended at `:2038` | behind **`OIN_EMIT_METAL_CONFIG`**, **default OFF** |
+| emit | `src/oinsmiles/utils/perception_tmc.py:1390-1396`, appended at `:2038` | behind **`OIN_EMIT_METAL_CONFIG`**, **default OFF** |
 | key fold | `src/oinsmiles/oin/compare.py::_METAL_CONFIG_TOKEN_RE` | folds; **must un-fold on promotion** |
 | generator | `src/oinsmiles/generation/metallogen_adapter.py` (`target_mc`, accept-first) | inert when `target_mc is None` |
 
@@ -565,7 +565,7 @@ its own author but not deleted**:
 |---|---|---|
 | module docstring, "THE DESCRIPTOR" bullet 4 | *"exactly 0 for an achiral arrangement — a perfect square and an ideal octahedron both return `+0.000e+00`. Achirality falls OUT of the index instead of needing a planarity test beside it, which is why square-planar `JEGKOW` emits nothing without a special case."* | **REFUTED** by D2 — true only for idealized coordinates; real JEGKOW reads −3.287e-04 |
 | `_CHIRALITY_EPS` comment | *"an achiral point set cancels to **exactly 0.0** … The separation is therefore between exact zero and the signal"* | **REFUTED** by D2 |
-| module docstring, "STATUS — DESCRIPTOR AND VALIDATION ONLY, NOT WIRED TO EMIT" | *"deliberately not yet called from `xyz2mol.py`'s emit path, and no lever turns it on"* | **STALE** — `e8485ebf` wired it; `xyz2mol.py:1391` calls `token_for_mol` behind `OIN_EMIT_METAL_CONFIG` |
+| module docstring, "STATUS — DESCRIPTOR AND VALIDATION ONLY, NOT WIRED TO EMIT" | *"deliberately not yet called from `perception_tmc.py`'s emit path, and no lever turns it on"* | **STALE** — `e8485ebf` wired it; `perception_tmc.py:1391` calls `token_for_mol` behind `OIN_EMIT_METAL_CONFIG` |
 
 The correct, current account lives in `is_achiral`'s and `metal_config_sign_symmetry`'s
 docstrings, in `_ACHIRAL_RMSD_TOL`'s comment, and in `docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md` (the three

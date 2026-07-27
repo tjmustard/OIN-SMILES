@@ -20,8 +20,8 @@ structure, and gated it — then it was promoted to default-ON.
 > the `OIN_STABLE_METAL_AC` lever — lives on `swimlane/v045-lane2` and is documented in
 > `docs/agentic-notes/v0.4.5/RENUMBERING_INSTABILITY_v0.4.5.md` (§"Follow-up, measured 2026-07-25"),
 > `docs/agentic-notes/v0.4.5/PROMOTION_GATE_v0.4.5.md`, `docs/agentic-notes/v0.4.5/CANONICAL_OIN_v0.4.5.md` §"Known gaps" item 5,
-> commit `8bf9df61`, `src/oinsmiles/utils/xyz2mol_local.py:1858-1913`,
-> `tools/geometry_tag_shift.py`, and `tests/unit/test_xyz2mol_errors.py`. Those are the
+> commit `8bf9df61`, `src/oinsmiles/utils/perception_core.py:1885-1940`,
+> `tools/geometry_tag_shift.py`, and `tests/unit/test_perception_tmc_errors.py`. Those are the
 > sources this file is built from. Two lanes, two different meanings of the word "order" —
 > read both files together and do not assume one is a stale copy of the other.
 >
@@ -60,8 +60,8 @@ tests/.../DUDREA_comp_0.xyz            SAME COORDINATES, atoms listed in two ord
                          |                              |
                          v                              v
 =====================================================================================
-STEP 1 — the DISTANCE pass                       xyz2mol_local.py:1848-1856
-         (inside xyz2AC_obabel, :1809)
+STEP 1 — the DISTANCE pass                       perception_core.py:1875-1883
+         (inside xyz2AC_obabel, :1836)
 =====================================================================================
     for i in range(N):
       for j in range(i+1, N):
@@ -79,7 +79,7 @@ STEP 1 — the DISTANCE pass                       xyz2mol_local.py:1848-1856
        Y has six hydride contacts: 2.298 / 2.300 / 2.328 / 2.379 / 2.408 / 2.421 A
 
 =====================================================================================
-STEP 2 — the VALENCE-CAPPING loop                xyz2mol_local.py:1889-1913
+STEP 2 — the VALENCE-CAPPING loop                perception_core.py:1916-1940
          *** THE ONLY ORDER-DEPENDENT STEP IN AC PERCEPTION ***
 =====================================================================================
 
@@ -116,7 +116,7 @@ STEP 2 — the VALENCE-CAPPING loop                xyz2mol_local.py:1889-1913
    six. So this was never "shortest wins" -- it was iteration order.
 
 =====================================================================================
-THE FIX — where it intervenes                    xyz2mol_local.py:1894-1903
+THE FIX — where it intervenes                    perception_core.py:1921-1930
 =====================================================================================
    if _lever_enabled("OIN_STABLE_METAL_AC"):
        def _cap_key(i):
@@ -189,7 +189,7 @@ The going-in hypotheses, in the order the probe's own scope call listed them:
    priorities — believed to share a root with Lane 1's `OIN_CANONICAL_PERCEPTION`;
 2. `core/chirality.py`'s `CIPAssigner` / `ChiralityRecoveryUtility` ordering assumptions;
 3. `_align_to_pai`'s index-dependent pivot and the `(i+1)**3` Z-moment sign
-   (`utils/xyz2mol.py:941`, `:971`) — nominated as the most likely route for `DUDREA_comp_0`,
+   (`utils/perception_tmc.py:1038`, `:1070`) — nominated as the most likely route for `DUDREA_comp_0`,
    on the reasoning that the Z-moment weighting flips Y/Z under renumbering and the geometric
    template fit then selects a different polyhedron.
 
@@ -213,9 +213,9 @@ programme is an atom-numbering dependence, not a geometry one** — which is wha
 ### CONFIRMED — the defect is one loop, and it is not the one anybody named
 
 `xyz2AC_obabel`'s distance pass is order-**free**: a symmetric comparison of the distance matrix
-against the covalent-radius sums (`src/oinsmiles/utils/xyz2mol_local.py:1848-1856`; the lane
+against the covalent-radius sums (`src/oinsmiles/utils/perception_core.py:1875-1883`; the lane
 docs cite the pre-merge location `:1194-1202`). **The only order-dependent step in AC perception
-is the valence-capping loop that follows** (`:1889-1913`), which iterated `for i in
+is the valence-capping loop that follows** (`:1916-1940`), which iterated `for i in
 range(num_atoms)` — in input atom order.
 
 The mechanism, stated exactly: capping atom *i* removes a bond, which lowers some atom *j*'s
@@ -318,7 +318,7 @@ changes, no transitions.** `0/298` refutes the concern the veto existed for.
 
 > ⚠ **Attribution caution.** The 145-fixed re-baseline and the 58.1% → 69.6% figures were
 > measured with **all six** promoted levers ON, not with `OIN_STABLE_METAL_AC` alone. The
-> docstring of `tests/unit/test_xyz2mol_errors.py` cites "capstone A/B: 145 molecules fixed,
+> docstring of `tests/unit/test_perception_tmc_errors.py` cites "capstone A/B: 145 molecules fixed,
 > zero correctness regressions" in support of this lever specifically; treat that as *the set
 > containing this lever showed no correctness regressions*, which is what was measured. The
 > lever-specific evidence is `geometry_tag_shift` **0/298** and DUDREA's **3/8 → 0/8**.
@@ -329,7 +329,7 @@ changes, no transitions.** `0/298` refutes the concern the veto existed for.
 
 ### The fix
 
-`src/oinsmiles/utils/xyz2mol_local.py`, in `xyz2AC_obabel` (`:1809`), 41 insertions / 4
+`src/oinsmiles/utils/perception_core.py`, in `xyz2AC_obabel` (`:1836`), 41 insertions / 4
 deletions (commit `8bf9df61`). The index order is replaced by a canonical one:
 
 ```python
@@ -414,7 +414,7 @@ correctly-perceived cage. The exemption is scoped to element B in a B–B–B tr
 computed from the **pre-pruning** AC so it cannot be triggered by pruning itself. The two levers
 are orthogonal in intent but **not** in code: a future edit to either must keep `exempt` computed
 before `cap_order` is consumed, and must not assume `cap_order` is `range(N)`. There is a
-detailed in-code comment block at `:1858-1888` saying exactly this; keep it in sync.
+detailed in-code comment block at `:1885-1915` saying exactly this; keep it in sync.
 
 ### Rejected alternatives
 
@@ -456,7 +456,7 @@ stranded bare-proton fragments. It was NOT added**, because charged hydrides are
 species and such a gate needs its own corpus A/B before it can be trusted not to reject real
 molecules.
 
-**Consequence, and a lesson about contract tests.** `tests/unit/test_xyz2mol_errors.py` — the
+**Consequence, and a lesson about contract tests.** `tests/unit/test_perception_tmc_errors.py` — the
 unit pin for TASK-41/WS-1, that `get_tmc_mol` raises a descriptive `ValueError` instead of
 returning a bare `None` on ligand-perception failure — **had to be rewritten as fault
 injection**, because its fixture no longer triggers the error path. The contract still matters
@@ -465,7 +465,7 @@ because the sole convert-path caller in `core/translator.py` unpacks a 2-tuple),
 exercised by making `get_lig_mol` fail directly:
 
 ```python
-with mock.patch.object(xyz2mol_module, "get_lig_mol", return_value=(None, 0)):
+with mock.patch.object(perception_module, "get_lig_mol", return_value=(None, 0)):
     with self.assertRaises(ValueError) as ctx:
         get_tmc_mol(_FIXTURE, 0, with_stereo=False)
 ```
@@ -567,16 +567,16 @@ instruction, v0.4.3/0.4.4/0.4.5 are **local-only and must not be pushed.**
 | lever | `OIN_STABLE_METAL_AC` |
 | default | **ON** — `src/oinsmiles/oin/levers.py::_DEFAULT_ON` |
 | opt out | `OIN_STABLE_METAL_AC=0` (also `false`/`no`/`off`/empty) |
-| code | `src/oinsmiles/utils/xyz2mol_local.py:1858-1913` (`xyz2AC_obabel`, `:1809`); comment block `:1858-1888` documents both defects in that loop |
-| composes with | `OIN_BORON_CAGE` (`boron_cage_vertices`, `:1744`) in the same statement |
+| code | `src/oinsmiles/utils/perception_core.py:1885-1940` (`xyz2AC_obabel`, `:1836`); comment block `:1885-1915` documents both defects in that loop |
+| composes with | `OIN_BORON_CAGE` (`boron_cage_vertices`, `:1771`) in the same statement |
 | instrument | `tools/geometry_tag_shift.py` (`--lever OIN_STABLE_METAL_AC --n 300 [--shard 1:4]`) |
 | probe | `tools/canonicality_probe.py` (`--n 300 --trials 2`, seed 42 fixed so every arm samples the same molecules) |
 
 **Guard tests**
 
-* `tests/unit/test_xyz2mol_errors.py::TestXyz2MolErrors::test_get_tmc_mol_raises_valueerror_when_get_lig_mol_fails`
+* `tests/unit/test_perception_tmc_errors.py::TestXyz2MolErrors::test_get_tmc_mol_raises_valueerror_when_get_lig_mol_fails`
   — the error-path contract, now fault-injected.
-* `tests/unit/test_xyz2mol_errors.py::TestXyz2MolErrors::test_broken_fixture_perceives_a_degenerate_graph_under_stable_metal_ac`
+* `tests/unit/test_perception_tmc_errors.py::TestXyz2MolErrors::test_broken_fixture_perceives_a_degenerate_graph_under_stable_metal_ac`
   — the degenerate-input tripwire (asserts >1 fragment and ≥1 bare-proton fragment).
 * `tests/unit/test_regression_stability.py::TestRegressionStability` (6 golden fixtures:
   `test_cisplatin`, `test_transplatin`, `test_cis_ptcl2en`, `test_ferrocene`,
@@ -610,7 +610,7 @@ PYTHONPATH=src .venv/bin/python tools/canonicality_probe.py \
    rejecting a perceived molecule that contains isolated bare-`[H+]` fragments would restore
    loud failure on degenerate inputs, but **charged hydrides are legitimate**, so it needs its
    own corpus A/B (how many currently-passing molecules contain a legitimate isolated hydride?)
-   before it can ship. If you build it, `tests/unit/test_xyz2mol_errors.py`'s second test is the
+   before it can ship. If you build it, `tests/unit/test_perception_tmc_errors.py`'s second test is the
    tripwire that will tell you it worked — and its module docstring must be updated with it.
 2. **Reconcile the coordination-degree numbers** (5/4 in the narrative vs 6/7 in the
    measurement). See the flagged inconsistency above.

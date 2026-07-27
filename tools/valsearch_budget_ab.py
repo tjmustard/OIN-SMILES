@@ -8,7 +8,7 @@ process** (the budget is read per ``AC2BO`` call, so no subprocess is needed) an
   valid-Lewis-structure / fallback-guess -- this is the ``best_BO`` half of the question;
 * the **emitted OIN string** -- the answer that actually matters, since a changed
   intermediate bond order may be washed out by later normalization;
-* the deterministic counters from ``xyz2mol_local.AC2BO_STATS``.
+* the deterministic counters from ``perception_core.AC2BO_STATS``.
 
 Two properties make this a fair A/B:
 
@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import re  # noqa: E402
 
 from oinsmiles import XYZToSMILES  # noqa: E402
-from oinsmiles.utils import xyz2mol_local  # noqa: E402
+from oinsmiles.utils import perception_core  # noqa: E402
 
 _CHARGE_RE = re.compile(r"Charge:\s*(-?\d+)")
 
@@ -67,15 +67,15 @@ class Recorder:
     """Wrap ``AC2BO`` to record what each call returned, and whether it was a guess."""
 
     def __init__(self):
-        self.original = xyz2mol_local.AC2BO
+        self.original = perception_core.AC2BO
         self.calls = []
 
     def __enter__(self):
         def wrapped(AC, atoms, charge, **kwargs):
-            before = dict(xyz2mol_local.AC2BO_STATS)
+            before = dict(perception_core.AC2BO_STATS)
             t0 = time.time()
             BO, ave = self.original(AC, atoms, charge, **kwargs)
-            after = xyz2mol_local.AC2BO_STATS
+            after = perception_core.AC2BO_STATS
             self.calls.append(
                 {
                     "ac_sha": _sha(AC.tolist()),
@@ -93,18 +93,18 @@ class Recorder:
             )
             return BO, ave
 
-        xyz2mol_local.AC2BO = wrapped
+        perception_core.AC2BO = wrapped
         return self
 
     def __exit__(self, *exc):
-        xyz2mol_local.AC2BO = self.original
+        perception_core.AC2BO = self.original
         return False
 
 
 def encode_at_budget(path, budget):
     """One encode with ``OIN_VALENCE_FALLBACK_TRIES=budget``. Returns a result dict."""
     os.environ["OIN_VALENCE_FALLBACK_TRIES"] = str(budget)
-    xyz2mol_local.reset_ac2bo_stats()
+    perception_core.reset_ac2bo_stats()
     t0 = time.time()
     with Recorder() as rec:
         try:
@@ -114,7 +114,7 @@ def encode_at_budget(path, budget):
         except Exception as exc:  # noqa: BLE001 - a failed arm is a result, not a crash
             oin, error = None, f"{type(exc).__name__}: {exc}"
     wall = time.time() - t0
-    stats = dict(xyz2mol_local.AC2BO_STATS)
+    stats = dict(perception_core.AC2BO_STATS)
     guesses = [c for c in rec.calls if c["over_cap"] and not c["found_valid"]]
     return {
         "budget": budget,

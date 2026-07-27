@@ -6,7 +6,7 @@ Every OIN ligand body is already serialized with ``MolToSmiles(..., canonical=Tr
 RDKit's *serializer* is canonical. The defect is one level up: **the graph handed to the
 serializer is not**. Perception from 3D distances makes two non-unique choices --
 ``get_UA_pairs`` uses ``networkx.max_weight_matching`` (maximum matchings are not unique,
-``utils/xyz2mol_local.py``) and ``AC2BO`` returns, in its own words, "an arbitrary
+``utils/perception_core.py``) and ``AC2BO`` returns, in its own words, "an arbitrary
 resonance form". Two geometries of one molecule therefore become two different graph
 objects and ``canonical=True`` faithfully turns each into a different string:
 ``O=c1[cH]{2>}[cH]{2}c(=O)o1`` from the crystal, ``O=C1[CH]{2>}=[CH]{2}C(=O)O1`` from the
@@ -179,7 +179,8 @@ def _reparse_once(mol, donors):
         work.GetAtomWithIdx(d).SetAtomMapNum(k + 1)
     # h_faithful_smiles, NOT Chem.MolToSmiles. This write is the one that decides the emitted
     # body, so a plain MolToSmiles here silently discards the OIN_H_FAITHFUL repair applied
-    # upstream at xyz2mol.py -- the caller overwrites its H-faithful string with whatever this
+    # upstream at perception_tmc.py -- the caller overwrites its H-faithful string with
+    # whatever this
     # function returns. That is why the two levers were mutually exclusive.
     #
     # Safe by construction: h_faithful_smiles returns plain MolToSmiles output verbatim when

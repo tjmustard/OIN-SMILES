@@ -44,7 +44,7 @@ SAMPLE_SEED = 42
 
 @contextlib.contextmanager
 def _silence():
-    """Mute xyz2mol's C-level 'suspicious distance' chatter (crystal C-H lengths)."""
+    """Mute perception_core's C-level 'suspicious distance' chatter (crystal C-H lengths)."""
     with open(os.devnull, "w") as devnull:
         old = os.dup(2)
         os.dup2(devnull.fileno(), 2)
@@ -84,7 +84,7 @@ def _mirror_flip_check(path: Path) -> dict:
     structure separates them: a sound convention flips EVERY time, whatever the skew.
     """
     from oinsmiles.oin.axial import axial_token
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     lines = path.read_text().splitlines()
     n_at = int(lines[0])
@@ -118,7 +118,7 @@ def _classify_one(args: tuple) -> dict:
     results in sample order and get a byte-identical report whatever ``--jobs`` is.
     """
     path, mirror_check = args
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     out: dict = {"name": path.stem, "path": str(path)}
     try:

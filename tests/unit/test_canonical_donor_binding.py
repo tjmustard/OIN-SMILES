@@ -23,7 +23,7 @@ from rdkit import Chem
 from rdkit.Geometry import Point3D
 
 from oinsmiles.utils.oin_aligner import OINSanitizer
-from oinsmiles.utils.xyz2mol import get_oin_string
+from oinsmiles.utils.perception_tmc import get_oin_string
 
 
 def _attach_conformer(rw, coords):

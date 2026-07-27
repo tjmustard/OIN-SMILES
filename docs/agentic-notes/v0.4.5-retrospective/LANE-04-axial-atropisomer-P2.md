@@ -114,7 +114,7 @@ Lane 4's charter (`spec/handoffs/v0.4.5/Lane4-axial-gate-multiaxis.md`) had two 
 rested on prior-wave conclusions:
 
 **Part A — flip `OIN_EMIT_AXIAL` to default ON.** The handoff states: *"The evidence to flip it
-exists; the flip does not."* It prescribed changing the default in `xyz2mol.py`'s
+exists; the flip does not."* It prescribed changing the default in `perception_tmc.py`'s
 `_axial_suffix` block, keeping `OIN_EMIT_AXIAL=0` as the opt-out, mirroring how `OIN_EARLY_EXIT`
 was promoted in v0.4.4.
 
@@ -233,7 +233,7 @@ inverts both signs at once, so the sign vector is well-defined only up to global
 
 That single fact explains three prior observations at once: the old `|ax:+-|` claimed chirality
 that is not there; the absolute signs came from whichever arbitrary resonance form `AC2BO`
-returned (`xyz2mol_local.py:800` says so in as many words), so they were never reproducible; and
+returned (`perception_core.py:1319` says so in as many words), so they were never reproducible; and
 the corpus mirror audit **passed vacuously** on these structures, because the mirror produces
 the complement, which the audit scores as "flipped correctly". **The audit was confirming the
 false positive it was trusted to catch.**
@@ -426,7 +426,7 @@ With the lever unset, encoder output is byte-identical to pre-Y2.
 
 **Code:** `src/oinsmiles/oin/axial.py` (single source of truth, shared by the encoder emit and
 `tools/injectivity/config_oracle.py`); emit site in
-`src/oinsmiles/utils/xyz2mol.py` (`_axial_suffix`, computed **before** `_align_to_pai` because
+`src/oinsmiles/utils/perception_tmc.py` (`_axial_suffix`, computed **before** `_align_to_pai` because
 that may reflect the coordinates and a reflection inverts a chirality descriptor; appended at the
 single `return inline_oin + _axial_suffix + _metal_config_suffix`).
 Key fold: `src/oinsmiles/oin/compare.py::_AXIAL_TOKEN_RE`.

@@ -131,7 +131,7 @@ class OINInlineHandler:
         # rank based on sorted fragments.
         # But fragments in SMILES are also sorted.
         # So fragments[1] corresponds to rank 1 (if we count metal as 0)?
-        # Let's check xyz2mol/oin_aligner.
+        # Let's check perception_tmc/oin_aligner.
         # In oin_aligner.py, fragments are processed.
         # The w tag is `rank.atom_idx:slot`.
 
@@ -269,7 +269,7 @@ class OINInlineHandler:
                     # canonical=False to hopefully preserve atom order if input was canonical?
                     # Ideally we want output to match input structure but with tags.
                     # RDKit might reorder.
-                    # BUT xyz2mol generated the input Frag SMILES using RDKit canonical.
+                    # BUT perception_tmc generated the input Frag SMILES using RDKit canonical.
                     # So Chem.MolToSmiles(mol) should likely produce the same string + maps.
                     # Let's trust RDKit.
 

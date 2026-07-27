@@ -195,7 +195,7 @@ def _build_dummy_metal_copy(mol: Chem.Mol, p_idx: int) -> Chem.Mol | None:
     Implementation note (found empirically, not spelled out by the
     normative recipe text): the metal--P bond in ``get_tmc_mol()`` output is
     a ``DATIVE`` bond. A dative bond counts toward the ACCEPTOR's valence
-    but not the DONOR's (P is the donor here per ``xyz2mol.py``'s
+    but not the DONOR's (P is the donor here per ``perception_tmc.py``'s
     ``AddBond(ligand_atom, metal_atom, DATIVE)`` convention) -- so RDKit's
     from-3D chirality perception sees only 3 valence-counting substituents
     on P, tops up the "missing" 4th with a phantom implicit H, and silently
@@ -431,7 +431,7 @@ def clear_boron_cage_stereo(mol):
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     if sum(1 for z in atoms if z == 5) < 3:
         return
-    from ..utils.xyz2mol_local import boron_cage_vertices
+    from ..utils.perception_core import boron_cage_vertices
 
     try:
         cage = boron_cage_vertices(atoms, Chem.rdmolops.GetAdjacencyMatrix(mol))

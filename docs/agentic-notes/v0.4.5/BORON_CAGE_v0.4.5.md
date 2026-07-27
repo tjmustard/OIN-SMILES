@@ -27,7 +27,7 @@ Every sentence in that is true. The conclusion still does not follow, because **
 never gets a cage to reason about.** The failure happens two stages *before* any bond-order
 search, in adjacency perception:
 
-`xyz2AC_obabel` (`utils/xyz2mol_local.py`) builds the adjacency matrix from a covalent-radius
+`xyz2AC_obabel` (`utils/perception_core.py`) builds the adjacency matrix from a covalent-radius
 distance criterion, and then runs this:
 
 ```python
@@ -90,7 +90,7 @@ different stages, which is why the class was misdiagnosed:
 |---|---:|---|
 | `xyz2AC_obabel` pruning loop | **34/34** | **causal site.** 7–19 cage bonds silently deleted. Raises nothing. |
 | `MetalDisconnector` + `GetMolFrags` | 34/34 | the amputated cage now falls apart into sub-cages plus loose `[H]B` fragments, each treated as its own ligand |
-| `get_lig_mol` → `OINEncodeError` | **34/34** | **reported site** (`xyz2mol.py:775`). The charge sweep is asked to find a charge for debris. |
+| `get_lig_mol` → `OINEncodeError` | **34/34** | **reported site** (`perception_tmc.py:959`). The charge sweep is asked to find a charge for debris. |
 | `AC2BO` | 0 | never reached with an intact cage — and see §5, with an intact cage it does not raise, it calls `sys.exit()` |
 | `SanitizeMol` / `MolToSmiles` | 0 | never reached |
 
@@ -139,7 +139,7 @@ for RDKit's valence *table* to be stepped around on the atoms that violate it.
 Everything is behind `OIN_BORON_CAGE`, default OFF, and every gate additionally requires the
 molecule to *contain the motif*.
 
-**The motif is a B–B–B triangle** (`boron_cage_vertices`, `utils/xyz2mol_local.py`) — the
+**The motif is a B–B–B triangle** (`boron_cage_vertices`, `utils/perception_core.py`) — the
 deltahedral face signature. Chosen over "contains ≥3 boron" so the relaxation cannot reach
 ordinary boron chemistry. Pinned by unit test:
 
@@ -158,7 +158,7 @@ Four changes:
 
 1. **`xyz2AC_obabel` pruning exemption** — cage vertices skip the connectivity cap, computed
    from the *pre*-pruning AC so the exemption cannot be triggered by pruning itself.
-2. **`_cage_frag_mol` (`utils/xyz2mol.py`)** — perceives a cage fragment *directly* rather than
+2. **`_cage_frag_mol` (`utils/perception_tmc.py`)** — perceives a cage fragment *directly* rather than
    searching for bond orders: every cage edge single, hydrogens as the geometry gives them,
    formal charges zero, `SANITIZE_ALL ^ SANITIZE_PROPERTIES`. It deliberately does **not** claim
    a Lewis structure, and does **not** claim the chemically-correct cage charge (a dicarbollide

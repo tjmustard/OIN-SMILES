@@ -33,7 +33,7 @@ This is the guard rail the Y2 axial wave lacked when a tie-break sorted on a ste
 
 ## 2. Where it is applied, and why there
 
-`utils/xyz2mol.get_oin_string`, as a post-pass on the **finished inline string**
+`utils/perception_tmc.get_oin_string`, as a post-pass on the **finished inline string**
 (`canonical_slots.canonicalize_oin_slots`), not inside `_permute_and_serialize`'s lex-max
 loop.
 

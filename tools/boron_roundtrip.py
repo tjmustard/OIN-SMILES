@@ -163,7 +163,7 @@ def check(mol_name: str, dataset_dir: str) -> dict:
     RDLogger.DisableLog("rdApp.*")
     from oinsmiles import XYZToSMILES
     from oinsmiles.oin.compare import canonical_roundtrip_key
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     rec: dict = {"mol": mol_name, "lever": bool(os.environ.get("OIN_BORON_CAGE"))}
     path = find_xyz(mol_name, dataset_dir)

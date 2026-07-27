@@ -23,9 +23,9 @@ and compare the multisets. Milliseconds, no perception, and — the point — it
 bond graph, so it cannot be fooled the way the metric is.
 
 It deliberately does **not** try to map OIN slot ``{n}`` onto a generated atom index. Slot→atom
-correspondence is exactly the fragile part (``xyz2mol.py``'s marker placement has a documented
-unreliable ``GetSubstructMatch`` fallback), and it is not needed: an aggregate multiset comparison
-is order-independent and already separates the failure from the pass.
+correspondence is exactly the fragile part (``perception_tmc.py``'s marker placement has a
+documented unreliable ``GetSubstructMatch`` fallback), and it is not needed: an aggregate
+multiset comparison is order-independent and already separates the failure from the pass.
 
 CONTRACT
 ========
@@ -45,7 +45,7 @@ from ..core.constants import TRANSITION_METALS_NUM
 _PT = GetPeriodicTable()
 
 #: Bonded-contact slack over the sum of covalent radii, in Angstrom. Matches the criterion
-#: ``xyz2AC_obabel`` uses for adjacency (``xyz2mol_local.py``), so "in contact" here means the
+#: ``xyz2AC_obabel`` uses for adjacency (``perception_core.py``), so "in contact" here means the
 #: same thing it means to the encoder. Near this boundary perception is genuinely ambiguous
 #: (see ``docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md`` §3.2) — which is why the
 #: report also carries the raw distances, so a marginal call can be inspected rather than

@@ -136,7 +136,7 @@ behavior-changing sanitize. A **Phase-0 probe task** (TASK-30 pattern) de-risks
 - **WS-6 (TASK-50, G5):** indenyl benzo-ring rigid-drag geometry.
 - **WS-7 (G6):** rotamer-phase encoding (V3.8) for TiCp2Me2/Ferrocene.
 - The **single-eta** path (`_stitch_eta_fragment`), the **DG fallback**, and the
-  **encoder** side (`oin_aligner.py`, `xyz2mol.py`) — read-only here.
+  **encoder** side (`oin_aligner.py`, `perception_tmc.py`) — read-only here.
 - Any change to winding computation (`signed_circulation`, `_determine_winding`)
   or the Phase-3 haptic-face correction block (`:1069-1130`).
 
@@ -158,7 +158,7 @@ behavior-changing sanitize. A **Phase-0 probe task** (TASK-30 pattern) de-risks
 `_template_generate` (`:1989`) → per-fragment loop (`:2058`) →
 `_stitch_multi_eta_fragment` (`:591`) → `_assemble_combined_mol` (`:556`) →
 `GeneratedStructure(xyz, mol, …)`. The re-encoder consumes `.mol` via
-`get_oin_string` (`xyz2mol.py:751`). WS-3 changes only what
+`get_oin_string` (`perception_tmc.py:751`). WS-3 changes only what
 `_stitch_multi_eta_fragment` returns and how the caller consumes it.
 
 **Current mechanism / root causes (`molassembler_adapter.py`):**

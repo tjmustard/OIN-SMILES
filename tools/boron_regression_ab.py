@@ -50,7 +50,7 @@ def worker(mol_file: str, dataset_dir: str) -> dict:
     from boron_roundtrip import _boron_h, graph_fp, oin_fragments, parse_frag_tolerant
 
     from oinsmiles import XYZToSMILES
-    from oinsmiles.utils.xyz2mol import get_tmc_mol
+    from oinsmiles.utils.perception_tmc import get_tmc_mol
 
     path = os.path.join(dataset_dir, mol_file)
     rec = {"mol": mol_file}

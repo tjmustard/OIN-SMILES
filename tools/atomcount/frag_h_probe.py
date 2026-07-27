@@ -16,7 +16,7 @@ from rdkit import Chem, RDLogger
 RDLogger.DisableLog("rdApp.*")
 
 from oinsmiles.utils import oin_aligner  # noqa: E402
-from oinsmiles.utils.xyz2mol import get_oin_string, get_tmc_mol  # noqa: E402
+from oinsmiles.utils.perception_tmc import get_oin_string, get_tmc_mol  # noqa: E402
 
 _orig = oin_aligner.OINSanitizer.generate_robust_smiles
 LOG: list = []

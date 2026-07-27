@@ -25,7 +25,7 @@ from oinsmiles.generation.metallogen_adapter import (
 from oinsmiles.generation.oin_parser import OINParser
 from oinsmiles.generator3d import om
 from oinsmiles.oin.compare import canonical_roundtrip_key
-from oinsmiles.utils.xyz2mol import get_oin_string
+from oinsmiles.utils.perception_tmc import get_oin_string
 
 CISPLATIN = "[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}"
 FERROCENE = "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"

@@ -14,9 +14,9 @@ own triage of these 48: `boron_cluster` 34, `resonance_timeout` 10, aromatic/qui
 `perception_charge_gap` 1 (`ASISAX`). SL5 landed:
 
 - a typed `OINEncodeError` for electron-deficient boron clusters (`_is_electron_deficient_cluster`,
-  `xyz2mol.py:535`) — **classifies**, does not encode, the 34 boron molecules;
+  `perception_tmc.py:597`) — **classifies**, does not encode, the 34 boron molecules;
 - a forked, CPU-time-bounded `ResonanceMolSupplier` (`_resonance_candidates_isolated`,
-  `xyz2mol.py:369`) that lets a completing large ligand finish byte-identically and
+  `perception_tmc.py:374`) that lets a completing large ligand finish byte-identically and
   degrades a genuine hang to the single perceived form, recovering some of the timeout 10;
 - documented as residual/future work: the `get_UA_pairs`-matching hangs, the 3 quinoid
   de-aromatization cases, and `ASISAX`'s charge gap.
@@ -72,7 +72,7 @@ other two).
 **Root cause.** `ASISAX` is a Ni tetraaza-macrocycle (confirmed by direct diagnosis: at
 ligand charge 0 the encoder's own `AC2mol` perceives it fine; every other charge in -6..+6
 returns `None`). `get_lig_mol`'s charge-rescue loop (`_rescue_unusable_perception`,
-`xyz2mol.py:498`) rejected the charge-0 candidate anyway, because it checked
+`perception_tmc.py:544`) rejected the charge-0 candidate anyway, because it checked
 `stuck_ring_atoms(candidate) or not _perception_is_usable(candidate)` — i.e. it treated
 *any* stuck (unkekulizable-as-aromatic) ring as an automatic reject, even though
 `_perception_is_usable` **already** calls `kekulize_safe_sanitize`, which can repair a stuck
@@ -82,11 +82,11 @@ rescue loop was strictly *more* conservative than the encoder's own downstream r
 for no documented reason. With every charge in -6..+4 rejected, the sweep exhausts and
 `get_lig_mol` raises the generic `ValueError` → `encode_fail`.
 
-**Fix, scoped narrowly.** `xyz2mol.py`'s `_rescue_unusable_perception`: split the combined
+**Fix, scoped narrowly.** `perception_tmc.py`'s `_rescue_unusable_perception`: split the combined
 check so the stuck-ring rejection is skipped when `OIN_RESCUE_STUCK_RING` is truthy, leaving
 the usability check (which already subsumes ring-repair) as the sole gate. Default unset →
 byte-identical to the pre-fix code (same combined boolean short-circuit). Mirrors the
-`OIN_EMIT_AXIAL` pattern (`xyz2mol.py:1101-1110`): inline truthiness check, no import
+`OIN_EMIT_AXIAL` pattern (`perception_tmc.py:1376-1381`): inline truthiness check, no import
 overhead when off.
 
 **Why gated, not landed ungated.** The early return in `_rescue_unusable_perception`

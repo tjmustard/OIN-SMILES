@@ -3,8 +3,8 @@
 The encoder's output *is* the product, so any speed change must be SHA-identical. Run
 this on both revisions and diff the output:
 
-    git show HEAD:src/oinsmiles/utils/xyz2mol_local.py > /tmp/base.py
-    trap 'cp /tmp/mine.py src/oinsmiles/utils/xyz2mol_local.py' EXIT   # NEVER git stash
+    git show HEAD:src/oinsmiles/utils/perception_core.py > /tmp/base.py
+    trap 'cp /tmp/mine.py src/oinsmiles/utils/perception_core.py' EXIT   # NEVER git stash
     ...
 
 Prints one ``name<TAB>sha256<TAB>len<TAB>eta`` line per molecule, sorted, plus a sha256
@@ -88,7 +88,7 @@ def main():
     )
 
     from oinsmiles import XYZToSMILES
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
 
     lines = []
     missing = []

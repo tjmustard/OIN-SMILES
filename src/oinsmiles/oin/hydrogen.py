@@ -196,7 +196,7 @@ def _repair(mol, smiles: str, kwargs: dict) -> str:
     candidate = Chem.MolToSmiles(candidate_mol, **kwargs)
 
     # The atom ORDER must not move. Callers read `_smilesAtomOutputOrder` off the
-    # molecule they passed us -- `xyz2mol.get_oin_string` uses it to decide which
+    # molecule they passed us -- `perception_tmc.get_oin_string` uses it to decide which
     # character position each `{slot}` marker attaches to -- and that property records
     # the FIRST serialization, not the repaired one. An unpaired electron can in
     # principle change the canonical ranking, and if it did, every slot marker would

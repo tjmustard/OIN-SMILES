@@ -22,7 +22,7 @@ from oinsmiles.generation.metallogen_adapter import _eta_winding_multiset
 from oinsmiles.generator3d.embed import _place_haptic
 from oinsmiles.oin.compare import canonical_roundtrip_key
 from oinsmiles.oin.winding import signed_circulation
-from oinsmiles.utils.xyz2mol import get_oin_string
+from oinsmiles.utils.perception_tmc import get_oin_string
 
 FERROCENE = "[Fe_LIN].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1"
 # Two load-bearing halide-face Cp rings (each ring's face is distinguishable, so its

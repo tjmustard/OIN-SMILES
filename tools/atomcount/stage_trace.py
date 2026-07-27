@@ -22,7 +22,7 @@ RDLogger.DisableLog("rdApp.*")
 from oinsmiles.generation.metallogen_adapter import _prepare_ligand_fragments  # noqa: E402
 from oinsmiles.generation.oin_parser import OINParser  # noqa: E402
 from oinsmiles.utils import oin_aligner  # noqa: E402
-from oinsmiles.utils.xyz2mol import get_oin_string, get_tmc_mol  # noqa: E402
+from oinsmiles.utils.perception_tmc import get_oin_string, get_tmc_mol  # noqa: E402
 
 _orig = oin_aligner.OINSanitizer.generate_robust_smiles
 CALLS: list = []

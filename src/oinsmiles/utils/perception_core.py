@@ -1,6 +1,11 @@
-"""Module for generating rdkit molobj/smiles/molecular graph from free atoms.
+"""Core perception: rdkit molobj/smiles/molecular graph from free atoms and coordinates.
 
-Main implementation by Jan H. Jensen, based on the paper
+Generic, metal-agnostic chemistry — coordinates in, bond graph out. The TMC-specific
+layer that drives it lives in ``perception_tmc.py``.
+
+ORIGIN AND CREDIT
+=================
+Main implementation by Jan H. Jensen (https://github.com/jensengroup/xyz2mol_tm), based on
 
     Yeonjoon Kim and Woo Youn Kim
     "Universal Structure Conversion Method for Organic Molecules: From Atomic Connectivity
@@ -8,7 +13,29 @@ Main implementation by Jan H. Jensen, based on the paper
     Bull. Korean Chem. Soc. 2015, Vol. 36, 1769-1777
     DOI: 10.1002/bkcs.10334
 
-Modified by Maria Harris Rasmussen 2024
+Modified by Maria Harris Rasmussen 2024. Renamed from ``xyz2mol_local.py`` in v0.4.7.
+
+⚠ THIS IS A HARD FORK, NOT A VENDORED DEPENDENCY — DO NOT RE-SYNC FROM UPSTREAM
+===============================================================================
+The old ``_local`` suffix meant "local copy", but it read as "unmodified copy", and that
+reading is wrong and expensive: a straight overwrite from upstream would silently delete
+a large amount of OIN-SMILES work. Roughly a third of the top-level functions here are
+this project's own, not Jensen's:
+
+    _ac2bo_memo_for / _ac2bo_memo_entries / _ac2bo_memo_anchor / _ac2bo_memo_clear
+    AC2BO_STATS / reset_ac2bo_stats / _fallback_tries
+    possible_valences / valence_combo_size / iter_ordered_valences / _ordered_valences
+    charge_filter_supported / _charge_feasible_suffix_counts / iter_charge_feasible_valences
+    suppress_canonical_perception / _canonical_atom_permutation
+    _valence_search_is_truncated / boron_cage_vertices
+
+This module also imports *back into* the package (``..oin.levers``), so it is not
+self-contained and cannot be dropped in from elsewhere. Upstream fixes must be ported by
+hand, function by function, with the levers and the memoization left intact.
+
+The one name deliberately kept as-is is the module-level ``xyz2mol()`` function and its
+CLI: that is upstream's public API name, and renaming it would break the correspondence
+with the paper and with the upstream repository.
 """
 
 import contextlib
@@ -576,7 +603,7 @@ def set_atomic_radicals(mol, atoms, atomic_valence_electrons, BO_valences, use_a
 
 # --- memo for AC2BO's candidate-generation loop -------------------------------------
 #
-# ``xyz2mol.py::_select_lig_mol`` runs a charge/carbene ladder that calls
+# ``perception_tmc.py::_select_lig_mol`` runs a charge/carbene ladder that calls
 # ``AC2mol`` -> ``AC2BO`` up to five times on the *same* adjacency matrix, and
 # ``_rescue_unusable_perception`` sweeps up to eight more charges over one AC of its own.
 # Only ``BO_is_OK`` / ``charge_is_OK`` read ``charge``: the candidate-generation half of
@@ -1324,7 +1351,7 @@ def AC2BO(
     on ``tests/fixtures/AGUFEN.xyz`` (a PPN counter-cation) the canonical order drops the
     total bond order 128 -> 126 and yields a pentavalent carbon that
     ``kekulize_safe_sanitize`` rejects, turning a working encode into an ``OINEncodeError``.
-    ``utils.xyz2mol.get_tmc_mol`` catches that case: if the encode raises, it retries the
+    ``utils.perception_tmc.get_tmc_mol`` catches that case: if the encode raises, it retries the
     whole perception with ``suppress_canonical_perception()``. A right answer that drifts
     beats a reproducible wrong one.
 

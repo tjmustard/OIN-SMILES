@@ -319,7 +319,7 @@ def _render(frags: list[str], metal_pos, mapping: dict):
     ``minimum canonical slot`` is by itself a **total** order on the coordinated fragments,
     because a slot belongs to exactly one fragment; the text term only ever decides between
     two *uncoordinated* fragments. So this sort replaces the old input-atom-index tie-break
-    (``xyz2mol.get_input_order_key``) with a property of the molecule rather than of the
+    (``perception_tmc.get_input_order_key``) with a property of the molecule rather than of the
     file, and it does so without needing a ligand-body parse.
     """
     relabeled = [_relabel_slots(f, mapping) for f in frags]
@@ -443,7 +443,7 @@ def canonicalize_oin_slots(oin_string: str) -> str:
     """Rewrite an inline OIN string with canonical slot labels and canonical fragment order.
 
     This is the encoder post-pass (``OIN_CANONICAL_SLOTS``), applied to the finished inline
-    string in ``utils.xyz2mol.get_oin_string``. Idempotent.
+    string in ``utils.perception_tmc.get_oin_string``. Idempotent.
     """
     _mapping, out = canonical_slot_relabeling(oin_string)
     return out

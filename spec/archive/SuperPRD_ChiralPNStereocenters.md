@@ -280,7 +280,7 @@ def main() -> None:
 - **Risk: SCINE build complexity on CI** → **Mitigation:** Pin `>=2.0.0`; add to CI pre-install step via conda-forge channel. Document build instructions in `README`.
 - **Risk: `PseudoAtomStrategy` wildcard (`*`) conflicts with downstream SMARTS queries** → **Mitigation:** Strip wildcard atoms before final OIN serialization — they must never appear in the output OIN string.
 - **Risk: New P-chiral fixture SMILES incorrect `@`/`@@`** → **Mitigation:** All new fixture SMILES route to `tests/candidate_outputs/` for human review; RDKit CIP oracle is required before promotion to `tests/fixtures/`.
-- **Risk: `chiral_stereo_check` flag in `xyz2mol_local.py` sets stereo flags before `CIPAssigner.assign_all()` runs, causing undefined precedence** → **Mitigation:** Audit `xyz2mol_local.py` during `ChiralEncoding` implementation to confirm `CIPAssigner` runs after and overrides any pre-set stereo flags.
+- **Risk: `chiral_stereo_check` flag in `perception_core.py` sets stereo flags before `CIPAssigner.assign_all()` runs, causing undefined precedence** → **Mitigation:** Audit `perception_core.py` during `ChiralEncoding` implementation to confirm `CIPAssigner` runs after and overrides any pre-set stereo flags.
 
 ---
 

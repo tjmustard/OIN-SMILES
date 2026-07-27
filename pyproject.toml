@@ -95,10 +95,10 @@ files = ["src/oinsmiles"]
 ignore_missing_imports = true
 
 # Vendored algorithms carried as-is -- the MetalloGen generator3d backend and the
-# Jensen et al. xyz2mol port. Not first-party; not type-checked yet (mirrors the
-# ruff per-file-ignore for xyz2mol_local.py).
+# Jensen et al. xyz2mol hard fork (perception_core). Not first-party; not type-checked
+# yet (mirrors the ruff per-file-ignore for perception_core.py).
 [[tool.mypy.overrides]]
-module = ["oinsmiles.generator3d.*", "oinsmiles.utils.xyz2mol_local"]
+module = ["oinsmiles.generator3d.*", "oinsmiles.utils.perception_core"]
 ignore_errors = true
 
 [tool.ruff]
@@ -123,8 +123,8 @@ ignore = ["D100", "D104"]
 # -- standalone scripts, docstrings not required, long diagnostic/data lines.
 # Pyflakes (F) rules still apply, so real bugs are still caught.
 "tools/**" = ["D", "E402", "E501"]
-# Vendored xyz2mol algorithm (Jensen et al.); keep upstream docstring style.
-"src/oinsmiles/utils/xyz2mol_local.py" = ["D"]
+# Hard fork of the Jensen et al. xyz2mol algorithm; keep upstream docstring style.
+"src/oinsmiles/utils/perception_core.py" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

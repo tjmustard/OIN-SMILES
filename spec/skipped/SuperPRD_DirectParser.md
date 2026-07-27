@@ -134,7 +134,7 @@ Eta blocks:    \|eta:([0-9,\s]+)\|    e.g., |eta:1,2,3|
 - `engine.py::OIN3DGenerator.generate()` — **Calls new parser**
 
 **No Changes:**
-- `xyz2mol.py` (XYZ→OIN pipeline)
+- `perception_tmc.py` (XYZ→OIN pipeline)
 - `oin/parser.py` (sidecar format)
 - `engine.py` public API (return type already `GeneratedStructure`)
 

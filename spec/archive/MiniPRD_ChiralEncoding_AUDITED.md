@@ -25,8 +25,8 @@ Before generating any plans or writing code, analyze this document and output a 
 
 ## 3. Implementation Plan (Task List)
 
-- [ ] Task 1: Read `src/oinsmiles/utils/oin_aligner.py` and `src/oinsmiles/utils/xyz2mol.py` to understand exactly where fragmentation happens and where `OINSanitizer.generate_robust_smiles()` is called. Confirm insertion points for `CIPAssigner` and `ChiralityRecoveryUtility`.
-- [ ] Task 2: Audit `src/oinsmiles/utils/xyz2mol_local.py` for the `chiral_stereo_check` flag. Confirm that `CIPAssigner.assign_all()` runs AFTER any stereo flags set by `xyz2mol_local.py`, and overrides them if needed.
+- [ ] Task 1: Read `src/oinsmiles/utils/oin_aligner.py` and `src/oinsmiles/utils/perception_tmc.py` to understand exactly where fragmentation happens and where `OINSanitizer.generate_robust_smiles()` is called. Confirm insertion points for `CIPAssigner` and `ChiralityRecoveryUtility`.
+- [ ] Task 2: Audit `src/oinsmiles/utils/perception_core.py` for the `chiral_stereo_check` flag. Confirm that `CIPAssigner.assign_all()` runs AFTER any stereo flags set by `perception_core.py`, and overrides them if needed.
 - [ ] Task 3: Create `src/oinsmiles/core/chirality.py` with three classes:
   - `CIPAssigner` with `assign_all(mol: Chem.Mol) -> Chem.Mol`
   - `ChiralityRecoveryUtility` with `recover(mol: Chem.Mol) -> Chem.Mol`

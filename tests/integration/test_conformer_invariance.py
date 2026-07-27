@@ -3,7 +3,7 @@
 A canonical encoding must be orientation-invariant: the same 3D structure, rigidly
 rotated and translated (atom order preserved), must encode to the *same* OIN-SMILES
 string. This exercises the PAI orientation canonicalization in
-``oinsmiles.utils.xyz2mol._align_to_pai`` across the curated size-stratified set in
+``oinsmiles.utils.perception_tmc._align_to_pai`` across the curated size-stratified set in
 ``tests/fixtures/conformer_set/`` (built by ``tools/select_conformer_test_set.py``)
 plus the CisPlatin / TransPlatin anchors.
 

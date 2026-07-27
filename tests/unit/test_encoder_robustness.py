@@ -11,7 +11,7 @@ The v0.4.2 capstone had 48 molecules whose crystal XYZ produced no OIN string at
   default-ON in v0.4.6 and takes this population from 0/36 encoding to 34/36. The W1 test
   below now pins the OPT-OUT contract (typed error when the lever is explicitly off), not the
   shipped behaviour.
-* A timeout cohort that hung inside xyz2mol perception on large conjugated ligands --
+* A timeout cohort that hung inside perception_tmc perception on large conjugated ligands --
   ``AC2BO`` materialising an exponential valence-order product, and ``ResonanceMolSupplier``
   building conjugation groups. Both are now bounded so oversized ligands complete (encode
   or fail fast) instead of hanging; small/medium ligands are byte-identical (W3).
@@ -33,7 +33,7 @@ from rdkit import Chem, RDLogger
 
 from oinsmiles.core.translator import XYZToSMILES
 from oinsmiles.utils.aromaticity import OINEncodeError
-from oinsmiles.utils.xyz2mol import (
+from oinsmiles.utils.perception_tmc import (
     _is_electron_deficient_cluster,
     get_tmc_mol,
 )
@@ -125,7 +125,7 @@ class TestAc2boCapIsByteIdentical(unittest.TestCase):
     """
 
     def test_cap_is_large(self):
-        from oinsmiles.utils.xyz2mol_local import _VALENCE_COMBO_CAP
+        from oinsmiles.utils.perception_core import _VALENCE_COMBO_CAP
 
         # A cisplatin/ferrocene-scale ligand's valence product is a few dozen at most;
         # the cap must stay far above that so ordinary ligands never take the fallback.
@@ -135,7 +135,7 @@ class TestAc2boCapIsByteIdentical(unittest.TestCase):
         # The extracted sorter is a permutation of the raw product -- same members.
         import itertools
 
-        from oinsmiles.utils.xyz2mol_local import _ordered_valences
+        from oinsmiles.utils.perception_core import _ordered_valences
 
         vlls = [[4], [3, 4], [2, 1]]
         atoms = [6, 7, 8]
@@ -154,13 +154,13 @@ class TestForkedResonanceRecovery(unittest.TestCase):
 
     @unittest.skipUnless(os.path.exists(FIXTURE) and hasattr(os, "fork"), "fixture/fork missing")
     def test_benvog_recovers_via_cpu_budget_fallback(self):
-        from oinsmiles.utils import xyz2mol
+        from oinsmiles.utils import perception_tmc
 
         # BENVOG's macrocycle burns CPU in ResonanceMolSupplier without ever finishing;
         # shrink the CPU budget so the kernel (SIGXCPU) kills the child quickly and perception
         # falls back to the single form.
-        orig = xyz2mol._RESONANCE_CPU_BUDGET_S
-        xyz2mol._RESONANCE_CPU_BUDGET_S = 2
+        orig = perception_tmc._RESONANCE_CPU_BUDGET_S
+        perception_tmc._RESONANCE_CPU_BUDGET_S = 2
         try:
             oin = XYZToSMILES().convert(self.FIXTURE)
             self.assertTrue(oin, "expected BENVOG to encode via the resonance-budget fallback")
@@ -168,7 +168,7 @@ class TestForkedResonanceRecovery(unittest.TestCase):
             # Deterministic across a repeat (same fallback form).
             self.assertEqual(oin, XYZToSMILES().convert(self.FIXTURE))
         finally:
-            xyz2mol._RESONANCE_CPU_BUDGET_S = orig
+            perception_tmc._RESONANCE_CPU_BUDGET_S = orig
 
 
 class TestStuckRingRescuePermissive(unittest.TestCase):

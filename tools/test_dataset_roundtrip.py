@@ -173,7 +173,7 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         # XYZ(Gen) -> OIN(2)
         if mol_gen_bonded is not None:
             try:
-                from oinsmiles.utils.xyz2mol import get_oin_string
+                from oinsmiles.utils.perception_tmc import get_oin_string
 
                 with open(gen_xyz_path, "r") as f:
                     xyz_lines = f.readlines()

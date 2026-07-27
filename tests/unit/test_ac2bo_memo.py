@@ -20,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
-from oinsmiles.utils import xyz2mol_local as loc
+from oinsmiles.utils import perception_core as loc
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 

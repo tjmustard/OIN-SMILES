@@ -36,8 +36,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from oinsmiles.utils import xyz2mol as xyz2mol_module
-from oinsmiles.utils.xyz2mol import get_tmc_mol
+from oinsmiles.utils import perception_tmc as perception_module
+from oinsmiles.utils.perception_tmc import get_tmc_mol
 
 _FIXTURE = Path(__file__).parent.parent / "fixtures" / "ticat3_generated_broken.xyz"
 
@@ -54,7 +54,7 @@ class TestXyz2MolErrors(unittest.TestCase):
         # (None, charge): get_lig_mol returns a 2-tuple that the call site unpacks before the
         # `if not lig_mol` guard, so injecting a bare None would fail in the unpack -- which is
         # the very TypeError this contract exists to prevent, raised from the wrong place.
-        with mock.patch.object(xyz2mol_module, "get_lig_mol", return_value=(None, 0)):
+        with mock.patch.object(perception_module, "get_lig_mol", return_value=(None, 0)):
             with self.assertRaises(ValueError) as ctx:
                 get_tmc_mol(_FIXTURE, 0, with_stereo=False)
         self.assertIn("get_lig_mol failed", str(ctx.exception))

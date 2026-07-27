@@ -889,7 +889,7 @@ class OINDiscreteAligner:
             metal_frag = self.ligands[self.metal_idx]
             metal_origin = metal_frag.get("metal_coords")
             if metal_origin is None:
-                # Fallback to origin if not found (should not happen with updated xyz2mol)
+                # Fallback to origin if not found (should not happen with updated perception_tmc)
                 metal_origin = np.array([0.0, 0.0, 0.0])
 
             zone_a_info = lig["binding_atoms"]  # list of (idx, mass, coords, local_idx)
@@ -1109,9 +1109,9 @@ class OINDiscreteAligner:
 
         Atom indices line up 1:1 with `local_idx`/`constituent_indices`.
         `Chem.MolFromSmiles(smiles, sanitize=False)` is the exact same
-        construction `xyz2mol.py` uses to derive `local_idx`
+        construction `perception_tmc.py` uses to derive `local_idx`
         (`smiles_mol = Chem.MolFromSmiles(sanitized_smiles, sanitize=False)`
-        at xyz2mol.py:952), so no substructure-match re-mapping is needed --
+        at perception_tmc.py:952), so no substructure-match re-mapping is needed --
         the indices are already the same numbering by construction (RT-2).
         Sanitizes everything except kekulization: Zone-A atoms carry forced
         explicit-H counts (`OINSanitizer`) that can defeat RDKit's kekulizer,

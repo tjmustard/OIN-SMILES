@@ -376,7 +376,7 @@ cycle of argument. Build the counter early.
 
 **100% round-trip accuracy is not reachable from this codebase.** `xyz2AC_obabel` can perceive a
 genuinely *different molecular graph* from two conformers of the same molecule near the
-covalent-radius + 0.45 Å cutoff (`utils/xyz2mol_local.py`). When the encoder and the generator
+covalent-radius + 0.45 Å cutoff (`utils/perception_core.py`). When the encoder and the generator
 disagree about what the molecule *is*, no amount of canonicalization reconciles them. The v0.4.5
 plan scoped this out at the outset and it was verified independently during this work. Any claim of
 approaching 100% must first address perception hardening, which is a different project.

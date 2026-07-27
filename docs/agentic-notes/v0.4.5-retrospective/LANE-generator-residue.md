@@ -248,8 +248,8 @@ model.
 For the 5 `[O-]Cl`-shaped molecules (`ATAGUZ`, `CUBDOT`, `XAXZIH`, `XIFVAM`, `YUMBEP`), **the
 encoder's own bond perception is also wrong**, independent of the generator issue. Checked
 `ATAGUZ`'s input XYZ directly: both `ClO₄⁻` groups have all 4 Cl–O contacts at **1.428–1.449 Å**
-(unambiguous covalent bonds), yet `utils/xyz2mol_local.py:145` hardcodes `atomic_valence[17] = [1]`
-(Cl max valence 1), so `xyz2AC_obabel`'s valence-capping loop (`:1091-1098` at the time of
+(unambiguous covalent bonds), yet `utils/perception_core.py:185` hardcodes `atomic_valence[17] = [1]`
+(Cl max valence 1), so `xyz2AC_obabel`'s valence-capping loop (`:1932-1940` at the time of
 measurement) keeps only the **shortest** Cl–O contact and drops the other three oxygens into free
 `[O-2]` ions.
 

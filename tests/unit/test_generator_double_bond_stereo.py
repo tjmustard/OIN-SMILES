@@ -29,7 +29,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../s
 from rdkit import Chem
 
 from oinsmiles.generation.engine import OIN3DGenerator
-from oinsmiles.utils.xyz2mol import get_oin_string, get_tmc_mol
+from oinsmiles.utils.perception_tmc import get_oin_string, get_tmc_mol
 
 OIN_E = "[Pt_SPL].C/C=C/CCN{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}"
 OIN_Z = r"[Pt_SPL].C/C=C\CCN{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}"
@@ -38,7 +38,7 @@ OIN_Z = r"[Pt_SPL].C/C=C\CCN{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}"
 def _perceive_alkene_stereo(xyz):
     """Re-encode a generated XYZ (stereo perception on) and read its C=C stereo.
 
-    Returns ``STEREONONE`` if xyz2mol's re-perception left the double bond's
+    Returns ``STEREONONE`` if perception_tmc's re-perception left the double bond's
     stereo undetermined for this particular geometry.
     """
     tmp_path = None

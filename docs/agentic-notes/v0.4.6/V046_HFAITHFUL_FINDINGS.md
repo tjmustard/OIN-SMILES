@@ -9,7 +9,7 @@ wrong as stated, and finding that out is the main result of this branch.
 
 **The mechanism was real.** `canonical_body_emit` had two writes, both plain `Chem.MolToSmiles`:
 the intermediate that feeds the reparse, and — the one that matters — the **final emit whose
-output becomes the body**. So `xyz2mol.py:1710` computed an H-faithful string and `:1736`
+output becomes the body**. So `perception_tmc.py:1725` computed an H-faithful string and `:1749`
 overwrote it. That is exactly how `OIN_CANONICAL_BODY` "undid" `OIN_H_FAITHFUL`, as recorded in
 `levers.py::_HELD_OFF`. Both writes now route through `h_faithful_smiles`.
 
@@ -133,7 +133,7 @@ outcomes survive, and only because none of the 18 failures was a timeout.
 
 Not reachable from here, and not only for effort reasons. `xyz2AC_obabel` can perceive a
 genuinely **different graph** between two conformers near the covalent-radius + 0.45 Å cutoff
-(`xyz2mol_local.py`), which bounds what any canonicalization can achieve — this is stated as
+(`perception_core.py`), which bounds what any canonicalization can achieve — this is stated as
 out-of-scope in the v0.4.5 plan and remains true. The <30 s target is much closer: already 83.6%
 of succeeding molecules, median 6.9 s, p90 50 s.
 
@@ -228,7 +228,7 @@ boron-ON**. Two questions are open and both need measuring before this is merged
 ## The narrower fix, if the answer to either is bad
 
 Scope the valence-free rungs to fragments that actually contain a boron cage — the detector
-already exists (`_is_electron_deficient_cluster`, and `_has_boron_cage` at the `xyz2mol` call
+already exists (`_is_electron_deficient_cluster`, and `_has_boron_cage` at the `perception_tmc` call
 sites) — instead of enabling them globally whenever the lever is set. That keeps the measured
 0/36 → 34/36 gain while removing the collateral change to CO and every other over-valent
 fragment.

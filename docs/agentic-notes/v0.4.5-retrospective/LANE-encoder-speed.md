@@ -29,7 +29,7 @@ so a lucky cache hit could not be what made the two versions agree.
       +-- xyz2AC / GetAdjacencyMatrix ......................... cheap
       |     (xyz2AC_obabel: 0 calls -- AC comes from GetAdjacencyMatrix)
       |
-      +-- xyz2mol.py::_select_lig_mol  THE CHARGE/CARBENE LADDER
+      +-- perception_tmc.py::_select_lig_mol  THE CHARGE/CARBENE LADDER
       |      up to 5x  AC2mol -> AC2BO  on the SAME adjacency matrix,
       |      varying only `charge` and `allow_carbenes`
       |      (_rescue_unusable_perception can add EIGHT more arms on an AC of its own)
@@ -132,7 +132,7 @@ so a lucky cache hit could not be what made the two versions agree.
 
 ### Confirmed
 
-* **`xyz2mol_local.AC2BO` is 99.8% of a slow encode.** Not "dominant" — essentially all of it.
+* **`perception_core.AC2BO` is 99.8% of a slow encode.** Not "dominant" — essentially all of it.
 
   | | `QIDKUL_comp_0` (eta, 59 atoms) | `QIDKIZ_comp_0` (non-eta, 39 atoms) |
   |---|---|---|
@@ -145,7 +145,7 @@ so a lucky cache hit could not be what made the two versions agree.
 * **It is not an eta phenomenon and not a size phenomenon.** The **non-eta 39-atom** molecule has
   the *same* profile and is *slower*. It is a property of the ligand's valence combinatorics.
 
-* **The mechanism.** `xyz2mol.py::_select_lig_mol` is a charge/carbene ladder: it calls
+* **The mechanism.** `perception_tmc.py::_select_lig_mol` is a charge/carbene ladder: it calls
   `AC2mol` -> `AC2BO` **up to five times on the same adjacency matrix**, varying only `charge` and
   `allow_carbenes`. For these ligands the per-atom valence product exceeds `_VALENCE_COMBO_CAP`
   (**500 000**), so each call takes the `itertools.islice(product, _VALENCE_FALLBACK_TRIES)` branch
@@ -265,7 +265,7 @@ b2d7433b  docs(encspeed): the encoder profiled for the first time -- AC2BO is 99
 ca462fbb  tools(encspeed): encode-side attribution probes -- AC2BO is 99.8% of an eta encode
 ```
 
-All code changes are in `src/oinsmiles/utils/xyz2mol_local.py`, and all are **ungated** —
+All code changes are in `src/oinsmiles/utils/perception_core.py`, and all are **ungated** —
 dead-work removal and memoization are the two classes this codebase has previously proved
 byte-identical, and the byte-identity A/B covers 24 molecules.
 
@@ -322,7 +322,7 @@ a DEBUG log line reachable solely on the `allow_carbenes=False` arm, so the emit
 `--mode counters` monkeypatches ~25 named hot-spot candidates (`COUNTER_NAMES`) to count **and**
 accumulate inclusive wall time: RDKit `SanitizeMol` / `MolToSmiles` / ring perception /
 `GetSubstructMatches` / `AssignStereochemistry` / `rdCIPLabeler` / `CanonicalRankAtoms`,
-`ResonanceMolSupplier`, all of `xyz2mol_local`'s `AC2BO` / `get_UA_pairs` / `get_BO` / `BO_is_OK` /
+`ResonanceMolSupplier`, all of `perception_core`'s `AC2BO` / `get_UA_pairs` / `get_BO` / `BO_is_OK` /
 `charge_is_OK` / `get_UA` / `get_bonds` / `get_atomic_charge` / `xyz2AC_obabel`, `nx.max_weight_matching`,
 the driver's `get_oin_string` / `get_tmc_mol`, and the aligner's `_map_to_template` /
 `_brute_force_symmetries` / `canonical_eta_set_representative` / `_orientation_symmetry_graph`. Counts
@@ -443,7 +443,7 @@ ligands is measured in the valsearch lane, not this one: **~0.2% of molecules** 
 
 ## Where it landed
 
-Code: `src/oinsmiles/utils/xyz2mol_local.py` — the bounded `AC2BO` LRU
+Code: `src/oinsmiles/utils/perception_core.py` — the bounded `AC2BO` LRU
 (`_AC2BO_MEMO_SLOTS = 6`, `_AC2BO_MEMO_MAX = 200_000`, `_ac2bo_memo_for` / `_ac2bo_memo_anchor` /
 `_ac2bo_memo_entries` / `_ac2bo_memo_clear`), the rewritten `charge_is_OK`, the `get_UA` /
 `valences_not_too_large` tidy-ups, and `AC2BO`'s in-place `charge_is_OK` evaluation. **Ungated.**
@@ -489,7 +489,7 @@ PYTHONPATH=src .venv/bin/python tools/perf_encode_redundancy.py \
 ### `tools/enc_byte_identity_ab.py` — the acceptance gate for any encoder change
 
 ```bash
-F=src/oinsmiles/utils/xyz2mol_local.py
+F=src/oinsmiles/utils/perception_core.py
 
 # arm NEW (working tree)
 PYTHONPATH=src .venv/bin/python tools/enc_byte_identity_ab.py \

@@ -145,7 +145,7 @@ Legend  ✖ never started    ⚠ recorded hazard / honest caveat
    accuracy credit before Wave D, and every lane's own A/B is an *estimate* of what the gate will show.
 2. **Merge order follows the file-level dependencies.** Land order was planned as
    **1 → 2 → 3 → 4 → 7 → 5 → 6**, because Lanes 1/2/3 all touch `utils/oin_aligner.py` and
-   `utils/xyz2mol.py`, and Lanes 2/5/6 share `oin/canonical_slots.py`.
+   `utils/perception_tmc.py`, and Lanes 2/5/6 share `oin/canonical_slots.py`.
 3. **The trial merge is a proxy for integration risk.** All six then-existing lane branches had been
    verified to *trial-merge cleanly* into `main` (`trial/v045-integration`). The plan noted explicitly
    that **textual cleanliness is not semantic validation**, and that the integrated suite was
@@ -259,7 +259,7 @@ call — already made: injectivity levers stay opt-in. **Determinism first, new 
 
 `release/v0.4.5` accumulated **101 commits** ahead of `main`. The planned land order was
 **1 → 2 → 3 → 4 → 7 → 5 → 6**, on the file-level dependency argument (Lanes 1/2/3 all touch
-`utils/oin_aligner.py` + `utils/xyz2mol.py`; Lanes 2/5/6 share `oin/canonical_slots.py`). The actual
+`utils/oin_aligner.py` + `utils/perception_tmc.py`; Lanes 2/5/6 share `oin/canonical_slots.py`). The actual
 first-parent order in git differs in two respects worth knowing:
 
 | # | merge commit | branch | note |
@@ -298,7 +298,7 @@ first-parent order in git differs in two respects worth knowing:
   heavier, so with both on the reparse **can undo** the H-faithful fix. Safe in the shipped
   configuration; `OIN_H_FAITHFUL` must not be promoted until that is addressed.
 
-**One fallback removed because it had become a trap.** `utils/xyz2mol_local.py` guarded its `levers`
+**One fallback removed because it had become a trap.** `utils/perception_core.py` guarded its `levers`
 import with a local shim that defaulted every lever to **OFF** — correct while the registry did not
 exist on every branch, and dangerous once it did, because a broken import would have silently reverted
 **six promoted defaults**. A missing registry should be a loud `ImportError`, not six quiet behaviour
@@ -417,7 +417,7 @@ easy case will confirm a wrong belief.**
   unchanged at 1 hindered / 1 emitting) — but the Y2 cohort numbers backing `OIN_EMIT_AXIAL`'s
   promotion evidence were measured with perception **OFF**, and `axial.py`'s safety argument covers
   only the *generator* reading **fewer** aromatic atoms, not the encoder reading **more**.
-- **`OIN_STABLE_METAL_AC` × a fixture-driven error path.** `test_xyz2mol_errors` had been driving its
+- **`OIN_STABLE_METAL_AC` × a fixture-driven error path.** `test_perception_tmc_errors` had been driving its
   error path with a real fixture, and the lever makes the deliberately-broken `ticat3_generated_broken.xyz`
   geometry **perceive**: the metal absorbs contested bonds and perception *succeeds*, returning
   nonsense — 8 fragments, seven bare `[H+]`, `[Ti-14]` — where the old order failed loudly. The
@@ -607,7 +607,7 @@ should be inferred from the partial directory.
 | commit | what |
 |---|---|
 | `4d92d828` … `f4c3525a` | the fifteen explicit lane merges onto `release/v0.4.5` (see the integration table) |
-| **`1450b5ce`** | *"release(v0.4.5): integrate 16 lanes and PROMOTE the six canonicality levers"* — also the merge point for `swimlane/v045-atomcount` (`c1ae2759`). Creates `src/oinsmiles/oin/levers.py` (107 lines) and `src/oinsmiles/oin/hydrogen.py`; touches `generation/metallogen_adapter.py`, `oin/inline.py`, `utils/oin_aligner.py`, `utils/xyz2mol.py`, `utils/xyz2mol_local.py`; adds `tests/unit/test_levers.py`, `tests/unit/test_atom_count_hydrogen.py`, `docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md` and `tools/atomcount/*` |
+| **`1450b5ce`** | *"release(v0.4.5): integrate 16 lanes and PROMOTE the six canonicality levers"* — also the merge point for `swimlane/v045-atomcount` (`c1ae2759`). Creates `src/oinsmiles/oin/levers.py` (107 lines) and `src/oinsmiles/oin/hydrogen.py`; touches `generation/metallogen_adapter.py`, `oin/inline.py`, `utils/oin_aligner.py`, `utils/perception_tmc.py`, `utils/perception_core.py`; adds `tests/unit/test_levers.py`, `tests/unit/test_atom_count_hydrogen.py`, `docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md` and `tools/atomcount/*` |
 | `3dfd7bdf` | point `tools/v045_state.sh` at the release branch and the remaining steps |
 | **`8f715699`** | **the 36-failure triage** — four causes, two real defects, one four-month-old wrong golden; finishes the `levers.py` migration (`locked_donor`, `OIN_BORON_CAGE` ×5, `OIN_RESCUE_STUCK_RING`) |
 | `7828f460` | `pending_g-xtb` means tier 2 is in flight, not that `xtb` is missing |
