@@ -78,14 +78,14 @@ fallback**.
   - `Ligand.winding` is **carried but unused** by the default DG embed — only the opt-in rigid
     placer (`_place_haptic`) reads it. So haptic winding is still recovered by the *search*
     (§6), exactly as before. (Constructing winding from it was tried and regressed — see
-    `docs/DIRECT_DG_VALIDATION.md`.)
+    `docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`.)
   - **Metal `@SPn` chirality** rides along in the representation but is currently **inert for
     round-trip**, because the encoder cannot yet emit a reproducible metal stereo descriptor.
     It is groundwork for future encoder work.
 - **Why direct, not m-SMILES:** removing the parse → serialize → parse round-trip means
   OIN-format changes reach 3D generation without a translation layer. An A/B matched the
   m-SMILES path byte-for-byte per molecule (0 regressions, 0 gains) — see
-  `docs/DIRECT_DG_VALIDATION.md`.
+  `docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`.
 - **Fallback** — if direct assembly raises on an edge case, `generate()` drops to
   `convert_parsed_to_msmiles` + `om.get_om_from_modified_smiles` (the winding-lossy m-SMILES
   path) rather than hard-fail. A fragment with **no** coordination slot (outer-sphere
@@ -229,6 +229,6 @@ fallback**.
 - **SL1 (v0.4.4)** — accept-first early-exit (default-on); stretched-bond metric (opt-in).
 - **SL4 (v0.4.4)** — RMSD demoted to a diagnostic; no-progress cutoff.
 - **v0.4.4 direct-assembly default** — OIN-direct build replaces the m-SMILES bridge as the
-  default (`docs/DIRECT_DG_VALIDATION.md`); m-SMILES retained as fallback.
+  default (`docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`); m-SMILES retained as fallback.
 - **Opt-in (not in the default path):** rigid Kabsch winding construction (SL2 `oin_direct`),
   greedy ordered placement (SL3), g-xTB/MACE optimizer.

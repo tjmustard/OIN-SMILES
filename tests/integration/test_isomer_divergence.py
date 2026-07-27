@@ -149,7 +149,7 @@ class TestIsomerComparisonLayer(unittest.TestCase):
         ``...n{5}1.c{2}...n{1}1.c{4}...n{3}1``, and
         ``canonical_roundtrip_key(fac_on) == canonical_roundtrip_key(fac_golden)`` -- the
         lever relabels, it does not change the isomer. mer is already canonical and does not
-        move. See ``docs/CANONICAL_SLOTS_v0.4.5.md``.
+        move. See ``docs/agentic-notes/v0.4.5/CANONICAL_SLOTS_v0.4.5.md``.
         """
         conv = XYZToSMILES()
         with _silence_fds():

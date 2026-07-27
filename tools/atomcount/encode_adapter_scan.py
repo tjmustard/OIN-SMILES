@@ -4,7 +4,7 @@ Encodes the input XYZ with the current code and lever settings, then runs the
 resulting OIN string through the generator's front half and counts the atoms
 MetalloGen would be asked to build.  Because the adapter-implied count was measured
 to equal the harness's reported generated count in 59/59 auditable molecules
-(docs/ATOM_COUNT_v0.4.5.md Sec 1), this predicts the atom-count gate without paying
+(docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md Sec 1), this predicts the atom-count gate without paying
 for embedding -- which makes it usable as an A/B arm.
 """
 

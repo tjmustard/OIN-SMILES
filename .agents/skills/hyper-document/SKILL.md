@@ -130,6 +130,35 @@ Then:
 
 ---
 
+### `docs/` — route before you write
+
+**This project splits `docs/` by audience, and the root is closed.** Decide which side your
+file lands on *before* writing it.
+
+| What you are writing | Where it goes |
+| :--- | :--- |
+| How the shipped software behaves | one of the four product docs at the `docs/` root |
+| What this session measured, tried, or refuted | `docs/agentic-notes/<release>/` |
+
+**Product docs — the complete allowlist:** `README.md`, `OPTIMIZERS.md`,
+`GENERATION_PIPELINE.md`, `KNOWN_LIMITATIONS.md`. Update these in place. **Do not create a
+fifth file at the `docs/` root** — a `pre-commit` guard (`tools/check_docs_layout.sh`)
+rejects it, and adding one needs maintainer sign-off.
+
+**Notes:** measurement reports, sweep results, A/B outcomes, per-lane write-ups, refuted
+hypotheses, status snapshots. `<release>` is the release the work is **for**, not the one
+that was current when you started — create `docs/agentic-notes/v0.4.7/` rather than
+reusing the newest existing folder. Add a row to `docs/agentic-notes/README.md` whenever
+you create a new folder.
+
+**A note never graduates by being moved.** When a finding becomes something a user needs,
+write it into the product doc in the user's language and leave the note in place as the
+evidence trail.
+
+Full rule: `.agents/rules/docs-layout.md`.
+
+---
+
 ### Standard Repository Documents
 (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `DEVELOPMENT.md`, `CITATION.cff`)
 

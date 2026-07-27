@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Is ``found_valid = 0`` on the over-cap branch a property of the ligand, or of the ORDER?
 
-``docs/VALENCE_SEARCH_v0.4.5.md`` measured that ``AC2BO``'s over-cap branch grinds 20 000
+``docs/agentic-notes/v0.4.5/VALENCE_SEARCH_v0.4.5.md`` measured that ``AC2BO``'s over-cap branch grinds 20 000
 candidates and finds none valid, so it returns ``best_BO`` -- a guess. But that branch also
 skips ``_ordered_valences``, the O/N/C/P/S grouping heuristic, and sub-cap ligands find a
 valid Lewis structure in **3 to 8** candidates *because* of it. So the failure may be a

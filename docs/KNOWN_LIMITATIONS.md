@@ -441,11 +441,11 @@ was fine -- usually the generator). This section is the opposite and more danger
 where two **genuinely distinct isomers encode to the same OIN**, so the round trip PASSES while
 the notation is silently lossy. Found by the Y1 injectivity audit (`tools/injectivity/`), which
 mirror-twins a structure and asks whether the encoder can still tell the enantiomers apart --
-no 3D generator involved. Full write-up: `docs/INJECTIVITY_Y1_OVERVIEW.md`.
+no 3D generator involved. Full write-up: `docs/agentic-notes/injectivity/INJECTIVITY_Y1_OVERVIEW.md`.
 
 **Wave 2 update (feasibility):** all three axes are **recoverable from the input 3D** — the
 encoder discards a signal it has, it does not lack one — so none is a *permanent* limitation
-(`docs/INJECTIVITY_Y2_FEASIBILITY.md`). A per-axis descriptor recovered from the coordinates flips
+(`docs/agentic-notes/injectivity/INJECTIVITY_Y2_FEASIBILITY.md`). A per-axis descriptor recovered from the coordinates flips
 between enantiomers on every fixture. P2 has an opt-in encoder emit; P1/P3 are deferred to the
 v0.4.5 canonical-string work (they need a canonical, orientation-invariant ordering + generator
 support before a token can be emitted safely).
@@ -456,7 +456,7 @@ support before a token can be emitted safely).
   `_polyhedron_signature`). RDKit's `AssignStereochemistryFrom3D` *does* recover the Δ/Λ
   configuration (octahedral permutation 10 vs 8), so this is recoverable; it needs a canonical donor
   ordering (the v0.4.5 problem) + generator support to emit an `@OHn` token. Detail:
-  `docs/INJECTIVITY_Y1_P1_METAL.md`.
+  `docs/agentic-notes/injectivity/INJECTIVITY_Y1_P1_METAL.md`.
 - **Axial / atropisomeric chirality (biaryl, BINAP) -- ENCODER-BLIND by default; OPT-IN EMIT that
   now ROUND-TRIPS (Wave 2).** `R`-BINAP and `S`-BINAP encode to **byte-identical** OIN strings by
   default. The axis is recovered from the signed biaryl dihedral (`src/oinsmiles/oin/axial.py`);
@@ -468,14 +468,14 @@ support before a token can be emitted safely).
   see "Axial token: what is decided and what is not" below** for the v0.4.5 product call, the
   key-folding decision and the staged promotion recommendation. Guards:
   `tests/unit/test_axial_emit.py`, `tests/integration/test_axial_roundtrip.py`. Detail:
-  `docs/INJECTIVITY_Y1_P2_AXIAL.md`, `docs/AXIAL_v0.4.5_LANE4.md`.
+  `docs/agentic-notes/injectivity/INJECTIVITY_Y1_P2_AXIAL.md`, `docs/agentic-notes/v0.4.5/AXIAL_v0.4.5_LANE4.md`.
 - **Trivalent-N amine inversion on binding -- ENCODER-BLIND (recoverable, deferred to v0.4.5).** A
   *metal-bound* secondary amine is stereogenic only because the metal locks its 4th position; the
   encoder strips the metal, leaving a trivalent N that Zone-A clears (`core/chirality.py:722-727`; N
   is out of lone-pair-CIP scope, `:33-36`). Recoverable as the signed tetrahedral volume at the
   locked N (−9.4 vs +9.4); emitting needs a Zone-A carve-out + canonical ordering + generator.
   Distinct from the pendant-amine `[N@@H]→[NH]` residual under *Documented residuals* above, which
-  is a generator loss. Detail: `docs/INJECTIVITY_Y1_P3_AMINE.md`.
+  is a generator loss. Detail: `docs/agentic-notes/injectivity/INJECTIVITY_Y1_P3_AMINE.md`.
 
 **Layer:** encoder injectivity / notation completeness. Reproduce with
 `PYTHONPATH=$PWD/src python -m tools.injectivity.report --probes`. Guards:

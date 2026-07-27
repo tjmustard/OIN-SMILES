@@ -197,7 +197,7 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         #
         # `oin2_string` above comes from `get_oin_string(mol_gen_bonded, ...)`, i.e. the GENERATOR's
         # own molecule, and that single shortcut causes BOTH reporting errors at once, measured over
-        # the 936-molecule results-v0.4.5-rebaseline cohort (docs/METRIC_FALSE_POSITIVES.md):
+        # the 936-molecule results-v0.4.5-rebaseline cohort (docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md):
         #
         #   gen_result.mol ASSERTS bonds the geometry does not support -> 61 FALSE POSITIVES
         #       (FIYHUT: both Cp rings 0.85 A off the Fe, scored a pass)
@@ -244,7 +244,7 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
         # bond graph -- so a Cp ring that drifted 0.85 A off the metal is still "bonded" there and
         # the key matches. Measured over the 633 scored successes of results-v0.4.5-rebaseline:
         # 9.6% of passes overall, and 28.1% of HAPTIC passes, carry coordination the geometry does
-        # not support (docs/METRIC_FALSE_POSITIVES.md). This field is the only thing in the report
+        # not support (docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md). This field is the only thing in the report
         # that can see it, because it reads distances from the two geometries and consults neither
         # bond graph.
         #
@@ -811,7 +811,7 @@ def main():
         # which meant `adapter.early_exit_hit` / `early_exit_miss` was unreachable from a sweep even
         # though the generator has recorded it all along. That is the signal which settles whether
         # the eta runtime tail is attempt-count or cost-per-attempt (see
-        # docs/V046_HFAITHFUL_FINDINGS.md), so a sweep now yields the accuracy numbers and that
+        # docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md), so a sweep now yields the accuracy numbers and that
         # distribution in one run.
         #
         # Cannot perturb the measurement: `record()` is documented to never raise and never consume

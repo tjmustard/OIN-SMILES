@@ -417,7 +417,7 @@ _AGUKOD_B = (
 class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
     """Pins the measured LIMIT of this post-pass, so nobody claims it closed without a fix.
 
-    Measured over 150 corpus molecules (see ``docs/CANONICAL_SLOTS_v0.4.5.md`` section 7a):
+    Measured over 150 corpus molecules (see ``docs/agentic-notes/v0.4.5/CANONICAL_SLOTS_v0.4.5.md`` section 7a):
     **32/32** residual ``slot_renumber`` pairs have an *identical* colored-vertex map. The
     post-pass derives its relabeling from that map alone, so it computes the identical
     permutation for both strings and the difference survives it. That is not a bug in the

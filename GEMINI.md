@@ -34,5 +34,11 @@ You do not need to manually open new context windows or run the Python scripts y
    - Treat `spec/compiled/architecture.yml` as the absolute ground truth for the project's state. 
    - Write temporary drafts and reports to `spec/active/`.
    - Ensure the generated specifications strictly adhere to the templates in `.agents/schemas/`.
-4. **Interactive Interviews**: When acting as the Architect, use your `ask_user` tool to gather structured constraints efficiently instead of relying solely on conversational text.
-5. **No Probabilistic Traversal**: Do not guess architectural dependencies. Always rely on the outputs of the `hypergraph_updater.py` script to understand the blast radius before executing code modifications.
+4. **Safe Sandboxing**:
+   - When doing exploratory work or executing potentially destructive scripts, always work in a branch prefixed with `research/` or `swimlane/`. A `pre-push` hook blocks these from hitting the remote, acting as a mandatory safety net.
+5. **Documentation Layout**:
+   - The `docs/` root is **closed**. It holds four product docs — `README.md`, `OPTIMIZERS.md`, `GENERATION_PIPELINE.md`, `KNOWN_LIMITATIONS.md` — and nothing else.
+   - Everything you produce as a session artifact (measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots) goes in `docs/agentic-notes/<release>/`, where `<release>` is the release the work is **for**. Create the folder if it does not exist.
+   - A `pre-commit` guard (`tools/check_docs_layout.sh`) rejects new files at the `docs/` root. Full rule: `.agents/rules/docs-layout.md`.
+6. **Interactive Interviews**: When acting as the Architect, use your `ask_user` tool to gather structured constraints efficiently instead of relying solely on conversational text.
+7. **No Probabilistic Traversal**: Do not guess architectural dependencies. Always rely on the outputs of the `hypergraph_updater.py` script to understand the blast radius before executing code modifications.

@@ -18,11 +18,26 @@ It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchai
 - **Protocol**: Review the relevant PRD in `PRDs/` before drafting implementation plans or modifying code.
 
 ## Development Flow
-1. **Describe**: Update `docs/Features/` before coding, referencing the specific file in `PRDs/`.
+1. **Describe**: Write the feature description before coding, referencing the specific file in `PRDs/`.
 2. **Plan**: Create `implementation_plan.md` and get approval.
 3. **Implement**: Write code and tests together.
 4. **Verify**: Run tests and static analysis.
-5. **Document**: Update docs to reflect reality.
+5. **Document**: Update docs to reflect reality — see **Documentation Layout** below for *where*.
+
+## Documentation Layout
+`docs/` is split by audience, and **the root is closed to new files**:
+- **Product documentation** — `docs/` root. Four files only: `README.md`, `OPTIMIZERS.md`,
+  `GENERATION_PIPELINE.md`, `KNOWN_LIMITATIONS.md`. Adding a fifth needs maintainer sign-off.
+- **Agentic coding notes** — `docs/agentic-notes/<release>/`. Everything a session produces:
+  measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots.
+
+**The test:** if it records what a session *measured, tried, or refuted*, it is a note. If it
+tells someone *how the shipped software behaves*, it is a product doc. `<release>` is the release
+the work is **for** — targeting v0.4.7 means creating `docs/agentic-notes/v0.4.7/`, not reusing
+the newest folder that already exists.
+
+A `pre-commit` guard (`tools/check_docs_layout.sh`) rejects new files at the `docs/` root. Full
+rule: `.agents/rules/docs-layout.md`.
 
 ## Maintainer Preferences
 - **Language**: Python (managed via `uv`).
@@ -43,6 +58,9 @@ It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchai
 - **`main` is intentionally ahead of `origin/main` and unpushed.** Do not push or open a PR without asking the maintainer.
 - **`git stash push <path>` on an already-committed (clean) path saves nothing and exits 0.** The following `git stash pop` then applies whatever stash *is* on top. To A/B a file against the previous commit use `git show HEAD~1:<path> > <path>` … `git checkout -- <path>`.
 
+## Branching Safeguards & Internal Files
+Review `.agents/rules/git-workflow.md` for strict rules regarding protected paths (e.g. `spec/process/`) and blocked remote branches (`research/*`, `swimlane/*`). Agents must respect these constraints.
+
 ## Testing Discipline
 - **Unit Tests**: `uv run python -m unittest discover tests/unit`
 - **Integration Tests**: `uv run python -m unittest discover tests/integration`
@@ -58,4 +76,4 @@ It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchai
 ## Self-Learning
 - If test discovery fails, verify the `__init__.py` files exist in test directories.
 - If import errors occur during `uv run`, ensure `uv sync` has been run to update the virtual environment.
-- Document any specific chemical edge cases (e.g., hapticity handling) in `docs/Development/chemistry-edge-cases.md`.
+- Document any specific chemical edge cases (e.g., hapticity handling) in `docs/KNOWN_LIMITATIONS.md` — that is the product doc for reproducible failure modes. The *investigation* behind one goes in `docs/agentic-notes/<release>/`.

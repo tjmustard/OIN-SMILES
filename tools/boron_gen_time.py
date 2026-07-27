@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Time GENERATION for a boron-cage molecule -- the arm the boron lane never measured.
 
-``docs/BORON_CAGE_v0.4.5.md`` §5's 34/34 table is nine ENCODER-side checks (encodes,
+``docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md`` §5's 34/34 table is nine ENCODER-side checks (encodes,
 byte-identical repeat encode, fragments re-parse, atom/bond multisets, key computable and
 stable). None of them invokes the 3D generator, so that document's "encode and round-trip"
 does not cover OIN -> XYZ -> OIN.

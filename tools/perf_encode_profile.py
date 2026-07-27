@@ -3,7 +3,7 @@
 Why this exists: every perf wave in this project targeted *generation*. Nobody had
 profiled the encoder, yet a single eta molecule's bare ``XYZToSMILES().convert()``
 was measured at 46-71s, and a round trip runs the encode twice. See
-``docs/ENCODER_PERF_v0.4.5.md``.
+``docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md``.
 
 Two modes, both on one molecule:
 

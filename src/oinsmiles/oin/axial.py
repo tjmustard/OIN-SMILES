@@ -1,9 +1,11 @@
 """Axial / atropisomer descriptor for the OIN encoder (Y2 P2 fix candidate).
 
 The encoder is totally blind to biaryl atropisomerism: R-BINAP and S-BINAP encode to
-byte-identical OIN strings (``docs/INJECTIVITY_Y1_P2_AXIAL.md``). The configuration is,
+byte-identical OIN strings
+(``docs/agentic-notes/injectivity/INJECTIVITY_Y1_P2_AXIAL.md``). The configuration is,
 however, recoverable straight from the 3D geometry as the **signed biaryl dihedral**
-(``docs/INJECTIVITY_Y2_FEASIBILITY.md``). RDKit does NOT perceive it from pure 3D -- per
+(``docs/agentic-notes/injectivity/INJECTIVITY_Y2_FEASIBILITY.md``). RDKit does NOT
+perceive it from pure 3D -- per
 the RDKit Book an atropisomer bond is only marked when a neighbour bond is *wedged*, and
 the configuration is only then read from the coordinates -- so we detect the axis and sign
 it ourselves.

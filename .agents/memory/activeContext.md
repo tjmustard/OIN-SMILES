@@ -24,7 +24,7 @@ per-version detail. The dated blocks below are retained as history.
   the 1,000-success guard — all 11 regressions are 300 s generation timeouts (a full-pool + direct-DG
   compute-time regime, not wrong answers). 37.4% of prior-version failures now round-trip. Report:
   `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.4-regression/REGRESSION_REPORT.md`; decision record
-  `docs/DIRECT_DG_VALIDATION.md`; limitation `docs/KNOWN_LIMITATIONS.md`.
+  `docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`; limitation `docs/KNOWN_LIMITATIONS.md`.
 
 ## Current State (as of 2026-07-18)
 
@@ -38,9 +38,9 @@ detail (the block below is retained as history; it predates v0.3.6 and is supers
 - **v0.4.2 — round-trip ACCURACY wave. MERGED to LOCAL `main` (`e6febd16`), UNPUSHED.** `pyproject`
   bumped to 0.4.2; `v0.4.2` tag deferred to push. Phases S1/S3/S5/S6a/S6b/S7 (+docs).
   - Full tmCAT/tmPHOTO sweep **complete: 25,197 molecules** — 88.4% `--quick` round-trip pass /
-    95.8% accuracy-clean (`docs/ACCURACY_v0.4.1.md`, a screening floor, not a headline).
+    95.8% accuracy-clean (`docs/agentic-notes/v0.4.1/ACCURACY_v0.4.1.md`, a screening floor, not a headline).
   - Quick-mode A/B vs a matched v0.4.1 control over all 2,917 failures: **+107 code-attributable
-    fixes, 0 deterministic regressions** (`docs/ACCURACY_v0.4.2.md`; tool `tools/ab_compare.py`).
+    fixes, 0 deterministic regressions** (`docs/agentic-notes/v0.4.2/ACCURACY_v0.4.2.md`; tool `tools/ab_compare.py`).
   - New tooling: `tools/ab_compare.py` (two-dir A/B), `tools/milestone_report.py` (backlog snapshots).
 
 **Not yet pushed** (user directive: additional docs/testing first). `README.md` is owned by a concurrent

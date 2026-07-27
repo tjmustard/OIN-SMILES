@@ -5,7 +5,7 @@ Lane 2's `tools/slot_drift_mechanism.py` classified 7 residual `slot_renumber` p
 Lane 9 settled all 7 from the 3D coordinates (`tools/wrong_donor_groundtruth.py`) and found
 **0 soundness defects**: 4 had a bit-identical donor->vertex map and the other 3 differed by a
 proper rotation of the coordination polyhedron, `|delta rssd| <= 1.2e-14`. See
-`docs/WRONG_DONOR_v0.4.5.md`.
+`docs/agentic-notes/v0.4.5/WRONG_DONOR_v0.4.5.md`.
 
 These tests use the **real emitted strings** from the actual 7, so they need no dataset (the
 dataset is gitignored and absent from a worktree). They pin the two classifier mechanisms that
@@ -112,7 +112,7 @@ class TestVerdictMakesNoSoundnessClaim(unittest.TestCase):
         self.assertNotIn(
             'return "DISTINCT_donors"',
             src,
-            "the verdict cannot claim a string is wrong -- see docs/WRONG_DONOR_v0.4.5.md",
+            "the verdict cannot claim a string is wrong -- see docs/agentic-notes/v0.4.5/WRONG_DONOR_v0.4.5.md",
         )
 
 

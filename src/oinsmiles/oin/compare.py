@@ -154,7 +154,7 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     # metal @-stereo above, it is a distinguisher the round-trip key does not yet gate on
     # (the generator cannot reproduce the axis), so the batch key stays blind to it and the
     # harness is unaffected whether or not the emit flag is set. Y2 P2; see
-    # docs/INJECTIVITY_Y2_FEASIBILITY.md.
+    # docs/agentic-notes/injectivity/INJECTIVITY_Y2_FEASIBILITY.md.
     s = _AXIAL_TOKEN_RE.sub("", oin_string)
     s = _METAL_CONFIG_TOKEN_RE.sub("", s)
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)

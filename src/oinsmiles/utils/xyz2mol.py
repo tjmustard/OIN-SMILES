@@ -561,7 +561,8 @@ def _rescue_unusable_perception(mol, AC, atoms, best_res_mol, charge, coordinati
     rescue loop *stricter* than the encoder's own repair path for no documented reason, and
     it is why ``ASISAX`` (a Ni tetraaza-macrocycle whose only usable ligand charge, 0, has
     stuck rings that de-aromatize cleanly) fell through to a hard `encode_fail` although a
-    usable perception existed. See ``docs/ENCODE_FAIL_v0.4.5.md``. Off by default: flipping it can
+    usable perception existed. See ``docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md``.
+    Off by default: flipping it can
     change which charge/candidate an *already-rescued* ligand lands on (the loop returns the
     first hit in Huckel-distance order), so it is not proven byte-identical for every ligand
     that currently reaches this loop -- only for ones that currently return nothing.

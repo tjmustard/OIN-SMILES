@@ -110,7 +110,7 @@ class TestCanonicalSlotsAreInvariant(_PresentationMixin, unittest.TestCase):
         """Documents why the fix is needed: rotation was already fine, numbering was not.
 
         Asserted as a *property of the lever*, not of the baseline -- the baseline's drift
-        is measured in ``docs/RENUMBERING_INSTABILITY_v0.4.5.md`` and is molecule-dependent,
+        is measured in ``docs/agentic-notes/v0.4.5/RENUMBERING_INSTABILITY_v0.4.5.md`` and is molecule-dependent,
         so pinning it here would be pinning a number that is allowed to improve.
         """
         with mock.patch.dict(os.environ, {"OIN_CANONICAL_SLOTS": "1"}):

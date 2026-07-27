@@ -241,7 +241,7 @@ def get_UA(maxValence_list, valence_list):
     Same loop as before, with the subtraction done once instead of twice and the
     ``append`` bound outside. Deliberately *not* vectorised: at ~60 atoms a numpy
     round trip costs more than the Python loop it replaces (measured -- see
-    ``docs/ENCODER_PERF_v0.4.5.md``).
+    ``docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md``).
     """
     UA = []
     DU = []
@@ -396,7 +396,8 @@ def BO_is_OK(
 
     # Left as-is on purpose. `BO.sum() - AC.sum()` avoids the NxN temporary and is
     # algebraically identical, but measured 0.72x -- two reductions cost more than one
-    # subtract-plus-reduction at this matrix size. See docs/ENCODER_PERF_v0.4.5.md.
+    # subtract-plus-reduction at this matrix size.
+    # See docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md.
     check_sum = (BO - AC).sum() == sum(DU)
     check_charge = charge_is_OK(
         BO,
@@ -693,7 +694,7 @@ def get_bonds(UA, AC):
 # attributes**, so ``nx.max_weight_matching`` is solving maximum *cardinality* matching with
 # a general (Blossom) weighted matcher. Alternatives can return a *different* matching of the
 # same size, which is a different Kekule structure and therefore a different perceived BO --
-# hence the lever. Measured in docs/VALENCE_SEARCH_v0.4.5.md.
+# hence the lever. Measured in docs/agentic-notes/v0.4.5/VALENCE_SEARCH_v0.4.5.md.
 _MATCHER_ENV = "OIN_VALENCE_MATCHER"
 
 
@@ -831,7 +832,7 @@ _VALENCE_FALLBACK_TRIES = 20_000
 # ``best_BO``. This is NOT byte-identical for over-cap ligands: ``best_BO`` is updated
 # with ``BO.sum() >= best_BO.sum()`` (note ``>=``), so the *last* candidate attaining the
 # maximum sum wins and a smaller budget can select a different one. See
-# docs/VALENCE_SEARCH_v0.4.5.md for the measured stability table.
+# docs/agentic-notes/v0.4.5/VALENCE_SEARCH_v0.4.5.md for the measured stability table.
 _FALLBACK_TRIES_ENV = "OIN_VALENCE_FALLBACK_TRIES"
 
 
@@ -857,7 +858,7 @@ def _fallback_tries():
 
 # Deterministic counters for the valence search. Wall clock is unusable on this host
 # (the release sweep keeps load above 12), so every claim in
-# docs/VALENCE_SEARCH_v0.4.5.md is made in these instead.
+# docs/agentic-notes/v0.4.5/VALENCE_SEARCH_v0.4.5.md is made in these instead.
 AC2BO_STATS = {
     "ac2bo_calls": 0,  # AC2BO invocations
     "over_cap_calls": 0,  # ... of which took the bounded lazy-product branch
@@ -942,7 +943,8 @@ _HEURISTIC_ELEMENTS = (8, 7, 6, 15, 16)  # O, N, C, P, S
 # valence assignments in the SAME order _ordered_valences produces -- lazily, so it does not
 # materialise the exponential product -- instead of the raw itertools.product order. Read
 # only inside `if over_cap:`, so sub-cap ligands (99.8% of the corpus) are byte-identical by
-# construction, exactly as OIN_VALENCE_FALLBACK_TRIES is. See docs/VALENCE_ORDER_v0.4.5.md.
+# construction, exactly as OIN_VALENCE_FALLBACK_TRIES is.
+# See docs/agentic-notes/v0.4.5/VALENCE_ORDER_v0.4.5.md.
 _ORDERED_FALLBACK_ENV = "OIN_VALENCE_ORDERED_FALLBACK"
 
 
@@ -1414,7 +1416,8 @@ def _AC2BO_core(
         AC2BO_STATS["over_cap_calls"] += 1
         # Default: the raw product order. Two default-OFF levers change what the bounded
         # prefix contains -- OIN_VALENCE_ORDERED_FALLBACK reorders it into the sub-cap
-        # heuristic's order (measured WORSE; see docs/VALENCE_ORDER_v0.4.5.md), and
+        # heuristic's order (measured WORSE; see
+        # docs/agentic-notes/v0.4.5/VALENCE_ORDER_v0.4.5.md), and
         # OIN_VALENCE_CHARGE_FILTER keeps the order but drops candidates that provably
         # cannot be valid. The filter wins if both are set, since it subsumes the question.
         want_filter = _lever_enabled(_CHARGE_FILTER_ENV)
@@ -1435,7 +1438,7 @@ def _AC2BO_core(
                 # blast radius is then exactly "a guess becomes a real Lewis structure",
                 # and never "a guess becomes a different guess". (The DP has already proved
                 # the grind cannot succeed, so short-circuiting it is a separate, safe
-                # optimisation -- see docs/VALENCE_ORDER_v0.4.5.md.)
+                # optimisation -- see docs/agentic-notes/v0.4.5/VALENCE_ORDER_v0.4.5.md.)
                 AC2BO_STATS["over_cap_infeasible"] += 1
                 candidate_source = itertools.product(*valences_list_of_lists)
             else:
@@ -1884,7 +1887,8 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
     #     bridging hydrides before H's valence rule discards them), then a per-atom
     #     fingerprint of rotation- and permutation-invariant scalars only.
     #
-    # See docs/BORON_CAGE_v0.4.5.md and docs/RENUMBERING_INSTABILITY_v0.4.5.md.
+    # See docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md and
+    # docs/agentic-notes/v0.4.5/RENUMBERING_INSTABILITY_v0.4.5.md.
     # Both default OFF; with neither set this loop is byte-identical to pre-v0.4.5.
     exempt = set()
     if _lever_enabled("OIN_BORON_CAGE"):

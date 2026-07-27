@@ -424,7 +424,8 @@ def generate_3d_structures(
     # Attempts actually spent, for the eta runtime question. A PLAIN COUNTER, not a
     # degradation site: the `adapter.early_exit_*` counters cannot answer it because
     # `_select_by_geometry(..., early_exit=False)` is the default and that block never runs, so a
-    # telemetry sweep came back with every site at zero (docs/V046_HFAITHFUL_FINDINGS.md).
+    # telemetry sweep came back with every site at zero
+    # (docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md).
     #
     # What this discriminates: flat attempts across eta and size-matched non-eta molecules means the
     # eta 3-6x penalty is COST-PER-ATTEMPT (a profiling target); systematically higher attempts for

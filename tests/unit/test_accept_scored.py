@@ -4,7 +4,7 @@ The lever exists because `accept_fn` was measured to be STRICTER than the predic
 a round trip: it adds an independent `XYZToSMILES().convert` re-perception the score never asks
 for. On HIDCIH_comp_1 the cheap test matched at pool conformer 0 (1.66 s) while the strict one
 first matched at conformer 25 (49.4 s) — 44 conformers were scored-successes that acceptance
-discarded. See `docs/v0.4.5-retrospective/LANE-eta-runtime-30s.md`.
+discarded. See `docs/agentic-notes/v0.4.5-retrospective/LANE-eta-runtime-30s.md`.
 
 These tests pin the three behaviours that matter and are cheap to get wrong:
 

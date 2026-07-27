@@ -7,7 +7,7 @@ structure along exactly one chemically-meaningful axis and asking whether the
 encoder (and the round-trip comparison key) can still tell them apart. None of it
 invokes the 3D generator, so it is immune to MetalloGen-inaccuracy / timeout noise.
 
-See ``docs/INJECTIVITY_Y1_OVERVIEW.md`` for the falsification frame and results.
+See ``docs/agentic-notes/injectivity/INJECTIVITY_Y1_OVERVIEW.md`` for the falsification frame and results.
 """
 
 from .oracle import OracleVerdict, geometric_chirality, is_distinct_enantiomer, stereo_fingerprint

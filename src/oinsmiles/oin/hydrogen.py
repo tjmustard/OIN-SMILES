@@ -15,7 +15,8 @@ re-reads carrying a hydrogen it never had:
 For a lossless notation this matters directly: the phantom hydrogen is baked into the
 OIN string, so the 3D generator faithfully builds a molecule with the wrong number of
 atoms and the round trip fails its final gate. It was the largest non-timeout
-``hard_fail`` class in the v0.4.5 capstone corpus -- see ``docs/ATOM_COUNT_v0.4.5.md``.
+``hard_fail`` class in the v0.4.5 capstone corpus -- see
+``docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md``.
 
 The per-motif alternative has been tried repeatedly and does not converge: the
 bare-donor strip heuristics in ``generation/metallogen_adapter.py`` and step 1b of

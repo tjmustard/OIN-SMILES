@@ -31,7 +31,8 @@ import os
 #: Levers that ship ENABLED. Everything not listed here defaults to disabled.
 #:
 #: The six below were promoted in v0.4.5 on the evidence in
-#: ``docs/PROMOTION_GATE_v0.4.5.md``: on a 300-molecule seed-42 sample, all six together took
+#: ``docs/agentic-notes/v0.4.5/PROMOTION_GATE_v0.4.5.md``: on a 300-molecule seed-42
+#: sample, all six together took
 #: byte-stability under rotation/renumbering from 58.1% to 69.6% (+35 molecules) and cut
 #: comparison-key instability from 60 molecules to 16 — 1-in-5 to roughly 1-in-19 — with every
 #: veto passing: fac/mer and cis/trans still distinct raw AND at key level, goldens
@@ -47,7 +48,7 @@ import os
 #: measured accuracy gain: on the 36 `XYZToSMILES failed` molecules of the 936-molecule
 #: re-baseline, 34 are `electron-deficient boron cluster` and the lever takes them from **0/36
 #: encoding to 34/36**, at 0.2-4.2s each. The boron lane separately measured 48/48 round-tripping
-#: (docs/BORON_CAGE_v0.4.5.md).
+#: (docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md).
 #:
 #: It is NOT a free win and was held back through v0.4.5 for a real reason: it moves 14 molecules
 #: that were SCORED AS PASSING to failing. That is correct -- those 14 passed while describing the
@@ -57,7 +58,7 @@ import os
 #: because correctness is the point of a lossless notation.
 #:
 #: ⚠ A THIRD cost, measured 2026-07-26 and missing from the original pricing: these molecules
-#: mostly do not GENERATE. 33 of 34 measured (docs/BORON_CAGE_v0.4.5.md §10,
+#: mostly do not GENERATE. 33 of 34 measured (docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md §10,
 #: tools/boron_gen_times.jsonl): only **2/33** produce a 3D structure, 25 burn the entire generation
 #: cap producing nothing (~2.1 CPU-h wasted per 5k sweep), 6 fail instantly. An earlier 10-molecule
 #: sample read 0/10 and was used to propose a blanket boron fast-fail; the full measurement REFUTES
@@ -136,7 +137,8 @@ _HELD_OFF = {
         "harness diagnostic: record an INDEPENDENT round-trip verdict beside the scored one. The "
         "harness scores with `get_oin_string(gen_result.mol, coords)` -- the GENERATOR's own "
         "molecule -- and that single shortcut causes BOTH reporting errors at once, measured over "
-        "the 936-molecule results-v0.4.5-rebaseline cohort (docs/METRIC_FALSE_POSITIVES.md): it "
+        "the 936-molecule results-v0.4.5-rebaseline cohort "
+        "(docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md): it "
         "ASSERTS bonds the geometry does not support (61 FALSE POSITIVES -- FIYHUT ships both Cp "
         "rings 0.85A off the Fe and scores a pass) and LACKS stereo the geometry does support (8 "
         "FALSE NEGATIVES -- YOSXIP's `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch). "
@@ -152,7 +154,8 @@ _HELD_OFF = {
         "accuracy audit; the point is to make the honest number available at CORPUS scale so that "
         "switch becomes a decision backed by a full sweep instead of a 936-molecule sample. Note "
         "the cost is already characterised from the other side: it is the same re-perception "
-        "`accept_fn`'s strict step performs, which docs/ACCEPT_SCORED_v0.4.7.md measured as the "
+        "`accept_fn`'s strict step performs, which "
+        "docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md measured as the "
         "runtime the OIN_ACCEPT_SCORED lever buys back."
     ),
     "OIN_ACCEPT_SCORED": (
@@ -183,7 +186,8 @@ _HELD_OFF = {
         "cohort: arm B is better, not worse (severe clashes 7 -> 0). That is consistent with "
         "_select_by_geometry's own comment that clash-minimising selection can splay donors to the "
         "edge of the gate; arm A picked a 16-clash POVPIA conformer that arm B never reached for. "
-        "⚠ THE 'PROMOTE' READING OF THE ABOVE IS SUPERSEDED -- see docs/ACCEPT_SCORED_v0.4.7.md "
+        "⚠ THE 'PROMOTE' READING OF THE ABOVE IS SUPERSEDED -- see "
+        "docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md "
         "(v0.4.7 lane L2-promote), which added the three arms this cohort A/B lacked. Its G2 gate "
         "shows the pass-rate arm above is CIRCULAR: `passed` is computed with "
         "`get_oin_string(gen.mol, coords)` -- the same predicate the lever accepts on -- so "
@@ -224,7 +228,8 @@ _HELD_OFF = {
         "sits between the perceived parent and the emitted string (perceived_H == input_H in "
         "36/45) and is heterogeneous -- 28/45 at dH +1..+3, 4 at dH 0 where hydrogen is not the "
         "issue, and three large losses (-14, -16, -36) with no shared explanation. Two aggregate "
-        "hypotheses have already been refuted (see docs/V046_HFAITHFUL_FINDINGS.md); the next "
+        "hypotheses have already been refuted (see "
+        "docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md); the next "
         "step is per-ATOM provenance, not another aggregate. Promote only with evidence that it "
         "moves a real population."
     ),

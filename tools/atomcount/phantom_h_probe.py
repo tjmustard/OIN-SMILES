@@ -2,7 +2,7 @@
 
 Runs the real encoder and reports, per heavy atom, the H count the input
 geometry supports versus the H count the encoder ends up serializing.  The
-`atom_count` hard-fail class is 100% hydrogen (see docs/ATOM_COUNT_v0.4.5.md),
+`atom_count` hard-fail class is 100% hydrogen (see docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md),
 so this is the whole question.
 """
 

@@ -6,7 +6,7 @@ discards is still present in the input coordinates. ``tools/injectivity/config_o
 recovers a per-axis descriptor that FLIPS between enantiomers; these guards lock that in.
 
 If any of these ever stops flipping, the recovery route regressed and the "recoverable, not
-permanent" disposition in ``docs/INJECTIVITY_Y2_FEASIBILITY.md`` no longer holds.
+permanent" disposition in ``docs/agentic-notes/injectivity/INJECTIVITY_Y2_FEASIBILITY.md`` no longer holds.
 """
 
 import sys

@@ -6,13 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **`docs/DIRECT_DG_VALIDATION.md`**: scale-validation section recording the v0.4.0-vs-v0.4.4
+- **`docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`**: scale-validation section recording the v0.4.0-vs-v0.4.4
   regression sweep (3,917 molecules = 2,917 v0.4.0 failures + 1,000 seed-42 successes, full
   quality) — **11 regressions / 1,092 fixes / net +1,081** round-trip-OK, zero correctness
   regressions on the 1,000-success guard, confirming direct-DG-as-default at dataset scale.
 - **`docs/KNOWN_LIMITATIONS.md`**: note that full-quality generation can time out (300 s) on 11
   medium-large molecules that quick mode round-trips in <30 s — a generation compute-time regime
   (full pool + direct-DG), not a wrong-answer/notation regression; root cause not yet isolated.
+- **`docs/agentic-notes/v0.4.4/ACCURACY_v0.4.4.md`**: round-trip accuracy report — the measured 3,917-molecule
+  regression sweep (11 regressions / 1,092 fixes) and a full-set pass-rate **projection** of
+  **~92% (±~1)**, up from the v0.4.0 baseline of 88.4%, with the projection caveats stated.
 - **`src/oinsmiles/oin/coordination.py`** — coordination-integrity check, and the first thing in a
   report that can see a **detached ligand**. The round-trip metric scores via
   `get_oin_string(gen_result.mol, …)`, i.e. the *generator's own bond graph*, so a Cp ring that
@@ -20,13 +23,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   only (distances, ~10 ms, consults neither bond graph); validated **90.2 % recall / 3.7 % false
   alarm** against 633 molecules with independent ground truth. Wired into
   `tools/test_dataset_roundtrip.py` as `report["coordination"]` — **always on, never a gate.**
-- **`docs/METRIC_FALSE_POSITIVES.md`** — the reported accuracy is not the accuracy, measured in both
+- **`docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md`** — the reported accuracy is not the accuracy, measured in both
   directions over 633 scored successes and 302 reported failures of `results-v0.4.5-rebaseline`.
   One root cause, two opposite errors: `gen_result.mol` **asserts bonds the geometry lacks**
   (61/633 = **9.6 %** false positives, **28.1 % of haptic** molecules — FIYHUT ships both Cp rings
   off the Fe and passes) and **lacks stereo the geometry has** (8/302 = 2.6 % false negatives —
   YOSXIP's `[S@]{5}` sulfoxide flattens to `S{5}` and fails). Net **~5.7 points over-stated**.
-- **`docs/SWEEP_v0.4.6_5K.md`** — the seed-42 5,000-molecule sweep: **round-trip 4660/5000 = 93.2 %**,
+- **`docs/agentic-notes/v0.4.6/SWEEP_v0.4.6_5K.md`** — the seed-42 5,000-molecule sweep: **round-trip 4660/5000 = 93.2 %**,
   `byte_exact` **82.80 %**. Failure attribution shows **78.8 % of failures never test the notation**
   (median failing molecule 300.2 s against a 300 s budget), so the notation-attributable gap is
   **~1.1 %** and the `<30 s` and `100 %` goals are one goal: generator compute. PASS 2's recovery
@@ -46,7 +49,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `ab_accept_scored.py`, `profile_eta.py`, `boron_gen_time.py`.
 
 ### Changed
-- **`docs/BORON_CAGE_v0.4.5.md`** — its 34/34 "round-trip" is corrected to **notation-level**: all
+- **`docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md`** — its 34/34 "round-trip" is corrected to **notation-level**: all
   nine checks are encoder-side and none invokes the generator. The pipeline arm, 33 of 34 measured:
   only **2 generate** a structure, 25 burn the whole cap (**~2.1 CPU-h wasted per 5k sweep**), 6 fail
   instantly. So `OIN_BORON_CAGE` moved most of this class from failing *instantly* to failing
@@ -99,7 +102,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   actually used, plus the OIN, pool width and timeout.
 
 ### Documented (measured negative results)
-- `docs/V046_HFAITHFUL_FINDINGS.md` records **eight refuted hypotheses**, each with the measurement
+- `docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md` records **eight refuted hypotheses**, each with the measurement
   that killed it: P3 tag restoration through the reparse (rewrites RIFGUJ's *relative* ring-carbon
   stereo); "the accuracy gap is mostly compute" (75% of timeouts hide real failures, not latent
   passes); a donor-cut rule for hydrogen (`dH` spans −36…+14, matches the bare-donor count in 4/45);
@@ -122,7 +125,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `src/oinsmiles/oin/canonical_slots.py` — lex-min colored-vertex signature over the proper-rotation
   group, exporting `canonical_slot_permutation()`. Also unifies the rotation group, fixing PBP from
   2 of 10 proper rotations to 10.
-- `docs/CANONICAL_OIN_v0.4.5.md`, plus 15 per-lane measurement documents.
+- `docs/agentic-notes/v0.4.5/CANONICAL_OIN_v0.4.5.md`, plus 15 per-lane measurement documents.
 
 ### Fixed
 - **Encoder instability under pure atom renumbering** (unplanned Lane 8): 13% of molecules emitted a
@@ -170,7 +173,7 @@ levers (rigid η-winding construction, greedy placement, stretched-bond metric) 
 found net-negative or neutral, and **kept opt-in** — a third confirmation that *selection beats
 construction*. No OIN format-version change (still v3.7 inline). Full unit suite **488 → 551 OK /
 3 skip**; FF-path goldens round-trip byte-identically under the new defaults. See
-`docs/GENERATION_PIPELINE.md` for the full default pipeline and `docs/DIRECT_DG_VALIDATION.md` for
+`docs/GENERATION_PIPELINE.md` for the full default pipeline and `docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md` for
 the direct-assembly decision record.
 
 ### Added
@@ -200,12 +203,12 @@ the direct-assembly decision record.
   m-SMILES bridge (`convert_parsed_to_msmiles`) to a **fallback** used only if direct assembly
   raises. Proven accuracy-neutral twice (0 regressions / 0 gains / identical buckets on a
   38-molecule stratified A/B and a confirmation A/B); metal `@SPn` chirality now survives into 3D
-  generation. (direct-dg promote; `docs/DIRECT_DG_VALIDATION.md`.)
+  generation. (direct-dg promote; `docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`.)
 - **The round-trip harness demotes RMSD to a diagnostic** (`tools/test_dataset_roundtrip.py`): a
   string-exact round trip that only exceeds the coordination-sphere RMSD gate is now a **success**
   carrying an `rmsd_over_gate` diagnostic (RMSD is only ~0.22-correlated with geometric quality),
   reclaiming 51 of 306 hard-fail molecules (28 directly attributable to the demote) with no
-  regression to the passing middle. (SL4; `docs/RELIABILITY_v0.4.4_SL4.md`.)
+  regression to the passing middle. (SL4; `docs/agentic-notes/v0.4.4/RELIABILITY_v0.4.4_SL4.md`.)
 
 ### Fixed
 - **Electron-deficient boron clusters now fail with a typed, classified error** (`utils/xyz2mol.py`,
@@ -213,7 +216,7 @@ the direct-assembly decision record.
   cannot perceive into a Lewis structure now raises a typed **`OINEncodeError`** naming the cause
   instead of returning `None`, so a known encode ceiling is distinguishable from an unexpected
   failure. `OINEncodeError` subclasses `ValueError`, so existing handlers are unaffected. Classifies
-  34 of the 48 capstone `encode_fail` molecules. (SL5; `docs/ENCODER_ROBUSTNESS_v0.4.4_SL5.md`.)
+  34 of the 48 capstone `encode_fail` molecules. (SL5; `docs/agentic-notes/v0.4.4/ENCODER_ROBUSTNESS_v0.4.4_SL5.md`.)
 - **xyz2mol perception hangs on large conjugated ligands bounded and recovered**
   (`utils/xyz2mol_local.py`, `utils/xyz2mol.py`): the `AC2BO` valence-combination sort is now capped
   (`_VALENCE_COMBO_CAP`), and the `ResonanceMolSupplier` enumeration runs in a **forked,
@@ -227,7 +230,7 @@ the direct-assembly decision record.
 A **structure-quality + conformer-invariance** release, developed as nine parallel worktree
 sessions (A0–A5, B1, B2, C1), each squash-merged to `main`. Where v0.4.2 attacked round-trip
 *string* accuracy, v0.4.3 attacks the *geometry the round-trip gate cannot see*: the elimination
-study (`docs/FALSIFICATION_v0.4.3_ELIMINATION.md`) found the round-trip gate is geometry-blind
+study (`docs/agentic-notes/v0.4.3/FALSIFICATION_v0.4.3_ELIMINATION.md`) found the round-trip gate is geometry-blind
 (`ρ(coord_rmsd, full_divergence)=0.22`) and the generator was routinely shipping
 validation-failing structures — **53% of generated structures carried a van der Waals clash vs
 5% for real crystals**. The headline fix is a whole-complex vdW clash acceptance term, now on by
@@ -309,7 +312,7 @@ floor. Accuracy is stated as **named per-molecule round-trip flips** against the
 `c7edeeb6` floor (a set of ~5,960 molecule IDs that pass on the baseline, `spec/handoffs/v0.4.2/`).
 No OIN format-version change (still v3.7 inline); one new CN-9 geometry code is added. Full unit
 suite **409 → 435 OK**; FF-path geometry is byte-identical to v0.4.1 for every non-targeted molecule.
-See `docs/ACCURACY_v0.4.2.md` for the per-class before→after and `docs/KNOWN_LIMITATIONS.md` for what
+See `docs/agentic-notes/v0.4.2/ACCURACY_v0.4.2.md` for the per-class before→after and `docs/KNOWN_LIMITATIONS.md` for what
 remains out of scope.
 
 ### Fixed
@@ -421,14 +424,14 @@ remains out of scope.
   atom-stereo fixes, and the deferred residuals `JUCCUH` (trivalent-N inversion RDKit clears) and
   `WEDYOU` (macrocyclic multi-P relative configuration). `spec/handoffs/v0.4.2/wontfix-carboranes.md`
   records the carborane class (3-centre-2-electron bonding outside the two-centre `AC2mol` model).
-- New `docs/ACCURACY_v0.4.2.md`: the per-class before→after table, the measurement-integrity
+- New `docs/agentic-notes/v0.4.2/ACCURACY_v0.4.2.md`: the per-class before→after table, the measurement-integrity
   rationale, and a **quick-mode A/B confirmation** — re-running all **2,917** v0.4.1 `--quick`
   failures against a matched v0.4.1 control (via `tools/ab_compare.py`, each arm on its own
   checkout's harness+venv) shows v0.4.2 delivers **107 code-attributable round-trip fixes** across the
   deterministic accuracy classes (E/Z 33, string-mismatch 25, atom-stereo 22, donor-H 14, encode-crash
   8, macrocycle 2, winding 2, geometry 1) with **zero deterministic regressions** (the 3 raw
   `pass→fail` are all stochastic `--quick` timeouts).
-- New `docs/ACCURACY_v0.4.1.md`: the full-corpus failure-mode distribution over the now-complete
+- New `docs/agentic-notes/v0.4.1/ACCURACY_v0.4.1.md`: the full-corpus failure-mode distribution over the now-complete
   25,197-molecule sweep (88.4% `--quick` round-trip pass / 95.8% accuracy-clean, stated as a screening
   floor).
 - Version bumped to 0.4.2 in `pyproject.toml`; the `v0.4.2` git tag is applied when the wave is pushed
@@ -569,7 +572,7 @@ engine since v0.3.3).
 
 ### Triage / documentation
 - **`no_conformers` class (R2):** all 36 rows the post-S6 registry filed under `no_conformers` were re-run serially (the registry over-counts the class — a concurrent sweep fabricates the error, so several rows are contention flakes that generate on a serial retry). After the two fixes above, **27 of 36 now generate a conformer**, and every row has a verdict: **16 round-trip cleanly** (net-new passes — `ABERUW CITGAO DURSOZ FIXYER EDOFUB EDOGEM ZIHGEE AGOGEJ RUBPAH ZUJNAT YEPXID IJAXIB IMELIW VEZYOQ TEZTAV YOMDAH`, rmsd 0.10–0.75); **11 generate but reclassify** into smaller-defect classes owned by other sessions (6 `atom_count`, 3 `string_mismatch`, 2 `high_rmsd`); and **9 are genuine and documented** in `docs/KNOWN_LIMITATIONS.md` (neutral L-donor over-valence `FUVNER`/`GEZKAZ`/`VIBRIK`; exotic bond orders the two-centre perception can't build `DAHXOB`/`MEDDUV`/`IREPAX`/`DOFCAE`/`HURGOS`; and one geometry-realization gap `BOBJIM`). The generation seed is fixed (42), so these verdicts are deterministic.
-- **Residual-tail triage (R4)** (`docs/roundtrip_residual_triage_R4.md`, `tools/triage_overrides.json`): the remaining unowned buckets were RDKit-diffed and routed — `string_mismatch_other` (28) is entirely stereo-only under per-fragment canonicalization (13 → `EZ_bond_stereo`, 13 → `atom_stereo`, 2 R3-resolved); `atom_stereo` (25) → the R5 session; singletons documented (DEKQAN `geometry_NON` → unperceived Y–O bonds; atom-count-decrease rows → generator atom loss, not encoder phantom-H).
+- **Residual-tail triage (R4)** (`docs/agentic-notes/v0.3.7/roundtrip_residual_triage_R4.md`, `tools/triage_overrides.json`): the remaining unowned buckets were RDKit-diffed and routed — `string_mismatch_other` (28) is entirely stereo-only under per-fragment canonicalization (13 → `EZ_bond_stereo`, 13 → `atom_stereo`, 2 R3-resolved); `atom_stereo` (25) → the R5 session; singletons documented (DEKQAN `geometry_NON` → unperceived Y–O bonds; atom-count-decrease rows → generator atom loss, not encoder phantom-H).
 
 ## [0.3.6.1] - 2026-07-10
 

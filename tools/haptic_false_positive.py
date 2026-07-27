@@ -3,7 +3,7 @@
 
 The open question
 ----------------
-`docs/ACCEPT_SCORED_v0.4.7.md` §4.7 established that the harness's success metric **cannot see a
+`docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md` §4.7 established that the harness's success metric **cannot see a
 detached haptic ligand**: it scores a round trip with `get_oin_string(gen_result.mol, coords)`,
 which reuses the *generator's own bond graph*. If the generated geometry has let a Cp ring drift
 off the metal, that bond graph still says it is coordinated, so the molecule scores a PASS.

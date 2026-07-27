@@ -42,6 +42,16 @@ For any task involving 3 or more steps, use the built-in task tools **before** s
 - **TaskUpdate** — mark `in_progress` when starting, `completed` when done
 - **TaskList** — check overall progress
 
+### Safe Branching & Automation
+When writing experimental code or testing tools, always checkout a branch prefixed with `research/` or `swimlane/`. These prefixes are intercepted by a `pre-push` hook, physically preventing you from accidentally pushing unstable code to the remote.
+
+### Where Session Notes Go
+Measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots — anything
+recording what *this session* measured, tried, or refuted — go in
+`docs/agentic-notes/<release>/`, where `<release>` is the release the work is **for**. The `docs/`
+root is closed: it holds four product docs and nothing else, and a `pre-commit` guard enforces it.
+Full rule in `AGENTS.md` → **Documentation Layout** and `.agents/rules/docs-layout.md`.
+
 ### Context Window Management
 When a skill instructs you to "open a new context window": **complete the current agent turn**,
 then inform the user to start a new conversation thread for the next phase. This prevents

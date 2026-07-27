@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Reproduce the Phase-2 firing-rate tables in docs/FALSIFICATION_v0.4.3_ELIMINATION.md §8b.
+"""Reproduce the Phase-2 firing-rate tables in docs/agentic-notes/v0.4.3/FALSIFICATION_v0.4.3_ELIMINATION.md §8b.
 
-Reads the committed telemetry run (``docs/data/v0.4.3/telemetry_events.json``, produced by
+Reads the committed telemetry run (``docs/agentic-notes/v0.4.3/data/telemetry_events.json``, produced by
 ``tools/telemetry_run.py``) and its stratified sample definition, and recomputes:
 
   * per-site firing rate by stratum (fraction of molecules where the site fired >=1x),

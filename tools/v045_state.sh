@@ -66,9 +66,9 @@ systemctl --user list-units --state=active 'lane*' 'v045*' --no-legend 2>/dev/nu
 echo "  load: $(uptime | sed 's/.*load average: //')   cores: $(nproc)"
 echo
 echo "READ THESE, IN ORDER"
-for d in docs/V045_STATUS_2026-07-25.md docs/RENUMBERING_INSTABILITY_v0.4.5.md \
-         docs/CANONICAL_BODY_v0.4.5.md docs/WINDING_RESIDUAL_v0.4.5.md \
-         docs/AXIAL_v0.4.5_LANE4.md; do
+for d in docs/agentic-notes/v0.4.5/V045_STATUS_2026-07-25.md docs/agentic-notes/v0.4.5/RENUMBERING_INSTABILITY_v0.4.5.md \
+         docs/agentic-notes/v0.4.5/CANONICAL_BODY_v0.4.5.md docs/agentic-notes/v0.4.5/WINDING_RESIDUAL_v0.4.5.md \
+         docs/agentic-notes/v0.4.5/AXIAL_v0.4.5_LANE4.md; do
     [ -f "$d" ] && echo "  $d" || echo "  $d   (on a lane branch, not main)"
 done
 echo

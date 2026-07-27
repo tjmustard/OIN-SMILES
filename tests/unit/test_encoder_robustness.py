@@ -181,7 +181,7 @@ class TestStuckRingRescuePermissive(unittest.TestCase):
     charge (0); at that charge the ring is stuck but de-aromatizes cleanly, so the old
     unconditional check discarded it and every other charge in -4..4 fails outright,
     exhausting the sweep with nothing to return. Default OFF: byte-identical until an
-    operator opts in. See docs/ENCODE_FAIL_v0.4.5.md.
+    operator opts in. See docs/agentic-notes/v0.4.5/ENCODE_FAIL_v0.4.5.md.
     """
 
     FIXTURE = _fixture("ASISAX_comp_0.xyz")

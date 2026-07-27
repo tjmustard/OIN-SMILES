@@ -7,8 +7,9 @@ scores with ``get_oin_string(gen_result.mol, coords)``, and ``gen_result.mol`` c
 generator's own bond graph**. A cyclopentadienyl ring that has drifted off the metal is still
 bonded *in that graph*, so the re-encode reproduces the input's coordination and the key matches.
 
-Measured rate on the default path (``docs/METRIC_FALSE_POSITIVES.md``, 633 scored successes of
-``results-v0.4.5-rebaseline``): **61/633 = 9.6 % overall, 48/171 = 28.1 % on haptic molecules.**
+Measured rate on the default path (``docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md``,
+633 scored successes of ``results-v0.4.5-rebaseline``): **61/633 = 9.6 % overall,
+48/171 = 28.1 % on haptic molecules.**
 ``FIYHUT_comp_0`` is the clean example — textbook ferrocene Fe–C is ≈2.05 Å and the input matches
 to 0.03 Å, while the generated structure puts all ten ring carbons at 2.84–2.96 Å (~0.85 Å too
 far, 10 bonded carbons → 0). Both rings are off the iron and it scores as a successful round trip.
@@ -46,8 +47,9 @@ _PT = GetPeriodicTable()
 #: Bonded-contact slack over the sum of covalent radii, in Angstrom. Matches the criterion
 #: ``xyz2AC_obabel`` uses for adjacency (``xyz2mol_local.py``), so "in contact" here means the
 #: same thing it means to the encoder. Near this boundary perception is genuinely ambiguous
-#: (see ``docs/METRIC_FALSE_POSITIVES.md`` §3.2) — which is why the report also carries the raw
-#: distances, so a marginal call can be inspected rather than silently decided.
+#: (see ``docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md`` §3.2) — which is why the
+#: report also carries the raw distances, so a marginal call can be inspected rather than
+#: silently decided.
 CONTACT_SLACK = 0.45
 
 #: A contact must move by more than this (Angstrom) before a count change is worth reporting, so

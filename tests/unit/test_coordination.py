@@ -3,7 +3,7 @@
 This exists because the round-trip metric credits structures whose ligands have come off: it
 scores through `gen_result.mol`, the generator's own bond graph. Measured false-positive rate on
 the default path is 9.6% overall and 28.1% on haptic molecules
-(`docs/METRIC_FALSE_POSITIVES.md`).
+(`docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md`).
 
 Synthetic geometries rather than fixtures, so each test pins exactly one behaviour and the
 distances are visible in the test itself.

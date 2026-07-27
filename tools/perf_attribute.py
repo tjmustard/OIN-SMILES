@@ -16,7 +16,7 @@ Counted:
   * ``metallogen_adapter.build_contract_mol`` / ``_reencode_key_matches`` /
     ``_reencode_oin_fast`` / ``_reencode_oin`` calls -- the SL1 accept-first re-encode
     path. This is where the dominant slow-tail cost actually lives (see
-    ``docs/PERF_v0.4.5.md``): ``_reencode_oin`` is a full ``XYZToSMILES().convert()``
+    ``docs/agentic-notes/v0.4.5/PERF_v0.4.5.md``): ``_reencode_oin`` is a full ``XYZToSMILES().convert()``
     re-perception, measured at 48-57s/call on an eta test case, and per-call stderr
     timing lines are printed for each of these so a single run shows exactly which
     calls are expensive and which are cache hits.

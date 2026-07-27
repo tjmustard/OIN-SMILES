@@ -1,6 +1,6 @@
 """The ``OIN_BORON_CAGE`` lever: deltahedral borane/carborane cages.
 
-Background (measured, see ``docs/BORON_CAGE_v0.4.5.md``): the 34 `boron_cluster`
+Background (measured, see ``docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md``): the 34 `boron_cluster`
 molecules in the v0.4.5 `encode_fail` cohort were documented as a permanent
 ceiling on the grounds that RDKit has no 2c-2e Lewis structure for a 3c-2e cage.
 That reasoning never applied. ``xyz2AC_obabel``'s covalent-radius distance

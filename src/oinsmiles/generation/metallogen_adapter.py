@@ -182,7 +182,7 @@ def _prepare_ligand_fragments(parsed: ParsedOIN):
             # along on a ligand whose carbene donor is the actual kekulization culprit;
             # AJODEI_comp_0 (97 -> 95) is the same story on a pyrrole, once per ligand.
             # 13 of the 13 auditable atom-count LOSS rows in the v0.4.5 capstone class --
-            # see docs/ATOM_COUNT_v0.4.5.md Sec 4.
+            # see docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md Sec 4.
             #
             # Deliberately NOT done here: preserving the H count of the atom that *does*
             # get charged. On an all-carbon haptic ring, that charge is load-bearing in a

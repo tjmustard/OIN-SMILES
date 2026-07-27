@@ -3,7 +3,7 @@
 That class -- 74 capstone molecules, the largest non-timeout `hard_fail` group -- is
 **entirely hydrogen**: over the 27 molecules with a stored generated structure, 27/27
 differed in H and nothing else. Two independent causes, one fixture set each. See
-``docs/ATOM_COUNT_v0.4.5.md``.
+``docs/agentic-notes/v0.4.5/ATOM_COUNT_v0.4.5.md``.
 
 The molecules and OIN strings below are real capstone rows, not constructions.
 """
