@@ -38,6 +38,31 @@ class StructuralAssemblyError(ValueError):
     """
 
 
+class BudgetExhaustedError(ValueError):
+    """The generation budget ran out before any conformer was produced.
+
+    Raised only when ``OIN_ENFORCE_BUDGET`` is on. It exists so a downstream
+    consumer -- the sweep harness, the next release's regression triage -- can tell
+    **"we stopped because we ran out of time"** from **"this molecule cannot be
+    assembled"**. Without the distinction v0.4.10 cannot separate its own regressions
+    from v0.4.9's intended behaviour: both would arrive as the same generic
+    ``MetalloGen failed to generate any conformers``, which
+    ``tools/classify_failures.py`` buckets as ``no_conformers``.
+
+    The message carries the budget **and** the wall-clock actually spent, because a
+    bound is only interpretable next to the number it was given: ``ULODUU`` assembles
+    under a 60 s cap and not under 30 s, which is exactly why the blanket boron
+    fast-fail was refuted.
+
+    Raised for an **empty pool only.** A budget that expires with usable conformers in
+    hand returns them -- a bound should stop work, not discard an answer it already
+    has. ``StructuralAssemblyError`` takes priority over it: a uniformly-structural
+    failure would have happened at any budget, so it is the better diagnosis.
+
+    Subclasses ``ValueError``, like its two siblings.
+    """
+
+
 def calculate_heavy_atom_rmsd(mol1, mol2):
     """Calculate the heavy atom rmsd."""
     import numpy as np
@@ -212,6 +237,7 @@ def generate_3d_structures(
     embed_time_budget=None,
     metal_complex=None,
     accept_fn=None,
+    enforce_budget=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -241,6 +267,22 @@ def generate_3d_structures(
     unaffected -- it fills the pool and breaks first. On exhaustion the pool built
     so far is returned; an empty pool becomes the same ``[]`` as before, only fast.
     None (the default) preserves the prior unbounded behavior for direct callers.
+
+    enforce_budget: turn ``embed_time_budget`` from a between-attempts hint into a
+    BOUND (``OIN_ENFORCE_BUDGET``; ``None`` reads the lever, default OFF). Two
+    changes, both no-ops when off:
+
+      * the deadline is threaded into ``embed.get_embedding``, which checks it inside
+        its two nested Python loops over ``AllChem.EmbedMolecule``. **That is where
+        the time actually is** -- profiled on ``FOSNEI_comp_0`` (the corpus's 759.9 s
+        worst case) at a 300 s budget, ``get_embedding`` is 61.5 s of SELF time across
+        10 calls, while the CBC solve is 1.74 s (2.1%) and the ``accept_fn`` re-encode
+        0.63 s (0.8%). The charter predicted the latter two; they are noise. Because
+        the sink is a Python loop rather than one long native call, a deadline check
+        is real enforcement and ``eps`` is one ``EmbedMolecule``, not one attempt --
+        no ``fork``/``RLIMIT_CPU`` machinery is required.
+      * an empty pool at the deadline raises ``BudgetExhaustedError`` instead of
+        returning ``[]``.
     """
     import time
 
@@ -348,6 +390,19 @@ def generate_3d_structures(
     # only to keep a molecule whose embed never validates from running the full
     # max_attempts budget (ZIHGEE ~1696 s) before giving up.
     deadline = (time.monotonic() + embed_time_budget) if embed_time_budget else None
+
+    # OIN_ENFORCE_BUDGET. Read through lever_enabled(), never os.environ.get -- "0" is a
+    # non-empty string and would ENABLE the lever; that trap cost 23 test failures across
+    # two promotions and test_levers::TestNoTestUnsetsAPromotedLever lints for it. An
+    # explicit argument wins over the environment so the unit tests do not have to mutate
+    # process state.
+    if enforce_budget is None:
+        from ..oin.levers import lever_enabled
+
+        enforce_budget = lever_enabled("OIN_ENFORCE_BUDGET")
+    # The deadline only becomes a bound if there IS one; with no budget there is nothing
+    # to enforce and this stays byte-identical to pristine.
+    embed_deadline = deadline if (enforce_budget and deadline is not None) else None
 
     # Opt-in no-acceptance-progress cutoff (v0.4.4 SL4), gated OFF by default so the
     # pool-fill path stays byte-identical. When set, the loop gives up after this many
@@ -493,6 +548,7 @@ def generate_3d_structures(
                     seed=seed + i * 1009,
                     alt_cache=alt_cache,
                     greedy=greedy_enabled,
+                    deadline=embed_deadline,
                 )
                 had_nonstructural_embed = True  # got past sanitization (positions or None)
             except _STRUCTURAL_EMBED_ERRORS as e:
@@ -586,6 +642,7 @@ def generate_3d_structures(
                         seed=seed + i * 1009,
                         alt_cache=alt_cache,
                         greedy=greedy_enabled,
+                        deadline=embed_deadline,
                     )
                     had_nonstructural_embed = True  # got past sanitization
                 except _STRUCTURAL_EMBED_ERRORS as e:
@@ -627,6 +684,13 @@ def generate_3d_structures(
         successful_mols = stereo_rejects
 
     if not successful_mols:
+        # OIN_ENFORCE_BUDGET: the budget ran out with NOTHING to show. Say so, typed,
+        # rather than degrading to the generic `[]` that becomes "no_conformers" three
+        # frames up. StructuralAssemblyError is checked FIRST because a uniformly
+        # structural failure would have happened at any budget, so it is the better
+        # diagnosis; "out of time" is what is left when nothing more specific applies.
+        # Both sit after the stereo_rejects fallback above, so a molecule that produced
+        # only wrong-stereo conformers still returns them.
         if last_structural_error is not None and not had_nonstructural_embed:
             # EVERY attempt failed structurally (no option ever got past
             # sanitization) and nothing filled the pool: the complex is uniformly
@@ -637,6 +701,15 @@ def generate_3d_structures(
                 f"with the same structural error ({type(last_structural_error).__name__}: "
                 f"{last_structural_error})"
             ) from last_structural_error
+        if enforce_budget and deadline is not None and time.monotonic() > deadline:
+            spent = embed_time_budget + (time.monotonic() - deadline)
+            raise BudgetExhaustedError(
+                f"Generation budget exhausted: {embed_time_budget}s requested, {spent:.1f}s "
+                f"spent, {_attempts_spent} attempt(s), pool empty "
+                f"({len(stereo_rejects)} stereo-reject(s)). This is a BOUND, not an "
+                "assembly failure -- the molecule may well assemble under a larger budget "
+                "(ULODUU does at 60s and does not at 30s)."
+            )
         return []
 
     # Sort by UFF energy if available (handle None values safely)

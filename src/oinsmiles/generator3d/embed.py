@@ -1,6 +1,7 @@
 import itertools
 import logging
 import random
+import time
 
 import numpy as np
 from rdkit import Chem
@@ -1180,6 +1181,7 @@ def get_embedding(
     seed=None,
     alt_cache=None,
     greedy=False,
+    deadline=None,
 ):
     """Return the embedding.
 
@@ -1189,6 +1191,17 @@ def get_embedding(
 
     ``alt_cache`` is an optional per-generation dict (see ``_alt_mol_cached``);
     None means recompute the alternative molecule every call.
+
+    ``deadline`` is an optional ``time.monotonic()`` timestamp past which this call
+    gives up and returns ``None`` (``OIN_ENFORCE_BUDGET``; ``None``, the default,
+    means unbounded and byte-identical to pristine). Checked at the top of both
+    nested loops -- the outer alternative-molecule loop and the inner haptic-scale
+    sweep -- because this function is the actual cost sink: 61.5 s of *self* time in
+    an 82.4 s generation of ``FOSNEI_comp_0``. Returning ``None`` rather than raising
+    makes an exhausted budget indistinguishable from an embed that produced no
+    positions, so the attempt loop's bookkeeping is untouched and
+    ``generate_3d_structures`` owns the one decision that matters (an empty pool at
+    the deadline is a ``BudgetExhaustedError``).
     """
     atom_d_criteria = 0.5
     ratio_criteria = 0.65
@@ -1257,6 +1270,22 @@ def get_embedding(
     haptic_exist = False
 
     for alternative_ace_mol in alternative_ace_mol_list:
+        # OIN_ENFORCE_BUDGET (v0.4.9). ``deadline`` is None unless the lever is on, so
+        # this is a single `is not None` per outer iteration otherwise.
+        #
+        # THIS is where the time is. Profiled on FOSNEI_comp_0 -- the corpus's 759.9 s
+        # worst case -- at a 300 s budget: this function is 61.5 s of SELF time across 10
+        # calls (75% of an 82.4 s generation), while the CBC bond-order solve the charter
+        # named as the prime suspect is 1.74 s (2.1%) and the accept_fn re-encode is
+        # 0.63 s (0.8%). Bounding either of those would have measured as "no change".
+        #
+        # Returning None rather than raising keeps the attempt loop's existing
+        # bookkeeping intact: an exhausted budget looks exactly like an embed that did
+        # not produce positions, and generate_3d_structures decides what an empty pool
+        # at the deadline means (BudgetExhaustedError) in one place.
+        if deadline is not None and time.monotonic() > deadline:
+            logger.debug("embed budget reached before an alternative molecule; abandoning attempt")
+            return None
         alternative_ace_mol_list.index(alternative_ace_mol)
         rd_mol = alternative_ace_mol.get_rd_mol()
         # Carried stereo persists across the repeated EmbedMolecule calls below
@@ -1274,6 +1303,14 @@ def get_embedding(
 
         # Try many scale values for haptic (haptic embedding seems to work differently)
         for haptic_scale in scales_for_haptic:
+            # The inner check is what sets eps. Each iteration runs up to four
+            # AllChem.EmbedMolecule calls, so the longest un-interruptible unit under this
+            # bound is one scale sweep -- NOT one get_embedding (6.5 s mean on FOSNEI) and
+            # certainly not one whole attempt. Measured eps is reported in
+            # docs/agentic-notes/v0.4.9/BUDGET_BOUND_v0.4.9.md.
+            if deadline is not None and time.monotonic() > deadline:
+                logger.debug("embed budget reached mid-scale-sweep; abandoning attempt")
+                return None
             failed = False
             embed_raised = False  # True only if the primary EmbedMolecule *raised*
             # Make cmap for embedding

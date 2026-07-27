@@ -19,7 +19,17 @@ import sys
 import numpy as np
 from rdkit import Chem
 
-from ..generator3d import clash, generate_3d_structures, get_xyz_string, globalvars, om
+from ..generator3d import (
+    # Re-exported so the three generation-failure types are importable from one place;
+    # BudgetExhaustedError is raised inside generator3d (that is where the deadline
+    # lives) but belongs to the same vocabulary as the two defined below.
+    BudgetExhaustedError,  # noqa: F401 -- public re-export, see docstring above
+    clash,
+    generate_3d_structures,
+    get_xyz_string,
+    globalvars,
+    om,
+)
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
