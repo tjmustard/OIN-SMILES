@@ -5,6 +5,78 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-07-26
+
+> **A release of measured negatives.** Five swimlanes ran; four of them ended by refuting the thing
+> they were built to ship, and the fifth refuted its own sibling. Every lever here is **default-OFF**
+> and the `results-v0.4.6-sweep` bucket report is **byte-for-byte unchanged** — `byte_exact`
+> 4140 / 82.80 %, `> 30 s` 994 / 19.88 % — which is the whole point: nothing shipped to the default
+> path, and the evidence that nothing did is on the record.
+
+### Added
+- **`OIN_ATTACH_CHECK`** (default **OFF**) — `OIN_ACCEPT_SCORED`'s missing safety condition:
+  *accept the first conformer the score credits **that still has its ligands attached***.
+  Coordinate-only, 7–81 ms/conformer against the 48–57 s strict test it replaces. It **never reads a
+  bond object** as evidence of attachment — a detached ligand keeps its bond, so a `GetBonds()`-based
+  check certifies exactly the defect it exists to catch. Falsified before it was built: separates
+  **7 of the 8** known independent regressions with **0 false positives** over 22 round-tripping
+  conformers, and both predicates the promote lane proposed fail (count-based wrongly rejects 11 of
+  22, set-based 3). Known residual shipped honestly: `POVPIA` is not caught, so this is 7/8, never
+  8/8. **Pairing rule:** against the bare lever it is strictly one-directional — 17 fixes, **zero**
+  regressions, severe clashes 14 → 5 — so nobody should run `OIN_ACCEPT_SCORED` without it.
+- **The two-arm v0.4.7 regression gate** (`tools/gate_v047.sh`) — ARM 1 encode-only over 61 fixtures,
+  ARM 2 a full round trip over a frozen 100-molecule slow cohort, both against committed goldens
+  carrying a `MANIFEST_SHA256`. It can tell a notation change from a compute change, which no
+  existing instrument could do. The cohort was rebuilt mid-lane: the first construction intersected
+  two result dirs and drew from a population that was not the frozen seed-42 5 k.
+- **`docs/agentic-notes/v0.4.7/`** — five lane reports: `ACCEPT_SCORED`, `ATTACH_CHECK`, `COHORT`,
+  `ENCODE_FLOOR`, `BORON_GEN_CEILING`.
+
+### Changed
+- **`docs/` is split by audience and the root is closed.** Of 76 tracked files, 72 were session
+  artifacts with four genuine product docs lost among them. Everything measured, tried or refuted
+  moved to `docs/agentic-notes/<release>/` (via `git mv`, so `log --follow` works); the root now
+  holds exactly `README`, `OPTIMIZERS`, `GENERATION_PIPELINE`, `KNOWN_LIMITATIONS`. Enforced by
+  `tools/check_docs_layout.sh` from `pre-commit`, with the rule in `.agents/rules/docs-layout.md`.
+  ⚠ The guard does **not** run on merge commits — `pre-commit` is skipped for merges — so a merge is
+  the one path into the repo that walks past it. All five v0.4.7 lane docs arrived that way and were
+  routed by hand.
+- **`OIN_ACCEPT_SCORED`: DO NOT PROMOTE**, superseding this lever's own earlier "promote" reading.
+  The gate that recommended it was **circular** — `passed` is computed with
+  `get_oin_string(gen.mol, coords)`, the same predicate the lever accepts on, so "18/22 both arms,
+  zero regressions" could not detect what dropping the strict step costs. Measured with a genuinely
+  independent arm: indep **15/20 → 7/20, 8 regressions, 0 fixes**, one-way; **6 of the 8 lose haptic
+  coordination outright**, with the metal geometry tag degrading in lockstep
+  (`[Ru_TET]`→`[Ru_TPL]`, `[Zr_TET]`→`[Zr_LIN]`). At n=100 it costs +28 vdW clashes and takes severe
+  clashes 5 → 14. **Byte-identical notation, changed geometry** — the cost is invisible to the very
+  metric that would police it.
+- **The encode floor is three cost regimes, not one.** `XIRMER`'s 20-minute encode is **3 forked
+  resonance timeouts at 95.8 % of the fork budget each** — the CPU-limit backstop firing, not slow
+  arithmetic, so tuning the solver would never have touched it. The `AC2BO` memo does hit now
+  (LEAD 3); LEAD 2 does not matter. Sub-cap valence search no longer materialises a product it never
+  reads, pinned by `tests/unit/test_valence_order.py`.
+- **The boron generation ceiling, priced at the generator.** Promoting `OIN_BORON_CAGE` in v0.4.6
+  moved most of that class from failing *instantly* to failing *slowly*: 40 of 48 burn a large,
+  uncapped amount of compute — a full-complex PuLP/CBC bond-order-and-charge solve, re-primed per
+  dummy-metal option, on a cage vertex that has no 2c-2e Lewis structure. ≈ **2.1 CPU-h** per 5,000-
+  molecule sweep. The internal generation budget is again confirmed **advisory**: molecules ran to
+  **3.7×** the requested cap.
+
+### Fixed
+- **`OIN_BORON_GEN_FASTFAIL`'s discriminator was refuted, and the lever corrected before it could do
+  harm.** The lane shipped a `{LIN}` geometry exclusion and a docstring naming TET among geometries
+  that "failed 100 % of the time"; `ULODUU_comp_0` is `[Zr_TET]` and **does** generate (61.8 s). The
+  lane's sweep capped at 30 s, so a 61.8 s success read there as a cap-burner — **the class boundary
+  moves with the compute you give it**. Cross-tabulated, **every geometry with a success also has
+  failures** (LIN 1/3, TET 1/4), so geometry separates nothing — and it was the last discriminator
+  standing after hapticity, size and denticity. Safe set widened to `{LIN, TET}`, priced exactly: it
+  gives up **4** of 25 recoverable cap-burners (all TET, 60–64 s), while the LIN exclusion costs
+  **nothing** (its 3 failures already fail in 0.00–0.01 s). Promotion now requires a *mechanism*, not
+  more correlation. A real `ULODUU_comp_0` fixture pins it.
+- **16 function-level imports across the merged lanes still named `utils/xyz2mol{,_local}.py`.**
+  Because they are function-level, nothing failed at import time — the modules loaded clean and would
+  have raised only when the code ran.
+
 ### Added
 - **`docs/agentic-notes/v0.4.4/DIRECT_DG_VALIDATION.md`**: scale-validation section recording the v0.4.0-vs-v0.4.4
   regression sweep (3,917 molecules = 2,917 v0.4.0 failures + 1,000 seed-42 successes, full
