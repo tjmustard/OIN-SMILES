@@ -5,6 +5,94 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-07-27
+
+> ### ⚠ The headline accuracy figure goes DOWN, on purpose. `byte_exact` is **72.46%**, not 82.80%.
+>
+> **This is a re-baseline, not a regression.** No encoder, generator or notation behaviour changed
+> in this release — the *measurement* changed. Every accuracy number this project has published
+> before now is over-stated, and the correct comparison for anything after this point is 72.46%.
+>
+> The harness scored a round trip with `get_oin_string(gen_result.mol, coords)` — **the generator's
+> own bond graph**. That is not merely inaccurate, it is circular: `gen_result.mol` is exactly the
+> artifact that would have to be wrong for the test to fail. A ligand could drift a full ångström
+> off the metal and the graph would still call it bonded. `FIYHUT_comp_0` ships both Cp rings 0.85 Å
+> off the iron — 10 bonded carbons to 0 — and scored a byte-exact pass.
+>
+> The same shortcut erred in the other direction too, discarding stereo the coordinates *do*
+> support: `YOSXIP_comp_0`'s `[S@]{5}` sulfoxide flattened to `S{5}` and was scored a mismatch.
+> Both directions close with one call — a full `XYZToSMILES().convert()` of the generated XYZ.
+
+### Changed
+- **`OIN_INDEP_SCORE` promoted to default-ON.** The round-trip verdict is now re-derived from the
+  generated coordinates alone. Measured over the same 5000-molecule corpus, same conformers, same
+  key and same `status` gate:
+
+  | bucket | scored | honest | delta |
+  |---|---:|---:|---:|
+  | `byte_exact` | 4140 (82.80%) | **3623 (72.46%)** | **−517** |
+  | `key_equal` | 520 (10.40%) | 610 (12.20%) | +90 |
+  | `facmer_divergent` | 1 | 16 | +15 |
+  | `structural` | 9 (0.18%) | 417 (8.34%) | +408 |
+  | `hard_fail` | 315 | 319 | +4 |
+  | `encode_fail` | 15 | 15 | ±0 |
+
+  613 molecules degraded, **30 improved** — the correction runs in both directions. At corpus
+  scale **36.7% of haptic `byte_exact` passes were false**, against 6.7% non-haptic.
+
+- **Scope is deliberately narrow: this changes what is *reported*, not what is *accepted*.**
+  `accept_fn` is untouched and the harness's tier ladder still escalates on the old predicate.
+  Scoring the ladder honestly would move runtime *and* the failure mix in the same release that
+  re-baselines the number, making both unmeasurable. Runtime did not move: nothing was
+  re-generated, so `metrics.elapsed_s` is unchanged (`> 30 s` stays 994 / 19.88%).
+
+- **`levers.py`'s rationale for holding the lever off was rewritten.** It priced the second encode
+  at "0.4–1.5 s/molecule" and cited the cost as the reason to wait. That figure had never been
+  measured. It is **0.33 s/molecule** — a low single-digit percentage of the sweep it corrects.
+
+### Added
+- **`tools/honest_rescore.py`** — re-scores a completed sweep offline, with no generator run.
+  `save_artifacts` stores the same `gen_result.xyz` string the lever converts, so re-encoding it is
+  bit-identical to the lever rather than an approximation. The full corpus re-scores in **334 s**
+  against the ~55 CPU-hours a live re-sweep costs, and because conformers are held fixed by
+  construction it also removes the A/B confound: `smiles_1` cannot move and no second encode enters
+  the `--mol-timeout` budget. Resumable, `#DONE` sentinel, `--fill-coordination` backfill.
+- **`tools/encoder_identity_corpus.py`** — corpus-scale encoder byte-identity gate. A bucket report
+  re-run over stored JSON proves only that the *classifier* did not move; it never encodes anything.
+  Result for this release: **4985/4985 byte-identical, zero drift.**
+- **`tools/roundtrip_bucket_report.py --score {scored,honest,both}`** — `both` emits the two tables
+  and the per-molecule transition matrix. A single number replacing another with no reconciliation
+  is precisely what makes a re-baseline read as a regression.
+- **`tools/atom_count_provenance.py`** and the Lane 2 verdict: the `Atom count mismatch` gate is
+  **load-bearing, not a third error direction**. 18 molecules at corpus scale (not the 27 assumed),
+  hydrogen-only in 18/18 — and **8 of them re-encode byte-identically to their input**, so no string
+  comparison of any kind can separate a structure carrying two extra hydrogens from the original.
+  `XAKCAP_comp_0` defeats four instruments at once: scored string PASS, honest string PASS (the same
+  string), key EQUAL, `coordination` INTACT, atom count 61 ≠ 63.
+- Vendored metric fixtures + tests: `tests/unit/test_honest_score.py`,
+  `tests/unit/test_atom_count_gate.py`.
+
+### Why the drop is trustworthy
+The honest arm could itself be wrong — an encoder that mis-perceives generated geometries would
+manufacture exactly this result. It was checked against `report["coordination"]`, which reads
+distances only and consults neither bond graph:
+
+- **control** (3595 `byte_exact` in both arms): 1.3% flagged — inside its 3.7% false-alarm band;
+- **moved** (428 pass → `structural`/`facmer_divergent`): **64.7% flagged — a 50× enrichment**;
+- the two agree on **mechanism**, not just count: `contacts_lost ÷ sites_lost` lands on the integers
+  1–7, and 95.2% of the ratio-above-1 population carries a haptic token — because an η⁵-Cp is five
+  *contacts* but one coordination *site*. Two instruments built from different data agree on which
+  ligand left and how many atoms it was bound through.
+- The 99 molecules `coordination` calls clean are its documented blindness (ligand-interior
+  connectivity, bond order, same-CN rearrangement — the `OGARAP` class), not the honest arm
+  misfiring.
+
+This refutes the previously recorded suspicion that a ~19× `structural` inflation on re-encode was
+an artifact of the method. It is real, and two thirds of it is independently confirmed.
+
+Full analysis: `docs/agentic-notes/v0.4.8/HONEST_BASELINE_v0.4.8.md` and
+`docs/agentic-notes/v0.4.8/ATOM_COUNT_GATE_v0.4.8.md`.
+
 ## [0.4.7] - 2026-07-26
 
 > **A release of measured negatives.** Five swimlanes ran; four of them ended by refuting the thing
