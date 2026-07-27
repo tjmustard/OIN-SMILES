@@ -49,6 +49,15 @@ from oinsmiles.oin.compare import (  # noqa: E402
 _ETA_RE = re.compile(r"\{\d+[<>]\}")
 _SLOT_RE = re.compile(r"\{(\d+)([<>^]?)\}")
 
+_BUCKET_ORDER = (
+    "byte_exact",
+    "key_equal",
+    "facmer_divergent",
+    "structural",
+    "hard_fail",
+    "encode_fail",
+)
+
 
 def _is_eta(smiles):
     return bool(_ETA_RE.search(smiles or ""))
@@ -79,10 +88,26 @@ def _key_equal_subclass(s1, s2):
     return "rdkit_canonical"
 
 
-def classify(rep):
-    """Return (bucket, subclass_or_None) for one report dict."""
+def classify(rep, score="scored"):
+    """Return (bucket, subclass_or_None) for one report dict.
+
+    ``score`` selects WHICH round-trip string the verdict is read from:
+
+    ``scored``
+        ``smiles_2`` -- ``get_oin_string(gen_result.mol, coords)``, the GENERATOR's own bond
+        graph. Historical default, and dishonest by construction: it asserts bonds the
+        coordinates do not support and drops stereo they do.
+    ``honest``
+        ``smiles_2_indep`` -- a full ``XYZToSMILES().convert()`` of the generated XYZ, which
+        re-perceives bonds AND stereo from coordinates alone (``OIN_INDEP_SCORE``, or
+        ``tools/honest_rescore.py`` offline).
+
+    Everything ELSE about the classification is deliberately held identical between the two,
+    including the ``status``-based ``hard_fail`` gate. The two tables must differ in exactly
+    one variable or the delta between them is not attributable.
+    """
     s1 = rep.get("smiles_1")
-    s2 = rep.get("smiles_2")
+    s2 = rep.get("smiles_2_indep") if score == "honest" else rep.get("smiles_2")
     status = rep.get("status")
     error = rep.get("error") or ""
 
@@ -158,10 +183,10 @@ def _load_reports(indiv_dir, only, sample, shard, limit):
     return rows
 
 
-def build_report(rows, indiv_dir):
+def build_report(rows, indiv_dir, score="scored"):
     results = []
     for rep in rows:
-        bucket, subclass = classify(rep)
+        bucket, subclass = classify(rep, score)
         results.append(
             {
                 "molecule": rep.get("molecule"),
@@ -171,7 +196,9 @@ def build_report(rows, indiv_dir):
                 "eta": _is_eta(rep.get("smiles_1")),
                 "elapsed_s": (rep.get("metrics") or {}).get("elapsed_s"),
                 "smiles_1": rep.get("smiles_1"),
-                "smiles_2": rep.get("smiles_2"),
+                "smiles_2": (
+                    rep.get("smiles_2_indep") if score == "honest" else rep.get("smiles_2")
+                ),
                 "error": rep.get("error"),
             }
         )
@@ -179,20 +206,19 @@ def build_report(rows, indiv_dir):
     total = len(results)
     counts = Counter(r["bucket"] for r in results)
     subcounts = Counter(r["subclass"] for r in results if r["bucket"] == "key_equal")
-    order = [
-        "byte_exact",
-        "key_equal",
-        "facmer_divergent",
-        "structural",
-        "hard_fail",
-        "encode_fail",
-    ]
+    order = list(_BUCKET_ORDER)
 
     elapsed_all = [r["elapsed_s"] for r in results if isinstance(r["elapsed_s"], (int, float))]
     elapsed_eta = [
         r["elapsed_s"] for r in results if r["eta"] and isinstance(r["elapsed_s"], (int, float))
     ]
 
+    scored_from = (
+        "`smiles_2_indep` -- independent re-perception of the generated XYZ (**HONEST**)"
+        if score == "honest"
+        else "`smiles_2` -- `get_oin_string(gen_result.mol, coords)`, the generator's own "
+        "bond graph (**scored**, historical)"
+    )
     lines = [
         "# v0.4.4 Round-Trip Bucket Report",
         "",
@@ -200,6 +226,8 @@ def build_report(rows, indiv_dir):
         "tools/roundtrip_bucket_report.py",
         f"from {total} individual reports in `{indiv_dir}`,",
         "classified with the v0.4.4 fac/mer-aware `oin.compare` key.",
+        "",
+        f"Round-trip string read from {scored_from}.",
         "",
         "## Buckets",
         "",
@@ -242,6 +270,71 @@ def build_report(rows, indiv_dir):
     return results, lines, {"total": total, "counts": dict(counts), "subcounts": dict(subcounts)}
 
 
+def _both_lines(scored_results, honest_results, scored_summary, honest_summary):
+    """Side-by-side tables plus the per-molecule transition matrix.
+
+    The matrix is the part that matters. "N molecules moved" is not a reconciliation: a
+    false positive can land in ``key_equal`` instead of falling out of ``byte_exact``
+    altogether, and those are different findings with different owners. Reporting WHERE each
+    corrected molecule went is what makes a falling headline auditable instead of alarming.
+    """
+    total = honest_summary["total"]
+    by_mol = {r["molecule"]: r["bucket"] for r in scored_results}
+    matrix = Counter()
+    for r in honest_results:
+        matrix[(by_mol.get(r["molecule"]), r["bucket"])] += 1
+
+    lines = [
+        "# Round-trip bucket report -- SCORED vs HONEST, same molecules",
+        "",
+        f"Generated {datetime.now().isoformat(timespec='seconds')} by "
+        "tools/roundtrip_bucket_report.py --score both",
+        "",
+        "Both columns classify the **same** reports with the **same** key and the **same** "
+        "`status` gate.",
+        "The single variable is which round-trip string the verdict reads:",
+        "",
+        "| column | string | what it is |",
+        "|---|---|---|",
+        "| scored | `smiles_2` | `get_oin_string(gen_result.mol, coords)` -- the generator's "
+        "own bond graph. Asserts bonds the coordinates do not support; drops stereo they do. |",
+        "| honest | `smiles_2_indep` | a full `XYZToSMILES().convert()` of the generated XYZ "
+        "-- bonds *and* stereo re-derived from coordinates alone. |",
+        "",
+        "## Buckets",
+        "",
+        "| bucket | scored | % | honest | % | delta |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for b in _BUCKET_ORDER:
+        s = scored_summary["counts"].get(b, 0)
+        h = honest_summary["counts"].get(b, 0)
+        lines.append(
+            f"| {b} | {s} | {100 * s / max(total, 1):.2f}% | "
+            f"{h} | {100 * h / max(total, 1):.2f}% | {h - s:+d} |"
+        )
+    lines.append(f"| **total** | **{total}** | | **{total}** | | |")
+
+    lines += [
+        "",
+        "## Transition matrix -- where every molecule went",
+        "",
+        "| scored bucket | honest bucket | n |",
+        "|---|---|---:|",
+    ]
+    for (a, b), n in sorted(matrix.items(), key=lambda kv: (-kv[1], str(kv[0]))):
+        moved = "" if a == b else "  **moved**"
+        lines.append(f"| {a} | {b} | {n}{moved} |")
+
+    moved_out = [r["molecule"] for r in honest_results if by_mol.get(r["molecule"]) != r["bucket"]]
+    lines += ["", f"## Molecules whose bucket moved ({len(moved_out)})", ""]
+    hb = {r["molecule"]: r["bucket"] for r in honest_results}
+    for m in sorted(moved_out):
+        lines.append(f"- `{m}`  {by_mol.get(m)} -> {hb.get(m)}")
+    lines += ["", "---", ""]
+    return lines
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
@@ -258,6 +351,16 @@ def main():
     parser.add_argument("--sample", type=int, default=None, help="Evenly sample N reports.")
     parser.add_argument("--limit", type=int, default=None, help="Cap to the first N reports.")
     parser.add_argument("--shard", default=None, help="I:N -- process shard I of N.")
+    parser.add_argument(
+        "--score",
+        choices=("scored", "honest", "both"),
+        default="scored",
+        help=(
+            "Which round-trip string the verdict reads. 'scored' (default) preserves the "
+            "historical behaviour byte-for-byte; 'honest' reads smiles_2_indep; 'both' emits "
+            "the two tables plus the transition matrix between them."
+        ),
+    )
     args = parser.parse_args()
 
     results_dir = os.path.abspath(args.results_dir)
@@ -267,27 +370,39 @@ def main():
     shard = tuple(int(x) for x in args.shard.split(":")) if args.shard else None
 
     rows = _load_reports(indiv_dir, only, args.sample, shard, args.limit)
-    results, lines, summary = build_report(rows, indiv_dir)
+
+    primary = "scored" if args.score == "scored" else "honest"
+    results, lines, summary = build_report(rows, indiv_dir, primary)
+
+    if args.score == "both":
+        # Side by side for the SAME molecules. A single number replacing another with no
+        # reconciliation is exactly what makes a re-baseline read as a regression, so the
+        # transition matrix is emitted with the tables and not as a separate artifact.
+        scored_results, _sl, scored_summary = build_report(rows, indiv_dir, "scored")
+        lines = _both_lines(scored_results, results, scored_summary, summary) + lines
+        summary = {"honest": summary, "scored": scored_summary}
 
     os.makedirs(output_dir, exist_ok=True)
-    md_path = os.path.join(output_dir, "bucket_report.md")
+    suffix = "" if args.score == "scored" else f"_{args.score}"
+    md_path = os.path.join(output_dir, f"bucket_report{suffix}.md")
     with open(md_path, "w") as f:
         f.write("\n".join(lines) + "\n")
-    json_path = os.path.join(output_dir, "bucket_report.json")
+    json_path = os.path.join(output_dir, f"bucket_report{suffix}.json")
     with open(json_path, "w") as f:
         json.dump(results, f, indent=1)
 
-    print(f"{summary['total']} reports classified.")
-    for b in [
-        "byte_exact",
-        "key_equal",
-        "facmer_divergent",
-        "structural",
-        "hard_fail",
-        "encode_fail",
-    ]:
-        n = summary["counts"].get(b, 0)
-        print(f"  {n:6d}  {b:18s}  {100 * n / max(summary['total'], 1):6.2f}%")
+    total = summary["honest"]["total"] if args.score == "both" else summary["total"]
+    print(f"{total} reports classified  (--score {args.score}).")
+    if args.score == "both":
+        print(f"  {'bucket':18s} {'scored':>8s} {'honest':>8s} {'delta':>8s}")
+        for b in _BUCKET_ORDER:
+            s = summary["scored"]["counts"].get(b, 0)
+            h = summary["honest"]["counts"].get(b, 0)
+            print(f"  {b:18s} {s:8d} {h:8d} {h - s:+8d}")
+    else:
+        for b in _BUCKET_ORDER:
+            n = summary["counts"].get(b, 0)
+            print(f"  {n:6d}  {b:18s}  {100 * n / max(total, 1):6.2f}%")
     print(f"Wrote {md_path}")
     print(f"Wrote {json_path}")
 

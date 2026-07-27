@@ -71,6 +71,32 @@ import os
 #: is real and a right-graph loud failure beats a wrong-graph silent pass -- but anyone reading
 #: "34 now encode and round-trip" should know that "round-trip" there is NOTATION-level, and that
 #: assembling a polyhedral borane cage is an open generator3d problem.
+#:
+#: OIN_INDEP_SCORE joined this set in v0.4.8, and it is the odd one out: it changes no encoder
+#: or generator output at all. It changes what the HARNESS reports about them. The harness had
+#: been scoring a round trip with ``get_oin_string(gen_result.mol, coords)`` -- the GENERATOR's
+#: own bond graph -- which is not merely inaccurate but CIRCULAR: ``gen_result.mol`` is exactly
+#: the artifact that would have to be wrong for the test to fail. Measured consequences, both
+#: directions, 936-molecule cohort (docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md): 61
+#: false positives (9.6%; 28.1% of HAPTIC inputs) where the graph asserts bonds the coordinates
+#: do not support, and 8 false negatives where it drops stereo they do.
+#:
+#: Both directions close with ONE call -- a full ``XYZToSMILES().convert()`` of the generated
+#: XYZ, re-perceiving bonds AND stereo from coordinates alone.
+#:
+#: ⚠ THE COST ARGUMENT THAT HELD THIS OFF WAS NEVER MEASURED, AND IS WRONG. The old rationale
+#: priced the second encode at "0.4-1.5 s/molecule, so a 5k sweep pays 1-2 CPU-hours" and cited
+#: that as a reason to wait. Measured over the full corpus (tools/honest_rescore.py, 4688 stored
+#: structures): **0.33 s/molecule median**, and the whole corpus re-scores in ~5 minutes. Against
+#: a sweep whose own median is 7.19 s and whose p95 is the 300 s timeout -- the ~55 CPU-hour
+#: range -- the honest metric costs a low single-digit percentage of the run it corrects. There
+#: was never a cost case for scoring dishonestly.
+#:
+#: SCOPE, deliberately narrow: this promotion changes what is REPORTED, not what is ACCEPTED.
+#: The harness's tier ladder and the generator's ``accept_fn`` both keep their existing
+#: predicates. Moving those changes runtime and the failure mix, and doing it in the same
+#: release that re-baselines the number would make both unmeasurable -- the identical confound
+#: that let the ``OIN_ACCEPT_SCORED`` A/B report "zero regressions" while the honest arm read 8.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -78,6 +104,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_INDEP_SCORE",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
     }
@@ -132,31 +159,6 @@ _HELD_OFF = {
         "bracketed through the sanitize, or re-derive parity from the parent geometry once the "
         "write order is fixed. Guarded by "
         "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
-    ),
-    "OIN_INDEP_SCORE": (
-        "harness diagnostic: record an INDEPENDENT round-trip verdict beside the scored one. The "
-        "harness scores with `get_oin_string(gen_result.mol, coords)` -- the GENERATOR's own "
-        "molecule -- and that single shortcut causes BOTH reporting errors at once, measured over "
-        "the 936-molecule results-v0.4.5-rebaseline cohort "
-        "(docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md): it "
-        "ASSERTS bonds the geometry does not support (61 FALSE POSITIVES -- FIYHUT ships both Cp "
-        "rings 0.85A off the Fe and scores a pass) and LACKS stereo the geometry does support (8 "
-        "FALSE NEGATIVES -- YOSXIP's `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch). "
-        "Net: passes inflated by 61, deflated by 8, so ~53 molecules / 5.7 points over-stated. A "
-        "full `XYZToSMILES().convert()` of the generated XYZ re-perceives bonds AND stereo from "
-        "coordinates alone, fixing both directions with one call, and is written to "
-        "`smiles_2_indep` / `indep_key_match`. "
-        "OFF for two separate reasons. (1) COST: a second full encode, ~0.4-1.5s per molecule "
-        "against ~10ms for report['coordination'], so a 5k sweep pays 1-2 CPU-hours. (2) It is a "
-        "DIAGNOSTIC, not the score -- `status` is untouched. Switching the scored predicate "
-        "would move ~53 molecules in one step, which is indistinguishable from a regression and is "
-        "the exact confound that produced v0.4.4's 11 phantom 'regressions'. Turn it ON for an "
-        "accuracy audit; the point is to make the honest number available at CORPUS scale so that "
-        "switch becomes a decision backed by a full sweep instead of a 936-molecule sample. Note "
-        "the cost is already characterised from the other side: it is the same re-perception "
-        "`accept_fn`'s strict step performs, which "
-        "docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md measured as the "
-        "runtime the OIN_ACCEPT_SCORED lever buys back."
     ),
     "OIN_ACCEPT_SCORED": (
         "makes pool acceptance use the predicate the SCORE uses -- "

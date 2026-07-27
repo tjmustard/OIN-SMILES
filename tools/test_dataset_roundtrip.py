@@ -158,7 +158,6 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
     tmp_dir = tempfile.mkdtemp()
     gen_xyz_path = os.path.join(tmp_dir, "gen.xyz")
     last_gen_xyz_content = None
-    xyz_to_smiles = XYZToSMILES()
 
     try:
         # OIN(1) -> XYZ(Gen)
@@ -169,6 +168,24 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
 
         last_gen_xyz_content = gen_result.xyz
         mol_gen_bonded = gen_result.mol
+
+        # The independent re-perception, computed at most once and shared by both consumers
+        # below. Both `oin2_indep` and `indep_error` being None means "not attempted yet"; a
+        # set `indep_error` means "attempted and it raised". Keeping the failure recorded is
+        # what stops a retry: on a molecule the encoder genuinely cannot read, re-attempting
+        # from the second call site would silently double its cost.
+        oin2_indep = None
+        indep_error = None
+
+        def _independent():
+            """``XYZToSMILES().convert()`` of the generated XYZ -- coordinates only."""
+            nonlocal oin2_indep, indep_error
+            if oin2_indep is None and indep_error is None:
+                try:
+                    oin2_indep = XYZToSMILES().convert(gen_xyz_path)
+                except Exception as _e:  # noqa: BLE001 - an encode failure is a datum
+                    indep_error = f"{type(_e).__name__}: {_e}"
+            return oin2_indep
 
         # XYZ(Gen) -> OIN(2)
         if mol_gen_bonded is not None:
@@ -187,46 +204,51 @@ def _attempt_generation(tier_name, generator, oin1_string, xyz_path, report):
                 xyz_coords = np.array(xyz_coords)
                 oin2_string = get_oin_string(mol_gen_bonded, xyz_coords)
             except Exception:
-                oin2_string = xyz_to_smiles.convert(gen_xyz_path)
+                oin2_string = _independent()
         else:
-            oin2_string = xyz_to_smiles.convert(gen_xyz_path)
+            oin2_string = _independent()
 
         report["smiles_2"] = oin2_string
 
-        # OIN_INDEP_SCORE -- record the INDEPENDENT verdict alongside the scored one.
+        # OIN_INDEP_SCORE -- the HONEST round-trip verdict. Default ON since v0.4.8.
         #
         # `oin2_string` above comes from `get_oin_string(mol_gen_bonded, ...)`, i.e. the GENERATOR's
-        # own molecule, and that single shortcut causes BOTH reporting errors at once, measured over
-        # the 936-molecule results-v0.4.5-rebaseline cohort (docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md):
+        # own molecule. That is not merely inaccurate, it is CIRCULAR: `gen_result.mol` is exactly
+        # the artifact that would have to be wrong for the test to fail. One shortcut, two opposite
+        # errors, measured over the 936-molecule results-v0.4.5-rebaseline cohort
+        # (docs/agentic-notes/v0.4.6/METRIC_FALSE_POSITIVES.md):
         #
         #   gen_result.mol ASSERTS bonds the geometry does not support -> 61 FALSE POSITIVES
-        #       (FIYHUT: both Cp rings 0.85 A off the Fe, scored a pass)
+        #       (FIYHUT: both Cp rings 0.85 A off the Fe, 10 bonded C -> 0, scored a pass)
         #   gen_result.mol LACKS stereo the geometry does support       ->  8 FALSE NEGATIVES
         #       (YOSXIP: `[S@]{5}` sulfoxide flattens to `S{5}`, scored a mismatch)
         #
-        # Net: passes inflated by 61, deflated by 8 -- ~53 molecules, 5.7 points of over-statement.
         # A full `XYZToSMILES().convert()` of the generated XYZ re-perceives bonds AND stereo from
         # coordinates alone, so one call fixes both directions.
         #
-        # RECORDED, NOT SCORED. `status` still comes from the comparison below, unchanged. Flipping
-        # the scored predicate would move ~53 molecules in one step -- indistinguishable from a
-        # regression, and the confound that produced v0.4.4's 11 phantom "regressions". This makes
-        # the honest number available at corpus scale, so the switch becomes a decision backed by a
-        # full sweep rather than by a 936-molecule sample.
+        # PROMOTED ON COST, WHICH HAD NEVER BEEN MEASURED. The old comment here priced this at
+        # "0.4-1.5 s/molecule" and held it off on that basis. Measured across the full corpus
+        # (tools/honest_rescore.py, 4688 stored structures): 0.33 s/molecule median. Against a
+        # sweep with a 7.19 s median and a 300 s p95, the honest metric is a low single-digit
+        # percentage of the run it corrects.
         #
-        # Default OFF because it is not free: a second full encode, ~0.4-1.5 s/molecule against
-        # ~10 ms for report["coordination"]. On for an accuracy audit, off for a throughput run.
+        # SCOPE: this records the honest string, it does not move the tier ladder. `status` below
+        # still comes from `oin2_string`, deliberately. The ladder escalates to more expensive
+        # generator tiers on failure, so scoring it honestly changes runtime AND the failure mix --
+        # in the same release that re-baselines the number, that makes both unmeasurable. It is the
+        # identical confound that let the OIN_ACCEPT_SCORED A/B read "zero regressions" while its
+        # honest arm read 8. Changing what is ACCEPTED is a separate decision from changing what is
+        # REPORTED, and it is not this release's.
         if lever_enabled("OIN_INDEP_SCORE"):
-            try:
-                oin2_indep = XYZToSMILES().convert(gen_xyz_path)
-                report["smiles_2_indep"] = oin2_indep
+            _independent()
+            report["smiles_2_indep"] = oin2_indep
+            if indep_error is not None:
+                report["indep_key_match"] = None
+                report["indep_error"] = indep_error
+            else:
                 report["indep_key_match"] = canonical_roundtrip_key(
                     oin1_string
                 ) == canonical_roundtrip_key(oin2_indep)
-            except Exception as _e:
-                report["smiles_2_indep"] = None
-                report["indep_key_match"] = None
-                report["indep_error"] = f"{type(_e).__name__}: {_e}"
 
         # Verification: compare by structure-level canonical key (collapses
         # chemically-meaningless notation drift -- implicit-H, carbene, symmetric
