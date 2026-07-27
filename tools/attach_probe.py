@@ -2,7 +2,7 @@
 """§6.5 FALSIFICATION: does a coordinate-only donor-set predicate separate arm A's accepted
 conformer from arm B's on the known `OIN_ACCEPT_SCORED` regressions?
 
-THE TRAP THIS AVOIDS (docs/ACCEPT_SCORED_v0.4.7.md §6.1)
+THE TRAP THIS AVOIDS (docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md §6.1)
 --------------------------------------------------------
 `metallogen_adapter._coordination_vectors` derives donors from
 `metal.GetBonds()` -- the GENERATOR'S OWN GRAPH. A ligand that has physically left the
@@ -72,8 +72,8 @@ def actual_donor_set(znums, coords, tolerance: float = 0.5):
 
     Returns (metal_idx, set_of_donor_indices, distances). No bond object is consulted.
     """
-    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
-    from oinsmiles.utils.xyz2mol_local import xyz2AC_obabel
+    from oinsmiles.utils.perception_core import xyz2AC_obabel
+    from oinsmiles.utils.perception_tmc import TRANSITION_METALS_NUM
 
     metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
     if metal_idx is None:
@@ -96,7 +96,7 @@ def fast_donor_set(znums, coords, tolerance: float = 0.5):
     Y-H). So this is an approximation of `actual_donor_set` and the two are measured against
     each other on every conformer rather than assumed equal -- `ac_row_divergence` below.
     """
-    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
+    from oinsmiles.utils.perception_tmc import TRANSITION_METALS_NUM
 
     pt = GetPeriodicTable()
     metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
@@ -119,8 +119,8 @@ def encoder_donor_set(znums, coords, tolerance: float = 0.5):
     `actual_donor_set` omits that filter and therefore over-counts donors on chelates. Whether
     that over-count matters is measured, not assumed: both sets are scored side by side.
     """
-    from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
-    from oinsmiles.utils.xyz2mol_local import xyz2AC_obabel
+    from oinsmiles.utils.perception_core import xyz2AC_obabel
+    from oinsmiles.utils.perception_tmc import TRANSITION_METALS_NUM
 
     metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
     if metal_idx is None:

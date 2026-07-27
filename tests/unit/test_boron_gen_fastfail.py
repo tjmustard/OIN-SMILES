@@ -1,6 +1,6 @@
 """``OIN_BORON_GEN_FASTFAIL``: fail fast on a boron cage the generator cannot embed.
 
-Background (measured, see ``docs/BORON_GEN_CEILING_v0.4.7.md``): promoting
+Background (measured, see ``docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md``): promoting
 ``OIN_BORON_CAGE`` (v0.4.6) fixed a genuine ENCODER ceiling -- 34 boron-cluster
 molecules go from 0/34 to 34/36 encoding -- but exposed a GENERATOR ceiling the
 encode failure had been hiding. Of a 48-molecule sample (the 34-molecule
@@ -46,7 +46,7 @@ CAGE_LEVER = "OIN_BORON_CAGE"
 #: nothing produced.
 KIXXOF = FIXTURES / "KIXXOF_comp_0.xyz"
 #: A nido-C2B7 cage on a TPL (CN=3) Ru -- one of the 14 "silently wrong before"
-#: molecules (docs/BORON_CAGE_v0.4.5.md SS5a); also confirmed 0/1 with the cage
+#: molecules (docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md SS5a); also confirmed 0/1 with the cage
 #: lever on (tools/boron_gen_sweep_14silent.sh).
 VEJXOZ = FIXTURES / "VEJXOZ_comp_0.xyz"
 #: A boron-rich molecule with NO cage motif (Ir boroxine, B-O-B-O-B-O ring, zero
@@ -113,7 +113,7 @@ class TestPredicateFiresOnConfirmedFailures(_LeverMixin):
 
 class TestPredicateSpecificityControls(_LeverMixin):
     """Molecules that must NEVER trip the predicate, on the evidence that earned
-    each exclusion (docs/BORON_GEN_CEILING_v0.4.7.md SS5)."""
+    each exclusion (docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md SS5)."""
 
     def test_no_cage_motif_at_all_is_never_flagged(self):
         parsed, _ = _parsed(ASUVIV)
@@ -128,7 +128,7 @@ class TestRawjegSuccessIsGenuineNotAWrongGraphPass(_LeverMixin):
     """``got_mol is not None`` is not proof of a CORRECT structure -- a harness
     that re-encodes through the generator's own bond graph can score a
     wrong-graph structure as a pass (the exact failure mode
-    ``docs/BORON_CAGE_v0.4.5.md`` SS5a documents for 14 other molecules at the
+    ``docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md`` SS5a documents for 14 other molecules at the
     encoder layer). The ``RAWJEG`` exclusion this predicate relies on
     (``_BORON_GEN_FASTFAIL_SAFE_GEOMETRIES``) would be built on a false positive
     if its "success" were actually wrong, so this is checked independently: the
@@ -176,7 +176,7 @@ class TestEndToEndFastFailIsActuallyFast(_LeverMixin):
         with self.assertRaises(BoronCageGenerationUnsupportedError):
             OIN3DGeneratorMetallogen(optimizer=None, ensemble_size=1, timeout=300).generate(oin)
         # timeout=300 above is deliberate: if the predicate did NOT short-circuit,
-        # a real run would spend most of that budget (docs/BORON_GEN_CEILING_v0.4.7.md
+        # a real run would spend most of that budget (docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md
         # SS2) -- this test only completes quickly because it never reaches the
         # embed loop at all, which is the behaviour being pinned.
 

@@ -25,7 +25,7 @@ from ..oin.compare import canonical_roundtrip_key
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from ..oin.levers import lever_enabled
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
-from ..utils.xyz2mol import _has_boron_cage
+from ..utils.perception_tmc import _has_boron_cage
 from . import _telemetry
 from .attach_check import conformer_ligands_attached
 from .oin_parser import OINParser, ParsedOIN
@@ -122,8 +122,8 @@ class BoronCageGenerationUnsupportedError(ValueError):
     that the encode failure had been hiding: assembling a 3D structure from that
     cage is a distance-geometry + bond-order-perception problem this pipeline
     cannot solve, and it does not fail fast finding that out (see
-    ``docs/BORON_GEN_CEILING_v0.4.7.md``). Measured on all 34 ``BORON_CAGE_v0.4.5``
-    encode_fail molecules: 0/34 produce a 3D structure; the ones that do not
+    ``docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md``). Measured on all 34
+    ``BORON_CAGE_v0.4.5`` encode_fail molecules: 0/34 produce a 3D structure; the ones that do not
     instant-fail on an unsupported geometry code burn their entire embed budget
     (up to ~2.3x over, see ``UncoordinatedFragmentError``'s sibling finding on the
     embed-time-budget bug) discovering this. Subclasses ``ValueError`` so existing
@@ -137,8 +137,8 @@ class BoronCageGenerationUnsupportedError(ValueError):
 #: cage is present, because a measured example in that geometry DOES generate.
 #: ``RAWJEG_comp_0`` ([Hg_LIN], a monodentate cage + Cl-, no haptic anything)
 #: produces a 3D structure in 2.5s -- the ONLY success found across the 34+14
-#: molecule sample (docs/BORON_GEN_CEILING_v0.4.7.md SS5). ``LIN`` (2-coordinate)
-#: is the sole geometry in that sample where a coordinated cage succeeded; every
+#: molecule sample (docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md SS5). ``LIN``
+#: (2-coordinate) is the sole geometry in that sample where a coordinated cage succeeded; every
 #: other geometry checked (TPL, TPY, TET, SPL/SQP, OCT, PBP, SQA -- CN 3 through 7)
 #: failed 100% of the time. A single success is thin evidence for a general rule,
 #: so this is deliberately an EXCLUSION list scoped to the one confirmed-safe case
@@ -164,7 +164,7 @@ def _parsed_oin_has_boron_cage(parsed: ParsedOIN) -> bool:
     to build one".
 
     Two additional gates, both earned by a measured counter-example
-    (``docs/BORON_GEN_CEILING_v0.4.7.md`` SS5) to the naive "motif present ->
+    (``docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md`` SS5) to the naive "motif present ->
     fast-fail" rule:
 
     1. **The cage fragment must be COORDINATED** (>=1 entry in ``parsed.vectors``
@@ -183,7 +183,7 @@ def _parsed_oin_has_boron_cage(parsed: ParsedOIN) -> bool:
     tried as candidate discriminators and refuted by a counter-example in the
     same sample (``HAXJOG`` is monodentate like RAWJEG but fails; ``PEKQII``/
     ``SEMTOV``/``VEJXOZ`` are smaller than every failing molecule in the 34-set
-    but still fail) -- see docs/BORON_GEN_CEILING_v0.4.7.md SS5 for the full
+    but still fail) -- see docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md SS5 for the full
     negative-result account. Geometry code is the only discriminator that has
     not been refuted by a counter-example in this sample.
     """
@@ -1944,8 +1944,8 @@ class MetalloGenAdapter:
     def generate(self, parsed: ParsedOIN) -> GeneratedStructure:
         """Generate a 3D structure for a parsed OIN via the MetalloGen engine."""
         # Fail fast on a boron-cage ligand (OIN_BORON_GEN_FASTFAIL, default OFF --
-        # see levers.py and docs/BORON_GEN_CEILING_v0.4.7.md). Measured 0/32 for a
-        # COORDINATED cage on a non-LIN geometry: no such molecule produces a 3D
+        # see levers.py and docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md).
+        # Measured 0/32 for a COORDINATED cage on a non-LIN geometry: no such molecule produces a 3D
         # structure today, whether via this direct-DG path or the m-SMILES fallback
         # below -- both eventually reach the same unbounded PuLP/CBC bond-order
         # solve inside the embed attempt loop's alt-cache priming (SS2 of the doc).
@@ -1961,7 +1961,7 @@ class MetalloGenAdapter:
                 f"(geometry {getattr(parsed, 'geo_code', None)!r}): fast-failed on a "
                 "coordinated boron-cage ligand fragment (B-B-B triangle motif) that "
                 "this pipeline cannot embed (OIN_BORON_GEN_FASTFAIL; measured 0/32, "
-                "see docs/BORON_GEN_CEILING_v0.4.7.md). "
+                "see docs/agentic-notes/v0.4.7/BORON_GEN_CEILING_v0.4.7.md). "
                 f"OIN={getattr(parsed, 'original_oin', None)!r}"
             )
         if self._oin_direct_enabled():

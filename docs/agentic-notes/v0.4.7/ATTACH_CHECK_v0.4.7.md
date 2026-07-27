@@ -12,7 +12,7 @@
 | **G4** pass rate | 0 regressions ✅ | 1 regression (timeout-shaped) ⚠ |
 | speedup vs default | **3.33×** | **1.43×** (43% retained) ⚠ |
 
-This lane exists because `docs/ACCEPT_SCORED_v0.4.7.md` §5.4 named exactly one route from
+This lane exists because `docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md` §5.4 named exactly one route from
 `DO NOT PROMOTE` to promotion: *build the attachment check of §6 as the lever's missing safety
 condition, then re-run the four gates.* §6.5 left one test outstanding and made it a gate —
 **if the predicate cannot separate arm A's accepted conformers from arm B's, §6 is wrong and
@@ -219,7 +219,7 @@ that structure; this one must reject it. There is also a ring-slip test (η5→�
 
 ### 2.2 Scope limit — an acceptance condition, not a return condition
 
-This guards **acceptance**. On the CHEAP_ONLY class (`docs/eta_accept_gap_cohort.md`, and §3 of
+This guards **acceptance**. On the CHEAP_ONLY class (`docs/agentic-notes/v0.4.6/eta_accept_gap_cohort.md`, and §3 of
 the promote lane's report) *nothing is ever accepted*: the pool fills to completion and
 `_select_by_geometry` returns a best-by-geometry conformer that never faced any acceptance test
 at all. Those molecules are unaffected by this check, with the lever on or off.

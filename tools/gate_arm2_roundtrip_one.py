@@ -123,7 +123,7 @@ def main():
             try:
                 import numpy as np
 
-                from oinsmiles.utils.xyz2mol import get_oin_string
+                from oinsmiles.utils.perception_tmc import get_oin_string
 
                 with open(gen_xyz_path) as f:
                     xyz_lines = f.readlines()

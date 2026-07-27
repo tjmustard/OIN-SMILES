@@ -161,7 +161,7 @@ def measure_one(xyz_path: str, timeout: float, dump_dir: str | None = None) -> d
                 stem = os.path.join(dump_dir, out["molecule"])
                 with open(stem + ".xyz", "w") as fh:
                     fh.write(res.xyz)
-                from oinsmiles.utils.xyz2mol import TRANSITION_METALS_NUM
+                from oinsmiles.utils.perception_tmc import TRANSITION_METALS_NUM
 
                 midx = next(
                     (

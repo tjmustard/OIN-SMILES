@@ -4,7 +4,7 @@
 Takes a baseline A/B run (`ab_accept_scored.py --cohort ...`, giving arm A = default and
 arm B = the bare lever) plus a `--single-arm 1` run made with the attachment check ON
 (arm C = lever + check), and prints the same scorecard shape as
-`docs/ACCEPT_SCORED_v0.4.7.md` §5.1 so the numbers are directly comparable.
+`docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md` §5.1 so the numbers are directly comparable.
 
 WHY ARM C CAN BE A SINGLE-ARM RUN
 ---------------------------------

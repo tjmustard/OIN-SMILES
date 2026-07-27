@@ -20,7 +20,7 @@ ratio**. Absolute seconds are marked ADVISORY and are never the basis of a concl
 
 ## 1. Headline: the inherited cost model is right about one regime and inverted about another
 
-`docs/ENCODER_PERF_v0.4.5.md` states that `xyz2mol_local.AC2BO` is **99.8 %** of a slow
+`docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md` states that `xyz2mol_local.AC2BO` is **99.8 %** of a slow
 encode — "not dominant, essentially all of it". Re-measured with the previously
 uninstrumented functions included, that is true for exactly one of **three** distinct
 regimes, and is off by a factor of ~100 for another.
@@ -372,7 +372,7 @@ the 9:1 ratio does not tempt a future lane into re-deriving the same non-result.
 
 ## 6. LEAD 3 — the `AC2BO` memo DOES hit across a renumbering now, but not where this lane's targets live
 
-`docs/V045_STATUS_2026-07-25.md` concluded the memo "cannot hit on the generated side,
+`docs/agentic-notes/v0.4.5/V045_STATUS_2026-07-25.md` concluded the memo "cannot hit on the generated side,
 because its key is a permutation away". That measurement predates the canonicalising
 wrapper: `AC2BO` now calls `_AC2BO_core` on the **permuted** matrix, and
 `_ac2bo_memo_anchor` tags on the bytes of *that* matrix, so two encodes of the same graph

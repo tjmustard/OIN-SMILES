@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Does the ``AC2BO`` memo hit across two *differently numbered* copies of one molecule?
 
-``docs/V045_STATUS_2026-07-25.md`` measured that a generated conformer's atom order never
+``docs/agentic-notes/v0.4.5/V045_STATUS_2026-07-25.md`` measured that a generated conformer's atom order never
 matches the input (0/36) and concluded the memo "cannot hit on the generated side, because
 its key is a permutation away". That measurement predates the canonicalising wrapper: today
 ``AC2BO`` computes ``perm = _canonical_atom_permutation(AC, atoms)`` and calls
@@ -95,7 +95,7 @@ def encode(path, loc):
 
 
 def probe(path, name, seed, tmpdir):
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
 
     syms, coords, comment = read_xyz(path)
     rng = random.Random(seed)

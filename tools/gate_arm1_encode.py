@@ -82,7 +82,7 @@ def main():
         )
 
     from oinsmiles import XYZToSMILES
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
 
     clear = getattr(loc, "_ac2bo_memo_clear", None)
 

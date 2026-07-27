@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Control-group sweep: the 14 "silently wrong before, correctly cage-encoding now" molecules
-# from docs/BORON_CAGE_v0.4.5.md SS5a (NOT the same population as the 34 encode_fail set --
+# from docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md SS5a (NOT the same population as the 34 encode_fail set --
 # these 14 previously encoded a WRONG graph and passed the pipeline; OIN_BORON_CAGE=1 fixes
 # their NOTATION but SS10's pipeline-arm gap was only sampled on the 34, not these 14).
 #

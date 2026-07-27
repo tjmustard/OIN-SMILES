@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Per-``AC2BO``-call cost attribution for the encode floor (v0.4.7, lane L3-encfloor).
 
-``docs/ENCODER_PERF_v0.4.5.md`` attributes 99.8 % of a slow encode to ``AC2BO`` and stops
+``docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md`` attributes 99.8 % of a slow encode to ``AC2BO`` and stops
 there. That attribution predates the default-ON ``OIN_CANONICAL_PERCEPTION`` wrapper, so
 two functions that now run on **every** ``AC2BO`` call -- ``_canonical_atom_permutation``
 and ``_valence_search_is_truncated`` -- have never appeared in any measurement, and neither
@@ -60,7 +60,7 @@ def _ac_key(AC, atoms, *extra):
 
 
 class Recorder:
-    """Instruments xyz2mol_local in place; ``restore()`` puts it back."""
+    """Instruments perception_core in place; ``restore()`` puts it back."""
 
     def __init__(self, loc):
         self.loc = loc
@@ -169,7 +169,7 @@ class Recorder:
         )
 
     def install_resonance(self, x2m):
-        """Instrument the SL5 forked resonance path in ``utils.xyz2mol``.
+        """Instrument the SL5 forked resonance path in ``utils.perception_tmc``.
 
         A sub-cap ligand fragment can still take tens of minutes to encode with ``AC2BO``
         contributing ~nothing (``HACYEQ_comp_0``: 54.89 s encode, ``_AC2BO_core`` 0.13 s =
@@ -219,8 +219,8 @@ class Recorder:
 
 def run_one(path, name):
     from oinsmiles import XYZToSMILES
-    from oinsmiles.utils import xyz2mol as x2m
-    from oinsmiles.utils import xyz2mol_local as loc
+    from oinsmiles.utils import perception_core as loc
+    from oinsmiles.utils import perception_tmc as x2m
 
     rec = Recorder(loc)
     loc.reset_ac2bo_stats()

@@ -1,6 +1,6 @@
 """Build the ARM 2 (round-trip) frozen golden manifest for `tools/gate_v047.sh`.
 
-The v0.4.7 slow-100 cohort (see `docs/COHORT_v0.4.7.md`) is selected from a SINGLE
+The v0.4.7 slow-100 cohort (see `docs/agentic-notes/v0.4.7/COHORT_v0.4.7.md`) is selected from a SINGLE
 sweep results dir (`tools/select_slow_byte_exact.py`, top-100 by `metrics.elapsed_s`
 within that one dir) -- ``smiles_1``/``smiles_2`` are therefore ALREADY known and
 byte-exact there. So the golden values this tool freezes come from that EXISTING
@@ -13,7 +13,7 @@ PRIMARY SOURCE, NOT TWO PEERS
 An earlier version of this tool required agreement between TWO sources, treated as
 equal peers, and hard-failed on any disagreement or absence in either. That was
 wrong: the two source dirs are different, uncorrelated random draws over the
-dataset (see ``docs/COHORT_v0.4.7.md`` -- the "62, not 100" incident) and share only
+dataset (see ``docs/agentic-notes/v0.4.7/COHORT_v0.4.7.md`` -- the "62, not 100" incident) and share only
 ~100 names total, so requiring both was a near-total sample destruction, not a
 robustness check. This tool now takes ONE required primary source
 (``--source-a``, the same dir the cohort was selected from -- every cohort name

@@ -159,7 +159,7 @@ Measured, arm A (`OIN_ACCEPT_SCORED=0`), on the CHEAP_ONLY class:
 | WIWRIE_comp_0 | A default | True | **False** | `ec9b6c3cbdcd07be` |
 | NOMMOU_comp_0 | A default | True | **False** | `5d8208fcbb9313c2` |
 
-**Mechanism.** These are the CHEAP_ONLY class of `docs/eta_accept_gap_cohort.md`: cheap matches
+**Mechanism.** These are the CHEAP_ONLY class of `docs/agentic-notes/v0.4.6/eta_accept_gap_cohort.md`: cheap matches
 many conformers, strict matches **none**. So `accept_fn` never fires, the pool fills to
 completion, and `_select_by_geometry` returns a best-by-geometry conformer **that was never
 required to pass acceptance at all**. Acceptance is not the only path to a returned structure.

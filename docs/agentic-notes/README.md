@@ -57,6 +57,7 @@ the evidence trail. Cross-link the note from the product doc if the derivation m
 | [`v0.4.4/`](v0.4.4) | Accuracy release: the gap decomposition, OIN-direct assembly validation, encoder robustness (SL5), reliability (SL4). |
 | [`v0.4.5/`](v0.4.5) | The canonical-OIN release — 18 lane reports: canonical body/slots, encode-fail histogram, boron cage, atom-count hydrogen, valence order/search, renumbering instability, perf, the promotion gate. |
 | [`v0.4.6/`](v0.4.6) | The 5,000-molecule sweep, the accuracy **instrument** (both error directions measured), the eta accept-scored A/B, and the H-faithful negative result. JSON artifacts alongside. |
+| [`v0.4.7/`](v0.4.7) | Five lanes, four of them negative: the `OIN_ACCEPT_SCORED` **do-not-promote** verdict and the attachment check that is its missing safety condition, the frozen slow cohort + two-arm byte-identity gate, the encode floor's three cost regimes, and the boron generation ceiling (whose own fast-fail proposal this release refutes). |
 
 ### Cross-cutting
 

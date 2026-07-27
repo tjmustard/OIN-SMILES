@@ -1,6 +1,6 @@
 # Boron cage generation ceiling — v0.4.7 (L4-boronfast)
 
-`OIN_BORON_CAGE` (promoted default-ON in v0.4.6, `docs/BORON_CAGE_v0.4.5.md`) fixed a genuine
+`OIN_BORON_CAGE` (promoted default-ON in v0.4.6, `docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md`) fixed a genuine
 **encoder** ceiling: 34 boron-cluster molecules that used to fail to encode at all now emit a
 correct, coordinated, single-bonded deltahedral cage. §10 of that document (added 2026-07-26,
 this release's base) measured a 10-molecule sample of the arm nobody had checked -- does the
@@ -11,7 +11,7 @@ measured safety proof including one confirmed counter-example, and pins the unbo
 mechanism precisely.
 
 **Verdict up front:** the class is real and it is exactly as big as the encoder fix (34 molecules)
-plus the population it silently corrected alongside it (14 more, `docs/BORON_CAGE_v0.4.5.md` §5a)
+plus the population it silently corrected alongside it (14 more, `docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md` §5a)
 -- **48 molecules, 1 of which currently generates.** The other 47 either already fail instantly
 (7) or burn the whole embed budget finding nothing (40). `OIN_BORON_GEN_FASTFAIL` (default OFF)
 converts those 40 from "burn the budget" to "fail in the time it takes to parse the OIN string,"
@@ -21,7 +21,7 @@ with zero effect on the 8 that are already fine.
 
 ## 1. Class size and failure-shape breakdown
 
-Sample: all 34 `OIN_BORON_CAGE` `encode_fail`-class molecules (`docs/BORON_CAGE_v0.4.5.md` §2)
+Sample: all 34 `OIN_BORON_CAGE` `encode_fail`-class molecules (`docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md` §2)
 plus all 14 molecules from that document's §5a ("silently wrong before, correctly cage-encoding
 now" -- a *different* population that carries the same motif and is affected the same way, never
 measured at the generation level before this). `optimizer=None`, `ensemble_size=1`, 1 worker,
@@ -192,7 +192,7 @@ slow one (`OIN_BORON_GEN_FASTFAIL` toggled, everything else identical):
 
 **`got_mol=True` alone is not proof of a correct structure** -- a harness that re-encodes through
 the generator's own bond graph can score a wrong-graph structure as a pass, which is exactly the
-failure mode `docs/BORON_CAGE_v0.4.5.md` §5a documents for 14 OTHER molecules at the encoder
+failure mode `docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md` §5a documents for 14 OTHER molecules at the encoder
 layer. So `RAWJEG`'s xyz was written to a fresh file and independently re-perceived with a brand
 new `XYZToSMILES().convert()` call -- coordinates in, nothing from the generator's own mol object
 reused -- and compared against the original OIN:

@@ -3,10 +3,11 @@
 WHY THIS EXISTS
 ===============
 ``OIN_ACCEPT_SCORED`` drops the one test in ``_reencode_key_matches`` that does not reuse the
-generator's own bond graph. Measured (``docs/ACCEPT_SCORED_v0.4.7.md``), that is a large
-speedup and it is byte-safe -- ``sha256(smiles_2)`` is identical on 118/118 molecules -- but
-it degrades the structure underneath the string: on a 100-molecule population, +28 vdW
-clashes, severe clashes 5->14, and independent re-perception lost on 26 molecules with zero
+generator's own bond graph. Measured (``docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md``),
+that is a large speedup and it is byte-safe -- ``sha256(smiles_2)`` is identical on 118/118
+molecules -- but it degrades the structure underneath the string: on a 100-molecule
+population, +28 vdW clashes, severe clashes 5->14, and independent re-perception lost on 26
+molecules with zero
 recoveries. Diffing the failures showed **6 of 8 lose metal-ligand coordination outright**
 (the eta ring becomes a free molecule and the metal geometry tag degrades by exactly one
 donor: ``[Ru_TET]``->``[Ru_TPL]``, ``[Zr_TET]``->``[Zr_LIN]``, ``[Ti_OCT]``->``[Ti_SPY]``).
@@ -28,8 +29,9 @@ index tuples rather than a mol: a caller cannot accidentally pass connectivity i
 THE PREDICATE, AND WHY IT IS THIS ONE
 =====================================
 Falsified against the ``indep`` oracle on 21 molecules / 40 accepted conformers in both arms
-(``tools/attach_probe.py``, ``docs/ATTACH_CHECK_v0.4.7.md`` §1). Four candidates were scored
-side by side; the two proposed in §6.4 of the promote lane's report both fail:
+(``tools/attach_probe.py``, ``docs/agentic-notes/v0.4.7/ATTACH_CHECK_v0.4.7.md`` §1). Four
+candidates were scored side by side; the two proposed in §6.4 of the promote lane's report
+both fail:
 
 ===========================================  ===========  ==========================
 predicate                                    separates/8  false positives/22
@@ -75,9 +77,10 @@ failures left standing, and it is the case §6.4 already called unreachable by a
 metal-centred check. **7 of 8 is the ceiling and it is reached; it is not 8 of 8.**
 
 Scope limit, separate from the residual above: this is an ACCEPTANCE condition, not a RETURN
-condition. On the CHEAP_ONLY class (``docs/eta_accept_gap_cohort.md``) nothing is ever
-accepted, the pool fills to completion and ``_select_by_geometry`` returns a best-by-geometry
-conformer that never faced any acceptance test. Those molecules are unaffected here, with the
+condition. On the CHEAP_ONLY class (``docs/agentic-notes/v0.4.6/eta_accept_gap_cohort.md``)
+nothing is ever accepted, the pool fills to completion and ``_select_by_geometry`` returns a
+best-by-geometry conformer that never faced any acceptance test. Those molecules are
+unaffected here, with the
 lever on or off.
 
 COST
@@ -127,8 +130,8 @@ def encoder_donor_set(atomic_nums, coords, tolerance: float = AC_TOLERANCE):
     point (see the module docstring). Returns ``(metal_idx, donor_index_set)``, or
     ``(None, set())`` when there is no transition metal.
     """
-    from ..utils.xyz2mol import TRANSITION_METALS_NUM
-    from ..utils.xyz2mol_local import xyz2AC_obabel
+    from ..utils.perception_core import xyz2AC_obabel
+    from ..utils.perception_tmc import TRANSITION_METALS_NUM
 
     znums = [int(z) for z in atomic_nums]
     metal_idx = next((i for i, z in enumerate(znums) if z in TRANSITION_METALS_NUM), None)
@@ -248,7 +251,7 @@ def conformer_ligands_attached(mol, claimed_donors=None):
     loud, because "never rejects" and "never runs" are otherwise indistinguishable in the
     output.
     """
-    from ..utils.xyz2mol import TRANSITION_METALS_NUM
+    from ..utils.perception_tmc import TRANSITION_METALS_NUM
 
     try:
         conf = mol.GetConformer()

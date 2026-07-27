@@ -2,7 +2,7 @@
 """Render the four `OIN_ACCEPT_SCORED` promotion gates from `ab_accept_scored.py` output.
 
 Reads one or more `--out` JSONs and prints the tables that go in
-`docs/ACCEPT_SCORED_v0.4.7.md`. Kept separate from the measuring script so the tables can be
+`docs/agentic-notes/v0.4.7/ACCEPT_SCORED_v0.4.7.md`. Kept separate from the measuring script so the tables can be
 regenerated without re-running anything -- at load 39 a re-run is not free and is not
 reproducible in wall-clock terms anyway.
 

@@ -3,7 +3,7 @@
 #
 # tools/boron_gen_time.py already times ONE molecule and prints a JSON line; this wraps it in
 # a HARD external `timeout` per molecule, because `embed_time_budget=self.timeout` is NOT a
-# hard bound (docs/BORON_CAGE_v0.4.5.md SS10) -- it is checked only BETWEEN attempts in the
+# hard bound (docs/agentic-notes/v0.4.5/BORON_CAGE_v0.4.5.md SS10) -- it is checked only BETWEEN attempts in the
 # embed loop, and a single attempt (an alt-cache MISS priming a fresh `option` via a full-complex
 # PuLP/CBC solve) can itself run well past the requested budget. Only an external SIGKILL
 # actually enforces a cap, so this script is that watchdog for the class-outcome sweep.

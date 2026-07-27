@@ -80,7 +80,7 @@ COUNTER_NAMES = [
     "valences_not_too_large",
     "chiral_stereo_check",
     # v0.4.7 L3-encfloor: the canonical-perception wrapper post-dates
-    # docs/ENCODER_PERF_v0.4.5.md's 99.8%-AC2BO attribution and runs on EVERY AC2BO call
+    # docs/agentic-notes/v0.4.5/ENCODER_PERF_v0.4.5.md's 99.8%-AC2BO attribution and runs on EVERY AC2BO call
     # (OIN_CANONICAL_PERCEPTION is default-ON), yet neither of these had ever been counted.
     # Neither had the sub-cap enumeration helpers.
     "_canonical_atom_permutation",
@@ -251,7 +251,7 @@ def main():
     result = {"molecule": args.molecule, "atoms": n, "loadavg_start": load}
 
     if args.mode in ("counters", "both"):
-        from oinsmiles.utils import xyz2mol_local as _loc
+        from oinsmiles.utils import perception_core as _loc
 
         counters = Counters()
         timings: dict[str, float] = {}

@@ -273,7 +273,7 @@ output, never gated on.
 respectively (`name<TAB>sha1<TAB>sha2<TAB>len1<TAB>len2<TAB>eta`) — a lane whose own
 arm produces no output for some molecules can diff its own two arms' shas against this
 manifest without re-deriving anything, and the frozen 100-name list
-(`docs/COHORT_v0.4.7.md` §2 table) is exactly the population the byte-exact selection
+(`docs/agentic-notes/v0.4.7/COHORT_v0.4.7.md` §2 table) is exactly the population the byte-exact selection
 predicate already vetted, so it doubles as a denominator check for "did my arm produce
 output at all" as well as "is the string unchanged."
 
