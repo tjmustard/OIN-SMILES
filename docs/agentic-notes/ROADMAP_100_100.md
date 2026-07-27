@@ -68,6 +68,44 @@ is doing too much work** — a molecule that loses a haptic contact is not an is
 release that owns 8.34 points cannot sit behind two canonicality releases worth 12.20 combined
 without someone having decided that deliberately. **Re-sequence before planning v0.4.11.**
 
+#### ⚠ Still not re-sequenced at v0.4.10's close-out — and now one release more urgent
+
+v0.4.10 was byte-identical by construction, so it moved **no** point of the gap and the table above
+is unchanged. That means the re-sequencing decision v0.4.9 asked for was simply not taken, and the
+ladder still spends its **next** release on its **smallest** block:
+
+| block | pts | currently scheduled |
+|---|---:|---|
+| `key_equal` → `slot_renumber` | **9.92** | v0.4.14 |
+| `structural` | **8.34** | v0.4.16 |
+| `hard_fail` | 6.38 | v0.4.9–13 |
+| `rdkit_canonical` | 2.28 | v0.4.15 |
+| `facmer_divergent` | 0.32 | v0.4.16 |
+| **`encode_fail`** | **0.30** | **v0.4.11 — next** |
+
+**18.26 of the 27.54 points sit at v0.4.14 and v0.4.16**, behind a release worth 0.30.
+
+There is a real argument for the current order — v0.4.12 (honest acceptance) and v0.4.13 (harness
+false negatives) are *measurement* prerequisites, and moving a 9.92-point release ahead of them
+risks attributing a harness artefact to a canonicality fix. That argument covers v0.4.12/13. **It
+does not cover v0.4.11**, whose 0.30 points depend on nothing and unblock nothing.
+
+**Recommendation, for the human to accept or reject** — this reorders eight planned releases and
+the target definition is the user's call, so it is written down rather than applied:
+
+1. Keep v0.4.12 and v0.4.13 where they are; they are prerequisites, not point-scorers.
+2. **Re-point v0.4.11 at `slot_renumber` (9.92 pts)** — encoder-side canonicality, the largest single
+   block, and the area where v0.4.5 already built six working levers, so it has the shortest path
+   from diagnosis to change.
+3. Demote **encode floor R3** to an opportunistic slot. It is genuinely cheap and this session hit
+   its cost first-hand — ARM 1 takes ~15 minutes almost entirely because several fixtures route
+   through `_resonance_candidates_isolated` at a **120 CPU-s budget per fork** — but 0.30 points is
+   a rounding error against a 27.54-point gap, and "it also speeds up our own gate" is a developer
+   convenience, not a roadmap argument.
+4. Re-label `structural` before scheduling it. 417 molecules whose generated structure re-perceives
+   with **different coordination than the OIN claims** is a generator-capability problem sitting
+   under an "isomer" heading; it likely belongs with v0.4.18, not beside `facmer_divergent`.
+
 Runtime, from the primary reports: overall n = 5000, median **7.19 s**, `> 30 s` **994 (19.88%)**;
 **eta** n = 1146, median 24.08 s, `> 30 s` 528 (46.1%) — **53.1% of the whole tail**; non-eta
 n = 3854, median 6.18 s, `> 30 s` 466 (12.1%).
@@ -129,7 +167,7 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.7** | close-out: land the 5 finished swimlanes; tag `v0.4.7`; bump `pyproject` 0.4.6 → 0.4.7 | flat |
 | **v0.4.8** | **the honest number** — promote `OIN_INDEP_SCORE` to *the* score; 5k honest sweep; + the atom-count gate | **DOWN ~5.7 pts, planned** |
 | **v0.4.9** ✅ | **speed becomes measurable** — `OIN_ENFORCE_BUDGET` (default OFF); 328-molecule stratified benchmark frozen. **Refuted its own premise:** `elapsed_s` is a sum, the harness already enforces to ε ≈ 0.2 s | pass flat ✓; benchmark reproduces to **0.28%** |
-| **v0.4.10** | **cost per attempt**, byte-identical. ⚠ **Start here, it is measured:** `get_embedding`'s outer loop calls `alternative_ace_mol_list.index(...)` and **discards the result** — 3711 calls / 198 eigendecompositions / **22% of an eta generation** on a thrown-away value. Then `_finalize_positions` (10.4 s of 72 s on CAHQEJ) | pass flat *by construction*; median down |
+| **v0.4.10** ✅ | **cost per attempt**, byte-identical. Deleted the discarded `.index()` scan (**`CAHQEJ` −32.9%**, `FOSNEI` +0.3% nil) and added `OIN_MEMO_CIP_REPARSE` (**`VAFMIA` −86.7%**, `CAHQEJ` −2.4%), both **byte-identical on ARM 1 and ARM 2**. ⚠ **Found its own arbiter broken:** ARM 1 had been non-runnable since `dd51a515` | pass FLAT ✓ by construction; **every speed number bimodal by molecule** |
 | **v0.4.11** | **encode floor R3** — memoize the forked-resonance timeout verdict per ligand graph | `encode_fail` down |
 | **v0.4.12** | **honest acceptance** — harden `OIN_ATTACH_CHECK`; the `OIN_ETA_EARLY_EXIT` corpus A/B | biggest tail move; **pass must not move — that is the gate** |
 | **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |

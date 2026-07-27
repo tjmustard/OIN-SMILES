@@ -1,6 +1,6 @@
 [project]
 name = "oin-smiles"
-version = "0.4.9"
+version = "0.4.10"
 description = "Lossless conversion between 3D transition-metal-complex structures and 1D Open Isomer Notation (OIN) SMILES."
 readme = "README.md"
 requires-python = ">=3.10"

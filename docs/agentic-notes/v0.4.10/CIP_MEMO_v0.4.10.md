@@ -103,6 +103,36 @@ Bounded at `_CIP_REPARSE_MEMO_MAX = 2048` so a long single-interpreter sweep can
 limit. Cross-molecule retention is safe by §2's purity argument; the clear hook exists so a
 per-molecule gate can guarantee isolation regardless.
 
+## 6a. Why it was NOT promoted, and exactly what would promote it
+
+The charter permits same-release promotion, unusually, *"because the acceptance bar is a
+byte-comparison rather than a judgement call"* — but conditions it precisely:
+
+> only if byte-identity holds on the **whole** benchmark, including the fast control.
+
+**This release ran the fast band: 90 of 328 molecules.** That is the *control*, not the whole
+benchmark, and the difference is not pedantry — `RUNTIME_BENCHMARK_v0.4.9.md` §5 names the fast
+cell's blind spot itself: it samples **90 of 4006 fast molecules (2.2%)** and detects *systematic*
+slowdown, never *targeted*. Promoting on it would be exactly the under-powered sample this project
+has been burned by before.
+
+So the lever ships **OFF**, and the gate is written down instead of being left to judgement:
+
+```bash
+# The full cohort, lever ON, against the EXISTING frozen golden.
+# No baseline arm is needed -- the golden IS the baseline.  ~10 CPU-h, ~1.7 h wall sharded 6-way.
+D=$PWD/tmCAT-tmPHOTO_xyz_dataset
+for i in 1 2 3 4 5 6; do                      # --shard is ONE-BASED; 0:6 exits 2
+  OIN_MEMO_CIP_REPARSE=1 bash tools/gate_v047.sh arm2 \
+      --cohort-dir $D/cohort-v049-strata --golden tools/gate_v049_arm2_golden.tsv \
+      --shard $i:6 --timeout 300 --out /tmp/v0410_promote_$i.tsv &
+done; wait
+```
+
+**Promote iff all six shards PASS with zero MISMATCH.** ARM 1 is already green at full scope (62/62),
+so it does not need repeating. One line in `oin/levers.py`'s `_DEFAULT_ON` flips it, and the same
+line reverts it.
+
 ## 7. Reproducing
 
 ```bash

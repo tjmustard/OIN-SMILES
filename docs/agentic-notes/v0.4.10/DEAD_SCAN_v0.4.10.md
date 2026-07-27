@@ -1,7 +1,7 @@
 # v0.4.10 · Lane A — deleting one line that eigendecomposed a matrix and threw it away
 
-> **`CAHQEJ_comp_0`: 118.44 s → 59.00 s. −50.2%. Byte-identical.**
-> **`FOSNEI_comp_0`: no measurable effect.**
+> **`CAHQEJ_comp_0`: 86.35 s → 57.96 s. −32.9%. Byte-identical.**
+> **`FOSNEI_comp_0`: +0.3% — no effect, and now cleanly measured.**
 >
 > Both facts are the deliverable. A release that reported only the first would be repeating
 > the exact mistake v0.4.9 recorded one release earlier: **the cost is bimodal by molecule,
@@ -60,34 +60,67 @@ checkout's pinned venv, this project's established A/B isolation method.
 
 | molecule | class | arm A (pristine) | arm B (deleted) | delta | within-arm spread |
 |---|---|---:|---:|---:|---|
-| `CAHQEJ_comp_0` | eta, `[Ni_TPL]`, 2 haptic | 117.94, 118.95 → **118.44 s** | 61.47, 56.53 → **59.00 s** | **−50.2%** | A 0.9%, B 8.4% |
-| `FOSNEI_comp_0` | non-eta, boron cage | 83.86, 94.36 → **89.11 s** | 84.77, 110.63 → **97.70 s** | +9.6% | A 12%, **B 30%** |
+| `CAHQEJ_comp_0` | eta, `[Ni_TPL]`, 2 haptic | 81.19, 91.52 → **86.35 s** | 58.32, 57.60 → **57.96 s** | **−32.9%** | A 12.7%, B **1.2%** |
+| `FOSNEI_comp_0` | non-eta, boron cage | 86.51, 85.07 → **85.78 s** | 87.16, 84.89 → **86.02 s** | **+0.3%** | A **1.7%**, B **2.7%** |
 
 **Structure fingerprints identical in every run** — `eab3cb62ac92c380` for `CAHQEJ` (all four, and
 independently reproduced by Lane B's arm on a third checkout), `797f8a0c3fc6ab40` for `FOSNEI`.
 
-### Reading the `FOSNEI` row honestly
+### ⚠ These numbers CORRECT an earlier, contention-inflated pair
 
-**+9.6% is noise, not a slowdown.** A pure deletion cannot make code slower; there is no new work on
-any path. The within-arm spreads (12% and 30%) are larger than the between-arm difference, which is
-the definition of an unresolved measurement — these two rounds ran while four gate processes were
-competing for the box. The defensible statement is **"no measurable effect on `FOSNEI`"**, and it is
-consistent with v0.4.9's profile of that molecule, which attributes its cost to `get_embedding` self
-time and `clean_geometry.ff_clean` and shows **no eigendecomposition traffic at all**.
+The first run of this A/B reported **−50.2%** on `CAHQEJ` and **+9.6%** on `FOSNEI`. It was taken
+while four byte-identity gate processes were competing for a 12-core box (load average **35**, driven
+partly by two orphaned multithreaded children that survived a `pkill`). Both figures were wrong in
+the same direction their noise pointed:
 
-The `CAHQEJ` row is the opposite: within-arm spread of 0.9% on the arm that matters, against a
-between-arm difference of 50%.
+| | contended | quiet | |
+|---|---:|---:|---|
+| `CAHQEJ` | −50.2% | **−32.9%** | the gain was **over**-stated by 17 points |
+| `FOSNEI` | +9.6% | **+0.3%** | the null was buried in 30% within-arm spread |
 
-## 4. ⚠ The handoff under-counted its own win — 22% predicted, 50% measured
+The commits that landed this lane quote the contended figures; **the quiet-box numbers above are the
+ones to cite.** The lesson is in `SPEED_v0.4.10.md` §7: byte-identity gates are load-immune and can be
+parallelised freely, wall-clock is neither.
 
-v0.4.9 handed this over as *"15.99 s of a 72.02 s generation — 22%"*. That figure is **one profile
-line**: `numpy.linalg.eig` via `chem.get_c_eig_list`. The scan's true cost is everything inside
-`Molecule.__eq__`, which also includes building the Coulomb matrix (`get_adj_matrix`, `get_z_list`,
-two `n×n` matmuls) on **both** operands of every comparison that survives the atom-count check.
+### Reading the `FOSNEI` row
 
-The gap matters beyond bookkeeping: a lane that had budgeted its effort against "22%" and measured
-50% would have had no way to tell a real under-count from a contaminated A/B, and would have been
-right to distrust the larger number. Attribution is in `SPEED_v0.4.10.md`.
+**+0.3% against within-arm spreads of 1.7% and 2.7% is a clean null.** A pure deletion cannot make
+code slower — there is no new work on any path — and §4 explains *why* there was nothing to gain:
+`FOSNEI` makes **3** `Molecule.__eq__` calls costing **0.03 s**, against `CAHQEJ`'s 99 calls costing
+38.52 s. Consistent with v0.4.9's profile, which attributes `FOSNEI` to `get_embedding` self time and
+`clean_geometry.ff_clean` with **no eigendecomposition traffic at all**.
+
+## 4. The attribution — and it predicts the A/B
+
+Measured directly on the pristine tree (`8b252292`) by wrapping `Molecule.__eq__` — what
+`list.index` actually calls — and the `get_c_eig_list` beneath it:
+
+| molecule | `__eq__` calls | cost | % of generate | generate |
+|---|---:|---:|---:|---:|
+| `CAHQEJ_comp_0` | **99** | **38.52 s** | **38.8%** | 99.39 s |
+| `FOSNEI_comp_0` | **3** | 0.03 s | **0.0%** | 87.11 s |
+
+**This explains both halves of §3 with one number each.** 99 comparisons versus 3 — the scan is
+38.8% of one molecule and nothing at all on the other. **The `FOSNEI` null is attributed, not
+excused as noise.**
+
+The two independent measurements agree on the size of the thing: the attribution puts the scan at
+**38.8%** of that run's 99.39 s generation, and the quiet A/B puts it at **32.9%** of an 86.35 s
+pristine mean. Both say *roughly a third of this molecule's generation*, and the difference between
+them sits inside the 12.7% run-to-run spread arm A shows on this molecule.
+
+### ⚠ The handoff under-counted its own win
+
+v0.4.9 passed this over as *"15.99 s of a 72.02 s generation — 22%"*. That is **one profile line**,
+`numpy.linalg.eig`. The whole of `get_c_eig_list` measures **38.51 s over 198 calls** — and the
+**198 eigendecompositions match v0.4.9's count exactly**, so this is the same work, differently
+bounded. The difference is the Coulomb matrix that `get_c_eig_list` builds before decomposing
+(`get_adj_matrix`, `get_z_list`, two `n×n` matmuls), on **both** operands of every comparison that
+survives the atom-count check.
+
+The gap matters beyond bookkeeping: a lane that had budgeted against "22%" and measured 50% would
+have had no way to tell a real under-count from a contaminated A/B — and, given how easily this
+release contaminated its own measurements, would have been right to distrust the larger number.
 
 ## 5. Why no lever
 

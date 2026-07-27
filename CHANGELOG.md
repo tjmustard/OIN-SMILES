@@ -5,6 +5,79 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.10] - 2026-07-27
+
+> ### Cost per attempt — byte-identical by construction, and the arbiter was broken before we started.
+>
+> **The first thing this release measured was its own gate, and the gate was dead.**
+> `tools/gate_v047.sh arm1` had been exiting 1 *before comparing anything* since `dd51a515`:
+> `ULODUU_comp_0.xyz` was added as a fixture and the golden was never extended, so the
+> `EXPECTED_FIXTURE_COUNT = 61` guard hard-refused every run. v0.4.9 froze a 328-molecule benchmark
+> and measured a 0.28% noise floor while the encoder arm of its own gate was non-runnable.
+>
+> Behind that refusal sat a second, real drift: `ASISAX_comp_0`'s frozen row carries
+> `ERROR:ValueError:xyz2mol failed:` and the tree emits `perception_tmc failed:` — the v0.4.7 rename,
+> recorded as *behaviour-neutral*. It was, of behaviour. It was not neutral for the error **string**,
+> and ARM 1 hashes error strings deliberately. **The other 60 rows are byte-identical**, so the
+> encoder itself has not moved; both rows are re-frozen at 62 with the diff recorded.
+>
+> **The transferable finding: a gate that fails before it compares is indistinguishable from a gate
+> that is merely inconvenient to run, and it silently stops covering everything else it was watching.**
+
+**Accuracy: FLAT, by construction.** No answer changes. Byte-identity is the primary acceptance gate,
+not a secondary check, and both arms pass for both lanes: **ARM 1 62/62 byte-identical, ARM 2 90/90
+gated**, plus identical generated-structure fingerprints across every A/B run.
+
+> ⚠ **Every speed number here is bimodal by molecule and none of them is a corpus number.** The same
+> two changes measure −32.9% and −86.7% on the molecules they target, and −2.4% and *nothing* one
+> molecule over. v0.4.9 shipped a lever aimed at whichever function profiled expensive last and
+> measured nothing; this release reports both halves.
+>
+> ⚠ **Lane A's figures were corrected before release.** A first A/B taken while four gate processes
+> competed for the box (load average **35**) reported **−50.2%** and **+9.6%**; quiet-box
+> re-measurement gives **−32.9%** and **+0.3%**. The gain was over-stated by 17 points and the null
+> was buried in 30% within-arm spread. **Byte-identity gates are load-immune and can be parallelised
+> freely; wall-clock is neither** — that is the method note this release paid for.
+
+### Changed
+- **The discarded `.index()` scan is gone** (`generator3d/embed.py`). `get_embedding`'s outer loop
+  called `alternative_ace_mol_list.index(alternative_ace_mol)` and **threw the result away**. Not a
+  no-op: `list.index` compares with `Molecule.__eq__` → `is_same_molecule` → `get_c_eig_list` →
+  `numpy.linalg.eig`, so it eigendecomposed a Coulomb matrix per candidate per outer iteration,
+  O(n²) in the candidate list. **`CAHQEJ_comp_0` 86.35 s → 57.96 s (−32.9%)**;
+  **`FOSNEI_comp_0` +0.3% — no effect**, and attributed rather than excused: that molecule makes
+  **3** such comparisons costing 0.03 s, against `CAHQEJ`'s **99** costing 38.52 s. Ships **on by
+  default, with no lever** — gating provably dead code would permanently ship
+  `if not lever: <discarded computation>`.
+- **ARM 1 golden re-frozen at 62 rows**, `EXPECTED_FIXTURE_COUNT` and the `#DONE` sentinel 61 → 62.
+  The two counts stay hardcoded and independently asserted: deriving one from the other would make
+  this class of drift self-heal, which deletes the guard rather than fixing it.
+
+### Added
+- **`OIN_MEMO_CIP_REPARSE` (default OFF)** — memoises `chirality._reparse_cip_label_once`, a pure
+  function of three immutable scalars that costs **2.43 s a call**. **`VAFMIA_comp_0` 81.89 s →
+  10.87 s (−86.7%)**, ~310× the noise floor. That molecule set v0.4.9's budget ε: the bound can
+  decline to *start* the next `accept_fn` call but cannot interrupt the running one, which is why it
+  held to 2.09× rather than 1.0×. At 10.87 s VAFMIA now clears 30 s — **the worst of the eleven
+  molecules that exceeded budget in both of v0.4.9's arms, and only that one.**
+  ⚠ The helper is also on the **encoder** path (`chirality.recover()` →
+  `_reparse_aromatic_cip_label`), which the charter's generator-side framing hides, so this lane is
+  gated on ARM 1 as well as ARM 2. Both pass.
+- `tests/unit/test_embed_dead_scan.py` (5) — pins the *purity* properties the deletion rests on, so
+  adding the "obvious" cache to `get_c_eig_list` fails there with an explanation instead of
+  surfacing as an unattributable string diff in a corpus run. Plus a lint against reintroduction.
+- `tests/unit/test_cip_reparse_memo.py` (11) — warm equals cold on every branch; the memo key is
+  **complete** (`O[C@:99]([O])(C)CC` returns `None` with `fill_deficit` and `"R"` without, checked in
+  both orders on a cleared cache); default OFF produces zero cache traffic; `=0` disables.
+
+### Not done, deliberately
+- **`OIN_MEMO_CIP_REPARSE` is not promoted.** The charter permits same-release promotion *"only if
+  byte-identity holds on the whole benchmark"*. This release ran the **fast band — 90 of 328**. The
+  promotion gate is the full cohort with the lever on, ~10 CPU-h sharded 6-way, against the existing
+  frozen golden. Fast-band-only evidence is not that.
+- **`max(elapsed_s) < 30 s` is still not delivered**, and this release does not claim to approach it.
+  v0.4.9 measured the same **11** molecules over budget in both arms; one of them is now fast.
+
 ## [0.4.9] - 2026-07-27
 
 > ### Speed becomes measurable — and this release refutes its own premise.
