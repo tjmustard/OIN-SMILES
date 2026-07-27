@@ -198,7 +198,31 @@ Reporting a loss made *entirely* of boundary contacts as `boundary_only` rather 
 false alarms 7.9 % → 3.7 % for one point of recall. FIYHUT is unaffected — 0.33 Å beyond cutoff is
 over 3× the band.
 
-**Two scope limits, measured and recorded in the module:**
+**Update (`5f565b6a`, `5057c630`) — the two limits were attacked; one closed, one refuted.**
+
+*Refuted as a verdict:* `denticity_signature()` groups metal contacts by ligand (connected
+components of the non-metal covalent graph — ferrocene is `(5,5)`), needing **no** slot→atom
+correspondence, so the "needs correspondence" claim below was wrong. It catches 5 of the 6 misses,
+lifting recall to 98.4 % — and fires on **55.8 % of genuine passes**. Eight recall points for a 15×
+worse false-alarm rate is a different, useless instrument. It is **recorded** (`denticity_in` /
+`denticity_gen`, informative per-molecule) but `intact` stays loss-based, guarded by a test.
+
+*Closed:* the boundary band was **one-sided** — it only saw contacts just *past* the cutoff.
+OGARAP_comp_0, the last unexplained miss, retains 3 Pd–C contacts but at margins **+0.084 / +0.028
+/ +0.007 Å**; a contact held by 0.007 Å is as ambiguous as one lost by 0.007 Å. With `at_boundary_gen`
+the band is two-sided:
+
+| | one-sided | two-sided |
+|---|---|---|
+| FLAG recall / false alarm | 90.2 % / 3.7 % | **90.2 % / 3.7 %** (unchanged) |
+| FLAG-or-BOUNDARY recall | 91.8 % | **96.7 %** |
+| **false positives passing with no signal** | 6 | **2** |
+
+Both remaining misses are gain-driven over-coordination. A side finding worth keeping: `BOUNDARY`
+covers 210/572 genuine passes, i.e. **better than a third of generated structures hold a ligand
+within 0.1 Å of the perception cutoff.**
+
+**Two scope limits, as originally measured:**
 1. The verdict is **loss**-based, so gain-driven over-coordination is invisible — 4 of the 61
    *gained* contacts (6→11, 7→12) and changed geometry tag without losing any. No threshold is
    asserted, because a genuine pass in the same corpus gained 2 (Mo 6→8).
