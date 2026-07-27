@@ -30,6 +30,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import sys
@@ -39,11 +40,26 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def find_xyz(dataset_dir: str, molecule: str) -> str:
+    """Resolve a molecule basename to its .xyz path under the dataset dir.
+
+    Checks ``cat/`` and ``photo/`` first (the raw tree), then any ``cohort-*/``
+    symlink dir directly under ``dataset_dir`` -- cohorts like
+    ``cohort-v047-slow100/`` (see ``tools/build_sweep_cohort.py``) are flat
+    directories of symlinks, siblings of ``cat``/``photo``, not covered by the
+    two hardcoded subdirs. Other v0.4.7 lanes point this tool at a cohort
+    directly, so a molecule that only exists there must still resolve.
+    """
     for sub in ("cat", "photo"):
         p = os.path.join(dataset_dir, sub, f"{molecule}.xyz")
         if os.path.exists(p):
             return p
-    raise FileNotFoundError(f"{molecule} not found under {dataset_dir}/{{cat,photo}}")
+    for cohort_dir in sorted(glob.glob(os.path.join(dataset_dir, "cohort-*"))):
+        p = os.path.join(cohort_dir, f"{molecule}.xyz")
+        if os.path.isdir(cohort_dir) and os.path.exists(p):
+            return p
+    raise FileNotFoundError(
+        f"{molecule} not found under {dataset_dir}/{{cat,photo}} or any {dataset_dir}/cohort-*/"
+    )
 
 
 def atom_count(xyz_path: str) -> int:

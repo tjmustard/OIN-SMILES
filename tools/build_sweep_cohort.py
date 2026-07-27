@@ -26,6 +26,22 @@ Usage
         --n 5000 --seed 42 --out tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k
 
 Then point the sweep at ``--dataset-dir <out>``.
+
+``--names-file`` MODE
+=====================
+For a cohort that is a *specific, pre-selected* molecule list (e.g. the v0.4.7
+slow-100 cohort chosen by ``tools/select_slow_byte_exact.py``) rather than a random
+sample, pass ``--names-file`` instead of ``--n/--seed``:
+
+    PYTHONPATH=src .venv/bin/python tools/build_sweep_cohort.py \
+        --names-file cohort_names.txt --out tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100
+
+The file is one basename per line (``.xyz`` extension, blank lines and ``#``-comments
+ignored). Every name must resolve under ``--subdirs`` (dedup priority order still
+applies, same ``collect_unique`` used by the random path) or the tool exits non-zero
+naming exactly which names were not found -- a cohort silently short a few molecules
+is worse than one that fails loudly. ``--n/--seed`` and ``--names-file`` are mutually
+exclusive. The refusal to overwrite an existing ``--out`` dir applies to both modes.
 """
 
 import argparse
@@ -66,10 +82,27 @@ def collect_unique(dataset_dir, subdirs):
     return chosen, dupes
 
 
+def read_names_file(path: str) -> list[str]:
+    """One basename per line; blank lines and ``#``-comments ignored."""
+    names = []
+    with open(path) as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            names.append(line)
+    return names
+
+
 def main():
     ap = argparse.ArgumentParser(description="Freeze a sweep cohort as a symlink dir + manifest.")
-    ap.add_argument("--n", type=int, required=True, help="Cohort size")
+    ap.add_argument("--n", type=int, default=None, help="Cohort size (random-sample mode)")
     ap.add_argument("--seed", type=int, default=42, help="Sampling seed (default 42)")
+    ap.add_argument(
+        "--names-file",
+        default=None,
+        help="Path to a file of explicit basenames (one per line) instead of random --n/--seed",
+    )
     ap.add_argument("--dataset-dir", default=DEFAULT_DATASET)
     ap.add_argument("--subdirs", default="cat,photo", help="Comma-separated, dedup priority order")
     ap.add_argument("--out", required=True, help="Cohort symlink dir to create")
@@ -81,6 +114,11 @@ def main():
     )
     args = ap.parse_args()
 
+    if args.names_file and args.n is not None:
+        sys.exit("error: --names-file and --n are mutually exclusive")
+    if not args.names_file and args.n is None:
+        sys.exit("error: pass either --n (random sample) or --names-file (explicit list)")
+
     dataset_dir = os.path.abspath(args.dataset_dir)
     out = os.path.abspath(args.out)
     subdirs = [s.strip() for s in args.subdirs.split(",") if s.strip()]
@@ -89,11 +127,23 @@ def main():
     names = sorted(chosen)
     print(f"unique basenames: {len(names)}  (duplicated across subdirs: {len(dupes)})")
 
-    if args.n > len(names):
-        sys.exit(f"error: --n {args.n} exceeds {len(names)} available")
-
-    # Sample from the SORTED name list so the draw depends only on (names, seed).
-    picked = sorted(random.Random(args.seed).sample(names, args.n))
+    if args.names_file:
+        requested = read_names_file(args.names_file)
+        missing = [n for n in requested if n not in chosen]
+        if missing:
+            sys.exit(
+                f"error: {len(missing)} / {len(requested)} names from {args.names_file} "
+                f"not found under {dataset_dir}/{{{','.join(subdirs)}}}: {missing}"
+            )
+        # Preserve the file's order (it may already be elapsed_s-ranked) rather than
+        # re-sorting -- a names-file cohort is a curated list, not a random sample.
+        picked = requested
+        print(f"names-file: {len(picked)} / {len(requested)} requested names resolved")
+    else:
+        if args.n > len(names):
+            sys.exit(f"error: --n {args.n} exceeds {len(names)} available")
+        # Sample from the SORTED name list so the draw depends only on (names, seed).
+        picked = sorted(random.Random(args.seed).sample(names, args.n))
 
     if os.path.exists(out):
         sys.exit(f"error: {out} already exists -- refusing to overwrite a frozen cohort")
@@ -133,12 +183,14 @@ def main():
     manifest = {
         "built_at": datetime.now().isoformat(timespec="seconds"),
         "commit_id": commit,
+        "mode": "names-file" if args.names_file else "random",
+        "names_file": os.path.abspath(args.names_file) if args.names_file else None,
         "dataset_dir": dataset_dir,
         "subdirs_dedup_priority": subdirs,
         "unique_basenames_available": len(names),
         "duplicated_basenames": len(dupes),
-        "seed": args.seed,
-        "n": args.n,
+        "seed": args.seed if not args.names_file else None,
+        "n": len(picked),
         "cohort_dir": out,
         "overlaps": overlaps,
         "molecules": picked,
