@@ -1,0 +1,558 @@
+{
+ "cohort": "the 340 molecules results-v0.4.6-sweep scored as FAILURES",
+ "arm": "OIN_ACCEPT_SCORED=1, --mol-timeout 60 (sweep used 300 -> this is a LOWER BOUND on recovery)",
+ "measured": 340,
+ "apparent_recoveries": 90,
+ "coordination_of_recoveries": {
+  "INTACT": 9,
+  "DEGRADED": 60,
+  "BOUNDARY": 21
+ },
+ "honest_recoveries_intact_only": 9,
+ "sweep_baseline_pass": 4660,
+ "sweep_total": 5000,
+ "apparent_corpus_pass_rate": 95.0,
+ "honest_corpus_pass_rate": 93.38,
+ "rows": [
+  {
+   "molecule": "KODHIU_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 12.523,
+   "reason": null
+  },
+  {
+   "molecule": "YIQVOJ_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 9.384,
+   "reason": "Ir: lost {'C': 4} (8 -> 5)"
+  },
+  {
+   "molecule": "LAHVOG_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 24.239,
+   "reason": "Zr: 4 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "NEXTIT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 51.273,
+   "reason": "Zr: lost {'C': 2} (11 -> 10)"
+  },
+  {
+   "molecule": "YUVXOE_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 2.779,
+   "reason": "Ir: lost {'C': 3} (8 -> 6)"
+  },
+  {
+   "molecule": "IGITOI_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 19.245,
+   "reason": "Y: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "POZSIG_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 8.88,
+   "reason": "Zr: lost {'C': 8} (12 -> 4)"
+  },
+  {
+   "molecule": "ESARUM_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 32.741,
+   "reason": "W: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "WOFGUT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 22.086,
+   "reason": "Y: lost {'O': 1} (9 -> 8)"
+  },
+  {
+   "molecule": "NIHHAP_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 21.476,
+   "reason": "Zr: 5 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "DIFPAM_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 12.929,
+   "reason": "Pt: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "QEBKUG_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 17.036,
+   "reason": "Ir: lost {'C': 6, 'Si': 1} (8 -> 2)"
+  },
+  {
+   "molecule": "QOCHAT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 29.097,
+   "reason": "Zr: lost {'C': 14} (14 -> 0)"
+  },
+  {
+   "molecule": "XATXOH_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 1.888,
+   "reason": "Co: lost {'O': 2} (6 -> 5)"
+  },
+  {
+   "molecule": "NOYREA_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 3.678,
+   "reason": "Pd: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "LUSBEI_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 6.787,
+   "reason": "Y: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "YIDFEZ_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 4.838,
+   "reason": "Ir: lost {'C': 3} (8 -> 6)"
+  },
+  {
+   "molecule": "SUJDAC_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 19.523,
+   "reason": "Zr: lost {'C': 7} (12 -> 5)"
+  },
+  {
+   "molecule": "KAQFEN_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 9.252,
+   "reason": "Ru: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "CAHQOT_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 27.085,
+   "reason": "Nb: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "OZUZEQ_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 11.615,
+   "reason": "Y: 1 contact(s) just past the cutoff; Y: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "PIKLOM_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 13.879,
+   "reason": "Ru: lost {'C': 8, 'H': 1} (9 -> 0)"
+  },
+  {
+   "molecule": "XOYCOE_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 13.496,
+   "reason": "Os: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "PUGVOC_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 38.557,
+   "reason": "Mo: lost {'O': 2, 'N': 1, 'C': 4} (8 -> 1)"
+  },
+  {
+   "molecule": "PAXJUT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 7.38,
+   "reason": "Zr: lost {'C': 7} (12 -> 5)"
+  },
+  {
+   "molecule": "UZEVAY_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 20.974,
+   "reason": "Ru: lost {'C': 4} (8 -> 4)"
+  },
+  {
+   "molecule": "LUZDAL_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 4.087,
+   "reason": "Zr: lost {'C': 4} (10 -> 8)"
+  },
+  {
+   "molecule": "XILCOM_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 11.14,
+   "reason": "Y: lost {'C': 5} (10 -> 9)"
+  },
+  {
+   "molecule": "USAPOU_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 3.116,
+   "reason": "Ru: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "WAVDED_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 4.173,
+   "reason": "Ru: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "NAYJIG_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 44.766,
+   "reason": "Ru: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "LUYYOT_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 3.326,
+   "reason": "Ti: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "NIXFIM_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 17.222,
+   "reason": "Ir: lost {'C': 3} (8 -> 5)"
+  },
+  {
+   "molecule": "DAGNIL_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 25.632,
+   "reason": null
+  },
+  {
+   "molecule": "ZUCKOZ_comp_1",
+   "coordination": "DEGRADED",
+   "elapsed_s": 12.341,
+   "reason": "Fe: lost {'C': 6} (8 -> 2)"
+  },
+  {
+   "molecule": "RIVNUG_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 3.178,
+   "reason": "Sc: lost {'C': 3} (11 -> 9)"
+  },
+  {
+   "molecule": "MUKGUW_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 6.013,
+   "reason": "Rh: lost {'C': 3} (8 -> 6)"
+  },
+  {
+   "molecule": "KAQDEL_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 13.204,
+   "reason": "Ru: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "TOWWUX_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 50.317,
+   "reason": "Ru: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "QEWJOS_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 5.831,
+   "reason": "Y: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "YUXZOI_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 14.889,
+   "reason": "Mo: lost {'O': 1, 'N': 1} (5 -> 3)"
+  },
+  {
+   "molecule": "VAJVOS_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 6.912,
+   "reason": "Ru: lost {'C': 6} (9 -> 3)"
+  },
+  {
+   "molecule": "NAGQOE_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 16.982,
+   "reason": "Fe: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "KIHHUG_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 32.871,
+   "reason": "Rh: lost {'Cl': 2, 'S': 1, 'C': 5} (8 -> 0)"
+  },
+  {
+   "molecule": "YOQMAT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.373,
+   "reason": "Ru: lost {'Cl': 1, 'C': 3} (8 -> 4)"
+  },
+  {
+   "molecule": "UDARIC_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 13.285,
+   "reason": "Zr: lost {'C': 10} (12 -> 2)"
+  },
+  {
+   "molecule": "RUKVAU_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 26.294,
+   "reason": "Ru: lost {'C': 6} (8 -> 2)"
+  },
+  {
+   "molecule": "BAJBAS_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 10.693,
+   "reason": "Ru: 4 contact(s) just past the cutoff; Ru: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "DOTBIA_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 46.122,
+   "reason": "Rh: 2 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "ZUGCAH_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.704,
+   "reason": "Fe: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "DAGNAD_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 23.298,
+   "reason": "Hf: lost {'O': 1, 'N': 1, 'C': 1} (7 -> 5)"
+  },
+  {
+   "molecule": "TOGKOR_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.109,
+   "reason": "Fe: lost {'C': 4} (8 -> 4)"
+  },
+  {
+   "molecule": "BUKCUG_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 7.6,
+   "reason": "Rh: lost {'C': 4} (6 -> 3)"
+  },
+  {
+   "molecule": "PIJWEK_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 49.317,
+   "reason": null
+  },
+  {
+   "molecule": "WIBTAD_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 2.833,
+   "reason": "Ti: lost {'C': 5} (12 -> 7)"
+  },
+  {
+   "molecule": "TANROQ_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 8.231,
+   "reason": "Ru: lost {'Cl': 1} (9 -> 12)"
+  },
+  {
+   "molecule": "XANKAA_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 14.406,
+   "reason": "Zr: lost {'N': 2, 'C': 3} (10 -> 5)"
+  },
+  {
+   "molecule": "JEHNES_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 43.94,
+   "reason": "Pt: lost {'C': 4} (5 -> 1)"
+  },
+  {
+   "molecule": "ETILUP_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 56.79,
+   "reason": "Ru: lost {'C': 5, 'N': 1, 'P': 2} (8 -> 0)"
+  },
+  {
+   "molecule": "WAWMUF_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 40.537,
+   "reason": "Ti: lost {'C': 11} (12 -> 1)"
+  },
+  {
+   "molecule": "COFMUH_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 20.211,
+   "reason": "Zr: lost {'C': 5} (15 -> 10)"
+  },
+  {
+   "molecule": "ZODBUP_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 6.133,
+   "reason": "Ta: lost {'C': 1} (5 -> 5)"
+  },
+  {
+   "molecule": "MIHLIY_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 13.602,
+   "reason": null
+  },
+  {
+   "molecule": "XOSCIT_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 13.212,
+   "reason": "Ru: lost {'C': 4} (9 -> 6)"
+  },
+  {
+   "molecule": "WOLRIA_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.037,
+   "reason": "Y: lost {'C': 2} (11 -> 13)"
+  },
+  {
+   "molecule": "ADEZOY_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 32.282,
+   "reason": "Ta: lost {'N': 1, 'C': 1} (9 -> 8)"
+  },
+  {
+   "molecule": "NIYJUA_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 36.796,
+   "reason": null
+  },
+  {
+   "molecule": "JINMID_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 28.925,
+   "reason": "Sc: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "XENZAS_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.569,
+   "reason": "Pt: lost {'C': 3} (6 -> 3)"
+  },
+  {
+   "molecule": "LACNOU_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 58.903,
+   "reason": "Sc: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "UTOJEU_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 15.583,
+   "reason": "Co: lost {'C': 6} (8 -> 3)"
+  },
+  {
+   "molecule": "MOCHUH_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 17.501,
+   "reason": "Zr: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "IDICEF_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 20.661,
+   "reason": "Sc: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "QIDKUL_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 46.968,
+   "reason": null
+  },
+  {
+   "molecule": "MECXEY_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 7.108,
+   "reason": "Ru: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "PUQRAW_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 27.062,
+   "reason": null
+  },
+  {
+   "molecule": "MAZKII_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 3.111,
+   "reason": "Zr: 1 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "MIFJIV_comp_1",
+   "coordination": "DEGRADED",
+   "elapsed_s": 7.109,
+   "reason": "Fe: lost {'C': 5} (8 -> 3)"
+  },
+  {
+   "molecule": "FOQGEY_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 16.149,
+   "reason": "Ir: lost {'C': 4} (6 -> 2)"
+  },
+  {
+   "molecule": "ZESCEI_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 14.63,
+   "reason": null
+  },
+  {
+   "molecule": "SUSGOC_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 11.873,
+   "reason": "Ru: lost {'C': 5} (8 -> 4)"
+  },
+  {
+   "molecule": "SIGYAL_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.958,
+   "reason": "Ru: lost {'C': 4} (9 -> 7)"
+  },
+  {
+   "molecule": "MOPVEU_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 34.608,
+   "reason": "Zr: lost {'C': 14} (14 -> 0)"
+  },
+  {
+   "molecule": "TOQXUU_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 2.417,
+   "reason": "Ir: lost {'C': 3} (8 -> 5)"
+  },
+  {
+   "molecule": "EWAMAQ_comp_2",
+   "coordination": "DEGRADED",
+   "elapsed_s": 19.427,
+   "reason": "Pd: lost {'Cl': 1, 'C': 1} (5 -> 3)"
+  },
+  {
+   "molecule": "PODZEO_comp_0",
+   "coordination": "INTACT",
+   "elapsed_s": 18.002,
+   "reason": null
+  },
+  {
+   "molecule": "LARQED_comp_0",
+   "coordination": "BOUNDARY",
+   "elapsed_s": 15.747,
+   "reason": "Y: 3 contact(s) held within 0.1 A of the cutoff"
+  },
+  {
+   "molecule": "JAYLIE_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 5.99,
+   "reason": "Zr: lost {'C': 3} (10 -> 7)"
+  },
+  {
+   "molecule": "EQEROI_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 16.192,
+   "reason": "Ru: lost {'C': 4} (9 -> 7)"
+  },
+  {
+   "molecule": "NIXFAE_comp_0",
+   "coordination": "DEGRADED",
+   "elapsed_s": 3.19,
+   "reason": "Ru: lost {'C': 4} (9 -> 6)"
+  }
+ ]
+}
