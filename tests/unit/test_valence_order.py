@@ -124,6 +124,84 @@ class TestLazyOrderedValences(unittest.TestCase):
         first = next(iter(xl.iter_ordered_valences(vll, atoms)))
         self.assertEqual(first, tuple([4] * 200))
 
+    def test_lazy_order_matches_on_CORPUS_SHAPED_configurations(self):
+        """The 400 random configs above are 1-7 atoms; real ligand fragments are not.
+
+        ``iter_ordered_valences`` is now the **sub-cap** enumeration (99.8% of the corpus),
+        so the equality it rests on has to hold on the population the corpus actually emits,
+        not only on the one the generator above happens to produce. That population was
+        harvested from 15 slow / high-``combo_size`` molecules (50 ligand fragments across
+        both ``allow_carbenes`` arms, incl. ``KEMTED`` 168 atoms and ``XIRMER`` 108 atoms):
+
+        * fragments are 2-168 atoms, but only **1-12** atoms have more than one candidate
+          valence -- which is why a 168-atom fragment can have ``combo_size`` 16;
+        * every per-atom option list has length **1, 2 or 3**, never more;
+        * in every fragment measured, the multi-option atoms were C/N/O/P/S, i.e. exactly
+          the elements the heuristic groups.
+
+        That last point is why this test does not simply reuse the generator above: when
+        every multi-option atom is grouped, ``order_idx`` pins the whole candidate and
+        ``sorted()``'s lexicographic tie-break is never exercised. So the corpus shape and
+        the tie-break shape are *different* risks, and both are generated here -- the
+        ``forced_tiebreak`` arm puts the options on a NON-grouped element (As/Cl/Se) at
+        large ``n``, which is the case the corpus does not currently show but the code
+        still has to get right.
+        """
+        rng = random.Random(4711)
+        grouped = [6, 7, 8, 15, 16]
+        ungrouped = [33, 17, 34, 9, 35]
+        filler = [1, 1, 1, 6, 6, 9, 17]
+        compared = 0
+        for trial in range(60):
+            forced_tiebreak = trial % 3 == 2
+            n = rng.randint(20, 200)
+            atoms = [rng.choice(filler) for _ in range(n)]
+            vll = [[xl.atomic_valence[z][0]] for z in atoms]
+            k = rng.randint(1, 12)
+            size = 1
+            for idx in rng.sample(range(n), k):
+                z = rng.choice(ungrouped if forced_tiebreak else grouped)
+                base = list(xl.atomic_valence[z])
+                if len(base) < 2:
+                    base = base + [base[0] + 2]
+                opts = base[: rng.randint(2, min(3, len(base)))]
+                if rng.random() < 0.2:
+                    opts = list(reversed(opts))  # As is [5, 3]: non-ascending is real
+                if size * len(opts) > 20000:
+                    continue
+                size *= len(opts)
+                atoms[idx] = z
+                vll[idx] = opts
+            if size == 1:
+                continue  # a single candidate proves nothing about ORDER
+            compared += 1
+            self.assertEqual(
+                xl._ordered_valences(vll, atoms),
+                list(xl.iter_ordered_valences(vll, atoms)),
+                f"n={n} combo={size} forced_tiebreak={forced_tiebreak}",
+            )
+        self.assertGreater(compared, 30, "too few corpus-shaped configurations compared")
+
+    def test_subcap_AC2BO_does_not_materialise_the_product(self):
+        """Structural pin: the sub-cap branch must take the LAZY path.
+
+        ``_ordered_valences`` builds the full Cartesian product twice plus a dict over the
+        five-group product, and the candidate loop that consumes it measurably exits after
+        a handful of iterations -- on ``NOCGAN_comp_0`` one ``AC2BO`` call consumed **1**
+        candidate out of a materialised 20 736 (99.2% of that call's wall). This asserts
+        the dead work is gone rather than trusting a code reading: if anything reintroduces
+        the eager call on the sub-cap branch, ``_ordered_valences`` raises and this fails.
+        """
+        AC, atoms = chain_ac(6)
+        atoms = [6, 7, 6, 8, 16, 6]
+
+        def boom(*_a, **_kw):
+            raise AssertionError("sub-cap AC2BO materialised the full product")
+
+        with mock.patch.object(xl, "_ordered_valences", boom):
+            BO, _ = xl._AC2BO_core(AC, atoms, 0, allow_charged_fragments=True, use_graph=True)
+        self.assertEqual(BO.shape, AC.shape)
+
 
 class TestChargeFilterIsNecessary(unittest.TestCase):
     """The filter may drop candidates only if none of them could ever have been accepted."""

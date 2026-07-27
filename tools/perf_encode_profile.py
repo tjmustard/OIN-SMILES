@@ -79,6 +79,16 @@ COUNTER_NAMES = [
     "AC2mol",
     "valences_not_too_large",
     "chiral_stereo_check",
+    # v0.4.7 L3-encfloor: the canonical-perception wrapper post-dates
+    # docs/ENCODER_PERF_v0.4.5.md's 99.8%-AC2BO attribution and runs on EVERY AC2BO call
+    # (OIN_CANONICAL_PERCEPTION is default-ON), yet neither of these had ever been counted.
+    # Neither had the sub-cap enumeration helpers.
+    "_canonical_atom_permutation",
+    "_valence_search_is_truncated",
+    "_ordered_valences",
+    "possible_valences",
+    "valence_combo_size",
+    "_AC2BO_core",
 ]
 
 
@@ -183,6 +193,14 @@ def instrument(counters, timings):
         "get_bonds",
         "_ordered_valences",
         "get_atomic_charge",
+        # See COUNTER_NAMES: these run on every AC2BO call under the default-ON
+        # OIN_CANONICAL_PERCEPTION and were absent from every previous attribution.
+        # AC2BO delegates to _AC2BO_core, so wrapping both separates wrapper from core.
+        "_AC2BO_core",
+        "_canonical_atom_permutation",
+        "_valence_search_is_truncated",
+        "possible_valences",
+        "valence_combo_size",
     ):
         add(_wrap_timed(counters, fn, loc_mod, fn, timings))
     add(_wrap_timed(counters, "max_weight_matching", nx, "max_weight_matching", timings))
@@ -233,23 +251,31 @@ def main():
     result = {"molecule": args.molecule, "atoms": n, "loadavg_start": load}
 
     if args.mode in ("counters", "both"):
+        from oinsmiles.utils import xyz2mol_local as _loc
+
         counters = Counters()
         timings: dict[str, float] = {}
         restores = instrument(counters, timings)
+        _loc.reset_ac2bo_stats()
         try:
             t0 = time.perf_counter()
             oin = XYZToSMILES().convert(xyz)
             dt = time.perf_counter() - t0
         finally:
             restore(restores)
+        stats = dict(_loc.AC2BO_STATS)
         print(f"\n=== COUNTERS (exact, contention-robust) ===  wall={dt:.2f}s")
         print(f"oin_len={len(oin)}")
         for k in sorted(counters, key=lambda k: -counters[k]):
             t = timings.get(k)
             tstr = f"  incl_wall={t:8.2f}s" if t is not None else ""
             print(f"  {k:38s} {counters[k]:8d}{tstr}")
+        print("\n=== AC2BO_STATS (load-independent) ===")
+        for k in sorted(stats, key=lambda k: -stats[k]):
+            print(f"  {k:38s} {stats[k]:10d}")
         result["counters"] = dict(counters)
         result["inclusive_wall"] = timings
+        result["ac2bo_stats"] = stats
         result["wall_counters_mode"] = dt
         result["oin"] = oin
 
