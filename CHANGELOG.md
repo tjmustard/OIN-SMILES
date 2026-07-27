@@ -13,6 +13,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`docs/KNOWN_LIMITATIONS.md`**: note that full-quality generation can time out (300 s) on 11
   medium-large molecules that quick mode round-trips in <30 s — a generation compute-time regime
   (full pool + direct-DG), not a wrong-answer/notation regression; root cause not yet isolated.
+- **`src/oinsmiles/oin/coordination.py`** — coordination-integrity check, and the first thing in a
+  report that can see a **detached ligand**. The round-trip metric scores via
+  `get_oin_string(gen_result.mol, …)`, i.e. the *generator's own bond graph*, so a Cp ring that
+  drifted 0.85 Å off the metal is still "bonded" there and the molecule scores a pass. Geometric
+  only (distances, ~10 ms, consults neither bond graph); validated **90.2 % recall / 3.7 % false
+  alarm** against 633 molecules with independent ground truth. Wired into
+  `tools/test_dataset_roundtrip.py` as `report["coordination"]` — **always on, never a gate.**
+- **`docs/METRIC_FALSE_POSITIVES.md`** — the reported accuracy is not the accuracy, measured in both
+  directions over 633 scored successes and 302 reported failures of `results-v0.4.5-rebaseline`.
+  One root cause, two opposite errors: `gen_result.mol` **asserts bonds the geometry lacks**
+  (61/633 = **9.6 %** false positives, **28.1 % of haptic** molecules — FIYHUT ships both Cp rings
+  off the Fe and passes) and **lacks stereo the geometry has** (8/302 = 2.6 % false negatives —
+  YOSXIP's `[S@]{5}` sulfoxide flattens to `S{5}` and fails). Net **~5.7 points over-stated**.
+- **`docs/SWEEP_v0.4.6_5K.md`** — the seed-42 5,000-molecule sweep: **round-trip 4660/5000 = 93.2 %**,
+  `byte_exact` **82.80 %**. Failure attribution shows **78.8 % of failures never test the notation**
+  (median failing molecule 300.2 s against a 300 s budget), so the notation-attributable gap is
+  **~1.1 %** and the `<30 s` and `100 %` goals are one goal: generator compute. PASS 2's recovery
+  ladder recovered **zero**.
+- **`OIN_INDEP_SCORE`** (default **OFF**) — records the honest round-trip verdict beside the scored
+  one as `smiles_2_indep` / `indep_key_match`, via a full `XYZToSMILES().convert()` of the generated
+  geometry. Fixes both error directions with one call. Off because it costs a second encode
+  (~0.4–1.5 s/molecule) and because switching the *scored* predicate would move ~53 molecules in one
+  step — indistinguishable from a regression.
+- **`OIN_ACCEPT_SCORED`** (default **OFF**) — pool acceptance on the predicate the score uses,
+  skipping the stricter independent re-perception. Median **16.0 s → 3.6 s**, molecules over 30 s
+  **10 → 3**. Held off on measurement, not caution: re-running the sweep's 340 failures with it on
+  "recovered" 90, but `report["coordination"]` shows those 90 are **60 DEGRADED / 21 BOUNDARY /
+  9 INTACT** — **+90 → 95.0 % is really +9 → 93.4 %**, so a global flip manufactures 60 phantom
+  passes no existing gate could detect. Recommendation: promote **with scope**, throughput runs only.
+- Tools: `haptic_false_positive.py`, `probe_accept_gap.py`, `summarize_accept_gap.py`,
+  `ab_accept_scored.py`, `profile_eta.py`, `boron_gen_time.py`.
+
+### Changed
+- **`docs/BORON_CAGE_v0.4.5.md`** — its 34/34 "round-trip" is corrected to **notation-level**: all
+  nine checks are encoder-side and none invokes the generator. The pipeline arm, 33 of 34 measured:
+  only **2 generate** a structure, 25 burn the whole cap (**~2.1 CPU-h wasted per 5k sweep**), 6 fail
+  instantly. So `OIN_BORON_CAGE` moved most of this class from failing *instantly* to failing
+  *slowly* — a cost missing from its original pricing, now recorded in `levers.py`.
+- **`OIN3DGenerator(timeout=…)` is documented as ADVISORY, not a bound** — 60 s requested,
+  60.0–172.8 s spent. Only the harness's per-molecule SIGKILL enforces a budget, so any timing taken
+  without it understates the tail.
+
+### Fixed
+- `clash.mol_clash_count()` returns 0 for any bare RDKit `Mol` (no `.atom_list`), so a
+  structure-quality gate built on it reads 0 everywhere and certifies without measuring. Quality is
+  now computed with `vdw_clash_count(positions, Z)` plus the continuous `worst_overlap`.
+- The coordination check's boundary band was **one-sided** — it saw contacts just past the cutoff but
+  not those *held* by a hair. Two-sided, the count of false positives passing with no signal drops
+  **6 → 2**, with the primary verdict's recall and false-alarm rate unchanged.
 
 ## [0.4.6] - 2026-07-26
 
