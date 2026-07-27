@@ -252,7 +252,54 @@ Record it as a diagnostic first, exactly as v0.4.4 did with RMSD. Gating on it i
 move ~61 molecules from pass to fail in one step and make the change indistinguishable from a
 regression — the confound this project has already been caught by twice.
 
-## 6. Reproduce
+## 6. The OTHER half — false NEGATIVES, and the single root cause behind both
+
+Measured the same way with `--status failed` over the 302 reported failures
+(`docs/metric_false_negatives.json`). Only **51 produced a stored structure**; the other 251 have
+nothing to check (timeout / no-conformers / encode failure) and are genuine failures.
+
+Of those 51, **35 key-match under independent re-perception**. That number is *not* the
+false-negative rate, and checking why is what keeps it honest:
+
+| why the harness marked it failed | n | reading |
+|---|---|---|
+| `Atom count mismatch` | 27 | a **separate deliberate gate**, not the string comparison — the known atom-count class |
+| `String mismatch` | **8** | **genuine false negatives** — the harness says the string differs, full re-perception says it matches |
+
+So the false-negative population is **8**, not 35: 8/302 reported failures = 2.6 %.
+
+### The two error directions have ONE cause
+
+`YOSXIP_comp_0` shows it exactly:
+
+```
+input             ... CS{1}CC[S@]{5}(C)=O ...     chiral sulfoxide sulfur
+harness smiles_2  ... CS{1}CCS{5}(C)=O ...        tag LOST  -> scored a mismatch
+full re-encode    ... CS{1}CC[S@]{5}(C)=O ...     tag PRESENT -> round-trips
+```
+
+The generated geometry carries the correct sulfoxide chirality. The harness cannot see it because
+`gen_result.mol` was never run through stereo-perception-from-structure.
+
+That is the **same shortcut** as §1, producing the opposite error:
+
+| | what `gen_result.mol` does | consequence |
+|---|---|---|
+| §1 | **asserts bonds** the geometry does not support | 61 **false positives** — detached ligands scored as passes |
+| §6 | **lacks stereo** the geometry does support | 8 **false negatives** — correct structures scored as failures |
+
+One root cause: scoring through the generator's own molecule instead of re-perceiving the
+coordinates. It over-credits connectivity and under-credits stereochemistry at the same time.
+
+### Net effect on the headline number
+
+On this 936-molecule cohort the reported pass count is **inflated by 61 and deflated by 8** — a net
+**~53 molecules, 5.7 points**, of over-statement. Both halves must be fixed together, and both are
+fixed by the same change: score from a full re-perception of the generated coordinates. That is
+precisely what `accept_fn`'s strict step already does, and what `docs/ACCEPT_SCORED_v0.4.7.md`
+measured as costing runtime — so the cost of an honest metric is now quantified from both sides.
+
+## 7. Reproduce
 
 ```bash
 export PYTHONPATH=$PWD/src; V=.venv/bin/python
@@ -262,6 +309,8 @@ for i in 1 2 3; do
 done; wait
 # haptic subpopulation only
 $V tools/haptic_false_positive.py --results-dir "$D" --haptic-only
+# the other half: reported failures that actually round-trip
+$V tools/haptic_false_positive.py --results-dir "$D" --status failed
 ```
 
 Generator-free: it reads stored `structures/*_generated.xyz` and runs no 3D generation, so it is

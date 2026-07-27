@@ -133,6 +133,14 @@ def main() -> int:
     ap.add_argument("--limit", type=int)
     ap.add_argument("--json")
     ap.add_argument(
+        "--status",
+        default="success",
+        help="which reported status to audit. 'success' measures FALSE POSITIVES (passes whose "
+        "coordination did not survive); 'failed' measures FALSE NEGATIVES (reported failures that "
+        "independent re-perception says round-trip fine). Both halves are needed before any "
+        "reported accuracy figure can be trusted.",
+    )
+    ap.add_argument(
         "--haptic-only",
         action="store_true",
         help="restrict to molecules whose input encode carries a haptic slot",
@@ -155,7 +163,7 @@ def main() -> int:
         except Exception:
             continue
         mol = rep.get("molecule") or os.path.basename(path)[:-5]
-        if rep.get("status") != "success":
+        if rep.get("status") != args.status:
             skipped["not_success"] += 1
             continue
         inp = rep.get("input_xyz")
@@ -204,6 +212,26 @@ def main() -> int:
     fp = [r for r in scored if r["case"] in FALSE_POSITIVE]
     haptic = [r for r in scored if r.get("haptic_in")]
     haptic_fp = [r for r in haptic if r["case"] in FALSE_POSITIVE]
+
+    if args.status == "failed":
+        # Inverted reading: the harness said FAIL. A KEY_MATCH here means independent
+        # re-perception disagrees -- the molecule round-trips and was reported as a failure.
+        fn = [r for r in scored if r["case"] == "KEY_MATCH"]
+        print("\n================ FALSE-NEGATIVE RATE (reported failures) ================")
+        print(f"  harness-scored FAILED molecules measured : {len(scored)}")
+        for c in sorted(counts):
+            print(f"    {c:20s} {counts[c]:5d}")
+        if scored:
+            print(
+                f"\n  FALSE NEGATIVES (reported FAIL, independently round-trips): "
+                f"{len(fn)}/{len(scored)} = {100 * len(fn) / len(scored):.1f}%"
+            )
+        print(f"  skipped: {skipped}")
+        if args.json:
+            with open(args.json, "w") as fh:
+                json.dump({"rows": rows, "counts": counts, "skipped": skipped}, fh, indent=1)
+            print(f"  wrote {args.json}")
+        return 0
 
     print("\n================ HAPTIC FALSE-POSITIVE RATE (default path) ================")
     print(f"  harness-scored SUCCESS molecules measured : {len(scored)}")
