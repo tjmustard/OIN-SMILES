@@ -309,6 +309,98 @@ def _min_slot(frag: str):
     return min(slots) if slots else _NO_SLOT
 
 
+def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) -> list[dict]:
+    """Slot permutations exchanging **interchangeable donors within one fragment**.
+
+    This is the v0.4.11 widening (``OIN_CANONICAL_DONOR_FOLD``), and it is the only place in
+    this module that folds past the geometry's own proper-rotation group. Two slots of *one*
+    fragment may be exchanged when both hold:
+
+    (a) their donor atoms lie in the same ``CanonicalRankAtoms(breakTies=False)`` symmetry
+        class of that fragment, and
+    (b) they carry the same vertex colour.
+
+    Always includes the identity, so the caller's candidate set is a superset of the
+    rotation-only one and the fold can never *lose* a labeling the old code could reach.
+
+    **Why this is not over-folding.** Condition (a) is a graph automorphism of the fragment
+    computed with ``includeChirality`` at its default ``True``, so two constitutionally
+    equivalent branches with *different* configurations land in different classes and are
+    never exchanged. Condition (b) keeps the exchange inside one colour, so the occupied
+    vertex set and the colored-vertex signature are both untouched -- the fold acts entirely
+    within the signature's kernel, which is precisely why the rotation-only post-pass could
+    not reach this class (``same_vcolor_identical``, 496/496 of the v0.4.11 population).
+    Nothing that distinguishes an isomer, an enantiomer or a winding sense is a function of
+    which of two automorphic donors carries which integer.
+
+    **Why the emitted string stays presentation-invariant.** Let ``G`` be the rotation group
+    and ``D`` the set returned here. A second presentation arrives as ``L' = g.L``. The
+    buckets above are keyed on *atom* symmetry classes, which the relabeling does not touch,
+    so ``D' = g D g^-1``. The candidate set for ``L'`` is
+    ``{p.d'.L' : p in G, d' in D'} = {p.g.d.L} = {(p.g).d.L}``, and ``p -> p.g`` is a
+    bijection of ``G``, so it equals ``{p.d.L}`` -- the candidate set for ``L``. The minimum,
+    hence the emitted string, is identical. This is the same argument
+    :func:`canonical_slot_relabeling` makes for the rotation group, extended by one factor.
+
+    ``cap`` bounds the combinatorial product (a fragment with ``k`` interchangeable donors
+    contributes ``k!``, and the fragments multiply). Over the cap the fold degrades to the
+    identity rather than spending unbounded time -- conservative in the same direction as an
+    unknown geometry.
+    """
+    from itertools import permutations, product
+
+    from rdkit import Chem
+
+    from .compare import _parse_fragment
+    from .inline import OINInlineHandler, _count_smiles_atoms_before
+
+    buckets_all: list[tuple[int, ...]] = []
+    for frag in frags:
+        if OINInlineHandler.METAL_REGEX.search(frag):
+            continue
+        slot_atoms: dict[int, set] = {}
+        for m in OINInlineHandler.SLOT_REGEX.finditer(frag):
+            prefix = OINInlineHandler.SLOT_REGEX.sub("", frag[: m.start()])
+            slot_atoms.setdefault(int(m.group(1)), set()).add(
+                _count_smiles_atoms_before(prefix, len(prefix))
+            )
+        if len(slot_atoms) < 2:
+            continue  # one donor cannot be exchanged with anything
+        mol = _parse_fragment(OINInlineHandler.SLOT_REGEX.sub("", frag))
+        if mol is None:
+            continue
+        try:
+            ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
+        except Exception:  # noqa: BLE001  -- an unrankable fragment simply does not fold
+            continue
+        by_class: dict[tuple, list[int]] = {}
+        for slot, atoms in sorted(slot_atoms.items()):
+            if any(i >= len(ranks) for i in atoms):
+                continue
+            key = (tuple(sorted(ranks[i] for i in atoms)), vcolor.get(slot))
+            by_class.setdefault(key, []).append(slot)
+        buckets_all.extend(tuple(sorted(s)) for s in by_class.values() if len(s) > 1)
+
+    if not buckets_all:
+        return [{}]
+
+    total = 1
+    for b in buckets_all:
+        for k in range(2, len(b) + 1):
+            total *= k
+        if total > cap:
+            return [{}]
+
+    buckets_all.sort()
+    out = []
+    for combo in product(*(permutations(b) for b in buckets_all)):
+        mapping = {}
+        for bucket, perm in zip(buckets_all, combo):
+            mapping.update(dict(zip(bucket, perm)))
+        out.append(mapping)
+    return out
+
+
 def _render(frags: list[str], metal_pos, mapping: dict):
     """Apply ``mapping`` and re-sort the fragments. Returns ``(string, sort_key_tuple)``.
 
@@ -380,21 +472,41 @@ def canonical_slot_relabeling(oin_string: str) -> tuple[dict[int, int], str]:
     nverts = max(geometry_vertex_count(geo), max(vcolor) + 1)
     group = geometry_rotation_group(geo) or [tuple(range(nverts))]
 
+    # v0.4.11: widen the candidate set by the within-fragment donor swaps, if enabled. With
+    # the lever off this is exactly ``[{}]``, so every key below keeps its v0.4.5 value and
+    # the emitted string and the returned map are both byte-identical to the old behaviour.
+    from .levers import lever_enabled
+
+    donor_perms = (
+        _donor_swap_permutations(frags, vcolor)
+        if lever_enabled("OIN_CANONICAL_DONOR_FOLD")
+        else [{}]
+    )
+
     best_key = None
     best_map: dict[int, int] = {}
     best_out = oin_string
     for perm in group:
-        mapping = {slot: (perm[slot] if slot < len(perm) else slot) for slot in vcolor}
-        arr = [VERTEX_SENTINEL] * nverts
-        for slot, color in vcolor.items():
-            arr[mapping[slot]] = color
-        out, order_key = _render(frags, metal_pos, mapping)
-        # Third term: a final tie-break so the *map* is deterministic too. It only ever
-        # separates permutations that already render identically, so it can never make the
-        # emitted string depend on the incoming labeling.
-        key = (tuple(arr), order_key, perm)
-        if best_key is None or key < best_key:
-            best_key, best_map, best_out = key, mapping, out
+        for dperm in donor_perms:
+            # Donor swap first, then the rotation: ``mapping[s] = p(d(s))``. ``d`` only ever
+            # exchanges same-coloured slots, so ``arr`` -- and hence the signature -- is
+            # identical for every ``d``, which is why this widening is invisible to the
+            # comparison key and changes only which labeling is emitted.
+            mapping = {}
+            for slot in vcolor:
+                s = dperm.get(slot, slot)
+                mapping[slot] = perm[s] if s < len(perm) else s
+            arr = [VERTEX_SENTINEL] * nverts
+            for slot, color in vcolor.items():
+                arr[mapping[slot]] = color
+            out, order_key = _render(frags, metal_pos, mapping)
+            # Third and fourth terms: a final tie-break so the *map* is deterministic too.
+            # They only ever separate candidates that already render identically, so they
+            # can never make the emitted string depend on the incoming labeling. ``dperm``
+            # is last so that with the lever off the key is unchanged from v0.4.5.
+            key = (tuple(arr), order_key, perm, tuple(sorted(dperm.items())))
+            if best_key is None or key < best_key:
+                best_key, best_map, best_out = key, mapping, out
     return best_map, best_out + suffix
 
 

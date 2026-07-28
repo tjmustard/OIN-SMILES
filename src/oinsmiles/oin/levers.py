@@ -114,6 +114,27 @@ _FALSEY = frozenset({"0", "", "false", "no", "off"})
 
 #: Deliberately NOT promoted, with the reason, so nobody has to reconstruct it.
 _HELD_OFF = {
+    "OIN_CANONICAL_DONOR_FOLD": (
+        "v0.4.11's within-fragment donor fold. OIN_CANONICAL_SLOTS folds the polyhedron's "
+        "PROPER-ROTATION group and stops at `same_vcolor_identical`: compare._parse_vertex_colors "
+        "colours every donor of a ligand with that ligand's whole body, so which donor of a "
+        "chelate holds which slot is invisible to it and the post-pass computes the SAME "
+        "permutation for both presentations. This lever additionally exchanges donors WITHIN one "
+        "fragment that are (a) in one CanonicalRankAtoms(breakTies=False) symmetry class and (b) "
+        "the same colour. Measured population: 496 slot_renumber molecules, 496/496 "
+        "same_vcolor_identical, of which 377 (7.54 pts) are atom-level `automorphism` and so "
+        "reachable here; 90 are frozen-resonance-form artifacts belonging to ligand-body "
+        "canonicalization (v0.4.14) and 28 are genuinely distinct donors.\n"
+        "⚠ THIS IS THE ONE LEVER THAT FOLDS PAST THE GEOMETRY'S OWN SYMMETRY. The whole v0.4.5 "
+        "design rests on folding only over proper rotations, because an improper operation maps a "
+        "structure to its mirror image -- collapsing enantiomers and flipping eta winding. What "
+        "keeps this safe is the narrowness of the scope: one fragment, one symmetry class, one "
+        "colour, so the occupied vertex set and the colored-vertex signature are both untouched "
+        "and no isomer-, enantiomer- or winding-level distinction is a function of which of two "
+        "automorphic donors carries which integer. ANY loosening of those three conditions voids "
+        "the argument. includeChirality stays at its default True so differently-configured "
+        "branches remain in different classes."
+    ),
     "OIN_EMIT_AXIAL": (
         "emits a new atropisomer token the generator must reproduce; promoting converts a "
         "silent false positive into a loud false negative. Evidence to promote is recorded, "

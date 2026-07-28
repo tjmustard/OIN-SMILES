@@ -232,5 +232,53 @@ class TestNoOverFolding(unittest.TestCase):
         self.assertNotEqual(self._encode("CisPlatin.xyz"), self._encode("TransPlatin.xyz"))
 
 
+class TestDonorFoldDoesNotCollapseEnantiomers(unittest.TestCase):
+    """The v0.4.11 guard: the widening must not make a token reflection-invariant.
+
+    ``OIN_CANONICAL_DONOR_FOLD`` is the one lever that folds past the geometry's own
+    proper-rotation group, and folding over an improper operation maps a structure to its
+    mirror image. So the fixture below is not a formality.
+
+    **The assertion is a NON-REGRESSION, deliberately, not "enantiomers are distinct".**
+    ``OIN_EMIT_METAL_CONFIG`` is held off, so the metal Delta/Lambda descriptor is not in the
+    string today and ZUMNEC's two enantiomers already share a comparison key with the lever
+    OFF. That is a pre-existing gap belonging to v0.4.16. What this lever must not do is take
+    away a distinction the shipped encoder *does* make -- so each arm is compared against the
+    lever-off answer for the same structure, which is the only comparison that attributes a
+    change to the fold.
+
+    A fixture alone has never been sufficient here: the Y2 axial wave sorted a tie-break on a
+    stereochemical sign, every local test passed, and only a corpus-wide mirror audit caught
+    it. ``tools/mirror_audit_donor_fold.py`` is that audit; this is its fast guard.
+    """
+
+    #: Chiral fixtures whose mirror image is a genuinely different structure.
+    _CHIRAL = ("ZUMNEC.xyz", "fac-Ir(ppy)3.xyz")
+
+    def _encode_pair(self, name, fold):
+        """``(self, mirror)`` OIN strings, encoded with the fold forced on or off."""
+        syms, coords = _read_xyz(os.path.join(_FIXTURES, name))
+        tmpdir = tempfile.mkdtemp(prefix="oin-v0411-mirror-")
+        mpath = os.path.join(tmpdir, "mirror_" + name)
+        _write_xyz(mpath, syms, coords * np.array([1.0, 1.0, -1.0]))
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1" if fold else "0"}):
+            conv = XYZToSMILES()
+            return conv.convert(os.path.join(_FIXTURES, name)), conv.convert(mpath)
+
+    def test_the_fold_never_removes_a_mirror_distinction(self):
+        for name in self._CHIRAL:
+            with self.subTest(name):
+                off_self, off_mirror = self._encode_pair(name, fold=False)
+                on_self, on_mirror = self._encode_pair(name, fold=True)
+                if off_self == off_mirror:
+                    self.skipTest(f"{name} is already mirror-folded with the lever off")
+                self.assertNotEqual(
+                    on_self,
+                    on_mirror,
+                    f"{name}: the donor fold collapsed a pair of enantiomers the shipped "
+                    "encoder separates -- STOP, this is the release's veto condition",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
