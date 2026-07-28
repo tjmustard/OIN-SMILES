@@ -1,12 +1,13 @@
 # Retrospective — has OIN-SMILES gotten more accurate, or faster, since v0.4.4?
 
-<!-- artifact-url: (not yet published) -->
+<!-- artifact-url: https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e -->
 
 **Scope:** v0.4.4 (2026-07-23) through v0.4.12 (2026-07-28). Nine releases.
 **Baseline commit:** `main` @ `675e5425` (the v0.4.12 release commit; `pyproject` 0.4.12, **no
 `v0.4.12` tag yet**). ⚠ `main` moves under this project — re-read the tip before trusting any SHA here.
 **Method:** committed evidence only. No sweep, benchmark or A/B was run for this report.
-**Refresh it with:** `/release-retrospective <version>` — see [Appendix A](#appendix-a--the-update-prompt).
+**Refresh it with:** `/release-retrospective <version>` — see [Appendix A](#appendix-a--how-to-update-this).
+**Published page:** <https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e> · GitHub Pages source on the `gh-pages` branch.
 
 ---
 
