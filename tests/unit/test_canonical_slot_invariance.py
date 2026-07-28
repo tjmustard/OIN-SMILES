@@ -232,5 +232,66 @@ class TestNoOverFolding(unittest.TestCase):
         self.assertNotEqual(self._encode("CisPlatin.xyz"), self._encode("TransPlatin.xyz"))
 
 
+class TestDonorFoldOnTheFixturesThatHappenToSurvive(unittest.TestCase):
+    """⚠ These two fixtures survive the fold. **That does not make the fold safe.**
+
+    🔴 It is not: a uniform 250-molecule corpus mirror audit found **19 collapses (7.6%)**,
+    18 confirmed genuinely chiral. `TestDonorFoldCollapsesEnantiomers` in
+    ``test_canonical_slots.py`` pins one of them, and
+    ``docs/agentic-notes/v0.4.11/LANE-02-donor-fold.md`` has the analysis.
+
+    This class is kept for exactly one reason: to record that **passing fixtures proved
+    nothing here**. `ZUMNEC` and `fac-Ir(ppy)₃` were the two fixtures the charter named as the
+    Δ/Λ guard, both pass with the lever on, and both are irrelevant — neither carries the
+    vulnerable motif (a ligand whose two automorphic donors sit at vertices related by an
+    improper operation of the coordination sphere). The Y2 axial wave failed the same way, and
+    the lesson is the same one: only a corpus-wide mirror audit, **on a uniform draw**, can
+    answer this question.
+
+    ``OIN_CANONICAL_DONOR_FOLD`` is the one lever that folds past the geometry's own
+    proper-rotation group, and folding over an improper operation maps a structure to its
+    mirror image.
+
+    **The assertion is a NON-REGRESSION, deliberately, not "enantiomers are distinct".**
+    ``OIN_EMIT_METAL_CONFIG`` is held off, so the metal Delta/Lambda descriptor is not in the
+    string today and ZUMNEC's two enantiomers already share a comparison key with the lever
+    OFF. That is a pre-existing gap belonging to v0.4.16. What this lever must not do is take
+    away a distinction the shipped encoder *does* make -- so each arm is compared against the
+    lever-off answer for the same structure, which is the only comparison that attributes a
+    change to the fold.
+
+    A fixture alone has never been sufficient here: the Y2 axial wave sorted a tie-break on a
+    stereochemical sign, every local test passed, and only a corpus-wide mirror audit caught
+    it. ``tools/mirror_audit_donor_fold.py`` is that audit; this is its fast guard.
+    """
+
+    #: Chiral fixtures whose mirror image is a genuinely different structure.
+    _CHIRAL = ("ZUMNEC.xyz", "fac-Ir(ppy)3.xyz")
+
+    def _encode_pair(self, name, fold):
+        """``(self, mirror)`` OIN strings, encoded with the fold forced on or off."""
+        syms, coords = _read_xyz(os.path.join(_FIXTURES, name))
+        tmpdir = tempfile.mkdtemp(prefix="oin-v0411-mirror-")
+        mpath = os.path.join(tmpdir, "mirror_" + name)
+        _write_xyz(mpath, syms, coords * np.array([1.0, 1.0, -1.0]))
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1" if fold else "0"}):
+            conv = XYZToSMILES()
+            return conv.convert(os.path.join(_FIXTURES, name)), conv.convert(mpath)
+
+    def test_the_fold_never_removes_a_mirror_distinction(self):
+        for name in self._CHIRAL:
+            with self.subTest(name):
+                off_self, off_mirror = self._encode_pair(name, fold=False)
+                on_self, on_mirror = self._encode_pair(name, fold=True)
+                if off_self == off_mirror:
+                    self.skipTest(f"{name} is already mirror-folded with the lever off")
+                self.assertNotEqual(
+                    on_self,
+                    on_mirror,
+                    f"{name}: the donor fold collapsed this pair too -- the known-bad set has grown, "
+                    "update LANE-02-donor-fold.md",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

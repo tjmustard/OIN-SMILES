@@ -7,14 +7,17 @@ real isomers) or destroys stereochemistry by folding over a reflection.
 """
 
 import itertools
+import os
 import re
 import unittest
+from unittest import mock
 
 import numpy as np
 
 from oinsmiles.oin.canonical_slots import (
     GEOMETRY_VERTICES,
     VERTEX_SENTINEL,
+    _donor_swap_permutations,
     canonical_slot_map,
     canonical_slot_permutation,
     canonicalize_oin_slots,
@@ -415,7 +418,14 @@ _AGUKOD_B = (
 
 
 class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
-    """Pins the measured LIMIT of this post-pass, so nobody claims it closed without a fix.
+    """The measured limit of the ROTATION-ONLY post-pass -- and, since v0.4.11, its fix.
+
+    **INVERTED in v0.4.11, as v0.4.5 asked.** The class below still pins exactly what it
+    always pinned: with ``OIN_CANONICAL_DONOR_FOLD`` off, the residual class is unreachable,
+    for the reason stated. What changed is that the fold now exists, so the same fixture is
+    also asserted to CONVERGE with the lever on -- see
+    ``test_the_donor_fold_converges_them`` and
+    ``docs/agentic-notes/v0.4.11/LANE-02-donor-fold.md``.
 
     Measured over 150 corpus molecules (see ``docs/agentic-notes/v0.4.5/CANONICAL_SLOTS_v0.4.5.md`` section 7a):
     **32/32** residual ``slot_renumber`` pairs have an *identical* colored-vertex map. The
@@ -423,6 +433,10 @@ class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
     permutation for both strings and the difference survives it. That is not a bug in the
     relabeling -- it is a limit of its input, and it means the lane's original acceptance
     target (``slot_renumber -> ~0``) is not reachable at this seam.
+
+    v0.4.11 re-measured the same taxonomy on the ROUND-TRIP population (496 pairs, not 32
+    re-presentation pairs) and found the same shape: **496/496 same_vcolor_identical**, of
+    which 377 are atom-level ``automorphism`` and reachable by the within-fragment fold.
 
     Why the map is identical: ``compare._parse_vertex_colors`` colors *every* donor of a
     ligand with that ligand's whole body and no chelate grouping, deliberately, so that a
@@ -435,8 +449,8 @@ class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
     the group-theoretic fold cannot reach it either -- and widening it is exactly the
     over-folding this lane must not do.
 
-    When a fix lands (fold same-symmetry-class, same-color donors WITHIN one fragment, with
-    its own Delta/Lambda guards), this test should be inverted, not deleted.
+    That fix -- fold same-symmetry-class, same-color donors WITHIN one fragment -- landed in
+    v0.4.11 as ``OIN_CANONICAL_DONOR_FOLD``, and this test was inverted rather than deleted.
     """
 
     def test_the_two_presentations_have_an_identical_vertex_coloring(self):
@@ -445,12 +459,26 @@ class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
         self.assertEqual(g1, g2)
         self.assertEqual(c1, c2, "if these ever differ, the post-pass CAN reach this class")
 
-    def test_and_therefore_the_post_pass_cannot_converge_them(self):
-        self.assertNotEqual(
-            canonicalize_oin_slots(_AGUKOD_A),
-            canonicalize_oin_slots(_AGUKOD_B),
-            "the residual class is now reachable -- update section 7a and invert this test",
-        )
+    def test_and_therefore_the_ROTATION_ONLY_post_pass_cannot_converge_them(self):
+        """Spell 'off' as "0" -- deleting the variable means ON once the lever is promoted."""
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "0"}):
+            self.assertNotEqual(
+                canonicalize_oin_slots(_AGUKOD_A),
+                canonicalize_oin_slots(_AGUKOD_B),
+                "the rotation-only fold reached this class -- re-measure section 7a",
+            )
+
+    def test_the_donor_fold_converges_them(self):
+        """The inversion: what v0.4.5 pinned as out of reach, v0.4.11 reaches."""
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1"}):
+            a = canonicalize_oin_slots(_AGUKOD_A)
+            b = canonicalize_oin_slots(_AGUKOD_B)
+        self.assertEqual(a, b, "the within-fragment donor fold must converge the archetype")
+
+    def test_the_fold_is_idempotent(self):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1"}):
+            once = canonicalize_oin_slots(_AGUKOD_A)
+            self.assertEqual(once, canonicalize_oin_slots(once))
 
     def test_the_relating_transposition_is_not_a_proper_rotation_of_the_square(self):
         self.assertNotIn((1, 0, 2, 3), geometry_rotation_group("SPL"))
@@ -461,6 +489,156 @@ class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
             canonical_roundtrip_key(_AGUKOD_A),
             canonical_roundtrip_key(_AGUKOD_B),
         )
+
+
+#: ``BIWDIV_comp_0``, a Co(III) bis(tridentate), and its MIRROR IMAGE. The two strings differ
+#: only by the {4}/{5} exchange on the second ligand -- which is exactly what the donor fold
+#: canonicalizes away. Confirmed genuinely chiral by ``tools/injectivity/oracle.py``
+#: (mirror RMSD 1.52 A over 8 automorphisms, no cap hit), so this is a real enantiomer pair.
+_BIWDIV_SELF = (
+    "[Co_OCT].O=C(N{0}c1ccccn1)c1cccc(C(=O)N{1}c2ccccn2)n{2}1"
+    ".O=C(N{4}c1ccccn1)c1cccc(C(=O)N{5}c2ccccn2)n{3}1"
+)
+_BIWDIV_MIRROR = (
+    "[Co_OCT].O=C(N{0}c1ccccn1)c1cccc(C(=O)N{1}c2ccccn2)n{2}1"
+    ".O=C(N{5}c1ccccn1)c1cccc(C(=O)N{4}c2ccccn2)n{3}1"
+)
+
+
+class TestDonorFoldCollapsesEnantiomers(unittest.TestCase):
+    """🔴 Pins the v0.4.11 REFUTATION, so nobody promotes this lever by accident.
+
+    ``OIN_CANONICAL_DONOR_FOLD`` buys +7.86 ``byte_exact`` points and **collapses
+    enantiomers**: a uniform 250-molecule corpus mirror audit found 19 structures (7.6%) whose
+    mirror encodes identically once the fold is on, 18 of them confirmed genuinely chiral by
+    an independent geometric oracle.
+
+    Why the scope was not enough: ``CanonicalRankAtoms(breakTies=False)`` computes the symmetry
+    of the **isolated ligand graph**, but the two donors sit at distinct vertices whose relation
+    to the other ligands is chirality-bearing, so the vertex permutation the exchange induces
+    can be **improper**. A fragment's automorphism says nothing about the PARITY of the vertex
+    permutation it induces -- which is precisely why v0.4.5 restricted folding to proper
+    rotations.
+
+    This test asserts the CURRENT, BROKEN behaviour on purpose, in the same spirit as v0.4.5's
+    ``TestResidualClassIsOutOfReachByDesign``. When a reflection-parity filter lands, this test
+    must be **inverted, not deleted**, and ``tools/mirror_audit_donor_fold.py`` re-run on a
+    uniform draw before any points are quoted.
+    """
+
+    def test_with_the_lever_OFF_the_enantiomers_stay_distinct(self):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "0"}):
+            self.assertNotEqual(
+                canonicalize_oin_slots(_BIWDIV_SELF),
+                canonicalize_oin_slots(_BIWDIV_MIRROR),
+                "the SHIPPED encoder must keep these enantiomers apart",
+            )
+
+    def test_with_the_lever_ON_they_collapse___THIS_IS_THE_DEFECT(self):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1"}):
+            self.assertEqual(
+                canonicalize_oin_slots(_BIWDIV_SELF),
+                canonicalize_oin_slots(_BIWDIV_MIRROR),
+                "if this now FAILS, a parity filter has landed -- invert this test, re-run the "
+                "uniform mirror audit, and only then quote the points",
+            )
+
+    def test_the_comparison_key_cannot_see_the_collapse_either(self):
+        """Why no round-trip metric caught this: the key folds this axis deliberately."""
+        self.assertEqual(
+            canonical_roundtrip_key(_BIWDIV_SELF),
+            canonical_roundtrip_key(_BIWDIV_MIRROR),
+            "if the key ever separates these, byte_exact stops being blind to the damage",
+        )
+
+
+class TestDonorFoldScope(unittest.TestCase):
+    """The three conditions that keep the v0.4.11 widening safe, tested one at a time.
+
+    The fold is the only place in this module that goes past the geometry's own
+    proper-rotation group, and the narrowness of its scope IS the safety argument: one
+    fragment, one ``breakTies=False`` symmetry class, one colour. Each test below removes
+    one condition and asserts the fold declines.
+    """
+
+    def _fold(self, oin, on=True):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1" if on else "0"}):
+            return canonicalize_oin_slots(oin)
+
+    def _swaps(self, oin):
+        """The swap set the fold would use -- asserted directly, not through the output.
+
+        Testing scope through ``canonicalize_oin_slots`` does not work: the rotation group
+        already converges most small cases on its own, so an equal-output assertion passes
+        whether or not the fold over-reached. The swap set is the thing under test.
+        """
+        frags = [f for f in oin.split(".") if f]
+        _m, _geo, vcolor = _parse_vertex_colors(normalize_oin_for_comparison(oin))
+        return _donor_swap_permutations(frags, vcolor)
+
+    def test_donors_in_DIFFERENT_symmetry_classes_are_not_exchanged(self):
+        """A 2-aminoethanol-like chelate: the N and the O are not interchangeable.
+
+        This is the ``distinct_donors_LOCAL`` class -- 118 of the v0.4.11 population. A
+        correctly-scoped fold cannot reach it, and must not try.
+        """
+        self.assertEqual(
+            self._swaps("[Pt_SPL].N{0}CCO{1}.[Cl]{2}.[Cl]{3}"),
+            [{}],
+            "the fold offered to exchange an N donor with an O donor -- condition (a) is broken",
+        )
+
+    def test_donors_in_DIFFERENT_fragments_are_not_exchanged(self):
+        """Two separate ligands' donors are never exchanged, however alike they are.
+
+        Cross-fragment exchange is what would reach the metal Delta/Lambda arrangement, and
+        that arrangement is the isomer. Scope condition: WITHIN one fragment.
+        """
+        self.assertEqual(
+            self._swaps("[Pt_SPL].N{0}C.N{1}CC.[Cl]{2}.[Cl]{3}"),
+            [{}],
+            "the fold offered a cross-fragment exchange -- the within-fragment scope is broken",
+        )
+
+    def test_two_equivalent_donors_of_ONE_fragment_DO_generate_a_swap(self):
+        """The positive control: without this, the three negatives above prove nothing.
+
+        ``AGUKOD``'s COD ligand has two symmetry-equivalent alkene arms on slots 0 and 1.
+        """
+        swaps = self._swaps(_AGUKOD_A)
+        # Identity is spelled {} when no bucket exists and {s: s, ...} when one does; both
+        # mean "change nothing", so test the property rather than the spelling.
+        self.assertTrue(
+            any(all(k == v for k, v in m.items()) for m in swaps),
+            "identity must always be offered, so the fold can never narrow the candidate set",
+        )
+        self.assertIn({0: 1, 1: 0}, swaps, "the two equivalent COD arms must be exchangeable")
+
+    def test_the_fold_never_changes_the_comparison_key(self):
+        """The invariant that keeps ``key_equal`` accounting readable across the A/B.
+
+        The fold only ever exchanges same-COLOURED slots, so the colored-vertex signature --
+        and therefore ``_polyhedron_signature``, and therefore the key -- is untouched. That
+        is also why the rotation-only post-pass could never reach this class: the difference
+        lives entirely in the signature's kernel.
+
+        Measured over the whole v0.4.11 population: 0 of 992 strings changed key.
+        """
+        for oin in (_AGUKOD_A, _AGUKOD_B, FAC_OIN, "[Pt_SPL].N{0}CCO{1}.[Cl]{2}.[Cl]{3}"):
+            with self.subTest(oin=oin[:40]):
+                before = canonical_roundtrip_key(oin)
+                self.assertEqual(before, canonical_roundtrip_key(self._fold(oin)))
+
+    def test_the_fold_never_narrows_the_candidate_set(self):
+        """Identity is always in the swap set, so the fold can only ever tie or improve.
+
+        Concretely: everything the rotation-only post-pass could already reach stays
+        reachable, which is what makes 'lever OFF is byte-identical' a scoping property and
+        not a coincidence.
+        """
+        for oin in (_AGUKOD_A, "[Pt_SPL].N{0}CCO{1}.[Cl]{2}.[Cl]{3}", FAC_OIN):
+            with self.subTest(oin=oin[:40]):
+                self.assertLessEqual(self._fold(oin), self._fold(oin, on=False))
 
 
 if __name__ == "__main__":
