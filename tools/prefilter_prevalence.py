@@ -52,6 +52,7 @@ import glob
 import json
 import os
 import sys
+import tempfile
 import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
@@ -88,18 +89,30 @@ def run_one(xyz_path, advisory, timeout):
             )
             res = gen.generate(oin_in)
             counts = dict(_telemetry.counts())
-        mol = getattr(res, "mol", None)
-        if mol is not None:
-            import numpy as np
-
-            from oinsmiles.utils.perception_tmc import get_oin_string
-
-            lines = res.xyz.splitlines()
-            n = int(lines[0].strip())
-            coords = np.array([[float(v) for v in lines[2 + i].split()[1:4]] for i in range(n)])
-            passed = canonical_roundtrip_key(oin_in) == canonical_roundtrip_key(
-                get_oin_string(mol, coords)
-            )
+        # ⚠ SCORED HONESTLY, and the obvious spelling is the WRONG one.
+        #
+        # The tempting line here is
+        #     canonical_roundtrip_key(get_oin_string(res.mol, coords))
+        # which is what the older A/B tools in this directory do -- and it is CIRCULAR: it scores
+        # the round trip with `res.mol`, the GENERATOR'S OWN bond graph, i.e. exactly the artifact
+        # that would have to be wrong for the test to fail. v0.4.8 measured that at 61/633 = 9.6%
+        # false positives and replaced it with OIN_INDEP_SCORE.
+        #
+        # It matters specifically HERE, more than in a normal A/B: this lane's whole subject is a
+        # disagreement between the cheap (generator-connectivity) predicate and the strict
+        # (independently re-perceived) one. Scoring the outcome with the cheap predicate would
+        # judge the lever by the very test it exists to override, and would report "recovered
+        # nothing" by construction. So write the XYZ and re-perceive it, the same single call
+        # tools/honest_rescore.py makes.
+        if getattr(res, "xyz", None):
+            with tempfile.NamedTemporaryFile("w", suffix=".xyz", delete=False) as fh:
+                fh.write(res.xyz)
+                tmp = fh.name
+            try:
+                indep = XYZToSMILES().convert(tmp)
+                passed = canonical_roundtrip_key(oin_in) == canonical_roundtrip_key(indep)
+            finally:
+                os.unlink(tmp)
     except Exception as exc:  # noqa: BLE001 -- a failed molecule is data, not a crash
         err = f"{type(exc).__name__}: {exc}"
     return counts, round(time.monotonic() - t0, 2), passed, err
@@ -166,6 +179,15 @@ def main() -> int:
     print(f"  cheap PASSED, veto never consulted      : {cp:6d}")
     print(f"  molecules recovered (fail -> pass)      : {n_recovered:6d} / {len(paths)}")
     print(f"\n  wall clock: OFF {t_off:.1f}s   ON {t_on:.1f}s   delta {t_on - t_off:+.1f}s")
+    print(
+        "\n  ⚠ THESE DENOMINATORS ARE NOT POOL SIZES. The first override ACCEPTS, which stops the\n"
+        "    pool filling, so the lever-ON arm evaluates FEWER conformers than the lever-OFF arm\n"
+        "    and far fewer than the pool would hold. `AROHIA_comp_0`'s documented 0/48-vs-16/48 was\n"
+        "    measured with the pool FORCED FULL (tools/probe_accept_gap.py); a count of 3 here is\n"
+        "    the same defect observed until it stopped mattering, not a smaller one. Read\n"
+        "    `overridden` as 'conformers recovered before early exit', never as a rate over 48.\n"
+        "    For the same reason a NEGATIVE latency delta is expected and is not a speed claim."
+    )
 
     print()
     if adv == 0 and cp == 0:

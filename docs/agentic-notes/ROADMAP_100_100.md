@@ -35,7 +35,7 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **72.46%** *(honest, v0.4.8)* | **100%** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **75.88%** *(honest, v0.4.13)* | **100%** |
 | **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
 
 ⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
@@ -43,20 +43,37 @@ silently yields `0` — **and it is a SUM** over up to three separately SIGKILLe
 The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
 rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − 72.46 = 27.54` points (honest, re-derived v0.4.9)
+## The gap — `100 − 75.88 = 24.12` points (honest, re-derived **v0.4.13**)
 
-⚠ **The `release` column below is post-`LADDER DECISION 2026-07-27` and post-v0.4.11.** It replaces
-an earlier copy that still pointed `slot_renumber` at v0.4.14 and `encode_fail` at v0.4.11.
+⚠ **This table is post-v0.4.13's promotion.** The donor fold + parity veto shipped default-ON and
+moved **171 molecules / +3.42 points** out of `slot_renumber` into `byte_exact`. Source:
+`tmCAT-tmPHOTO_xyz_dataset/results-v0.4.13-honest/bucket_report_PASS1_authoritative.md`.
+The previous copy of this table read `100 − 72.46 = 27.54` and is superseded.
 
 | block | n | pts | nature | release |
 |---|---:|---:|---|---|
-| `key_equal` → `slot_renumber` | 496 | 9.92 | canonicality, encoder-side | 🔴 **v0.4.11 attempted — REFUTED.** 377 (7.54) are reachable by a within-fragment fold, but that fold **collapses enantiomers in 221 of its 393 gains**. Needs a reflection-parity filter. 90 mol / **1.80 pts** of the residue re-filed to **v0.4.14** (frozen resonance form) |
-| **`structural`** | **417** | **8.34** | generator capability (re-labelled) | v0.4.17 |
-| `hard_fail` | 319 | 6.38 | compute (mostly) | v0.4.12 – v0.4.13 |
-| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**+1.80 from above ⇒ ~4.08**) |
+| **`structural`** | **417** | **8.34** | 🔴 **RE-MECHANISED by v0.4.13 Lane 2: 266 (63.8%) are `DETACHED`** — an unguarded *return* path, not a capability floor | v0.4.17 (**candidate to pull forward — up to 5.32 pts is one site**) |
+| `hard_fail` | 319 | 6.38 | compute; **315/319 produce no structure at all** | — |
+| `key_equal` → `slot_renumber` | **325** | **6.50** | canonicality, encoder-side. **Was 496; the fold took 171.** 90 of the residue are frozen resonance forms (ligand **body**) | v0.4.14 |
+| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**⇒ ~4.08 with the 90 above**) |
 | `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 (opportunistic) |
-| **sum** | **1377** | **27.54** ✓ | | |
+| **sum** | **1206** | **24.12** ✓ | | |
+
+### The other decomposition v0.4.13 added: by ATTACHMENT, not by bucket
+
+Over the **767 genuine failures** (non-`byte_exact`, excluding `key_equal`'s benign
+canonicalization). Control: `byte_exact` reads **1.32%** `DETACHED` against **24.11%** on the
+failing side — **18.2× enrichment**, `UNKNOWN` = 0, `#DONE 5000`.
+
+| class | n | what it is |
+|---|---:|---|
+| **GAVSED** — `DETACHED` | **280** | returned with ligands off the metal; `_select_by_geometry`'s fallback is not attachment-aware |
+| **MEDZUR** — `INTACT` | **99** | attachment fine, independent re-perception still disagrees — **still unexplained** |
+| `BOUNDARY` | 53 | the attachment call itself is inside the tolerance band |
+| `NO_STRUCTURE` | 335 | nothing generated — no returned conformer to be wrong |
+
+Both classes were handed forward on **n = 1** for two releases.
 
 ### 🔴 The honest number REORDERED the ladder
 

@@ -5,6 +5,87 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.13] - 2026-07-28
+
+> ### The donor fold ships — and the release that was supposed to cost 55 CPU-hours cost none.
+>
+> **`byte_exact` 72.46% → 75.88%, +3.42 points, 171 molecules, 0 moved in a bad direction.**
+> The first time this project's headline has moved **up**; the only other time it moved at all was
+> v0.4.8, which took it down 10.34 points on purpose to make it honest.
+>
+> `OIN_CANONICAL_DONOR_FOLD` + `OIN_FOLD_PARITY_VETO` go **default-ON together**. The gate ran on
+> **two** populations, not one, and both zero with exact accounting:
+>
+> | | cat/ | cat+photo |
+> |---|---:|---:|
+> | collapses, veto OFF → promoted | **19 → 0** | **33 → 0** |
+> | `achiral_or_preexisting_fold`, unmoved | 157 | 134 |
+> | accounting | 73 + 19 = 92 ✓ | 83 + 33 = 116 ✓ |
+>
+> Every collapsing molecule moved into `distinct_both_arms` and **nothing else moved at all** — so
+> the zero is bought by *separating*, not by *abstaining*, which is how v0.4.12's own first veto
+> implementation failed (it declined on 18 of 18 while all three fixture tests passed).
+>
+> **🔴 The 55 CPU-h re-sweep v0.4.12 made a precondition was the WRONG INSTRUMENT, and was not
+> run.** `results-v0.4.8-honest` — the 72.46% baseline — is itself an offline re-score, not a
+> sweep; no generator sweep has run in this project since v0.4.6. A fresh run would have
+> contaminated a +3.42-point signal with the stochastic generator's run-to-run variation and would
+> not even have been like-for-like with the table it was compared against. What made the offline
+> route *exact* was measured, not assumed: over all **9669** corpus strings the fold moves **1019**
+> and changes **0** comparison keys, so `accept_fn` — which decides by key — returns bit-identical
+> conformers either way.
+
+### Added
+- **`OIN_CANONICAL_DONOR_FOLD` and `OIN_FOLD_PARITY_VETO` promoted to default-ON**, together and
+  never separately. `test_levers::TestDonorFoldAndParityVetoAreCoupled` pins the pair: the fold ON
+  with the veto OFF is the configuration v0.4.11 refuted, and **neither `byte_exact` nor the
+  round-trip key can see the damage** — only `tools/mirror_audit_donor_fold.py` can.
+- `OIN_PREFILTER_ADVISORY` (**default OFF**) — makes the cheap acceptance prefilter advisory
+  instead of dispositive, with `overridden` / `confirmed` / `cheap_pass` telemetry so the decision
+  is observable. On `AROHIA_comp_0` the cheap test rejects **2** conformers the strict test accepts.
+- `tools/attach_class_audit.py` — sizes the MEDZUR and GAVSED classes, both handed forward on
+  **n = 1**. Over 767 genuine failures: **GAVSED 280, MEDZUR 99**, with a `byte_exact` control at
+  1.32% against 24.11% (**18.2× enrichment**) and `UNKNOWN` = 0.
+- `tools/fold_key_invariance.py` — the generator-neutrality proof above.
+- `tools/prefilter_prevalence.py` — Lane 1's two-arm harness; distinguishes `INSTRUMENT_DEAD`,
+  `NO_POPULATION`, `PREFILTER_VINDICATED` and `DEFECT_CONFIRMED`, which would otherwise all read 0.
+- `tools/freeze_v0413_table.py` — refuses to freeze a table from an arm that excluded anything.
+
+### Changed
+- **`structural` is re-mechanised, not re-labelled.** 417 molecules / 8.34 pts, scheduled v0.4.17
+  as *"bounded by what the generator can assemble"* — **266 of them (63.8%) are `DETACHED`**: the
+  generator assembled a structure and *returned* it with ligands off the metal, because
+  `_select_by_geometry`'s fallback ranking is not attachment-aware. A one-site return-path guard,
+  not a capability floor.
+- ARM 2's v0.4.9 golden: **11 of 325 rows re-frozen** (the fold-movers), re-run individually rather
+  than bulk-accepting a regenerated manifest. ARM 1 and the v0.4.7 ARM 2 golden are unchanged —
+  **provably**, not as an economy: 0 of their molecules are fold-movers.
+
+### Fixed
+- 🔴 **`tools/fold_transition_sim.py` printed the REFUTED number after measuring nothing.** Run
+  from a worktree its `--dataset` default is *relative*, so all 393 movers landed in `unavailable`
+  and it reported the bare fold's **+7.86** — the figure v0.4.11 refuted for collapsing
+  enantiomers — under a heading saying "veto", and exited 0. It now refuses when it measures 0 of
+  N movers.
+- 🔴 **`tools/run_sweep.sh` resolved its interpreter by globbing sibling checkouts** — the trap
+  `gate_v047.sh` was hardened against in v0.4.9, left live in the one place it costs 55 CPU-h.
+  From the v0.4.13 worktree it selected `EtaCatalysis/.venv` (no rdkit); the next candidate carries
+  rdkit 2025.09.2 against the pinned 2025.9.3. Now resolves via `--git-common-dir` and refuses on
+  version drift.
+- A lever-interaction bug introduced by `OIN_PREFILTER_ADVISORY` and caught before it shipped:
+  without `and not cheap_vetoes`, that lever plus `OIN_ACCEPT_SCORED` would together accept a
+  conformer the score itself calls a failure — a combination neither lever's own A/B exercises.
+
+### Known limitations
+- **Lane 1's corpus prevalence is NOT measured.** The lever, telemetry and harness are built and
+  the defect is confirmed on `AROHIA_comp_0`, but n = 1 is exactly what this project forbids
+  quoting. Handed to v0.4.14 with its instrument gated.
+- **ARM 1 is structurally blind to this release**: 0 of its 62 fixtures are fold-movers, so its
+  PASS means "no regression", not "the promotion works". Any future canonicality promotion must
+  state its gate's *coverage of the moved population*, not just its verdict.
+- The **48 `byte_exact` molecules that read `DETACHED`** are unexplained; two readings survive and
+  neither was tested.
+
 ## [0.4.12] - 2026-07-28
 
 > ### Reflection parity — the filter v0.4.11's refutation demanded, and it works.
