@@ -168,14 +168,44 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.8** | **the honest number** — promote `OIN_INDEP_SCORE` to *the* score; 5k honest sweep; + the atom-count gate | **DOWN ~5.7 pts, planned** |
 | **v0.4.9** ✅ | **speed becomes measurable** — `OIN_ENFORCE_BUDGET` (default OFF); 328-molecule stratified benchmark frozen. **Refuted its own premise:** `elapsed_s` is a sum, the harness already enforces to ε ≈ 0.2 s | pass flat ✓; benchmark reproduces to **0.28%** |
 | **v0.4.10** ✅ | **cost per attempt**, byte-identical. Deleted the discarded `.index()` scan (**`CAHQEJ` −32.9%**, `FOSNEI` +0.3% nil) and added `OIN_MEMO_CIP_REPARSE` (**`VAFMIA` −86.7%**, `CAHQEJ` −2.4%), both **byte-identical on ARM 1 and ARM 2**. ⚠ **Found its own arbiter broken:** ARM 1 had been non-runnable since `dd51a515` | pass FLAT ✓ by construction; **every speed number bimodal by molecule** |
-| **v0.4.11** | **encode floor R3** — memoize the forked-resonance timeout verdict per ligand graph | `encode_fail` down |
+| **v0.4.11** | **`slot_renumber`** (496 / **9.92 pts**) — the within-fragment donor fold v0.4.5 Lane 2 *specified and declined to implement*. ⚠ Classify the 496 by mechanism FIRST: the taxonomy has only ever run on re-presentation pairs, never on round-trip pairs | byte_exact **UP**; size conditional on that classification |
 | **v0.4.12** | **honest acceptance** — harden `OIN_ATTACH_CHECK`; the `OIN_ETA_EARLY_EXIT` corpus A/B | biggest tail move; **pass must not move — that is the gate** |
 | **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |
-| **v0.4.14** | **`slot_renumber`** (459 / 9.18 pts) | byte_exact **UP ~9 pts** |
-| **v0.4.15** | **`rdkit_canonical`** (61 / 1.22 pts) + winding residue | byte_exact up ~1.2 pts |
-| **v0.4.16** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
-| **v0.4.17** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
-| **v0.4.18** | **generator capability floor** — boron assembly, `NON` geometry, 28 produced-nothing | likely a documented limitation |
+| **v0.4.14** | **`rdkit_canonical`** (114 / **2.28 pts**) + winding residue | byte_exact up ~2.3 pts |
+| **v0.4.15** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
+| **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
+| **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-LABELLED**: generated structures that re-perceive with *different coordination than the OIN claims*. A generator-capability problem, not "wrong isomer"; it does not belong beside `facmer_divergent` | byte_exact **UP**, bounded by what the generator can assemble |
+| **v0.4.18** | **generator capability floor** — boron assembly, `NON` geometry, 28 produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in here opportunistically | likely a documented limitation |
+
+### LADDER DECISION 2026-07-27 — accepted, by the project owner
+
+```
+Change:   v0.4.11  was  encode floor R3 (15 mol / 0.30 pts)
+                   is   slot_renumber   (496 mol / 9.92 pts)
+          v0.4.14-v0.4.18 shift up one; `structural` pulled out of v0.4.16 and re-filed
+          at v0.4.17, re-labelled as generator capability; encode floor R3 folded into
+          v0.4.18 as opportunistic work.
+
+Because:  the ladder pointed its NEXT release at the SMALLEST block in the gap while
+          18.26 of 27.54 points sat four and six releases out. 0.30 points is a rounding
+          error against a 27.54-point gap, and encode floor R3 depends on nothing and
+          unblocks nothing, so no prerequisite argument protects its position. Its real
+          merit -- ARM 1 of the byte-identity gate takes ~15 min, almost all of it
+          fixtures hitting `_resonance_candidates_isolated` at 120 CPU-s per fork -- is a
+          developer-convenience argument, not a roadmap-points one.
+
+Not changed, and why:
+          v0.4.12 (honest acceptance) and v0.4.13 (harness false negatives) stay early.
+          They are MEASUREMENT PREREQUISITES: shipping a 9-point canonicality fix before
+          the harness's false-negative rate is known risks attributing an artefact to the
+          fix. That argument covers 12 and 13. It does not cover a 0.30-point release.
+
+Also corrected: the ladder carried STALE counts -- `slot_renumber (459 / 9.18)` and
+          `rdkit_canonical (61 / 1.22)` predate the v0.4.8 honest baseline. The honest
+          figures are 496 / 9.92 and 114 / 2.28, reproduced 2026-07-27 from
+          `results-v0.4.8-honest/bucket_report_honest.md`.
+```
+
 
 v0.4.8–v0.4.10 are written as full charter sets. v0.4.11–v0.4.18 are **SKETCH** and are promoted to
 full one at a time by the close-out ritual below.
