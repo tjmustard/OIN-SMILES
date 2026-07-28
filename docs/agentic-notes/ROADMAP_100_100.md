@@ -172,7 +172,7 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.9** ✅ | **speed becomes measurable** — `OIN_ENFORCE_BUDGET` (default OFF); 328-molecule stratified benchmark frozen. **Refuted its own premise:** `elapsed_s` is a sum, the harness already enforces to ε ≈ 0.2 s | pass flat ✓; benchmark reproduces to **0.28%** |
 | **v0.4.10** ✅ | **cost per attempt**, byte-identical. Deleted the discarded `.index()` scan (**`CAHQEJ` −32.9%**, `FOSNEI` +0.3% nil) and added `OIN_MEMO_CIP_REPARSE` (**`VAFMIA` −86.7%**, `CAHQEJ` −2.4%), both **byte-identical on ARM 1 and ARM 2**. ⚠ **Found its own arbiter broken:** ARM 1 had been non-runnable since `dd51a515` | pass FLAT ✓ by construction; **every speed number bimodal by molecule** |
 | **v0.4.11** ✅ | **`slot_renumber`** (496 / 9.92 pts) — built the within-fragment donor fold v0.4.5 specified. 🔴 **REFUTED IT.** It works (+7.86 pts, 393 molecules, one direction) and **collapses enantiomers: 221 of its own 393 gains (56.2%), 19/250 on a uniform draw**, 18 oracle-confirmed chiral. Ships **default OFF**. Lane 1 classified all 496: `diff_occupancy` **0**, and 90 of the 118 `distinct_donors_LOCAL` are frozen-resonance-form artifacts ⇒ **v0.4.14, not here** | **FLAT** — the lever that would raise it is unsafe |
-| **v0.4.12** | **honest acceptance** — harden `OIN_ATTACH_CHECK`; the `OIN_ETA_EARLY_EXIT` corpus A/B | biggest tail move; **pass must not move — that is the gate** |
+| **v0.4.12** | **reflection parity + honest acceptance** — L1 `OIN_FOLD_PARITY_VETO`, the filter v0.4.11's close-out specified; L2 `OIN_ETA_ACCEPT_EXIT`, the winding criterion moved from selection into `accept_fn`, the only site that can stop pool filling. ⚠ `OIN_ETA_EARLY_EXIT` is **runtime-inert as sited** and its promotion gate is **void, not unrun** | default path **FLAT** (both levers OFF); L1 lever-ON gain and L2 tail move measured separately — see `docs/agentic-notes/v0.4.12/` |
 | **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |
 | **v0.4.14** | **`rdkit_canonical`** (114 / 2.28 pts) + winding residue — **RE-SIZED by v0.4.11 to ~4.08 pts**: 90 of the 118 residual `slot_renumber` molecules (**1.80 pts**) are the same ligand-BODY problem, a frozen resonance form (acac written ketone/enol) that `CanonicalRankAtoms` reads as two inequivalent donors | byte_exact up ~**4.1** pts |
 | **v0.4.15** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
@@ -208,6 +208,54 @@ Also corrected: the ladder carried STALE counts -- `slot_renumber (459 / 9.18)` 
           figures are 496 / 9.92 and 114 / 2.28, reproduced 2026-07-27 from
           `results-v0.4.8-honest/bucket_report_honest.md`.
 ```
+
+### LADDER DECISION 2026-07-28 — accepted, by the project owner
+
+```
+Change:   v0.4.12  was  honest acceptance (2 lanes)
+                   is   reflection parity (L1) + honest acceptance (L2), one lane each
+
+Because:  v0.4.11 refuted its own fix but left the block REACHABLE and named the
+          parity filter as the concrete next step. 7.54 pts is 27% of the remaining
+          27.54, the oracle is already built (mirror_audit_donor_fold.py +
+          injectivity/oracle.py), and the defect is pinned by
+          TestDonorFoldCollapsesEnantiomers. Deferring it means the largest live
+          block waits behind a release worth 0 points by design.
+
+Not changed, and why:
+          v0.4.13 (harness false negatives) stays where it is. PREFILTER_VETO's
+          SCORING half was already closed by OIN_INDEP_SCORE in v0.4.8 -- measured
+          on the frozen corpus, cheap-fails-but-independent-passes is 28/5000, and
+          the honest metric already counts those correctly. What remains is purely
+          an ACCEPTANCE-side defect, and it belongs there with the MEDZUR class.
+          The v0.4.12 sketch's "PREFILTER_VETO may belong here" is DECLINED.
+
+Override recorded: this breaks the roadmap's own "one theme, one or two lanes"
+          rule. The release therefore carries TWO headline predictions, not one,
+          and CLOSEOUT §3 diffs both separately.
+```
+
+#### What the v0.4.12 re-baseline established before any code was written
+
+- 🔴 **`OIN_ETA_EARLY_EXIT` is runtime-inert AS SITED, and its promotion gate is VOID rather
+  than unrun.** It lives in `_select_by_geometry_impl`, which runs *after*
+  `generate_3d_structures` has filled the whole pool; the only site that can stop pool filling
+  is `accept_fn`. Its own in-code A/B already said so (Ferrocene: fires, attempts 32 → 32).
+  The sketch's Lane 2 — "run the corpus A/B its promotion gate demands" — would have spent
+  real CPU confirming a documented structural null. **Overridden:** the criterion moved to
+  `accept_fn` as `OIN_ETA_ACCEPT_EXIT`.
+- **The v0.4.7 stored A/B arms no longer exist** (`spec/handoffs/v0.4.7/runs/` is gone), so
+  every G1–G4 number must be re-*measured*, not re-scored.
+- **The v0.4.6 accept-gap cohort classification is STALE.** All 8 of its `CHEAP_ONLY`/`GAP`
+  molecules now satisfy the key inside `accept_fn` (telemetry: `adapter.early_exit_hit` fires
+  in both arms, `adapter.eta_accept_*` never). The lever's real target population had to be
+  re-derived from the frozen sweep: **405 eta molecules whose key does not match, 378 of them
+  over 30 s.**
+- **Three releases' byte-identity claims hold.** Re-encoding the frozen corpus's inputs and
+  stored generated structures with today's encoder reproduces the v0.4.8 strings exactly on
+  every molecule tested, so v0.4.9/v0.4.10/v0.4.11's "default path unchanged" is confirmed
+  rather than assumed.
+
 
 
 v0.4.8–v0.4.10 are written as full charter sets. v0.4.11–v0.4.18 are **SKETCH** and are promoted to
