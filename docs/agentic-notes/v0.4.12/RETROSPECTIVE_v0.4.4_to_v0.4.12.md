@@ -535,6 +535,17 @@ points** (171 of 393). v0.4.11 bounded the safe set at *"at most ~172 (~3.44 pts
 collapses; this filter counts survivors through the shipped predicate and lands on **171**. Two
 independent routes agreeing to one molecule.
 
+**And it holds at a second, disjoint seed — which is the part that matters.** v0.4.11's recorded
+methodology lesson was that one draw cannot separate a corpus property from a sampling artifact.
+Seed 11 answers it: the **baseline independently reproduces 19/250** on a disjoint sample, so the
+**7.6% collapse rate is a property of the corpus**, not of seed 7. The veto zeroes both seeds while
+`achiral_or_preexisting_fold` stays untouched at **157 and 141** respectively — so it is separating
+the right set rather than declining to fold. *That the achiral population is unmoved is the
+second-most-important number here: a veto without that left conjunct would have swallowed all 157
+as well, still reported `REGRESSION_raw_collapsed = 0`, and looked like a total success while
+destroying the fold's entire benefit.* Lane 1's gate is now fully met; the ~55 CPU-h re-sweep and
+the re-frozen goldens remain as v0.4.13 preconditions.
+
 **Speed: no runtime claim in the release.** `OIN_ETA_ACCEPT_EXIT`'s timing A/B was **stopped rather
 than banked** at load 26 — *never interleave timing runs with gate runs* — so its predicted tail
 reduction shipped **unverified**.
