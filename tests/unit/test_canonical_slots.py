@@ -491,6 +491,67 @@ class TestResidualClassIsOutOfReachByDesign(unittest.TestCase):
         )
 
 
+#: ``BIWDIV_comp_0``, a Co(III) bis(tridentate), and its MIRROR IMAGE. The two strings differ
+#: only by the {4}/{5} exchange on the second ligand -- which is exactly what the donor fold
+#: canonicalizes away. Confirmed genuinely chiral by ``tools/injectivity/oracle.py``
+#: (mirror RMSD 1.52 A over 8 automorphisms, no cap hit), so this is a real enantiomer pair.
+_BIWDIV_SELF = (
+    "[Co_OCT].O=C(N{0}c1ccccn1)c1cccc(C(=O)N{1}c2ccccn2)n{2}1"
+    ".O=C(N{4}c1ccccn1)c1cccc(C(=O)N{5}c2ccccn2)n{3}1"
+)
+_BIWDIV_MIRROR = (
+    "[Co_OCT].O=C(N{0}c1ccccn1)c1cccc(C(=O)N{1}c2ccccn2)n{2}1"
+    ".O=C(N{5}c1ccccn1)c1cccc(C(=O)N{4}c2ccccn2)n{3}1"
+)
+
+
+class TestDonorFoldCollapsesEnantiomers(unittest.TestCase):
+    """🔴 Pins the v0.4.11 REFUTATION, so nobody promotes this lever by accident.
+
+    ``OIN_CANONICAL_DONOR_FOLD`` buys +7.86 ``byte_exact`` points and **collapses
+    enantiomers**: a uniform 250-molecule corpus mirror audit found 19 structures (7.6%) whose
+    mirror encodes identically once the fold is on, 18 of them confirmed genuinely chiral by
+    an independent geometric oracle.
+
+    Why the scope was not enough: ``CanonicalRankAtoms(breakTies=False)`` computes the symmetry
+    of the **isolated ligand graph**, but the two donors sit at distinct vertices whose relation
+    to the other ligands is chirality-bearing, so the vertex permutation the exchange induces
+    can be **improper**. A fragment's automorphism says nothing about the PARITY of the vertex
+    permutation it induces -- which is precisely why v0.4.5 restricted folding to proper
+    rotations.
+
+    This test asserts the CURRENT, BROKEN behaviour on purpose, in the same spirit as v0.4.5's
+    ``TestResidualClassIsOutOfReachByDesign``. When a reflection-parity filter lands, this test
+    must be **inverted, not deleted**, and ``tools/mirror_audit_donor_fold.py`` re-run on a
+    uniform draw before any points are quoted.
+    """
+
+    def test_with_the_lever_OFF_the_enantiomers_stay_distinct(self):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "0"}):
+            self.assertNotEqual(
+                canonicalize_oin_slots(_BIWDIV_SELF),
+                canonicalize_oin_slots(_BIWDIV_MIRROR),
+                "the SHIPPED encoder must keep these enantiomers apart",
+            )
+
+    def test_with_the_lever_ON_they_collapse___THIS_IS_THE_DEFECT(self):
+        with mock.patch.dict(os.environ, {"OIN_CANONICAL_DONOR_FOLD": "1"}):
+            self.assertEqual(
+                canonicalize_oin_slots(_BIWDIV_SELF),
+                canonicalize_oin_slots(_BIWDIV_MIRROR),
+                "if this now FAILS, a parity filter has landed -- invert this test, re-run the "
+                "uniform mirror audit, and only then quote the points",
+            )
+
+    def test_the_comparison_key_cannot_see_the_collapse_either(self):
+        """Why no round-trip metric caught this: the key folds this axis deliberately."""
+        self.assertEqual(
+            canonical_roundtrip_key(_BIWDIV_SELF),
+            canonical_roundtrip_key(_BIWDIV_MIRROR),
+            "if the key ever separates these, byte_exact stops being blind to the damage",
+        )
+
+
 class TestDonorFoldScope(unittest.TestCase):
     """The three conditions that keep the v0.4.11 widening safe, tested one at a time.
 

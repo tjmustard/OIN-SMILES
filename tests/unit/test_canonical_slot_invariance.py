@@ -232,12 +232,25 @@ class TestNoOverFolding(unittest.TestCase):
         self.assertNotEqual(self._encode("CisPlatin.xyz"), self._encode("TransPlatin.xyz"))
 
 
-class TestDonorFoldDoesNotCollapseEnantiomers(unittest.TestCase):
-    """The v0.4.11 guard: the widening must not make a token reflection-invariant.
+class TestDonorFoldOnTheFixturesThatHappenToSurvive(unittest.TestCase):
+    """⚠ These two fixtures survive the fold. **That does not make the fold safe.**
+
+    🔴 It is not: a uniform 250-molecule corpus mirror audit found **19 collapses (7.6%)**,
+    18 confirmed genuinely chiral. `TestDonorFoldCollapsesEnantiomers` in
+    ``test_canonical_slots.py`` pins one of them, and
+    ``docs/agentic-notes/v0.4.11/LANE-02-donor-fold.md`` has the analysis.
+
+    This class is kept for exactly one reason: to record that **passing fixtures proved
+    nothing here**. `ZUMNEC` and `fac-Ir(ppy)₃` were the two fixtures the charter named as the
+    Δ/Λ guard, both pass with the lever on, and both are irrelevant — neither carries the
+    vulnerable motif (a ligand whose two automorphic donors sit at vertices related by an
+    improper operation of the coordination sphere). The Y2 axial wave failed the same way, and
+    the lesson is the same one: only a corpus-wide mirror audit, **on a uniform draw**, can
+    answer this question.
 
     ``OIN_CANONICAL_DONOR_FOLD`` is the one lever that folds past the geometry's own
     proper-rotation group, and folding over an improper operation maps a structure to its
-    mirror image. So the fixture below is not a formality.
+    mirror image.
 
     **The assertion is a NON-REGRESSION, deliberately, not "enantiomers are distinct".**
     ``OIN_EMIT_METAL_CONFIG`` is held off, so the metal Delta/Lambda descriptor is not in the
@@ -275,8 +288,8 @@ class TestDonorFoldDoesNotCollapseEnantiomers(unittest.TestCase):
                 self.assertNotEqual(
                     on_self,
                     on_mirror,
-                    f"{name}: the donor fold collapsed a pair of enantiomers the shipped "
-                    "encoder separates -- STOP, this is the release's veto condition",
+                    f"{name}: the donor fold collapsed this pair too -- the known-bad set has grown, "
+                    "update LANE-02-donor-fold.md",
                 )
 
 
