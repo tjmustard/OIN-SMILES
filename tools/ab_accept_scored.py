@@ -492,7 +492,18 @@ def main() -> int:
         f"(of {len(b)} molecules) {mc_div or ''}"
     )
     if mc_div:
-        print("  🔴 G5 FAILS -- an arm returned the opposite enantiomer and G1-G4 cannot see it.")
+        for m in mc_div:
+            rb = next(r for r in mc_measured if r["molecule"] == m)
+            print(
+                f"      {m}: A={by[m]['mc_token']!r} -> B={rb['mc_token']!r}"
+                f"   sha_out {'IDENTICAL' if by[m].get('sha_out') == rb.get('sha_out') else 'differs'}"
+            )
+        print(
+            "  🔴 G5 FAILS -- the arms returned structures whose metal-configuration DESCRIPTORS\n"
+            "     differ, and G1-G4 cannot see it. State the tokens, above, rather than the\n"
+            "     conclusion: an absent token means no helicity was PERCEIVED, which is not the\n"
+            "     same claim as 'the opposite enantiomer' and must not be reported as one."
+        )
     elif not mc_measured:
         print("  ⚠ G5 measured NOTHING -- token_for_mol returned None everywhere. Not a pass.")
 

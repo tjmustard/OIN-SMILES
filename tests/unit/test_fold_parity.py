@@ -222,6 +222,39 @@ class TestReentrancy(unittest.TestCase):
             self.assertNotIn(FOLD, os.environ, "unset and '0' are different states")
 
 
+class TestSuffixLeverInteraction(unittest.TestCase):
+    """🔴 The veto must survive being run alongside an information-ADDING lever.
+
+    ``resolve``'s self-check compares a string from ``XYZToSMILES().convert()`` -- which carries
+    the trailing ``|ax:|`` / ``|mc:|`` sidecars -- against ``s_rot``, computed from the
+    PRE-suffix ``inline_oin``. With both suffix levers held off (the default) they are empty and
+    the comparison works by accident.
+
+    Turn ``OIN_EMIT_AXIAL`` on and, without ``_strip_suffixes``, every molecule fails the
+    self-check, declines, and **the veto silently stops vetoing while still emitting a plausible
+    string** -- this release's own headline failure mode, one lever-combination away. Found by
+    reading the code, not by a red test, so this is the test that would have caught it.
+    """
+
+    def test_strip_suffixes_removes_both_sidecars(self):
+        body = "[Co_OCT].N{0}c1ccccn1"
+        self.assertEqual(fold_parity._strip_suffixes(body + " |ax:-|"), body)
+        self.assertEqual(fold_parity._strip_suffixes(body + " |mc:+|"), body)
+        self.assertEqual(fold_parity._strip_suffixes(body + " |ax:-| |mc:+|"), body)
+        self.assertEqual(fold_parity._strip_suffixes(body), body, "no suffix -> unchanged")
+
+    def test_the_veto_still_vetoes_with_OIN_EMIT_AXIAL_on(self):
+        for name in COLLAPSE_FIXTURES:
+            with self.subTest(name):
+                with mock.patch.dict(os.environ, {FOLD: "1", VETO: "1", "OIN_EMIT_AXIAL": "1"}):
+                    XYZToSMILES().convert(str(FIXTURES / f"{name}.xyz"))
+                outcome = fold_parity.last_outcome()
+                self.assertFalse(
+                    (outcome or "").startswith("declined"),
+                    f"{name}: the veto lost its instrument under OIN_EMIT_AXIAL (got {outcome})",
+                )
+
+
 class TestPresentationInvariance(unittest.TestCase):
     """The verdict must be a property of the STRUCTURE, not of the input atom numbering."""
 

@@ -112,8 +112,9 @@ lever-agnostic, so it gained `--lever` / `--extra-env` rather than being forked.
 **G5**:
 
 > **G1–G4 are structurally blind to metal configuration.** G3 compares `sha256(smiles_2)` and
-> G2 compares round-trip keys, and **both fold `|mc:|` by design**. An arm can therefore hand
-> back the **opposite enantiomer** and every gate reports "identical".
+> G2 compares round-trip keys, and **both fold `|mc:|` by design**. An arm can therefore return
+> a structurally different answer — up to and including the opposite enantiomer — while every
+> gate reports "identical".
 
 `_select_by_geometry`'s own comment has said this for two releases — *"accepting on the key
 alone would hand back the wrong enantiomer while reporting success"* — and no A/B in this
@@ -126,13 +127,66 @@ measured"* have printed identically in this script's history. On the first pilot
 
 ---
 
-## 5. What is deliberately NOT measured here
+## 5. 🔴 The A/B on the real population — a large speedup, and G5 FAILS
 
-**The timing arms.** The box was at load 26 with two mirror audits running, and this project's
-standing trap is *never interleave timing runs with gate runs* — a `pkill -f` incident once
-drove load to 35 and corrupted every in-flight timing. Under load the per-molecule hard cap
-also fires spuriously, manufacturing timeout-shaped "regressions" (v0.4.4 read 11 of those as
-correctness deltas; all 11 were timeouts). The A/B was **stopped rather than banked**.
+Re-run on a **quiet box** after the load-26 attempt was discarded. 12 eta molecules whose key
+never matches and which exceed 30 s, `--timeout 150 --hard-cap 240 --workers 2`.
+
+| | A default | **B lever** |
+|---|---:|---:|
+| `passed` | 4/12 | **4/12** |
+| median | 61.8 s | **18.82 s** (−69.5%) |
+| total | 824.8 s | **433.5 s** (−47.4%) |
+| `> 30 s` | 11 | **5** |
+| independent re-perception | 1/12 | **3/12** |
+| `clash_vdw` | 0 | 1 (`PAWJED`, worst_overlap 0.7509 → 0.6073) |
+| `sha256(smiles_2)` identical | — | **11 / 12** |
+
+**The runtime thesis is confirmed**, and it is bimodal exactly as v0.4.10's speed work was —
+`RIRYOJ` 119.04 s → **4.4 s** (27×, byte-identical string, passing in both arms), `PEDPOG`
+42.16 → **1.93 s**, `NODLEA` 61.46 → **6.32 s**, `TEQHOM` 58.23 → **6.18 s**; while `UQUXAG`
+(11.06 → 12.25) and `MOSLEL` (62.15 → 61.29) are nil.
+
+**G2 nets positive but is not one-directional:** 3 `indep` fixes (`PAWJED`, `PEDPOG`, `NODLEA`)
+against **1 regression (`KIHHUG`)**. No pass regressions, no pass fixes.
+
+### And then the fifth arm did its job
+
+```
+G5 METAL CONFIGURATION divergent: 1 over 12 measured (of 12 molecules) ['KIHHUG_comp_0']
+      KIHHUG_comp_0: A='' -> B='|mc:-|'   sha_out IDENTICAL
+```
+
+`KIHHUG_comp_0`'s two arms returned structures whose **metal-configuration descriptors differ** —
+arm A's had no perceptible helicity, arm B's reads Δ/Λ-minus — and the **emitted OIN string is
+byte-identical** (`5d89b34d4699566e` in both). It is also the single `indep` regression.
+
+> **Every one of G1–G4 reports this molecule as unchanged.** G3 compares `sha256(smiles_2)`:
+> identical. G4 compares pass rate: unchanged. The divergence is visible only to an arm that
+> reads the descriptor `compare.py` folds by design.
+
+This is the instrument v0.4.11 paid for, catching a real instance on its first proper run.
+
+**Stated precisely, because overstating it would be the same sin.** An absent token means no
+helicity was *perceived*, which is **not** the same claim as "the opposite enantiomer was
+returned". The tool's message was corrected to print the tokens and let the reader draw the
+conclusion. What is certain: the arms returned **structurally different** answers on a molecule
+that every existing gate calls identical, and that is disqualifying on its own.
+
+**Verdict: `OIN_ETA_ACCEPT_EXIT` stays default-OFF.** The charter made any Δ/Λ divergence a
+*blocking* finding, and one appeared at n=12. The speedup is real and large; it is not free, and
+the thing it costs is invisible to four of the five gates.
+
+## 6. What is deliberately NOT measured here
+
+**Nothing, in the end — but the first attempt was thrown away and that was right.** The A/B
+was initially run at load 26 with two mirror audits going, and the standing trap is *never
+interleave timing runs with gate runs*. It was **stopped rather than banked** and re-run on a
+quiet box. The two runs disagree by enough to have wrecked the conclusion: `UQUXAG_comp_0`
+reads **17.93 s** under load and **11.06 s** clean — a 62% inflation, comparable to the entire
+effect being measured. Under load the per-molecule hard cap also fires spuriously and
+manufactures timeout-shaped "regressions" (v0.4.4 read 11 of those as correctness deltas; all
+11 were timeouts).
 
 Also out of scope, and handed forward in writing: the **GAVSED class** —
 `_select_by_geometry`'s fallback ranking is not attachment-aware, so the check guards
@@ -140,7 +194,7 @@ Also out of scope, and handed forward in writing: the **GAVSED class** —
 
 ---
 
-## 6. Files
+## 7. Files
 
 `src/oinsmiles/generation/metallogen_adapter.py` (`_geometry_classifies`,
 `_eta_accept_exit_ok`, `accept_fn` wiring) · `src/oinsmiles/oin/levers.py` ·

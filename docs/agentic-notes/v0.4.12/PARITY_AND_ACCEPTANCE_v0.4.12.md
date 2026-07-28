@@ -123,7 +123,7 @@ The charter's predictions were written **before** either lever was built.
 | `byte_exact`, L1 lever ON | **+3.0 to +3.5 pts** (≈150–175 of 393 survive) | **+3.42 pts, 171 of 393** | ✓ |
 | mirror audit, uniform 250 | 19 → **0** | *see §6.1* | |
 | `> 30 s`, default path | FLAT | **FLAT** | ✓ nothing default-path changed |
-| eta `> 30 s`, L2 lever ON | down; magnitude unpredicted | **not measured — timing run deferred** | ⚠ |
+| eta `> 30 s`, L2 lever ON | down; magnitude unpredicted | **11 → 5; median −69.5%** | ✓ |
 | suite | ≥ v0.4.11's floor | **988 OK** (skipped 3, xfail 5) | ✓ |
 
 Two of these deserve more than a tick.
@@ -135,13 +135,20 @@ predicate and got **171 / +3.42**. Two different mechanisms agreeing to a single
 the strongest evidence here that the veto separates the right set — stronger than either number
 alone.
 
-**The L2 timing arm is a deliberate hole, not an oversight.** The box was at load 26 with two
-mirror audits running, and this project's standing trap is *never interleave timing runs with
-gate runs*. Under load the per-molecule hard cap also fires spuriously and manufactures
-timeout-shaped "regressions" — v0.4.4 read 11 of those as correctness deltas and all 11 were
-timeouts. The A/B was **stopped rather than banked**. L2 therefore ships with its correctness
-arms and **no runtime claim at all**, which is the honest position: its predicted tail
-reduction is **unverified**.
+**L2's runtime thesis is confirmed and L2 still does not ship.** On the re-derived population
+the lever takes the median **61.8 s → 18.82 s** and `> 30 s` **11 → 5**, with `RIRYOJ_comp_0`
+going 119.04 s → **4.4 s** for a byte-identical string. Then the fifth gate arm failed:
+`KIHHUG_comp_0`'s arms returned structures whose metal-configuration descriptors differ
+(`''` → `|mc:-|`) with **byte-identical output**, and it is also the run's only `indep`
+regression. Four of the five gates call that molecule unchanged.
+
+> A large, real speedup that costs something **four of five instruments cannot see** is exactly
+> the trade this release exists to be able to detect. The lever stays OFF.
+
+The first attempt at this A/B was run at load 26 and **thrown away** rather than banked — the
+standing trap is *never interleave timing runs with gate runs*. The two runs disagree by enough
+to have wrecked the conclusion: `UQUXAG_comp_0` reads **17.93 s** under load and **11.06 s**
+clean, a 62% inflation comparable to the whole effect being measured.
 
 ---
 
