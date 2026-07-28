@@ -17,25 +17,49 @@ handoff to run this.
 - **`--full` — regenerate.** Re-derive every figure from the sources below. Use this when an
   earlier number has been corrected, which in this project happens.
 
-## Step 0 — isolate first (do not skip)
+## Where things live — the file-placement contract
 
-**The primary checkout is frequently on another session's branch, and `main` gets rewritten
-underneath you.** Check before touching anything:
+**This is settled. Do not re-litigate it, and do not invent a side branch.**
+
+| branch | contents |
+|---|---|
+| **`main`** | **all source** — the report markdown, the page body, the build script, this command |
+| **`gh-pages`** | **only the generated `index.html` + `.nojekyll`.** Nothing else, ever. |
+
+Commit the source **directly to `main`**. Three reasons it cannot live anywhere else:
+
+1. **A slash command only exists on the branch you have checked out.** On a side branch or on
+   `gh-pages`, `/release-retrospective` is simply absent when anyone works on `main`.
+2. **The report cites lane docs, `levers.py` and `CHANGELOG.md`** — all on `main`. Splitting them
+   leaves the next updater without one side.
+3. **`gh-pages` is an orphan branch and that is the point.** No shared history with `main` means a
+   session rewriting `main` cannot disturb the published site. **Never merge `main` into it**, and
+   never put source on it — everything there is publicly served.
+
+A `docs/release-retrospective` branch was tried once and was wrong: it conflated *isolation from
+another session's checkout* (which a **worktree** solves) with *needing separate history* (never
+true). It was merged to `main` and deleted.
+
+## Step 0 — isolate with a WORKTREE, not a branch (do not skip)
+
+**The primary checkout is frequently on another session's swimlane, and `main` gets rewritten
+underneath you** — both happened while this report was first written. Check before touching
+anything:
 
 ```bash
 git -C <repo> rev-parse --abbrev-ref HEAD     # may be a sibling's swimlane, NOT main
 git -C <repo> worktree list
 ```
 
-Work in a dedicated worktree off `main`, never in the primary checkout:
+If the primary checkout is already on a clean `main`, work there. Otherwise add a worktree
+**checked out on `main`** — no `-b`, no new branch:
 
 ```bash
-git worktree add -b docs/release-retrospective-<version> ../oin-retrospective main
+git worktree add ../oin-retrospective main
 ```
 
-If `docs/release-retrospective` already exists, branch from it instead so the history is
-continuous. After **every** commit, re-read `git log --oneline -1` and confirm your commit is
-still there; if it vanished, recover it with `git reflog` + `git cherry-pick`.
+After **every** commit, re-read `git log --oneline -1` and confirm your commit is still there; if
+it vanished, recover it with `git reflog` + `git cherry-pick`.
 
 ## Step 1 — read the sources (do not guess a number)
 
@@ -85,21 +109,42 @@ These are why the report is trustworthy. Carry every one forward.
 5. **A lever measured but shipped default-OFF changes nothing for a user.** Say so explicitly
    every time — that distinction is the spine of this report.
 
-## Step 4 — rebuild the GitHub Pages branch
+## Step 4 — commit the source to `main`
+
+```bash
+git add docs/agentic-notes/v0.4.12/RETROSPECTIVE_v0.4.4_to_v0.4.12.md \
+        docs/agentic-notes/v0.4.12/retrospective.page.html
+git commit                       # normally — --no-verify is banned
+git log --oneline -1             # re-read: confirm your commit survived
+```
+
+Do **not** push `main` — see Guardrails.
+
+## Step 5 — rebuild and push the GitHub Pages branch
+
+Only the generated file crosses over. Nothing else belongs on `gh-pages`.
 
 ```bash
 git worktree add ../oin-ghpages gh-pages
 python3 tools/build_retrospective_page.py \
     --source docs/agentic-notes/v0.4.12/retrospective.page.html \
     --out ../oin-ghpages/index.html
-git -C ../oin-ghpages add index.html
-git -C ../oin-ghpages commit -m "site: retrospective through <version>"
+git -C ../oin-ghpages commit -am "site: retrospective through <version>"
+git -C ../oin-ghpages push origin gh-pages
 ```
 
-`gh-pages` is an **orphan** branch — it shares no history with `main`, which is why a sibling
-session rewriting `main` cannot disturb it. Keep it that way: never merge `main` into it.
+Pushing `gh-pages` **is authorised** — the maintainer asked for GitHub Pages hosting and the site
+is already live at <https://tjmustard.github.io/OIN-SMILES/>. That authorisation covers this
+branch only; `main` is still do-not-push.
 
-## Step 5 — republish the Artifact to the SAME url
+Confirm the rebuild landed rather than assuming it:
+
+```bash
+gh api repos/tjmustard/OIN-SMILES/pages/builds/latest --jq '{status, error: .error.message}'
+curl -s https://tjmustard.github.io/OIN-SMILES/ | grep -c '<some string you just added>'
+```
+
+## Step 6 — republish the Artifact to the SAME url
 
 Read the `<!-- artifact-url: ... -->` comment at the top of the markdown report and pass it as
 the `Artifact` tool's `url` parameter. Without it a new URL is minted and the old link goes
@@ -119,8 +164,13 @@ stale. If the comment is missing or reads `(not yet published)`, find the URL wi
 
 - **Read-only on the corpus.** Do **not** run a sweep, benchmark or A/B unless explicitly asked:
   a full corpus sweep is ~55 CPU-h, the frozen 328-molecule runtime benchmark ~1–2 CPU-h.
-- **Do not push.** Report the exact push command and let the maintainer run it.
+- **Pushing is split, and the split is deliberate.** `gh-pages` **may** be pushed — that is how the
+  site updates, and the maintainer authorised it. **`main` may not**: report the push command and
+  let them run it. A sibling session has been observed pushing `main` against instruction, so do
+  not treat a moved remote `main` as permission.
 - **Commit normally — `--no-verify` is banned.** `pre-commit` runs the docs-layout guard and
   `ruff`; `commit-msg` rewrites the trailer.
+- **Never create a side branch for this work.** Source goes on `main`, generated HTML on
+  `gh-pages`, nothing else on either. See the file-placement contract at the top.
 - The `docs/` root is closed to four product docs. Everything here goes in a subdirectory.
 - If a figure and a source disagree, **re-measure or drop the figure** — do not pick one.

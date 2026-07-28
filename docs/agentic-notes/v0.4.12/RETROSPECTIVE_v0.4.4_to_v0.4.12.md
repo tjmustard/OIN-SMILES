@@ -679,7 +679,21 @@ hosted page and the shared link cannot drift. The build script **refuses** a sou
 document-level tags, because that failure would otherwise be invisible until someone opened the
 published page.
 
-### The `gh-pages` branch
+### Where each file lives — settled, do not re-litigate
+
+| branch | contents |
+|---|---|
+| **`main`** | **all source** — the report, the page body, the build script, the command |
+| **`gh-pages`** | **only the generated `index.html` + `.nojekyll`.** Nothing else, ever. |
+
+The source cannot live anywhere but `main`: a slash command only exists on the branch you have
+checked out, so `/release-retrospective` is simply *absent* from a side branch or from `gh-pages`.
+The report also cites lane docs, `levers.py` and `CHANGELOG.md`, all on `main` — splitting them
+leaves the next updater without one side.
+
+`gh-pages` is an **orphan** branch, no shared history with `main`. That is the point: a session
+rewriting `main` cannot disturb the published site. **Never merge `main` into it**, and never put
+source on it — everything there is publicly served.
 
 ```bash
 git worktree add ../oin-ghpages gh-pages
@@ -687,14 +701,17 @@ python3 tools/build_retrospective_page.py \
     --source docs/agentic-notes/v0.4.12/retrospective.page.html \
     --out ../oin-ghpages/index.html
 git -C ../oin-ghpages commit -am "site: retrospective through <version>"
+git -C ../oin-ghpages push origin gh-pages     # authorised; `main` is not
 ```
 
-`gh-pages` is an **orphan** branch — no shared history with `main`. That is deliberate: a sibling
-session rewriting `main` cannot disturb it. Never merge `main` into it.
+### Work in a worktree — but not on a side branch
 
-### Work in a worktree, not the primary checkout
+A `docs/release-retrospective` branch was tried once and was **wrong**. It conflated *isolation
+from another session's checkout* — which a **worktree** solves — with *needing separate history*,
+which was never true. It was merged to `main` and deleted.
 
 The primary checkout is often on another session's swimlane, and `main` gets rewritten underneath
-you — both happened while this report was being written. Branch off `main` into a dedicated
-worktree, and after **every** commit re-read `git log --oneline -1` to confirm your commit
-survived; if it did not, recover it with `git reflog` + `git cherry-pick`.
+you; both happened while this report was being written. So: check out **`main`** in a dedicated
+worktree (`git worktree add ../oin-retrospective main` — no `-b`), and after **every** commit
+re-read `git log --oneline -1` to confirm your commit survived. If it did not, recover it with
+`git reflog` + `git cherry-pick`.
