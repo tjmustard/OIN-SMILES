@@ -1,0 +1,37 @@
+{
+ "eta": [
+  {
+   "molecule": "GAVSED_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/GAVSED_comp_0.xyz"
+  },
+  {
+   "molecule": "HEJXIF_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/HEJXIF_comp_0.xyz"
+  },
+  {
+   "molecule": "WIWRIE_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/WIWRIE_comp_0.xyz"
+  },
+  {
+   "molecule": "NOMMOU_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/NOMMOU_comp_0.xyz"
+  },
+  {
+   "molecule": "KAQDOV_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/photo/KAQDOV_comp_0.xyz"
+  },
+  {
+   "molecule": "ZITSIE_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/ZITSIE_comp_0.xyz"
+  },
+  {
+   "molecule": "RATPEK_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/RATPEK_comp_0.xyz"
+  },
+  {
+   "molecule": "MEDZUR_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/MEDZUR_comp_0.xyz"
+  }
+ ],
+ "control": []
+}

@@ -35,6 +35,10 @@ docs/agentic-notes/v0.4.7/MY_MEASUREMENT.md
   started. Targeting v0.4.7? Create `v0.4.7/`. Do **not** park it in `v0.4.6/` because
   that folder happens to exist.
 - Raw JSON/CSV backing a report goes beside the report, or in `<release>/data/` if bulky.
+  **But data a LATER RELEASE will diff — frozen baselines, gate tallies, transition matrices —
+  goes in `measurements/<release>/` instead**, written by `tools/harvest_measurements.py`. The
+  split is by audience, same as everything else here: a note's data is read *with the note*; a
+  measurement is read *against the next release*. See `measurements/README.md`.
 - A research program that genuinely spans releases gets its own topic folder at the
   `agentic-notes/` level — `injectivity/` is the precedent. Use this sparingly; per-release
   is the default.
