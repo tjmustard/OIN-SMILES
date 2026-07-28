@@ -76,17 +76,39 @@ def _pair(name, fold, veto):
         os.unlink(mpath)
 
 
-class TestDefaultOff(unittest.TestCase):
-    def test_registered_and_held_off(self):
-        self.assertIn(VETO, held_off())
+class TestDefaultOn(unittest.TestCase):
+    """v0.4.13 promoted the veto, together with the fold it polices.
 
-    def test_unset_means_off(self):
-        """The trap that cost 23 test failures across two promotions."""
+    This class asserted default-OFF through v0.4.12 and was the only casualty of the promotion
+    (2 failures in a 990-test suite). It is inverted rather than deleted, because the property
+    worth pinning is not "off" -- it is that **unset resolves to the shipped answer and `=0`
+    still disables**. That second half is the trap the lever registry exists to close: a bare
+    `os.environ.get(VETO)` reads `"0"` as truthy and ENABLES it, so anyone opting out the
+    obvious way would get the enantiomer-collapsing configuration.
+    """
+
+    def test_no_longer_held_off(self):
+        self.assertNotIn(VETO, held_off(), f"{VETO} ships ON since v0.4.13")
+
+    def test_unset_means_on(self):
+        """The trap that cost 23 test failures across two promotions, now pointing the other way.
+
+        Deleting a lever's env var means "take the default". While every lever defaulted OFF that
+        was indistinguishable from disabling it; after a promotion it silently becomes a
+        lever-ON test. Spelled explicitly here so the next promotion cannot inherit an
+        assertion that quietly changed meaning.
+        """
         env = {k: v for k, v in os.environ.items() if k != VETO}
         with mock.patch.dict(os.environ, env, clear=True):
-            self.assertFalse(lever_enabled(VETO))
+            self.assertTrue(lever_enabled(VETO))
 
     def test_explicit_zero_disables(self):
+        """Unchanged by the promotion, and now load-bearing rather than incidental.
+
+        With the veto ON by default, `OIN_FOLD_PARITY_VETO=0` is the one spelling that returns
+        the refuted v0.4.11 configuration -- the bare donor fold, which collapses enantiomers in
+        56.2% of its own gains. It must mean what it says.
+        """
         with mock.patch.dict(os.environ, {VETO: "0"}):
             self.assertFalse(lever_enabled(VETO))
 

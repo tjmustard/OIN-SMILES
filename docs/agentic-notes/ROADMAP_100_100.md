@@ -173,11 +173,11 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.10** ✅ | **cost per attempt**, byte-identical. Deleted the discarded `.index()` scan (**`CAHQEJ` −32.9%**, `FOSNEI` +0.3% nil) and added `OIN_MEMO_CIP_REPARSE` (**`VAFMIA` −86.7%**, `CAHQEJ` −2.4%), both **byte-identical on ARM 1 and ARM 2**. ⚠ **Found its own arbiter broken:** ARM 1 had been non-runnable since `dd51a515` | pass FLAT ✓ by construction; **every speed number bimodal by molecule** |
 | **v0.4.11** ✅ | **`slot_renumber`** (496 / 9.92 pts) — built the within-fragment donor fold v0.4.5 specified. 🔴 **REFUTED IT.** It works (+7.86 pts, 393 molecules, one direction) and **collapses enantiomers: 221 of its own 393 gains (56.2%), 19/250 on a uniform draw**, 18 oracle-confirmed chiral. Ships **default OFF**. Lane 1 classified all 496: `diff_occupancy` **0**, and 90 of the 118 `distinct_donors_LOCAL` are frozen-resonance-form artifacts ⇒ **v0.4.14, not here** | **FLAT** — the lever that would raise it is unsafe |
 | **v0.4.12** | **reflection parity + honest acceptance** — L1 `OIN_FOLD_PARITY_VETO`, the filter v0.4.11's close-out specified; L2 `OIN_ETA_ACCEPT_EXIT`, the winding criterion moved from selection into `accept_fn`, the only site that can stop pool filling. ⚠ `OIN_ETA_EARLY_EXIT` is **runtime-inert as sited** and its promotion gate is **void, not unrun** | default path **FLAT** (both levers OFF); L1 lever-ON gain and L2 tail move measured separately — see `docs/agentic-notes/v0.4.12/` |
-| **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |
+| **v0.4.13** | **the donor fold ships + harness false negatives** — promotes `OIN_CANONICAL_DONOR_FOLD` + `OIN_FOLD_PARITY_VETO` to default-ON (owner's call; voids the carry-forward licence, so a full re-sweep and re-frozen goldens are owed). L1 `PREFILTER_VETO` acceptance-side prevalence; L2 the MEDZUR/GAVSED split — **both classes were n = 1 and are now 99 and 280** | **UP ~3.42 pts** from the promotion (72.46% → ~75.88%); Lane 1/2 are measurements, not headline movers |
 | **v0.4.14** | **`rdkit_canonical`** (114 / 2.28 pts) + winding residue — **RE-SIZED by v0.4.11 to ~4.08 pts**: 90 of the 118 residual `slot_renumber` molecules (**1.80 pts**) are the same ligand-BODY problem, a frozen resonance form (acac written ketone/enol) that `CanonicalRankAtoms` reads as two inequivalent donors | byte_exact up ~**4.1** pts |
 | **v0.4.15** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
 | **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
-| **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-LABELLED**: generated structures that re-perceive with *different coordination than the OIN claims*. A generator-capability problem, not "wrong isomer"; it does not belong beside `facmer_divergent` | byte_exact **UP**, bounded by what the generator can assemble |
+| **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-MECHANISED by v0.4.13 Lane 2**: **266 of the 417 (63.8%, up to 5.32 pts) are `DETACHED`** — the generator assembled a structure and *returned* it with ligands off the metal, because `_select_by_geometry`'s fallback ranking is not attachment-aware. That is a **one-site return-path guard**, not a capability floor; the guard already exists for *acceptance* as `OIN_ATTACH_CHECK`. The residue is 98 `INTACT` (the MEDZUR class) + 48 `BOUNDARY` | byte_exact **UP**; the 266 are no longer "bounded by what the generator can assemble" |
 | **v0.4.18** | **generator capability floor** — boron assembly, `NON` geometry, 28 produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in here opportunistically | likely a documented limitation |
 
 ### LADDER DECISION 2026-07-27 — accepted, by the project owner
@@ -233,6 +233,71 @@ Not changed, and why:
 Override recorded: this breaks the roadmap's own "one theme, one or two lanes"
           rule. The release therefore carries TWO headline predictions, not one,
           and CLOSEOUT §3 diffs both separately.
+```
+
+### LADDER DECISION 2026-07-27 (v0.4.13) — two decisions, two different deciders
+
+> ⚠ Attribution matters here and the two halves are NOT the same kind of call.
+> **The promotion was accepted by the project owner**, against a stated confound, in answer to a
+> direct question. **The `structural` re-sizing was decided by the session** on the strength of a
+> measurement taken this release; it is recorded so the owner can overturn it cheaply, and the
+> reordering it implies is deliberately left open rather than applied.
+
+```
+Change:   the DONOR FOLD PROMOTION.  [DECIDED BY: project owner] OIN_CANONICAL_DONOR_FOLD + OIN_FOLD_PARITY_VETO
+          go DEFAULT-ON in v0.4.13. byte_exact 72.46% -> ~75.88% (+3.42 pts, 171
+          molecules). This VOIDS the carry-forward licence: v0.4.13 owes a full
+          ~55 CPU-h re-sweep and re-frozen ARM 1 / ARM 2 goldens.
+
+Because:  v0.4.12 satisfied precondition 1 (a second uniform mirror-audit seed
+          reading 0, with its baseline independently reproducing 19/250 on a
+          disjoint draw). The remaining two preconditions are COMPUTE and
+          BOOKKEEPING, not science. The owner elected to spend them here rather
+          than defer to v0.4.14.
+
+Confound recorded, raised BEFORE the decision and accepted: v0.4.13 is also the
+          release that first measures the harness's false-negative rate, so a
+          reader cannot attribute a headline move to the fold rather than to the
+          harness without reading the two apart. Mitigation: the sweep that
+          produces the headline runs with BOTH Lane levers OFF, so the +3.42 is
+          attributable to the promotion alone, and Lane 1/Lane 2 are reported as
+          measurements rather than as headline movers.
+
+Change:   v0.4.17  [DECIDED BY: session, from this release's measurement]
+                   was  `structural` (417 / 8.34 pts), "generator capability
+                        floor ... bounded by what the generator can assemble"
+                   is   RE-SIZED and RE-MECHANISED. 266 of its 417 molecules
+                        (63.8%) are a RETURN-PATH GUARD DEFECT, not a capability
+                        limit, and are worth up to 5.32 pts on their own.
+
+Because:  v0.4.13 Lane 2 classified the attachment state of every stored generated
+          structure (tools/attach_class_audit.py, #DONE 5000, 0 UNKNOWN).
+          `structural` reads 266 DETACHED / 48 BOUNDARY / 98 INTACT / 5 none.
+          The 266 did not fail because the generator could not assemble them --
+          it assembled something and RETURNED it with ligands off the metal,
+          because `_select_by_geometry`'s fallback ranking is not attachment-aware.
+          The guard already exists for ACCEPTANCE (OIN_ATTACH_CHECK); applying it
+          to RETURN is one site. v0.4.12 handed this forward by name as "the
+          GAVSED class ... closing it changes arm A's behaviour and needs its own
+          gate."
+          Control: byte_exact reads 1.32% DETACHED against 24.11% on the failing
+          side -- 18.2x enrichment -- so detachment discriminates and the 266 is
+          evidence rather than an artifact of the predicate.
+
+Not changed, and why:
+          v0.4.13's own theme is CONFIRMED, not refuted. Its sketch carried a
+          deletion clause -- "if both turn out to be single-molecule curiosities,
+          this release should be deleted from the ladder" -- and it does NOT fire:
+          GAVSED goes n=1 -> 280 and MEDZUR n=1 -> 99 on the genuine-failure cut.
+          v0.4.14 (`rdkit_canonical` + winding residue) keeps its slot. The
+          promotion consumes 171 of `slot_renumber` but leaves the 90
+          frozen-resonance-form molecules v0.4.11 re-filed there.
+
+Open for the owner: whether the 266-molecule return-path guard should DISPLACE
+          v0.4.15 ("the 57 notation molecules", explicitly "knowledge, not
+          points"). That would trade a 0-point release for a measured 5.32-point
+          one, two rungs earlier. Not applied here -- it reorders three releases
+          and the last such reorder was taken by the owner, not by a session.
 ```
 
 #### What the v0.4.12 re-baseline established before any code was written
