@@ -5,6 +5,66 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.12] - 2026-07-28
+
+> ### Reflection parity — the filter v0.4.11's refutation demanded, and it works.
+>
+> v0.4.11 built the donor fold, measured **+7.86 `byte_exact` points across 393 molecules**, and
+> refuted it: the fold **collapses enantiomers in 221 of those same gains**. This release builds
+> the reflection-parity filter its close-out specified.
+>
+> **The gate reads 0.** A uniform 250-molecule mirror audit goes **19 → 0**
+> `REGRESSION_raw_collapsed`, with those 19 moving into `distinct_both_arms` (73 → 92) and
+> `achiral_or_preexisting_fold` **unmoved at 157** — the direct evidence that the veto did not
+> simply refuse to fold everything.
+>
+> **The surviving gain is +3.42 points** (171 of 393). v0.4.11 bounded the safe set at *"at most
+> ~172 (~3.44 pts)"* by counting collapses; this filter counts survivors through the shipped
+> predicate and lands on 171. Two independent routes agreeing to one molecule.
+>
+> **The headline is FLAT at 72.46% and that is deliberate** — both levers ship default-OFF, so
+> the default path is byte-identical (ARM 1 PASS, 62/62; suite 988 OK).
+
+### Added
+- `OIN_FOLD_PARITY_VETO` (**default OFF**) — declines the donor fold on any molecule where
+  folding would make the structure's mirror encode identically. Lives in `get_oin_string` on the
+  **pristine** conformer, because **reflection parity is not a property of the emitted string**:
+  a donor swap is a transposition fixing every other vertex, so the obvious `det > 0` test on
+  the polyhedron rejects *every* swap and degenerates the fold to the identity.
+- `OIN_ETA_ACCEPT_EXIT` (**default OFF**) — the eta winding criterion relocated from
+  `_select_by_geometry_impl` into `accept_fn`, the only site consulted *during* pool filling.
+  A conjunction with geometry classification and ligand attachment, because winding alone would
+  bypass clash-first ranking — the defect `OIN_ACCEPT_SCORED` has.
+- `tools/fold_transition_sim.py` — commits the `+393` measurement v0.4.11 made with an
+  uncommitted script. Its veto arm re-encodes from coordinates and carries a drift control.
+- `tools/ab_accept_scored.py` gains `--lever` / `--extra-env` and a **G5 metal-configuration
+  arm**. G1–G4 are structurally blind to Δ/Λ because `compare.py` folds `|mc:|`, so an arm can
+  return the opposite enantiomer and every gate reports "identical".
+
+### Changed
+- `OIN_ETA_EARLY_EXIT`'s `_HELD_OFF` entry now records that it is **runtime-inert as sited** and
+  that its promotion gate is **void, not unrun** — it runs downstream of a fully-filled pool.
+- The carry-forward licence is now **measured**: re-encoding the frozen corpus's inputs *and*
+  stored generated structures reproduces the v0.4.8 strings on all 393 movers (0 drift), so
+  v0.4.9/v0.4.10/v0.4.11's byte-identity claims are confirmed rather than inherited.
+
+### Fixed
+- Two silent defects in the veto's own construction, both caught only by disbelieving a clean
+  result. `tmc_mol`'s atom order is **not** the coordinate order (`__origIdx`) — zipping
+  positionally encoded `BIWDIV` as `[Co_TBP]` with invented bonds. And the mirror was encoded
+  with the fold *inherited*, which disarmed the achiral guard and made the self-check decline on
+  **18 of 18** movers **while all three fixture tests passed** — because declining to fold also
+  separates a mirror pair. `resolve()` now records *why* it decided, and tests assert the
+  outcome rather than the string.
+
+### Known limitations
+- `OIN_ETA_ACCEPT_EXIT` ships with its correctness arms and **no runtime claim**. Its timing A/B
+  was stopped rather than banked at load 26 (*never interleave timing runs with gate runs*), so
+  its predicted tail reduction is **unverified**.
+- The chartered v0.4.6 accept-gap cohort is **stale on 8 of 8** molecules; any cohort frozen
+  before v0.4.8 must be re-derived. The real eta target population is **405 molecules whose key
+  never matches, 378 of them > 30 s**.
+
 ## [0.4.11] - 2026-07-27
 
 > ### `slot_renumber` — the fold works, buys 7.86 points, and must not ship.
