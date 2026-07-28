@@ -236,6 +236,33 @@ def main():
         if unavailable:
             print(f"⚠ EXCLUDED {len(unavailable)} molecules: structure not on disk")
 
+        # 🔴 REFUSE rather than report when the veto arm measured NOTHING (v0.4.13).
+        #
+        # Excluded movers keep their FOLD-arm bucket, which is the pessimistic direction for a
+        # PARTIAL exclusion -- but it is catastrophic for a TOTAL one: with every mover excluded
+        # the veto arm degenerates into the fold arm and prints the bare fold's +7.86, the number
+        # v0.4.11 REFUTED, under a heading that says "veto". That is a broken instrument printing
+        # a plausible result, which is the exact failure this release exists to be able to catch.
+        #
+        # It is not hypothetical. Run from a git worktree, `--dataset` defaults to the RELATIVE
+        # pair "tmCAT-tmPHOTO_xyz_dataset/{cat,photo}", which does not exist there -- so
+        # `_find_input_xyz` returned None for all 393 movers, every one landed in `unavailable`,
+        # and the run printed "+7.86 points" and exited 0.
+        n_measured = len(veto_bucket)
+        if movers and n_measured == 0:
+            sys.exit(
+                f"\n🔴 REFUSING TO REPORT: the veto arm measured 0 of {len(movers)} movers "
+                f"({len(unavailable)} unavailable, {len(drift)} drift).\n"
+                "   With every mover excluded this arm IS the fold arm, and would print the bare\n"
+                "   fold's +7.86 -- the number v0.4.11 refuted -- labelled as the veto's.\n"
+                "   Most likely cause: --dataset defaults are RELATIVE and you are not in the\n"
+                "   main checkout. Pass absolute roots:\n"
+                "       --dataset <main>/tmCAT-tmPHOTO_xyz_dataset/cat "
+                "--dataset <main>/tmCAT-tmPHOTO_xyz_dataset/photo"
+            )
+        if movers:
+            print(f"veto arm measured {n_measured}/{len(movers)} movers")
+
     for rep in rows:
         mol = rep.get("molecule")
         b0 = base_by_mol[mol][0]

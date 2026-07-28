@@ -54,6 +54,50 @@ class TestDefaults(unittest.TestCase):
             self.assertFalse(lever_enabled("OIN_NOT_A_REAL_LEVER"))
 
 
+class TestDonorFoldAndParityVetoAreCoupled(unittest.TestCase):
+    """The donor fold and its reflection-parity veto ship together or not at all (v0.4.13).
+
+    ``OIN_CANONICAL_DONOR_FOLD`` ON with ``OIN_FOLD_PARITY_VETO`` OFF is the exact configuration
+    v0.4.11 measured and refuted: it buys +7.86 ``byte_exact`` points and COLLAPSES ENANTIOMERS in
+    221 of those same 393 gains (56.2%), plus 19 of a uniform 250-molecule draw.
+
+    What makes that worth a dedicated guard rather than a comment: **neither the headline metric
+    nor the round-trip comparison key can see the damage.** ``compare._parse_vertex_colors``
+    colours every donor of a ligand with that ligand's whole body, so the axis this fold can
+    destroy is deliberately folded by the key as well. A future session that demotes the veto
+    alone -- to "isolate a regression", or because the veto costs an encode -- would see a green
+    suite, green gate arms, and a HIGHER pass rate, with the loss invisible in every instrument
+    the project routinely reads. Only ``tools/mirror_audit_donor_fold.py`` can detect it.
+
+    So the invariant is pinned here, at the registry, where it cannot be missed.
+    """
+
+    FOLD = "OIN_CANONICAL_DONOR_FOLD"
+    VETO = "OIN_FOLD_PARITY_VETO"
+
+    def test_both_are_promoted_together(self):
+        on = default_on()
+        self.assertEqual(
+            self.FOLD in on,
+            self.VETO in on,
+            f"{self.FOLD} and {self.VETO} must share a default. The fold without the veto "
+            "collapses enantiomers and no gate arm, golden, or comparison key can see it -- "
+            "mirror_audit_donor_fold.py is the only instrument that can. Demote both or neither.",
+        )
+
+    def test_the_shipped_default_is_both_on(self):
+        """Pins the v0.4.13 promotion itself, so a silent revert is a test failure."""
+        env = {k: v for k, v in os.environ.items() if k not in (self.FOLD, self.VETO)}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertTrue(lever_enabled(self.FOLD), f"{self.FOLD} ships ON since v0.4.13")
+            self.assertTrue(lever_enabled(self.VETO), f"{self.VETO} ships ON since v0.4.13")
+
+    def test_neither_is_listed_as_held_off(self):
+        held = held_off()
+        self.assertNotIn(self.FOLD, held)
+        self.assertNotIn(self.VETO, held)
+
+
 class TestOverride(unittest.TestCase):
     def test_explicit_override_beats_environment(self):
         with mock.patch.dict(os.environ, {"OIN_CANONICAL_BODY": "1"}):

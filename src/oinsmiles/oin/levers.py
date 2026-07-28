@@ -97,13 +97,64 @@ import os
 #: predicates. Moving those changes runtime and the failure mix, and doing it in the same
 #: release that re-baselines the number would make both unmeasurable -- the identical confound
 #: that let the ``OIN_ACCEPT_SCORED`` A/B report "zero regressions" while the honest arm read 8.
+#:
+#: OIN_CANONICAL_DONOR_FOLD and OIN_FOLD_PARITY_VETO joined this set in v0.4.13, together and
+#: never separately. They are ONE promotion with two names: the fold is the change that pays,
+#: the veto is the condition under which it is safe, and the pair is the smallest unit that is
+#: both. Read the coupling invariant below before touching either.
+#:
+#: WHAT IT BUYS. v0.4.11 built the within-fragment donor fold, measured +7.86 ``byte_exact``
+#: points across 393 molecules -- one direction, 0 molecules moving any other way, comparison
+#: key unchanged on 992 strings, both gate arms byte-identical -- and then REFUTED it: the fold
+#: collapses enantiomers in 221 of those same 393 gains (56.2%), and 19 of a uniform 250-molecule
+#: draw (7.6%). v0.4.12 built the reflection-parity veto that separates the two sets. Through the
+#: shipped predicate, 171 of the 393 gains survive: **+3.42 points**, 72.46% -> 75.88%.
+#:
+#: WHY THE NUMBER IS TRUSTED. It was reached twice, by different mechanisms, and the two agree to
+#: a single molecule. v0.4.11 bounded the safe set from ABOVE by counting collapses in a mirror
+#: audit ("at most ~172 of 393"); v0.4.12 counted SURVIVORS from below through the veto itself
+#: (171). An upper bound from damage and a lower bound from survival meeting at 171/172 is
+#: stronger evidence than either alone, because a bug that inflated one would have to inflate the
+#: other in the same direction by the same amount.
+#:
+#: THE GATE THAT PROMOTED IT. Mirror audit ``tools/mirror_audit_donor_fold.py`` on a uniform draw
+#: reads 19 -> 0 at seed 7 AND at seed 11, with ``achiral_or_preexisting_fold`` unmoved (157 and
+#: 141) -- so the veto is not buying its zero by declining everything. The seed-11 BASELINE
+#: independently reproduces 19/250 on a disjoint draw, which is what establishes 7.6% as a
+#: property of the corpus rather than of seed 7.
+#:
+#: 🔴 COUPLING INVARIANT -- ``OIN_CANONICAL_DONOR_FOLD`` IS ONLY SAFE WITH ``OIN_FOLD_PARITY_VETO``.
+#: The fold ON with the veto OFF is the exact configuration v0.4.11 refuted: it silently collapses
+#: enantiomers, and NEITHER ``byte_exact`` NOR the round-trip comparison key can see it, because
+#: ``compare._parse_vertex_colors`` folds that axis deliberately. ``test_levers`` pins the pair
+#: in this set together; if you demote one, demote both, and if a future release needs them
+#: apart, the mirror audit is the arbiter, not the gate arms.
+#:
+#: SCOPE. There is exactly one production path into the fold: ``perception_tmc.get_oin_string``
+#: calls ``fold_parity.resolve``, and ``canonicalize_oin_slots`` has no other caller in ``src/``.
+#: The veto declines to fold -- returning the rotation-only labeling, the pre-v0.4.11 answer --
+#: whenever it cannot build its own evidence (no conformer, no atom/coordinate pairing, a failed
+#: reconstruction, a failed mirror encode). Every failure mode of the instrument therefore lands
+#: on the SAFE side, which is why a corpus reading of ``declined_* = 0`` is what proves it alive
+#: rather than the separation count.
+#:
+#: ⚠ WHAT THIS PROMOTION COSTS, stated because it was accepted rather than avoided. It changes
+#: the default answer for 171 molecules, which VOIDS the carry-forward licence: v0.4.13 owes a
+#: full re-sweep and re-frozen ARM 1 / ARM 2 goldens, and no table measured before it may be
+#: quoted beside the new headline. It also lands in the same release as the harness
+#: false-negative measurement (Lane 1/Lane 2), so a reader cannot attribute a headline move to
+#: the fold rather than to the harness without reading both apart. That confound is real, was
+#: raised, and was accepted by the project owner; the release doc states the two separately and
+#: the sweep that produces the headline runs with the Lane levers OFF.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
         "OIN_CANONICAL_BODY",
+        "OIN_CANONICAL_DONOR_FOLD",
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
@@ -114,73 +165,28 @@ _FALSEY = frozenset({"0", "", "false", "no", "off"})
 
 #: Deliberately NOT promoted, with the reason, so nobody has to reconstruct it.
 _HELD_OFF = {
-    "OIN_CANONICAL_DONOR_FOLD": (
-        "v0.4.11's within-fragment donor fold. OIN_CANONICAL_SLOTS folds the polyhedron's "
-        "PROPER-ROTATION group and stops at `same_vcolor_identical`: compare._parse_vertex_colors "
-        "colours every donor of a ligand with that ligand's whole body, so which donor of a "
-        "chelate holds which slot is invisible to it and the post-pass computes the SAME "
-        "permutation for both presentations. This lever additionally exchanges donors WITHIN one "
-        "fragment that are (a) in one CanonicalRankAtoms(breakTies=False) symmetry class and (b) "
-        "the same colour. Measured population: 496 slot_renumber molecules, 496/496 "
-        "same_vcolor_identical, of which 377 (7.54 pts) are atom-level `automorphism` and so "
-        "reachable here; 90 are frozen-resonance-form artifacts belonging to ligand-body "
-        "canonicalization (v0.4.14) and 28 are genuinely distinct donors.\n"
-        "🔴 REFUTED IN v0.4.11 -- DO NOT PROMOTE. It works, and it buys +7.86 byte_exact points "
-        "(393 molecules, one direction, comparison key untouched, both gate arms byte-identical "
-        "with it off). It also COLLAPSES ENANTIOMERS: a uniform 250-molecule corpus mirror audit "
-        "found 19 structures (7.6%) whose mirror encodes identically once the fold is on. Run "
-        "directly on the 393 molecules the fold CLAIMS AS WINS, 221 of them (56.2%) collapse. "
-        "tools/injectivity/oracle.py confirms 18/19 of the uniform draw and 26/30 of a sample of "
-        "the 221 are genuinely chiral -- and three (BIWDIV, CIHVAT, OJEKET) without hitting its "
-        "automorphism cap, so the verdict does not rest on the unreliable ones. MORE THAN HALF "
-        "THE GAIN IS THE DAMAGE: at most ~172 of 393 (~3.44 of the 7.86 points) are safe.\n"
-        "WHY THE SCOPE IS NOT ENOUGH. The original argument was that two donors in one "
-        "breakTies=False symmetry class denote the same molecule when exchanged. False: "
-        "CanonicalRankAtoms computes the symmetry of the ISOLATED LIGAND GRAPH, while the two "
-        "donors sit at distinct vertices whose relation to the other ligands is chirality-bearing, "
-        "so the induced vertex permutation can be IMPROPER. A fragment's automorphism says nothing "
-        "about the PARITY of the vertex permutation it induces -- which is exactly why v0.4.5 "
-        "restricted folding to proper rotations. The three conditions are each necessary and "
-        "jointly INSUFFICIENT.\n"
-        "TO PROMOTE, first add a reflection-parity filter (admit a swap only when the labeling it "
-        "produces is related to the original by a proper operation on the WHOLE coordination "
-        "sphere), then re-run tools/mirror_audit_donor_fold.py TO COMPLETION on both cohorts. Two "
-        "independent draws find the defect at comparable rates -- uniform 19/250 (7.6%) and the "
-        "runtime-stratified cohort 31/300 (10.3%) -- so it is not a sampling artifact. ⚠ Read the "
-        "SUMMARY line, not progress lines: the tool prints a verdict every 50th molecule, and "
-        "during v0.4.11 four clean progress lines were briefly mistaken for 200 clean molecules.\n"
-        "⚠ Neither byte_exact nor the comparison key can see this regression: the key folds this "
-        "axis deliberately (_parse_vertex_colors colours every donor with its ligand's whole "
-        "body). Mirror-audit any future canonicality lever BEFORE quoting its points.\n"
-        "v0.4.12 BUILT THAT FILTER -- see OIN_FOLD_PARITY_VETO below. This lever is only safe "
-        "with that one also on, and never alone."
-    ),
-    "OIN_FOLD_PARITY_VETO": (
-        "v0.4.12 Lane 1: the reflection-parity filter OIN_CANONICAL_DONOR_FOLD's entry above "
-        "demands before that lever can be promoted. Per molecule, it declines the donor fold "
-        "whenever folding would make the structure's MIRROR encode identically -- the exact "
-        "implication tools/mirror_audit_donor_fold.py scores a regression on:\n"
-        "    veto  <=>  (S_rot != S_rot_mirror) and (S_fold == S_fold_mirror)\n"
-        "The left conjunct is load-bearing and is not defensive padding: without it every "
-        "ACHIRAL molecule is vetoed (its mirror encodes identically with the fold on OR off), "
-        "and so is every metal-centred Delta/Lambda pair -- whose descriptor the shipped "
-        "encoder already folds because OIN_EMIT_METAL_CONFIG is held off. That is a "
-        "pre-existing gap belonging to v0.4.16, and this lever must neither be blamed for it "
-        "nor allowed to hide behind it.\n"
-        "⚠ WHY THE OBVIOUS FIX IS NOT THIS. Requiring each swap to be a proper rotation of the "
-        "polyhedron -- reusing canonical_slots.derive_rotation_group's det>0 test -- is "
-        "wrong before it is built: a donor swap is a transposition fixing every OTHER vertex, "
-        "which for a rank-3 polyhedron does not preserve the Gram matrix at all, so that test "
-        "rejects EVERY swap and the fold degenerates to the identity. The fold is justified by "
-        "a symmetry of the LIGAND realized as a proper rotation of the whole complex, which is "
-        "not a property of the coordination graph and cannot be read off it. So the parity is "
-        "tested on the GEOMETRY.\n"
-        "COST: one extra full encode, and only on molecules where the fold actually changes "
-        "the string (S_rot == S_fold short-circuits before the mirror is ever built). The "
-        "other three strings are pure canonicalize_oin_slots calls.\n"
-        "⚠ It reads the PRISTINE conformer captured before _align_to_pai, which can itself "
-        "reflect: mirroring an already-reflected conformer composes two improper maps into a "
-        "proper one, and the veto would then never fire while looking perfectly healthy."
+    "OIN_PREFILTER_ADVISORY": (
+        "v0.4.13 Lane 1. `_reencode_key_matches` is two-stage: step 1 re-serializes the generated "
+        "geometry through the GENERATOR'S OWN contract-mol connectivity and rejects on a key "
+        "mismatch, on the stated theory that 'a MISMATCH here is a reliable geometry-is-wrong "
+        "signal'. This lever makes step 1 ADVISORY -- a cheap mismatch falls through to the "
+        "strict independent test instead of returning False.\n"
+        "THE THEORY HAS A COUNTER-EXAMPLE. On AROHIA_comp_0 the cheap test matches 0/48 "
+        "conformers while the strict independent test matches 16/48. Because the cheap veto "
+        "returns False first, those 16 are unreachable IN BOTH ARMS OF EVERY A/B EVER RUN on "
+        "this. The defect runs in the PESSIMISTIC direction -- it makes the project look worse "
+        "than it is -- which is why nobody chased it.\n"
+        "SCOPE: acceptance only. The SCORING half of this defect was closed by OIN_INDEP_SCORE "
+        "in v0.4.8 -- on the frozen corpus, cheap-fails-but-independent-passes is 28/5000 and "
+        "the honest metric already counts every one correctly. Do not re-open it.\n"
+        "HELD OFF pending its own prevalence measurement AND its latency cost. The prefilter "
+        "exists to make acceptance cheap; every cheap-veto this lever overrides now pays a full "
+        "XYZToSMILES round trip (measured 48-57s per call on an eta/haptic conformer). A "
+        "correct-but-slow prefilter moves the cost into v0.4.12's territory and must be priced "
+        "there, not waved through as a pass-rate win.\n"
+        "⚠ A lever that never fires and a lever that fires and finds nothing BOTH report zero "
+        "overrides. Gate on adapter.prefilter_veto_overridden being non-zero on AROHIA_comp_0 "
+        "(cheap 0/48, strict 16/48) before quoting any corpus number."
     ),
     "OIN_EMIT_AXIAL": (
         "emits a new atropisomer token the generator must reproduce; promoting converts a "

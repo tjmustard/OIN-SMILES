@@ -81,6 +81,14 @@ ALLOW = [
     "ab_*.json",
     "cohort_*.json",
     "audit_*.json",
+    # v0.4.13. Added because this release's instruments are EXACTLY the artifact class whose
+    # loss motivated this tool -- the two mirror arms are the same kind of file as v0.4.11's
+    # vanished 19/250 audit, and `fold_transition_veto.json` names all 171 molecules behind the
+    # +3.42 headline, which no prose in `docs/` reproduces.
+    "mirror_arm*.json",
+    "fold_*.json",
+    "attach_class_audit.json",
+    "prefilter_*.json",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -120,6 +128,34 @@ PROVENANCE = [
         "tools/ab_accept_scored.py --cohort <cohort> --lever <lever> --timeout 150 --hard-cap 240",
     ),
     (r"^cohort_.*\.json$", "cohort manifest, built from the frozen sweep"),
+    # v0.4.13's instruments.
+    (
+        r"^mirror_arm([AB])_(\w+)\.json$",
+        "tools/mirror_audit_donor_fold.py --dataset <cohort> --n 250 --seed 7"
+        "   (arm {0}: {1}; arm B sets OIN_FOLD_PARITY_VETO=0)",
+    ),
+    (
+        r"^fold_transition_(fold|veto)\.json$",
+        "tools/fold_transition_sim.py --sweep <frozen sweep> --arm {0}"
+        "   --dataset <cat> --dataset <photo>   (ABSOLUTE roots: the relative default"
+        " silently excludes every mover from a worktree)",
+    ),
+    (
+        r"^fold_key_invariance\.json$",
+        "tools/fold_key_invariance.py --sweep <frozen sweep>"
+        "   (does the fold ever change the round-trip KEY? 0 => generator-neutral"
+        " => an offline re-score is exact and no sweep is owed)",
+    ),
+    (
+        r"^attach_class_audit\.json$",
+        "tools/attach_class_audit.py --results-dir <frozen sweep>"
+        "   (MEDZUR/GAVSED split, with the byte_exact control arm)",
+    ),
+    (
+        r"^prefilter_.*\.json$",
+        "tools/prefilter_prevalence.py --xyz <input> | --cohort <dir>"
+        "   (OIN_PREFILTER_ADVISORY two-arm; needs a QUIET machine — it reports a latency cost)",
+    ),
     (r"^bucket_report.*\.md$", "tools/roundtrip_bucket_report.py --results-dir <dir>"),
     (r"^FROZEN\.md$|^SOURCE$", "hand-written provenance record for a frozen sweep"),
     (r"^triage_hard_fails\.md$", "tools/triage_hard_fails.py"),
