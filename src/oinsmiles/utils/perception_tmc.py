@@ -1412,6 +1412,17 @@ def get_oin_string(tmc_mol, xyz_coords):
             _locked_plan = None
             _locked_donor_conf = None
 
+    # 0c. Opt-in reflection-parity veto for the donor fold (v0.4.12 Lane 1). Captured HERE,
+    # for the same reason as 0a/0b and with a sharper consequence: _align_to_pai below can
+    # REFLECT the coordinates, and the veto's whole job is to build the structure's mirror.
+    # Mirroring an already-reflected conformer composes two improper maps into a PROPER one,
+    # so the "mirror" would encode identically to the original, the veto would see no
+    # difference anywhere, and it would silently never fire -- a safety check that certifies
+    # everything. Default OFF -> nothing is copied -> byte-identical.
+    _parity_conf = None
+    if lever_enabled("OIN_FOLD_PARITY_VETO"):
+        _parity_conf = np.array(xyz_coords, dtype=float, copy=True)
+
     # 1. Identify Metal and Connections
     metal_idx = -1
     for atom in tmc_mol.GetAtoms():
@@ -2031,10 +2042,17 @@ def get_oin_string(tmc_mol, xyz_coords):
     # against it is correct with the lever either way, and stays correct after promotion.
     # Do NOT call `canonical_slot_permutation(geo, vcolor)` for that question; see its
     # docstring warning (its tie-break is a property of the incoming labeling).
+    #
+    # v0.4.12 Lane 1 (opt-in, OIN_FOLD_PARITY_VETO): the donor fold that OIN_CANONICAL_DONOR_FOLD
+    # widens this post-pass by can COLLAPSE ENANTIOMERS -- measured at 221 of its own 393 gains.
+    # `fold_parity.resolve` is `canonicalize_oin_slots` plus a per-molecule reflection test that
+    # falls back to the rotation-only labeling when folding would make the mirror encode
+    # identically. With the veto lever off it is exactly the one call it replaces. See
+    # oin/fold_parity.py for why a det>0 test on the polyhedron cannot express this.
     if lever_enabled("OIN_CANONICAL_SLOTS"):
-        from ..oin.canonical_slots import canonicalize_oin_slots
+        from ..oin.fold_parity import resolve as _resolve_slots
 
-        inline_oin = canonicalize_oin_slots(inline_oin)
+        inline_oin = _resolve_slots(inline_oin, tmc_mol, _parity_conf)
 
     return inline_oin + _axial_suffix + _metal_config_suffix
 

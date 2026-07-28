@@ -521,9 +521,21 @@ class TestDonorFoldCollapsesEnantiomers(unittest.TestCase):
     rotations.
 
     This test asserts the CURRENT, BROKEN behaviour on purpose, in the same spirit as v0.4.5's
-    ``TestResidualClassIsOutOfReachByDesign``. When a reflection-parity filter lands, this test
-    must be **inverted, not deleted**, and ``tools/mirror_audit_donor_fold.py`` re-run on a
-    uniform draw before any points are quoted.
+    ``TestResidualClassIsOutOfReachByDesign``.
+
+    ⚠ v0.4.12 LANDED THE PARITY FILTER AND THIS TEST DID **NOT** INVERT. That was the expected
+    disposition ("inverted, not deleted") and it turned out to be the wrong expectation, for a
+    reason worth more than the test:
+
+        Reflection parity is not a property of the emitted string. Two labelings differing by
+        a donor swap are related by a permutation whose PARITY depends on where those donors
+        sit in space, and the string does not carry that.
+
+    So ``canonicalize_oin_slots`` still collapses this pair, exactly as asserted below, and it
+    always will. ``OIN_FOLD_PARITY_VETO`` sits one level up in ``get_oin_string``, where the
+    pristine conformer is still in hand. **The fix cannot live where the defect is visible.**
+    The coordinate-level proof is ``tests/unit/test_fold_parity.py``; these two assertions stay
+    as the pin that the string-level fold is unsafe on its own.
     """
 
     def test_with_the_lever_OFF_the_enantiomers_stay_distinct(self):
@@ -539,8 +551,9 @@ class TestDonorFoldCollapsesEnantiomers(unittest.TestCase):
             self.assertEqual(
                 canonicalize_oin_slots(_BIWDIV_SELF),
                 canonicalize_oin_slots(_BIWDIV_MIRROR),
-                "if this now FAILS, a parity filter has landed -- invert this test, re-run the "
-                "uniform mirror audit, and only then quote the points",
+                "this must KEEP collapsing: parity is not a string property, so the v0.4.12 "
+                "veto could not and did not fix it here. See test_fold_parity.py for the "
+                "coordinate-level proof that the same molecule now stays separated.",
             )
 
     def test_the_comparison_key_cannot_see_the_collapse_either(self):
