@@ -151,6 +151,27 @@ def measure_one(xyz_path: str, timeout: float, dump_dir: str | None = None) -> d
             out["indep_error"] = f"{type(e).__name__}: {e}"
         out["indep_s"] = round(time.monotonic() - ti, 2)
 
+        # --- G5: the axis the other four gates are STRUCTURALLY BLIND TO (v0.4.12) ----------
+        # G3 compares sha256(oin_out) and G2 compares round-trip keys, and BOTH fold metal
+        # configuration: compare.py strips |mc:| by design and OIN_EMIT_METAL_CONFIG is held
+        # off, so an arm can hand back the OPPOSITE ENANTIOMER and every gate above reports
+        # "identical". The adapter already knows this -- _select_by_geometry's own comment says
+        # accepting on the key alone "would hand back the wrong enantiomer while reporting
+        # success" -- but no A/B in this project has ever measured it.
+        #
+        # This is the instrument v0.4.11 paid for: its donor fold moved 393 molecules in one
+        # direction, changed the key on 0 of 992, passed both gate arms, and collapsed
+        # enantiomers in 221 of those same gains. A one-directional transition matrix is not
+        # evidence of safety. So: report the Delta/Lambda token of the RETURNED structure, per
+        # arm, and let the comparison be made rather than assumed.
+        try:
+            from oinsmiles.oin.metal_config import token_for_mol
+
+            out["mc_token"] = token_for_mol(mol)
+        except Exception as e:  # noqa: BLE001 -- reported, never silently absent
+            out["mc_token"] = None
+            out["mc_error"] = f"{type(e).__name__}: {e}"
+
         if dump_dir:
             # The accepted conformer, plus the generator's CLAIM about which atoms are bonded
             # to the metal. The claim is a REFERENCE only -- never a measurement of attachment
@@ -327,9 +348,24 @@ def main() -> int:
         "generator's own timeout is advisory (see run_arm)",
     )
     ap.add_argument(
+        "--lever",
+        default="OIN_ACCEPT_SCORED",
+        help="which generator lever the arms drive. Defaults to the lever this script was "
+        "built for; v0.4.12 Lane 2 points it at OIN_ETA_ACCEPT_EXIT. Everything else about "
+        "the measurement -- including the non-circular indep_* arm and the G5 mc_token arm -- "
+        "is lever-agnostic by construction, which is why generalizing beats forking.",
+    )
+    ap.add_argument(
+        "--extra-env",
+        action="append",
+        default=[],
+        help="KEY=VALUE applied to BOTH arms (repeatable). For pairing a lever with a "
+        "condition that must hold in both, e.g. OIN_ATTACH_CHECK=1.",
+    )
+    ap.add_argument(
         "--single-arm",
         choices=["0", "1"],
-        help="run ONE arm with OIN_ACCEPT_SCORED set to this, and dump raw rows. Exists for "
+        help="run ONE arm with --lever set to this, and dump raw rows. Exists for "
         "the A-vs-A' determinism control: an A/B sha difference is only attributable to the "
         "lever if sha_out is stable across two runs of the SAME arm.",
     )
@@ -355,12 +391,19 @@ def main() -> int:
     print(f"cohort: {len(cohort)} molecules, {args.workers} workers, timeout {args.timeout}s")
     hard_cap = args.hard_cap if args.hard_cap else args.timeout * 1.6
 
+    extra = {}
+    for kv in args.extra_env:
+        k, _, v = kv.partition("=")
+        extra[k] = v
+    if extra:
+        print(f"applied to BOTH arms: {extra}")
+
     if args.single_arm is not None:
         label = args.label or f"arm-{args.single_arm}"
         rows = run_arm(
             cohort,
             label,
-            {"OIN_ACCEPT_SCORED": args.single_arm},
+            {args.lever: args.single_arm, **extra},
             args.timeout,
             args.workers,
             hard_cap,
@@ -378,17 +421,17 @@ def main() -> int:
     a = run_arm(
         cohort,
         "A-default",
-        {"OIN_ACCEPT_SCORED": "0"},
+        {args.lever: "0", **extra},
         args.timeout,
         args.workers,
         hard_cap,
         args.dump_xyz,
     )
-    print("\n--- ARM B: OIN_ACCEPT_SCORED=1 ---")
+    print(f"\n--- ARM B: {args.lever}=1 ---")
     b = run_arm(
         cohort,
         "B-scored",
-        {"OIN_ACCEPT_SCORED": "1"},
+        {args.lever: "1", **extra},
         args.timeout,
         args.workers,
         hard_cap,
@@ -434,6 +477,24 @@ def main() -> int:
     ]
     print(f"  INDEP REGRESSIONS (A indep-pass -> B indep-fail): {indep_reg or 'none'}")
     print(f"  INDEP FIXES       (A indep-fail -> B indep-pass): {indep_fix or 'none'}")
+
+    # G5 -- the arm no gate in this project has ever run. See measure_one for why the other
+    # four cannot see it. Reported with its DENOMINATOR: "0 divergent" and "0 divergent over 0
+    # measured" have printed identically in this script's history, twice.
+    mc_measured = [
+        r
+        for r in b
+        if r.get("mc_token") is not None and by.get(r["molecule"], {}).get("mc_token") is not None
+    ]
+    mc_div = [r["molecule"] for r in mc_measured if r["mc_token"] != by[r["molecule"]]["mc_token"]]
+    print(
+        f"  G5 METAL CONFIGURATION divergent: {len(mc_div)} over {len(mc_measured)} measured "
+        f"(of {len(b)} molecules) {mc_div or ''}"
+    )
+    if mc_div:
+        print("  🔴 G5 FAILS -- an arm returned the opposite enantiomer and G1-G4 cannot see it.")
+    elif not mc_measured:
+        print("  ⚠ G5 measured NOTHING -- token_for_mol returned None everywhere. Not a pass.")
 
     # --- G3: the wave's actual gate. Byte identity of smiles_2, per molecule. -----------
     # sha_in is the CONTROL: the lever is generation-side, so it must not move.
