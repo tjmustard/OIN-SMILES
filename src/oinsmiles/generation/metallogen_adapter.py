@@ -1585,8 +1585,27 @@ def _reencode_key_matches(
         if cmol is None:
             cmol = build_contract_mol(parsed, m)
         fast = _reencode_oin_fast(cmol)
-        if fast is not None and canonical_roundtrip_key(fast) != target_key:
-            return False
+        cheap_vetoes = fast is not None and canonical_roundtrip_key(fast) != target_key
+        if cheap_vetoes:
+            # OIN_PREFILTER_ADVISORY (v0.4.13 Lane 1, default OFF -> byte-identical to pristine).
+            #
+            # The cheap prefilter's justification is that a mismatch here is "a reliable 'geometry
+            # is wrong' signal". AROHIA_comp_0 falsifies it: the cheap test matches 0 of 48
+            # conformers while the strict independent test matches 16 of 48, and because this
+            # `return False` fires first those 16 are unreachable IN BOTH ARMS of every A/B ever
+            # run on this molecule. The error runs in the PESSIMISTIC direction, which is why it
+            # survived -- it makes the project look worse than it is.
+            #
+            # With the lever on, a cheap veto becomes advisory: fall through to step 2 and let the
+            # independent re-perception decide. The counters below are what make the decision
+            # OBSERVABLE, and they are not decoration: a lever that never fires and a lever that
+            # fires and finds nothing both report zero overrides, so the corpus number is only
+            # meaningful beside `prefilter_veto_confirmed` and a non-zero reading on AROHIA.
+            if not lever_enabled("OIN_PREFILTER_ADVISORY"):
+                return False
+            _telemetry.record("adapter.prefilter_veto_advisory")
+        elif fast is not None:
+            _telemetry.record("adapter.prefilter_cheap_pass")
         # OIN_ACCEPT_SCORED: accept on the predicate the SCORE uses, skipping step 2.
         #
         # The harness decides success with `get_oin_string(gen_result.mol, coords)` -- which is
@@ -1619,7 +1638,14 @@ def _reencode_key_matches(
         # code and the default path is byte-identical. See generation/attach_check.py for the
         # predicate, its falsification (7/8 separation, 0/22 false positives) and its residual
         # (POVPIA: metal sphere intact, defect is ligand-internal).
-        if not independent_confirm and fast is not None:
+        # ⚠ `not cheap_vetoes` is REQUIRED once OIN_PREFILTER_ADVISORY exists, and is not
+        # defensive padding. This branch's whole premise is "accept on the predicate the SCORE
+        # uses" -- and the score uses exactly the cheap re-encode above. Before the advisory
+        # lever, a cheap mismatch had already returned False, so reaching here implied the cheap
+        # test passed. With the lever on we fall through instead, so without this guard the two
+        # levers TOGETHER would accept a conformer the score itself calls a failure -- a
+        # combination neither lever's own A/B would exercise.
+        if not independent_confirm and fast is not None and not cheap_vetoes:
             if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
                 return False
             # ⚠ `cmol`, NOT `m`. `m` is a MetalloGen ``Molecule``, not an ``rdkit.Chem.Mol`` --
@@ -1640,12 +1666,20 @@ def _reencode_key_matches(
             if cache is not None:
                 cache[id(m)] = full
         if full is None or canonical_roundtrip_key(full) != target_key:
+            # The strict test agrees with the cheap veto: the prefilter was RIGHT here.
+            if cheap_vetoes:
+                _telemetry.record("adapter.prefilter_veto_confirmed")
             return False
         if require_no_stretch and clash.mol_stretched_bond_count(m) > 0:
             return False
     except Exception:
         logger.debug("accept-first re-encode/key comparison failed for a conformer", exc_info=True)
         return False
+    if cheap_vetoes:
+        # 🔴 The AROHIA shape, counted. The cheap prefilter rejected this conformer and the
+        # strict independent test ACCEPTS it -- a conformer that the shipped default silently
+        # discards. This is the lane's whole quantity.
+        _telemetry.record("adapter.prefilter_veto_overridden")
     return True
 
 

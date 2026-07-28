@@ -165,6 +165,29 @@ _FALSEY = frozenset({"0", "", "false", "no", "off"})
 
 #: Deliberately NOT promoted, with the reason, so nobody has to reconstruct it.
 _HELD_OFF = {
+    "OIN_PREFILTER_ADVISORY": (
+        "v0.4.13 Lane 1. `_reencode_key_matches` is two-stage: step 1 re-serializes the generated "
+        "geometry through the GENERATOR'S OWN contract-mol connectivity and rejects on a key "
+        "mismatch, on the stated theory that 'a MISMATCH here is a reliable geometry-is-wrong "
+        "signal'. This lever makes step 1 ADVISORY -- a cheap mismatch falls through to the "
+        "strict independent test instead of returning False.\n"
+        "THE THEORY HAS A COUNTER-EXAMPLE. On AROHIA_comp_0 the cheap test matches 0/48 "
+        "conformers while the strict independent test matches 16/48. Because the cheap veto "
+        "returns False first, those 16 are unreachable IN BOTH ARMS OF EVERY A/B EVER RUN on "
+        "this. The defect runs in the PESSIMISTIC direction -- it makes the project look worse "
+        "than it is -- which is why nobody chased it.\n"
+        "SCOPE: acceptance only. The SCORING half of this defect was closed by OIN_INDEP_SCORE "
+        "in v0.4.8 -- on the frozen corpus, cheap-fails-but-independent-passes is 28/5000 and "
+        "the honest metric already counts every one correctly. Do not re-open it.\n"
+        "HELD OFF pending its own prevalence measurement AND its latency cost. The prefilter "
+        "exists to make acceptance cheap; every cheap-veto this lever overrides now pays a full "
+        "XYZToSMILES round trip (measured 48-57s per call on an eta/haptic conformer). A "
+        "correct-but-slow prefilter moves the cost into v0.4.12's territory and must be priced "
+        "there, not waved through as a pass-rate win.\n"
+        "⚠ A lever that never fires and a lever that fires and finds nothing BOTH report zero "
+        "overrides. Gate on adapter.prefilter_veto_overridden being non-zero on AROHIA_comp_0 "
+        "(cheap 0/48, strict 16/48) before quoting any corpus number."
+    ),
     "OIN_EMIT_AXIAL": (
         "emits a new atropisomer token the generator must reproduce; promoting converts a "
         "silent false positive into a loud false negative. Evidence to promote is recorded, "

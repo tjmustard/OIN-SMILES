@@ -277,7 +277,12 @@ class TestAcceptancePredicateWiring(unittest.TestCase):
         from oinsmiles.generation import metallogen_adapter
 
         src = inspect.getsource(metallogen_adapter._reencode_key_matches)
-        guard = "if not independent_confirm and fast is not None:"
+        # v0.4.13 added `and not cheap_vetoes` to this guard. The conjunct is required once
+        # OIN_PREFILTER_ADVISORY can let a cheap-vetoed conformer fall through: this branch
+        # accepts "on the predicate the SCORE uses", and the score IS the cheap re-encode, so
+        # without it the two levers together would accept a conformer the score calls a failure.
+        # The property this test pins is unchanged and the guard is strictly stronger.
+        guard = "if not independent_confirm and fast is not None and not cheap_vetoes:"
         self.assertIn(guard, src)
         after = src.split(guard, 1)[1]
         before = src.split(guard, 1)[0]
