@@ -1402,6 +1402,80 @@ def _eta_winding_multiset(oin_string):
     return sorted(_ETA_WINDING_RE.findall(oin_string))
 
 
+def _geometry_classifies(parsed, cmol):
+    """Does ``cmol``'s coordination sphere classify as the geometry the OIN asks for?
+
+    The same ``classify_and_fit`` test ``_select_by_geometry_impl`` applies, hoisted so the
+    accept-side eta exit can require it. Anything it cannot evaluate returns ``False``: an
+    unverifiable conformer must not be accepted early, it must fall through to the pool.
+    """
+    from ..utils.oin_aligner import classify_and_fit
+
+    target = _norm_geo_code(parsed.geo_code)
+    expected_n = _expected_coordination_number(parsed.geo_code)
+    if not target or expected_n is None or cmol is None:
+        return False
+    vecs = _coordination_vectors(cmol, expected_n)
+    if vecs is None:
+        return False
+    label, _fit = classify_and_fit(vecs, target)
+    return _norm_geo_code(label) == target
+
+
+def _eta_accept_exit_ok(parsed, cmol, eta_targets):
+    """``OIN_ETA_ACCEPT_EXIT`` (v0.4.12 Lane 2): the winding criterion, at the site that pays.
+
+    WHY THIS EXISTS AND ``OIN_ETA_EARLY_EXIT`` DOES NOT REPLACE IT
+    ==============================================================
+    ``OIN_ETA_EARLY_EXIT`` applies this same winding test inside ``_select_by_geometry_impl``,
+    which runs **after** ``generate_3d_structures`` has already filled the entire pool. Its own
+    measured A/B says so: on Ferrocene the lever FIRES and the attempt count does not move,
+    32 -> 32. A selection-side early exit can only shorten the selection scan, which is cheap
+    beside 32 embeds. The only site that can stop pool filling is ``accept_fn``, and that is
+    here. Eta is **53.1% of the whole >30s tail**, so this is where the runtime goal lives.
+
+    WHY IT IS A CONJUNCTION AND NOT JUST THE WINDING TEST
+    ====================================================
+    Accepting on winding alone would stop the pool before ``_select_by_geometry``'s
+    clash-first ranking ever ran -- structurally the SAME defect ``OIN_ACCEPT_SCORED`` has,
+    which cost 26 independent-re-perception regressions on a 100-molecule population. So a
+    conformer must additionally
+
+      * classify as the requested coordination geometry, and
+      * still have every claimed coordination site populated
+        (``conformer_ligands_attached`` -- v0.4.7's ``OIN_ATTACH_CHECK``, falsified at 7/8
+        separation with 0/22 false positives).
+
+    v0.4.7's one unambiguous finding was *never run a scored-acceptance lever without the
+    attachment check*. That check is therefore unconditional here rather than lever-gated:
+    within this branch it is not an option, it is part of what the predicate means.
+
+    Returns ``False`` for anything it cannot evaluate -- the pool then fills as it does today.
+    """
+    if not eta_targets or cmol is None:
+        return False
+    try:
+        oin = _reencode_oin_fast(cmol)
+        if not oin or _eta_winding_multiset(oin) != eta_targets:
+            return False
+        if not _geometry_classifies(parsed, cmol):
+            _telemetry.record("adapter.eta_accept_reject_geometry")
+            return False
+        if not conformer_ligands_attached(cmol):
+            _telemetry.record("adapter.eta_accept_reject_detached")
+            return False
+    except Exception:
+        # Recorded, never swallowed silently. v0.4.7's first attachment check raised on every
+        # call, the abstain branch ate it, and a COMPLETE 21-molecule A/B then reported the
+        # silent no-op as a clean null result. "Never fires" and "never runs" must not look
+        # the same from the outside.
+        _telemetry.record("adapter.eta_accept_unevaluable")
+        logger.debug("eta accept-exit predicate failed for a conformer", exc_info=True)
+        return False
+    _telemetry.record("adapter.eta_accept_hit")
+    return True
+
+
 def _reencode_oin_fast(contract_mol):
     """Fast XYZ->OIN re-encode of an already-perceived contract mol.
 
@@ -2136,6 +2210,17 @@ class MetalloGenAdapter:
                 # a no-op for every OIN encoded without the flag.
                 _target_axial = parse_axial_token(getattr(parsed, "original_oin", None))
 
+                # OIN_ETA_ACCEPT_EXIT (v0.4.12 Lane 2): the winding targets an eta molecule may
+                # short-circuit on, evaluated HERE -- inside accept_fn, the only site that can
+                # stop the pool filling. Empty for every non-eta molecule and None unless the
+                # lever is set, and both disable the branch below, so the default predicate is
+                # byte-identical. See _eta_accept_exit_ok for why it is a conjunction.
+                _eta_accept_targets = (
+                    _eta_winding_multiset(getattr(parsed, "original_oin", None))
+                    if lever_enabled("OIN_ETA_ACCEPT_EXIT")
+                    else None
+                )
+
                 def accept_fn(
                     mg_mol,
                     _pk=_target_key,
@@ -2143,8 +2228,9 @@ class MetalloGenAdapter:
                     _ax=_target_axial,
                     _cache=_reencode_cache,
                     _ic=_confirm,
+                    _eta=_eta_accept_targets,
                 ):
-                    if _ax is None:
+                    if _ax is None and not _eta:
                         # byte-identical to the pre-axial predicate for every OIN that
                         # carries no token -- i.e. everything, absent OIN_EMIT_AXIAL.
                         return _reencode_key_matches(
@@ -2161,18 +2247,23 @@ class MetalloGenAdapter:
                     cmol = build_contract_mol(parsed, mg_mol)
                     if cmol is None:
                         return False
-                    return (
-                        _reencode_key_matches(
-                            parsed,
-                            mg_mol,
-                            _pk,
-                            cmol=cmol,
-                            require_no_stretch=_rns,
-                            cache=_cache,
-                            independent_confirm=_ic,
-                        )
-                        and mol_axial_token(cmol) == _ax
-                    )
+                    if _reencode_key_matches(
+                        parsed,
+                        mg_mol,
+                        _pk,
+                        cmol=cmol,
+                        require_no_stretch=_rns,
+                        cache=_cache,
+                        independent_confirm=_ic,
+                    ) and (_ax is None or mol_axial_token(cmol) == _ax):
+                        return True
+                    # The key did not match. For an eta molecule the key is STRICTER than the
+                    # test that ultimately decides success (_select_by_geometry's winding
+                    # match), so this is exactly the population that pays for a full pool and
+                    # then passes anyway. Offer it the deciding test directly.
+                    if _eta and _ax is None:
+                        return _eta_accept_exit_ok(parsed, cmol, _eta)
+                    return False
 
         with contextlib.redirect_stdout(sys.stderr):
             mols = generate_3d_structures(

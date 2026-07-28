@@ -62,6 +62,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import tempfile
 import threading
 
@@ -139,6 +140,28 @@ class _forced_lever:
         else:
             os.environ[self.name] = self.prior
         return False
+
+
+#: Trailing information-adding sidecars: ` |ax:+|` (Y2 atropisomer) and ` |mc:-|` (Y1 helicity).
+#: Appended by ``get_oin_string`` AFTER the slot post-pass, so a string that came back from the
+#: public converter carries them and the pre-post-pass string does not.
+_SUFFIX_RE = re.compile(r"(\s*\|(?:ax|mc):[+\-]*\|)+\s*$")
+
+
+def _strip_suffixes(oin: str) -> str:
+    """Drop trailing ``|ax:|`` / ``|mc:|`` sidecars so two strings are comparable.
+
+    ⚠ NOT cosmetic. ``resolve``'s self-check compares a string returned by
+    ``XYZToSMILES().convert()`` -- which has the sidecars appended -- against ``s_rot``, which is
+    computed from the PRE-suffix ``inline_oin``. With both suffix levers held off they are empty
+    and the comparison happens to work; enable ``OIN_EMIT_AXIAL`` alongside the veto and every
+    molecule would fail the self-check, decline, and the veto would **silently stop vetoing while
+    still emitting a plausible string**. That is this release's own headline failure mode, one
+    lever-combination away, and it was found by reading rather than by a test going red --
+    which is exactly why the guard is here and pinned by
+    ``test_fold_parity.py::TestSuffixLeverInteraction``.
+    """
+    return _SUFFIX_RE.sub("", oin or "")
 
 
 def _mirror_coords(coords):
@@ -291,7 +314,7 @@ def resolve(inline_oin: str, tmc_mol, xyz_coords) -> str:
         _note("declined_no_self_encode")
         return s_rot
     with _forced_lever(FOLD_LEVER, False):
-        if canonicalize_oin_slots(self_oin) != s_rot:
+        if _strip_suffixes(canonicalize_oin_slots(self_oin)) != _strip_suffixes(s_rot):
             _note("declined_reconstruction_drift")
             return s_rot
 
