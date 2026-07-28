@@ -1,0 +1,405 @@
+{
+ "eta": [
+  {
+   "molecule": "ADANEB_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/ADANEB_comp_0.xyz"
+  },
+  {
+   "molecule": "AGIKUW_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/AGIKUW_comp_0.xyz"
+  },
+  {
+   "molecule": "AHUKIZ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/AHUKIZ_comp_0.xyz"
+  },
+  {
+   "molecule": "AJIJUY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/AJIJUY_comp_0.xyz"
+  },
+  {
+   "molecule": "AJOKIV_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/AJOKIV_comp_0.xyz"
+  },
+  {
+   "molecule": "APAGOO_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/APAGOO_comp_0.xyz"
+  },
+  {
+   "molecule": "BIKRUL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/BIKRUL_comp_0.xyz"
+  },
+  {
+   "molecule": "BITREE_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/BITREE_comp_0.xyz"
+  },
+  {
+   "molecule": "BOMNOJ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/BOMNOJ_comp_0.xyz"
+  },
+  {
+   "molecule": "BOPZOX_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/BOPZOX_comp_0.xyz"
+  },
+  {
+   "molecule": "CAHQAF_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CAHQAF_comp_0.xyz"
+  },
+  {
+   "molecule": "CAHQEJ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CAHQEJ_comp_0.xyz"
+  },
+  {
+   "molecule": "CAZXIM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CAZXIM_comp_0.xyz"
+  },
+  {
+   "molecule": "CIMZAZ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CIMZAZ_comp_0.xyz"
+  },
+  {
+   "molecule": "CINWUT_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CINWUT_comp_0.xyz"
+  },
+  {
+   "molecule": "CISCUE_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CISCUE_comp_0.xyz"
+  },
+  {
+   "molecule": "CISDUF_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/CISDUF_comp_0.xyz"
+  },
+  {
+   "molecule": "COMXUY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/COMXUY_comp_0.xyz"
+  },
+  {
+   "molecule": "DAWBOT_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DAWBOT_comp_0.xyz"
+  },
+  {
+   "molecule": "DEFPOW_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DEFPOW_comp_0.xyz"
+  },
+  {
+   "molecule": "DEMSOG_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DEMSOG_comp_0.xyz"
+  },
+  {
+   "molecule": "DERMET_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DERMET_comp_0.xyz"
+  },
+  {
+   "molecule": "DERMIX_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DERMIX_comp_0.xyz"
+  },
+  {
+   "molecule": "DIDROZ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DIDROZ_comp_0.xyz"
+  },
+  {
+   "molecule": "DILZOQ_comp_2",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DILZOQ_comp_2.xyz"
+  },
+  {
+   "molecule": "DIPPAW_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DIPPAW_comp_0.xyz"
+  },
+  {
+   "molecule": "DIYWAM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DIYWAM_comp_0.xyz"
+  },
+  {
+   "molecule": "DOGQEX_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DOGQEX_comp_0.xyz"
+  },
+  {
+   "molecule": "DOKROM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/DOKROM_comp_0.xyz"
+  },
+  {
+   "molecule": "EBUFOX_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EBUFOX_comp_0.xyz"
+  },
+  {
+   "molecule": "EHORID_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EHORID_comp_0.xyz"
+  },
+  {
+   "molecule": "ENUGAX_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/ENUGAX_comp_0.xyz"
+  },
+  {
+   "molecule": "ERATIA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/ERATIA_comp_0.xyz"
+  },
+  {
+   "molecule": "EWUQOC_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EWUQOC_comp_0.xyz"
+  },
+  {
+   "molecule": "EYOCEC_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EYOCEC_comp_0.xyz"
+  },
+  {
+   "molecule": "EZURIB_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EZURIB_comp_0.xyz"
+  },
+  {
+   "molecule": "EZUROH_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/EZUROH_comp_0.xyz"
+  },
+  {
+   "molecule": "FIBQAK_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FIBQAK_comp_0.xyz"
+  },
+  {
+   "molecule": "FIXDAS_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FIXDAS_comp_0.xyz"
+  },
+  {
+   "molecule": "FOJJUM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FOJJUM_comp_0.xyz"
+  },
+  {
+   "molecule": "FOKQOM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FOKQOM_comp_0.xyz"
+  },
+  {
+   "molecule": "FUWMAN_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FUWMAN_comp_0.xyz"
+  },
+  {
+   "molecule": "FUXMAN_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/FUXMAN_comp_0.xyz"
+  },
+  {
+   "molecule": "GAMFOS_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/GAMFOS_comp_0.xyz"
+  },
+  {
+   "molecule": "GAVSED_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/GAVSED_comp_0.xyz"
+  },
+  {
+   "molecule": "GIMWAA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/GIMWAA_comp_0.xyz"
+  },
+  {
+   "molecule": "GIZQEN_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/GIZQEN_comp_0.xyz"
+  },
+  {
+   "molecule": "HAMGAD_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HAMGAD_comp_0.xyz"
+  },
+  {
+   "molecule": "HAMGEH_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HAMGEH_comp_0.xyz"
+  },
+  {
+   "molecule": "HEXFAS_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HEXFAS_comp_0.xyz"
+  },
+  {
+   "molecule": "HIJPUM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HIJPUM_comp_0.xyz"
+  },
+  {
+   "molecule": "HIPQIH_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HIPQIH_comp_0.xyz"
+  },
+  {
+   "molecule": "HOHTAB_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/HOHTAB_comp_0.xyz"
+  },
+  {
+   "molecule": "IBAZIW_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IBAZIW_comp_0.xyz"
+  },
+  {
+   "molecule": "IBIZUP_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IBIZUP_comp_0.xyz"
+  },
+  {
+   "molecule": "ICUYUC_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/ICUYUC_comp_0.xyz"
+  },
+  {
+   "molecule": "IFICAD_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IFICAD_comp_0.xyz"
+  },
+  {
+   "molecule": "IHOYAH_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IHOYAH_comp_0.xyz"
+  },
+  {
+   "molecule": "IJOSOP_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IJOSOP_comp_0.xyz"
+  },
+  {
+   "molecule": "ILUDID_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/ILUDID_comp_0.xyz"
+  },
+  {
+   "molecule": "INUWUL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/INUWUL_comp_0.xyz"
+  },
+  {
+   "molecule": "IXUTAW_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IXUTAW_comp_0.xyz"
+  },
+  {
+   "molecule": "IZIMOU_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/IZIMOU_comp_0.xyz"
+  },
+  {
+   "molecule": "JAFFOL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/JAFFOL_comp_0.xyz"
+  },
+  {
+   "molecule": "JEDPIU_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/JEDPIU_comp_0.xyz"
+  },
+  {
+   "molecule": "JIVFOK_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/JIVFOK_comp_0.xyz"
+  },
+  {
+   "molecule": "JOCWOP_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/JOCWOP_comp_0.xyz"
+  },
+  {
+   "molecule": "JUXPID_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/JUXPID_comp_0.xyz"
+  },
+  {
+   "molecule": "KADVER_comp_1",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KADVER_comp_1.xyz"
+  },
+  {
+   "molecule": "KAHNEO_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KAHNEO_comp_0.xyz"
+  },
+  {
+   "molecule": "KAQDEL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KAQDEL_comp_0.xyz"
+  },
+  {
+   "molecule": "KELQOI_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KELQOI_comp_0.xyz"
+  },
+  {
+   "molecule": "KIKGAP_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KIKGAP_comp_0.xyz"
+  },
+  {
+   "molecule": "KIPBAP_comp_1",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KIPBAP_comp_1.xyz"
+  },
+  {
+   "molecule": "KIRVOY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KIRVOY_comp_0.xyz"
+  },
+  {
+   "molecule": "KUJGEC_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/KUJGEC_comp_0.xyz"
+  },
+  {
+   "molecule": "LARQED_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LARQED_comp_0.xyz"
+  },
+  {
+   "molecule": "LIRFOJ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LIRFOJ_comp_0.xyz"
+  },
+  {
+   "molecule": "LOMFUQ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LOMFUQ_comp_0.xyz"
+  },
+  {
+   "molecule": "LUMDON_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LUMDON_comp_0.xyz"
+  },
+  {
+   "molecule": "LUSBEI_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LUSBEI_comp_0.xyz"
+  },
+  {
+   "molecule": "LUZDAL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LUZDAL_comp_0.xyz"
+  },
+  {
+   "molecule": "LUZGIY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/LUZGIY_comp_0.xyz"
+  },
+  {
+   "molecule": "MECXEY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MECXEY_comp_0.xyz"
+  },
+  {
+   "molecule": "MEVFAU_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MEVFAU_comp_0.xyz"
+  },
+  {
+   "molecule": "MIQWEO_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MIQWEO_comp_0.xyz"
+  },
+  {
+   "molecule": "MOCHAN_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MOCHAN_comp_0.xyz"
+  },
+  {
+   "molecule": "MUBNAY_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MUBNAY_comp_0.xyz"
+  },
+  {
+   "molecule": "MUHGIG_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/MUHGIG_comp_0.xyz"
+  },
+  {
+   "molecule": "NEDCII_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NEDCII_comp_0.xyz"
+  },
+  {
+   "molecule": "NICWUS_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NICWUS_comp_0.xyz"
+  },
+  {
+   "molecule": "NISHAZ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NISHAZ_comp_0.xyz"
+  },
+  {
+   "molecule": "NONGAA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NONGAA_comp_0.xyz"
+  },
+  {
+   "molecule": "NOVYUU_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NOVYUU_comp_0.xyz"
+  },
+  {
+   "molecule": "NOYREA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/NOYREA_comp_0.xyz"
+  },
+  {
+   "molecule": "OCUKAA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/OCUKAA_comp_0.xyz"
+  },
+  {
+   "molecule": "OROJUB_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/OROJUB_comp_0.xyz"
+  },
+  {
+   "molecule": "OTIGIJ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/OTIGIJ_comp_0.xyz"
+  },
+  {
+   "molecule": "OVUFUI_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/OVUFUI_comp_0.xyz"
+  },
+  {
+   "molecule": "PIXGIP_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cohort-v047-slow100/PIXGIP_comp_0.xyz"
+  }
+ ],
+ "control": []
+}

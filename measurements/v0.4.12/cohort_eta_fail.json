@@ -1,0 +1,53 @@
+{
+ "eta": [
+  {
+   "molecule": "ULORAQ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/ULORAQ_comp_0.xyz"
+  },
+  {
+   "molecule": "UQUXAG_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/UQUXAG_comp_0.xyz"
+  },
+  {
+   "molecule": "ROMSER_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/ROMSER_comp_0.xyz"
+  },
+  {
+   "molecule": "AMUKEZ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/AMUKEZ_comp_0.xyz"
+  },
+  {
+   "molecule": "RIRYOJ_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/RIRYOJ_comp_0.xyz"
+  },
+  {
+   "molecule": "PAWJED_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/PAWJED_comp_0.xyz"
+  },
+  {
+   "molecule": "MOSLEL_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/MOSLEL_comp_0.xyz"
+  },
+  {
+   "molecule": "KIHHUG_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/KIHHUG_comp_0.xyz"
+  },
+  {
+   "molecule": "PEDPOG_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/PEDPOG_comp_0.xyz"
+  },
+  {
+   "molecule": "NODLEA_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/NODLEA_comp_0.xyz"
+  },
+  {
+   "molecule": "HOHTEF_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/HOHTEF_comp_0.xyz"
+  },
+  {
+   "molecule": "TEQHOM_comp_0",
+   "xyz": "tmCAT-tmPHOTO_xyz_dataset/cat/TEQHOM_comp_0.xyz"
+  }
+ ],
+ "control": []
+}

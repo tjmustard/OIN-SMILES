@@ -1,0 +1,1997 @@
+{
+  "sweep": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest",
+  "arm": "fold",
+  "n": 5000,
+  "base": {
+    "byte_exact": 3623,
+    "key_equal/rdkit_canonical": 114,
+    "facmer_divergent": 16,
+    "hard_fail": 319,
+    "key_equal/slot_renumber": 496,
+    "structural": 417,
+    "encode_fail": 15
+  },
+  "after": {
+    "byte_exact": 4016,
+    "key_equal/rdkit_canonical": 114,
+    "facmer_divergent": 16,
+    "hard_fail": 319,
+    "structural": 417,
+    "key_equal/slot_renumber": 103,
+    "encode_fail": 15
+  },
+  "byte_exact_before": 3623,
+  "byte_exact_after": 4016,
+  "points": 7.86,
+  "bad_direction": 0,
+  "transitions": {
+    "key_equal/slot_renumber -> byte_exact": 393
+  },
+  "moved": [
+    {
+      "molecule": "AFADOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AGAVIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AGUBOT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ARAFUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AXESAY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AYOBIA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AYOSOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "AYOVUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BELYUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BEZCAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BIBDAS_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BIDQOV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BIFDAX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BIXTOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BOFLIT_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BOJKAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BOSRAE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BOSYUF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BUFNUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "BUZYOL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CAGSIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CAPZID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CAQNUE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CEBYAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CEFBAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CETPOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CIFZEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CIQJER_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "CIZFAT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "COFCIL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "COPZAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "COZBEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DALHEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DAPZOL_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DEDBUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DEFBUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DEVFUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DICROZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DIDTOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DIHNEO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DIQVEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DITREG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DOBQAN_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DOFWIG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DOGPAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DOMZEL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DORTIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DUBVEC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "DUZLAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EBAMEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EBAMIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ECEYUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ECOZAY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EFELOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EFILIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EFUPUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EGODAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EJUDIX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EKIWEB_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EPEJUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EPIBOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EPIMIB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EPOLOL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ESEBIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ESOCOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ESOSOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EVADUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EVURAO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EYALEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "EZEHOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FAJDEB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FAMRET_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FANSAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FEDYUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FEFWUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FEKMOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIDNUE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIHNOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIKZEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIMMUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIQTEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FIXXES_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FOPKOM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FUBCAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FUXGIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "FUYXII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GAKLAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GAKZOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GIJBOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GIMKIY_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GOBMEP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GOFHUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GUNYUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "GUSVEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HASJAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HATRUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HEDKAF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HEGMAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HEXFOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HIJHAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HITHUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HODVOO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HOQBOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HULSAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "HUZLEV_comp_2",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IBEGEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ICIGAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ICUXOV_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ICUZEN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IFIBIK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IGAKUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IGAWOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IGIGUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IHIROI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IHUGOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IJIFOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IKEKUF_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IKIDOX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ILEPAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IMIDEN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IPIQIJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IPISUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IPOQEK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IRUCUU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ISAPUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ITUYIH_comp_3",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IWELUT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IYOKAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "IZUPUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JAKKOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JAMFOV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JATCAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JAVCAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JAYLEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JEBTAM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JIPPEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JIWYEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JOCMUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JOFSAB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JOKBIV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JUDMEC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "JUWSOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KAMFAI_comp_2",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KAWHIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KECFII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KEFTEV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KEJKUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KIRMAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KITHED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KITHIH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KOKGUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KOPBAU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KOWXIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KUFZIV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KUGGEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KUMDAY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "KUPPUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LAMVIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LECZEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LEGKIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LEMKAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LETYUF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LEYTAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LIHYAF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LIHZAE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LIKZUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LILLEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LOHFEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "LOVCOQ_comp_3",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MAKNOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MARJIZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MAWZIV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIDCIM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIGVEF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIJPIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIKHAQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIPCOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIQCOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MITHIH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MIWKIN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MOZRIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MUJHOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "MUTMIZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NANYUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NANZOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NAPYEJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NARFEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NARFIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NARNUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NAWMAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NAXQOS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NEBVAU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NELTII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NEMDUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NISDOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NIWNOX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NIWTIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NOBKOG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NOFTOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NOGTIP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NOLXAQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NOZLAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NUDXUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NUFXAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "NUXSIK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OBALUA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OBOHOD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ODAGAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ODUJED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ODUJON_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OGEKOD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OGOJEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OHEQOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OHIJIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OJEKET_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OJELEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OKOFID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OMOBUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ONOXOG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OVELOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OVEQAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OVOTOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "OYUKOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PAGKAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PEWWOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PIJZOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PIYDAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "POFQUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "POJDEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "POJDUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "POSWUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PUNJOX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PUNTAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PUWMID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "PUYBIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QAYMUB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QAYNEM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QAYRUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QEHPOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QEKLEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QENLUT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QEVNUB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QEWDEC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QICVUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QIDDAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QIKFEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QIZTAX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QOJRUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QOQGEK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QOQGIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "QUCXUJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RACNUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RAMHUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RANRAB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RAPLAX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RARJEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RAWCEY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "REKBEQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "REKDAO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RIYYUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ROCDUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RONHIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RUBPAH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RUQKAQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RURMUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RURTAA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "RUZYAO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SASSUB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SAVCUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SECSOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SEHQED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SEQPIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SICLOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SICWOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SIDNUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SIHRIM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SIMLEH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SITHOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SITHUA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SIXROJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SOSMAQ_comp_2",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SOSPIA_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SOSXOO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SOXCUF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SOYSOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SUDQEP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "SURFEQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TAYDUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEBXED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEBXIH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEMHAX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEPBAT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEPBEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TEXJIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TIDCUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TILGOM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TIQWUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TITQAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TOQXEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TORHUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TORJEP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "TUVBUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UBIHOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UCAWAX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UCOREK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UDEJOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UGUQIX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UHINAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UHIPEI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ULOTEV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UQIMAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "UROPOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VACMEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VAKKAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VEBXAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VETBEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VICROR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIFMOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIGWAM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VILDUR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIMQAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VISBUV_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VISDOS_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIWKIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIYDIS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VIZKEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "VOQPOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WAKRUX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WEKVUF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WENCOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WENDAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WENDID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WEPFII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WEVNUJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WIRVUR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WIWDUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WOBLUX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WOPXAB_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WOYVAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUBZIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUVNUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUVNUW_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUVPAE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUWNOT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUXKUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "WUYWET_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XADXOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XAWHOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XAYWUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEFROQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEHLOO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEJGOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XESHAH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEXMIZ_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEXMUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEZTED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XEZVII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XILCUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XIPQIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XISBAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XISBEH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XIVTUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XIXPEB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XIXPIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XONHIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XOQSAZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "XOVMIG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YAJYAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YAQMUA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YEJFIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YEQBEB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YINLIR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YINLOX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YIVFOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOBKOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOHZIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOMPUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOQLEY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOZVIT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YOZVOZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YUSBOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "YUYZUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZASYUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZEHCAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZIDZAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZIKYAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZIRNUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZITLOG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZOGLIS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZOMJUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZOYYUJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZUSSAH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    },
+    {
+      "molecule": "ZUTVUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact"
+    }
+  ]
+}

@@ -268,9 +268,16 @@ full one at a time by the close-out ritual below.
 Every release ends by running `spec/handoffs/roadmap-100-100/CLOSEOUT.md`:
 
 1. land the lanes · 2. re-measure and freeze the bucket report · 3. **diff predicted vs actual — a
-miss is a deliverable** · 4. write the git-durable `docs/*.md` · 5. tag, bump, CHANGELOG ·
+miss is a deliverable** · 4. write the git-durable `docs/agentic-notes/<release>/*.md` ·
+**4b. freeze the NUMBERS into `measurements/<release>/` via `tools/harvest_measurements.py`** ·
+5. tag, bump, CHANGELOG ·
 **6. generate `v0.4.<N+1>/` and promote it from SKETCH to full using the numbers just measured** ·
 7. prune worktrees.
+
+> Step 4b exists because steps 1–7 previously made only the *prose* durable.
+> `tmCAT-tmPHOTO_xyz_dataset/` is gitignored in full, so six consecutive releases shipped
+> write-ups whose underlying numbers lived on one disk — and **v0.4.11's mirror audit, the
+> measurement that chartered v0.4.12, was lost outright.**
 
 Step 6 runs `spec/handoffs/roadmap-100-100/PROMPT-next-release.md`, which requires the next session
 to re-derive the gap decomposition, **re-check whether the ladder is still right**, and say

@@ -1,0 +1,1010 @@
+{
+ "tally": {
+  "achiral_or_preexisting_fold": 157,
+  "distinct_both_arms": 73,
+  "REGRESSION_raw_collapsed": 19,
+  "encode_failed": 1
+ },
+ "records": [
+  {
+   "molecule": "ABEROQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "AFAMOL_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "AMEJOR_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "AZELOI_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "AZUQAN_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "BARHUZ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "BAXWAA_comp_2",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "BIWDIV_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "BOCPUF_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "BULSAE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "BUWQAM_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CAFSUZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CATWOL_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CEBHEW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CERFUD_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CETDIQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "CETLOD_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "CEWGUJ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CICSIQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CIHVAT_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "CIJROE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CIMBEG_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CITGAO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CODNEP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "COLYIM_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CORPAD_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "COSBOE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "CUHFER_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "CUKPIJ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DALHIK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "DAVXOQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "DECSIO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DEGWAO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DEXSOQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "DEXSOR_comp_2",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "DIZQUB_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "DOBXAV_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DOLYUB_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DONBEO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "DUHBOZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EDANAB_comp_1",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EDOBAC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EDOLER_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EFEKUY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EFIDUU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EKEFEH_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EQIWIK_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ERUMAG_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ESEWIK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "ESOCEW_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "EYITIR_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "EZOSET_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "FAKGAA_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "FEFYUL_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "FETSEE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "FIJFOW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "FOQMEF_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "FORJED_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "FOZGIK_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "FUGWAH_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "FUVFEI_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GADKUT_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GADSIQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "GAHKIK_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "GAHKOQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GALGUW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GIHFIO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GIKKER_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "GIYPIP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GODNUK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "GOHVOR_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "GOPVOY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "HAHTES_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "HAXJEW_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "HEBBAS_comp_1",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "HEFSAN_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "HIJCUA_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "HISZIT_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "HOQFUP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "IDABIA_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "IDILOZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "IFUBIX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "IGIGUC_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "ILOJOK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "IPEQOJ_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "IRUPOC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ITIGEX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ITOQIS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ITUGIP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "JANVUQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "JAXCUJ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "JEGDAB_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "JIWZIZ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "JOCGOX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "JOZQEW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "KAGXUM_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "KALCUX_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "KAYHAW_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "KIRDEX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "KIWPIR_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "KOCREA_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "KUMHEG_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "LEGKEO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "LEKFUE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "LEZWAO_comp_0",
+   "verdict": "encode_failed"
+  },
+  {
+   "molecule": "LILHEU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "LIWNAI_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "LIYFAA_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "LOJGEW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MAGLEM_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MAPMUO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MARFIX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MIFHAN_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "MIKDUG_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "MITMIN_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MOCFER_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MOFGIZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "MOWDOS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NACREQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NEBTAP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NISFEC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NISKAC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NOBGER_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NOCWOS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NOFTUA_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NOPNUD_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "NORRET_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "NUDRAH_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OCUKOO_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "ODABEC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OFUSUF_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "OJEKET_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "OJENAT_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OKEWEI_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OLAJEQ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "OLURAP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OMISUY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OQIHUT_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OVAVUD_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "OZESOC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "PAMJOF_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "PEPCIY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "PIQXAQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "PIYQUL_comp_1",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "POJFOK_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "POLWES_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "POWDOV_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "PUDJUU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "PUGVOC_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "PUNCIM_comp_1",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "PUVROP_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "PUWMID_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "QADJAI_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "QIFHUK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "QISLOU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "QISMEK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "QIWPIW_comp_1",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "QIXDAE_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "QOLDIG_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "QOSMER_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "QUMKOY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "RAFJIS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "RAPFIZ_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "REWVAR_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "RISRUH_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "RODNED_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "ROGXUH_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ROYNIE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "RUWDUK_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "RUXDEU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "SAYDAY_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "SEPYOC_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "SERRIR_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "SIXCOU_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "SIXLOC_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "SOSPAU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "SOWVUW_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "SUJCIL_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "SUXDUL_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "TAFPIA_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "TARQOT_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "TAVKIL_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "TERCID_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TEWREU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TICNIF_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TICPAX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TIDCUH_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TOKVAT_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "TUMYIL_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "UDAMAP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "UGUXOK_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "UJALEY_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "ULIDIE_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "USUTEI_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "UXENIV_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "UXIFUE_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "VAJDOB_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VANQEI_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "VAYQUH_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "VEGNAZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VEKCIZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VIBTEG_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "VIFLUU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VILDEB_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VOCDEY_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "VOLDOS_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "VOPQUP_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "VOYJIE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WACDOU_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "WAJCEQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WAPTOY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WARQEO_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "WEHLAZ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WELSIS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WEPHEH_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "WEPTUI_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "WIHVIU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WIJXAO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WIRYII_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WIWYOS_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WOJHAF_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "WOLZOO_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WOYYIU_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WUMBIQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WUQTUY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "WURSIL_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "XADKOE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "XATSIW_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "XEMSAK_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "XIKLUY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "XIQGEM_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "XONBUX_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "XOQVEG_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "XOVMIG_comp_0",
+   "verdict": "REGRESSION_raw_collapsed"
+  },
+  {
+   "molecule": "XUFHOW_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "XUJHIU_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "XULPEA_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "YADQAX_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "YALGUQ_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "YEXNUN_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "YIKXIA_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "YOBTAL_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "YOCBEA_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "YOLXIH_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "YOXPUY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ZAGMAY_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ZELDUR_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ZIGHEE_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  },
+  {
+   "molecule": "ZOGQIV_comp_0",
+   "verdict": "distinct_both_arms"
+  },
+  {
+   "molecule": "ZUDNIV_comp_0",
+   "verdict": "achiral_or_preexisting_fold"
+  }
+ ]
+}

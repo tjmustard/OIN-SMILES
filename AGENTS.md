@@ -36,6 +36,12 @@ tells someone *how the shipped software behaves*, it is a product doc. `<release
 the work is **for** — targeting v0.4.7 means creating `docs/agentic-notes/v0.4.7/`, not reusing
 the newest folder that already exists.
 
+- **Frozen measurement data** — `measurements/<release>/`. The numbers a *later release diffs*:
+  frozen baselines, gate/audit tallies, transition matrices. Written by
+  `tools/harvest_measurements.py`, never by hand. **The test:** *"will a future release diff this
+  to know whether it regressed?"* — if yes it is a measurement; if it is the evidence for one
+  paragraph of one write-up, it is a note and belongs beside that note.
+
 A `pre-commit` guard (`tools/check_docs_layout.sh`) rejects new files at the `docs/` root. Full
 rule: `.agents/rules/docs-layout.md`.
 

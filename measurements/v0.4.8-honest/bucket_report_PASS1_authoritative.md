@@ -1,0 +1,1505 @@
+# Round-trip bucket report -- SCORED vs HONEST, same molecules
+
+Generated 2026-07-26T23:57:50 by tools/roundtrip_bucket_report.py --score both
+
+Both columns classify the **same** reports with the **same** key and the **same** `status` gate.
+The single variable is which round-trip string the verdict reads:
+
+| column | string | what it is |
+|---|---|---|
+| scored | `smiles_2` | `get_oin_string(gen_result.mol, coords)` -- the generator's own bond graph. Asserts bonds the coordinates do not support; drops stereo they do. |
+| honest | `smiles_2_indep` | a full `XYZToSMILES().convert()` of the generated XYZ -- bonds *and* stereo re-derived from coordinates alone. |
+
+## Buckets
+
+| bucket | scored | % | honest | % | delta |
+|---|---:|---:|---:|---:|---:|
+| byte_exact | 4140 | 82.80% | 3623 | 72.46% | -517 |
+| key_equal | 520 | 10.40% | 610 | 12.20% | +90 |
+| facmer_divergent | 1 | 0.02% | 16 | 0.32% | +15 |
+| structural | 9 | 0.18% | 417 | 8.34% | +408 |
+| hard_fail | 315 | 6.30% | 319 | 6.38% | +4 |
+| encode_fail | 15 | 0.30% | 15 | 0.30% | +0 |
+| **total** | **5000** | | **5000** | | |
+
+## Transition matrix -- where every molecule went
+
+| scored bucket | honest bucket | n |
+|---|---|---:|
+| byte_exact | byte_exact | 3595 |
+| key_equal | key_equal | 428 |
+| byte_exact | structural | 350  **moved** |
+| hard_fail | hard_fail | 315 |
+| byte_exact | key_equal | 180  **moved** |
+| key_equal | structural | 62  **moved** |
+| key_equal | byte_exact | 25  **moved** |
+| encode_fail | encode_fail | 15 |
+| byte_exact | facmer_divergent | 12  **moved** |
+| key_equal | facmer_divergent | 4  **moved** |
+| structural | structural | 4 |
+| byte_exact | hard_fail | 3  **moved** |
+| structural | byte_exact | 3  **moved** |
+| structural | key_equal | 2  **moved** |
+| facmer_divergent | structural | 1  **moved** |
+| key_equal | hard_fail | 1  **moved** |
+
+## Molecules whose bucket moved (643)
+
+- `ABOZEW_comp_0`  byte_exact -> key_equal
+- `ADANEB_comp_0`  byte_exact -> facmer_divergent
+- `AFIROW_comp_0`  byte_exact -> hard_fail
+- `AHEBEV_comp_0`  byte_exact -> structural
+- `AHUKIZ_comp_0`  byte_exact -> structural
+- `AJOKIV_comp_0`  byte_exact -> structural
+- `ALAJON_comp_0`  byte_exact -> key_equal
+- `APAGOO_comp_0`  byte_exact -> structural
+- `APOTOO_comp_0`  byte_exact -> structural
+- `AQICUZ_comp_0`  byte_exact -> key_equal
+- `AROKUP_comp_0`  byte_exact -> key_equal
+- `AWORUZ_comp_0`  structural -> byte_exact
+- `BADPOO_comp_0`  byte_exact -> structural
+- `BADPUU_comp_0`  byte_exact -> structural
+- `BALTOY_comp_0`  byte_exact -> key_equal
+- `BARRES_comp_0`  byte_exact -> key_equal
+- `BAZZEG_comp_0`  byte_exact -> key_equal
+- `BEKHIK_comp_0`  byte_exact -> structural
+- `BEPSUN_comp_0`  byte_exact -> structural
+- `BERZAC_comp_0`  byte_exact -> structural
+- `BEZMUP_comp_1`  byte_exact -> key_equal
+- `BIDBAT_comp_0`  byte_exact -> key_equal
+- `BIFDAX_comp_0`  byte_exact -> key_equal
+- `BIKROD_comp_0`  key_equal -> structural
+- `BIKRUL_comp_0`  byte_exact -> structural
+- `BINMAO_comp_0`  byte_exact -> key_equal
+- `BIXCAN_comp_0`  byte_exact -> structural
+- `BOCGEH_comp_0`  byte_exact -> structural
+- `BOCHIM_comp_0`  byte_exact -> structural
+- `BODBOM_comp_0`  byte_exact -> facmer_divergent
+- `BODPAM_comp_0`  byte_exact -> structural
+- `BOKREZ_comp_0`  key_equal -> structural
+- `BOMTAB_comp_0`  byte_exact -> structural
+- `BOPZOX_comp_0`  byte_exact -> structural
+- `BOVCUM_comp_0`  byte_exact -> structural
+- `BUDDOU_comp_0`  key_equal -> byte_exact
+- `CAHQEJ_comp_0`  byte_exact -> structural
+- `CAMDUQ_comp_0`  key_equal -> structural
+- `CAZHAP_comp_0`  byte_exact -> structural
+- `CAZXIM_comp_0`  byte_exact -> structural
+- `CEDXER_comp_0`  byte_exact -> structural
+- `CESFIR_comp_0`  byte_exact -> structural
+- `CEZLOK_comp_0`  byte_exact -> key_equal
+- `CIMCIL_comp_0`  byte_exact -> structural
+- `CIMZAZ_comp_0`  byte_exact -> key_equal
+- `CIXPEG_comp_0`  byte_exact -> structural
+- `COFBAB_comp_0`  byte_exact -> key_equal
+- `COMXUY_comp_0`  byte_exact -> structural
+- `COTTAJ_comp_0`  byte_exact -> key_equal
+- `CUWHIM_comp_0`  byte_exact -> structural
+- `DALHIK_comp_0`  key_equal -> structural
+- `DAPCIH_comp_0`  byte_exact -> structural
+- `DAXZUZ_comp_0`  byte_exact -> key_equal
+- `DEGSUD_comp_0`  byte_exact -> structural
+- `DEMSOG_comp_0`  byte_exact -> structural
+- `DEQGUB_comp_0`  key_equal -> structural
+- `DERKOD_comp_0`  byte_exact -> key_equal
+- `DERMET_comp_0`  byte_exact -> structural
+- `DERMIX_comp_0`  byte_exact -> structural
+- `DIDJAC_comp_0`  byte_exact -> key_equal
+- `DIDROZ_comp_0`  byte_exact -> structural
+- `DILYOM_comp_0`  byte_exact -> structural
+- `DILZOQ_comp_2`  byte_exact -> structural
+- `DIVYAJ_comp_0`  byte_exact -> key_equal
+- `DIVZOY_comp_0`  byte_exact -> structural
+- `DIYWAM_comp_0`  byte_exact -> structural
+- `DOCNIU_comp_0`  byte_exact -> key_equal
+- `DOGMOD_comp_0`  byte_exact -> structural
+- `DOGQEX_comp_0`  byte_exact -> structural
+- `DOKROM_comp_0`  byte_exact -> structural
+- `DOLWEG_comp_0`  key_equal -> structural
+- `DOQJIC_comp_0`  byte_exact -> key_equal
+- `DOTWEQ_comp_0`  byte_exact -> key_equal
+- `DOYRUE_comp_0`  byte_exact -> key_equal
+- `EBESIQ_comp_0`  byte_exact -> key_equal
+- `EBUGEO_comp_0`  byte_exact -> key_equal
+- `EBUMOG_comp_0`  byte_exact -> key_equal
+- `EDANEF_comp_0`  byte_exact -> structural
+- `EHAQAG_comp_0`  byte_exact -> key_equal
+- `EHAQIO_comp_0`  byte_exact -> key_equal
+- `EJITUN_comp_0`  byte_exact -> key_equal
+- `EJUKOK_comp_0`  byte_exact -> structural
+- `EKETUJ_comp_0`  key_equal -> structural
+- `EKOHIW_comp_0`  byte_exact -> structural
+- `ELOWAD_comp_0`  byte_exact -> key_equal
+- `EMUGAU_comp_0`  byte_exact -> structural
+- `ENUGAX_comp_0`  byte_exact -> structural
+- `EQAGEK_comp_0`  byte_exact -> structural
+- `EQOKOL_comp_0`  byte_exact -> key_equal
+- `EQOYEO_comp_0`  byte_exact -> structural
+- `ERATIA_comp_0`  byte_exact -> structural
+- `ESEXIK_comp_0`  byte_exact -> structural
+- `ETACIL_comp_1`  byte_exact -> structural
+- `EVIQUX_comp_0`  byte_exact -> key_equal
+- `EVIQUX_comp_1`  byte_exact -> key_equal
+- `EVUHUZ_comp_0`  byte_exact -> structural
+- `EWALET_comp_0`  byte_exact -> structural
+- `EWUQOC_comp_0`  byte_exact -> structural
+- `EYEBOA_comp_0`  byte_exact -> structural
+- `EYOCEC_comp_0`  byte_exact -> structural
+- `EZURIB_comp_0`  byte_exact -> structural
+- `EZUROH_comp_0`  byte_exact -> structural
+- `FAGZUL_comp_0`  byte_exact -> structural
+- `FATCEJ_comp_0`  byte_exact -> structural
+- `FAYNEB_comp_0`  byte_exact -> structural
+- `FEBNEH_comp_0`  byte_exact -> key_equal
+- `FECSUC_comp_0`  byte_exact -> structural
+- `FEDQUD_comp_0`  byte_exact -> structural
+- `FENQAQ_comp_0`  byte_exact -> structural
+- `FEPZIK_comp_0`  byte_exact -> structural
+- `FEPZOQ_comp_0`  byte_exact -> structural
+- `FEQCEM_comp_0`  byte_exact -> key_equal
+- `FESFUG_comp_0`  byte_exact -> structural
+- `FESKUK_comp_0`  key_equal -> structural
+- `FETNEZ_comp_0`  byte_exact -> key_equal
+- `FETTAB_comp_0`  byte_exact -> key_equal
+- `FIBQAK_comp_0`  byte_exact -> structural
+- `FIFZIF_comp_0`  byte_exact -> key_equal
+- `FIKXAZ_comp_0`  byte_exact -> key_equal
+- `FILVON_comp_0`  byte_exact -> key_equal
+- `FIYBEX_comp_0`  byte_exact -> key_equal
+- `FOGCIN_comp_0`  byte_exact -> structural
+- `FOHFIT_comp_0`  byte_exact -> structural
+- `FOJJUM_comp_0`  byte_exact -> structural
+- `FOJWOR_comp_0`  byte_exact -> structural
+- `FOJZOU_comp_0`  byte_exact -> structural
+- `FOKDIV_comp_0`  key_equal -> byte_exact
+- `FOKQOM_comp_0`  byte_exact -> structural
+- `FOLKEX_comp_0`  byte_exact -> key_equal
+- `FOSNEI_comp_0`  structural -> byte_exact
+- `FOSWOA_comp_0`  byte_exact -> key_equal
+- `FUJRAE_comp_0`  byte_exact -> key_equal
+- `FULBIZ_comp_0`  key_equal -> structural
+- `FUMZEU_comp_0`  byte_exact -> key_equal
+- `FUQZAT_comp_0`  key_equal -> structural
+- `FUSNAK_comp_0`  key_equal -> structural
+- `FUXMAN_comp_0`  byte_exact -> structural
+- `FUYYAB_comp_0`  byte_exact -> structural
+- `FUYYEF_comp_0`  byte_exact -> structural
+- `FUZSOK_comp_0`  byte_exact -> structural
+- `GACCAQ_comp_0`  byte_exact -> structural
+- `GACTAG_comp_0`  byte_exact -> structural
+- `GALZOK_comp_0`  key_equal -> structural
+- `GAMFOS_comp_0`  byte_exact -> structural
+- `GANPIV_comp_0`  byte_exact -> key_equal
+- `GARXAZ_comp_0`  byte_exact -> structural
+- `GAVSUT_comp_0`  byte_exact -> key_equal
+- `GAWMAS_comp_0`  byte_exact -> key_equal
+- `GAYSOO_comp_0`  key_equal -> structural
+- `GEBTEP_comp_0`  byte_exact -> structural
+- `GEFMUC_comp_0`  byte_exact -> key_equal
+- `GEKZUU_comp_0`  byte_exact -> facmer_divergent
+- `GESYAG_comp_0`  byte_exact -> key_equal
+- `GIBMEM_comp_0`  byte_exact -> structural
+- `GIHTAT_comp_0`  byte_exact -> key_equal
+- `GIJFEL_comp_0`  byte_exact -> key_equal
+- `GIMWAA_comp_0`  byte_exact -> structural
+- `GIYBAU_comp_0`  byte_exact -> key_equal
+- `GOHNEW_comp_0`  byte_exact -> key_equal
+- `GONHAS_comp_0`  key_equal -> byte_exact
+- `GUBTUS_comp_0`  byte_exact -> key_equal
+- `GULPAG_comp_0`  byte_exact -> structural
+- `GUXDUZ_comp_0`  byte_exact -> structural
+- `HAMGAD_comp_0`  byte_exact -> structural
+- `HAMGEH_comp_0`  byte_exact -> structural
+- `HAMJEK_comp_0`  byte_exact -> structural
+- `HAMJOU_comp_0`  byte_exact -> structural
+- `HAMKAH_comp_0`  byte_exact -> structural
+- `HAMKOV_comp_0`  key_equal -> structural
+- `HATGAN_comp_0`  byte_exact -> structural
+- `HAVNUQ_comp_0`  byte_exact -> key_equal
+- `HEFKOT_comp_0`  byte_exact -> key_equal
+- `HEJKEM_comp_0`  byte_exact -> structural
+- `HEPSOL_comp_0`  byte_exact -> structural
+- `HERXOS_comp_0`  byte_exact -> key_equal
+- `HEWDAO_comp_0`  key_equal -> structural
+- `HEWKOL_comp_0`  key_equal -> structural
+- `HIJPUM_comp_0`  byte_exact -> key_equal
+- `HIKCAI_comp_0`  byte_exact -> structural
+- `HIKCIQ_comp_0`  byte_exact -> structural
+- `HIPQIH_comp_0`  byte_exact -> structural
+- `HITHUO_comp_0`  byte_exact -> key_equal
+- `HIXMOR_comp_0`  key_equal -> facmer_divergent
+- `HOBBUY_comp_0`  byte_exact -> hard_fail
+- `HOHKOF_comp_0`  key_equal -> byte_exact
+- `HOHTAB_comp_0`  byte_exact -> structural
+- `HOLLUR_comp_0`  byte_exact -> key_equal
+- `HUNLUX_comp_0`  byte_exact -> structural
+- `HURWOH_comp_0`  byte_exact -> structural
+- `IBAZIW_comp_0`  byte_exact -> structural
+- `ICEROX_comp_0`  byte_exact -> key_equal
+- `ICUCAN_comp_0`  byte_exact -> structural
+- `ICUYUC_comp_0`  byte_exact -> structural
+- `IFICAD_comp_0`  key_equal -> facmer_divergent
+- `IGOBIP_comp_0`  key_equal -> byte_exact
+- `IGOBOX_comp_0`  byte_exact -> structural
+- `IGOBUD_comp_0`  byte_exact -> structural
+- `IHEBED_comp_0`  byte_exact -> key_equal
+- `IHIKEP_comp_0`  byte_exact -> structural
+- `IHIZEE_comp_0`  key_equal -> structural
+- `IHOYAH_comp_0`  byte_exact -> structural
+- `IHUBUJ_comp_0`  byte_exact -> key_equal
+- `IJAXIB_comp_0`  byte_exact -> structural
+- `IJAZAV_comp_0`  byte_exact -> key_equal
+- `IJOSOP_comp_0`  byte_exact -> structural
+- `ILONON_comp_0`  byte_exact -> key_equal
+- `IMIYIO_comp_0`  key_equal -> byte_exact
+- `INUWUL_comp_0`  byte_exact -> structural
+- `IWEGAU_comp_0`  byte_exact -> structural
+- `IWUGIR_comp_0`  byte_exact -> structural
+- `IXIHAZ_comp_0`  byte_exact -> structural
+- `IXUTAW_comp_0`  byte_exact -> structural
+- `IZIMEK_comp_0`  byte_exact -> key_equal
+- `IZIMOU_comp_0`  byte_exact -> key_equal
+- `IZUDOX_comp_0`  byte_exact -> key_equal
+- `IZUHAM_comp_0`  byte_exact -> structural
+- `JAFFOL_comp_0`  byte_exact -> structural
+- `JATDUE_comp_0`  byte_exact -> key_equal
+- `JEDPIU_comp_0`  byte_exact -> structural
+- `JEQLOJ_comp_0`  byte_exact -> key_equal
+- `JETNEC_comp_0`  byte_exact -> structural
+- `JIMBAJ_comp_0`  key_equal -> structural
+- `JIVFOK_comp_0`  byte_exact -> structural
+- `JIVQEL_comp_0`  byte_exact -> structural
+- `JOBNUK_comp_0`  byte_exact -> structural
+- `JOFXOS_comp_0`  byte_exact -> structural
+- `JOWBOP_comp_0`  byte_exact -> structural
+- `JUCCUH_comp_0`  byte_exact -> structural
+- `JUXPAV_comp_0`  key_equal -> structural
+- `JUXPID_comp_0`  byte_exact -> structural
+- `KADVER_comp_1`  byte_exact -> structural
+- `KADYEW_comp_0`  byte_exact -> key_equal
+- `KAFYUL_comp_0`  byte_exact -> key_equal
+- `KALHUD_comp_0`  key_equal -> structural
+- `KAQHIW_comp_0`  byte_exact -> key_equal
+- `KAQHOC_comp_0`  byte_exact -> key_equal
+- `KEHNOA_comp_0`  key_equal -> structural
+- `KENQOJ_comp_0`  byte_exact -> key_equal
+- `KEWYAM_comp_0`  byte_exact -> structural
+- `KEXCOI_comp_0`  byte_exact -> structural
+- `KIHGAK_comp_0`  byte_exact -> facmer_divergent
+- `KIHVIH_comp_0`  byte_exact -> structural
+- `KIPBAP_comp_1`  byte_exact -> structural
+- `KIRVOY_comp_0`  byte_exact -> structural
+- `KIRWEP_comp_0`  key_equal -> structural
+- `KIZHOS_comp_0`  key_equal -> byte_exact
+- `KOBNUN_comp_0`  byte_exact -> structural
+- `KOPBAU_comp_0`  byte_exact -> key_equal
+- `KOYZIJ_comp_0`  key_equal -> structural
+- `KUCWUB_comp_0`  byte_exact -> structural
+- `KUGDEX_comp_0`  byte_exact -> structural
+- `KUJMUX_comp_0`  byte_exact -> structural
+- `KUMHIK_comp_0`  byte_exact -> key_equal
+- `KUPVEX_comp_0`  key_equal -> structural
+- `KURBAC_comp_0`  byte_exact -> structural
+- `LABJEG_comp_0`  byte_exact -> structural
+- `LABKIK_comp_0`  byte_exact -> structural
+- `LABKOQ_comp_0`  byte_exact -> structural
+- `LARQAY_comp_2`  byte_exact -> structural
+- `LARQIG_comp_0`  byte_exact -> structural
+- `LASFER_comp_0`  byte_exact -> structural
+- `LASSOQ_comp_0`  byte_exact -> structural
+- `LASVUZ_comp_0`  byte_exact -> structural
+- `LASXUB_comp_0`  byte_exact -> structural
+- `LAZYAO_comp_0`  byte_exact -> structural
+- `LEJBEH_comp_0`  byte_exact -> structural
+- `LERLEC_comp_0`  byte_exact -> key_equal
+- `LEXZIX_comp_0`  byte_exact -> structural
+- `LEXZOD_comp_0`  byte_exact -> structural
+- `LEYTIT_comp_0`  key_equal -> structural
+- `LIHREB_comp_0`  byte_exact -> structural
+- `LIJVEG_comp_0`  byte_exact -> structural
+- `LIKJIB_comp_0`  key_equal -> structural
+- `LODMAV_comp_0`  byte_exact -> structural
+- `LOFLAU_comp_0`  byte_exact -> structural
+- `LOFMOJ_comp_0`  byte_exact -> structural
+- `LOJMUS_comp_0`  byte_exact -> structural
+- `LOMFUQ_comp_0`  byte_exact -> structural
+- `LORPUF_comp_0`  byte_exact -> structural
+- `LOYSUP_comp_0`  byte_exact -> key_equal
+- `LUSZUW_comp_0`  key_equal -> structural
+- `LUTYOO_comp_0`  key_equal -> byte_exact
+- `LUWLAS_comp_0`  byte_exact -> structural
+- `LUWYOR_comp_0`  byte_exact -> key_equal
+- `LUZGIY_comp_0`  byte_exact -> structural
+- `MAMPEW_comp_0`  byte_exact -> structural
+- `MARXAH_comp_0`  key_equal -> byte_exact
+- `MATLOL_comp_0`  key_equal -> structural
+- `MENJAT_comp_0`  key_equal -> structural
+- `MERCIV_comp_0`  byte_exact -> structural
+- `MEVFAU_comp_0`  byte_exact -> structural
+- `MEVSEO_comp_0`  byte_exact -> key_equal
+- `MEWJON_comp_0`  byte_exact -> key_equal
+- `MEXWUH_comp_0`  byte_exact -> structural
+- `MIDPUL_comp_0`  byte_exact -> key_equal
+- `MIKDOA_comp_0`  byte_exact -> structural
+- `MIMHEW_comp_0`  byte_exact -> structural
+- `MIQWEO_comp_0`  byte_exact -> structural
+- `MOJYAL_comp_0`  byte_exact -> structural
+- `MOKDAS_comp_0`  key_equal -> facmer_divergent
+- `MOQQEO_comp_0`  byte_exact -> facmer_divergent
+- `MOQXAT_comp_0`  byte_exact -> key_equal
+- `MOZNIA_comp_0`  byte_exact -> structural
+- `MUBNAY_comp_0`  byte_exact -> structural
+- `MUHGIG_comp_0`  byte_exact -> structural
+- `MUJRIS_comp_0`  key_equal -> structural
+- `MUNWAU_comp_0`  key_equal -> structural
+- `MUPGEK_comp_0`  byte_exact -> key_equal
+- `MUTCEK_comp_0`  byte_exact -> structural
+- `MUTCIO_comp_0`  byte_exact -> structural
+- `MUYTEH_comp_0`  byte_exact -> structural
+- `MUZZUC_comp_0`  byte_exact -> hard_fail
+- `NABLIN_comp_0`  byte_exact -> key_equal
+- `NACTUH_comp_0`  key_equal -> byte_exact
+- `NAHDOQ_comp_0`  byte_exact -> key_equal
+- `NAKHAI_comp_0`  byte_exact -> structural
+- `NAKJUH_comp_0`  byte_exact -> structural
+- `NASKEY_comp_0`  byte_exact -> key_equal
+- `NAYSOX_comp_0`  byte_exact -> structural
+- `NEBVAU_comp_0`  structural -> key_equal
+- `NEBVEW_comp_0`  byte_exact -> structural
+- `NEGSID_comp_0`  key_equal -> structural
+- `NESJAW_comp_0`  key_equal -> byte_exact
+- `NINKAX_comp_0`  byte_exact -> key_equal
+- `NISHAZ_comp_0`  byte_exact -> structural
+- `NIVGEG_comp_0`  byte_exact -> structural
+- `NIYZED_comp_0`  byte_exact -> key_equal
+- `NIYZON_comp_0`  byte_exact -> key_equal
+- `NONDUR_comp_0`  byte_exact -> key_equal
+- `NONGAA_comp_0`  byte_exact -> key_equal
+- `NONSUG_comp_0`  byte_exact -> structural
+- `NONTAN_comp_0`  byte_exact -> structural
+- `NOPXUM_comp_0`  byte_exact -> key_equal
+- `NOVYUU_comp_0`  byte_exact -> structural
+- `NOYQID_comp_0`  byte_exact -> structural
+- `NUJFUV_comp_0`  byte_exact -> structural
+- `NUMLAK_comp_0`  key_equal -> structural
+- `NUVWOQ_comp_0`  byte_exact -> structural
+- `NUZXIQ_comp_0`  byte_exact -> structural
+- `OBILAM_comp_0`  byte_exact -> structural
+- `OBOKIB_comp_0`  byte_exact -> key_equal
+- `OCIKAO_comp_0`  byte_exact -> structural
+- `OCUKAA_comp_0`  byte_exact -> structural
+- `OCUXUG_comp_0`  byte_exact -> key_equal
+- `OFEGAJ_comp_0`  byte_exact -> structural
+- `OFUSUF_comp_0`  byte_exact -> structural
+- `OFUTIU_comp_0`  key_equal -> structural
+- `OGONOP_comp_0`  byte_exact -> key_equal
+- `OGONUV_comp_0`  byte_exact -> structural
+- `OHIQON_comp_0`  byte_exact -> structural
+- `OJOWAL_comp_0`  byte_exact -> structural
+- `OKAPEX_comp_0`  byte_exact -> structural
+- `OKEWEI_comp_0`  byte_exact -> structural
+- `OKOQIO_comp_0`  key_equal -> byte_exact
+- `OLEZEM_comp_0`  byte_exact -> key_equal
+- `OLUXEZ_comp_0`  key_equal -> structural
+- `OMOBIC_comp_0`  key_equal -> structural
+- `ONUGIO_comp_0`  byte_exact -> structural
+- `OPEHOI_comp_0`  byte_exact -> structural
+- `OROJUB_comp_0`  byte_exact -> structural
+- `OSIBEZ_comp_0`  byte_exact -> structural
+- `OTIGIJ_comp_0`  byte_exact -> structural
+- `OVUFUI_comp_0`  byte_exact -> structural
+- `OVUGET_comp_0`  byte_exact -> structural
+- `OWEXIZ_comp_0`  key_equal -> structural
+- `OWIBOM_comp_0`  byte_exact -> key_equal
+- `PACYOJ_comp_0`  byte_exact -> key_equal
+- `PADTIZ_comp_0`  key_equal -> structural
+- `PAKVAA_comp_0`  byte_exact -> key_equal
+- `PALDEN_comp_0`  key_equal -> structural
+- `PANHUJ_comp_0`  byte_exact -> structural
+- `PEBLUF_comp_0`  byte_exact -> structural
+- `PEQQAG_comp_1`  byte_exact -> structural
+- `PERHEC_comp_0`  byte_exact -> structural
+- `PERPIO_comp_0`  byte_exact -> structural
+- `PERYUJ_comp_0`  byte_exact -> structural
+- `PIBDEK_comp_0`  byte_exact -> key_equal
+- `PIGXAG_comp_0`  byte_exact -> structural
+- `PIKROS_comp_0`  byte_exact -> structural
+- `PIQREP_comp_0`  byte_exact -> key_equal
+- `PITHUY_comp_0`  byte_exact -> structural
+- `PIXGIP_comp_0`  byte_exact -> structural
+- `PIXGUB_comp_0`  byte_exact -> structural
+- `PIXHIQ_comp_0`  byte_exact -> structural
+- `PIZBUW_comp_0`  byte_exact -> structural
+- `POJPUZ_comp_0`  byte_exact -> key_equal
+- `POLFIG_comp_0`  byte_exact -> key_equal
+- `POVQOH_comp_0`  byte_exact -> structural
+- `POYGEQ_comp_0`  byte_exact -> structural
+- `PUHBEZ_comp_0`  byte_exact -> facmer_divergent
+- `PUNPEV_comp_0`  byte_exact -> structural
+- `QAHZUU_comp_0`  byte_exact -> facmer_divergent
+- `QALWEH_comp_0`  byte_exact -> key_equal
+- `QANFOD_comp_0`  byte_exact -> structural
+- `QAQZAK_comp_0`  byte_exact -> structural
+- `QASRUA_comp_0`  byte_exact -> structural
+- `QEFSOJ_comp_0`  byte_exact -> structural
+- `QENYOY_comp_0`  byte_exact -> key_equal
+- `QEYMAJ_comp_0`  byte_exact -> structural
+- `QIDKIZ_comp_0`  byte_exact -> structural
+- `QIDNEX_comp_0`  byte_exact -> structural
+- `QIGYUC_comp_0`  byte_exact -> key_equal
+- `QIHBIU_comp_0`  byte_exact -> structural
+- `QIHBUG_comp_0`  byte_exact -> key_equal
+- `QIXGOW_comp_1`  byte_exact -> key_equal
+- `QOHZOC_comp_0`  key_equal -> structural
+- `QOQMUF_comp_1`  byte_exact -> structural
+- `QOSJOY_comp_0`  byte_exact -> key_equal
+- `QOSKAL_comp_0`  byte_exact -> structural
+- `QOZNIE_comp_0`  byte_exact -> key_equal
+- `QUHKIO_comp_0`  byte_exact -> structural
+- `QULZON_comp_0`  byte_exact -> structural
+- `QUVYOX_comp_1`  byte_exact -> structural
+- `RAPMIG_comp_0`  byte_exact -> structural
+- `RAPQEG_comp_0`  key_equal -> byte_exact
+- `RAXVAN_comp_0`  byte_exact -> structural
+- `RECKAN_comp_0`  byte_exact -> key_equal
+- `RECKUH_comp_0`  byte_exact -> structural
+- `REKFAQ_comp_0`  byte_exact -> structural
+- `RIFPOO_comp_0`  byte_exact -> structural
+- `RIFXEL_comp_0`  byte_exact -> key_equal
+- `RIGHOF_comp_0`  byte_exact -> structural
+- `RIHXOV_comp_0`  byte_exact -> structural
+- `RIJJUR_comp_0`  byte_exact -> structural
+- `RILBOG_comp_0`  byte_exact -> structural
+- `RILGAW_comp_0`  byte_exact -> structural
+- `RILGIE_comp_0`  byte_exact -> key_equal
+- `RIPDEA_comp_0`  key_equal -> hard_fail
+- `RIQNUC_comp_0`  byte_exact -> structural
+- `RIRKOV_comp_0`  key_equal -> structural
+- `RIVNUH_comp_0`  byte_exact -> key_equal
+- `RIVPAP_comp_0`  byte_exact -> key_equal
+- `RIXROH_comp_0`  byte_exact -> structural
+- `RIXVAX_comp_0`  key_equal -> structural
+- `RIYHEM_comp_0`  byte_exact -> key_equal
+- `ROCWAK_comp_0`  byte_exact -> structural
+- `ROCZAN_comp_0`  byte_exact -> structural
+- `ROGYES_comp_0`  byte_exact -> structural
+- `ROHZEV_comp_0`  byte_exact -> structural
+- `ROLSET_comp_0`  byte_exact -> structural
+- `ROZNIE_comp_0`  byte_exact -> structural
+- `RULKOZ_comp_0`  byte_exact -> key_equal
+- `RULWEB_comp_0`  key_equal -> structural
+- `RURHUH_comp_0`  byte_exact -> structural
+- `RUSLIC_comp_0`  byte_exact -> structural
+- `RUYDUM_comp_0`  byte_exact -> structural
+- `RUZNUW_comp_0`  byte_exact -> key_equal
+- `SABDAB_comp_0`  byte_exact -> structural
+- `SADMOC_comp_0`  byte_exact -> structural
+- `SAKLOI_comp_0`  byte_exact -> structural
+- `SANNIE_comp_0`  byte_exact -> structural
+- `SARKEC_comp_0`  byte_exact -> key_equal
+- `SAYZOI_comp_0`  byte_exact -> key_equal
+- `SEMPIJ_comp_0`  byte_exact -> structural
+- `SIJROU_comp_0`  byte_exact -> structural
+- `SISBIG_comp_0`  byte_exact -> key_equal
+- `SISBOM_comp_0`  byte_exact -> key_equal
+- `SIWXUT_comp_0`  byte_exact -> key_equal
+- `SOKROB_comp_0`  byte_exact -> structural
+- `SOMKOX_comp_0`  byte_exact -> facmer_divergent
+- `SOMKOX_comp_1`  byte_exact -> structural
+- `SOMWOI_comp_0`  byte_exact -> structural
+- `SOQHIP_comp_0`  byte_exact -> structural
+- `SOSPEW_comp_0`  byte_exact -> structural
+- `SOWNUQ_comp_0`  byte_exact -> structural
+- `SULFEK_comp_0`  byte_exact -> key_equal
+- `SUQXAD_comp_0`  byte_exact -> structural
+- `TAJBUE_comp_0`  byte_exact -> key_equal
+- `TAKTUW_comp_0`  byte_exact -> key_equal
+- `TAKVUY_comp_0`  key_equal -> byte_exact
+- `TAPLIG_comp_0`  key_equal -> byte_exact
+- `TAQLUS_comp_0`  byte_exact -> key_equal
+- `TAXSOC_comp_0`  byte_exact -> structural
+- `TEGXEJ_comp_0`  key_equal -> structural
+- `TEKQAE_comp_0`  byte_exact -> structural
+- `TELSEL_comp_0`  byte_exact -> structural
+- `TENWOB_comp_0`  byte_exact -> structural
+- `TEQHIG_comp_0`  key_equal -> structural
+- `TETQAL_comp_0`  key_equal -> structural
+- `TEVSEV_comp_0`  byte_exact -> structural
+- `TICNUP_comp_0`  byte_exact -> structural
+- `TIXWEC_comp_0`  byte_exact -> structural
+- `TIZLAQ_comp_0`  byte_exact -> structural
+- `TOFWES_comp_0`  byte_exact -> structural
+- `TOGJOQ_comp_0`  byte_exact -> key_equal
+- `TOGMOT_comp_0`  byte_exact -> key_equal
+- `TOHCAX_comp_0`  byte_exact -> structural
+- `TORLAN_comp_0`  byte_exact -> key_equal
+- `TOVTOP_comp_0`  byte_exact -> structural
+- `TULTAX_comp_0`  facmer_divergent -> structural
+- `TURTIL_comp_0`  byte_exact -> key_equal
+- `TUXGOK_comp_0`  byte_exact -> structural
+- `UBARUN_comp_0`  byte_exact -> structural
+- `UCIYOX_comp_0`  byte_exact -> structural
+- `UFOHAZ_comp_0`  key_equal -> structural
+- `UGINOO_comp_0`  key_equal -> structural
+- `UHATAY_comp_0`  byte_exact -> structural
+- `UHIMEE_comp_0`  byte_exact -> key_equal
+- `UJEHAT_comp_0`  byte_exact -> structural
+- `UKUMAP_comp_0`  byte_exact -> key_equal
+- `UKUMET_comp_0`  byte_exact -> facmer_divergent
+- `ULIDIE_comp_0`  key_equal -> structural
+- `ULOQET_comp_0`  byte_exact -> structural
+- `ULORIY_comp_0`  key_equal -> structural
+- `UMENEG_comp_0`  byte_exact -> key_equal
+- `UNAFOG_comp_0`  byte_exact -> structural
+- `UNEXOC_comp_0`  key_equal -> byte_exact
+- `URALAC_comp_0`  byte_exact -> key_equal
+- `UROGAK_comp_0`  byte_exact -> key_equal
+- `USEKAF_comp_0`  byte_exact -> structural
+- `UWALOU_comp_0`  byte_exact -> key_equal
+- `UWULEE_comp_0`  byte_exact -> structural
+- `UXOCAN_comp_0`  byte_exact -> key_equal
+- `UZITED_comp_0`  byte_exact -> key_equal
+- `VAHMID_comp_0`  byte_exact -> structural
+- `VAQRAH_comp_0`  key_equal -> facmer_divergent
+- `VARTOZ_comp_0`  byte_exact -> key_equal
+- `VATQUE_comp_0`  byte_exact -> structural
+- `VATRAL_comp_0`  byte_exact -> structural
+- `VAZHUB_comp_0`  byte_exact -> key_equal
+- `VECYOU_comp_0`  key_equal -> structural
+- `VEXHIR_comp_0`  byte_exact -> key_equal
+- `VIFKEB_comp_0`  byte_exact -> structural
+- `VIGXOZ_comp_0`  byte_exact -> structural
+- `VIGYES_comp_0`  byte_exact -> structural
+- `VIGZER_comp_0`  key_equal -> byte_exact
+- `VIMVUL_comp_0`  byte_exact -> structural
+- `VIMWAS_comp_0`  byte_exact -> structural
+- `VIQQOB_comp_0`  byte_exact -> structural
+- `VIQSAP_comp_0`  byte_exact -> structural
+- `VISVEA_comp_0`  byte_exact -> key_equal
+- `VOCDEY_comp_0`  byte_exact -> structural
+- `VOCSOY_comp_0`  byte_exact -> structural
+- `VOGBEZ_comp_0`  byte_exact -> structural
+- `VOHNEN_comp_0`  byte_exact -> key_equal
+- `VOHYAU_comp_0`  byte_exact -> key_equal
+- `VOJMAL_comp_0`  key_equal -> structural
+- `VUGJEN_comp_0`  byte_exact -> structural
+- `VUGNUI_comp_1`  byte_exact -> structural
+- `VUPQEE_comp_0`  structural -> byte_exact
+- `VUPRUT_comp_0`  byte_exact -> key_equal
+- `WABDEK_comp_0`  byte_exact -> structural
+- `WACFAI_comp_0`  byte_exact -> structural
+- `WAGGUG_comp_0`  byte_exact -> structural
+- `WAQXAP_comp_0`  byte_exact -> structural
+- `WAQXOB_comp_0`  byte_exact -> key_equal
+- `WAVXID_comp_0`  byte_exact -> structural
+- `WAVXOJ_comp_0`  byte_exact -> structural
+- `WAWMAK_comp_0`  byte_exact -> key_equal
+- `WEHXUE_comp_0`  byte_exact -> structural
+- `WEPJOS_comp_0`  byte_exact -> structural
+- `WERQOC_comp_0`  byte_exact -> structural
+- `WEVCEG_comp_0`  key_equal -> byte_exact
+- `WEYDOW_comp_0`  byte_exact -> structural
+- `WISJUG_comp_0`  byte_exact -> structural
+- `WIWRIE_comp_0`  byte_exact -> structural
+- `WIXJOE_comp_0`  byte_exact -> structural
+- `WIXLUL_comp_0`  byte_exact -> structural
+- `WOCTAL_comp_0`  byte_exact -> structural
+- `WOCTEP_comp_0`  byte_exact -> structural
+- `WOFYOF_comp_0`  byte_exact -> key_equal
+- `WOGWEU_comp_0`  byte_exact -> key_equal
+- `WOSFOZ_comp_0`  byte_exact -> key_equal
+- `WOTQAZ_comp_0`  key_equal -> structural
+- `WUBKIP_comp_0`  byte_exact -> structural
+- `WUNYAF_comp_0`  byte_exact -> structural
+- `WURSIL_comp_0`  byte_exact -> key_equal
+- `WUSJAW_comp_0`  byte_exact -> structural
+- `WUSTIP_comp_0`  key_equal -> byte_exact
+- `XAGPAZ_comp_0`  byte_exact -> structural
+- `XANFEZ_comp_0`  byte_exact -> structural
+- `XARHAC_comp_0`  key_equal -> byte_exact
+- `XAWJEL_comp_0`  byte_exact -> key_equal
+- `XAXBAZ_comp_0`  byte_exact -> structural
+- `XECSIJ_comp_0`  byte_exact -> structural
+- `XECTAA_comp_0`  byte_exact -> structural
+- `XEFPON_comp_0`  byte_exact -> structural
+- `XEPCAX_comp_0`  byte_exact -> key_equal
+- `XEQRUI_comp_0`  byte_exact -> key_equal
+- `XESCAB_comp_0`  byte_exact -> key_equal
+- `XEVFUA_comp_0`  byte_exact -> structural
+- `XEVMIV_comp_0`  byte_exact -> structural
+- `XEWSID_comp_0`  byte_exact -> structural
+- `XEXPAU_comp_0`  key_equal -> byte_exact
+- `XEYLIX_comp_0`  byte_exact -> facmer_divergent
+- `XIBHEX_comp_0`  byte_exact -> key_equal
+- `XIJQAJ_comp_0`  key_equal -> byte_exact
+- `XISCIL_comp_0`  byte_exact -> key_equal
+- `XITCIO_comp_0`  byte_exact -> structural
+- `XIVYIL_comp_0`  key_equal -> structural
+- `XIXPUR_comp_0`  key_equal -> structural
+- `XIXTUV_comp_0`  byte_exact -> key_equal
+- `XIXVIL_comp_0`  byte_exact -> key_equal
+- `XIXXUZ_comp_0`  byte_exact -> key_equal
+- `XIYCUF_comp_0`  byte_exact -> key_equal
+- `XIZWUZ_comp_0`  byte_exact -> facmer_divergent
+- `XOQSON_comp_0`  byte_exact -> key_equal
+- `XOVFIZ_comp_0`  key_equal -> byte_exact
+- `XUPQEF_comp_0`  byte_exact -> key_equal
+- `XUWGOL_comp_0`  byte_exact -> structural
+- `XUWHAA_comp_0`  byte_exact -> structural
+- `XUWLEH_comp_0`  key_equal -> structural
+- `XUZHAB_comp_0`  byte_exact -> structural
+- `XUZMIQ_comp_0`  byte_exact -> key_equal
+- `YADBIP_comp_0`  byte_exact -> structural
+- `YAKDUL_comp_0`  byte_exact -> key_equal
+- `YAPSIT_comp_0`  key_equal -> structural
+- `YAVHIN_comp_1`  byte_exact -> structural
+- `YAXWEA_comp_0`  byte_exact -> key_equal
+- `YEBPEC_comp_0`  byte_exact -> structural
+- `YEHHUP_comp_0`  byte_exact -> structural
+- `YEYVAB_comp_0`  byte_exact -> structural
+- `YICXEO_comp_0`  byte_exact -> key_equal
+- `YIMVOG_comp_0`  key_equal -> structural
+- `YINLOX_comp_0`  byte_exact -> key_equal
+- `YOBTAL_comp_0`  byte_exact -> key_equal
+- `YOPPEA_comp_0`  byte_exact -> structural
+- `YOWBUI_comp_0`  byte_exact -> structural
+- `YUDWAW_comp_0`  byte_exact -> structural
+- `YURCEV_comp_0`  key_equal -> structural
+- `YUSLEF_comp_0`  byte_exact -> facmer_divergent
+- `YUYSES_comp_0`  byte_exact -> structural
+- `ZALSAJ_comp_0`  key_equal -> byte_exact
+- `ZATNOZ_comp_0`  key_equal -> structural
+- `ZAYDIO_comp_0`  byte_exact -> key_equal
+- `ZEGZUG_comp_0`  key_equal -> byte_exact
+- `ZELKUY_comp_0`  key_equal -> structural
+- `ZEPLEO_comp_0`  byte_exact -> key_equal
+- `ZEPPAO_comp_0`  byte_exact -> structural
+- `ZEYSOO_comp_1`  byte_exact -> key_equal
+- `ZEZLEX_comp_0`  byte_exact -> structural
+- `ZIBZUI_comp_0`  byte_exact -> key_equal
+- `ZINHOW_comp_0`  byte_exact -> key_equal
+- `ZIPHIR_comp_0`  byte_exact -> key_equal
+- `ZOGXIF_comp_0`  byte_exact -> structural
+- `ZOTZUF_comp_0`  byte_exact -> structural
+- `ZOVDOF_comp_0`  byte_exact -> structural
+- `ZOVKEC_comp_0`  byte_exact -> structural
+- `ZOYYAP_comp_0`  byte_exact -> key_equal
+- `ZOYYUJ_comp_0`  structural -> key_equal
+- `ZUFZUX_comp_0`  byte_exact -> structural
+- `ZUGBUA_comp_0`  byte_exact -> structural
+- `ZUJBIP_comp_0`  key_equal -> structural
+
+---
+
+# v0.4.4 Round-Trip Bucket Report
+
+Generated 2026-07-26T23:57:47 by tools/roundtrip_bucket_report.py
+from 5000 individual reports in `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest/individual_reports`,
+classified with the v0.4.4 fac/mer-aware `oin.compare` key.
+
+Round-trip string read from `smiles_2_indep` -- independent re-perception of the generated XYZ (**HONEST**).
+
+## Buckets
+
+| bucket | count | % |
+|---|---:|---:|
+| byte_exact | 3623 | 72.46% |
+| key_equal | 610 | 12.20% |
+| facmer_divergent | 16 | 0.32% |
+| structural | 417 | 8.34% |
+| hard_fail | 319 | 6.38% |
+| encode_fail | 15 | 0.30% |
+| **total** | **5000** | **100.00%** |
+
+### key_equal sub-split (benign canonicalization reclaimed)
+
+| subclass | count |
+|---|---:|
+| slot_renumber | 496 |
+| rdkit_canonical | 114 |
+
+## elapsed_s percentiles
+
+| subset | n | p50 | p90 | p95 | p99 | max |
+|---|---:|---:|---:|---:|---:|---:|
+| overall | 5000 | 7.2 | 115.7 | 300.1 | 390.1 | 759.9 |
+| eta subset | 1146 | 24.1 | 300.2 | 300.4 | 421.9 | 577.7 |
+
+## fac/mer-divergent (newly-caught isomer errors -- SL2/SL3 target) (16)
+
+- `ADANEB_comp_0`
+- `BODBOM_comp_0`
+- `GEKZUU_comp_0`
+- `HIXMOR_comp_0`
+- `IFICAD_comp_0`
+- `KIHGAK_comp_0`
+- `MOKDAS_comp_0`
+- `MOQQEO_comp_0`
+- `PUHBEZ_comp_0`
+- `QAHZUU_comp_0`
+- `SOMKOX_comp_0`
+- `UKUMET_comp_0`
+- `VAQRAH_comp_0`
+- `XEYLIX_comp_0`
+- `XIZWUZ_comp_0`
+- `YUSLEF_comp_0`
+
+## hard-fail (SL4 worklist) (319)
+
+- `ADEZOY_comp_0`
+- `AFIROW_comp_0`
+- `AKUMAV_comp_0`
+- `ALEMOT_comp_0`
+- `ALITEU_comp_0`
+- `AMUKEZ_comp_0`
+- `ATAGUZ_comp_0`
+- `ATAGUZ_comp_2`
+- `BAJBAS_comp_0`
+- `BAQFIJ_comp_0`
+- `BAXWUS_comp_0`
+- `BEDLII_comp_0`
+- `BEKLUA_comp_0`
+- `BEWSUT_comp_0`
+- `BOLDOW_comp_0`
+- `BUKCUG_comp_0`
+- `BUWHAD_comp_1`
+- `CAHQOT_comp_0`
+- `CAJZOD_comp_0`
+- `CAKBEW_comp_0`
+- `CEGBAU_comp_0`
+- `CEMTIZ_comp_0`
+- `CEQWAY_comp_0`
+- `CEQWUS_comp_0`
+- `CETFAJ_comp_0`
+- `CETYAC_comp_0`
+- `CINXAA_comp_0`
+- `COFMUH_comp_0`
+- `COGKEQ_comp_0`
+- `COJJAP_comp_0`
+- `COJJOD_comp_0`
+- `CUCCIO_comp_0`
+- `DAGNAD_comp_0`
+- `DAGNIL_comp_0`
+- `DAMVAQ_comp_0`
+- `DAYCUE_comp_0`
+- `DEJHEF_comp_0`
+- `DIFPAM_comp_0`
+- `DIRFIW_comp_0`
+- `DOCPAO_comp_0`
+- `DOFCAE_comp_0`
+- `DOFCAE_comp_2`
+- `DOTBIA_comp_0`
+- `EBAFUL_comp_0`
+- `EBAGAS_comp_0`
+- `EBUBAH_comp_0`
+- `ECIGAZ_comp_0`
+- `EQEROI_comp_0`
+- `ESARUM_comp_0`
+- `ETILUP_comp_0`
+- `EWAMAQ_comp_2`
+- `FARFAI_comp_0`
+- `FEKKAJ_comp_0`
+- `FIQPIG_comp_0`
+- `FIYBIB_comp_0`
+- `FOQGEY_comp_0`
+- `GADKUT_comp_0`
+- `GANFEI_comp_0`
+- `GEKNUG_comp_0`
+- `GIFVUN_comp_0`
+- `GOBYAA_comp_0`
+- `GORNUY_comp_0`
+- `GURJUA_comp_0`
+- `GURKOU_comp_0`
+- `GURKUA_comp_0`
+- `GURWAT_comp_0`
+- `GUXMAP_comp_0`
+- `HACDOG_comp_0`
+- `HAPCUY_comp_0`
+- `HIMFAM_comp_0`
+- `HIMQOL_comp_0`
+- `HITHAW_comp_0`
+- `HOBBUY_comp_0`
+- `HOHTEF_comp_0`
+- `HOQFUP_comp_0`
+- `HOZZUT_comp_0`
+- `HUTCIK_comp_0`
+- `HUTCOQ_comp_0`
+- `HUTMEO_comp_0`
+- `ICEZUO_comp_0`
+- `ICOXIK_comp_0`
+- `IDICEF_comp_0`
+- `IFADUQ_comp_0`
+- `IFAPUD_comp_0`
+- `IGITOI_comp_0`
+- `IJIXEG_comp_0`
+- `ILELOA_comp_0`
+- `INALIU_comp_0`
+- `IRINIH_comp_0`
+- `IRUPOC_comp_0`
+- `ITOQIS_comp_0`
+- `IXAHIZ_comp_0`
+- `JAYLIE_comp_0`
+- `JEFHAE_comp_0`
+- `JEHNES_comp_0`
+- `JESFIX_comp_0`
+- `JINMID_comp_0`
+- `JIRFEW_comp_0`
+- `JIVRIP_comp_0`
+- `JIVVIT_comp_0`
+- `KADYAS_comp_0`
+- `KAQDEL_comp_0`
+- `KAQFEN_comp_0`
+- `KAXPAA_comp_0`
+- `KECJUA_comp_0`
+- `KEYVIU_comp_0`
+- `KIKRUU_comp_0`
+- `KIKSAB_comp_0`
+- `KIKWOQ_comp_0`
+- `KIVGIH_comp_0`
+- `KODHIU_comp_0`
+- `LACNOU_comp_0`
+- `LAGJIP_comp_0`
+- `LAHVOG_comp_0`
+- `LAMTAX_comp_0`
+- `LARQED_comp_0`
+- `LEKCIP_comp_0`
+- `LETXOY_comp_0`
+- `LIMVEL_comp_0`
+- `LIRFOJ_comp_0`
+- `LISNUX_comp_0`
+- `LOJGEW_comp_0`
+- `LOLROW_comp_0`
+- `LUMDON_comp_0`
+- `LUSBEI_comp_0`
+- `LUYYOT_comp_0`
+- `LUZDAL_comp_0`
+- `MAFRUJ_comp_0`
+- `MAHTOE_comp_0`
+- `MAZKII_comp_0`
+- `MECXEY_comp_0`
+- `MIBFEL_comp_0`
+- `MIFJIV_comp_1`
+- `MIHLIY_comp_0`
+- `MITZAS_comp_0`
+- `MOCHUH_comp_0`
+- `MOPVEU_comp_0`
+- `MOSLEL_comp_0`
+- `MUKGUW_comp_0`
+- `MUXKAT_comp_0`
+- `MUZZUC_comp_0`
+- `NAGQOE_comp_0`
+- `NAHNOB_comp_0`
+- `NASZOY_comp_0`
+- `NAYJIG_comp_0`
+- `NEFNER_comp_0`
+- `NEGVOL_comp_0`
+- `NEVCOI_comp_0`
+- `NEVCUO_comp_0`
+- `NEXTIT_comp_0`
+- `NIHHAP_comp_0`
+- `NIXFAE_comp_0`
+- `NIXFIM_comp_0`
+- `NIYJUA_comp_0`
+- `NODKUP_comp_0`
+- `NODLAW_comp_0`
+- `NODLEA_comp_0`
+- `NOEPOR_comp_0`
+- `NOJWAN_comp_0`
+- `NOYREA_comp_0`
+- `NOYTUS_comp_0`
+- `NURTEA_comp_0`
+- `NUTHER_comp_0`
+- `OBABAX_comp_0`
+- `ODUBAS_comp_0`
+- `ODUJEC_comp_0`
+- `OPUCUZ_comp_0`
+- `OQAPED_comp_0`
+- `OQIFEA_comp_0`
+- `OTOLAL_comp_0`
+- `OWEWAQ_comp_0`
+- `OWODUA_comp_0`
+- `OZADAW_comp_0`
+- `OZUZEQ_comp_0`
+- `PACMEL_comp_0`
+- `PAFZUS_comp_0`
+- `PAQCAM_comp_0`
+- `PAWJED_comp_0`
+- `PAXJUT_comp_0`
+- `PDTPOR_comp_0`
+- `PEDPEW_comp_0`
+- `PEDPOG_comp_0`
+- `PEKRAB_comp_0`
+- `PICVII_comp_0`
+- `PICVUT_comp_0`
+- `PICWAA_comp_0`
+- `PIJPAB_comp_0`
+- `PIJWEK_comp_0`
+- `PIKLOM_comp_0`
+- `PODZEO_comp_0`
+- `PORKUF_comp_0`
+- `POZSIG_comp_0`
+- `PUGVOC_comp_0`
+- `PUMKUD_comp_0`
+- `PUMLEP_comp_0`
+- `PUQRAW_comp_0`
+- `PURROJ_comp_0`
+- `PUVWEK_comp_0`
+- `QAMJAP_comp_0`
+- `QEBKUG_comp_0`
+- `QEWJOS_comp_0`
+- `QIDHEQ_comp_0`
+- `QIDKUL_comp_0`
+- `QIFHIY_comp_0`
+- `QIYYED_comp_0`
+- `QIYYON_comp_0`
+- `QOCHAT_comp_0`
+- `QOFTUA_comp_0`
+- `QOJKUW_comp_0`
+- `QONNAK_comp_0`
+- `RAJNIC_comp_0`
+- `RATXOZ_comp_0`
+- `RAYCEC_comp_0`
+- `REMVIQ_comp_0`
+- `REVMEL_comp_0`
+- `RIPDEA_comp_0`
+- `RIRYOJ_comp_0`
+- `RIVNUG_comp_0`
+- `RIWKEO_comp_0`
+- `RIXSAU_comp_1`
+- `ROMSER_comp_0`
+- `RONNOA_comp_0`
+- `RONQET_comp_0`
+- `RONQOD_comp_0`
+- `RUKVAU_comp_0`
+- `RUKWOL_comp_0`
+- `RULMOA_comp_2`
+- `SEMPEF_comp_0`
+- `SEMPOP_comp_0`
+- `SEMVUD_comp_0`
+- `SEQVEP_comp_0`
+- `SERCOI_comp_0`
+- `SICNIC_comp_0`
+- `SIGYAL_comp_0`
+- `SOQHEL_comp_0`
+- `SOQKEQ_comp_0`
+- `SUJDAC_comp_0`
+- `SUMQAT_comp_0`
+- `SUNROK_comp_0`
+- `SUSGOC_comp_0`
+- `SUVREH_comp_0`
+- `SUXJOM_comp_0`
+- `SUXJUS_comp_0`
+- `TANROQ_comp_0`
+- `TEPGED_comp_0`
+- `TEQHOM_comp_0`
+- `TEYCOQ_comp_0`
+- `TIKVOB_comp_1`
+- `TIPDIG_comp_0`
+- `TIZLEU_comp_0`
+- `TOCZES_comp_0`
+- `TOGKOR_comp_0`
+- `TOQXUU_comp_0`
+- `TOWWUX_comp_0`
+- `TOXDIV_comp_0`
+- `TUVCIX_comp_0`
+- `UDARIC_comp_0`
+- `ULOFEG_comp_0`
+- `ULOQIX_comp_0`
+- `ULOQOD_comp_0`
+- `ULORAQ_comp_0`
+- `UPABUK_comp_0`
+- `UQUXAG_comp_0`
+- `USAPOU_comp_0`
+- `UTEMIR_comp_0`
+- `UTOJEU_comp_0`
+- `UZEVAY_comp_0`
+- `VADCEI_comp_0`
+- `VAJVOS_comp_0`
+- `VEJXOZ_comp_0`
+- `VEMQIP_comp_0`
+- `VIMTET_comp_0`
+- `VIQQAN_comp_0`
+- `VOPQOJ_comp_0`
+- `VUXTOZ_comp_0`
+- `WAHXOV_comp_1`
+- `WAMWUE_comp_0`
+- `WAVDED_comp_0`
+- `WAWMUF_comp_0`
+- `WECYOS_comp_0`
+- `WERLOV_comp_0`
+- `WIBTAD_comp_0`
+- `WODCIC_comp_0`
+- `WOFGUT_comp_0`
+- `WOLRIA_comp_0`
+- `WUMQAY_comp_0`
+- `XAJBIW_comp_0`
+- `XAKCAP_comp_0`
+- `XANKAA_comp_0`
+- `XATXOH_comp_0`
+- `XENNIO_comp_0`
+- `XENZAS_comp_0`
+- `XILCOM_comp_0`
+- `XIVBIN_comp_0`
+- `XOMKUG_comp_0`
+- `XOSCIT_comp_0`
+- `XOYCOE_comp_0`
+- `YARYOI_comp_0`
+- `YIDFEZ_comp_0`
+- `YIQVOJ_comp_0`
+- `YIVLAQ_comp_0`
+- `YOLHOX_comp_0`
+- `YOQMAT_comp_0`
+- `YOSYEM_comp_0`
+- `YUVXOE_comp_0`
+- `YUXZOI_comp_0`
+- `ZAYNEU_comp_0`
+- `ZEKKIL_comp_0`
+- `ZENZAW_comp_1`
+- `ZESCEI_comp_0`
+- `ZIPFOV_comp_0`
+- `ZIQLOD_comp_0`
+- `ZISKUJ_comp_0`
+- `ZOCYIC_comp_0`
+- `ZODBUP_comp_0`
+- `ZOLXOP_comp_0`
+- `ZUCKOZ_comp_1`
+- `ZUGCAH_comp_0`
+- `ZUYVEU_comp_0`
+
+## encode-fail (SL5 worklist) (15)
+
+- `BENVOG_comp_0`
+- `GABSOT_comp_0`
+- `HICLAG_comp_0`
+- `KEMSUS_comp_0`
+- `KESWUB_comp_0`
+- `LEXDUP_comp_0`
+- `LUJJUX_comp_0`
+- `NOGWOX_comp_0`
+- `NOXREZ_comp_0`
+- `OMEYUA_comp_0`
+- `SUGQOA_comp_0`
+- `UROFUD_comp_0`
+- `UVIWIG_comp_0`
+- `XAWSET_comp_0`
+- `ZEHQOU_comp_0`
+
+## structural mismatch (417)
+
+- `AHEBEV_comp_0`
+- `AHUKIZ_comp_0`
+- `AJOKIV_comp_0`
+- `APAGOO_comp_0`
+- `APOTOO_comp_0`
+- `BADPOO_comp_0`
+- `BADPUU_comp_0`
+- `BEKHIK_comp_0`
+- `BEPSUN_comp_0`
+- `BERZAC_comp_0`
+- `BIKROD_comp_0`
+- `BIKRUL_comp_0`
+- `BIXCAN_comp_0`
+- `BOCGEH_comp_0`
+- `BOCHIM_comp_0`
+- `BODPAM_comp_0`
+- `BOKREZ_comp_0`
+- `BOMTAB_comp_0`
+- `BOPZOX_comp_0`
+- `BOVCUM_comp_0`
+- `BUWSUI_comp_0`
+- `CAHQEJ_comp_0`
+- `CAMDUQ_comp_0`
+- `CAZHAP_comp_0`
+- `CAZXIM_comp_0`
+- `CEDXER_comp_0`
+- `CESFIR_comp_0`
+- `CIMCIL_comp_0`
+- `CIXPEG_comp_0`
+- `COMXUY_comp_0`
+- `CUWHIM_comp_0`
+- `DALHIK_comp_0`
+- `DAPCIH_comp_0`
+- `DEGSUD_comp_0`
+- `DEMSOG_comp_0`
+- `DEQGUB_comp_0`
+- `DERMET_comp_0`
+- `DERMIX_comp_0`
+- `DIDROZ_comp_0`
+- `DILYOM_comp_0`
+- `DILZOQ_comp_2`
+- `DIVZOY_comp_0`
+- `DIYWAM_comp_0`
+- `DOGMOD_comp_0`
+- `DOGQEX_comp_0`
+- `DOKROM_comp_0`
+- `DOLWEG_comp_0`
+- `EDANEF_comp_0`
+- `EJUKOK_comp_0`
+- `EKETUJ_comp_0`
+- `EKOHIW_comp_0`
+- `EMUGAU_comp_0`
+- `ENUGAX_comp_0`
+- `EQAGEK_comp_0`
+- `EQOYEO_comp_0`
+- `ERATIA_comp_0`
+- `ESEXIK_comp_0`
+- `ETACIL_comp_1`
+- `EVUHUZ_comp_0`
+- `EWALET_comp_0`
+- `EWUQOC_comp_0`
+- `EYEBOA_comp_0`
+- `EYOCEC_comp_0`
+- `EZURIB_comp_0`
+- `EZUROH_comp_0`
+- `FAGZUL_comp_0`
+- `FATCEJ_comp_0`
+- `FAYNEB_comp_0`
+- `FECSUC_comp_0`
+- `FEDQUD_comp_0`
+- `FENQAQ_comp_0`
+- `FEPZIK_comp_0`
+- `FEPZOQ_comp_0`
+- `FESFUG_comp_0`
+- `FESKUK_comp_0`
+- `FIBQAK_comp_0`
+- `FOGCIN_comp_0`
+- `FOHFIT_comp_0`
+- `FOJJUM_comp_0`
+- `FOJWOR_comp_0`
+- `FOJZOU_comp_0`
+- `FOKQOM_comp_0`
+- `FULBIZ_comp_0`
+- `FUQZAT_comp_0`
+- `FUSNAK_comp_0`
+- `FUXMAN_comp_0`
+- `FUYYAB_comp_0`
+- `FUYYEF_comp_0`
+- `FUZSOK_comp_0`
+- `GACCAQ_comp_0`
+- `GACTAG_comp_0`
+- `GALZOK_comp_0`
+- `GAMFOS_comp_0`
+- `GARXAZ_comp_0`
+- `GAYSOO_comp_0`
+- `GEBTEP_comp_0`
+- `GIBMEM_comp_0`
+- `GIMWAA_comp_0`
+- `GULPAG_comp_0`
+- `GUXDUZ_comp_0`
+- `GUYQUO_comp_0`
+- `HAMGAD_comp_0`
+- `HAMGEH_comp_0`
+- `HAMJEK_comp_0`
+- `HAMJOU_comp_0`
+- `HAMKAH_comp_0`
+- `HAMKOV_comp_0`
+- `HATGAN_comp_0`
+- `HEJKEM_comp_0`
+- `HEPSOL_comp_0`
+- `HEWDAO_comp_0`
+- `HEWKOL_comp_0`
+- `HIKCAI_comp_0`
+- `HIKCIQ_comp_0`
+- `HIPQIH_comp_0`
+- `HOHTAB_comp_0`
+- `HUNLUX_comp_0`
+- `HURWOH_comp_0`
+- `IBAZIW_comp_0`
+- `ICUCAN_comp_0`
+- `ICUYUC_comp_0`
+- `IGOBOX_comp_0`
+- `IGOBUD_comp_0`
+- `IHIKEP_comp_0`
+- `IHIZEE_comp_0`
+- `IHOYAH_comp_0`
+- `IJAXIB_comp_0`
+- `IJOSOP_comp_0`
+- `INUWUL_comp_0`
+- `IWEGAU_comp_0`
+- `IWUGIR_comp_0`
+- `IXIHAZ_comp_0`
+- `IXUTAW_comp_0`
+- `IZUHAM_comp_0`
+- `JAFFOL_comp_0`
+- `JEDPIU_comp_0`
+- `JETNEC_comp_0`
+- `JIMBAJ_comp_0`
+- `JIVFOK_comp_0`
+- `JIVQEL_comp_0`
+- `JOBNUK_comp_0`
+- `JOFXOS_comp_0`
+- `JOWBOP_comp_0`
+- `JUCCUH_comp_0`
+- `JUXPAV_comp_0`
+- `JUXPID_comp_0`
+- `KADVER_comp_1`
+- `KALHUD_comp_0`
+- `KEHNOA_comp_0`
+- `KEWYAM_comp_0`
+- `KEXCOI_comp_0`
+- `KIHHUG_comp_0`
+- `KIHVIH_comp_0`
+- `KIPBAP_comp_1`
+- `KIRVOY_comp_0`
+- `KIRWEP_comp_0`
+- `KOBNUN_comp_0`
+- `KOYZIJ_comp_0`
+- `KUCWUB_comp_0`
+- `KUGDEX_comp_0`
+- `KUJMUX_comp_0`
+- `KUPVEX_comp_0`
+- `KURBAC_comp_0`
+- `LABJEG_comp_0`
+- `LABKIK_comp_0`
+- `LABKOQ_comp_0`
+- `LARQAY_comp_2`
+- `LARQIG_comp_0`
+- `LASFER_comp_0`
+- `LASSOQ_comp_0`
+- `LASVUZ_comp_0`
+- `LASXUB_comp_0`
+- `LAZYAO_comp_0`
+- `LEJBEH_comp_0`
+- `LEXZIX_comp_0`
+- `LEXZOD_comp_0`
+- `LEYTIT_comp_0`
+- `LIHREB_comp_0`
+- `LIJVEG_comp_0`
+- `LIKJIB_comp_0`
+- `LODMAV_comp_0`
+- `LOFLAU_comp_0`
+- `LOFMOJ_comp_0`
+- `LOJMUS_comp_0`
+- `LOMFUQ_comp_0`
+- `LORPUF_comp_0`
+- `LUSZUW_comp_0`
+- `LUWLAS_comp_0`
+- `LUZGIY_comp_0`
+- `MAMPEW_comp_0`
+- `MATLOL_comp_0`
+- `MENJAT_comp_0`
+- `MERCIV_comp_0`
+- `MEVFAU_comp_0`
+- `MEXWUH_comp_0`
+- `MIKDOA_comp_0`
+- `MIMHEW_comp_0`
+- `MIQWEO_comp_0`
+- `MOJYAL_comp_0`
+- `MOZNIA_comp_0`
+- `MUBNAY_comp_0`
+- `MUHGIG_comp_0`
+- `MUJRIS_comp_0`
+- `MUNWAU_comp_0`
+- `MUTCEK_comp_0`
+- `MUTCIO_comp_0`
+- `MUYTEH_comp_0`
+- `NAKHAI_comp_0`
+- `NAKJUH_comp_0`
+- `NAYSOX_comp_0`
+- `NEBVEW_comp_0`
+- `NEGSID_comp_0`
+- `NISHAZ_comp_0`
+- `NIVGEG_comp_0`
+- `NONSUG_comp_0`
+- `NONTAN_comp_0`
+- `NOVYUU_comp_0`
+- `NOYQID_comp_0`
+- `NUJFUV_comp_0`
+- `NUMLAK_comp_0`
+- `NUVWOQ_comp_0`
+- `NUZXIQ_comp_0`
+- `OBILAM_comp_0`
+- `OCIKAO_comp_0`
+- `OCUKAA_comp_0`
+- `OFEGAJ_comp_0`
+- `OFUSUF_comp_0`
+- `OFUTIU_comp_0`
+- `OGONUV_comp_0`
+- `OHIQON_comp_0`
+- `OJOWAL_comp_0`
+- `OKAPEX_comp_0`
+- `OKEWEI_comp_0`
+- `OLUXEZ_comp_0`
+- `OMOBIC_comp_0`
+- `ONUGIO_comp_0`
+- `OPEHOI_comp_0`
+- `OROJUB_comp_0`
+- `OSIBEZ_comp_0`
+- `OTIGIJ_comp_0`
+- `OVUFUI_comp_0`
+- `OVUGET_comp_0`
+- `OWEXIZ_comp_0`
+- `PADTIZ_comp_0`
+- `PALDEN_comp_0`
+- `PANHUJ_comp_0`
+- `PEBLUF_comp_0`
+- `PEQQAG_comp_1`
+- `PERHEC_comp_0`
+- `PERPIO_comp_0`
+- `PERYUJ_comp_0`
+- `PIGXAG_comp_0`
+- `PIKROS_comp_0`
+- `PITHUY_comp_0`
+- `PIXGIP_comp_0`
+- `PIXGUB_comp_0`
+- `PIXHIQ_comp_0`
+- `PIZBUW_comp_0`
+- `POVQOH_comp_0`
+- `POYGEQ_comp_0`
+- `PUNPEV_comp_0`
+- `QANFOD_comp_0`
+- `QAQZAK_comp_0`
+- `QASRUA_comp_0`
+- `QEFSOJ_comp_0`
+- `QEYMAJ_comp_0`
+- `QIDKIZ_comp_0`
+- `QIDNEX_comp_0`
+- `QIHBIU_comp_0`
+- `QIWNIU_comp_0`
+- `QOHZOC_comp_0`
+- `QOQMUF_comp_1`
+- `QOSKAL_comp_0`
+- `QUHKIO_comp_0`
+- `QULZON_comp_0`
+- `QUVYOX_comp_1`
+- `RAPMIG_comp_0`
+- `RAXVAN_comp_0`
+- `RECKUH_comp_0`
+- `REKFAQ_comp_0`
+- `RIFPOO_comp_0`
+- `RIGHOF_comp_0`
+- `RIHXOV_comp_0`
+- `RIJJUR_comp_0`
+- `RILBOG_comp_0`
+- `RILGAW_comp_0`
+- `RIQNUC_comp_0`
+- `RIRKOV_comp_0`
+- `RIXROH_comp_0`
+- `RIXVAX_comp_0`
+- `ROCWAK_comp_0`
+- `ROCZAN_comp_0`
+- `ROGYES_comp_0`
+- `ROHZEV_comp_0`
+- `ROLSET_comp_0`
+- `ROZNIE_comp_0`
+- `RULWEB_comp_0`
+- `RURHUH_comp_0`
+- `RUSLIC_comp_0`
+- `RUYDUM_comp_0`
+- `SABDAB_comp_0`
+- `SADMOC_comp_0`
+- `SAKLOI_comp_0`
+- `SANNIE_comp_0`
+- `SEMPIJ_comp_0`
+- `SIJROU_comp_0`
+- `SOKROB_comp_0`
+- `SOMKOX_comp_1`
+- `SOMWOI_comp_0`
+- `SOQHIP_comp_0`
+- `SOSPEW_comp_0`
+- `SOWNUQ_comp_0`
+- `SUQXAD_comp_0`
+- `TAXSOC_comp_0`
+- `TEGXEJ_comp_0`
+- `TEKQAE_comp_0`
+- `TELSEL_comp_0`
+- `TENWOB_comp_0`
+- `TEQHIG_comp_0`
+- `TETQAL_comp_0`
+- `TEVSEV_comp_0`
+- `TICNUP_comp_0`
+- `TIXWEC_comp_0`
+- `TIZLAQ_comp_0`
+- `TOFWES_comp_0`
+- `TOHCAX_comp_0`
+- `TOVTOP_comp_0`
+- `TULTAX_comp_0`
+- `TUXGOK_comp_0`
+- `UBARUN_comp_0`
+- `UCIYOX_comp_0`
+- `UFOHAZ_comp_0`
+- `UGINOO_comp_0`
+- `UHATAY_comp_0`
+- `UJEHAT_comp_0`
+- `ULIDIE_comp_0`
+- `ULOQET_comp_0`
+- `ULORIY_comp_0`
+- `UNAFOG_comp_0`
+- `USEKAF_comp_0`
+- `UWULEE_comp_0`
+- `VAHMID_comp_0`
+- `VATQUE_comp_0`
+- `VATRAL_comp_0`
+- `VECYOU_comp_0`
+- `VIFKEB_comp_0`
+- `VIGXOZ_comp_0`
+- `VIGYES_comp_0`
+- `VIMVUL_comp_0`
+- `VIMWAS_comp_0`
+- `VIQQOB_comp_0`
+- `VIQSAP_comp_0`
+- `VOCDEY_comp_0`
+- `VOCSOY_comp_0`
+- `VOGBEZ_comp_0`
+- `VOJMAL_comp_0`
+- `VUGJEN_comp_0`
+- `VUGNUI_comp_1`
+- `WABDEK_comp_0`
+- `WACFAI_comp_0`
+- `WAGGUG_comp_0`
+- `WAQXAP_comp_0`
+- `WAVXID_comp_0`
+- `WAVXOJ_comp_0`
+- `WEHXUE_comp_0`
+- `WEPJOS_comp_0`
+- `WERQOC_comp_0`
+- `WEYDOW_comp_0`
+- `WISJUG_comp_0`
+- `WIWRIE_comp_0`
+- `WIXJOE_comp_0`
+- `WIXLUL_comp_0`
+- `WOCTAL_comp_0`
+- `WOCTEP_comp_0`
+- `WOTQAZ_comp_0`
+- `WUBKIP_comp_0`
+- `WUNYAF_comp_0`
+- `WUSJAW_comp_0`
+- `XAGPAZ_comp_0`
+- `XANFEZ_comp_0`
+- `XAXBAZ_comp_0`
+- `XECSIJ_comp_0`
+- `XECTAA_comp_0`
+- `XEFPON_comp_0`
+- `XEVFUA_comp_0`
+- `XEVMIV_comp_0`
+- `XEWSID_comp_0`
+- `XITCIO_comp_0`
+- `XIVYIL_comp_0`
+- `XIXPUR_comp_0`
+- `XUWGOL_comp_0`
+- `XUWHAA_comp_0`
+- `XUWLEH_comp_0`
+- `XUZHAB_comp_0`
+- `YADBIP_comp_0`
+- `YAPSIT_comp_0`
+- `YAVHIN_comp_1`
+- `YEBPEC_comp_0`
+- `YEHHUP_comp_0`
+- `YEYVAB_comp_0`
+- `YIMVOG_comp_0`
+- `YOPPEA_comp_0`
+- `YOWBUI_comp_0`
+- `YUDWAW_comp_0`
+- `YURCEV_comp_0`
+- `YUYSES_comp_0`
+- `ZATNOZ_comp_0`
+- `ZELKUY_comp_0`
+- `ZEPPAO_comp_0`
+- `ZEZLEX_comp_0`
+- `ZOGXIF_comp_0`
+- `ZOTZUF_comp_0`
+- `ZOVDOF_comp_0`
+- `ZOVKEC_comp_0`
+- `ZUFZUX_comp_0`
+- `ZUGBUA_comp_0`
+- `ZUJBIP_comp_0`

@@ -23,6 +23,7 @@ If it tells a user or contributor *how the shipped software behaves*, it is a pr
 | A refuted hypothesis or negative result | `agentic-notes/<release>/` |
 | A status snapshot or session handoff record | `agentic-notes/<release>/` |
 | Raw JSON backing a report | beside that report, or `<release>/data/` |
+| A number a LATER RELEASE will diff (baseline, gate tally, transition matrix) | `measurements/<release>/` — via `tools/harvest_measurements.py` |
 | A multi-release research program | its own topic folder (see `injectivity/`) |
 | A behaviour a user would hit | `docs/KNOWN_LIMITATIONS.md` |
 | How a shipped subsystem works | `docs/GENERATION_PIPELINE.md` or a new product doc |
