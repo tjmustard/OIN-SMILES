@@ -158,7 +158,73 @@ are now **confirmed rather than inherited**, and the carry-forward licence rests
 
 ---
 
-## 6. Files
+## 6. 🔴 The gate: 19 → 0 collapses, and nothing else moved
+
+```bash
+OIN_FOLD_PARITY_VETO=1 PYTHONPATH=$PWD/src .venv/bin/python \
+    tools/mirror_audit_donor_fold.py --dataset tmCAT-tmPHOTO_xyz_dataset/cat --n 250 --seed 7
+```
+
+| verdict | baseline | **veto** | |
+|---|---:|---:|---|
+| 🔴 `REGRESSION_raw_collapsed` | 19 | **0** | the gate |
+| `distinct_both_arms` | 73 | **92** | ← the same 19, now correctly separated |
+| `achiral_or_preexisting_fold` | 157 | **157** | the achiral guard did **not** over-fire |
+| `encode_failed` | 1 | **1** | unchanged |
+
+The movement is exactly one-directional and exactly the intended 19 molecules. **That
+`achiral_or_preexisting_fold` is unmoved at 157 is the second-most-important number here**: it
+is the direct evidence that the left conjunct works. A veto without it would have swallowed all
+157 of those molecules as well, still reported `REGRESSION_raw_collapsed = 0`, and looked like
+a total success while destroying the fold's entire benefit.
+
+## 7. What the veto costs — 171 of 393 gains survive, +3.42 points
+
+```bash
+PYTHONPATH=$PWD/src .venv/bin/python tools/fold_transition_sim.py \
+    --sweep tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest --arm veto
+```
+
+| | fold alone | **fold + veto** |
+|---|---:|---:|
+| `key_equal/slot_renumber → byte_exact` | 393 | **171** |
+| `byte_exact` | 3623 → 4016 | **3623 → 3794** |
+| points | **+7.86** | **+3.42** |
+| `facmer_divergent` | 16 → 16 | **16 → 16** |
+| moved in a bad direction | 0 | **0** |
+| excluded as `drift` / unavailable | — | **0 / 0** |
+
+**The veto keeps 43.5% of the fold's gain and gives back the rest.** v0.4.11 bounded the safe
+set at *"at most ~172 of 393 (~3.44 of the 7.86 points)"* from its collapse count; the filter
+independently lands on **171 / +3.42**. Two different measurements — one counting collapses in
+a mirror audit, one counting survivors through the shipped predicate — agreeing to a single
+molecule is the strongest evidence in this lane that the veto is separating the right set.
+
+**0 drift across all 393** is a second result carried by the same run: today's encoder
+reproduces the v0.4.8 strings for every mover's input *and* generated structure, so
+v0.4.9 / v0.4.10 / v0.4.11's byte-identity claims — and the carry-forward licence that rests on
+them — are **measured, not inherited**.
+
+> The gain is bankable only because §6 read 0. A surviving-gain count says what the veto
+> *kept*; only the audit says whether what it kept is safe. Both were run before the number
+> above was quoted anywhere.
+
+### 7.1 The default path is provably untouched
+
+```bash
+bash tools/gate_v047.sh arm1
+#   [gate] python=.../.venv/bin/python (rdkit 2025.09.3)   <- the right interpreter
+#   [gate/arm1] sentinel OK: #DONE 62
+#   [gate/arm1] PASS -- byte-identical to golden
+```
+
+62/62 fixtures byte-identical with both levers off, and the gate resolved the **pinned**
+rdkit 2025.09.3 rather than a sibling project's venv — the v0.4.9 trap where a byte-identity
+gate silently ran on rdkit 2025.09.2 and reported MISMATCHes that read as code regressions.
+
+Full suite: **988 OK** (skipped 3, expected failures 5).
+
+## 8. Files
 
 `src/oinsmiles/oin/fold_parity.py` (new) · `src/oinsmiles/utils/perception_tmc.py`
 (pristine-conformer capture + post-pass call site) · `src/oinsmiles/oin/levers.py` ·

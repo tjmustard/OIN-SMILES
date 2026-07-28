@@ -115,7 +115,33 @@ and 19/250 mirror regressions) reproduce **exactly**.
 
 ## 6. Predicted vs actual
 
-See `spec/handoffs/v0.4.12/CLOSEOUT.md` §3. Filled at close-out.
+The charter's predictions were written **before** either lever was built.
+
+| | predicted | actual | |
+|---|---|---|---|
+| `byte_exact`, default path | FLAT 72.46% | **FLAT 72.46%** | ✓ both levers OFF |
+| `byte_exact`, L1 lever ON | **+3.0 to +3.5 pts** (≈150–175 of 393 survive) | **+3.42 pts, 171 of 393** | ✓ |
+| mirror audit, uniform 250 | 19 → **0** | *see §6.1* | |
+| `> 30 s`, default path | FLAT | **FLAT** | ✓ nothing default-path changed |
+| eta `> 30 s`, L2 lever ON | down; magnitude unpredicted | **not measured — timing run deferred** | ⚠ |
+| suite | ≥ v0.4.11's floor | **988 OK** (skipped 3, xfail 5) | ✓ |
+
+Two of these deserve more than a tick.
+
+**The L1 prediction was not a lucky guess, and it is corroborated by an independent route.**
+v0.4.11 bounded the safe set at *"at most ~172 of 393 (~3.44 of the 7.86 points)"* by counting
+**collapses** in a mirror audit. This release counted **survivors** through the shipped
+predicate and got **171 / +3.42**. Two different mechanisms agreeing to a single molecule is
+the strongest evidence here that the veto separates the right set — stronger than either number
+alone.
+
+**The L2 timing arm is a deliberate hole, not an oversight.** The box was at load 26 with two
+mirror audits running, and this project's standing trap is *never interleave timing runs with
+gate runs*. Under load the per-molecule hard cap also fires spuriously and manufactures
+timeout-shaped "regressions" — v0.4.4 read 11 of those as correctness deltas and all 11 were
+timeouts. The A/B was **stopped rather than banked**. L2 therefore ships with its correctness
+arms and **no runtime claim at all**, which is the honest position: its predicted tail
+reduction is **unverified**.
 
 ---
 
