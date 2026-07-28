@@ -161,8 +161,8 @@ step this lane hands forward, and it is testable with the tooling built here.
 | comparison key, 992 strings | 0 changed | the key **deliberately** folds this axis (`_parse_vertex_colors` is colour-blind to which donor holds which slot) |
 | ARM 1 / ARM 2 | 62/62, 90/90 PASS | lever OFF — correct, and silent about ON |
 | `ZUMNEC` + `fac-Ir(ppy)₃` fixtures | pass | the wrong fixtures; neither has the vulnerable motif |
-| stratified audit (slow band, 300) | 0 regressions in the first 200 | **the wrong sample** |
 | **uniform draw (250)** | **19 collapses** | the only instrument that could |
+| **stratified cohort (300)** | **31 collapses** | likewise — both cohorts find it |
 
 > 🔴 **The +7.86 points looked free precisely because the metric and the key are both blind to
 > the axis being destroyed.** For a roadmap whose target *is* `byte_exact` 100%, that is the
@@ -170,10 +170,17 @@ step this lane hands forward, and it is testable with the tooling built here.
 > future canonicality lever must be mirror-audited on a uniform draw before its points are
 > quoted.
 
-**Sampling matters as much as the check.** The stratified runtime cohort is selected for being
-*slow*, not for carrying stereochemistry; it returned a clean bill for 200 molecules while a
-uniform draw of 250 found 19 collapses. A corpus audit on the wrong stratum is not a corpus
-audit.
+### ⚠ A methodology error made during this lane, recorded rather than buried
+
+Mid-run the stratified audit was read as *"0 regressions in the first 200"* and briefly written
+up as evidence that the runtime-stratified cohort was **the wrong sample**. That was wrong:
+`mirror_audit_donor_fold.py` prints a per-molecule verdict only every **50th** molecule, so four
+clean progress lines were mistaken for 200 clean molecules. Run to completion the same cohort
+reports **31 collapses (10.3%)** — a *higher* rate than the uniform draw.
+
+> **A partial run is not a result, and a progress line is not a tally.** Read the summary line,
+> or count with `--verbose`. Both cohorts detect the defect; nothing here supports a claim about
+> stratum choice.
 
 ## 5. Status and disposition
 
