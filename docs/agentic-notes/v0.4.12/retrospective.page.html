@@ -1,0 +1,1409 @@
+<title>OIN-SMILES v0.4.4 → v0.4.12 — accuracy &amp; speed retrospective</title>
+
+<style>
+/* ─── tokens ─────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+  --plane:      #F2F4F3;
+  --surface:    #FCFCFB;
+  --surface-2:  #F7F9F8;
+  --ink:        #111618;
+  --ink-2:      #4C5A5C;
+  --ink-muted:  #7E8A8B;
+  --rule:       #DDE3E2;
+  --rule-soft:  #E9EEED;
+  --accent:     #008C9E;
+  --accent-ink: #016673;
+  --data:       #008C9E;
+  --data-soft:  #A6D2D9;
+  --data-mute:  #C4CDCD;
+  --grid:       #E4EAE9;
+  --good:       #0ca30c;
+  --warning:    #fab219;
+  --serious:    #ec835a;
+  --shadow:     0 1px 2px rgba(17,22,24,.05), 0 8px 24px -16px rgba(17,22,24,.28);
+
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --plane:      #0A0E0F;
+    --surface:    #151B1D;
+    --surface-2:  #1B2325;
+    --ink:        #E7ECEB;
+    --ink-2:      #A8B4B5;
+    --ink-muted:  #7C8A8B;
+    --rule:       #2A3436;
+    --rule-soft:  #222B2D;
+    --accent:     #00A6BC;
+    --accent-ink: #46C2D3;
+    --data:       #00A6BC;
+    --data-soft:  #1C5762;
+    --data-mute:  #3C4A4C;
+    --grid:       #232D2F;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:      #0A0E0F;
+  --surface:    #151B1D;
+  --surface-2:  #1B2325;
+  --ink:        #E7ECEB;
+  --ink-2:      #A8B4B5;
+  --ink-muted:  #7C8A8B;
+  --rule:       #2A3436;
+  --rule-soft:  #222B2D;
+  --accent:     #00A6BC;
+  --accent-ink: #46C2D3;
+  --data:       #00A6BC;
+  --data-soft:  #17454E;
+  --grid:       #232D2F;
+  --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --plane: #F2F4F3; --surface: #FCFCFB; --surface-2: #F7F9F8;
+  --ink: #111618; --ink-2: #4C5A5C; --ink-muted: #7E8A8B;
+  --rule: #DDE3E2; --rule-soft: #E9EEED;
+  --accent: #008C9E; --accent-ink: #016673;
+  --data: #008C9E; --data-soft: #B9DDE2; --grid: #E4EAE9;
+}
+
+/* ─── base ───────────────────────────────────────────────────────────── */
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, .u-sans { font-family: var(--sans); }
+h1, h2, h3, h4 { text-wrap: balance; letter-spacing: -0.021em; margin: 0; font-weight: 680; }
+p { margin: 0; }
+a { color: var(--accent-ink); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+code, .mono { font-family: var(--mono); font-size: .855em; }
+strong { font-weight: 700; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+.flow > * + * { margin-top: var(--gap, 18px); }
+.measure { max-width: 68ch; }
+
+/* ─── masthead ───────────────────────────────────────────────────────── */
+.masthead { padding: 68px 0 40px; border-bottom: 1px solid var(--rule); }
+.eyebrow {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 20px;
+}
+.masthead h1 { font-size: clamp(32px, 5.2vw, 52px); line-height: 1.06; max-width: 19ch; }
+.masthead .dek {
+  margin-top: 20px; max-width: 60ch; font-size: 19px; color: var(--ink-2); line-height: 1.55;
+}
+
+/* verdict tiles — the hero is the two answers */
+.verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; margin-top: 40px; }
+.verdict {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 22px 24px 24px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.verdict .q { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+.verdict .a { font-family: var(--sans); font-size: 25px; font-weight: 680; line-height: 1.2; letter-spacing: -.02em; }
+.verdict .a em { font-style: normal; color: var(--accent-ink); }
+.verdict .why { font-size: 15.5px; color: var(--ink-2); line-height: 1.5; }
+
+/* ─── layout: ladder rail + main ─────────────────────────────────────── */
+.shell { display: grid; grid-template-columns: 226px minmax(0, 1fr); gap: 56px; padding: 44px 0 96px; align-items: start; }
+@media (max-width: 940px) { .shell { grid-template-columns: 1fr; gap: 32px; } }
+
+.rail { position: sticky; top: 24px; }
+@media (max-width: 940px) { .rail { position: static; } }
+.rail h2 {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500; margin-bottom: 16px;
+}
+.ladder { list-style: none; margin: 0; padding: 0; position: relative; }
+.ladder::before {
+  content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px;
+  width: 1px; background: var(--rule);
+}
+.ladder li { position: relative; padding: 0 0 0 22px; }
+.ladder li + li { margin-top: 3px; }
+.ladder a {
+  display: flex; align-items: baseline; gap: 8px; padding: 5px 0;
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink-2);
+  text-decoration: none; border-bottom: 1px solid transparent;
+}
+.ladder a:hover { color: var(--ink); border-bottom-color: var(--rule); }
+.ladder .rung {
+  position: absolute; left: 0; top: 12px; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--surface); border: 2px solid var(--ink-muted);
+}
+.ladder .rung[data-state="gain"]  { border-color: var(--good); background: var(--good); }
+.ladder .rung[data-state="rebase"]{ border-color: var(--warning); background: var(--warning); }
+.ladder .rung[data-state="flat"]  { border-color: var(--rule); background: var(--surface); }
+.ladder .tag { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); margin-left: auto; }
+.rail .key { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 11px; color: var(--ink-muted); line-height: 1.9; }
+.rail .key span { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
+
+/* ─── main content ───────────────────────────────────────────────────── */
+main > section + section { margin-top: 64px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.sec-head h2 { font-size: 25px; }
+.sec-head .n { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); letter-spacing: .08em; }
+
+.lede { font-size: 18.5px; line-height: 1.58; color: var(--ink-2); max-width: 64ch; }
+main p { max-width: 68ch; }
+main p + p { margin-top: 14px; }
+
+.callout {
+  border-left: 3px solid var(--accent); background: var(--surface);
+  padding: 18px 22px; border-radius: 0 8px 8px 0; margin: 26px 0;
+  font-size: 16.5px; max-width: 70ch;
+}
+.callout.warn { border-left-color: var(--warning); }
+.callout .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); display: block; margin-bottom: 7px; }
+
+/* release cards */
+.rel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 26px 28px 28px; box-shadow: var(--shadow); scroll-margin-top: 20px;
+}
+.rel + .rel { margin-top: 18px; }
+.rel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.rel-head h3 { font-size: 21px; }
+.rel-head .ver { font-family: var(--mono); font-size: 13px; color: var(--accent-ink); font-weight: 600; letter-spacing: .01em; }
+.rel .strap { color: var(--ink-2); font-size: 16px; margin-bottom: 18px; max-width: 70ch; }
+.rel dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 10px 20px; align-items: baseline; }
+@media (max-width: 620px) { .rel dl { grid-template-columns: 1fr; gap: 4px 0; } .rel dd { margin-bottom: 12px; } }
+.rel dt {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--ink-muted); padding-top: 4px;
+}
+.rel dd { margin: 0; font-size: 16px; line-height: 1.55; }
+.rel .suite { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule-soft); font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
+
+/* state chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+  padding: 3px 9px 3px 7px; border-radius: 999px; border: 1px solid var(--rule);
+  background: var(--surface-2); color: var(--ink-2); white-space: nowrap;
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-muted); flex: none; }
+.chip[data-state="gain"] .dot { background: var(--good); }
+.chip[data-state="rebase"] .dot { background: var(--warning); }
+.chip[data-state="cost"] .dot { background: var(--serious); }
+.chip[data-state="flat"] .dot { background: transparent; border: 1.5px solid var(--ink-muted); }
+
+/* tables */
+.tw { overflow-x: auto; margin: 22px 0; border: 1px solid var(--rule); border-radius: 9px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: 14.5px; }
+th, td { padding: 10px 15px; text-align: left; border-bottom: 1px solid var(--rule-soft); white-space: nowrap; }
+thead th {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500; background: var(--surface-2);
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.total td { font-weight: 700; border-top: 1px solid var(--rule); }
+td .mono { color: var(--ink-2); }
+
+/* figures */
+figure { margin: 30px 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 22px 24px 18px; box-shadow: var(--shadow); }
+figcaption { margin-bottom: 18px; }
+figcaption .ftitle { font-family: var(--sans); font-weight: 680; font-size: 16.5px; letter-spacing: -.01em; display: block; }
+figcaption .fsub { font-size: 14.5px; color: var(--ink-2); margin-top: 5px; display: block; line-height: 1.5; max-width: 66ch; }
+.chartbox { overflow-x: auto; }
+.chartbox svg { display: block; min-width: 600px; width: 100%; height: auto; }
+svg text { font-family: var(--sans); fill: var(--ink-2); }
+svg .axlab { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-muted); letter-spacing: .04em; }
+svg .rowlab { font-size: 12.5px; fill: var(--ink); }
+svg .rowsub { font-family: var(--mono); font-size: 10px; fill: var(--ink-muted); }
+svg .val { font-family: var(--sans); font-size: 12px; font-weight: 650; fill: var(--ink); }
+svg .grid { stroke: var(--grid); stroke-width: 1; }
+svg .base { stroke: var(--rule); stroke-width: 1; }
+.hit { cursor: default; }
+.hit:hover .bar, .hit:focus-visible .bar { opacity: .82; }
+
+details.tv { margin-top: 16px; border-top: 1px solid var(--rule-soft); padding-top: 12px; }
+details.tv summary {
+  cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-muted); list-style: none;
+}
+details.tv summary::-webkit-details-marker { display: none; }
+details.tv summary::before { content: "▸ "; }
+details.tv[open] summary::before { content: "▾ "; }
+details.tv .tw { margin: 12px 0 2px; }
+
+/* state strip */
+.strip { display: grid; gap: 4px; }
+.strip-row { display: grid; grid-template-columns: 74px repeat(9, minmax(0,1fr)); gap: 4px; align-items: stretch; }
+.strip-row .rl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-muted); align-self: center; }
+.cell {
+  border-radius: 5px; padding: 11px 4px; text-align: center;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+  border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink-muted);
+}
+.cell[data-s="gain"]   { background: color-mix(in srgb, var(--good) 18%, var(--surface)); border-color: color-mix(in srgb, var(--good) 45%, var(--rule)); color: var(--ink); }
+.cell[data-s="rebase"] { background: color-mix(in srgb, var(--warning) 22%, var(--surface)); border-color: color-mix(in srgb, var(--warning) 55%, var(--rule)); color: var(--ink); }
+.cell[data-s="cost"]   { background: color-mix(in srgb, var(--serious) 20%, var(--surface)); border-color: color-mix(in srgb, var(--serious) 50%, var(--rule)); color: var(--ink); }
+.strip-head { display: grid; grid-template-columns: 74px repeat(9, minmax(0,1fr)); gap: 4px; margin-bottom: 6px; }
+.strip-head span { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); text-align: center; letter-spacing: .02em; }
+.strip-head span:first-child { text-align: left; }
+
+/* misc */
+.footnote { font-size: 14.5px; color: var(--ink-2); max-width: 70ch; }
+.srcs { font-family: var(--mono); font-size: 12.5px; line-height: 2; color: var(--ink-2); }
+.pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+hr.soft { border: 0; border-top: 1px solid var(--rule); margin: 34px 0; }
+.colophon { border-top: 1px solid var(--rule); padding: 30px 0 70px; font-size: 14px; color: var(--ink-muted); font-family: var(--sans); }
+pre.prompt {
+  background: var(--surface-2); border: 1px solid var(--rule); border-radius: 8px;
+  padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px;
+  line-height: 1.7; color: var(--ink-2); margin: 16px 0;
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.12</p>
+    <h1>Nine releases, two questions, and one scoreboard that was lying.</h1>
+    <p class="dek">
+      Accuracy and speed across every point release since v0.4.4 — including the release where the
+      headline number fell ten points on purpose, and the release that built a fix worth eight
+      points and then refused to ship it.
+    </p>
+
+    <div class="verdicts">
+      <div class="verdict">
+        <span class="q">Is it more accurate?</span>
+        <span class="a">Than v0.4.4, <em>yes</em>. Than v0.4.6, <em>no</em> — deliberately.</span>
+        <span class="why">
+          Real gains landed in v0.4.4, v0.4.5 and v0.4.6. The default path has not changed a single
+          answer since. The reported figure fell from <strong>82.80% to 72.46%</strong> at v0.4.8
+          because the measurement was corrected, not because the software regressed.
+        </span>
+      </div>
+      <div class="verdict">
+        <span class="q">Is it faster?</span>
+        <span class="a">On the molecules that hit the fixed costs, <em>yes</em>. Corpus-wide, <em>unknown</em>.</span>
+        <span class="why">
+          Three default-path optimisations landed. But no full sweep has run since v0.4.6, so the
+          corpus figure is stale — and the largest measured single win
+          (<span class="mono">81.89 s → 10.87 s</span>) ships behind a lever that is
+          <strong>off</strong>.
+        </span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="shell">
+
+  <nav class="rail" aria-label="Releases">
+    <h2>The ladder</h2>
+    <ul class="ladder">
+      <li><span class="rung" data-state="gain"></span><a href="#v044">v0.4.4 <span class="tag">gain</span></a></li>
+      <li><span class="rung" data-state="gain"></span><a href="#v045">v0.4.5 <span class="tag">gain</span></a></li>
+      <li><span class="rung" data-state="gain"></span><a href="#v046">v0.4.6 <span class="tag">gain</span></a></li>
+      <li><span class="rung" data-state="flat"></span><a href="#v047">v0.4.7 <span class="tag">flat</span></a></li>
+      <li><span class="rung" data-state="rebase"></span><a href="#v048">v0.4.8 <span class="tag">re-baselined</span></a></li>
+      <li><span class="rung" data-state="flat"></span><a href="#v049">v0.4.9 <span class="tag">flat</span></a></li>
+      <li><span class="rung" data-state="flat"></span><a href="#v0410">v0.4.10 <span class="tag">flat</span></a></li>
+      <li><span class="rung" data-state="flat"></span><a href="#v0411">v0.4.11 <span class="tag">flat</span></a></li>
+      <li><span class="rung" data-state="flat"></span><a href="#v0412">v0.4.12 <span class="tag">in flight</span></a></li>
+    </ul>
+    <div class="key">
+      <span style="background:var(--good)"></span>accuracy gain<br>
+      <span style="background:var(--warning)"></span>re-baselined<br>
+      <span style="background:var(--surface);border:2px solid var(--rule)"></span>no default change
+    </div>
+  </nav>
+
+  <main>
+
+  <!-- ─── ELI5 ─────────────────────────────────────────────────────── -->
+  <section id="eli5">
+    <div class="sec-head"><span class="n">01</span><h2>Explain it like I'm five</h2></div>
+    <div class="flow measure">
+      <p class="lede">
+        Think of the project as a machine that turns a 3D molecule into a short piece of text, and
+        back again. It works if the text you get out the second time is <em>exactly</em> the text
+        you put in.
+      </p>
+      <p>
+        For two releases the machine genuinely got better. Then someone checked the scoreboard and
+        found it was cheating: when the machine was asked "did you rebuild the molecule right?", it
+        had been grading its own homework — looking at what it <em>meant</em> to build instead of
+        what it <em>actually</em> built. Once that was fixed, the score dropped from 83 out of 100
+        to 72 out of 100.
+      </p>
+      <p><strong>The machine didn't get worse. The scoreboard got honest.</strong></p>
+      <p>
+        Since then, five releases in a row have changed nothing about how the machine works. That
+        sounds bad, but it's the opposite of sloppiness. Each one built the thing it was supposed
+        to build, measured it properly, and in most cases discovered the idea was wrong and shelved
+        it. One release built a fix worth eight points and then found it worked by
+        <em>throwing away</em> information — quietly turning left-handed molecules into right-handed
+        ones. It was switched off.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── ELI20 ────────────────────────────────────────────────────── -->
+  <section id="eli20">
+    <div class="sec-head"><span class="n">02</span><h2>Explain it like I'm twenty</h2></div>
+
+    <p class="lede">Two separate questions, two separate answers.</p>
+
+    <h3 style="margin-top:30px;font-size:18px;">Accuracy</h3>
+    <p style="margin-top:10px;">
+      <span class="mono">byte_exact</span> — the share of molecules whose generated 3D structure
+      re-encodes to a byte-identical OIN string — improved materially across v0.4.4, v0.4.5 and
+      v0.4.6, then stopped moving.
+    </p>
+
+    <div class="tw">
+      <table>
+        <caption class="u-sans" style="text-align:left;padding:12px 15px 0;font-size:12px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;">Default-path accuracy change, by release</caption>
+        <thead>
+          <tr><th>Release</th><th>State</th><th>Key number</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">v0.4.4</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td>worst-cohort byte-exact <strong>44.7% → 60.5%</strong></td></tr>
+          <tr><td class="mono">v0.4.5</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td>byte-stability <strong>58.1% → 69.6%</strong>; key instability <strong>60 → 16</strong> molecules</td></tr>
+          <tr><td class="mono">v0.4.6</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td>boron cages <strong>0/36 → 34/36</strong> encoding</td></tr>
+          <tr><td class="mono">v0.4.7</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>bucket report byte-for-byte unchanged</td></tr>
+          <tr><td class="mono">v0.4.8</td><td><span class="chip" data-state="rebase"><span class="dot"></span>Re-baselined</span></td><td><span class="mono">byte_exact</span> <strong>82.80% → 72.46%</strong></td></tr>
+          <tr><td class="mono">v0.4.9</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>296/300 agreement, <strong>0/300</strong> encoder drift</td></tr>
+          <tr><td class="mono">v0.4.10</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>ARM 1 <strong>62/62</strong>, ARM 2 <strong>90/90</strong> byte-identical</td></tr>
+          <tr><td class="mono">v0.4.11</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>+7.86 pts built, then refuted — <strong>221 of 393</strong> gains collapse enantiomers</td></tr>
+          <tr><td class="mono">v0.4.12</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>mirror audit <strong>19 → 0</strong>; surviving gain <strong>+3.42 pts</strong>, still off</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      The v0.4.8 drop needs explaining, and it is not a regression. The harness had been scoring a
+      round trip with <code>get_oin_string(gen_result.mol, coords)</code> — the <em>generator's own
+      bond graph</em>. That is circular: <code>gen_result.mol</code> is precisely the artifact that
+      would have to be wrong for the test to fail. <code>FIYHUT_comp_0</code> ships both
+      cyclopentadienyl rings 0.85 Å off the iron — ten bonded carbons down to zero — and scored a
+      byte-exact pass.
+    </p>
+    <p>
+      Re-deriving the verdict from the generated coordinates alone moved 613 molecules down and 30
+      up. <strong>72.46% and 82.80% describe the same underlying performance; only one of them is
+      true.</strong>
+    </p>
+
+    <h3 style="margin-top:34px;font-size:18px;">Speed</h3>
+    <p style="margin-top:10px;">
+      Three real default-path wins since v0.4.4 — and no current corpus-wide number.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Release</th><th>Default-path speed change</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">v0.4.4</td><td><code>OIN_EARLY_EXIT</code> default-ON — <strong>~5×</strong> on the worst cohort</td></tr>
+          <tr><td class="mono">v0.4.5</td><td>removed a duplicate <strong>48–57 s</strong> re-encode per rejected conformer</td></tr>
+          <tr><td class="mono">v0.4.6–v0.4.9</td><td>none on the default path — the two big candidates held OFF on measurement</td></tr>
+          <tr><td class="mono">v0.4.10</td><td>deleted a discarded <code>.index()</code> scan — <strong>−32.9%</strong> / <strong>+0.3% (nil)</strong></td></tr>
+          <tr><td class="mono">v0.4.11–v0.4.12</td><td>none claimed</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="lbl">The number you cannot quote as current</span>
+      The headline speed figure — <strong>994/5000 = 19.88% of molecules over 30 s, median
+      7.19 s</strong> — comes from the v0.4.6 sweep and <strong>has not been re-measured since</strong>.
+      Every speed number after it is a per-molecule A/B, and every one of those is
+      <strong>bimodal</strong>: the same change measures −32.9% on one molecule and nothing on the
+      next one over. Goal B (<code>max(elapsed_s) &lt; 30 s</code>) is <strong>not delivered</strong>.
+    </div>
+
+    <h3 style="margin-top:34px;font-size:18px;">What actually improved most</h3>
+    <p style="margin-top:10px;">
+      Neither number. What improved most is the project's ability to tell a real result from a fake
+      one. The unit suite went <strong>551 → 988</strong>, and the instruments added in that window —
+      the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
+      coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, a
+      59%-false-positive cohort, a dead gate arm, and an enantiomer collapse.
+      <strong>Five releases that moved no points each removed a way of being wrong.</strong>
+    </p>
+  </section>
+
+  <!-- ─── figures ──────────────────────────────────────────────────── -->
+  <section id="figures">
+    <div class="sec-head"><span class="n">03</span><h2>The numbers, drawn</h2></div>
+
+    <!-- FIG 1 -->
+    <figure>
+      <figcaption>
+        <span class="ftitle">Every corpus accuracy measurement since v0.4.4 — deliberately not joined up</span>
+        <span class="fsub">
+          These come from four different cohorts. They are <strong>not</strong> a time series, and a
+          line between any two of them would be an invention. The only legitimate comparison is the
+          linked pair at the bottom: the same 5000 reports, classified two ways.
+        </span>
+      </figcaption>
+      <div class="chartbox">
+        <svg viewBox="0 0 760 268" role="img" aria-label="Dot plot of byte_exact percentage for five corpus measurements across four different cohorts.">
+          <!-- grid -->
+          <g>
+            <line class="grid" x1="286" y1="26" x2="286" y2="212"></line>
+            <line class="grid" x1="386" y1="26" x2="386" y2="212"></line>
+            <line class="grid" x1="486" y1="26" x2="486" y2="212"></line>
+            <line class="grid" x1="586" y1="26" x2="586" y2="212"></line>
+            <line class="base" x1="186" y1="212" x2="686" y2="212"></line>
+            <text class="axlab" x="186" y="228">0%</text>
+            <text class="axlab" x="286" y="228" text-anchor="middle">20</text>
+            <text class="axlab" x="386" y="228" text-anchor="middle">40</text>
+            <text class="axlab" x="486" y="228" text-anchor="middle">60</text>
+            <text class="axlab" x="586" y="228" text-anchor="middle">80</text>
+            <text class="axlab" x="686" y="228" text-anchor="end">100</text>
+            <text class="axlab" x="436" y="248" text-anchor="middle">byte_exact (%)</text>
+          </g>
+          <!-- rows -->
+          <g class="hit"><title>v0.4.2 generation, re-classified with the v0.4.4 key — 6719 molecules — 81.19%</title>
+            <text class="rowlab" x="176" y="42" text-anchor="end">v0.4.2 gen · v0.4.4 key</text>
+            <text class="rowsub" x="176" y="55" text-anchor="end">capstone · N=6719</text>
+            <line x1="186" y1="42" x2="591.95" y2="42" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="591.95" cy="42" r="6" fill="var(--data)"></circle>
+            <text class="val" x="605" y="46">81.19%</text>
+          </g>
+          <g class="hit"><title>v0.4.4 regression cohort — deliberately adversarial: 2917 known v0.4.0 failures plus 1000 successes — 44.91%</title>
+            <text class="rowlab" x="176" y="82" text-anchor="end">v0.4.4 regression</text>
+            <text class="rowsub" x="176" y="95" text-anchor="end">adversarial · N=3917</text>
+            <line x1="186" y1="82" x2="410.6" y2="82" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="410.6" cy="82" r="6" fill="var(--data)"></circle>
+            <text class="val" x="425" y="86">44.91%</text>
+          </g>
+          <g class="hit"><title>v0.4.5 re-baseline cohort — 936 molecules — 60.26%</title>
+            <text class="rowlab" x="176" y="122" text-anchor="end">v0.4.5 re-baseline</text>
+            <text class="rowsub" x="176" y="135" text-anchor="end">N=936</text>
+            <line x1="186" y1="122" x2="487.3" y2="122" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="487.3" cy="122" r="6" fill="var(--data)"></circle>
+            <text class="val" x="501" y="126">60.26%</text>
+          </g>
+          <!-- the linked pair -->
+          <g class="hit"><title>v0.4.6 seed-42 sweep, scored against the generator's own bond graph — 5000 molecules — 82.80%</title>
+            <text class="rowlab" x="176" y="166" text-anchor="end">v0.4.6 sweep — scored</text>
+            <text class="rowsub" x="176" y="179" text-anchor="end">seed-42 · N=5000</text>
+            <line x1="186" y1="166" x2="600.0" y2="166" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="600.0" cy="166" r="6" fill="var(--surface)" stroke="var(--data)" stroke-width="2.5"></circle>
+            <text class="val" x="614" y="170">82.80%</text>
+          </g>
+          <g class="hit"><title>The same 5000 reports, re-scored from the generated coordinates alone — 72.46%</title>
+            <text class="rowlab" x="176" y="200" text-anchor="end">v0.4.6 sweep — honest</text>
+            <text class="rowsub" x="176" y="213" text-anchor="end">same 5000 reports</text>
+            <line x1="186" y1="200" x2="548.3" y2="200" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="548.3" cy="200" r="6" fill="var(--data)"></circle>
+            <text class="val" x="562" y="204">72.46%</text>
+          </g>
+          <!-- connector for the one legitimate comparison -->
+          <path d="M 600 174 L 600 188 L 556 188" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
+          <path d="M 556 188 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
+          <text class="rowsub" x="614" y="192" style="fill:var(--ink-2)">−10.34 pts · same molecules</text>
+          <!-- key -->
+          <g transform="translate(186, 12)">
+            <circle cx="5" cy="-4" r="5" fill="var(--data)"></circle>
+            <text class="rowsub" x="16" y="0">honest / independent scoring</text>
+            <circle cx="200" cy="-4" r="5" fill="var(--surface)" stroke="var(--data)" stroke-width="2.5"></circle>
+            <text class="rowsub" x="211" y="0">scored via generator's own graph</text>
+          </g>
+        </svg>
+      </div>
+      <details class="tv">
+        <summary>Table view</summary>
+        <div class="tw"><table>
+          <thead><tr><th>Measurement</th><th>Cohort</th><th class="num">N</th><th class="num">byte_exact</th></tr></thead>
+          <tbody>
+            <tr><td>v0.4.2 gen, v0.4.4 key</td><td>capstone</td><td class="num">6719</td><td class="num">81.19%</td></tr>
+            <tr><td>v0.4.4 regression</td><td>adversarial</td><td class="num">3917</td><td class="num">44.91%</td></tr>
+            <tr><td>v0.4.5 re-baseline</td><td>rebaseline</td><td class="num">936</td><td class="num">60.26%</td></tr>
+            <tr><td>v0.4.6 sweep — scored</td><td>seed-42</td><td class="num">5000</td><td class="num">82.80%</td></tr>
+            <tr><td>v0.4.6 sweep — honest</td><td>seed-42 (same reports)</td><td class="num">5000</td><td class="num">72.46%</td></tr>
+          </tbody>
+        </table></div>
+      </details>
+    </figure>
+
+    <!-- FIG 2 -->
+    <figure>
+      <figcaption>
+        <span class="ftitle">What changed for someone running the default configuration</span>
+        <span class="fsub">
+          A lever that was built, measured, and shipped <em>off</em> changes nothing for a user.
+          This strip shows only what actually moved on the default path — which is why five
+          consecutive releases read flat.
+        </span>
+      </figcaption>
+      <div class="chartbox" style="min-width:0">
+        <div class="strip" style="min-width:560px">
+          <div class="strip-head">
+            <span></span><span>v0.4.4</span><span>v0.4.5</span><span>v0.4.6</span><span>v0.4.7</span>
+            <span>v0.4.8</span><span>v0.4.9</span><span>v0.4.10</span><span>v0.4.11</span><span>v0.4.12</span>
+          </div>
+          <div class="strip-row">
+            <span class="rl">Accuracy</span>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell">Flat</div>
+            <div class="cell" data-s="rebase">Re-base</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+          </div>
+          <div class="strip-row">
+            <span class="rl">Speed</span>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="cost">Cost</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+          </div>
+        </div>
+      </div>
+      <p class="footnote" style="margin-top:16px;">
+        <strong>Cost</strong> at v0.4.6 is real and was accepted knowingly: promoting the boron-cage
+        lever moved most of that class from failing <em>instantly</em> to failing <em>slowly</em> —
+        25 of 33 molecules now burn the full generation cap, about
+        <strong>2.1 CPU-h per 5000-molecule sweep</strong> — in exchange for 34 molecules that
+        previously could not be encoded at all.
+      </p>
+    </figure>
+
+    <!-- FIG 3 -->
+    <figure>
+      <figcaption>
+        <span class="ftitle">Where the remaining 27.54 points are</span>
+        <span class="fsub">
+          The honest gap to <span class="mono">byte_exact = 100%</span>, decomposed at v0.4.9. The
+          release each block is assigned to is shown at right — and the ordering is an open question
+          the roadmap flags against itself.
+        </span>
+      </figcaption>
+      <div class="chartbox">
+        <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 27.54-point accuracy gap.">
+          <g>
+            <line class="grid" x1="342" y1="14" x2="342" y2="200"></line>
+            <line class="grid" x1="452" y1="14" x2="452" y2="200"></line>
+            <line class="grid" x1="562" y1="14" x2="562" y2="200"></line>
+            <line class="base" x1="232" y1="200" x2="672" y2="200"></line>
+            <text class="axlab" x="232" y="216">0</text>
+            <text class="axlab" x="342" y="216" text-anchor="middle">2.5</text>
+            <text class="axlab" x="452" y="216" text-anchor="middle">5.0</text>
+            <text class="axlab" x="562" y="216" text-anchor="middle">7.5</text>
+            <text class="axlab" x="672" y="216" text-anchor="end">10.0</text>
+            <text class="axlab" x="452" y="236" text-anchor="middle">points of byte_exact</text>
+          </g>
+          <g class="hit"><title>key_equal → slot_renumber: 496 molecules, 9.92 points. v0.4.11 attempted and refuted it.</title>
+            <text class="rowlab" x="222" y="26" text-anchor="end">slot_renumber</text>
+            <text class="rowsub" x="222" y="38" text-anchor="end">496 mol</text>
+            <rect class="bar" x="232" y="14" width="436.5" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="662" y="28" text-anchor="end" style="fill:var(--surface)">9.92</text>
+          </g>
+          <g class="hit"><title>structural: 417 molecules, 8.34 points — the second-largest block, re-labelled at v0.4.9.</title>
+            <text class="rowlab" x="222" y="60" text-anchor="end">structural</text>
+            <text class="rowsub" x="222" y="72" text-anchor="end">417 mol</text>
+            <rect class="bar" x="232" y="48" width="367.0" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="592" y="62" text-anchor="end" style="fill:var(--surface)">8.34</text>
+          </g>
+          <g class="hit"><title>hard_fail: 319 molecules, 6.38 points — mostly generator compute.</title>
+            <text class="rowlab" x="222" y="94" text-anchor="end">hard_fail</text>
+            <text class="rowsub" x="222" y="106" text-anchor="end">319 mol</text>
+            <rect class="bar" x="232" y="82" width="280.7" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="505" y="96" text-anchor="end" style="fill:var(--surface)">6.38</text>
+          </g>
+          <g class="hit"><title>key_equal → rdkit_canonical: 114 molecules, 2.28 points — re-sized to about 4.08 by v0.4.11.</title>
+            <text class="rowlab" x="222" y="128" text-anchor="end">rdkit_canonical</text>
+            <text class="rowsub" x="222" y="140" text-anchor="end">114 mol</text>
+            <rect class="bar" x="232" y="116" width="100.3" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="344" y="130">2.28</text>
+          </g>
+          <g class="hit"><title>facmer_divergent: 16 molecules, 0.32 points — genuinely the wrong isomer.</title>
+            <text class="rowlab" x="222" y="162" text-anchor="end">facmer_divergent</text>
+            <text class="rowsub" x="222" y="174" text-anchor="end">16 mol</text>
+            <rect class="bar" x="232" y="150" width="14.1" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="258" y="164">0.32</text>
+          </g>
+          <g class="hit"><title>encode_fail: 15 molecules, 0.30 points — encoder coverage.</title>
+            <text class="rowlab" x="222" y="196" text-anchor="end">encode_fail</text>
+            <text class="rowsub" x="222" y="208" text-anchor="end">15 mol</text>
+            <rect class="bar" x="232" y="184" width="13.2" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="257" y="198">0.30</text>
+          </g>
+          <g>
+            <text class="rowsub" x="690" y="28">v0.4.11 ✗</text>
+            <text class="rowsub" x="690" y="62">v0.4.17</text>
+            <text class="rowsub" x="690" y="96">v0.4.12–13</text>
+            <text class="rowsub" x="690" y="130">v0.4.14</text>
+            <text class="rowsub" x="690" y="164">v0.4.15</text>
+            <text class="rowsub" x="690" y="198">v0.4.18</text>
+          </g>
+        </svg>
+      </div>
+      <details class="tv">
+        <summary>Table view</summary>
+        <div class="tw"><table>
+          <thead><tr><th>Block</th><th class="num">Molecules</th><th class="num">Points</th><th>Nature</th><th>Owning release</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">key_equal → slot_renumber</td><td class="num">496</td><td class="num">9.92</td><td>canonicality, encoder-side</td><td>v0.4.11 attempted — refuted</td></tr>
+            <tr><td class="mono">structural</td><td class="num">417</td><td class="num">8.34</td><td>generator capability</td><td>v0.4.17</td></tr>
+            <tr><td class="mono">hard_fail</td><td class="num">319</td><td class="num">6.38</td><td>compute, mostly</td><td>v0.4.12–v0.4.13</td></tr>
+            <tr><td class="mono">key_equal → rdkit_canonical</td><td class="num">114</td><td class="num">2.28</td><td>canonicality, encoder-side</td><td>v0.4.14 (re-sized ≈4.08)</td></tr>
+            <tr><td class="mono">facmer_divergent</td><td class="num">16</td><td class="num">0.32</td><td>wrong isomer</td><td>v0.4.15</td></tr>
+            <tr><td class="mono">encode_fail</td><td class="num">15</td><td class="num">0.30</td><td>encoder coverage</td><td>v0.4.18</td></tr>
+            <tr class="total"><td>Total</td><td class="num">1377</td><td class="num">27.54</td><td></td><td></td></tr>
+          </tbody>
+        </table></div>
+      </details>
+      <div class="callout warn" style="margin-bottom:0;">
+        <span class="lbl">Open sequencing question</span>
+        <strong>18.26 of the 27.54 points sit at v0.4.14 and v0.4.17</strong>, behind releases worth
+        a fraction of that. The re-sequencing decision v0.4.9 asked for has now been deferred at
+        three consecutive close-outs.
+      </div>
+    </figure>
+
+    <!-- FIG 4 -->
+    <figure>
+      <figcaption>
+        <span class="ftitle">The v0.4.8 correction: where the 643 molecules that moved went</span>
+        <span class="fsub">
+          Same 5000 reports, same key, same status gate — the only variable is which round-trip
+          string the verdict reads. <strong>613 degraded, 30 improved</strong>: the correction runs in
+          both directions, which is what distinguishes it from a pessimism knob.
+        </span>
+      </figcaption>
+      <div class="chartbox">
+        <svg viewBox="0 0 760 302" role="img" aria-label="Ranked bar chart of the eleven bucket transitions at v0.4.8, totalling 643 molecules.">
+          <g>
+            <line class="grid" x1="368" y1="12" x2="368" y2="256"></line>
+            <line class="grid" x1="472" y1="12" x2="472" y2="256"></line>
+            <line class="grid" x1="576" y1="12" x2="576" y2="256"></line>
+            <line class="base" x1="264" y1="256" x2="680" y2="256"></line>
+            <text class="axlab" x="264" y="272">0</text>
+            <text class="axlab" x="368" y="272" text-anchor="middle">100</text>
+            <text class="axlab" x="472" y="272" text-anchor="middle">200</text>
+            <text class="axlab" x="576" y="272" text-anchor="middle">300</text>
+            <text class="axlab" x="680" y="272" text-anchor="end">400</text>
+            <text class="axlab" x="472" y="292" text-anchor="middle">molecules that changed bucket</text>
+          </g>
+          <g class="hit"><title>byte_exact → structural: 350 molecules. The headline of the correction — passes whose generated structure re-perceives with different coordination.</title>
+            <text class="rowlab" x="254" y="26" text-anchor="end">byte_exact → structural</text>
+            <rect class="bar" x="264" y="12" width="364.0" height="18" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="620" y="25" text-anchor="end" style="fill:var(--surface)">350</text>
+          </g>
+          <g class="hit"><title>byte_exact → key_equal: 180 molecules.</title>
+            <text class="rowlab" x="254" y="52" text-anchor="end">byte_exact → key_equal</text>
+            <rect class="bar" x="264" y="38" width="187.2" height="18" rx="4" fill="var(--data-mute)"></rect>
+            <text class="val" x="461" y="51">180</text>
+          </g>
+          <g class="hit"><title>key_equal → structural: 62 molecules.</title>
+            <text class="rowlab" x="254" y="78" text-anchor="end">key_equal → structural</text>
+            <rect class="bar" x="264" y="64" width="64.5" height="18" rx="4" fill="var(--data-mute)"></rect>
+            <text class="val" x="338" y="77">62</text>
+          </g>
+          <g class="hit"><title>key_equal → byte_exact: 25 molecules — an improvement. The honest arm recovers stereo the coordinates do support.</title>
+            <text class="rowlab" x="254" y="104" text-anchor="end">key_equal → byte_exact</text>
+            <rect class="bar" x="264" y="90" width="26.0" height="18" rx="4" fill="var(--data-mute)"></rect>
+            <text class="val" x="300" y="103">25 ↑</text>
+          </g>
+          <g class="hit"><title>byte_exact → facmer_divergent: 12 molecules.</title>
+            <text class="rowlab" x="254" y="130" text-anchor="end">byte_exact → facmer_divergent</text>
+            <rect class="bar" x="264" y="116" width="12.5" height="18" rx="4" fill="var(--data-mute)"></rect>
+            <text class="val" x="286" y="129">12</text>
+          </g>
+          <g class="hit"><title>key_equal → facmer_divergent: 4 molecules.</title>
+            <text class="rowlab" x="254" y="156" text-anchor="end">key_equal → facmer_divergent</text>
+            <rect class="bar" x="264" y="142" width="4.2" height="18" rx="2" fill="var(--data-mute)"></rect>
+            <text class="val" x="278" y="155">4</text>
+          </g>
+          <g class="hit"><title>byte_exact → hard_fail: 3 molecules.</title>
+            <text class="rowlab" x="254" y="182" text-anchor="end">byte_exact → hard_fail</text>
+            <rect class="bar" x="264" y="168" width="3.1" height="18" rx="1.5" fill="var(--data-mute)"></rect>
+            <text class="val" x="277" y="181">3</text>
+          </g>
+          <g class="hit"><title>structural → byte_exact: 3 molecules — an improvement.</title>
+            <text class="rowlab" x="254" y="208" text-anchor="end">structural → byte_exact</text>
+            <rect class="bar" x="264" y="194" width="3.1" height="18" rx="1.5" fill="var(--data-mute)"></rect>
+            <text class="val" x="277" y="207">3 ↑</text>
+          </g>
+          <g class="hit"><title>structural → key_equal: 2 molecules — an improvement.</title>
+            <text class="rowlab" x="254" y="234" text-anchor="end">structural → key_equal</text>
+            <rect class="bar" x="264" y="220" width="2.1" height="18" rx="1" fill="var(--data-mute)"></rect>
+            <text class="val" x="276" y="233">2 ↑</text>
+          </g>
+          <g class="hit"><title>facmer_divergent → structural, and key_equal → hard_fail: 1 molecule each.</title>
+            <text class="rowlab" x="254" y="252" text-anchor="end">two further moves</text>
+            <rect class="bar" x="264" y="240" width="2.1" height="14" rx="1" fill="var(--data-mute)"></rect>
+            <text class="val" x="276" y="251">1 + 1</text>
+          </g>
+        </svg>
+      </div>
+      <details class="tv">
+        <summary>Table view — the full transition matrix</summary>
+        <div class="tw"><table>
+          <thead><tr><th>Scored bucket</th><th>Honest bucket</th><th class="num">n</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">byte_exact</td><td class="mono">structural</td><td class="num">350</td></tr>
+            <tr><td class="mono">byte_exact</td><td class="mono">key_equal</td><td class="num">180</td></tr>
+            <tr><td class="mono">key_equal</td><td class="mono">structural</td><td class="num">62</td></tr>
+            <tr><td class="mono">key_equal</td><td class="mono">byte_exact</td><td class="num">25</td></tr>
+            <tr><td class="mono">byte_exact</td><td class="mono">facmer_divergent</td><td class="num">12</td></tr>
+            <tr><td class="mono">key_equal</td><td class="mono">facmer_divergent</td><td class="num">4</td></tr>
+            <tr><td class="mono">byte_exact</td><td class="mono">hard_fail</td><td class="num">3</td></tr>
+            <tr><td class="mono">structural</td><td class="mono">byte_exact</td><td class="num">3</td></tr>
+            <tr><td class="mono">structural</td><td class="mono">key_equal</td><td class="num">2</td></tr>
+            <tr><td class="mono">facmer_divergent</td><td class="mono">structural</td><td class="num">1</td></tr>
+            <tr><td class="mono">key_equal</td><td class="mono">hard_fail</td><td class="num">1</td></tr>
+            <tr class="total"><td>Moved</td><td></td><td class="num">643</td></tr>
+          </tbody>
+        </table></div>
+      </details>
+      <p class="footnote" style="margin-top:16px;">
+        <strong>Why the drop is trustworthy.</strong> An encoder that mis-perceived generated
+        geometries would manufacture exactly this result, so the honest arm was cross-checked
+        against a distance-only coordination check that consults no bond graph. On the 3595
+        molecules byte-exact in both arms it flags <strong>1.3%</strong> — inside its 3.7%
+        false-alarm band. On the 428 that moved from pass to failure it flags
+        <strong>64.7% — a 50× enrichment</strong>. And the two agree on <em>mechanism</em>, not just
+        count: <span class="mono">contacts_lost ÷ sites_lost</span> lands on the integers 1–7, and
+        95.2% of the ratio-above-1 population carries a haptic token — because an η⁵-Cp is five
+        <em>contacts</em> but one coordination <em>site</em>.
+      </p>
+    </figure>
+  </section>
+
+  <!-- ─── how to read ──────────────────────────────────────────────── -->
+  <section id="reading">
+    <div class="sec-head"><span class="n">04</span><h2>How to read these numbers</h2></div>
+    <p class="lede">Three traps, all of which this project has already fallen into once and documented.</p>
+
+    <div class="callout">
+      <span class="lbl">Trap 1 — the bucket reports are not a time series</span>
+      They come from four different cohorts: 6719 (v0.4.2 capstone), 3917 (v0.4.4 regression,
+      deliberately adversarial), 936 (v0.4.5 re-baseline), 5000 (seed-42 sweep). Every accuracy
+      figure here carries its N and its cohort. <strong>Do not draw a line between two of
+      them.</strong> The only genuine like-for-like comparison in this document is
+      scored-vs-honest at v0.4.8, which classifies <em>the same 5000 reports</em> two ways.
+    </div>
+
+    <div class="callout">
+      <span class="lbl">Trap 2 — <span class="mono" style="text-transform:none;letter-spacing:0">metrics.elapsed_s</span> is nested, and it is a sum</span>
+      Read from the top level it silently yields <code>0</code>. It also accumulates up to three
+      separately <span class="mono">SIGKILL</span>ed harness attempts, so the retired headline
+      "max 759.9 s against a 300 s budget" was arithmetic on a sum — all 4658 single-attempt rows
+      in the 5k sweep finish within <strong>0.2 s</strong> of their cap. The harness enforces to
+      ε ≈ 0.2 s.
+    </div>
+
+    <div class="callout">
+      <span class="lbl">Trap 3 — suite count is a rigour proxy, not accuracy</span>
+      551 → 988 tests means the project can detect more kinds of wrongness. It does not mean the
+      notation got better.
+    </div>
+  </section>
+
+  <!-- ─── per release ──────────────────────────────────────────────── -->
+  <section id="releases">
+    <div class="sec-head"><span class="n">05</span><h2>Release by release</h2></div>
+    <p class="lede" style="margin-bottom:26px;">
+      Each card: what shipped · accuracy · speed · what was refuted. Refutations get equal weight to
+      wins — that is what most of these releases produced.
+    </p>
+
+    <article class="rel" id="v044">
+      <div class="rel-head">
+        <span class="ver">v0.4.4</span><h3>Accuracy, and the instrument to measure it</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Accuracy gain</span>
+        <span class="chip" data-state="gain"><span class="dot"></span>Speed gain</span>
+      </div>
+      <p class="strap">
+        Six parallel worktree swimlanes. The centrepiece is a fac/mer-aware canonical round-trip key
+        that separates a genuine <em>fac</em>↔<em>mer</em> miss from benign slot relabeling, plus the
+        bucket report that decomposes every round trip into six classes.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real gain.</strong> <code>OIN_EARLY_EXIT</code> — accept the first conformer that
+          independently re-encodes to the key, instead of exhausting the pool — took byte-exact
+          <strong>44.7% → 60.5%</strong> and key-match 55.3% → 73.7% with zero regressions. A
+          separate 3917-molecule regression sweep measured <strong>11 regressions / 1092
+          fixes</strong>, and all 11 regressions are 300 s timeouts: <strong>zero correctness
+          regressions</strong>.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>Real gain.</strong> <code>OIN_EARLY_EXIT</code> is ~<strong>5×</strong> faster on
+          the worst cohort. Encoder-side, the <code>AC2BO</code> valence-combination sort was capped
+          and resonance enumeration moved into a forked, CPU-bounded child, recovering
+          previously-unencodable molecules without changing any encodable OIN.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          Rigid η-winding construction, Kabsch greedy placement, and a stretched-bond acceptance
+          metric all measured net-negative or neutral and kept OFF — a third independent
+          confirmation that <strong>selection beats construction</strong> in this pipeline.
+        </dd>
+        <dt>Caution</dt>
+        <dd>
+          The <span class="mono">byte_exact 81.19%</span> figure often associated with v0.4.4 is the
+          <em>v0.4.4 key applied to v0.4.2-generated data</em>. It measures the new classifier, not
+          new generation.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 488 → 551 OK</p>
+    </article>
+
+    <article class="rel" id="v045">
+      <div class="rel-head">
+        <span class="ver">v0.4.5</span><h3>The emitted string becomes canonical</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Accuracy gain</span>
+        <span class="chip" data-state="gain"><span class="dot"></span>Speed gain</span>
+      </div>
+      <p class="strap">
+        Six canonicality levers promoted to default-ON <em>together</em>, via a new single-source
+        registry. What made them safe as a block: each repairs a renumbered presentation
+        <strong>without rewriting the canonical answer</strong> — which is why the corpus shows no
+        churn.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real gain — and the important number is not <span class="mono">byte_exact</span>.</strong>
+          On a generator-free probe holding the graph fixed and varying only rotation and atom
+          renumbering (so the correct answer is byte-identical by construction): byte-stability
+          <strong>58.1% → 69.6%</strong>, comparison-key instability <strong>60 → 16</strong>
+          molecules. The key <em>is</em> the harness's acceptance predicate and the basis of every
+          accuracy number the project reports — it went from unstable on 1 molecule in 5 to 1 in 19.
+          On the 936-molecule re-baseline, <strong>145 of 436</strong> previously-failing molecules
+          were fixed.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>Real gain, unconditional.</strong> The confirming step of <code>OIN_EARLY_EXIT</code>
+          — a full re-perception measured at <strong>48–57 s per call</strong> — was running
+          <em>twice</em> per conformer, once during pool fill and again, redundantly, in the
+          selection re-scan. Anything surviving to selection is provably already a confirmed
+          non-match, so the second test recomputed a known answer.
+        </dd>
+        <dt>Found</dt>
+        <dd>
+          The project's <strong>first ever encoder profile</strong>: <code>perception_core.AC2BO</code>
+          is <strong>99.8%</strong> of a slow encode — not "dominant", essentially all of it. Neither
+          an eta nor a size phenomenon: a 39-atom non-eta molecule profiles the same and is
+          <em>slower</em>.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          The <strong>inverted CIP goldens</strong> for two chiral fixtures had been wrong for four
+          months. The test that "verified" them ran <code>rdCIPLabeler</code> on a SMILES reparsed
+          from the encoder's <em>own</em> output — and that call converts a parity tag into a label
+          without checking it, so an inverted tag was self-consistent and passed. Separately, 13% of
+          molecules were found to emit <em>different absolute stereochemistry</em> under pure atom
+          renumbering; no prior instrument could see it.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 837 OK</p>
+    </article>
+
+    <article class="rel" id="v046">
+      <div class="rel-head">
+        <span class="ver">v0.4.6</span><h3>Boron, Δ/Λ, and the first crack in the metric</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Accuracy gain</span>
+        <span class="chip" data-state="cost"><span class="dot"></span>Speed cost</span>
+      </div>
+      <p class="strap">
+        <code>OIN_BORON_CAGE</code> promoted; a complete metal-centred Δ/Λ descriptor pipeline
+        behind an opt-in lever; and — decisively for everything that follows —
+        <code>OIN_INDEP_SCORE</code> added, recording the honest verdict beside the scored one.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real, small, correctly priced.</strong> 34 of the 36 encode-failing molecules on
+          the re-baseline are electron-deficient boron clusters; the lever takes that population
+          from <strong>0/36 to 34/36</strong>. It also moves <strong>14 molecules from
+          scored-passing to failing</strong> — which is <em>correct</em>: they passed while
+          describing the wrong graph. It trades 14 silent false positives for 14 loud honest
+          failures, so a headline pass rate can move either way.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>A measured regression, accepted.</strong> Promoting the lever moved most of that
+          class from failing <em>instantly</em> to failing <em>slowly</em>: of 33 measured, only
+          <strong>2 generate</strong>, <strong>25 burn the entire cap</strong>, 6 fail instantly —
+          roughly <strong>2.1 CPU-h wasted per 5000-molecule sweep</strong>. One molecule is the
+          two-point proof: lever OFF it fails in 0.87 s; lever ON it encodes a correct B₁₀ cage and
+          then runs past 340 s.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>Eight hypotheses</strong>, each with the measurement that killed it — including
+          "the accuracy gap is mostly compute" (75% of timeouts hide real failures, not latent
+          passes) and three successive Δ/Λ formulations.
+        </dd>
+        <dt>Set up v0.4.8</dt>
+        <dd>
+          The seed-42 5000-molecule sweep landed here: <span class="mono">byte_exact</span>
+          <strong>82.80%</strong>, median 7.2 s, <strong>994 molecules over 30 s</strong>. Alongside
+          it, the false-positive measurement: <strong>9.6%</strong> overall, <strong>28.1% of
+          haptic</strong> molecules — net ~5.7 points over-stated. And a lever that "recovered" 90
+          of 340 failures was held OFF because a coordination check showed those 90 to be
+          <strong>60 degraded / 21 boundary / 9 intact</strong> — a claimed +90 is really +9.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 838 OK</p>
+    </article>
+
+    <article class="rel" id="v047">
+      <div class="rel-head">
+        <span class="ver">v0.4.7</span><h3>A release of measured negatives</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>No default change</span>
+      </div>
+      <p class="strap">
+        Five swimlanes. <strong>Four refuted the thing they were built to ship, and the fifth
+        refuted its own sibling.</strong> Every lever default-OFF.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Zero — and the evidence that it is zero is the deliverable.</strong> The sweep's
+          bucket report is byte-for-byte unchanged: <span class="mono">byte_exact</span> 4140 /
+          82.80%, <span class="mono">&gt; 30 s</span> 994 / 19.88%.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong><code>OIN_ACCEPT_SCORED</code>: do not promote</strong>, superseding this lever's
+          own earlier "promote" reading. The gate that recommended it was <strong>circular</strong> —
+          <code>passed</code> is computed with the same predicate the lever accepts on, so "18/22
+          both arms, zero regressions" could not detect what dropping the strict step costs. With a
+          genuinely independent arm: <strong>15/20 → 7/20, 8 regressions, 0 fixes</strong>, one-way.
+          Six of the eight lose haptic coordination outright.
+          <em>Byte-identical notation, changed geometry</em> — the cost is invisible to the very
+          metric that would police it.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          A boron fast-fail discriminator, caught before it could do harm. One molecule the lane
+          classified as a hopeless cap-burner <em>does</em> generate — in 61.8 s, against a lane
+          sweep capped at 30 s. <strong>The class boundary moves with the compute you give it.</strong>
+          Cross-tabulated, every geometry with a success also has failures, so geometry separates
+          nothing — and it was the last discriminator standing after hapticity, size and denticity.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>The encode floor is three cost regimes, not one.</strong> A 20-minute encode turned
+          out to be three forked resonance timeouts at 95.8% of the fork budget each — the CPU-limit
+          backstop firing, not slow arithmetic. Tuning the solver would never have touched it.
+        </dd>
+        <dt>Built for later</dt>
+        <dd>
+          <code>OIN_ATTACH_CHECK</code> (7 of 8 known regressions separated, 0 false positives,
+          7–81 ms against the 48–57 s test it replaces) — and it <strong>never reads a bond
+          object</strong> as evidence of attachment, because a detached ligand keeps its bond. Plus
+          the two-arm byte-identity gate, the first instrument that could tell a notation change
+          from a compute change.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 909 OK</p>
+    </article>
+
+    <article class="rel" id="v048">
+      <div class="rel-head">
+        <span class="ver">v0.4.8</span><h3>The honest number</h3>
+        <span class="chip" data-state="rebase"><span class="dot"></span>Re-baselined −10.34 pts</span>
+      </div>
+      <p class="strap">
+        <code>OIN_INDEP_SCORE</code> promoted to default-ON. <strong>No encoder, generator or
+        notation behaviour changed.</strong> The measurement changed.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>The reported figure falls 10.34 points, on purpose.</strong>
+          <span class="mono">byte_exact</span> 4140 (82.80%) → <strong>3623 (72.46%)</strong>;
+          <span class="mono">structural</span> 9 → <strong>417</strong>. 643 molecules moved bucket:
+          <strong>613 degraded, 30 improved</strong>. At corpus scale <strong>36.7% of haptic
+          byte-exact passes were false</strong>, against 6.7% non-haptic.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>Unchanged, and stated as such.</strong> Nothing was re-generated, so
+          <span class="mono">elapsed_s</span> is untouched and <span class="mono">&gt; 30 s</span>
+          stays 994 / 19.88%.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          The recorded suspicion that a ~19× <span class="mono">structural</span> inflation on
+          re-encode was an artifact of the method. It is real, and two thirds of it is independently
+          confirmed. Also refuted: <strong>the cost argument that had held the lever off.</strong> It
+          priced the second encode at "0.4–1.5 s/molecule"; the measured figure is
+          <strong>0.33 s/molecule</strong>, and the whole corpus re-scores in <strong>334 s</strong>
+          against the ~55 CPU-h a live re-sweep costs. <em>There was never a cost case for scoring
+          dishonestly.</em>
+        </dd>
+        <dt>Also found</dt>
+        <dd>
+          The atom-count gate is <strong>load-bearing</strong>, not a third error direction. Of 18
+          molecules at corpus scale, hydrogen-only in 18/18, <strong>8 re-encode byte-identically to
+          their input</strong> — so no string comparison of any kind can separate a structure
+          carrying two extra hydrogens from the original. One molecule defeats four instruments at
+          once: scored PASS, honest PASS (the same string), key EQUAL, coordination INTACT, atom
+          count 61 ≠ 63.
+        </dd>
+        <dt>Scope</dt>
+        <dd>
+          Deliberately narrow: this changed what is <em>reported</em>, not what is <em>accepted</em>.
+          Scoring the acceptance ladder honestly would move runtime <em>and</em> the failure mix in
+          the same release that re-baselines the number, making both unmeasurable.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 920 OK</p>
+    </article>
+
+    <article class="rel" id="v049">
+      <div class="rel-head">
+        <span class="ver">v0.4.9</span><h3>Speed becomes measurable — and the release refutes its own charter</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>No default change</span>
+      </div>
+      <p class="strap">
+        <code>OIN_ENFORCE_BUDGET</code> (default OFF), a typed budget-exhaustion error, and a frozen
+        stratified 328-molecule runtime benchmark reproducing to <strong>0.28%</strong> — the noise
+        floor every later runtime claim must clear.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd><strong>Zero.</strong> Confirmed by a live 300-molecule run: 296/300 per-molecule agreement with the offline re-score, <strong>0/300</strong> encoder drift.</dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>Nothing promoted — but the goal became expressible for the first time.</strong>
+          <code>OIN3DGenerator(timeout=)</code> confirmed <strong>advisory</strong>: 60 s requested,
+          60.0–172.8 s spent, worst case <strong>2.9×</strong>, because the deadline is checked only
+          at the top of the embed attempt loop and an in-flight attempt always runs to completion.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>Its own chartered justification.</strong> The charter rested on one number —
+          "759.9 s against a 300 s budget" — which is arithmetic on a sum. All <strong>4658</strong>
+          single-attempt rows finish within <strong>0.2 s</strong> of their cap. The
+          advisory-timeout defect is real and two direct probes measure it; the corpus number was
+          simply never evidence for it.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>The first design of its own lever.</strong> Threading the deadline into the one
+          function two profiles had indicted measured <strong>ε = +48.4 s on a 30 s budget</strong> —
+          it changed almost nothing. There is <strong>no single sink</strong>: three molecules, three
+          dominant costs (75% embed / 77% embed+eigendecomposition / <strong>99% CIP
+          re-parse</strong>). <em>A bound threaded into whichever function profiled expensive last is
+          not a bound.</em>
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>The inherited slow cohort is 59% false positive.</strong> It selected on the
+          <em>scored</em> verdict — and a slow cohort is made of exactly the haptic molecules the
+          scored verdict over-states most.
+        </dd>
+        <dt>Measured, not delivered</dt>
+        <dd>
+          With the bound on, ε = <strong>+32.8 s</strong> on a 30 s budget and the same
+          <strong>11 molecules</strong> exceed it in every arm. The bound compresses the tail
+          (2.63× → 2.09×); it does not remove it.
+        </dd>
+        <dt>Reordered the roadmap</dt>
+        <dd>
+          <span class="mono">structural</span> was 9 molecules / 0.18 points when scored dishonestly.
+          Honestly it is <strong>417 / 8.34 points — the second-largest block in the gap</strong>.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 930 OK</p>
+    </article>
+
+    <article class="rel" id="v0410">
+      <div class="rel-head">
+        <span class="ver">v0.4.10</span><h3>Cost per attempt — and the arbiter was broken first</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>Accuracy flat</span>
+        <span class="chip" data-state="gain"><span class="dot"></span>Speed gain</span>
+      </div>
+      <p class="strap">
+        Two performance changes and a gate repair. The first thing this release measured was its own
+        gate, and the gate was dead.
+      </p>
+      <dl>
+        <dt>The gate</dt>
+        <dd>
+          ARM 1 had been exiting <strong>before comparing anything</strong> for a whole release
+          cycle: a fixture was added and the golden never extended, so a hardcoded count guard
+          hard-refused every run. <strong>v0.4.9 froze a 328-molecule benchmark and measured a 0.28%
+          noise floor while the encoder arm of its own gate was non-runnable.</strong> Behind the
+          refusal sat a second, real drift — a rename that was behaviour-neutral but not
+          <em>string</em>-neutral, and ARM 1 hashes error strings on purpose. The other 60 rows were
+          byte-identical, so the encoder itself had not moved.
+        </dd>
+        <dt>Accuracy</dt>
+        <dd><strong>Zero, by construction.</strong> ARM 1 <strong>62/62</strong> and ARM 2 <strong>90/90</strong> byte-identical, for both lanes, on all four gate runs.</dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>One default-path win, one shelved.</strong> <code>get_embedding</code>'s outer loop
+          called <code>list.index()</code> on a candidate list and <strong>threw the result
+          away</strong> — not a no-op, because that comparison eigendecomposes a Coulomb matrix per
+          candidate per iteration. Deleted: <strong>−32.9%</strong> on the molecule that hits it,
+          <strong>+0.3% (nil)</strong> one molecule over. Ships on by default with no lever — gating
+          provably dead code would permanently ship
+          <code>if not lever: &lt;discarded computation&gt;</code>.
+        </dd>
+        <dt>Attributed</dt>
+        <dd>
+          The bimodality is explained, not excused as noise: one molecule makes <strong>99</strong>
+          such comparisons costing <strong>38.52 s (38.8% of generation)</strong>; the other makes
+          <strong>3</strong>, costing 0.03 s. Two independent measurements agree on size — 38.8%
+          attribution vs 32.9% quiet A/B.
+        </dd>
+        <dt>Corrected</dt>
+        <dd>
+          A first A/B taken while four gate processes competed for the box (load average
+          <strong>35</strong>) reported −50.2% and +9.6%. Quiet-box re-measurement gives −32.9% and
+          +0.3% — the gain was over-stated by 17 points and the null was buried in 30% within-arm
+          spread. <strong>Byte-identity gates are load-immune and can be parallelised freely;
+          wall-clock is neither.</strong>
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          The chartered Lane 1's premise does not reproduce — all 165 calls converge in exactly one
+          iteration against a cap of 30, and the charter's "1189 calls / 15.6 s" measures 74 calls /
+          1.75 s. Chartered Lane 2 was already fixed by an earlier release. <strong>Executing the
+          charter as written would have spent the release on its third-best target.</strong>
+        </dd>
+        <dt>Not done, deliberately</dt>
+        <dd>
+          The CIP memo — <strong>81.89 s → 10.87 s, −86.7%</strong>, the largest measured single
+          speed win in the project's history — is <strong>not promoted</strong>. The charter permits
+          same-release promotion only if byte-identity holds on the whole benchmark; this release ran
+          the fast band, 90 of 328. Fast-band-only evidence is not that. So it ships
+          <strong>off</strong>.
+        </dd>
+      </dl>
+      <p class="suite">Suite: 946 OK</p>
+    </article>
+
+    <article class="rel" id="v0411">
+      <div class="rel-head">
+        <span class="ver">v0.4.11</span><h3>The fix that worked, and had to be refused</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>No default change</span>
+      </div>
+      <p class="strap">
+        The lane built the fix v0.4.5 had specified in writing for the largest single block in the
+        gap — 496 molecules, 9.92 points. It works exactly as designed. It also destroys information.
+      </p>
+      <dl>
+        <dt>It works</dt>
+        <dd>
+          <strong>393 molecules</strong> move <span class="mono">slot_renumber → byte_exact</span>,
+          <strong>none in any other direction</strong>. <span class="mono">facmer_divergent</span>
+          holds at 16, the comparison key moves on <strong>0 of 992</strong> strings, both gate arms
+          stay byte-identical with the lever off. <strong>+7.86 points.</strong>
+        </dd>
+        <dt>And it collapses enantiomers</dt>
+        <dd>
+          A mirror audit on a <em>uniform</em> 250-molecule draw found <strong>19 (7.6%)</strong>
+          whose mirror image encodes identically once the fold is on. Run directly on the 393
+          molecules the fold claims as wins: <strong>221 of 393 (56.2%)</strong> collapse. An
+          independent geometric oracle sharing no machinery with the encoder confirms 18 of 19
+          uniform-draw collapses. <strong>More than half the gain is the damage.</strong>
+        </dd>
+        <dt>Why the safety argument failed</dt>
+        <dd>
+          It assumed two donors in one symmetry class are interchangeable. The symmetry computed is
+          that of the <em>isolated ligand graph</em>, but those donors sit at distinct vertices whose
+          relation to the <em>other</em> ligands is chirality-bearing — so the vertex permutation
+          their exchange induces can be <strong>improper</strong>. <em>A fragment's automorphism says
+          nothing about the parity of the vertex permutation it induces.</em> v0.4.5's restriction to
+          proper rotations was not conservatism; it was the load-bearing correctness condition.
+        </dd>
+      </dl>
+      <div class="callout warn" style="margin-bottom:0;">
+        <span class="lbl">The finding that outranks the points</span>
+        <strong><span class="mono" style="letter-spacing:0">byte_exact</span> can be raised by
+        deleting information, and the comparison key will agree.</strong> Both are blind to
+        reflection, because the key folds that axis deliberately. <strong>A one-directional
+        transition matrix is not evidence of safety for anything touching canonicalization.</strong>
+        Two independent cohorts find the damage (uniform 19/250, stratified 31/300), and the named
+        Δ/Λ fixtures <em>both pass with the lever on</em> — fixtures alone could never have caught
+        this.
+      </div>
+      <p class="suite">Suite: 957 OK · Also measured: all 496 <span class="mono">slot_renumber</span> classified for the first time; 90 of 118 residual cases are frozen-resonance-form artifacts, re-sizing v0.4.14 from 2.28 to ~4.08 points.</p>
+    </article>
+
+    <article class="rel" id="v0412">
+      <div class="rel-head">
+        <span class="ver">v0.4.12</span><h3>The parity filter</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>No default change</span>
+      </div>
+      <p class="strap">
+        Released on <span class="mono">main</span> at <span class="mono">675e5425</span>,
+        <code>pyproject</code> 0.4.12 — no <code>v0.4.12</code> tag yet. The lane built the
+        reflection-parity filter v0.4.11's refutation demanded, and it works.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Flat, deliberately — both levers ship OFF.</strong> But the filter works: a uniform
+          250-molecule mirror audit goes <strong>19 → 0</strong> collapses, with those 19 moving into
+          "distinct in both arms" (73 → 92) and the achiral/pre-existing-fold class
+          <strong>unmoved at 157</strong> — direct evidence that the veto did not simply refuse to
+          fold everything. <strong>The surviving gain is +3.42 points</strong> (171 of 393). v0.4.11
+          bounded the safe set at "at most ~172" by counting collapses; this filter counts survivors
+          through the shipped predicate and lands on <strong>171</strong>. Two independent routes
+          agreeing to one molecule.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>No runtime claim in the release.</strong> The eta lever's timing A/B was
+          <em>stopped rather than banked</em> at load 26 — never interleave timing runs with gate
+          runs — so its predicted tail reduction shipped unverified.
+          <br><br>
+          <strong>⚠ Post-release, not part of v0.4.12.</strong> A lane commit on
+          <span class="mono">swimlane/v0412-eta-accept</span> (unmerged at the time of writing)
+          re-ran that A/B on a quiet box against a <em>re-derived</em> 12-molecule population:
+          median <strong>61.8 s → 18.82 s (−69.5%)</strong>, total −47.4%,
+          <span class="mono">&gt;30 s</span> <strong>11 → 5</strong>, with the same bimodal
+          signature as v0.4.10 — one molecule 119.04 s → 4.4 s, a <strong>27×</strong> win with a
+          byte-identical string; two molecules nil. <strong>The runtime thesis is confirmed — and
+          the lever still stays off.</strong> A fifth gate arm, the metal-configuration check
+          v0.4.11 paid for, caught one molecule returning a <em>different Δ/Λ descriptor</em> with a
+          <strong>byte-identical emitted string</strong>; four of the five gates call that molecule
+          untouched, and any Δ/Λ divergence is blocking. <em>A large real speedup that costs
+          something four of five instruments cannot see is precisely the trade this release exists
+          to detect.</em>
+        </dd>
+        <dt>Refuted before it was built</dt>
+        <dd>
+          Reflection parity is <strong>not a property of the emitted string</strong>: a donor swap is
+          a transposition fixing every other vertex, so the obvious determinant test on the
+          polyhedron rejects <em>every</em> swap and degenerates the fold to the identity. The veto
+          had to run on the pristine conformer instead.
+        </dd>
+        <dt>Two silent defects</dt>
+        <dd>
+          Both caught only by disbelieving a clean result. The molecule's atom order is
+          <strong>not</strong> the coordinate order — zipping positionally invented bonds outright.
+          And the mirror was encoded with the fold <em>inherited</em>, which disarmed the achiral
+          guard and made the self-check decline on <strong>18 of 18</strong> movers <strong>while all
+          three fixture tests passed</strong> — because declining to fold also separates a mirror
+          pair.
+        </dd>
+      </dl>
+      <div class="callout" style="margin-bottom:0;">
+        <span class="lbl">The transferable lesson</span>
+        Ask what a <strong>broken</strong> version of the instrument would print. If it is the same
+        thing, you have measured nothing.
+      </div>
+      <p class="suite">Suite: 988 OK</p>
+    </article>
+  </section>
+
+  <!-- ─── unknowns ─────────────────────────────────────────────────── -->
+  <section id="unknown">
+    <div class="sec-head"><span class="n">06</span><h2>What is not known</h2></div>
+    <p class="lede">Stated explicitly, because the gaps are as decision-relevant as the numbers.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Gap</th><th>What it would take to close</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Corpus speed since v0.4.6</strong> is unmeasured — <span class="mono">994/5000</span> is a v0.4.6-era figure, and v0.4.10's default-ON deletion has never run at corpus scale</td><td>The frozen 328-molecule benchmark, <strong>~1–2 CPU-h</strong> — not a 55 CPU-h sweep</td></tr>
+          <tr><td><strong>Corpus accuracy since v0.4.6</strong> is unmeasured but well-bounded — 72.46% rests on gates and a carry-forward measurement, not a fresh run</td><td>A full seed-42 sweep on current <span class="mono">main</span>, <strong>~55 CPU-h</strong></td></tr>
+          <tr><td>The <strong>CIP memo's promotion gate</strong> has not been run, so the largest measured single speed win stays off</td><td>Full 328-molecule cohort with the lever on, <strong>~10 CPU-h</strong> sharded 6-way</td></tr>
+          <tr><td>The <strong>four bucket-report cohorts are not comparable</strong>, so no honest like-for-like accuracy line exists from v0.4.4 to today</td><td>Re-run the seed-42 corpus on current <span class="mono">main</span></td></tr>
+          <tr><td>The <strong>eta acceptance lever has no runtime claim at all</strong></td><td>Re-run its A/B on a quiet box</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">
+      <strong>The two goals are one goal.</strong> Of the 340 failures in the v0.4.6 sweep,
+      <strong>78.8% never test the notation</strong> — 240 are generator timeouts and 28 produced
+      nothing. The notation-attributable gap is <strong>57/5000 ≈ 1.1%</strong>: where the notation is
+      actually exercised, it is <strong>~98.9% correct</strong>. A per-molecule 30 s cap recovers
+      <strong>37.84 CPU-h</strong> and costs <strong>251 passes (5.02 points)</strong>; 93.1% of
+      honest passes already finish under 30 s.
+    </p>
+  </section>
+
+  <!-- ─── keeping it current ───────────────────────────────────────── -->
+  <section id="update">
+    <div class="sec-head"><span class="n">07</span><h2>Keeping this current</h2></div>
+    <p class="lede">
+      Refresh the report at any release close-out. The command re-derives the figures from the
+      sources, appends one release section, updates the verdicts and the gap table, and republishes
+      this page to the same URL.
+    </p>
+    <pre class="prompt">/release-retrospective v0.4.13      # append one release (the common case)
+/release-retrospective --full       # re-derive every figure from source</pre>
+    <p class="footnote">
+      It lives at <code>.claude/commands/release-retrospective.md</code>, and it carries the standing
+      caveats with it — cohorts are not comparable, <span class="mono">elapsed_s</span> is nested and
+      a sum, the corpus speed figure is stale until a sweep says otherwise, and a lever measured but
+      shipped default-OFF changes nothing for a user. The full markdown record lives at
+      <code>docs/agentic-notes/v0.4.12/RETROSPECTIVE_v0.4.4_to_v0.4.12.md</code>.
+    </p>
+  </section>
+
+  <!-- ─── sources ──────────────────────────────────────────────────── -->
+  <section id="sources">
+    <div class="sec-head"><span class="n">08</span><h2>Sources</h2></div>
+    <p class="lede" style="margin-bottom:18px;">
+      Every figure on this page traces to a committed artifact. No measurement was run to produce
+      this report.
+    </p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>What</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>Per-release narrative and figures</td><td class="mono">CHANGELOG.md §§ [0.4.4]–[0.4.12]</td></tr>
+          <tr><td>Honest re-baseline + transition matrix</td><td class="mono">results-v0.4.8-honest/bucket_report_both.md</td></tr>
+          <tr><td>Cohort bucket reports</td><td class="mono">results-v0.4.{4-sl4,4-regression,5-rebaseline,6-sweep}/</td></tr>
+          <tr><td>v0.4.5 promotion evidence, encoder profile</td><td class="mono">v0.4.5/PROMOTION_GATE, ENCODER_PERF, PERF</td></tr>
+          <tr><td>Speed A/Bs, bimodality attribution</td><td class="mono">v0.4.10/SPEED_v0.4.10.md</td></tr>
+          <tr><td>Cost regimes, benchmark provenance</td><td class="mono">v0.4.9/BUDGET_BOUND, RUNTIME_BENCHMARK</td></tr>
+          <tr><td>The elapsed_s-is-a-sum refutation</td><td class="mono">v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md</td></tr>
+          <tr><td>Honest baseline + atom-count gate</td><td class="mono">v0.4.8/HONEST_BASELINE, ATOM_COUNT_GATE</td></tr>
+          <tr><td>Enantiomer collapse / parity filter</td><td class="mono">v0.4.11/LANE-02, v0.4.12/LANE-01</td></tr>
+          <tr><td>Shipped configuration, held-off reasons</td><td class="mono">src/oinsmiles/oin/levers.py</td></tr>
+          <tr><td>Gap decomposition and ladder</td><td class="mono">docs/agentic-notes/ROADMAP_100_100.md</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  </main>
+</div>
+</div>
+
+<footer class="colophon">
+  <div class="wrap">
+    OIN-SMILES — lossless 3D XYZ ↔ 1D OIN-SMILES conversion for transition-metal complexes.
+    Retrospective covering v0.4.4 (2026-07-23) through v0.4.12 (in flight).
+    Built from committed evidence only; no sweep, benchmark or A/B was run to produce it.
+  </div>
+</footer>
