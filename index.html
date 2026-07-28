@@ -1409,8 +1409,26 @@ pre.prompt {
       It lives at <code>.claude/commands/release-retrospective.md</code>, and it carries the standing
       caveats with it — cohorts are not comparable, <span class="mono">elapsed_s</span> is nested and
       a sum, the corpus speed figure is stale until a sweep says otherwise, and a lever measured but
-      shipped default-OFF changes nothing for a user. The full markdown record lives at
-      <code>docs/agentic-notes/v0.4.12/RETROSPECTIVE_v0.4.4_to_v0.4.12.md</code>.
+      shipped default-OFF changes nothing for a user.
+    </p>
+    <div class="tw">
+      <table>
+        <caption class="u-sans" style="text-align:left;padding:12px 15px 0;font-size:12px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;">Where each file lives — settled</caption>
+        <thead><tr><th>Branch</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">main</td><td><strong>All source</strong> — the report, the page body, the build script, the command</td></tr>
+          <tr><td class="mono">gh-pages</td><td><strong>Only the generated <span class="mono">index.html</span></strong> + <span class="mono">.nojekyll</span>. Nothing else, ever.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">
+      The source cannot live anywhere but <span class="mono">main</span>: a slash command only exists
+      on the branch you have checked out, so <code>/release-retrospective</code> is simply
+      <em>absent</em> from a side branch or from <span class="mono">gh-pages</span>. And
+      <span class="mono">gh-pages</span> is an <strong>orphan</strong> branch — no shared history with
+      <span class="mono">main</span> — which is precisely why a session rewriting
+      <span class="mono">main</span> cannot disturb the published site. Never merge
+      <span class="mono">main</span> into it; never put source on it.
     </p>
   </section>
 
