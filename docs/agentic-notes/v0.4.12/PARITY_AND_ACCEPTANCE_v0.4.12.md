@@ -121,7 +121,7 @@ The charter's predictions were written **before** either lever was built.
 |---|---|---|---|
 | `byte_exact`, default path | FLAT 72.46% | **FLAT 72.46%** | ✓ both levers OFF |
 | `byte_exact`, L1 lever ON | **+3.0 to +3.5 pts** (≈150–175 of 393 survive) | **+3.42 pts, 171 of 393** | ✓ |
-| mirror audit, uniform 250 | 19 → **0** | *see §6.1* | |
+| mirror audit, uniform 250 | 19 → **0** | **19 → 0 at seed 7 AND seed 11** | ✓ |
 | `> 30 s`, default path | FLAT | **FLAT** | ✓ nothing default-path changed |
 | eta `> 30 s`, L2 lever ON | down; magnitude unpredicted | **11 → 5; median −69.5%** | ✓ |
 | suite | ≥ v0.4.11's floor | **988 OK** (skipped 3, xfail 5) | ✓ |

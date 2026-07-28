@@ -165,14 +165,24 @@ OIN_FOLD_PARITY_VETO=1 PYTHONPATH=$PWD/src .venv/bin/python \
     tools/mirror_audit_donor_fold.py --dataset tmCAT-tmPHOTO_xyz_dataset/cat --n 250 --seed 7
 ```
 
-| verdict | baseline | **veto** | |
-|---|---:|---:|---|
-| 🔴 `REGRESSION_raw_collapsed` | 19 | **0** | the gate |
-| `distinct_both_arms` | 73 | **92** | ← the same 19, now correctly separated |
-| `achiral_or_preexisting_fold` | 157 | **157** | the achiral guard did **not** over-fire |
-| `encode_failed` | 1 | **1** | unchanged |
+Run at **two independent seeds**, because the lane's acceptance bar asked for two draws.
 
-The movement is exactly one-directional and exactly the intended 19 molecules. **That
+| seed | verdict | baseline | **veto** |
+|---|---|---:|---:|
+| **7** | 🔴 `REGRESSION_raw_collapsed` | 19 | **0** |
+| | `distinct_both_arms` | 73 | **92** |
+| | `achiral_or_preexisting_fold` | 157 | **157** |
+| | `encode_failed` | 1 | 1 |
+| **11** | 🔴 `REGRESSION_raw_collapsed` | 19 | **0** |
+| | `distinct_both_arms` | 90 | **109** |
+| | `achiral_or_preexisting_fold` | 141 | **141** |
+
+**The second draw is worth more than a repeat.** Its *baseline* independently reproduces
+**19/250** on a disjoint sample, which says the 7.6% collapse rate is a property of the corpus
+rather than of seed 7. And the veto zeroes both while leaving the achiral population untouched
+at 157 and 141 respectively.
+
+The movement is exactly one-directional and exactly the intended 19 molecules at each seed. **That
 `achiral_or_preexisting_fold` is unmoved at 157 is the second-most-important number here**: it
 is the direct evidence that the left conjunct works. A veto without it would have swallowed all
 157 of those molecules as well, still reported `REGRESSION_raw_collapsed = 0`, and looked like
