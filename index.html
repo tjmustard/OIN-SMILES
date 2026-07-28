@@ -30,7 +30,7 @@ table { border-collapse: collapse; }
 </head>
 <body>
 <button id="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">◐</button>
-<title>OIN-SMILES v0.4.4 → v0.4.12 — accuracy &amp; speed retrospective</title>
+<title>OIN-SMILES v0.4.4 → v0.4.13 — accuracy &amp; speed retrospective</title>
 
 <style>
 /* ─── tokens ─────────────────────────────────────────────────────────── */
@@ -276,7 +276,7 @@ details.tv .tw { margin: 12px 0 2px; }
 
 /* state strip */
 .strip { display: grid; gap: 4px; }
-.strip-row { display: grid; grid-template-columns: 74px repeat(9, minmax(0,1fr)); gap: 4px; align-items: stretch; }
+.strip-row { display: grid; grid-template-columns: 74px repeat(10, minmax(0,1fr)); gap: 4px; align-items: stretch; }
 .strip-row .rl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-muted); align-self: center; }
 .cell {
   border-radius: 5px; padding: 11px 4px; text-align: center;
@@ -286,7 +286,7 @@ details.tv .tw { margin: 12px 0 2px; }
 .cell[data-s="gain"]   { background: color-mix(in srgb, var(--good) 18%, var(--surface)); border-color: color-mix(in srgb, var(--good) 45%, var(--rule)); color: var(--ink); }
 .cell[data-s="rebase"] { background: color-mix(in srgb, var(--warning) 22%, var(--surface)); border-color: color-mix(in srgb, var(--warning) 55%, var(--rule)); color: var(--ink); }
 .cell[data-s="cost"]   { background: color-mix(in srgb, var(--serious) 20%, var(--surface)); border-color: color-mix(in srgb, var(--serious) 50%, var(--rule)); color: var(--ink); }
-.strip-head { display: grid; grid-template-columns: 74px repeat(9, minmax(0,1fr)); gap: 4px; margin-bottom: 6px; }
+.strip-head { display: grid; grid-template-columns: 74px repeat(10, minmax(0,1fr)); gap: 4px; margin-bottom: 6px; }
 .strip-head span { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); text-align: center; letter-spacing: .02em; }
 .strip-head span:first-child { text-align: left; }
 
@@ -306,32 +306,37 @@ pre.prompt {
 
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.12</p>
-    <h1>Nine releases, two questions, and one scoreboard that was lying.</h1>
+    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.13</p>
+    <h1>Ten releases, two questions, and one scoreboard that was lying.</h1>
     <p class="dek">
       Accuracy and speed across every point release since v0.4.4 — including the release where the
-      headline number fell ten points on purpose, and the release that built a fix worth eight
-      points and then refused to ship it.
+      headline number fell ten points on purpose, the release that built a fix worth eight points
+      and then refused to ship it, and the release that finally shipped the safe half of it and
+      cancelled its own 55 CPU-hour re-measurement as the wrong instrument.
     </p>
 
     <div class="verdicts">
       <div class="verdict">
         <span class="q">Is it more accurate?</span>
-        <span class="a">Than v0.4.4, <em>yes</em>. Than v0.4.6, <em>no</em> — deliberately.</span>
+        <span class="a">Yes — <em>72.46% → 75.88%</em> at v0.4.13, the first rise in the window.</span>
         <span class="why">
-          Real gains landed in v0.4.4, v0.4.5 and v0.4.6. The default path has not changed a single
-          answer since. The reported figure fell from <strong>82.80% to 72.46%</strong> at v0.4.8
-          because the measurement was corrected, not because the software regressed.
+          Real gains landed in v0.4.4–v0.4.6; then the default path changed no answer for five
+          releases while the figure <em>fell</em> from <strong>82.80% to 72.46%</strong> at v0.4.8 —
+          the measurement was corrected, not the software regressed. <strong>v0.4.13 shipped the
+          safe half of a fix that had been built, refuted and shelved two releases earlier</strong>,
+          once a veto existed that could prove the harmful half gone on two independent draws.
         </span>
       </div>
       <div class="verdict">
         <span class="q">Is it faster?</span>
         <span class="a">On the molecules that hit the fixed costs, <em>yes</em>. Corpus-wide, <em>unknown</em>.</span>
         <span class="why">
-          Three default-path optimisations landed. But no full sweep has run since v0.4.6, so the
-          corpus figure is stale — and the largest measured single win
+          Three default-path optimisations landed. But no generator sweep has run since v0.4.6, so
+          the corpus figure is stale — and the largest measured single win
           (<span class="mono">81.89 s → 10.87 s</span>) ships behind a lever that is
-          <strong>off</strong>.
+          <strong>off</strong>. v0.4.13 declined to run a sweep on purpose: re-running a
+          <em>stochastic</em> generator to A/B an <em>encoder-side</em> change adds noise to the
+          number it is trying to read.
         </span>
       </div>
     </div>
@@ -353,6 +358,7 @@ pre.prompt {
       <li><span class="rung" data-state="flat"></span><a href="#v0410">v0.4.10 <span class="tag">flat</span></a></li>
       <li><span class="rung" data-state="flat"></span><a href="#v0411">v0.4.11 <span class="tag">flat</span></a></li>
       <li><span class="rung" data-state="flat"></span><a href="#v0412">v0.4.12 <span class="tag">flat</span></a></li>
+      <li><span class="rung" data-state="gain"></span><a href="#v0413">v0.4.13 <span class="tag">gain</span></a></li>
     </ul>
     <div class="key">
       <span style="background:var(--good)"></span>accuracy gain<br>
@@ -381,12 +387,20 @@ pre.prompt {
       </p>
       <p><strong>The machine didn't get worse. The scoreboard got honest.</strong></p>
       <p>
-        Since then, five releases in a row have changed nothing about how the machine works. That
-        sounds bad, but it's the opposite of sloppiness. Each one built the thing it was supposed
-        to build, measured it properly, and in most cases discovered the idea was wrong and shelved
-        it. One release built a fix worth eight points and then found it worked by
-        <em>throwing away</em> information — quietly turning left-handed molecules into right-handed
-        ones. It was switched off.
+        Then five releases in a row changed nothing about how the machine works. That sounds bad,
+        but it's the opposite of sloppiness. Each one built the thing it was supposed to build,
+        measured it properly, and in most cases discovered the idea was wrong and shelved it. One
+        built a fix worth eight points and then found it worked by <em>throwing away</em>
+        information — quietly turning left-handed molecules into right-handed ones. It was switched
+        off.
+      </p>
+      <p>
+        <strong>The sixth one finally moved the score up: 72 out of 100 to 76.</strong> It did that
+        by taking the switched-off fix and adding the safety check that tells its good half from its
+        harmful half — then proving on two separate samples that the harmful half was gone. It also
+        cancelled the expensive re-measurement it was supposed to run, because re-running a machine
+        that makes slightly different choices each time would have added noise to the very number it
+        was trying to read, and a cheaper check gave an exact answer.
       </p>
     </div>
   </section>
@@ -420,6 +434,7 @@ pre.prompt {
           <tr><td class="mono">v0.4.10</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>ARM 1 <strong>62/62</strong>, ARM 2 <strong>90/90</strong> byte-identical</td></tr>
           <tr><td class="mono">v0.4.11</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>+7.86 pts built, then refuted — <strong>221 of 393</strong> gains collapse enantiomers</td></tr>
           <tr><td class="mono">v0.4.12</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>mirror audit <strong>19 → 0</strong>; surviving gain <strong>+3.42 pts</strong>, still off</td></tr>
+          <tr><td class="mono">v0.4.13</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td><span class="mono">byte_exact</span> <strong>72.46% → 75.88%</strong> — 171 molecules, <strong>0</strong> in a bad direction</td></tr>
         </tbody>
       </table>
     </div>
@@ -437,10 +452,22 @@ pre.prompt {
       up. <strong>72.46% and 82.80% describe the same underlying performance; only one of them is
       true.</strong>
     </p>
+    <p style="margin-top:14px;">
+      The v0.4.13 rise deserves the same scrutiny, because <strong>this project has already raised
+      <span class="mono">byte_exact</span> once by deleting information</strong>. The donor fold
+      moves 393 molecules in one direction with the comparison key untouched — and collapses
+      enantiomers in 221 of them, which neither the metric nor the key can see. What makes +3.42
+      trustworthy is not the transition matrix. It is that the parity veto zeroes the collapse on
+      <strong>two independent draws</strong> (19 → 0 cat-only, 33 → 0 mixed) while the achiral
+      population stays unmoved in both, and that every collapsing molecule is accounted for as a
+      <em>separated pair</em> rather than a decline. <strong>171 survivors was also reached from the
+      opposite direction</strong>: v0.4.11 bounded the safe set from above at "at most ~172" by
+      counting damage.
+    </p>
 
     <h3 style="margin-top:34px;font-size:18px;">Speed</h3>
     <p style="margin-top:10px;">
-      Three real default-path wins since v0.4.4 — and no current corpus-wide number.
+      Three real default-path wins since v0.4.4 — and still no current corpus-wide number.
     </p>
 
     <div class="tw">
@@ -451,7 +478,7 @@ pre.prompt {
           <tr><td class="mono">v0.4.5</td><td>removed a duplicate <strong>48–57 s</strong> re-encode per rejected conformer</td></tr>
           <tr><td class="mono">v0.4.6–v0.4.9</td><td>none on the default path — the two big candidates held OFF on measurement</td></tr>
           <tr><td class="mono">v0.4.10</td><td>deleted a discarded <code>.index()</code> scan — <strong>−32.9%</strong> / <strong>+0.3% (nil)</strong></td></tr>
-          <tr><td class="mono">v0.4.11–v0.4.12</td><td>none claimed</td></tr>
+          <tr><td class="mono">v0.4.11–v0.4.13</td><td>none claimed. v0.4.13's promotion is <strong>generator-neutral by measurement</strong> — 9669 strings, 1019 moved, <strong>0 comparison keys changed</strong> — so acceptance returns bit-identical conformers and runtime cannot have moved</td></tr>
         </tbody>
       </table>
     </div>
@@ -468,11 +495,13 @@ pre.prompt {
     <h3 style="margin-top:34px;font-size:18px;">What actually improved most</h3>
     <p style="margin-top:10px;">
       Neither number. What improved most is the project's ability to tell a real result from a fake
-      one. The unit suite went <strong>551 → 988</strong>, and the instruments added in that window —
+      one. The unit suite went <strong>551 → 993</strong>, and the instruments added in that window —
       the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
       coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, a
       59%-false-positive cohort, a dead gate arm, and an enantiomer collapse.
-      <strong>Five releases that moved no points each removed a way of being wrong.</strong>
+      <strong>Five releases that moved no points each removed a way of being wrong</strong> — and
+      v0.4.13 is the return on that, banking a fix that could only ship once an instrument existed
+      that could see its damage.
     </p>
   </section>
 
@@ -486,26 +515,28 @@ pre.prompt {
         <span class="ftitle">Every corpus accuracy measurement since v0.4.4 — deliberately not joined up</span>
         <span class="fsub">
           These come from four different cohorts. They are <strong>not</strong> a time series, and a
-          line between any two of them would be an invention. The only legitimate comparison is the
-          linked pair at the bottom: the same 5000 reports, classified two ways.
+          line between any two of them would be an invention. The only legitimate comparisons are
+          the three linked at the bottom: <strong>the same 5000 reports, classified three ways</strong>
+          — the generator's own bond graph, an honest re-perception of the coordinates, and that
+          same honest re-perception under v0.4.13's promoted encoder.
         </span>
       </figcaption>
       <div class="chartbox">
-        <svg viewBox="0 0 760 268" role="img" aria-label="Dot plot of byte_exact percentage for five corpus measurements across four different cohorts.">
+        <svg viewBox="0 0 760 308" role="img" aria-label="Dot plot of byte_exact percentage for six corpus measurements across four different cohorts. The lowest three share one cohort of 5000 reports and are the only directly comparable values.">
           <!-- grid -->
           <g>
-            <line class="grid" x1="286" y1="26" x2="286" y2="212"></line>
-            <line class="grid" x1="386" y1="26" x2="386" y2="212"></line>
-            <line class="grid" x1="486" y1="26" x2="486" y2="212"></line>
-            <line class="grid" x1="586" y1="26" x2="586" y2="212"></line>
-            <line class="base" x1="186" y1="212" x2="686" y2="212"></line>
-            <text class="axlab" x="186" y="228">0%</text>
-            <text class="axlab" x="286" y="228" text-anchor="middle">20</text>
-            <text class="axlab" x="386" y="228" text-anchor="middle">40</text>
-            <text class="axlab" x="486" y="228" text-anchor="middle">60</text>
-            <text class="axlab" x="586" y="228" text-anchor="middle">80</text>
-            <text class="axlab" x="686" y="228" text-anchor="end">100</text>
-            <text class="axlab" x="436" y="248" text-anchor="middle">byte_exact (%)</text>
+            <line class="grid" x1="286" y1="26" x2="286" y2="252"></line>
+            <line class="grid" x1="386" y1="26" x2="386" y2="252"></line>
+            <line class="grid" x1="486" y1="26" x2="486" y2="252"></line>
+            <line class="grid" x1="586" y1="26" x2="586" y2="252"></line>
+            <line class="base" x1="186" y1="252" x2="686" y2="252"></line>
+            <text class="axlab" x="186" y="268">0%</text>
+            <text class="axlab" x="286" y="268" text-anchor="middle">20</text>
+            <text class="axlab" x="386" y="268" text-anchor="middle">40</text>
+            <text class="axlab" x="486" y="268" text-anchor="middle">60</text>
+            <text class="axlab" x="586" y="268" text-anchor="middle">80</text>
+            <text class="axlab" x="686" y="268" text-anchor="end">100</text>
+            <text class="axlab" x="436" y="288" text-anchor="middle">byte_exact (%)</text>
           </g>
           <!-- rows -->
           <g class="hit"><title>v0.4.2 generation, re-classified with the v0.4.4 key — 6719 molecules — 81.19%</title>
@@ -544,10 +575,20 @@ pre.prompt {
             <circle class="bar" cx="548.3" cy="200" r="6" fill="var(--data)"></circle>
             <text class="val" x="562" y="204">72.46%</text>
           </g>
-          <!-- connector for the one legitimate comparison -->
+          <g class="hit"><title>The same 5000 reports again, re-scored under v0.4.13's promoted donor fold + parity veto — 75.88%. The generator was not re-run; the promotion is generator-neutral (0 of 9669 comparison keys move).</title>
+            <text class="rowlab" x="176" y="240" text-anchor="end">v0.4.13 — honest, promoted</text>
+            <text class="rowsub" x="176" y="253" text-anchor="end">same 5000 reports</text>
+            <line x1="186" y1="240" x2="565.4" y2="240" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="565.4" cy="240" r="6" fill="var(--data)"></circle>
+            <text class="val" x="579" y="244">75.88%</text>
+          </g>
+          <!-- connectors: the only legitimate comparisons, both within one cohort -->
           <path d="M 600 174 L 600 188 L 556 188" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
           <path d="M 556 188 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
-          <text class="rowsub" x="614" y="192" style="fill:var(--ink-2)">−10.34 pts · same molecules</text>
+          <text class="rowsub" x="614" y="192" style="fill:var(--ink-2)">−10.34 pts · same 5000</text>
+          <path d="M 548.3 208 L 548.3 226 L 559 226" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
+          <path d="M 565 226 l -6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
+          <text class="rowsub" x="614" y="230" style="fill:var(--ink-2)">+3.42 pts · same 5000</text>
           <!-- key -->
           <g transform="translate(186, 12)">
             <circle cx="5" cy="-4" r="5" fill="var(--data)"></circle>
@@ -579,14 +620,15 @@ pre.prompt {
         <span class="fsub">
           A lever that was built, measured, and shipped <em>off</em> changes nothing for a user.
           This strip shows only what actually moved on the default path — which is why five
-          consecutive releases read flat.
+          consecutive releases read flat, and why v0.4.13 reading <em>gain</em> is the first
+          user-visible accuracy change since v0.4.6.
         </span>
       </figcaption>
       <div class="chartbox" style="min-width:0">
-        <div class="strip" style="min-width:560px">
+        <div class="strip" style="min-width:620px">
           <div class="strip-head">
             <span></span><span>v0.4.4</span><span>v0.4.5</span><span>v0.4.6</span><span>v0.4.7</span>
-            <span>v0.4.8</span><span>v0.4.9</span><span>v0.4.10</span><span>v0.4.11</span><span>v0.4.12</span>
+            <span>v0.4.8</span><span>v0.4.9</span><span>v0.4.10</span><span>v0.4.11</span><span>v0.4.12</span><span>v0.4.13</span>
           </div>
           <div class="strip-row">
             <span class="rl">Accuracy</span>
@@ -599,6 +641,7 @@ pre.prompt {
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
+            <div class="cell" data-s="gain">Gain</div>
           </div>
           <div class="strip-row">
             <span class="rl">Speed</span>
@@ -609,6 +652,7 @@ pre.prompt {
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
             <div class="cell" data-s="gain">Gain</div>
+            <div class="cell">Flat</div>
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
           </div>
@@ -626,15 +670,17 @@ pre.prompt {
     <!-- FIG 3 -->
     <figure>
       <figcaption>
-        <span class="ftitle">Where the remaining 27.54 points are</span>
+        <span class="ftitle">Where the remaining 24.12 points are</span>
         <span class="fsub">
-          The honest gap to <span class="mono">byte_exact = 100%</span>, decomposed at v0.4.9. The
-          release each block is assigned to is shown at right — and the ordering is an open question
-          the roadmap flags against itself.
+          The honest gap to <span class="mono">byte_exact = 100%</span>, re-derived at v0.4.13 —
+          the previous copy read 27.54 before the promotion consumed 171 molecules. The release each
+          block is assigned to is shown at right, and the ordering is an open question the roadmap
+          flags against itself: <strong>266 of <span class="mono">structural</span>'s 417 are a
+          single unguarded code path worth up to 5.32 points</strong>, sitting four rungs out.
         </span>
       </figcaption>
       <div class="chartbox">
-        <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 27.54-point accuracy gap.">
+        <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 24.12-point accuracy gap, largest first.">
           <g>
             <line class="grid" x1="342" y1="14" x2="342" y2="200"></line>
             <line class="grid" x1="452" y1="14" x2="452" y2="200"></line>
@@ -647,46 +693,46 @@ pre.prompt {
             <text class="axlab" x="672" y="216" text-anchor="end">10.0</text>
             <text class="axlab" x="452" y="236" text-anchor="middle">points of byte_exact</text>
           </g>
-          <g class="hit"><title>key_equal → slot_renumber: 496 molecules, 9.92 points. v0.4.11 attempted and refuted it.</title>
-            <text class="rowlab" x="222" y="26" text-anchor="end">slot_renumber</text>
-            <text class="rowsub" x="222" y="38" text-anchor="end">496 mol</text>
-            <rect class="bar" x="232" y="14" width="436.5" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="662" y="28" text-anchor="end" style="fill:var(--surface)">9.92</text>
+          <g class="hit"><title>structural: 417 molecules, 8.34 points. RE-MECHANISED at v0.4.13 — 266 of them (63.8%) are DETACHED: the generator returned a structure with ligands off the metal, an unguarded return path rather than a capability floor.</title>
+            <text class="rowlab" x="222" y="26" text-anchor="end">structural</text>
+            <text class="rowsub" x="222" y="38" text-anchor="end">417 mol</text>
+            <rect class="bar" x="232" y="14" width="367.0" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="593.0" y="28" text-anchor="end" style="fill:var(--surface)">8.34</text>
           </g>
-          <g class="hit"><title>structural: 417 molecules, 8.34 points — the second-largest block, re-labelled at v0.4.9.</title>
-            <text class="rowlab" x="222" y="60" text-anchor="end">structural</text>
-            <text class="rowsub" x="222" y="72" text-anchor="end">417 mol</text>
-            <rect class="bar" x="232" y="48" width="367.0" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="592" y="62" text-anchor="end" style="fill:var(--surface)">8.34</text>
+          <g class="hit"><title>key_equal → slot_renumber: 325 molecules, 6.50 points. Was 496 / 9.92 — v0.4.13's promoted donor fold took 171 of them.</title>
+            <text class="rowlab" x="222" y="60" text-anchor="end">slot_renumber</text>
+            <text class="rowsub" x="222" y="72" text-anchor="end">325 mol</text>
+            <rect class="bar" x="232" y="48" width="286.0" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="512.0" y="62" text-anchor="end" style="fill:var(--surface)">6.50</text>
           </g>
-          <g class="hit"><title>hard_fail: 319 molecules, 6.38 points — mostly generator compute.</title>
+          <g class="hit"><title>hard_fail: 319 molecules, 6.38 points — mostly generator compute; 315 of the 319 produce no structure at all.</title>
             <text class="rowlab" x="222" y="94" text-anchor="end">hard_fail</text>
             <text class="rowsub" x="222" y="106" text-anchor="end">319 mol</text>
             <rect class="bar" x="232" y="82" width="280.7" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="505" y="96" text-anchor="end" style="fill:var(--surface)">6.38</text>
+            <text class="val" x="506.7" y="96" text-anchor="end" style="fill:var(--surface)">6.38</text>
           </g>
-          <g class="hit"><title>key_equal → rdkit_canonical: 114 molecules, 2.28 points — re-sized to about 4.08 by v0.4.11.</title>
+          <g class="hit"><title>key_equal → rdkit_canonical: 114 molecules, 2.28 points — about 4.08 combined with the 90 frozen-resonance-form residue.</title>
             <text class="rowlab" x="222" y="128" text-anchor="end">rdkit_canonical</text>
             <text class="rowsub" x="222" y="140" text-anchor="end">114 mol</text>
             <rect class="bar" x="232" y="116" width="100.3" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="344" y="130">2.28</text>
+            <text class="val" x="344.3" y="130">2.28</text>
           </g>
           <g class="hit"><title>facmer_divergent: 16 molecules, 0.32 points — genuinely the wrong isomer.</title>
             <text class="rowlab" x="222" y="162" text-anchor="end">facmer_divergent</text>
             <text class="rowsub" x="222" y="174" text-anchor="end">16 mol</text>
             <rect class="bar" x="232" y="150" width="14.1" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="258" y="164">0.32</text>
+            <text class="val" x="258.1" y="164">0.32</text>
           </g>
           <g class="hit"><title>encode_fail: 15 molecules, 0.30 points — encoder coverage.</title>
             <text class="rowlab" x="222" y="196" text-anchor="end">encode_fail</text>
             <text class="rowsub" x="222" y="208" text-anchor="end">15 mol</text>
             <rect class="bar" x="232" y="184" width="13.2" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="257" y="198">0.30</text>
+            <text class="val" x="257.2" y="198">0.30</text>
           </g>
           <g>
-            <text class="rowsub" x="690" y="28">v0.4.11 ✗</text>
-            <text class="rowsub" x="690" y="62">v0.4.17</text>
-            <text class="rowsub" x="690" y="96">v0.4.12–13</text>
+            <text class="rowsub" x="690" y="28">v0.4.17</text>
+            <text class="rowsub" x="690" y="62">v0.4.14</text>
+            <text class="rowsub" x="690" y="96">—</text>
             <text class="rowsub" x="690" y="130">v0.4.14</text>
             <text class="rowsub" x="690" y="164">v0.4.15</text>
             <text class="rowsub" x="690" y="198">v0.4.18</text>
@@ -698,21 +744,23 @@ pre.prompt {
         <div class="tw"><table>
           <thead><tr><th>Block</th><th class="num">Molecules</th><th class="num">Points</th><th>Nature</th><th>Owning release</th></tr></thead>
           <tbody>
-            <tr><td class="mono">key_equal → slot_renumber</td><td class="num">496</td><td class="num">9.92</td><td>canonicality, encoder-side</td><td>v0.4.11 attempted — refuted</td></tr>
-            <tr><td class="mono">structural</td><td class="num">417</td><td class="num">8.34</td><td>generator capability</td><td>v0.4.17</td></tr>
-            <tr><td class="mono">hard_fail</td><td class="num">319</td><td class="num">6.38</td><td>compute, mostly</td><td>v0.4.12–v0.4.13</td></tr>
-            <tr><td class="mono">key_equal → rdkit_canonical</td><td class="num">114</td><td class="num">2.28</td><td>canonicality, encoder-side</td><td>v0.4.14 (re-sized ≈4.08)</td></tr>
+            <tr><td class="mono">structural</td><td class="num">417</td><td class="num">8.34</td><td><strong>266 (63.8%) are an unguarded return path</strong>, not a capability floor</td><td>v0.4.17 — candidate to pull forward</td></tr>
+            <tr><td class="mono">key_equal → slot_renumber</td><td class="num">325</td><td class="num">6.50</td><td>canonicality, encoder-side (was 496 / 9.92; the fold took 171)</td><td>v0.4.14</td></tr>
+            <tr><td class="mono">hard_fail</td><td class="num">319</td><td class="num">6.38</td><td>compute; 315 of the 319 produce no structure at all</td><td>—</td></tr>
+            <tr><td class="mono">key_equal → rdkit_canonical</td><td class="num">114</td><td class="num">2.28</td><td>canonicality, encoder-side</td><td>v0.4.14 (≈4.08 with the 90)</td></tr>
             <tr><td class="mono">facmer_divergent</td><td class="num">16</td><td class="num">0.32</td><td>wrong isomer</td><td>v0.4.15</td></tr>
             <tr><td class="mono">encode_fail</td><td class="num">15</td><td class="num">0.30</td><td>encoder coverage</td><td>v0.4.18</td></tr>
-            <tr class="total"><td>Total</td><td class="num">1377</td><td class="num">27.54</td><td></td><td></td></tr>
+            <tr class="total"><td>Total</td><td class="num">1206</td><td class="num">24.12</td><td></td><td></td></tr>
           </tbody>
         </table></div>
       </details>
       <div class="callout warn" style="margin-bottom:0;">
         <span class="lbl">Open sequencing question</span>
-        <strong>18.26 of the 27.54 points sit at v0.4.14 and v0.4.17</strong>, behind releases worth
-        a fraction of that. The re-sequencing decision v0.4.9 asked for has now been deferred at
-        three consecutive close-outs.
+        <strong>266 of <span class="mono">structural</span>'s 417 molecules are a single unguarded
+        code path worth up to 5.32 points</strong> — and they sit at v0.4.17, behind a release
+        chartered explicitly as "knowledge, not points". v0.4.13 found this and deliberately did
+        <em>not</em> apply the reorder it implies: the decision is recorded for the project owner,
+        because the last such reorder was theirs to make.
       </div>
     </figure>
 
@@ -851,7 +899,7 @@ pre.prompt {
 
     <div class="callout">
       <span class="lbl">Trap 3 — suite count is a rigour proxy, not accuracy</span>
-      551 → 988 tests means the project can detect more kinds of wrongness. It does not mean the
+      551 → 993 tests means the project can detect more kinds of wrongness. It does not mean the
       notation got better.
     </div>
   </section>
@@ -1367,6 +1415,89 @@ pre.prompt {
       </div>
       <p class="suite">Suite: 988 OK</p>
     </article>
+
+    <article class="rel" id="v0413">
+      <div class="rel-head">
+        <span class="ver">v0.4.13</span><h3>The fold ships — and the release cancels its own 55 CPU-hour precondition</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Accuracy gain</span>
+      </div>
+      <p class="strap">
+        Released as tag <code>v0.4.13</code>, <span class="mono">main</span> at
+        <span class="mono">9fbdf678</span>. <strong>The first upward move in the ten releases this
+        report covers</strong> — and it was banked by shipping a fix that had been built, measured,
+        refuted and shelved two releases earlier.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real gain — <span class="mono">byte_exact</span> 3623 → 3794, 72.46% → 75.88%,
+          +3.42 points.</strong> 171 molecules move <span class="mono">key_equal/slot_renumber →
+          byte_exact</span>; <strong>0</strong> move in a bad direction;
+          <span class="mono">facmer_divergent</span> unchanged at 16.
+          <span class="mono">OIN_CANONICAL_DONOR_FOLD</span> and
+          <span class="mono">OIN_FOLD_PARITY_VETO</span> are promoted to default-ON <em>together</em>
+          — one promotion with two names, pinned by a test so neither can be demoted alone, because
+          the fold without the veto is the configuration v0.4.11 refuted and <strong>no gate, golden
+          or comparison key can see that damage</strong>.
+        </dd>
+        <dt>The gate, twice</dt>
+        <dd>
+          Run on <strong>two independent draws</strong>, and the accounting is what carries it:
+          cat-only goes <strong>19 → 0</strong> collapses (achiral unmoved at 157, 73 + 19 = 92) and
+          the mixed cat+photo draw goes <strong>33 → 0</strong> (achiral unmoved at 134,
+          83 + 33 = 116). A veto that works and a veto that declines everything both report zero —
+          v0.4.12's own first implementation declined on <strong>18 of 18</strong> while every
+          fixture test passed. Here <em>every</em> collapsing molecule lands in the separated class
+          and nothing else moves, so the zero is bought by separating, not abstaining.
+        </dd>
+        <dt>Refuted: its own sweep</dt>
+        <dd>
+          <strong>The chartered ~55 CPU-hour re-sweep was not run, and running it would have been
+          worse evidence.</strong> The 72.46% baseline is itself an offline <em>re-score</em>, not a
+          sweep — no generator sweep has run since v0.4.6. Re-running a <em>stochastic</em> generator
+          to A/B an <em>encoder-side</em> change contaminates the signal with run-to-run variation
+          and is not even like-for-like with the table it is compared against. What licensed the
+          offline route was measured: acceptance decides by comparison <em>key</em>, and across
+          <strong>9669 corpus strings the fold moves 1019 and changes 0 keys</strong>. The 1019 is
+          the load-bearing half — a lever that never fired would also print zero.
+        </dd>
+        <dt>Two n = 1 classes, finally sized</dt>
+        <dd>
+          Over the 767 genuine failures: <strong>280 <span class="mono">DETACHED</span></strong>
+          (the generator returned a structure with ligands off the metal) and
+          <strong>99 <span class="mono">INTACT</span></strong> (attachment fine, re-perception still
+          disagrees), against a control of <strong>1.32%</strong> detached among passing molecules
+          versus 24.11% among failing — an <strong>18.2× enrichment</strong>. So
+          <span class="mono">structural</span> is <strong>266/417 = 63.8% detached</strong>: a
+          one-site <em>return-path</em> guard, not a capability floor. An independently-written
+          audit partitions the same 767 by cause and calls 437 of them "ambiguous — generator or
+          notation"; this split resolves <strong>280 of them to generator</strong>.
+        </dd>
+        <dt>Four blind instruments</dt>
+        <dd>
+          The mirror audit died silently on a dataset a branch switch had deleted. The transition
+          simulator excluded <strong>all 393 movers</strong> and printed <strong>+7.86</strong> —
+          the <em>refuted</em> bare-fold figure — under a heading saying "veto", and exited 0. The
+          sweep runner still resolved its interpreter by globbing sibling checkouts. And the
+          byte-identity gate passed <em>before and after</em> the promotion because <strong>0 of its
+          62 fixtures were among the molecules that moved</strong>.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          Eleven of 325 rows in the round-trip golden genuinely moved and were re-run individually
+          rather than bulk-accepted. <span class="mono">PREFILTER_VETO</span>'s corpus prevalence is
+          <strong>n = 1 and was not quoted as a prevalence</strong> — the lever and harness are
+          built, the defect is confirmed on one molecule, and the measurement is handed forward. The
+          48 passing molecules that read detached remain unexplained.
+        </dd>
+      </dl>
+      <div class="callout" style="margin-bottom:0;">
+        <span class="lbl">The transferable lesson</span>
+        A gate that cannot see your change is not evidence about your change. State its
+        <strong>coverage of the population you moved</strong>, not its verdict.
+      </div>
+      <p class="suite">Suite: 993 OK</p>
+    </article>
   </section>
 
   <!-- ─── unknowns ─────────────────────────────────────────────────── -->
@@ -1378,10 +1509,13 @@ pre.prompt {
         <thead><tr><th>Gap</th><th>What it would take to close</th></tr></thead>
         <tbody>
           <tr><td><strong>Corpus speed since v0.4.6</strong> is unmeasured — <span class="mono">994/5000</span> is a v0.4.6-era figure, and v0.4.10's default-ON deletion has never run at corpus scale</td><td>The frozen 328-molecule benchmark, <strong>~1–2 CPU-h</strong> — not a 55 CPU-h sweep</td></tr>
-          <tr><td><strong>Corpus accuracy since v0.4.6</strong> is unmeasured but well-bounded — 72.46% rests on gates and a carry-forward measurement, not a fresh run</td><td>A full seed-42 sweep on current <span class="mono">main</span>, <strong>~55 CPU-h</strong></td></tr>
+          <tr><td><strong>Corpus accuracy still rests on the v0.4.6 generator run</strong> — 75.88% is an offline re-score of those stored structures, exactly as 72.46% was. v0.4.13 argues that is <em>correct</em>, not a gap: the re-score is exact for a change that moves no comparison key, and it measured 0 of 9669</td><td>Nothing, for encoder-side work — run <span class="mono">fold_key_invariance.py</span> first. <strong>Any change touching acceptance or selection owes a real sweep (~55 CPU-h)</strong>, and that check is how you find out</td></tr>
           <tr><td>The <strong>CIP memo's promotion gate</strong> has not been run, so the largest measured single speed win stays off</td><td>Full 328-molecule cohort with the lever on, <strong>~10 CPU-h</strong> sharded 6-way</td></tr>
           <tr><td>The <strong>four bucket-report cohorts are not comparable</strong>, so no honest like-for-like accuracy line exists from v0.4.4 to today</td><td>Re-run the seed-42 corpus on current <span class="mono">main</span></td></tr>
           <tr><td>The <strong>eta acceptance lever has no runtime claim at all</strong></td><td>Re-run its A/B on a quiet box</td></tr>
+          <tr><td><strong><span class="mono">PREFILTER_VETO</span>'s corpus prevalence is n = 1.</strong> v0.4.13 built the lever, telemetry and harness and confirmed the defect on one molecule — whether it is 2 molecules or 200 is unmeasured, and the release declined to quote n = 1 as a prevalence</td><td>Run the harness over a re-derived cohort <strong>on a quiet machine</strong> — its deliverable includes a latency cost</td></tr>
+          <tr><td>The <strong>48 passing molecules that read "ligands detached"</strong> are unexplained — either the notation does not express the lost contact, or the attachment check is over-sensitive at that tolerance</td><td>Run the chirality oracle and clash count over those 48 and ask whether the lost contact is one the notation encodes</td></tr>
+          <tr><td>The <strong>MEDZUR class — 99 molecules with attachment intact and re-perception still disagreeing</strong> — has no mechanism. It is now sized but no better understood than at n = 1</td><td>Unknown. Naming what measurement would find one is itself open work</td></tr>
         </tbody>
       </table>
     </div>
@@ -1443,7 +1577,11 @@ pre.prompt {
       <table>
         <thead><tr><th>What</th><th>Where</th></tr></thead>
         <tbody>
-          <tr><td>Per-release narrative and figures</td><td class="mono">CHANGELOG.md §§ [0.4.4]–[0.4.12]</td></tr>
+          <tr><td>Per-release narrative and figures</td><td class="mono">CHANGELOG.md §§ [0.4.4]–[0.4.13]</td></tr>
+          <tr><td><strong>v0.4.13's frozen numbers — tracked and public</strong></td><td class="mono">measurements/v0.4.13-honest/ (13 files)</td></tr>
+          <tr><td>The promotion, the cancelled sweep, the four blind instruments</td><td class="mono">v0.4.13/PROMOTION_AND_CLASSES_v0.4.13.md</td></tr>
+          <tr><td>MEDZUR / GAVSED sizing + the independent cross-check</td><td class="mono">v0.4.13/LANE-02-attach-classes.md</td></tr>
+          <tr><td>PREFILTER_VETO — confirmed defect, unmeasured prevalence</td><td class="mono">v0.4.13/LANE-01-prefilter-advisory.md</td></tr>
           <tr><td>Honest re-baseline + transition matrix</td><td class="mono">results-v0.4.8-honest/bucket_report_both.md</td></tr>
           <tr><td>Cohort bucket reports</td><td class="mono">results-v0.4.{4-sl4,4-regression,5-rebaseline,6-sweep}/</td></tr>
           <tr><td>v0.4.5 promotion evidence, encoder profile</td><td class="mono">v0.4.5/PROMOTION_GATE, ENCODER_PERF, PERF</td></tr>
