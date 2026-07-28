@@ -5,6 +5,89 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.11] - 2026-07-27
+
+> ### `slot_renumber` — the fold works, buys 7.86 points, and must not ship.
+>
+> This release built the fix v0.4.5 Lane 2 specified in writing for the **largest single block in
+> the gap** (496 molecules / 9.92 points), measured it, and **refuted it**. The within-fragment
+> donor fold does exactly what it was designed to do: **393 molecules move
+> `key_equal/slot_renumber → byte_exact`, none in any other direction**, `facmer_divergent` holds
+> at 16, the comparison key moves on **0 of 992** strings, and both gate arms stay byte-identical
+> with the lever off.
+>
+> It also **collapses enantiomers.** A corpus mirror audit on a **uniform** draw found 19 of 250
+> structures (7.6%) whose mirror image encodes identically once the fold is on — and run directly
+> on the 393 molecules the fold *claims as wins*, **221 of 393 (56.2%)** collapse. An independent
+> geometric oracle (`tools/injectivity/oracle.py`, which shares no machinery with the encoder)
+> confirms **18 of 19** uniform-draw collapses and **26 of a 30-sample** of the 221 are genuinely
+> chiral; three are cap-free and unambiguous. **More than half the gain is the damage**, so at most
+> ~172 of 393 (~3.44 of the 7.86 points) are safe.
+>
+> **Why the safety argument failed.** It assumed two donors in one `breakTies=False` symmetry class
+> are interchangeable. `CanonicalRankAtoms` computes the symmetry of the **isolated ligand graph**,
+> but those donors sit at distinct vertices whose relation to the other ligands is chirality-bearing
+> — so the vertex permutation their exchange induces can be **improper**. *A fragment's automorphism
+> says nothing about the parity of the vertex permutation it induces.* v0.4.5's restriction to proper
+> rotations was not conservatism; it was the load-bearing correctness condition.
+>
+> **The finding that outranks the points: `byte_exact` can be raised by deleting information, and
+> the comparison key will agree.** Both are blind to reflection, because `_parse_vertex_colors`
+> folds that axis deliberately. A one-directional transition matrix is *not* evidence of safety for
+> anything touching canonicalization. Mirror-audit every future canonicality lever, on a uniform
+> draw, before quoting its points.
+
+**Accuracy: FLAT — 72.46%.** `OIN_CANONICAL_DONOR_FOLD` ships **default OFF** and no default answer
+moves. ARM 1 **62/62 byte-identical**, ARM 2 **90/90 gated**. The `BASELINE.md` §1 carry-forward
+licence therefore **survives**: v0.4.12 does not owe a re-sweep.
+
+> ⚠ **Two independent cohorts find it** — uniform 19/250 (7.6%) and the runtime-stratified cohort
+> 31/300 (10.3%) — so the damage is not an artifact of one sample. The named Δ/Λ fixtures
+> (`ZUMNEC`, `fac-Ir(ppy)₃`) **both pass with the lever on**: neither carries the vulnerable motif,
+> and fixtures alone could never have caught this.
+>
+> ⚠ **A methodology error made during this release, recorded rather than buried.** The stratified
+> audit was read mid-run as "0 regressions in the first 200" and briefly written up as a *"wrong
+> stratum"* finding. The tool prints a verdict only every 50th molecule, so four clean progress
+> lines had been mistaken for 200 clean molecules; the completed run reports 31 collapses. **A
+> partial run is not a result, and a progress line is not a tally.**
+
+### Added
+- `tools/mirror_audit_donor_fold.py` — the instrument that caught the collapse. Reports a four-way
+  table and defines a regression as an implication (`OFF_distinct and not ON_distinct`), so a
+  pre-existing fold is never miscounted against the lever under test. **Should gate every future
+  canonicality lever.**
+- `tools/slot_drift_mechanism.py`: `--roundtrip` (classify round-trip pairs, not just
+  re-presentation pairs), `--expect N` (abort unless exactly N pairs are selected), and
+  `--explain-distinct` (re-test `distinct_donors_LOCAL` resonance-insensitively).
+- `OIN_CANONICAL_DONOR_FOLD`, registered in `_HELD_OFF` with the full refutation and the condition
+  for promotion (a reflection-parity filter).
+
+### Measured
+- **All 496 `slot_renumber` molecules classified for the first time** — the taxonomy had only ever
+  run on re-presentation pairs. `same_vcolor_identical` **496/496**; `diff_occupancy`,
+  `diff_geometry`, `diff_colors` and `postpass_BUG_diverges` all **0**. The charter's headline risk
+  is refuted *in the release's favour*: the block is entirely reachable in principle.
+- **90 of the 118 `distinct_donors_LOCAL` are frozen-resonance-form artifacts** — acac binds through
+  two equivalent oxygens but is written ketone/enol, so `CanonicalRankAtoms` separates them. That is
+  a ligand-**body** gap, so **v0.4.14 is re-sized from 2.28 to ~4.08 points**.
+- Two stale v0.4.5 priors corrected: the canonicality probe reads **35 / 28 / 7 / 0** today, not
+  32 / 23 / 7 / 2 — the 2 unparsable are gone because `OIN_BORON_CAGE` was promoted in v0.4.6, after
+  the prior was recorded.
+
+### Changed
+- `TestResidualClassIsOutOfReachByDesign` **inverted, not deleted**, as v0.4.5 asked: the residual
+  class *is* reachable. What is not true is that reaching it this way is safe.
+- The fixture-based mirror test is renamed to say what it actually proves — nothing — because
+  passing fixtures are how this nearly shipped.
+
+### Added (tests)
+- `TestDonorFoldCollapsesEnantiomers` pins the defect at string level (`BIWDIV_comp_0` and its
+  mirror), to be **inverted, not deleted**, when a parity filter lands.
+- `TestDonorFoldScope` tests the three scope conditions by removing one at a time — asserting on
+  `_donor_swap_permutations` **directly**, because the rotation group already converges most small
+  cases and an equal-output assertion passes whether or not the fold over-reached.
+
 ## [0.4.10] - 2026-07-27
 
 > ### Cost per attempt — byte-identical by construction, and the arbiter was broken before we started.

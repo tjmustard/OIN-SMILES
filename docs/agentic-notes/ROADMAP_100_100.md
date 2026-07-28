@@ -45,14 +45,17 @@ rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9
 
 ## The gap — `100 − 72.46 = 27.54` points (honest, re-derived v0.4.9)
 
+⚠ **The `release` column below is post-`LADDER DECISION 2026-07-27` and post-v0.4.11.** It replaces
+an earlier copy that still pointed `slot_renumber` at v0.4.14 and `encode_fail` at v0.4.11.
+
 | block | n | pts | nature | release |
 |---|---:|---:|---|---|
-| `key_equal` → `slot_renumber` | 496 | 9.92 | canonicality, encoder-side | v0.4.14 |
-| **`structural`** | **417** | **8.34** | wrong isomer / lost coordination | **⚠ see below** |
-| `hard_fail` | 319 | 6.38 | compute (mostly) | v0.4.9 – v0.4.13 |
-| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.15 |
-| `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.16 |
-| `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.11 |
+| `key_equal` → `slot_renumber` | 496 | 9.92 | canonicality, encoder-side | 🔴 **v0.4.11 attempted — REFUTED.** 377 (7.54) are reachable by a within-fragment fold, but that fold **collapses enantiomers in 221 of its 393 gains**. Needs a reflection-parity filter. 90 mol / **1.80 pts** of the residue re-filed to **v0.4.14** (frozen resonance form) |
+| **`structural`** | **417** | **8.34** | generator capability (re-labelled) | v0.4.17 |
+| `hard_fail` | 319 | 6.38 | compute (mostly) | v0.4.12 – v0.4.13 |
+| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**+1.80 from above ⇒ ~4.08**) |
+| `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
+| `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 (opportunistic) |
 | **sum** | **1377** | **27.54** ✓ | | |
 
 ### 🔴 The honest number REORDERED the ladder
@@ -168,10 +171,10 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.8** | **the honest number** — promote `OIN_INDEP_SCORE` to *the* score; 5k honest sweep; + the atom-count gate | **DOWN ~5.7 pts, planned** |
 | **v0.4.9** ✅ | **speed becomes measurable** — `OIN_ENFORCE_BUDGET` (default OFF); 328-molecule stratified benchmark frozen. **Refuted its own premise:** `elapsed_s` is a sum, the harness already enforces to ε ≈ 0.2 s | pass flat ✓; benchmark reproduces to **0.28%** |
 | **v0.4.10** ✅ | **cost per attempt**, byte-identical. Deleted the discarded `.index()` scan (**`CAHQEJ` −32.9%**, `FOSNEI` +0.3% nil) and added `OIN_MEMO_CIP_REPARSE` (**`VAFMIA` −86.7%**, `CAHQEJ` −2.4%), both **byte-identical on ARM 1 and ARM 2**. ⚠ **Found its own arbiter broken:** ARM 1 had been non-runnable since `dd51a515` | pass FLAT ✓ by construction; **every speed number bimodal by molecule** |
-| **v0.4.11** | **`slot_renumber`** (496 / **9.92 pts**) — the within-fragment donor fold v0.4.5 Lane 2 *specified and declined to implement*. ⚠ Classify the 496 by mechanism FIRST: the taxonomy has only ever run on re-presentation pairs, never on round-trip pairs | byte_exact **UP**; size conditional on that classification |
+| **v0.4.11** ✅ | **`slot_renumber`** (496 / 9.92 pts) — built the within-fragment donor fold v0.4.5 specified. 🔴 **REFUTED IT.** It works (+7.86 pts, 393 molecules, one direction) and **collapses enantiomers: 221 of its own 393 gains (56.2%), 19/250 on a uniform draw**, 18 oracle-confirmed chiral. Ships **default OFF**. Lane 1 classified all 496: `diff_occupancy` **0**, and 90 of the 118 `distinct_donors_LOCAL` are frozen-resonance-form artifacts ⇒ **v0.4.14, not here** | **FLAT** — the lever that would raise it is unsafe |
 | **v0.4.12** | **honest acceptance** — harden `OIN_ATTACH_CHECK`; the `OIN_ETA_EARLY_EXIT` corpus A/B | biggest tail move; **pass must not move — that is the gate** |
 | **v0.4.13** | **harness false negatives** — `PREFILTER_VETO` prevalence; the MEDZUR class | pass **UP** |
-| **v0.4.14** | **`rdkit_canonical`** (114 / **2.28 pts**) + winding residue | byte_exact up ~2.3 pts |
+| **v0.4.14** | **`rdkit_canonical`** (114 / 2.28 pts) + winding residue — **RE-SIZED by v0.4.11 to ~4.08 pts**: 90 of the 118 residual `slot_renumber` molecules (**1.80 pts**) are the same ligand-BODY problem, a frozen resonance form (acac written ketone/enol) that `CanonicalRankAtoms` reads as two inequivalent donors | byte_exact up ~**4.1** pts |
 | **v0.4.15** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
 | **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
 | **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-LABELLED**: generated structures that re-perceive with *different coordination than the OIN claims*. A generator-capability problem, not "wrong isomer"; it does not belong beside `facmer_divergent` | byte_exact **UP**, bounded by what the generator can assemble |
@@ -241,6 +244,25 @@ explicitly what the new numbers refuted. **v0.4.19 and beyond never need to be w
   made the axial token reflection-invariant and silently killed the chirality it encoded; every guard
   written against the single-axis fixture passed. **Prove the descriptor still flips for the mirror,
   on a multi-center case.**
+- 🔴 **`byte_exact` CAN BE RAISED BY DELETING INFORMATION — and the comparison key will agree.**
+  v0.4.11's donor fold moved **393 molecules into `byte_exact`, 0 in any other direction**, changed
+  the key on **0 of 992** strings, and passed both gate arms — while **collapsing enantiomers in 221
+  of those same 393 gains (56.2%)**. The metric and the key are *both* blind to reflection, because
+  `compare._parse_vertex_colors` folds that axis deliberately. A one-directional transition matrix
+  is therefore **not** evidence of safety for anything touching canonicalization.
+  **Mirror-audit every canonicality lever (`tools/mirror_audit_donor_fold.py`) before quoting its
+  points**, and confirm chirality independently with `tools/injectivity/oracle.py`. Two independent
+  cohorts found it at comparable rates (uniform 19/250 = 7.6%, stratified 31/300 = 10.3%).
+- **A partial run is not a result, and a progress line is not a tally.** During v0.4.11 the
+  stratified audit was read mid-run as "0 regressions in the first 200" and written up as evidence
+  that the cohort was the *wrong sample*. The tool prints a verdict only every 50th molecule, so
+  four clean progress lines had been mistaken for 200 clean molecules; run to completion the same
+  cohort reported **31 collapses**. The "wrong stratum" conclusion was an artifact of reading a
+  sampled log as a census. **Wait for the summary line, or count with `--verbose`.**
+- **A fragment's automorphism says nothing about the parity of the vertex permutation it induces.**
+  Two donors interchangeable in the *isolated ligand graph* can sit at vertices whose exchange is an
+  **improper** operation on the coordination sphere. This is why folding is restricted to proper
+  rotations; narrowing a fold's scope *within a fragment* is not a substitute for a parity check.
 - **`OIN_EMIT_AXIAL`'s promoting evidence is stale** — measured with `OIN_CANONICAL_PERCEPTION` OFF,
   now default-ON; YESKOZ's hindered-axis count goes 2 → 1 under it.
 - **P3's obvious fix is measured-wrong** — stamping `[N@]` after the sanitize moves the canonical
