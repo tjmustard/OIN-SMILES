@@ -33,10 +33,24 @@ failed to parse and was skipped -- would print ``0 differing`` and look like a c
 output states how many strings were compared, how many the fold actually MOVED (which must be
 non-zero, or the lever is not wired), and how many were skipped.
 
+ANY ENCODER-SIDE CANONICALIZATION LEVER (v0.4.14)
+=================================================
+The question generalizes without change: a lever that never moves a comparison key cannot move
+``accept_fn``'s verdict. ``--lever`` names the lever under test and ``--holding`` names levers
+forced ON in **both** arms.
+
+``--holding`` is not a convenience. ``OIN_RESONANCE_DONOR_FOLD`` only widens a candidate set
+that ``OIN_CANONICAL_DONOR_FOLD`` creates, so measuring it against a fold-OFF baseline would
+report the *fold's* movement as the widening's -- a larger, more attractive, and wrong number.
+Hold the fold ON in both arms and the delta is the widening's alone.
+
 Usage
 -----
     PYTHONPATH=src .venv/bin/python tools/fold_key_invariance.py \
         --sweep tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest
+
+    PYTHONPATH=src .venv/bin/python tools/fold_key_invariance.py \
+        --sweep ... --lever OIN_RESONANCE_DONOR_FOLD --holding OIN_CANONICAL_DONOR_FOLD
 """
 
 from __future__ import annotations
@@ -46,7 +60,7 @@ import glob
 import json
 import os
 import sys
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
@@ -79,6 +93,13 @@ def main() -> int:
     ap.add_argument("--sweep", required=True)
     ap.add_argument("--out-json")
     ap.add_argument("--limit", type=int)
+    ap.add_argument("--lever", default=FOLD, help=f"lever under test (default {FOLD})")
+    ap.add_argument(
+        "--holding",
+        action="append",
+        default=[],
+        help="lever forced ON in BOTH arms, repeatable (see module docstring)",
+    )
     args = ap.parse_args()
 
     reports = sorted(glob.glob(os.path.join(args.sweep, "individual_reports", "*.json")))
@@ -102,12 +123,15 @@ def main() -> int:
             if not s:
                 continue
             try:
-                with forced(FOLD, False):
-                    off = canonicalize_oin_slots(s)
-                    k_off = canonical_roundtrip_key(off)
-                with forced(FOLD, True):
-                    on = canonicalize_oin_slots(s)
-                    k_on = canonical_roundtrip_key(on)
+                with ExitStack() as held:
+                    for name in args.holding:
+                        held.enter_context(forced(name, True))
+                    with forced(args.lever, False):
+                        off = canonicalize_oin_slots(s)
+                        k_off = canonical_roundtrip_key(off)
+                    with forced(args.lever, True):
+                        on = canonicalize_oin_slots(s)
+                        k_on = canonical_roundtrip_key(on)
             except Exception:  # noqa: BLE001 -- an unparseable string is not evidence either way
                 n_skipped += 1
                 continue
@@ -119,15 +143,17 @@ def main() -> int:
                 n_key_diff += 1
                 key_diffs.append(f"{mol}:{field}")
 
-    print(f"# fold key-invariance over {args.sweep}\n")
+    held = " + ".join(args.holding) or "(none)"
+    print(f"# key-invariance of {args.lever} over {args.sweep}")
+    print(f"# levers held ON in BOTH arms: {held}\n")
     print(f"  strings compared          : {n_cmp}")
-    print(f"  strings the FOLD MOVED    : {n_moved}   <-- must be > 0 or the lever is not wired")
+    print(f"  strings the LEVER MOVED   : {n_moved}   <-- must be > 0 or the lever is not wired")
     print(f"  strings whose KEY CHANGED : {n_key_diff}")
     print(f"  skipped (unparseable)     : {n_skipped}")
 
     print()
     if n_moved == 0:
-        print("  🔴 THE FOLD MOVED NOTHING. This measured nothing -- the lever is not active.")
+        print(f"  🔴 {args.lever} MOVED NOTHING. This measured nothing -- it is not active.")
         verdict = "INCONCLUSIVE"
     elif n_key_diff == 0:
         print("  ✅ GENERATOR-NEUTRAL. The fold changes strings but never the comparison key, so")
@@ -146,6 +172,8 @@ def main() -> int:
         json.dump(
             {
                 "sweep": args.sweep,
+                "lever": args.lever,
+                "holding": args.holding,
                 "verdict": verdict,
                 "n_compared": n_cmp,
                 "n_moved": n_moved,
