@@ -178,8 +178,14 @@ import os
 #: anything.
 #:
 #: ⚠ WHAT IT COSTS. It changes the default answer for 78 molecules, so arm2's goldens move:
-#: gate_v049_arm2_golden.tsv 12 of 325 rows, gate_v047_arm2_golden.tsv 2 of 100. ARM 1 is
-#: unaffected (0 of 62 fixtures are movers) and must stay byte-identical.
+#: 7 of 325 rows re-frozen in gate_v049_arm2_golden.tsv, 1 of 100 in gate_v047_arm2_golden.tsv.
+#: (Coverage of the moved population is the larger, different count -- 12/325 and 2/100 -- because
+#: the v0.4.9 golden predates the donor fold and some of its labelings coincide with today's.)
+#: ARM 1 is unaffected (0 of 62 fixtures are movers) and stays byte-identical, #DONE 62.
+#: ⚠ arm2's field 3 is a FRESH STOCHASTIC GENERATION, so a changed out-hash is not attributable to
+#: an encoder lever. Two rows flipped round-trip status in the re-freeze and NEITHER is this
+#: lever's doing -- the control on the frozen sweep structures reads HEKFEL True->True and FOJJUM
+#: False->False. Recorded as comments inside the goldens so a future diff does not misread them.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",

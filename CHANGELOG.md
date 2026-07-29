@@ -72,9 +72,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   decomposition re-filed by owner — **5.94 points move off the encoder ladder**. The encoder ladder
   has **1.28 points** of reachable work left (39 `NOT_A_MIRROR` + 25 resonance residue); the rest of
   the distance to 100% is generator work.
-- `gate_v049_arm2_golden.tsv` (12 of 325 rows) and `gate_v047_arm2_golden.tsv` (2 of 100) re-frozen
-  for the promotion, `MANIFEST_SHA256` recomputed — arm2 does not verify it, so a stale one goes
-  unseen. ARM 1 is byte-identical (0 of 62 fixtures are movers).
+- arm2 goldens re-frozen for the promotion — **7 of 325 rows** in `gate_v049_arm2_golden.tsv` and
+  **1 of 100** in `gate_v047_arm2_golden.tsv`, `MANIFEST_SHA256` recomputed (arm2 does not verify
+  it, so a stale one goes unseen). ARM 1 is byte-identical, `#DONE 62`. *Coverage of the moved
+  population is a different count and is 12/325 and 2/100 — the v0.4.9 golden predates the donor
+  fold and some of its labelings coincide with today's.*
+  Two traps caught in the re-freeze: only fields 1–6 are taken from the fresh run, because a v0.4.9
+  golden's field 7 is the **band** `--band` filters on while a fresh row carries `xyz_sha` there;
+  and **field 3 is a fresh stochastic generation**, so the two rows whose round-trip status changed
+  (`HEKFEL`, `FOJJUM`) are **not** lever-caused — the deterministic control on the frozen sweep
+  structures reads `True→True` and `False→False` respectively. Both facts are recorded as comments
+  inside the goldens.
 
 ### Fixed
 - Nothing. This release changes what the encoder emits for 78 molecules and what four numbers on

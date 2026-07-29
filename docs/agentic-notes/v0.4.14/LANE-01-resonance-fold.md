@@ -116,16 +116,42 @@ On the draw that *can* see the change:
 
 ## 5. Gates
 
-| | result | coverage of the moved population |
-|---|---|---|
-| ARM 1 (`gate_v047.sh arm1`) | **PASS — byte-identical**, `#DONE 62` | **0 of 62** |
-| `gate_v047_arm2_golden.tsv` | 2 rows re-frozen | 2 of 100 |
-| `gate_v049_arm2_golden.tsv` | 12 rows re-frozen | 12 of 325 |
-| `tests/unit` | **1006 → OK** (skipped 3, xfail 5) | — |
-| ruff 0.15.20 | format + check clean, 309 files | — |
+| | result | coverage of the moved population | rows re-frozen |
+|---|---|---|---|
+| ARM 1 (`gate_v047.sh arm1`) | **PASS — byte-identical**, `#DONE 62` | **0 of 62** | 0 |
+| `gate_v047_arm2_golden.tsv` | re-frozen | 2 of 100 | **1** |
+| `gate_v049_arm2_golden.tsv` | re-frozen | 12 of 325 | **7** |
+| `tests/unit` | **1006 → OK** (skipped 3, xfail 5) | — | — |
+| ruff 0.15.20 | format + check clean, 309 files | — | — |
+
+*Coverage and rows-re-frozen are different counts and both are given: a golden fixture can be a
+string-mover in the frozen sweep and still hold a row this encoder reproduces, because the v0.4.9
+golden predates the donor fold and some of its labelings coincide with today's.*
 
 ⚠ The arm2 goldens carry a `MANIFEST_SHA256` line that **arm2 does not verify**, so a stale one
-goes unseen. It is recomputed with the re-frozen rows.
+goes unseen. It is recomputed.
+
+### Two traps in the re-freeze, both caught before the write
+
+**1. Splicing whole rows would have silently broken `--band`.** A v0.4.9 golden's field 7 is the
+runtime **band** that `gate_v047.sh arm2 --band` filters on; a fresh row carries `xyz_sha` there.
+Only fields 1–6 (name, sha_in, sha_out, len_in, len_out, eta) are taken from the fresh run and
+fields 7+ are preserved. The first attempt overwrote them, and would have broken band filtering for
+exactly the rows this release touched.
+
+**2. Two rows changed round-trip status and NEITHER is caused by this lever.** `arm2` **re-generates
+stochastically**, so its field-3 hash is not attributable to an encoder-side change. The
+deterministic control, on the frozen sweep structures:
+
+| | frozen-structure `byte_exact`, lever OFF → ON | arm2 fresh row |
+|---|---|---|
+| `HEKFEL_comp_0` | **True → True** (both strings move together) | flipped to not-round-tripping |
+| `FOJJUM_comp_0` | **False → False** (already not byte-exact) | old golden said round-tripping |
+
+Field-2 changes *are* attributable, and that was verified rather than assumed: each was re-encoded
+in a **fresh process per lever setting**, because in-process perception memoisation would otherwise
+let the second encode reuse the first one's answer. Both facts are recorded as comments inside the
+goldens themselves, so a future session reading a diff does not have to reconstruct them.
 
 ## 6. What this lane does NOT claim
 
