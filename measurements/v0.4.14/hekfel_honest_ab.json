@@ -1,0 +1,48 @@
+{
+  "lever": "OIN_RESONANCE_DONOR_FOLD",
+  "cohort_dir": "tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
+  "n_requested": 2,
+  "n_scored": 2,
+  "gains": [
+    "XIXXUZ_comp_0"
+  ],
+  "losses": [
+    "HEKFEL_comp_0"
+  ],
+  "net": 0,
+  "input_moved": 2,
+  "output_moved": 1,
+  "nondeterministic": [],
+  "rows": [
+    {
+      "molecule": "HEKFEL_comp_0",
+      "off": {
+        "byte_exact": true,
+        "elapsed_s": 10.46,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 34.3,
+        "error": null
+      },
+      "input_string_moved": true,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "XIXXUZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 1.76,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 2.04,
+        "error": null
+      },
+      "input_string_moved": true,
+      "output_string_moved": false
+    }
+  ]
+}

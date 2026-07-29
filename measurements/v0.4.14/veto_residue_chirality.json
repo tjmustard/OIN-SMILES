@@ -1,0 +1,902 @@
+{
+  "outcomes": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/veto_outcomes.json",
+  "sweep": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest",
+  "n_reverted": 222,
+  "n_classified": 222,
+  "tally": {
+    "MIRROR_MATCH": 183,
+    "NOT_A_MIRROR": 39
+  },
+  "rows": [
+    {
+      "molecule": "AFADOC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "AGAVIQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "AXESAY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "AYOVUH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BELYUP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BIXTOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BOFLIT_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BOJKAN_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BOSRAE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "BOSYUF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "CAGSIO_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "CAPZID_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "CAQNUE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "CEBYAK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "COFCIL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DALHEG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DEFBUN_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "DEVFUG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DIDTOC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DIQVEE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DOFWIG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DOMZEL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DORTIQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "DUZLAN_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "ECEYUI_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "EKIWEB_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "EPEJUG_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "EPIBOW_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "EPIMIB_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "ESOSOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "EVADUC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "EYALEW_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FAJDEB_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FAMRET_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FANSAR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FEDYUI_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "FEFWUK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FIDNUE_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "FIXXES_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "FUYXII_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "GAKZOK_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "GIJBOR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "GIMKIY_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HATRUS_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HEDKAF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HEGMAK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HIJHAL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HODVOO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "HUZLEV_comp_2",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IBEGEE_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "ICIGAD_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "ICUXOV_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IFIBIK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IGAWOF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IGIGUC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IHIROI_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IKEKUF_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IKIDOX_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "ILEPAR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IPIQIJ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IPISUV_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "IRUCUU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "ISAPUO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "IYOKAI_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "JAKKOW_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JAMFOV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JATCAL_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "JIPPEG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JIWYEU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JOCMUK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JOFSAB_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "JUDMEC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KAMFAI_comp_2",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KAWHIC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KECFII_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KEFTEV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KEJKUG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KITHED_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KITHIH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KOKGUP_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "KOPBAU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KOWXIF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "KUMDAY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LAMVIE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LEGKIU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LEMKAS_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LEYTAL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LIHYAF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LIKZUD_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LILLEZ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "LOHFEW_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MAKNOE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MARJIZ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MAWZIV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MIGVEF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MIPCOF_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "MIQCOH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MITHIH_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "MIWKIN_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "MOZRIC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NANYUZ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NANZOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NAPYEJ_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "NAXQOS_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NEMDUG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NISDOJ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NIWTIY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NOBKOG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NOFTOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NOLXAQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NOZLAR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NUDXUG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NUFXAP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "NUXSIK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OBALUA_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "OBOHOD_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OGEKOD_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "OJEKET_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OJELEU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OMOBUO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OVELOR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OVEQAI_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OVOTOK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "OYUKOK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "PEWWOF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "PIJZOY_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "PIYDAD_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "POFQUZ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "POJDEA_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "POJDUQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "PUNTAV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "PUWMID_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "PUYBIU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QAYRUD_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QEVNUB_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QEWDEC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QICVUV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QIKFEX_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QOJRUD_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QOQGEK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "QOQGIO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "RANRAB_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "RARJEA_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "RAWCEY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "REKDAO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "RUQKAQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "RURMUO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "RURTAA_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SAVCUP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SEHQED_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SEQPIO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SICLOH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SIDNUQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SIHRIM_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SITHOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SITHUA_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SIXROJ_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "SUDQEP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "SURFEQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TAYDUV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TEPBAT_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TEPBEX_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TILGOM_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "TIQWUN_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TOQXEE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "TORHUD_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "TORJEP_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "UGUQIX_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "UHINAC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "UHIPEI_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "UQIMAJ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "UROPOH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VAKKAV_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VICROR_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VIFMOP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VIMQAJ_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "VISBUV_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VISDOS_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VIWKIY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VIYDIS_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "VIZKEW_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WAKRUX_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "WENCOI_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "WENDAV_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "WENDID_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "WEVNUJ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WOBLUX_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WOPXAB_comp_1",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "WUVNUW_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WUVPAE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WUWNOT_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "WUXKUW_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "XADXOP_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XAWHOU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XEFROQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XEHLOO_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XEJGOK_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XESHAH_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "XEXMIZ_comp_1",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XEXMUL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XEZTED_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XIPQIY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XISBAC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XISBEH_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XIVTUS_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "XIXPEB_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XIXPIF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XONHIU_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "XOVMIG_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YAJYAJ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YEJFIC_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YIVFOY_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YOHZIF_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YOMPUL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YOZVIT_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "YOZVOZ_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "YUSBOE_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "YUYZUP_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "ZASYUQ_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "ZIRNUL_comp_0",
+      "verdict": "MIRROR_MATCH"
+    },
+    {
+      "molecule": "ZITLOG_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    },
+    {
+      "molecule": "ZUSSAH_comp_0",
+      "verdict": "NOT_A_MIRROR"
+    }
+  ],
+  "excluded_drift": [],
+  "excluded_unavailable": []
+}

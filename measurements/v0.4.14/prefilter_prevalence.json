@@ -1,0 +1,1301 @@
+{
+ "n_measured": 49,
+ "n_requested": 50,
+ "hard_timeout": [
+  "YIDFEZ_comp_0"
+ ],
+ "totals_on": {
+  "adapter.prefilter_veto_overridden": 4,
+  "adapter.prefilter_veto_confirmed": 257,
+  "adapter.prefilter_cheap_pass": 1077,
+  "adapter.prefilter_veto_advisory": 261
+ },
+ "totals_off": {
+  "adapter.prefilter_veto_overridden": 0,
+  "adapter.prefilter_veto_confirmed": 0,
+  "adapter.prefilter_cheap_pass": 1081,
+  "adapter.prefilter_veto_advisory": 0
+ },
+ "molecules_with_advisory": 26,
+ "molecules_with_override": 2,
+ "n_recovered": 1,
+ "elapsed_off_s": 4135.55,
+ "elapsed_on_s": 3656.73,
+ "verdicts": {
+  "INSTRUMENT_DEAD": 5,
+  "PREFILTER_VINDICATED": 24,
+  "NO_POPULATION": 18,
+  "DEFECT_CONFIRMED": 2
+ },
+ "rows": [
+  {
+   "molecule": "CAKBEW_comp_0",
+   "off": {
+    "counts": {},
+    "elapsed_s": 296.12,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TET'); OIN='[Zr_TET].CCN{0}CC.CCN{1}CC.C[Si](C)(C{3}1[CH]{3}[CH]{3>}[CH]{3}[CH]{3}1)C12[BH]34[BH]56[BH]378[BH]439C{2}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125', pool=16, timeout=300s"
+   },
+   "on": {
+    "counts": {},
+    "elapsed_s": 297.68,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TET'); OIN='[Zr_TET].CCN{0}CC.CCN{1}CC.C[Si](C)(C{3}1[CH]{3}[CH]{3>}[CH]{3}[CH]{3}1)C12[BH]34[BH]56[BH]378[BH]439C{2}4[BH]1%10%11[BH]251[BH]672[BH]835[BH]94%10[BH]%11125', pool=16, timeout=300s"
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "CAZHAP_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 39,
+     "embed.best_rejected_returned": 21,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 20.73,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 39,
+     "embed.best_rejected_returned": 21,
+     "adapter.prefilter_veto_advisory": 9,
+     "adapter.prefilter_veto_confirmed": 9,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 21.51,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "CEDXER_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 38,
+     "embed.best_rejected_returned": 13,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 18.92,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 38,
+     "embed.best_rejected_returned": 13,
+     "adapter.prefilter_veto_advisory": 10,
+     "adapter.prefilter_veto_confirmed": 10,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 19.44,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "CETFAJ_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 9,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 66.24,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 9,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 66.82,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "COJJAP_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 10,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 34.34,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 10,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 33.27,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "COJJOD_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 38.85,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 11,
+     "adapter.prefilter_veto_advisory": 4,
+     "adapter.prefilter_veto_confirmed": 4,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 40.85,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "DALHIK_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 43,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 32.23,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 43,
+     "adapter.prefilter_cheap_pass": 15,
+     "adapter.prefilter_veto_advisory": 33,
+     "adapter.prefilter_veto_confirmed": 33,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 37.21,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "DAYCUE_comp_0",
+   "off": {
+    "counts": {},
+    "elapsed_s": 141.58,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TPL'); OIN='[Fe_TPL].CC(=CC(C)=N{0}c1c(C(C)C)cccc1C(C)C)N{1}c1c(C(C)C)cccc1C(C)C.[BH3-][N+](C)(C)[BH2-]N{2}(C)C', pool=5, timeout=300s"
+   },
+   "on": {
+    "counts": {},
+    "elapsed_s": 139.33,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TPL'); OIN='[Fe_TPL].CC(=CC(C)=N{0}c1c(C(C)C)cccc1C(C)C)N{1}c1c(C(C)C)cccc1C(C)C.[BH3-][N+](C)(C)[BH2-]N{2}(C)C', pool=5, timeout=300s"
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "DIFPAM_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 16,
+     "adapter.prefilter_cheap_pass": 9,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 15.03,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 12,
+     "adapter.prefilter_cheap_pass": 5,
+     "adapter.prefilter_veto_advisory": 4,
+     "adapter.prefilter_veto_confirmed": 2,
+     "adapter.prefilter_veto_overridden": 2,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 12.11,
+    "passed": true,
+    "error": null
+   },
+   "recovered": true
+  },
+  {
+   "molecule": "EBAGAS_comp_0",
+   "off": {
+    "counts": {},
+    "elapsed_s": 0.32,
+    "passed": null,
+    "error": "UncoordinatedFragmentError: Fragment 4 ('C1CCOC1') has no binding slot; uncoordinated fragments are not representable in MetalloGen m-SMILES."
+   },
+   "on": {
+    "counts": {},
+    "elapsed_s": 0.22,
+    "passed": null,
+    "error": "UncoordinatedFragmentError: Fragment 4 ('C1CCOC1') has no binding slot; uncoordinated fragments are not representable in MetalloGen m-SMILES."
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ECIGAZ_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 242,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 288.45,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 242,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 286.86,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ENUGAX_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 32,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 49.14,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 32,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 48.21,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ESARUM_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 45,
+     "embed.best_rejected_returned": 35,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 159.59,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 45,
+     "embed.best_rejected_returned": 35,
+     "adapter.prefilter_veto_advisory": 3,
+     "adapter.prefilter_veto_confirmed": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 161.73,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "EWUQOC_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 33,
+     "adapter.prefilter_cheap_pass": 48,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 42.76,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 33,
+     "adapter.prefilter_cheap_pass": 48,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 41.77,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "EZURIB_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 44,
+     "adapter.prefilter_cheap_pass": 7,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 102.81,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 44,
+     "adapter.prefilter_veto_advisory": 8,
+     "adapter.prefilter_veto_confirmed": 8,
+     "adapter.prefilter_cheap_pass": 7,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 102.19,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "FECSUC_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 19,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 31.12,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 19,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 30.69,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "FESFUG_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 20.14,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 20.65,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "GAMFOS_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 13,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 46.19,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 13,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 47.12,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "HIKCIQ_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 11,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 28.56,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 11,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 30.21,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "HIPQIH_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 46,
+     "adapter.prefilter_cheap_pass": 18,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 66.44,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 46,
+     "adapter.prefilter_cheap_pass": 18,
+     "adapter.prefilter_veto_advisory": 30,
+     "adapter.prefilter_veto_confirmed": 30,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 68.5,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "HUTCOQ_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 8,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 520.15,
+    "passed": true,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 1,
+     "adapter.prefilter_veto_advisory": 2,
+     "adapter.prefilter_veto_overridden": 2,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 25.11,
+    "passed": true,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "KEHNOA_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 15,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 17.14,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 15,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 16.85,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "KIVGIH_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 14,
+     "adapter.prefilter_cheap_pass": 14,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 15.71,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 14,
+     "adapter.prefilter_cheap_pass": 14,
+     "adapter.prefilter_veto_advisory": 1,
+     "adapter.prefilter_veto_confirmed": 1,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 16.39,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "KOYZIJ_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 11,
+     "embed.best_rejected_returned": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 4.42,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 11,
+     "embed.best_rejected_returned": 3,
+     "adapter.prefilter_veto_advisory": 4,
+     "adapter.prefilter_veto_confirmed": 4,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 4.65,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "LUMDON_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 9,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 72.99,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 9,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 72.4,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "MUNWAU_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 27.42,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 27.99,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "NONSUG_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 20,
+     "adapter.prefilter_cheap_pass": 40,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 29.15,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 20,
+     "adapter.prefilter_cheap_pass": 40,
+     "adapter.prefilter_veto_advisory": 8,
+     "adapter.prefilter_veto_confirmed": 8,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 29.98,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ODUJEC_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 4,
+     "adapter.prefilter_cheap_pass": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 7.6,
+    "passed": true,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 4,
+     "adapter.prefilter_cheap_pass": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 7.44,
+    "passed": true,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "PIJWEK_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 285.85,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 286.41,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "QIDKUL_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 47,
+     "embed.best_rejected_returned": 5,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 320.45,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 47,
+     "embed.best_rejected_returned": 5,
+     "adapter.prefilter_veto_advisory": 1,
+     "adapter.prefilter_veto_confirmed": 1,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 305.39,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RAPMIG_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 6,
+     "embed.best_rejected_returned": 9,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 20.07,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 6,
+     "embed.best_rejected_returned": 9,
+     "adapter.prefilter_veto_advisory": 9,
+     "adapter.prefilter_veto_confirmed": 9,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 22.84,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "REVMEL_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 92.42,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 92.47,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RILGAW_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 13,
+     "embed.best_rejected_returned": 7,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 48.21,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 13,
+     "embed.best_rejected_returned": 7,
+     "adapter.prefilter_veto_advisory": 2,
+     "adapter.prefilter_veto_confirmed": 2,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 50.55,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RIQNUC_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 41,
+     "adapter.prefilter_cheap_pass": 40,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 31.82,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 41,
+     "adapter.prefilter_cheap_pass": 40,
+     "adapter.prefilter_veto_advisory": 8,
+     "adapter.prefilter_veto_confirmed": 8,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 32.54,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RIVNUG_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 37,
+     "embed.best_rejected_returned": 63,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 84.89,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 37,
+     "embed.best_rejected_returned": 63,
+     "adapter.prefilter_veto_advisory": 11,
+     "adapter.prefilter_veto_confirmed": 11,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 85.4,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RIXVAX_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 35,
+     "embed.best_rejected_returned": 27,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 77.51,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 35,
+     "embed.best_rejected_returned": 27,
+     "adapter.prefilter_veto_advisory": 13,
+     "adapter.prefilter_veto_confirmed": 13,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 82.96,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ROGYES_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 46,
+     "embed.best_rejected_returned": 2,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 26.1,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 46,
+     "embed.best_rejected_returned": 2,
+     "adapter.prefilter_veto_advisory": 2,
+     "adapter.prefilter_veto_confirmed": 2,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 26.26,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RONQET_comp_0",
+   "off": {
+    "counts": {},
+    "elapsed_s": 300.68,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TPY'); OIN='[Ru_TPY].C{0}12[BH]{1}34[BH]56[BH]178[BH]219C2(C%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C{2}%13[BH]%10%19%20[BH]%11%14%10[BH]%15%16%11[BH]%17%12%14[BH]%18%13%19[BH]%20%10%11%14)[BH]3%10%11[BH]453[BH]674[BH]815[BH]92%10[BH]%11345.Cc{3}1c{3}(C)c{3>}(C)c{3}(C)c{3}(C)c{3}1C', pool=16, timeout=300s"
+   },
+   "on": {
+    "counts": {},
+    "elapsed_s": 300.49,
+    "passed": null,
+    "error": "ValueError: MetalloGen failed to generate any conformers via OIN-direct assembly (geometry 'TPY'); OIN='[Ru_TPY].C{0}12[BH]{1}34[BH]56[BH]178[BH]219C2(C%10%11[BH]%12%13[BH]%14%15[BH]%12%16%17[BH]%13%12%18C{2}%13[BH]%10%19%20[BH]%11%14%10[BH]%15%16%11[BH]%17%12%14[BH]%18%13%19[BH]%20%10%11%14)[BH]3%10%11[BH]453[BH]674[BH]815[BH]92%10[BH]%11345.Cc{3}1c{3}(C)c{3>}(C)c{3}(C)c{3}(C)c{3}1C', pool=16, timeout=300s"
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ROZNIE_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 10,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 19.61,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 48,
+     "embed.best_rejected_returned": 10,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 19.91,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RURHUH_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 40,
+     "embed.best_rejected_returned": 23,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 28.45,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 40,
+     "embed.best_rejected_returned": 23,
+     "adapter.prefilter_veto_advisory": 8,
+     "adapter.prefilter_veto_confirmed": 8,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 29.19,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RUSLIC_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 30,
+     "adapter.prefilter_cheap_pass": 43,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 35.42,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_veto_advisory": 5,
+     "adapter.prefilter_veto_confirmed": 5,
+     "embed.best_rejected_returned": 30,
+     "adapter.prefilter_cheap_pass": 43,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 35.2,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "RUYDUM_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 35,
+     "adapter.prefilter_cheap_pass": 48,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 41.6,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 35,
+     "adapter.prefilter_cheap_pass": 48,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 42.17,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "TICNUP_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 5,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 6.59,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 5,
+     "adapter.prefilter_cheap_pass": 15,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 6.5,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "TIXWEC_comp_0",
+   "off": {
+    "counts": {
+     "adapter.prefilter_cheap_pass": 25,
+     "embed.best_rejected_returned": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 10.09,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_veto_advisory": 23,
+     "adapter.prefilter_veto_confirmed": 23,
+     "adapter.prefilter_cheap_pass": 25,
+     "embed.best_rejected_returned": 3,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 12.2,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "TULTAX_comp_0",
+   "off": {
+    "counts": {
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 5.07,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "adapter.prefilter_veto_advisory": 48,
+     "adapter.prefilter_veto_confirmed": 48,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 6.22,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "ULOQOD_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 28,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 317.68,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 28,
+     "adapter.prefilter_veto_advisory": 6,
+     "adapter.prefilter_veto_confirmed": 6,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 321.26,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "VIMWAS_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 24,
+     "adapter.prefilter_cheap_pass": 40,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 29.42,
+    "passed": false,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 24,
+     "adapter.prefilter_cheap_pass": 40,
+     "adapter.prefilter_veto_advisory": 8,
+     "adapter.prefilter_veto_confirmed": 8,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_miss": 1
+    },
+    "elapsed_s": 29.31,
+    "passed": false,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "VUXTOZ_comp_0",
+   "off": {
+    "counts": {
+     "embed.best_rejected_returned": 19,
+     "adapter.prefilter_cheap_pass": 6,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 158.68,
+    "passed": true,
+    "error": null
+   },
+   "on": {
+    "counts": {
+     "embed.best_rejected_returned": 19,
+     "adapter.prefilter_cheap_pass": 6,
+     "adapter.prefilter_veto_advisory": 1,
+     "adapter.prefilter_veto_confirmed": 1,
+     "pool.attempts_spent": 1,
+     "adapter.early_exit_hit": 1
+    },
+    "elapsed_s": 161.3,
+    "passed": true,
+    "error": null
+   },
+   "recovered": false
+  },
+  {
+   "molecule": "WODCIC_comp_0",
+   "off": {
+    "counts": {},
+    "elapsed_s": 0.8,
+    "passed": null,
+    "error": "UncoordinatedFragmentError: Fragment 3 ('[O-2]') has no binding slot; uncoordinated fragments are not representable in MetalloGen m-SMILES."
+   },
+   "on": {
+    "counts": {},
+    "elapsed_s": 0.98,
+    "passed": null,
+    "error": "UncoordinatedFragmentError: Fragment 3 ('[O-2]') has no binding slot; uncoordinated fragments are not representable in MetalloGen m-SMILES."
+   },
+   "recovered": false
+  }
+ ]
+}

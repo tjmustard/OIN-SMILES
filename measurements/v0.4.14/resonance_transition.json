@@ -1,0 +1,1046 @@
+{
+  "sweep": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest",
+  "lever": "OIN_RESONANCE_DONOR_FOLD",
+  "n": 5000,
+  "baseline_byte_exact": 3794,
+  "byte_exact_after": 3872,
+  "points": 1.56,
+  "n_movers": 179,
+  "n_measured": 168,
+  "gains": 78,
+  "losses": 0,
+  "bad_direction": 0,
+  "transitions": {
+    "key_equal/slot_renumber -> byte_exact": 78
+  },
+  "changed": [
+    {
+      "molecule": "ALAJON_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "AROKUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "BINMAO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "CAVBAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "COFBAB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "DERKOD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "DIDJAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "DOCNIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "DOQJIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "DOTWEQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "EBESIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "EGUFIV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "EHAQAG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "EHAQIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "EJITUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ELOWAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "EVIQUX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "EVIQUX_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "FETNEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "FIFZIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "FIKXAZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "FILVON_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "FOSWOA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "FUMZEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "GAWMAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "GEFMUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "GIJFEL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "GOHNEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "HAVNUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "HERXOS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "IHEBED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "IHUBUJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "IJAZAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ISUHAG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "JALTIC_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "KADYEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "KAQHIW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "KAQHOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "LOYSUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "NABLIN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "NAHDOQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "NIYZED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "NIYZON_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "OBOKIB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "OGONOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "OWIBOM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "PACYOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "POLFIG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "QEPKII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "QOZNIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "REMFIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "allowed_separation_survives"
+      ]
+    },
+    {
+      "molecule": "RIVNUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "RIVPAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "RULKOZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "SAYZOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "SIWXUT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "TAJBUE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "TOGJOQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "TURTIL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "URALAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "UZITED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "VAZHUB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "VEXHIR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "WAQXOB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "WAWMAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "XIBHEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "XIXTUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "XIXVIL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "fold_inactive",
+        "allowed_preexisting_fold"
+      ]
+    },
+    {
+      "molecule": "XIXXUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "XOQSON_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "XUPQEF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "YAKDUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZAYDIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZEPLEO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZEYSOO_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZIBZUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZINHOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_separation_survives",
+        "fold_inactive"
+      ]
+    },
+    {
+      "molecule": "ZOYYAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "byte_exact",
+      "outcome_before": [
+        "fold_inactive",
+        "fold_inactive"
+      ],
+      "outcome_after": [
+        "allowed_preexisting_fold",
+        "fold_inactive"
+      ]
+    }
+  ],
+  "excluded_drift": [],
+  "excluded_unavailable": [
+    "CAHQOT_comp_0",
+    "KADYAS_comp_0",
+    "KIKRUU_comp_0",
+    "LAMTAX_comp_0",
+    "LIMVEL_comp_0",
+    "LUYYOT_comp_0",
+    "NURTEA_comp_0",
+    "QOJKUW_comp_0",
+    "ULOQOD_comp_0",
+    "ULORAQ_comp_0",
+    "YARYOI_comp_0"
+  ]
+}

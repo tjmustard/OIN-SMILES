@@ -140,6 +140,13 @@ PROVENANCE = [
         "tools/fold_transition_sim.py --sweep <frozen sweep> --arm {0}",
     ),
     (
+        r"^mirror_(movers|cat)_(control_resoff|resonance)\.json$",
+        "tools/mirror_audit_donor_fold.py --dataset <{0} cohort> --n {0}"
+        "   (OIN_RESONANCE_DONOR_FOLD={1}; the `movers` draw is the MOVER-ENRICHED cohort at"
+        " 179/179 coverage -- the `cat` draw holds only 1 mover in 250 = 0.4% and is a"
+        " general-population control, NOT evidence about this lever)",
+    ),
+    (
         r"^veto_outcomes\.json$",
         "tools/veto_outcome_audit.py --sweep <frozen sweep> --dataset <cat> --dataset <photo>"
         "   (which of fold_parity's FIVE outcomes each reverted molecule got: 222/222"
@@ -430,6 +437,7 @@ def main() -> int:
         ap.error("nothing to do: pass --backfill and/or --release with --from")
 
     grand_total, grand_files, unresolved = 0, 0, []
+    by_release: dict[str, list] = {}
     for release, src in jobs:
         if not src.is_dir():
             print(f"  ⚠ missing source, skipped: {src}")
@@ -461,6 +469,14 @@ def main() -> int:
             print(f"    {size:>8}  {newname}{rename}{tag}")
             if provenance_for(newname) == "UNKNOWN":
                 unresolved.append(f"{release}/{newname}")
+        # ⚠ ACCUMULATE, never write per --from. write_release() rebuilds README.md from the batch
+        # it is handed and OVERWRITES, so calling it once per source left the index describing only
+        # the LAST source: v0.4.14 harvested 16 files and its README documented 2. The files were
+        # all present, which is what makes this shape dangerous -- the data looks complete and the
+        # provenance record, the entire point of the tree, silently is not.
+        by_release.setdefault(release, []).extend(picks)
+
+    for release, picks in by_release.items():
         write_release(dest, release, picks, args.dry_run, root)
 
     print(f"\nTOTAL: {grand_files} files, {grand_total / 1024:.0f} KB")
