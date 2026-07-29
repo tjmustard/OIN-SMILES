@@ -120,6 +120,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.4.13] - 2026-07-28
 
+> ### 🔴 CORRECTED BY v0.4.14 — the headline below is over-stated and the sweep it skipped was owed
+>
+> **Measured: `byte_exact` 72.46% → ~74.88%, ~+2.42 points — ~150 real gains against ~30 LOSSES.**
+> Published as +3.42 / 75.88% / "0 moved in a bad direction". The stanza is left standing rather
+> than rewritten, because *why* it was wrong is the useful part.
+>
+> This release's own finding was that its chartered 55 CPU-h sweep was the wrong instrument, on the
+> grounds that `tools/fold_key_invariance.py` read **0 comparison keys changed**. That verdict
+> bounds the **acceptance** step — `accept_fn` decides by key — but the generator's input is the
+> OIN **string**, so a slot relabeling changes `ParsedOIN`, the CoordMap, and the pool itself. An
+> offline re-score holds the generated structure fixed and therefore reports `bad_direction = 0`
+> **whether or not losses exist**.
+>
+> Measured end-to-end by `tools/generator_ab_honest.py`: gains **22/25 = 88%** (seed 17), losses
+> **6/40 = 15%** (seed 13) over a **197-molecule at-risk population** — movers that were already
+> `byte_exact`, which nobody sampled here or in v0.4.14's first pass. See
+> `docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md`.
+>
+> ⚠ The **`gh-pages` retrospective is public and still carries +3.42.** Refresh it with
+> `/release-retrospective` before the next push.
+
 > ### The donor fold ships — and the release that was supposed to cost 55 CPU-hours cost none.
 >
 > **`byte_exact` 72.46% → 75.88%, +3.42 points, 171 molecules, 0 moved in a bad direction.**
