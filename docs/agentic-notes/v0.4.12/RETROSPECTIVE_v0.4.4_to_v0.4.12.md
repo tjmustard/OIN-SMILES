@@ -2,9 +2,9 @@
 
 <!-- artifact-url: https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e -->
 
-**Scope:** v0.4.4 (2026-07-23) through v0.4.12 (2026-07-28). Nine releases.
-**Baseline commit:** `main` @ `675e5425` (the v0.4.12 release commit; `pyproject` 0.4.12, **no
-`v0.4.12` tag yet**). ⚠ `main` moves under this project — re-read the tip before trusting any SHA here.
+**Scope:** v0.4.4 (2026-07-23) through v0.4.13 (2026-07-28). Ten releases.
+**Baseline commit:** `main` @ `9fbdf678`, tag `v0.4.13`, `pyproject` 0.4.13.
+⚠ `main` moves under this project — re-read the tip before trusting any SHA here.
 **Method:** committed evidence only. No sweep, benchmark or A/B was run for this report.
 **Refresh it with:** `/release-retrospective <version>` — see [Appendix A](#appendix-a--how-to-update-this).
 **Published page:** <https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e> · GitHub Pages source on the `gh-pages` branch.
@@ -22,14 +22,21 @@ grading its own homework — it looked at what it *meant* to build instead of wh
 built. Once that was fixed, the score dropped from 83 out of 100 to 72 out of 100. **The machine
 didn't get worse. The scoreboard got honest.**
 
-Since then, five releases in a row have changed nothing about how the machine works. That sounds
-bad, but it isn't sloppiness — it's the opposite. Each release built the thing it was supposed to
-build, measured it properly, and in most cases discovered the idea was wrong and shelved it. One
-release built a fix worth 8 points and then found it worked by *throwing away* information —
-quietly turning left-handed molecules into right-handed ones. It was switched off.
+Then five releases in a row changed nothing about how the machine works. That sounds bad, but it
+isn't sloppiness — it's the opposite. Each one built the thing it was supposed to build, measured
+it properly, and in most cases discovered the idea was wrong and shelved it. One built a fix worth
+8 points and then found it worked by *throwing away* information — quietly turning left-handed
+molecules into right-handed ones. It was switched off.
 
-So: **more accurate than v0.4.4, yes. More accurate than v0.4.6, no — on purpose. And much harder
-to fool.**
+**The sixth one finally moved the score up: 72 out of 100 to 76.** It did that by taking the
+switched-off fix, adding the safety check that tells the good half from the harmful half, and
+proving on two separate samples that the harmful half was gone. It also cancelled the expensive
+re-measurement it was supposed to run — because re-running a machine that makes slightly different
+choices each time would have added noise to the very number it was trying to read, and there was a
+cheaper check that gave an exact answer.
+
+So: **more accurate than v0.4.4, yes. More accurate than v0.4.6 — now yes, and honestly measured
+this time. And much harder to fool.**
 
 ---
 
@@ -40,7 +47,8 @@ Two separate questions, two separate answers.
 ### Accuracy
 
 `byte_exact` — the share of molecules whose generated 3D structure re-encodes to a byte-identical
-OIN string — improved materially across v0.4.4, v0.4.5 and v0.4.6, then stopped moving.
+OIN string — improved materially across v0.4.4, v0.4.5 and v0.4.6, stopped moving for five
+releases, and **moved up for the first time at v0.4.13**.
 
 | release | default-path accuracy change | key number |
 |---|---|---|
@@ -53,6 +61,7 @@ OIN string — improved materially across v0.4.4, v0.4.5 and v0.4.6, then stoppe
 | **v0.4.10** | **Zero, gated** | ARM 1 **62/62**, ARM 2 **90/90** byte-identical |
 | **v0.4.11** | **Zero** — built a +7.86-point fix and refuted it | fold collapses enantiomers in **221 of its own 393 gains** |
 | **v0.4.12** | **Zero** — parity filter works, ships default-OFF | mirror audit **19 → 0** collapses; surviving gain **+3.42 pts** |
+| **v0.4.13** | 🎉 **Real gain — the first upward move in the project's history** — fold + parity veto promoted together | `byte_exact` **72.46% → 75.88%** (+3.42 pts, 171 molecules, **0** in a bad direction) |
 
 The v0.4.8 drop is the one that needs explaining, and it is not a regression. The harness had been
 scoring a round trip with `get_oin_string(gen_result.mol, coords)` — the *generator's own bond
@@ -61,6 +70,16 @@ for the test to fail. `FIYHUT_comp_0` ships both cyclopentadienyl rings 0.85 Å 
 bonded carbons down to zero — and scored a byte-exact pass. Re-deriving the verdict from the
 generated coordinates alone moved 613 molecules down and 30 up. **72.46% and 82.80% describe the
 same underlying performance; only one of them is true.**
+
+The v0.4.13 rise is the mirror image and deserves the same scrutiny, because **this project has
+already raised `byte_exact` once by deleting information**. The donor fold moves 393 molecules in
+one direction with the comparison key untouched — and collapses enantiomers in 221 of them, which
+neither `byte_exact` nor the key can see. What makes +3.42 trustworthy is not the transition
+matrix: it is that the reflection-parity veto zeroes the collapse on **two independent draws**
+(19 → 0 cat-only, 33 → 0 mixed) while the achiral population stays **unmoved** in both, and that
+every collapsing molecule is accounted for as a *separated pair* rather than a decline
+(73 + 19 = 92; 83 + 33 = 116). **171 survivors was also reached from the opposite direction** —
+v0.4.11 bounded the safe set from above at "at most ~172" by counting damage.
 
 ### Speed
 
@@ -72,7 +91,7 @@ Three real default-path wins since v0.4.4, and **no current corpus-wide number**
 | **v0.4.5** | Removed a duplicate **48–57 s** re-encode running once per rejected conformer (unconditional). First encoder profile ever taken: `AC2BO` is **99.8%** of a slow encode |
 | **v0.4.6–v0.4.9** | **None on the default path.** The two big candidates were held OFF on measurement, not caution |
 | **v0.4.10** | Deleted a discarded `.index()` scan that eigendecomposed a Coulomb matrix per candidate — **on by default, no lever**: `CAHQEJ_comp_0` **−32.9%**, `FOSNEI_comp_0` **+0.3% (nil)** |
-| **v0.4.11–v0.4.12** | None claimed |
+| **v0.4.11–v0.4.13** | None claimed. v0.4.13's promotion is **generator-neutral by measurement** — 9669 corpus strings, 1019 moved by the fold, **0 comparison keys changed** — so `accept_fn` returns bit-identical conformers and runtime cannot have moved |
 
 The headline speed figure — **994/5000 = 19.88% of molecules over 30 s, median 7.19 s** — comes
 from the v0.4.6 sweep and **has not been re-measured since**. Every speed number after it is a
@@ -82,11 +101,19 @@ molecule and nothing on the next one over. Goal B (`max(elapsed_s) < 30 s`) is *
 ### What actually improved most
 
 Neither number. What improved most is the project's ability to tell a real result from a fake one.
-Between v0.4.4 and v0.4.12 the unit suite went **551 → 988**, and the instruments added in that
+Between v0.4.4 and v0.4.13 the unit suite went **551 → 993**, and the instruments added in that
 window — the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
 coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, the
 59%-false-positive cohort, the dead gate arm, and the enantiomer collapse. Five releases that moved
 no points each removed a way of being wrong.
+
+**v0.4.13 is the return on that.** The +3.42 it banks is the fix v0.4.11 built and refused; it
+could only be shipped once an instrument existed that could see the damage. The same release then
+caught **four instruments printing plausible nothing** — including one that reported the *refuted*
+number under the correct heading, and a byte-identity gate whose PASS was meaningless because
+**0 of its 62 fixtures were among the molecules the change moved**. The lesson generalises past
+this project: *a gate that cannot see your change is not evidence about your change* — state its
+coverage of the moved population, not its verdict.
 
 ---
 
@@ -94,17 +121,26 @@ no points each removed a way of being wrong.
 
 > ### Is it more accurate?
 >
-> **Than v0.4.4: yes, substantially — and more honestly measured.** Than v0.4.6: **no, and
-> deliberately so.** The default path has not changed a single answer since v0.4.6. The reported
-> figure fell from 82.80% to 72.46% at v0.4.8 because the measurement was corrected, not because
-> the software regressed.
+> **Yes — and as of v0.4.13, measurably so on the honest metric: 72.46% → 75.88%.**
+>
+> The long answer is the interesting one. From v0.4.6 to v0.4.12 the default path did not change a
+> single answer, and the reported figure *fell* from 82.80% to 72.46% at v0.4.8 because the
+> measurement was corrected, not because the software regressed. **v0.4.13 is the first release in
+> the window to move the number up**, and it moved it by shipping a fix that had been built,
+> measured, refuted and shelved two releases earlier — once the veto that separates its safe half
+> from its harmful half could be proven on two independent draws.
+>
+> **The 24.12 points that remain are now decomposed by mechanism, not just by bucket.** Of the 767
+> genuine failures, **280 are the generator returning a structure with ligands off the metal** —
+> a one-site guard, not a capability limit.
 
 > ### Is it faster?
 >
 > **On the molecules that hit the specific costs removed, yes — up to −86.7%.** Corpus-wide,
-> **unknown since v0.4.6**, because no full sweep has been run since. Three default-path
-> optimisations landed (v0.4.4, v0.4.5, v0.4.10); the largest measured single win
-> (`VAFMIA_comp_0`, 81.89 s → 10.87 s) sits behind a lever that ships **off**.
+> **unknown since v0.4.6**, because no full sweep has been run since — and v0.4.13 deliberately
+> declined to run one. Three default-path optimisations landed (v0.4.4, v0.4.5, v0.4.10); the
+> largest measured single win (`VAFMIA_comp_0`, 81.89 s → 10.87 s) sits behind a lever that ships
+> **off**. Goal B (`max(elapsed_s) < 30 s`) is **not delivered**.
 
 ---
 
@@ -587,6 +623,91 @@ Suite: **988 OK**.
 
 ---
 
+### v0.4.13 — the fold ships, and the release cancels its own 55 CPU-h precondition
+
+**Status: RELEASED, tag `v0.4.13`, `main` @ `9fbdf678`, `pyproject` 0.4.13.**
+
+**What shipped.** **PROMOTED to default-ON, together:** `OIN_CANONICAL_DONOR_FOLD` and
+`OIN_FOLD_PARITY_VETO`. They are one promotion with two names — the fold is the change that pays,
+the veto is the condition under which it is safe, and
+`test_levers::TestDonorFoldAndParityVetoAreCoupled` pins them so neither can be demoted alone.
+**Added but default-OFF:** `OIN_PREFILTER_ADVISORY`, which makes the cheap acceptance prefilter
+advisory instead of dispositive.
+
+**Accuracy: REAL GAIN — `byte_exact` 3623 → 3794, 72.46% → 75.88%, +3.42 points.** 171 molecules
+move `key_equal/slot_renumber → byte_exact`; **0** move in a bad direction; `facmer_divergent`
+unchanged at 16. This is the first upward movement in the window this report covers.
+
+**The safety gate ran on two independent draws, and the accounting is what carries it.**
+
+| | cat/ (v0.4.12's draw) | cat+photo (mixed) |
+|---|---:|---:|
+| `REGRESSION_raw_collapsed`, veto OFF → promoted | **19 → 0** | **33 → 0** |
+| `achiral_or_preexisting_fold` | 157 → 157 | 134 → 134 |
+| `distinct_both_arms` | 73 → 92 | 83 → 116 |
+| accounting | **73 + 19 = 92** ✓ | **83 + 33 = 116** ✓ |
+
+A veto that works and a veto that declines everything both report zero collapses — v0.4.12's own
+first implementation declined on **18 of 18** while all three fixture tests passed. Here every
+collapsing molecule lands in `distinct_both_arms` and **nothing else moves**, so the zero is bought
+by *separating*, not by *abstaining*. The cat/ arm reproduces v0.4.12's published table
+(157 / 73 / 1) line for line; the mixed draw reads 13.2% against cat-only's 7.6%, which is a second
+population rather than a contradiction.
+
+**Refuted: the 55 CPU-h re-sweep this release was chartered to run.** v0.4.12 made it a promotion
+precondition. It was not run, and running it would have produced **weaker** evidence:
+`results-v0.4.8-honest` — the 72.46% baseline itself — is an offline **re-score**, not a sweep, and
+**no generator sweep has run since v0.4.6**. Re-running a *stochastic* generator to A/B an
+*encoder-side* change contaminates the signal with run-to-run variation and is not even
+like-for-like with the table it is compared against.
+
+What licensed the offline route was measured rather than assumed. `accept_fn` accepts by comparing
+the round-trip **key**, so the question is whether the fold ever moves one:
+
+| `tools/fold_key_invariance.py`, whole corpus | |
+|---|---:|
+| strings compared | **9669** |
+| strings the fold MOVED | **1019** |
+| strings whose KEY changed | **0** |
+
+The 1019 is the load-bearing half — *a lever that never fired would also print 0 key changes.*
+Verdict `GENERATOR_NEUTRAL`, reproducing v0.4.11's "0 of 992" at ~10× the scale.
+
+**Two n = 1 classes finally sized, and one re-mechanises a release four rungs out.** Over the 767
+genuine failures: **GAVSED (`DETACHED`) 280**, **MEDZUR (`INTACT`) 99**, `BOUNDARY` 53,
+`NO_STRUCTURE` 335 — against a `byte_exact` control of **1.32%** `DETACHED` vs 24.11% on the
+failing side (**18.2× enrichment**, `UNKNOWN` = 0). **`structural` is 266/417 = 63.8% `DETACHED`**:
+those molecules did not fail because the generator could not assemble them — it assembled something
+and *returned* it with ligands off the metal, because `_select_by_geometry`'s fallback ranking is
+not attachment-aware. A one-site **return-path guard**, not a capability floor. Independently
+cross-checked: `missed_success_audit` partitions the same 767 by cause and its largest bucket is
+**437 molecules it labels "ambiguous — generator OR notation"**; this split resolves **280 of them
+to generator**.
+
+**Four instruments caught printing plausible nothing.** The mirror audit died silently on a dataset
+a branch switch had deleted (26,232 files; `git status` stays clean). `fold_transition_sim.py`
+excluded **all 393 movers** — its `--dataset` default is relative and the run was from a worktree —
+and printed **+7.86**, the *refuted* bare-fold figure, under a heading saying "veto", exit 0.
+`run_sweep.sh` still carried the sibling-glob venv trap `gate_v047.sh` was hardened against in
+v0.4.9, live in the one place it costs 55 CPU-h. And **ARM 1 passed byte-identically before *and*
+after the promotion because 0 of its 62 fixtures were fold-movers** — a PASS that means "no
+regression", not "the change works". Each now refuses or reports its denominator.
+
+> **A gate that cannot see your change is not evidence about your change. State its coverage of the
+> moved population, not its verdict.**
+
+**What it cost.** ARM 2's v0.4.9 golden had **11 of 325 rows** genuinely move; they were re-run
+individually and patched rather than bulk-accepting a regenerated manifest, and `MANIFEST_SHA256`
+was recomputed (arm2 does not check it, so a stale one would have gone unseen). Lane 1's corpus
+prevalence is **n = 1 and therefore unquotable** — the lever, telemetry and harness are built and
+the defect is confirmed on `AROHIA_comp_0`, but the measurement needs a quiet machine and is handed
+to v0.4.14. The 48 `byte_exact` molecules that read `DETACHED` remain unexplained. One merge commit
+shipped without a trailer (`--no-edit`; the hook only rewrites, never inserts).
+
+Suite: **993 OK**.
+
+---
+
 ## What is not known
 
 Stated explicitly, because the gaps are as decision-relevant as the numbers.
@@ -595,10 +716,14 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    v0.4.6-era figure. v0.4.10's default-ON deletion has never been run at corpus scale. The cheap
    way to close this is the frozen 328-molecule v0.4.9 benchmark (~1–2 CPU-h), not a 55 CPU-h
    sweep.
-2. **Corpus accuracy since v0.4.6 is unmeasured — but well-bounded.** No full sweep has run since,
-   so 72.46% rests on the v0.4.6 sweep plus the byte-identity gates and the v0.4.12 carry-forward
-   measurement, not on a fresh 5000-molecule run. Given every release since ships default-OFF and
-   both gate arms are clean, the risk of drift is low but it is *inference*, not measurement.
+2. **Corpus accuracy still rests on the v0.4.6 generator run — and v0.4.13 argues that is correct,
+   not a gap.** No generator sweep has run since v0.4.6; 75.88% is an offline re-score of those
+   stored structures, exactly as 72.46% was. The re-score is **exact** for an encoder-side change
+   that moves no comparison key, and v0.4.13 measured that condition (0 of 9669). What remains
+   genuinely unmeasured is anything that would change what the *generator returns* — so the next
+   release that touches acceptance or selection owes a real sweep, and the key-invariance check is
+   how it finds out. Note the drift control passed on all 393 movers, which turns three releases'
+   byte-identity *claims* into measurements.
 3. **`OIN_MEMO_CIP_REPARSE`'s promotion gate has not been run** — the full 328-molecule cohort with
    the lever on, ~10 CPU-h sharded 6-way. Until it is, the project's largest measured single speed
    win stays off.
@@ -606,26 +731,45 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    accuracy line from v0.4.4 to today. Building one requires re-running the seed-42 5000-molecule
    corpus on current `main`.
 5. **`OIN_ETA_ACCEPT_EXIT` has no runtime claim at all** — its A/B was stopped, not banked.
+6. **`PREFILTER_VETO`'s corpus prevalence is n = 1.** v0.4.13 built the lever, the telemetry and
+   the harness, and confirmed the defect on `AROHIA_comp_0` — 2 conformers the cheap prefilter
+   rejects that the strict test accepts. Whether that is 2 molecules or 200 corpus-wide is
+   **unmeasured**, and the release declined to quote n = 1 as a prevalence.
+7. **The 48 `byte_exact` molecules that read `DETACHED` are unexplained.** Either the notation does
+   not express the lost metal contact, or `coordination.intact` is over-sensitive at that
+   tolerance — the 1593-molecule `BOUNDARY` band says the second is possible. Neither was tested.
+8. **The MEDZUR class — 99 molecules with attachment intact and re-perception still disagreeing —
+   has no mechanism.** It is now sized but no better understood than when it was n = 1.
 
 ---
 
-## Where the remaining 27.54 points are
+## Where the remaining 24.12 points are
 
-From `docs/agentic-notes/ROADMAP_100_100.md`, honest baseline, re-derived at v0.4.9:
+From `docs/agentic-notes/ROADMAP_100_100.md`, honest baseline, **re-derived at v0.4.13**. The
+previous copy of this table read 27.54 and is superseded: the promotion consumed 171 molecules.
 
 | block | n | pts | nature | owning release |
 |---|---:|---:|---|---|
-| `key_equal` → `slot_renumber` | 496 | 9.92 | canonicality, encoder-side | v0.4.11 attempted, **refuted**; 7.54 needs the parity filter, 1.80 re-filed to v0.4.14 |
-| **`structural`** | **417** | **8.34** | generator capability (re-labelled) | v0.4.17 |
-| `hard_fail` | 319 | 6.38 | compute, mostly | v0.4.12–v0.4.13 |
-| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**+1.80 ⇒ ~4.08**) |
+| **`structural`** | **417** | **8.34** | 🔴 **re-mechanised: 266 (63.8%) are `DETACHED`** — an unguarded *return* path, not a capability floor | v0.4.17 — **candidate to pull forward; ~5.32 pts is one site** |
+| `hard_fail` | 319 | 6.38 | compute; **315/319 produce no structure at all** | — |
+| `key_equal` → `slot_renumber` | **325** | **6.50** | canonicality, encoder-side. **Was 496; the fold took 171.** 90 of the residue are frozen resonance forms (ligand **body**) | v0.4.14 |
+| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**⇒ ~4.08 with the 90**) |
 | `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 |
-| **sum** | **1377** | **27.54** | | |
+| **sum** | **1206** | **24.12** | | |
 
-⚠ **An open sequencing question, recorded in the roadmap and not yet answered.** **18.26 of the
-27.54 points sit at v0.4.14 and v0.4.17**, behind releases worth a fraction of that. The
-re-sequencing decision v0.4.9 asked for has now been deferred at three consecutive close-outs.
+**The failure side also has a second decomposition now — by mechanism rather than by bucket.**
+Over the same 767 genuine failures: **280 `DETACHED`** (the generator returned a structure with
+ligands off the metal), **99 `INTACT`** (attachment fine, re-perception still disagrees), 53
+`BOUNDARY`, 335 `NO_STRUCTURE`. Two independently-written tools partition that set and agree to
+within ~5 molecules.
+
+⚠ **The open sequencing question is now sharper, not softer.** `structural`'s 266 `DETACHED`
+molecules are worth up to **5.32 points at one code site**, and they sit at v0.4.17 — behind
+v0.4.15, which is explicitly chartered as *"knowledge, not points"*. Whether that should be
+reordered is recorded as an **open decision for the project owner** in
+`LADDER DECISION 2026-07-27 (v0.4.13)`; it was deliberately not applied by the session that found
+it, because the last such reorder was the owner's call.
 
 **The other structural fact:** the two goals are one goal. Of the 340 failures in the v0.4.6 sweep,
 **78.8% never test the notation** — 240 are generator timeouts and 28 produced nothing. The
@@ -639,7 +783,11 @@ notation-attributable gap is **57/5000 ≈ 1.1%**: *where the notation is actual
 
 | what | where |
 |---|---|
-| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.12] |
+| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.13] |
+| **v0.4.13's frozen numbers, tracked and public** | **`measurements/v0.4.13-honest/`** (13 files: both mirror draws, the transition record naming all 171, the generator-neutrality proof, the attachment split) |
+| The promotion, the cancelled sweep, the four blind instruments | `docs/agentic-notes/v0.4.13/PROMOTION_AND_CLASSES_v0.4.13.md` |
+| MEDZUR / GAVSED sizing + the `missed_success_audit` cross-check | `docs/agentic-notes/v0.4.13/LANE-02-attach-classes.md` |
+| `PREFILTER_VETO` — confirmed defect, unmeasured prevalence | `docs/agentic-notes/v0.4.13/LANE-01-prefilter-advisory.md` |
 | Honest re-baseline + transition matrix | `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.8-honest/bucket_report_both.md` |
 | Cohort bucket reports | `tmCAT-tmPHOTO_xyz_dataset/results-v0.4.{4-sl4,4-regression,5-rebaseline,6-sweep}/` |
 | v0.4.5 promotion evidence | `docs/agentic-notes/v0.4.5/PROMOTION_GATE_v0.4.5.md`, `ENCODER_PERF_v0.4.5.md`, `PERF_v0.4.5.md` |
