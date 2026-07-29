@@ -170,6 +170,18 @@ PROVENANCE = [
         "   (9669 compared, 228 moved, 0 keys changed. ⚠ bounds ACCEPTANCE, not embedding)",
     ),
     (
+        r"^reso_sample_definitions\.json$",
+        "hand-assembled index: seed + membership for every sample behind a v0.4.14 figure,"
+        " plus the class splits. Exists because the scratchpad they were drawn in lives under"
+        " /tmp and is DELETED between sessions -- a rate without its sample is not reproducible",
+    ),
+    (
+        r"^v0413_gains_ab\.json$",
+        "tools/generator_ab_honest.py --lever OIN_CANONICAL_DONOR_FOLD over 25 of v0.4.13's 171"
+        " claimed gains (seed 17), resonance held OFF in both arms"
+        "   (22/25 = 88% real => ~150 gains; with ~30 losses, v0.4.13's true net is ~+2.42 pts)",
+    ),
+    (
         r"^reso_movers_exact\.json$",
         "tools/lever_string_movers.py --lever OIN_RESONANCE_DONOR_FOLD --holding"
         " OIN_CANONICAL_DONOR_FOLD --holding OIN_FOLD_PARITY_VETO"
