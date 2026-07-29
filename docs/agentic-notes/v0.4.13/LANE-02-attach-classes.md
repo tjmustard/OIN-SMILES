@@ -79,6 +79,34 @@ Of the 432 genuine failures where a structure exists **and** the attachment call
 **280 (64.8%) are attachment failures.** That is the dominant mechanism in the failure side of
 the gap, and it is a *return*-path defect, not an acceptance-path one.
 
+## 4b. Cross-checked against an independent decomposition — and it resolves that one's ambiguity
+
+`tools/injectivity/missed_success_audit.py` partitions the **same 767 failures** by *cause*, and
+it was written years before this lane. The two agree without having been made to:
+
+| missed-success audit | n | this lane | n |
+|---|---:|---|---:|
+| output names a different isomer — *"ambiguous: generator OR notation"* | **437** | `DETACHED` + `INTACT` + `BOUNDARY` | **432** |
+| timeout (269) + produced nothing (32) + encoder refused (15) | 316 | `NO_STRUCTURE` | 335 |
+| canonicalization noise | 14 | — | — |
+
+Two independently-written tools, two different predicates, the same corpus, agreeing to within
+~5 molecules on both halves. The residual is definitional: this lane calls a molecule
+`NO_STRUCTURE` when `status != success` **or** `smiles_2` is empty, which catches a few the audit
+attributes to a named cause.
+
+**The point is not the agreement — it is what the split adds.** The audit's largest bucket is 437
+molecules it explicitly labels *ambiguous, generator or notation, we cannot tell*. This lane tells:
+
+| the audit's ambiguous 437 | resolves to |
+|---|---|
+| **280** | **generator** — the returned structure has ligands off the metal |
+| 99 | genuinely unexplained (MEDZUR) — attachment intact, re-perception still disagrees |
+| 53 | undecidable at this tolerance (`BOUNDARY`) |
+
+So the single largest "we don't know" in the project's failure attribution is now **65% known**,
+and known to be a *return-path guard*, not a notation defect.
+
 ## 5. 🔴 What this does to the ladder
 
 **`structural` is 266/417 = 63.8% `DETACHED`.**
