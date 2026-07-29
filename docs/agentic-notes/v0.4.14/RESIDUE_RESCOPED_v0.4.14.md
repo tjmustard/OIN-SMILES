@@ -98,7 +98,11 @@ here**, and the charter's 2.28 points for this block should not be counted again
 
 ---
 
-## 3. What was built: `OIN_RESONANCE_DONOR_FOLD` (default OFF)
+## 3. What was built: `OIN_RESONANCE_DONOR_FOLD` (**promoted default-ON**)
+
+> Built default-OFF, measured, and promoted on the evidence in
+> [`LANE-01-resonance-fold.md`](LANE-01-resonance-fold.md): **+1.56 points, 78 molecules, 0 in a
+> bad direction**, with a mirror audit at **100% coverage of the moved population**.
 
 The 103 the fold cannot reach fail on one specific condition — 101 of 103 — and it is a
 bookkeeping artifact rather than chemistry:

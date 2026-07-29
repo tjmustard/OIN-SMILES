@@ -5,6 +5,81 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.14] - 2026-07-28
+
+> ### The lever worked, the charter didn't — and the charter being wrong is the bigger result.
+>
+> **`byte_exact` 75.88% → 77.44%, +1.56 points, 78 molecules, 0 moved in a bad direction.**
+> Predicted +3.5–4.1. **The miss is the finding:** 114 of the 204 molecules this release was
+> chartered to close were never reachable by the kind of change it proposed.
+>
+> `OIN_RESONANCE_DONOR_FOLD` ships **default-ON**. It ranks a fragment's *constitutional
+> skeleton* — bond orders, aromatic flags, charges and hydrogens erased, connectivity, element and
+> chiral tag kept — so acac written ketone/enol, carboxylates and sulfonates stop being read as two
+> inequivalent donors. Ester `-O-`/`=O`, ether/ketone and amide N/O still do not merge.
+>
+> **🔴 Two blocks were re-filed off the encoder ladder. Neither number moved; who owns them did.**
+>
+> | | n | pts | was | is |
+> |---|---:|---:|---|---|
+> | `rdkit_canonical` | 114 | 2.28 | "RDKit canonical write order" | **80.7% η-set denticity drift** — the generated ring slips, fewer carbons fall inside the bonding cutoff. No string change can reach it |
+> | veto-reverted `slot_renumber` | 183 | 3.66 | "benign canonicalization" | **the generator built the ENANTIOMER.** `byte_exact` failing is CORRECT |
+>
+> The second one is the serious one. `key_equal` is documented as *"benign canonicalization — the
+> win reclaimed"*; for **183 of its 361 remaining members (50.7%)** that is false. They are
+> enantiomer pairs, invisible because `compare._parse_vertex_colors` folds reflection deliberately
+> — **and `accept_fn` decides by that same key**, so the generator accepted a mirror-image
+> structure and the harness recorded it as a same-isomer string difference. Measured, not inferred:
+> `tools/veto_residue_chirality.py` re-encodes the input, the stored round trip, and the *mirrored*
+> input, and reads **222/222 classified, 0 excluded, 183 `MIRROR_MATCH`**.
+>
+> That is the **third** time this project's headline has rested on a metric that folds the axis
+> under test, after v0.4.8 (scored vs honest) and v0.4.11 (the fold itself). The transferable form:
+> **a bucket name that asserts a cause is a hypothesis, not a measurement.**
+>
+> **🔴 The gate that passed was blind, and saying so is the point.** A uniform 250-molecule mirror
+> audit contains **1 of the 179 moved molecules — 0.4% coverage** — so its identical before/after
+> tally proves only that the lever does not damage molecules it never touches. That is v0.4.13's
+> ARM 1 failure reproduced exactly, and it would have shipped as clean evidence if the coverage
+> had not been computed. The gate that *can* see the change runs on a mover-enriched cohort at
+> **179/179 = 100%**: 0 regressions, **0 per-molecule verdict changes**, `achiral_or_preexisting_fold`
+> unmoved at 71, and — the number that separates "safe" from "never fired on anything chiral" —
+> **33 of the 78 gains are on molecules the encoder resolves as chiral and still resolves after.**
+
+### Added
+- **`OIN_RESONANCE_DONOR_FOLD`, promoted default-ON.** Widens `OIN_CANONICAL_DONOR_FOLD`'s
+  donor-equivalence test to the fragment's constitutional skeleton
+  (`canonical_slots._skeleton_ranks`). Grouping is union-find (`_merge_classes`), never a composite
+  key, so the partition can only get **coarser** — a composite key could move a slot into a
+  different bucket and lose a labeling the shipped encoder already reaches. Subject to the same
+  coupling invariant as the fold it widens: only safe with `OIN_FOLD_PARITY_VETO` on, pinned by
+  `test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling`.
+- **`tools/veto_outcome_audit.py`** — separates the parity veto's five outcomes, which no bucket
+  report can, since every reverted molecule lands in the same bucket regardless of why. Over
+  **393/393 movers, 0 excluded: 222/222 `vetoed_collapse`, 0 `no_evidence`.** `levers.py` asserted
+  the veto was alive at corpus scale; this measures it.
+- **`tools/veto_residue_chirality.py`** — settles whether the veto-reverted residue is a generator
+  or an encoder problem, rather than inferring it from `vetoed_collapse` (which is a statement
+  about one structure and its mirror, not about input vs round trip).
+- **`tools/resonance_transition_sim.py`** — both arms re-encode from coordinates, because the state
+  being compared against runs the parity veto and therefore needs a conformer.
+- `tools/fold_key_invariance.py` grew `--lever` / `--holding`. `--holding` is not a convenience:
+  measuring the widening against a fold-OFF baseline would report the *fold's* movement as the
+  widening's.
+
+### Changed
+- `docs/agentic-notes/ROADMAP_100_100.md`: gap re-derived to **`100 − 77.44 = 22.56`**, and the
+  decomposition re-filed by owner — **5.94 points move off the encoder ladder**. The encoder ladder
+  has **1.28 points** of reachable work left (39 `NOT_A_MIRROR` + 25 resonance residue); the rest of
+  the distance to 100% is generator work.
+- `gate_v049_arm2_golden.tsv` (12 of 325 rows) and `gate_v047_arm2_golden.tsv` (2 of 100) re-frozen
+  for the promotion, `MANIFEST_SHA256` recomputed — arm2 does not verify it, so a stale one goes
+  unseen. ARM 1 is byte-identical (0 of 62 fixtures are movers).
+
+### Fixed
+- Nothing. This release changes what the encoder emits for 78 molecules and what four numbers on
+  the roadmap mean; it fixes no reported defect.
+
 ## [0.4.13] - 2026-07-28
 
 > ### The donor fold ships — and the release that was supposed to cost 55 CPU-hours cost none.
