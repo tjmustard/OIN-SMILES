@@ -331,12 +331,18 @@ ZUGBUA_comp_0	4febefdb5ceff3c05bd5655b7be7d8dd5a0f2754ecde91d8815628c134b70b6d	4
 #   Every changed field-2 (input) hash was verified DETERMINISTIC and lever-attributable by
 #   re-encoding in a FRESH PROCESS per lever setting -- in-process perception memos would
 #   otherwise let the second encode reuse the first one's answer.
-#   ⚠ Field 3 is a FRESH STOCHASTIC GENERATION and is NOT attributable to an encoder lever.
-#   Two rows changed round-trip status and NEITHER is caused by this lever; the control on the
-#   frozen sweep structures (results-v0.4.8-honest) reads:
-#       HEKFEL_comp_0  byte_exact TRUE with the lever off and TRUE with it on
-#       FOJJUM_comp_0  byte_exact FALSE both ways (it was already not byte-exact)
-#   Do not read either as a v0.4.14 regression.
+#   ⚠ CORRECTED 2026-07-28. An earlier version of this comment claimed field 3 was a stochastic
+#   generation and that neither flipped row was lever-caused. BOTH CLAIMS WERE WRONG.
+#   Generation is SEEDED (MetalloGenAdapter seed=42) and reproduces exactly across runs.
+#   Measured honestly end-to-end with tools/generator_ab_honest.py (--repeat 2, 0 non-determinism):
+#       HEKFEL_comp_0  byte_exact TRUE with the lever off, FALSE with it on -> a REAL REGRESSION
+#       FOJJUM_comp_0  byte_exact FALSE both ways -> no regression (the old golden's TRUE came
+#                      from arm2's CIRCULAR predicate, get_oin_string(result.mol), not an
+#                      independent re-perception)
+#   ⚠ arm2 is a BYTE-IDENTITY gate, not an accuracy instrument: it scores with the generator's own
+#   bond graph, which OIN_INDEP_SCORE replaced in v0.4.8 at a 9.6% false-positive rate. Do not read
+#   these hashes as a round-trip verdict.
+#   See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md
 #   See docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md
 # MANIFEST_SHA256=da37bac68385482a65eeec1531a8d4ae0549b502c9f9bb5ca770c7d25cdeba51
 #DONE 325

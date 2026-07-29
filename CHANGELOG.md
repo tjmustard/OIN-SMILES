@@ -9,9 +9,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 > ### The lever worked, the charter didn't — and the charter being wrong is the bigger result.
 >
-> **`byte_exact` 75.88% → 77.44%, +1.56 points, 78 molecules, 0 moved in a bad direction.**
+> **`byte_exact` 75.88% → ~77.25%, ~+1.36 points (point estimate), ~74 gains against ~6 losses.**
 > Predicted +3.5–4.1. **The miss is the finding:** 114 of the 204 molecules this release was
 > chartered to close were never reachable by the kind of change it proposed.
+>
+> 🔴 **The offline number this release first reported (+1.56, `bad_direction = 0`) was WRONG, and
+> the way it was wrong is the release's most transferable result.** `fold_key_invariance.py`'s
+> `GENERATOR_NEUTRAL` verdict bounds the *acceptance* step — `accept_fn` decides by key — but the
+> generator's input is the OIN **string**, so a slot relabeling changes `ParsedOIN`, the CoordMap,
+> and the **pool itself**. An offline re-score holds the generated structure fixed, so for a
+> molecule that already round-trips it can only ever print *"still fine"*: **it reports
+> `bad_direction = 0` whether or not losses exist.** Measured honestly end-to-end
+> (`tools/generator_ab_honest.py`): 19/20 sampled gains are real, **3/20 sampled molecules that
+> were already `byte_exact` LOSE**, and `HEKFEL_comp_0` is a confirmed regression. v0.4.13
+> cancelled a chartered 55 CPU-h sweep on this same licence; **a sweep is now owed.**
 >
 > `OIN_RESONANCE_DONOR_FOLD` ships **default-ON**. It ranks a fragment's *constitutional
 > skeleton* — bond orders, aromatic flags, charges and hydrogens erased, connectivity, element and

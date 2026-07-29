@@ -35,7 +35,7 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **77.44%** *(honest, v0.4.14)* | **100%** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **~77.25%** *(v0.4.14, point estimate — a sweep is owed)* | **100%** |
 | **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
 
 ⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
@@ -43,11 +43,15 @@ silently yields `0` — **and it is a SUM** over up to three separately SIGKILLe
 The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
 rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − 77.44 = 22.56` points (honest, re-derived **v0.4.14**)
+## The gap — `100 − ~77.25 = ~22.75` points (v0.4.14 point estimate; **a sweep is owed**)
 
-⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON and
-moved **78 molecules / +1.56 points** out of `slot_renumber` into `byte_exact`. The previous copy
-read `100 − 75.88 = 24.12` and is superseded. Source:
+⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON for a
+net of **~+68 molecules / ~+1.36 points**. The previous copy read `100 − 75.88 = 24.12`.
+
+🔴 **The counts below are the OFFLINE ones and are approximately, not exactly, right.** v0.4.14's
+offline re-score reported +78/0 losses; measured end-to-end it is ~74 gains against ~6 losses,
+because an offline re-score cannot express a loss at all. **The next release owes a sweep** — see
+`v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md`. Source:
 `measurements/v0.4.14/` · `docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md`.
 
 🔴 **v0.4.14 also RE-FILED two blocks that had been on the encoder ladder for four releases.**
@@ -62,7 +66,15 @@ Neither number moved; who owns them did. See `VETO_RESIDUE_OWNERSHIP_v0.4.14.md`
 | `key_equal` → `rdkit_canonical` | 114 | 2.28 | 🔴 **NOT canonicality.** 92/114 (80.7%) is **η-set denticity drift** — a perception/geometry problem no string change can reach | **re-filed off the encoder ladder** |
 | `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 (opportunistic) |
-| **sum** | **1128** | **22.56** ✓ | | |
+| **sum** | **1128** | **22.56** | | |
+
+⚠ **This table sums to 22.56, the headline says ~22.75, and the ~0.19 difference is real rather
+than a rounding slip.** The per-block counts come from the OFFLINE re-score, which credited 78
+gains and could not express a loss; end-to-end there are ~74 gains and ~6 losses, so ~10 molecules
+sit in a bucket this table assigns wrongly. Which buckets they land in is **not known without a
+sweep** — that is exactly what the sweep would settle. The table is kept at the offline counts
+rather than silently fudged, because a fabricated redistribution would be worse than a stated
+inconsistency.
 
 ### The re-filing, stated as owners
 

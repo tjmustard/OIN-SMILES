@@ -1,6 +1,12 @@
 # v0.4.14 Lane 1 — `OIN_RESONANCE_DONOR_FOLD`, built, measured, promoted
 
-**Result: `byte_exact` 75.88% → 77.44%, +1.56 points, 78 molecules, 0 in a bad direction.**
+**Result: `byte_exact` 75.88% → ~77.25%, ~+1.36 points (point estimate), ~74 gains against ~6
+losses.**
+
+> 🔴 **SUPERSEDED IN PART.** This lane first reported **+1.56 points, 0 in a bad direction**, from
+> an offline re-score. That instrument **cannot express a loss** — see
+> [`GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md`](GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md).
+> §2 below is the offline measurement as taken; the corrected end-to-end number is above.
 
 The lane's subject was re-derived before anything was built, and the charter's attribution turned
 out to be wrong in both halves — see [`RESIDUE_RESCOPED_v0.4.14.md`](RESIDUE_RESCOPED_v0.4.14.md)
@@ -167,9 +173,10 @@ goldens themselves, so a future session reading a diff does not have to reconstr
 
 ## 7. Predicted vs actual
 
-| | charter | actual |
-|---|---|---|
-| `byte_exact` | **UP ~3.5–4.1 pts** | **+1.56** |
+| | charter | offline (as first reported) | corrected, end-to-end |
+|---|---|---|---|
+| `byte_exact` | **UP ~3.5–4.1 pts** | +1.56 | **~+1.36** (range +0.94…+1.51) |
+| bad direction | — | 0 | **~6 losses** |
 
 **A miss, and the reason is the re-scoping rather than the lever underperforming.** The charter's
 ~4.08 assumed both blocks were reachable encoder-side: `rdkit_canonical` (114 / 2.28) plus a

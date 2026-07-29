@@ -152,12 +152,23 @@ import os
 #: to the SAME coupling invariant as the fold it widens: only safe with OIN_FOLD_PARITY_VETO on,
 #: pinned by test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling.
 #:
-#: WHAT IT BUYS: byte_exact 3794 -> 3872, **+1.56 points**, 78 molecules, every one of them
-#: key_equal/slot_renumber -> byte_exact. Nothing moved out of byte_exact and nothing moved into
-#: structural / facmer_divergent / encode_fail (bad_direction = 0). Offline re-score over
-#: results-v0.4.8-honest, exact because the change is generator-neutral: fold_key_invariance.py
-#: reads 9669 strings compared, 228 moved, **0 keys changed**, so accept_fn cannot decide
-#: differently and no sweep is owed. 168 of 179 movers measured, 11 unavailable, 0 drift.
+#: WHAT IT BUYS: **~+1.36 points (point estimate), ~74 gains against ~6 losses**, byte_exact
+#: 75.88% -> ~77.25%.
+#:
+#: 🔴 THE FIRST NUMBER THIS LEVER SHIPPED WITH (+1.56, bad_direction = 0) WAS WRONG. It came from an
+#: offline re-score licensed by fold_key_invariance.py reading 0 keys changed. That verdict bounds
+#: the ACCEPTANCE step -- accept_fn decides by key -- but the generator's input is the OIN STRING,
+#: so a slot relabeling changes ParsedOIN, the CoordMap, and the POOL ITSELF. An offline re-score
+#: holds the generated structure fixed, so for a molecule that already round-trips it can only ever
+#: print "still fine": it reports bad_direction = 0 whether or not losses exist.
+#: Measured honestly end-to-end (tools/generator_ab_honest.py, seeded generator, --repeat verified):
+#:     20 sampled from the 78 claimed gains  -> 19 real gains, 0 losses
+#:     20 sampled from the 39 movers that were ALREADY byte_exact -> 0 gains, 3 REAL LOSSES
+#:     HEKFEL_comp_0 -> REAL LOSS (OFF=True, ON=False), 0 non-determinism over 2 repeats
+#: Extrapolated: ~74 gains, ~6 losses, net ~+68 molecules. Range over both samples' plausible
+#: corners: +0.94 to +1.51 points. Net-positive across the whole range, which is why it stays ON --
+#: but this is a POINT ESTIMATE WITH A METHOD, not a measured figure, and A SWEEP IS OWED.
+#: See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md.
 #:
 #: WHY THE GAINS ARE THE RIGHT ONES. All 78 land inside the 103-molecule class the v0.4.13 fold
 #: provably cannot reach; 0 come from the 222 the parity veto reverts, 0 from rdkit_canonical,
