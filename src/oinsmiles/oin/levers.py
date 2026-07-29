@@ -146,6 +146,40 @@ import os
 #: the fold rather than to the harness without reading both apart. That confound is real, was
 #: raised, and was accepted by the project owner; the release doc states the two separately and
 #: the sweep that produces the headline runs with the Lane levers OFF.
+#: OIN_RESONANCE_DONOR_FOLD joined this set in v0.4.14. It widens OIN_CANONICAL_DONOR_FOLD's
+#: donor-equivalence test to the fragment's constitutional skeleton, so acac written ketone/enol
+#: and a sulfonate's oxygens stop being read as two inequivalent donors. It is therefore subject
+#: to the SAME coupling invariant as the fold it widens: only safe with OIN_FOLD_PARITY_VETO on,
+#: pinned by test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling.
+#:
+#: WHAT IT BUYS: byte_exact 3794 -> 3872, **+1.56 points**, 78 molecules, every one of them
+#: key_equal/slot_renumber -> byte_exact. Nothing moved out of byte_exact and nothing moved into
+#: structural / facmer_divergent / encode_fail (bad_direction = 0). Offline re-score over
+#: results-v0.4.8-honest, exact because the change is generator-neutral: fold_key_invariance.py
+#: reads 9669 strings compared, 228 moved, **0 keys changed**, so accept_fn cannot decide
+#: differently and no sweep is owed. 168 of 179 movers measured, 11 unavailable, 0 drift.
+#:
+#: WHY THE GAINS ARE THE RIGHT ONES. All 78 land inside the 103-molecule class the v0.4.13 fold
+#: provably cannot reach; 0 come from the 222 the parity veto reverts, 0 from rdkit_canonical,
+#: 0 from anywhere else. The lever hits its target population and nothing adjacent.
+#:
+#: 🔴 THE GATE, AND ITS COVERAGE -- which is the part v0.4.13 got wrong and this states first.
+#: A uniform cat/ draw (n=250, seed 7) contains **1 of the 179 movers = 0.4% coverage**, so its
+#: identical before/after tally is NOT safety evidence; it says only that the lever does not
+#: damage molecules it never touches. (It is still run, and it reproduces v0.4.13's frozen
+#: 157/92/1 exactly, which is what proves the instrument and the draw are alive.)
+#: The gate that can SEE this change is a mover-enriched cohort at **179/179 = 100% coverage**:
+#:     distinct_both_arms 108 · achiral_or_preexisting_fold 71 · REGRESSIONS 0, both arms
+#:     per-molecule verdicts differing between arms: 0
+#: `achiral_or_preexisting_fold` unmoved at 71 is what rules out buying the zero by declining
+#: everything. And the number that separates "safe" from "never fired on anything chiral":
+#: **33 of the 78 gains are on molecules the encoder resolves as chiral (distinct_both_arms) and
+#: STILL resolves after the widening.** The other 45 are achiral, where folding cannot collapse
+#: anything.
+#:
+#: ⚠ WHAT IT COSTS. It changes the default answer for 78 molecules, so arm2's goldens move:
+#: gate_v049_arm2_golden.tsv 12 of 325 rows, gate_v047_arm2_golden.tsv 2 of 100. ARM 1 is
+#: unaffected (0 of 62 fixtures are movers) and must stay byte-identical.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -156,6 +190,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_ETA_WINDING",
         "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
+        "OIN_RESONANCE_DONOR_FOLD",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
     }
@@ -187,37 +222,6 @@ _HELD_OFF = {
         "⚠ A lever that never fires and a lever that fires and finds nothing BOTH report zero "
         "overrides. Gate on adapter.prefilter_veto_overridden being non-zero on AROHIA_comp_0 "
         "(cheap 0/48, strict 16/48) before quoting any corpus number."
-    ),
-    "OIN_RESONANCE_DONOR_FOLD": (
-        "v0.4.14 Lane 1. Widens OIN_CANONICAL_DONOR_FOLD's condition (a) -- 'the two donors are "
-        "in one CanonicalRankAtoms class of their fragment' -- to also accept donors that are in "
-        "one class of the fragment's CONSTITUTIONAL SKELETON (canonical_slots._skeleton_ranks: "
-        "bond orders, aromatic flags, formal charges and H counts erased; connectivity, element "
-        "and CHIRAL TAG kept).\n"
-        "WHY. The strict ranking reads a FROZEN RESONANCE FORM as two inequivalent donors. acac "
-        "serialized `CC(=O{0})C=C(C)O{1}` ranks its two oxygens 2 and 3; a sulfonate "
-        "`O{0}S(=O)(=O{2})` ranks its two 2 and 0. Which oxygen got written as the ketone is a "
-        "property of the Kekule structure the perceiver emitted, not of the ligand. MEASURED on "
-        "results-v0.4.8-honest: 101 of the 103 slot_renumber molecules the v0.4.13 fold cannot "
-        "reach fail on exactly this (`same_colour_DIFFERENT_rank`); the other 2 are one "
-        "unparseable fragment and one unclassified.\n"
-        "WHAT IT DOES NOT MERGE, because the skeleton keeps constitution: ester -O- vs =O "
-        "(2-connected vs terminal), ether O vs ketone O (different neighbourhoods), amide N vs O "
-        "(different elements). Verified as tests, not asserted.\n"
-        "SAFETY IS INHERITED, NOT RE-ARGUED. This lever only widens a candidate set that "
-        "OIN_FOLD_PARITY_VETO already polices per molecule, so it is subject to the SAME coupling "
-        "invariant: it is only safe with the veto on, and `test_levers` pins that. It cannot fire "
-        "at all with OIN_CANONICAL_DONOR_FOLD off.\n"
-        "⚠ WHAT THE CHIRAL-TAG RETENTION DOES AND DOES NOT BUY, because the attractive reading is "
-        "false. The skeleton keeps chiral tags and CanonicalRankAtoms consumes them, so the "
-        "widening does not DISCARD stereochemical information the v0.4.11 strict ranking already "
-        "used -- that is the entire claim. It is NOT 'stereochemically distinguishable donors can "
-        "never merge'. Measured on a diol pair: the C2-symmetric (R,R) arms do NOT merge "
-        "(over-conservative, a missed fold -- the safe direction) while the meso (R,S) arms DO, "
-        "because they are enantiotopic. Folding an enantiotopic pair is a reflection, and the "
-        "guard against it is the veto, per molecule, not this ranking. Pinned by "
-        "test_resonance_donor_fold::test_the_skeleton_ranking_consumes_those_tags, which states "
-        "the limit in its own docstring rather than leaving it to be rediscovered."
     ),
     "OIN_EMIT_AXIAL": (
         "emits a new atropisomer token the generator must reproduce; promoting converts a "

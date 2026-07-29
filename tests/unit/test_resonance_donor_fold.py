@@ -172,18 +172,37 @@ class TestLeverMovesTheStringOnlyWhenOn(unittest.TestCase):
                 once = self._canon(a, True)
                 self.assertEqual(once, self._canon(once, True))
 
-    def test_off_is_byte_identical_to_the_lever_being_unset(self):
-        """Property 3 -- the one that would fail silently on the DEFAULT path."""
+    def test_unset_is_byte_identical_to_the_lever_being_ON(self):
+        """Property 3, restated for the v0.4.14 promotion.
+
+        Before promotion this asserted ``off == unset``. It now asserts ``unset == on``, and the
+        inversion is the point: leaving the lever alone must give the SHIPPED answer, at the
+        string level and not merely in the registry. ``TestLeverRegistration`` checks
+        ``default_on()``; that is a statement about a frozenset, and a lever can be listed there
+        while a call site still spells its own default and reaches the old code path.
+        """
         for label, (a, b) in self.PAIRS.items():
             for s in (a, b):
                 with self.subTest(f"{label} {s[:24]}"):
-                    with mock.patch.dict(os.environ, {FOLD: "1", LEVER: "0"}):
-                        off = canonicalize_oin_slots(s)
+                    with mock.patch.dict(os.environ, {FOLD: "1", LEVER: "1"}):
+                        on = canonicalize_oin_slots(s)
                     env = {k: v for k, v in os.environ.items() if k != LEVER}
                     env[FOLD] = "1"
                     with mock.patch.dict(os.environ, env, clear=True):
                         unset = canonicalize_oin_slots(s)
-                    self.assertEqual(off, unset)
+                    self.assertEqual(on, unset)
+
+    def test_explicit_off_still_reaches_the_v0413_answer(self):
+        """The opt-out has to work, and ``"0"`` is the spelling that historically did not.
+
+        ``os.environ.get(name)`` returns ``"0"`` as a truthy string, so a call site using it
+        would ENABLE the lever here and this test would fail -- which is the only cheap way to
+        catch that, since the wrong spelling is silent at runtime.
+        """
+        for label, (a, b) in self.PAIRS.items():
+            with self.subTest(label):
+                with mock.patch.dict(os.environ, {FOLD: "1", LEVER: "0"}):
+                    self.assertNotEqual(canonicalize_oin_slots(a), canonicalize_oin_slots(b))
 
     def test_cannot_fire_with_the_donor_fold_off(self):
         """It widens a candidate set that does not exist unless the fold is on."""
@@ -194,19 +213,20 @@ class TestLeverMovesTheStringOnlyWhenOn(unittest.TestCase):
 
 
 class TestLeverRegistration(unittest.TestCase):
-    def test_ships_off(self):
-        self.assertNotIn(LEVER, default_on())
+    def test_the_shipped_default_is_on(self):
+        """Pins the v0.4.14 promotion itself, so a silent revert is a test failure."""
+        self.assertIn(LEVER, default_on())
         env = {k: v for k, v in os.environ.items() if k != LEVER}
         with mock.patch.dict(os.environ, env, clear=True):
-            self.assertFalse(lever_enabled(LEVER))
+            self.assertTrue(lever_enabled(LEVER), f"{LEVER} ships ON since v0.4.14")
 
-    def test_is_registered_as_held_off_with_a_reason(self):
-        self.assertIn(
+    def test_is_no_longer_listed_as_held_off(self):
+        self.assertNotIn(
             LEVER,
             held_off(),
-            "every opt-in lever records WHY it is opt-in, in oin/levers.py::_HELD_OFF",
+            "_HELD_OFF is for levers that are deliberately opt-in. A promoted lever listed "
+            "there makes held_off() lie about the shipped configuration.",
         )
-        self.assertGreater(len(held_off()[LEVER]), 200)
 
     def test_read_through_lever_enabled_never_os_environ_get(self):
         """``os.environ.get(name)`` returns ``"0"``, which is truthy and ENABLES the lever.
