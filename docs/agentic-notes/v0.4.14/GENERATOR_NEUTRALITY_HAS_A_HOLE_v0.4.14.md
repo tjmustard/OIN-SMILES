@@ -100,12 +100,34 @@ A/B over the affected set is therefore *exact*, at a fraction of a ~55 CPU-h swe
 defining limitation rather than bad luck: it re-encodes a *fixed* structure, so for a molecule that
 already round-trips it can only print "still fine".
 
-### v0.4.13 has the same defect, and it is larger
+### v0.4.13 has the same defect, and it is larger — both sides now measured
 
-Its at-risk population — movers that were already `byte_exact` — is **197**, and was never sampled.
-Measured on 40 of them (seed 13): **6 losses, 15%**, implying **~30 losses** against 171 claimed
-gains. So v0.4.13's true net is **~+2.82 points, not +3.42**. Its gain side is not sampled here, so
-that figure is an upper bound.
+| | sampled | rate | over population | implied |
+|---|---|---|---|---|
+| gains | 22/25 (seed 17) | **88%** | 171 claimed | **~150 real** |
+| losses | 6/40 (seed 13) | **15%** | **197 at-risk** | **~30** |
+
+**v0.4.13's true net is ~+121 molecules = ~+2.42 points, not +3.42** — and its `byte_exact` is
+**~74.88%, not 75.88%.**
+
+### 🔴 The knock-on: no ABSOLUTE `byte_exact` figure has been measured since v0.4.6
+
+v0.4.14's **delta** (+1.42) is exact — it was measured against the shipped v0.4.13 state as that
+state actually generates. But the **absolute** figure it is added to is not:
+
+```
+v0.4.6   last real generator sweep
+v0.4.8   72.46%  offline re-score of the v0.4.6 structures with an honest predicate
+v0.4.13  75.88%  offline re-score simulating a lever  -> measured ~74.88%
+v0.4.14  77.30%  = 75.88 + 1.42, i.e. a measured delta on an over-stated base
+```
+
+Corrected, v0.4.14's absolute is **~76.30%**. And that still rests on v0.4.6-era generated
+structures re-scored — while v0.4.9 through v0.4.14 have all changed what the generator builds.
+
+**The deltas are sound. The absolute has drifted, and only a real sweep can restore it.** That is a
+different sweep from the one v0.4.13 cancelled: not to A/B a lever, but to re-establish the
+baseline every lever's delta is added to.
 
 ## 5. What the losses actually are — and why they are a v0.4.15 finding
 
