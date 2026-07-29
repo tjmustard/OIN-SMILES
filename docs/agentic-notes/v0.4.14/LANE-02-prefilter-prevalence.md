@@ -109,6 +109,74 @@ does **not** ship a fix.
 
 ---
 
-## 4. Result
+## 4. Result — `PREFILTER_VINDICATED`, and the cost argument REFUTED
 
-*(cohort run pending — see §5 of the release close-out)*
+**49 of 50 measured** (`YIDFEZ_comp_0` hit the 900 s per-molecule hard cap). Of the 49, **5 are
+`INSTRUMENT_DEAD`** — not one counter fired, so they measured nothing and are excluded from every
+rate below. **The live denominator is 44.**
+
+### The predicate ran, and it ran a lot
+
+| counter, lever ON, summed over 49 molecules | n |
+|---|---:|
+| cheap PASSED, veto never consulted | **1077** |
+| cheap veto total (`advisory` fired) | **261** |
+| ↳ cheap veto, strict **rejects** (`confirmed`) | **257** |
+| ↳ cheap veto, strict **ACCEPTS** (`overridden`) — the AROHIA shape | **4** |
+
+### Prevalence — three denominators, because they answer different questions
+
+| | |
+|---|---|
+| cheap vetoes the strict test disagreed with | **4 / 261 = 1.5%** |
+| molecules where the prefilter vetoed anything | 26 / 44 = 59.1% |
+| **molecules showing the defect at all** | **2 / 44 = 4.5%** |
+| molecules recovered fail → pass | 1 / 49 = 2.0% — **CONFOUNDED, see §3** |
+
+**The cheap prefilter agrees with the strict test 257 times out of 261.** `AROHIA_comp_0`'s
+`0/48`-vs-`16/48` is an **outlier, not the typical case** — which is exactly what v0.4.13 could not
+know from `n = 1`, and exactly why it refused to quote it.
+
+### 🔴 The latency argument that held this lever off is refuted
+
+The `_HELD_OFF` rationale reads: *"every cheap-veto this lever overrides now pays a full
+`XYZToSMILES` round trip … a correct-but-slow prefilter moves the cost into v0.4.12's territory."*
+Measured, the lever is **latency-positive**, and the delta decomposes cleanly by whether it acted:
+
+| | n | summed Δ |
+|---|---:|---:|
+| lever **acted** (≥1 override) | 2 | **−498.0 s** — `HUTCOQ_comp_0` alone is −495.0 s |
+| lever **inert** (predicate ran, 0 overrides) | 42 | **+19.9 s** (median +0.6 s, range −15.1…+5.4) |
+| `INSTRUMENT_DEAD` | 5 | −0.8 s |
+| **total** | 49 | **−478.8 s (−11.6%)** |
+
+So: when it does nothing it costs **≈ +0.47 s/molecule**, and when it fires it *saves*, because an
+override accepts and stops the pool filling. **−498 of the −478.8 s is attributable**; the
+non-acting 47 molecules contribute **+19.1 s** in total. That decomposition is what makes the
+negative delta readable at all — the tool warns that a negative delta is early exit rather than
+speed, and here it is early exit on **one** molecule.
+
+It also doubles as a run-to-run noise estimate: 42 molecules where the lever provably did nothing
+drift by a median of **+0.6 s**. Whatever else is uncertain here, the two arms are comparable.
+
+## 5. Verdict and recommendation
+
+**`OIN_PREFILTER_ADVISORY` stays default-OFF in v0.4.14** — but for a **different reason than the
+one on record**, and the registry entry is corrected accordingly.
+
+- **The accuracy case is not made.** The defect is real and reproducible (the AROHIA wiring gate
+  reads `overridden=2` every time), but at **1.5% of vetoes / 4.5% of molecules** it is rare. The
+  one fail → pass recovery in this sample is a **stochastic A/B on a stochastic generator** and
+  cannot carry a corpus projection; extrapolating it would be the `n = 1` move this lane exists to
+  avoid, one order of magnitude up.
+- **The cost case against it is dead.** It is measured **faster**, not slower. Any future session
+  citing latency as the reason to keep this off is citing a refuted number.
+
+What would change the verdict: a recovery measurement that is not an A/B — e.g. forcing the pool
+full (`tools/probe_accept_gap.py`) on the 26 molecules where the prefilter actually vetoes, and
+counting conformers the strict test would have accepted. That is a bounded piece of work and does
+not need a sweep.
+
+⚠ **Conditions.** No OIN jobs were running, but this box carries a **~4.5 baseline load** from
+unrelated daemons. The latency figures are against that baseline, not clean-room; the ±0.6 s median
+drift on 42 inert molecules is the honest noise floor for them.

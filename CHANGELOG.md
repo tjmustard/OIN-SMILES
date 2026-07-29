@@ -84,8 +84,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   structures reads `True→True` and `False→False` respectively. Both facts are recorded as comments
   inside the goldens.
 
+### Measured (no code change)
+- **`OIN_PREFILTER_ADVISORY` prevalence — `PREFILTER_VINDICATED`, and it stays default-OFF for a
+  *different reason than the one on record*.** v0.4.13 built the instrument and could only measure
+  `n = 1`. Over a stratified 50-molecule sample (seed 7; 49 measured, 1 hard timeout, **5
+  `INSTRUMENT_DEAD` excluded so the live denominator is 44**): the cheap prefilter vetoed **261**
+  conformers and the strict test disagreed on **4** — **1.5% of vetoes, 2/44 = 4.5% of molecules**.
+  `AROHIA_comp_0`'s `0/48`-vs-`16/48` is an **outlier**, which is exactly what `n = 1` could not say.
+- 🔴 **The latency argument that held it off is refuted.** It is measured **faster**: −478.8 s
+  (−11.6%) over 49 molecules, decomposing to **−498.0 s from the 2 molecules where it acted**
+  (`HUTCOQ_comp_0` alone −495.0 s, an early exit that stopped a long pool fill) and **+19.9 s across
+  the 42 where the predicate ran and it did nothing** (≈ +0.47 s/molecule). Those 42 also give the
+  noise floor: median drift **+0.6 s**. The `_HELD_OFF` entry is corrected — it still holds the
+  lever off, now on the accuracy evidence, because the single fail→pass recovery in the sample is a
+  stochastic A/B on a stochastic generator and cannot carry a corpus projection.
+
 ### Fixed
-- Nothing. This release changes what the encoder emits for 78 molecules and what four numbers on
+- Nothing. This release changes what the encoder emits for 78 molecules and what several numbers on
   the roadmap mean; it fixes no reported defect.
 
 ## [0.4.13] - 2026-07-28
