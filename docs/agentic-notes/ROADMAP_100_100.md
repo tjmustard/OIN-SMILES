@@ -225,12 +225,47 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.12** | **reflection parity + honest acceptance** — L1 `OIN_FOLD_PARITY_VETO`, the filter v0.4.11's close-out specified; L2 `OIN_ETA_ACCEPT_EXIT`, the winding criterion moved from selection into `accept_fn`, the only site that can stop pool filling. ⚠ `OIN_ETA_EARLY_EXIT` is **runtime-inert as sited** and its promotion gate is **void, not unrun** | default path **FLAT** (both levers OFF); L1 lever-ON gain and L2 tail move measured separately — see `docs/agentic-notes/v0.4.12/` |
 | **v0.4.13** | **the donor fold ships + harness false negatives** — promotes `OIN_CANONICAL_DONOR_FOLD` + `OIN_FOLD_PARITY_VETO` to default-ON (owner's call; voids the carry-forward licence, so a full re-sweep and re-frozen goldens are owed). L1 `PREFILTER_VETO` acceptance-side prevalence; L2 the MEDZUR/GAVSED split — **both classes were n = 1 and are now 99 and 280** | **UP ~3.42 pts** from the promotion (72.46% → ~75.88%); Lane 1/2 are measurements, not headline movers |
 | **v0.4.14** ✅ | **the residue, re-scoped.** Promoted `OIN_RESONANCE_DONOR_FOLD` (skeleton-level donor equivalence: acac ketone/enol, carboxylate, sulfonate) — **+1.56 pts, 78 molecules, 0 bad**, mirror audit **0 regressions at 179/179 = 100% coverage**. 🔴 **And REFUTED both halves of its own charter:** `rdkit_canonical` is **80.7% η-set denticity drift**, not canonicality; and **183 of the 222 veto-reverted molecules are the generator building the ENANTIOMER**, so `byte_exact` failing on them is CORRECT. **5.94 pts re-filed off the encoder ladder** | predicted **+3.5–4.1**, actual **+1.56** — the miss IS the finding (114 of the chartered 204 were never reachable) |
-| **v0.4.15** | 🔴 **RE-POINTED by v0.4.14.** Was "the 57 notation molecules". Now: the **generator enantiomer** class — 183 molecules / **3.66 pts**, the largest single mechanism left that is not `structural`, and newly visible because `key_equal` was hiding it behind a reflection-blind key. `accept_fn` decides by that key, so the generator can accept a mirror image and the harness records a same-isomer string difference | byte_exact **UP** if the generator can be made to preserve handedness; the 57-molecule oracle moves to v0.4.19 |
-| **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
-| **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-MECHANISED by v0.4.13 Lane 2**: **266 of the 417 (63.8%, up to 5.32 pts) are `DETACHED`** — the generator assembled a structure and *returned* it with ligands off the metal, because `_select_by_geometry`'s fallback ranking is not attachment-aware. That is a **one-site return-path guard**, not a capability floor; the guard already exists for *acceptance* as `OIN_ATTACH_CHECK`. The residue is 98 `INTACT` (the MEDZUR class) + 48 `BOUNDARY` | byte_exact **UP**; the 266 are no longer "bounded by what the generator can assemble" |
-| **v0.4.18** | **generator capability floor** — boron assembly, `NON` geometry, 28 produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in here opportunistically | likely a documented limitation |
+| **v0.4.15** | 🔴 **RE-POINTED by v0.4.14, owner-accepted 2026-07-28. THE GENERATOR OWNS THE GAP.** Two lanes: **L1 `structural`/`DETACHED`** (266 mol, up to **5.32 pts**) wires the attachment guard that already exists for *acceptance* (`OIN_ATTACH_CHECK`) into the *return* path; **L2 the generator ENANTIOMER class** (183 mol, **3.66 pts**) — `accept_fn` decides by a reflection-blind key, so the generator can accept a mirror image and the harness records it as a same-isomer string difference. Resolves BOTH standing open decisions (v0.4.13's and v0.4.14's) together | byte_exact **UP 2–6 pts** (wide on purpose); `> 30 s` **UP** — both lanes make acceptance stricter |
+| **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]`. ⚠ v0.4.15 L2 *uses* the Δ/Λ descriptor as an acceptance test without emitting it; this release is where emitting it lands, and emitting makes the generator responsible for reproducing it | **DOWN, then recovers** |
+| **v0.4.17** | **generator capability floor** — boron assembly, `NON` geometry, produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in opportunistically. ⚠ RE-SIZED: `structural` is no longer this release's subject — v0.4.13 measured 63.8% of it as `DETACHED`, a return-path guard, and v0.4.15 L1 now owns it | likely a documented limitation |
+| **v0.4.18** | **the 57 notation molecules** — build the per-case oracle. Plus the encoder ladder's remaining **1.28 pts**: 39 `NOT_A_MIRROR` (parity-aware canonicalization) + the 25-molecule resonance residue | knowledge, not points |
 
-### LADDER DECISION 2026-07-28 (v0.4.14) — 🔴 OPEN, needs the project owner
+### LADDER DECISION 2026-07-28 (v0.4.14) — **ACCEPTED by the project owner**
+
+```
+Change:   v0.4.15  was  the 57 notation molecules (knowledge, not points)
+                   is   THE GENERATOR OWNS THE GAP -- two lanes:
+                          L1  structural / DETACHED      266 mol, up to 5.32 pts
+                          L2  generator enantiomer class 183 mol,       3.66 pts
+          v0.4.16  information-adding tokens P1/P2/P3   (unchanged theme, moved up)
+          v0.4.17  generator capability floor           (structural REMOVED -- L1 owns it)
+          v0.4.18  the 57 notation molecules + the encoder ladder's last 1.28 pts
+
+Because: it resolves BOTH standing open decisions at once -- v0.4.13's (should structural's
+         266 DETACHED displace v0.4.15?) and v0.4.14's (should the enantiomer class?). Both
+         are generator lanes; taking them together is what makes the ordering coherent
+         rather than arbitrary. Combined they are 8.98 of the remaining 22.70 points.
+
+         v0.4.14 established the premise: the ENCODER ladder has 1.28 points of reachable
+         work left in total. Four releases were scheduled against blocks that are mostly
+         generator work. Continuing down the encoder ladder would be optimising the
+         smallest remaining block -- the exact mistake v0.4.9/v0.4.10 made.
+
+⚠ ACCEPTED WITH A KNOWN CONFOUND. Two headline movers in one release means a reader cannot
+  attribute a move to either lane without reading both apart. v0.4.13 accepted the same
+  shape and flagged it. Mitigation is MANDATORY, not optional: each lane behind its own
+  default-OFF lever, THREE arms measured (L1-only, L2-only, both), and separate commits so
+  a bisect can separate them even if the release doc does not.
+
+Not changed, and why: v0.4.16's P1/P2/P3 keeps its theme -- v0.4.15 L2 *uses* the Delta/Lambda
+         descriptor as an acceptance predicate without emitting it, so emitting stays a
+         separate, larger change. v0.4.17 keeps the capability floor but LOSES `structural`,
+         which is now v0.4.15 L1's.
+
+Accepted 2026-07-28 by the project owner. Recorded by the v0.4.14 close-out session.
+```
+
+#### The superseded proposal, kept for the record
 
 ```
 Change:   v0.4.15  was  the 57 notation molecules (knowledge, not points)
