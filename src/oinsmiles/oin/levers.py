@@ -146,6 +146,63 @@ import os
 #: the fold rather than to the harness without reading both apart. That confound is real, was
 #: raised, and was accepted by the project owner; the release doc states the two separately and
 #: the sweep that produces the headline runs with the Lane levers OFF.
+#: OIN_RESONANCE_DONOR_FOLD joined this set in v0.4.14. It widens OIN_CANONICAL_DONOR_FOLD's
+#: donor-equivalence test to the fragment's constitutional skeleton, so acac written ketone/enol
+#: and a sulfonate's oxygens stop being read as two inequivalent donors. It is therefore subject
+#: to the SAME coupling invariant as the fold it widens: only safe with OIN_FOLD_PARITY_VETO on,
+#: pinned by test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling.
+#:
+#: WHAT IT BUYS: **+1.42 points -- 78 gains, 7 losses, net +71 molecules**, byte_exact
+#: 75.88% -> 77.30%. MEASURED end-to-end over all 182 molecules the lever can affect.
+#:
+#: 🔴 THE FIRST NUMBER THIS LEVER SHIPPED WITH (+1.56, bad_direction = 0) WAS WRONG. It came from an
+#: offline re-score licensed by fold_key_invariance.py reading 0 keys changed. That verdict bounds
+#: the ACCEPTANCE step -- accept_fn decides by key -- but the generator's input is the OIN STRING,
+#: so a slot relabeling changes ParsedOIN, the CoordMap, and the POOL ITSELF. An offline re-score
+#: holds the generated structure fixed, so for a molecule that already round-trips it can only ever
+#: print "still fine": it reports bad_direction = 0 whether or not losses exist.
+#: Measured honestly end-to-end (tools/generator_ab_honest.py, seeded generator), over the COMPLETE
+#: affected population rather than a sample -- tools/lever_string_movers.py derives it from
+#: coordinates (93 molecules move encode(input); union with the generated-side movers is 182), and
+#: every other molecule is unchanged BY CONSTRUCTION because it receives an identical input string:
+#:     n = 182 of 182   78 REAL GAINS   7 REAL LOSSES   net +71
+#: So no sweep was needed: the affected set is derivable, and an A/B over it is exact.
+#: The offline sim had the GAINS exactly right (78) and was blind only to the losses -- which is its
+#: defining limitation, not bad luck: it re-encodes a FIXED structure, so for a molecule that
+#: already round-trips it can only ever print "still fine".
+#: ⚠ The 7 losses are NOT the encoder emitting a wrong string. The encoder is canonical in both
+#: arms; the GENERATOR, handed an equally valid but differently-LABELLED input, builds a worse
+#: structure. The generator's output depends on the slot labeling of its input and it should not.
+#: Every future canonicalization lever pays this, which is why it is a v0.4.15 lane.
+#: See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md.
+#:
+#: WHY THE GAINS ARE THE RIGHT ONES. All 78 land inside the 103-molecule class the v0.4.13 fold
+#: provably cannot reach; 0 come from the 222 the parity veto reverts, 0 from rdkit_canonical,
+#: 0 from anywhere else. The lever hits its target population and nothing adjacent.
+#:
+#: 🔴 THE GATE, AND ITS COVERAGE -- which is the part v0.4.13 got wrong and this states first.
+#: A uniform cat/ draw (n=250, seed 7) contains **1 of the 179 movers = 0.4% coverage**, so its
+#: identical before/after tally is NOT safety evidence; it says only that the lever does not
+#: damage molecules it never touches. (It is still run, and it reproduces v0.4.13's frozen
+#: 157/92/1 exactly, which is what proves the instrument and the draw are alive.)
+#: The gate that can SEE this change is a mover-enriched cohort at **179/179 = 100% coverage**:
+#:     distinct_both_arms 108 · achiral_or_preexisting_fold 71 · REGRESSIONS 0, both arms
+#:     per-molecule verdicts differing between arms: 0
+#: `achiral_or_preexisting_fold` unmoved at 71 is what rules out buying the zero by declining
+#: everything. And the number that separates "safe" from "never fired on anything chiral":
+#: **33 of the 78 gains are on molecules the encoder resolves as chiral (distinct_both_arms) and
+#: STILL resolves after the widening.** The other 45 are achiral, where folding cannot collapse
+#: anything.
+#:
+#: ⚠ WHAT IT COSTS. It changes the default answer for 78 molecules, so arm2's goldens move:
+#: 7 of 325 rows re-frozen in gate_v049_arm2_golden.tsv, 1 of 100 in gate_v047_arm2_golden.tsv.
+#: (Coverage of the moved population is the larger, different count -- 12/325 and 2/100 -- because
+#: the v0.4.9 golden predates the donor fold and some of its labelings coincide with today's.)
+#: ARM 1 is unaffected (0 of 62 fixtures are movers) and stays byte-identical, #DONE 62.
+#: ⚠ arm2's field 3 is a FRESH STOCHASTIC GENERATION, so a changed out-hash is not attributable to
+#: an encoder lever. Two rows flipped round-trip status in the re-freeze and NEITHER is this
+#: lever's doing -- the control on the frozen sweep structures reads HEKFEL True->True and FOJJUM
+#: False->False. Recorded as comments inside the goldens so a future diff does not misread them.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -156,6 +213,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_ETA_WINDING",
         "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
+        "OIN_RESONANCE_DONOR_FOLD",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
     }
@@ -179,11 +237,25 @@ _HELD_OFF = {
         "SCOPE: acceptance only. The SCORING half of this defect was closed by OIN_INDEP_SCORE "
         "in v0.4.8 -- on the frozen corpus, cheap-fails-but-independent-passes is 28/5000 and "
         "the honest metric already counts every one correctly. Do not re-open it.\n"
-        "HELD OFF pending its own prevalence measurement AND its latency cost. The prefilter "
-        "exists to make acceptance cheap; every cheap-veto this lever overrides now pays a full "
-        "XYZToSMILES round trip (measured 48-57s per call on an eta/haptic conformer). A "
-        "correct-but-slow prefilter moves the cost into v0.4.12's territory and must be priced "
-        "there, not waved through as a pass-rate win.\n"
+        "🔴 v0.4.14 MEASURED BOTH HALVES OF THAT GATE. The prevalence is LOW and the latency "
+        "objection is REFUTED -- so this lever is still held off, but NOT for the reason that "
+        "was on record here.\n"
+        "PREVALENCE (49 of 50 stratified-sample molecules measured, seed 7, 1 hard timeout; 5 "
+        "INSTRUMENT_DEAD excluded so the live denominator is 44): the cheap prefilter vetoed "
+        "261 conformers and the strict test disagreed with it on 4. That is 4/261 = 1.5% of "
+        "vetoes and 2/44 = 4.5% of molecules. AROHIA_comp_0's 0/48-vs-16/48 is an OUTLIER, not "
+        "the typical case -- which is precisely what n=1 could not tell anyone.\n"
+        "LATENCY, the claim this entry used to make: the lever is measured FASTER, not slower. "
+        "Total -478.8s (-11.6%) over 49 molecules, and it decomposes: the 2 molecules where it "
+        "ACTED contribute -498.0s (HUTCOQ_comp_0 alone is -495.0s, an early exit that stopped a "
+        "long pool fill), while the 42 where the predicate ran and it did NOTHING contribute "
+        "+19.9s total -- about +0.47s/molecule. Anyone citing cost as the reason to keep this "
+        "off is citing a refuted number.\n"
+        "STILL HELD OFF because the ACCURACY case is not made: the single fail->pass recovery in "
+        "the sample is a stochastic A/B on a stochastic generator and cannot carry a corpus "
+        "projection. What would settle it is a NON-A/B recovery count -- force the pool full "
+        "(tools/probe_accept_gap.py) on the 26 molecules where the prefilter actually vetoes and "
+        "count conformers the strict test would have accepted. Bounded work; no sweep needed.\n"
         "⚠ A lever that never fires and a lever that fires and finds nothing BOTH report zero "
         "overrides. Gate on adapter.prefilter_veto_overridden being non-zero on AROHIA_comp_0 "
         "(cheap 0/48, strict 16/48) before quoting any corpus number."

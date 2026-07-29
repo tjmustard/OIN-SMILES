@@ -6,7 +6,7 @@ BAVKAM_comp_1	df78a1567d03433c6eba9de226d45256f238bda6efac8cf957d3b0fcf0a2aa40	d
 BEDLII_comp_0	ab9cfac30dadcc84d3e83a2a22b15b90b249a6463b564cb4cb894a2c101d7bc1	NO_STRUCTURE@300s	193	-	-	b300_plus	no_structure
 BEKHIK_comp_0	2e45f420ba473cfc166497e47b55809ab97dfd70f0a46195d9ac4cf09b962a8c	2e45f420ba473cfc166497e47b55809ab97dfd70f0a46195d9ac4cf09b962a8c	98	98	eta	b60_300	byte->FAIL
 BEPJOW_comp_0	3fee363546e2e56c7d32b09a398b9416e508247dec2f9b7bd6b41211bde77905	3fee363546e2e56c7d32b09a398b9416e508247dec2f9b7bd6b41211bde77905	130	130	-	b30_60	byte->byte
-BIFDAX_comp_0	08f0a879c4aacb45aecc0a165662902afd1034650cd9a278d01808dcb4d1bde0	08f0a879c4aacb45aecc0a165662902afd1034650cd9a278d01808dcb4d1bde0	101	101	eta	fast	byte->byte
+BIFDAX_comp_0	da2344f2f0243ff04dcdc368909f89b8b5a66ef2d1d3c02ed5e2e3ad06b6d48f	da2344f2f0243ff04dcdc368909f89b8b5a66ef2d1d3c02ed5e2e3ad06b6d48f	101	101	eta	fast	byte->byte
 BODBAY_comp_1	f7ef9cae98b21f67c5e2deba322b4bf3d3c07f9f4c14d94fbb3d368f6c563dd9	f7ef9cae98b21f67c5e2deba322b4bf3d3c07f9f4c14d94fbb3d368f6c563dd9	97	97	-	b30_60	byte->byte
 BOHLIV_comp_0	1418937dee8a4d91edb6aeced0efce15d4b614acfb4e1a09489fafab91d7b183	1418937dee8a4d91edb6aeced0efce15d4b614acfb4e1a09489fafab91d7b183	118	118	eta	fast	byte->byte
 BOMNOJ_comp_0	bed5410c4fa3093d880936bb3d8668b8115b4f8172f928df42d836b327212fb3	bed5410c4fa3093d880936bb3d8668b8115b4f8172f928df42d836b327212fb3	178	178	eta	b60_300	byte->byte
@@ -50,7 +50,7 @@ FIJPEW_comp_0	928b4a7a9459bc2ee7f8e45b78b40b9fc9ee614601bdca8a7c8a675bdeb5ac2b	9
 FIMMUK_comp_0	778190dd9f418f530be17018479cfcb1cf2e147ac4563d88fb5236aa0b7f9501	778190dd9f418f530be17018479cfcb1cf2e147ac4563d88fb5236aa0b7f9501	143	143	-	b60_300	key->byte
 FOGPIB_comp_0	66a15d3d7c9afaf46917349dda924c037585c2c17b64d0e1024fc12030c359f9	66a15d3d7c9afaf46917349dda924c037585c2c17b64d0e1024fc12030c359f9	84	84	eta	fast	byte->byte
 FOHFIT_comp_0	f33eee74ffd7993095e588d0ed8979f1452ef6c17b52a1beb59eeb3c393c1fbc	f33eee74ffd7993095e588d0ed8979f1452ef6c17b52a1beb59eeb3c393c1fbc	88	88	eta	b60_300	byte->FAIL
-FOJJUM_comp_0	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	191	191	-	b60_300	byte->FAIL
+FOJJUM_comp_0	1acf6bbb2118b6d7b83709cbc9b5739b7e64c428fd91f86adc75b2031c2dee1e	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	191	191	-	b60_300	byte->FAIL
 FOKQOM_comp_0	c5a32a1cfce64d2f50c6b8d587181faead1175bf7d6d6d80120c4e0b245653e8	c5a32a1cfce64d2f50c6b8d587181faead1175bf7d6d6d80120c4e0b245653e8	89	89	eta	b60_300	byte->FAIL
 FOLKEX_comp_0	fd2dc460736bd3b4aa6959ce6e3de5e37be3766e5934cedb9b007e246ef6ed56	fd2dc460736bd3b4aa6959ce6e3de5e37be3766e5934cedb9b007e246ef6ed56	122	122	eta	fast	byte->key
 FOQGAU_comp_0	324ef2308883e3cea1ee006f3e48ff1a51ad70a0e92778fc098ccd3181d99142	324ef2308883e3cea1ee006f3e48ff1a51ad70a0e92778fc098ccd3181d99142	92	92	eta	fast	byte->byte
@@ -76,7 +76,7 @@ HAMJOU_comp_0	d93ffa8bcbc1b352c5c9aa338be9531c6216fba1fbbd26caf22b6edb691bbfb2	d
 HAMKOV_comp_0	40f87ff7b14102761ac964faa3916c6a1154112421e8e25204cb1e5c08116e62	b24cc1ff294103f82cf46a2e409d4255c2649fa7123f11ae47f3a259865f4d5b	105	113	-	b60_300	key->FAIL
 HATGAN_comp_0	ca766820e47d3651fe748c2607d7aba8abd7e969af206240a7bb95f7aa954f52	ca766820e47d3651fe748c2607d7aba8abd7e969af206240a7bb95f7aa954f52	81	81	eta	b30_60	byte->FAIL
 HATGUH_comp_0	6dbbd972e9fb8a5e8f39815624694a13609ffe633094650b9abc6d9171ba9ce8	6dbbd972e9fb8a5e8f39815624694a13609ffe633094650b9abc6d9171ba9ce8	131	131	-	b60_300	byte->byte
-HEKFEL_comp_0	f76978ccc1ccc42760203bb0d6cc304b5df944657f08e4e0de1b4f3fb88c7ff7	f76978ccc1ccc42760203bb0d6cc304b5df944657f08e4e0de1b4f3fb88c7ff7	75	75	-	b30_60	byte->byte
+HEKFEL_comp_0	5337a379eced6b07701584385257264f4f0875352725cc041c97fbdb5be48568	f97d4ce72c0dceb4ed8f428f74bd400bd8bb3b01de8509cc4401c2049122f08c	75	75	-	b30_60	byte->byte
 HEQFIS_comp_0	78f65f7774c3841fd6eec6f95d4c67bc45d1481697328dcd1a3ad79ad8f6ba94	78f65f7774c3841fd6eec6f95d4c67bc45d1481697328dcd1a3ad79ad8f6ba94	102	102	eta	fast	byte->byte
 HICZID_comp_0	3ecd44ba706d9188cf4cdc5b1fd05c879621ffe435b2d2cf4d06b24d5d8a2140	3ecd44ba706d9188cf4cdc5b1fd05c879621ffe435b2d2cf4d06b24d5d8a2140	96	96	-	fast	byte->byte
 HIKCAI_comp_0	149c76070f693a4c3298c71e873775dddb5ae983295d7d8280d4cc9c469792cd	149c76070f693a4c3298c71e873775dddb5ae983295d7d8280d4cc9c469792cd	118	118	-	b60_300	byte->FAIL
@@ -93,7 +93,7 @@ ICUXUB_comp_0	b8c28cc5e265c22184d7ecbd619919b7e84f79c34de356f41e229975693accf0	b
 IDIGUA_comp_0	7e76de317f4e1b637625a16eb4e3419344a994013b24f34b87334e05ba1d0bf0	7e76de317f4e1b637625a16eb4e3419344a994013b24f34b87334e05ba1d0bf0	82	82	-	fast	byte->byte
 IFOYIN_comp_0	aba06eb24787969db1e38a5def232c176651c28f107056f5eeee92ab472ab3c2	aba06eb24787969db1e38a5def232c176651c28f107056f5eeee92ab472ab3c2	94	94	eta	fast	byte->byte
 IGAWOF_comp_0	eb426ba7ff96fa4b70b1fa06bf1c8310c825ce2ac1b9be973162a85268ebe7da	2e0a5820e7e043413d4acf073e03167c28a22ba507e18219f31f9b3bf429e23f	99	99	-	fast	key->key
-IJAZAV_comp_0	93556d69cba101b8d54d94ad1c0130a857f3d981a242fc271a16d062229cb341	93556d69cba101b8d54d94ad1c0130a857f3d981a242fc271a16d062229cb341	102	102	-	fast	byte->key
+IJAZAV_comp_0	7daccadb47f00043b65852e23b666e701edf2e461a90159ff545345406d76291	7daccadb47f00043b65852e23b666e701edf2e461a90159ff545345406d76291	102	102	-	fast	byte->key
 IJOSOP_comp_0	3120cbbc228ef4a9ee9edf4f68352d56c8b9b7d84a1715e315335c8aa9679a1a	3120cbbc228ef4a9ee9edf4f68352d56c8b9b7d84a1715e315335c8aa9679a1a	134	134	-	b60_300	byte->FAIL
 ILUDID_comp_0	3b88e00340e07c8f5e29c8499feb6aa44655fbd6a23fd6965ee7d59ac0959965	3b88e00340e07c8f5e29c8499feb6aa44655fbd6a23fd6965ee7d59ac0959965	162	162	-	b60_300	byte->byte
 IMEPAS_comp_0	c13c3282ac63bdb764c1dd9e529419b5647c06fd7a1761d6edad1bd206f802c7	c13c3282ac63bdb764c1dd9e529419b5647c06fd7a1761d6edad1bd206f802c7	85	85	eta	b30_60	byte->byte
@@ -170,7 +170,7 @@ NOGWOX_comp_0	NO_ENCODE@300s	NO_ENCODE@300s	-	-	-	b300_plus	no_structure
 NONDUR_comp_0	745f7203e6e33cd902268e9d8b8f929ae9b3d4d26ac21a4ab6eeba88895f0815	745f7203e6e33cd902268e9d8b8f929ae9b3d4d26ac21a4ab6eeba88895f0815	83	83	eta	b30_60	byte->key
 NONROZ_comp_0	0f27503419db15189b8ff8916b61a50bc99557f7a7c859b2d4c0a55269437094	0f27503419db15189b8ff8916b61a50bc99557f7a7c859b2d4c0a55269437094	100	100	-	fast	byte->byte
 NOXREZ_comp_0	NO_ENCODE@300s	NO_ENCODE@300s	-	-	-	b300_plus	no_structure
-NURTEA_comp_0	6943e0e652a64bfaa1753999fa787f17c2a6f82feefefddd741f685959d302f5	NO_STRUCTURE@300s	181	-	-	b300_plus	no_structure
+NURTEA_comp_0	1dda41a5cb59e104a65228e3d4f81224589e055a47135901933e05966708b2ed	1dda41a5cb59e104a65228e3d4f81224589e055a47135901933e05966708b2ed	181	181	-	b300_plus	no_structure
 NUWCUE_comp_0	8fd360999fd6fa01fbe33832cbd01388f38cbfdb447a36ea56008c2e3c5b372c	8fd360999fd6fa01fbe33832cbd01388f38cbfdb447a36ea56008c2e3c5b372c	55	55	-	fast	byte->byte
 OBABAX_comp_0	4331af7a8296b10bba59bba46429687e2ba062fb268ec9fc0951319cd74d9113	NO_STRUCTURE@300s	165	-	-	b300_plus	no_structure
 OCIKAO_comp_0	c7736f681ff1cdbd20dccceb2fe9d7fa11f201d11a45b8194f66ca933b732f1e	c7736f681ff1cdbd20dccceb2fe9d7fa11f201d11a45b8194f66ca933b732f1e	92	92	eta	b60_300	byte->FAIL
@@ -185,7 +185,7 @@ OPEHOI_comp_0	2ffb25a492f980b64ceda1c159a0a6b5c32eeda2f008364b0f827a40d77014df	2
 OSIBEZ_comp_0	8e75620eaf7616ac90adf5b1896f44d8715a7d60af55f23945d53f3c96cc585a	8e75620eaf7616ac90adf5b1896f44d8715a7d60af55f23945d53f3c96cc585a	84	84	eta	b30_60	byte->FAIL
 OTIGIJ_comp_0	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	168	168	-	b60_300	byte->FAIL
 OTOLAL_comp_0	6721872c1ba6629e45f934f0e09750e70ae8c3133f37c5a0fa1057ded9616c2c	NO_STRUCTURE@300s	183	-	-	b300_plus	no_structure
-OWIBOM_comp_0	a0fc1adff50ac37f86def2fa5226577851abe40e3510fd462f536dd297e17f9d	a0fc1adff50ac37f86def2fa5226577851abe40e3510fd462f536dd297e17f9d	86	86	eta	b30_60	byte->key
+OWIBOM_comp_0	916c97675cf1d7cc66a169d8207e963f32f95b480c2c8cfb1d15198f1e235a49	916c97675cf1d7cc66a169d8207e963f32f95b480c2c8cfb1d15198f1e235a49	86	86	eta	b30_60	byte->key
 OZADAW_comp_0	f3f496fe2d7cb9301b31a45fec91b672e27d88cba86e6fab52da48865b1bd402	f3f496fe2d7cb9301b31a45fec91b672e27d88cba86e6fab52da48865b1bd402	132	132	-	b300_plus	no_structure
 PABVIY_comp_0	3e0ba65eb22d0156b353756736c922f7a14af7ad1aebfff4f1bc02d000c6cf4e	3e0ba65eb22d0156b353756736c922f7a14af7ad1aebfff4f1bc02d000c6cf4e	109	109	eta	fast	byte->byte
 PAKWAB_comp_0	fec7122c48935dbfed1f480c6de17e34185143796c6983d293148ef594b54f86	9bc52dc851dd4ea91b86c7136e8858a002b9d25d5e7a428edbd85b16c9afbffa	128	128	eta	b30_60	key->key
@@ -250,7 +250,7 @@ UKUMET_comp_0	527c172f860eba104ccda2d6e1ca47a39b25139c7242285e4f086ce2aee04aa5	5
 ULIDIE_comp_0	5b63c11abcdceef8ba1616bc07400c4814eff86f5e0aee779ae476570dc223f6	d52f4e23b26776183824146158d080fea221b25bb11aab1ea435440e0ce3492c	99	99	-	b30_60	key->FAIL
 ULOFEG_comp_0	135156b92c9c24a1ff603e2e34fff1a6deb1f91ffc9e134e7067acaa06e5a2ee	NO_STRUCTURE@300s	184	-	eta	b300_plus	no_structure
 ULOQIX_comp_0	a5135322ab5c74ae4a29aeee6856ef287650d647d41db41cff2419430a2c424b	a5135322ab5c74ae4a29aeee6856ef287650d647d41db41cff2419430a2c424b	80	80	eta	b60_300	byte->byte
-ULORAQ_comp_0	a8425a1e81c72a44464463d96da3bf080aa0dfa39b1614cac0c7ddba7a45ac2d	5565393cd4c83e8f9752a3663e7ed24bb5b8149cf7d729f14744ee02ba444b57	99	99	eta	b300_plus	no_structure
+ULORAQ_comp_0	950408320c49164355abd1c20aca918756ee7b411ba5d3bff7cfe84a1ed4a76f	7bd2bb93fcaa701435bc02b7887d5c9d24b67a7144f4fc854d2412ba1d4569db	99	99	eta	b300_plus	no_structure
 ULORIY_comp_0	b37186b19b174e5122a0a68f83d13874ba35286d77b639c4a819f1ff229fbcf2	ed3dac655fcfa74e8f1b33873da51c0ac7aaa74bdd7376e62b89f4db285e7653	79	79	eta	b60_300	key->FAIL
 ULOTEV_comp_0	32da6206a2280232f442d2a8a72ae12b4db8e10c6261bb7091ae8537d3a2aaff	32da6206a2280232f442d2a8a72ae12b4db8e10c6261bb7091ae8537d3a2aaff	106	106	eta	fast	key->byte
 UNEGEB_comp_0	9a0a06d566fa0d8ef2f5c87adf74b856902b8a16d563f767c845c32287efe5e9	9a0a06d566fa0d8ef2f5c87adf74b856902b8a16d563f767c845c32287efe5e9	100	100	-	fast	byte->byte
@@ -323,5 +323,26 @@ ZOGLIS_comp_0	d84ca28c0837bc3443fc9f2c8f342823ed1886738623c29b17d743ae7294d2dc	d
 ZOGXIF_comp_0	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	93	93	-	b30_60	byte->FAIL
 ZOYYUJ_comp_0	73e30efe6b7dbc1f31498950ebef86b0a7228d5065ebfac770da00d1a5b2bccf	d2366fbe368392fbd8865ec8a3a353a2e0e1a8682ac61aa098a9be2c8238a66b	86	83	-	b300_plus	FAIL->byte
 ZUGBUA_comp_0	4febefdb5ceff3c05bd5655b7be7d8dd5a0f2754ecde91d8815628c134b70b6d	4febefdb5ceff3c05bd5655b7be7d8dd5a0f2754ecde91d8815628c134b70b6d	117	117	eta	b60_300	byte->FAIL
-# MANIFEST_SHA256=83044cff1391c1988078b379ab295241da9b23f6c42feff10b659171ad9c84c6
+# v0.4.14: rows re-frozen for the OIN_RESONANCE_DONOR_FOLD promotion (default-ON).
+#   Only fields 1-6 (name, sha_in, sha_out, len_in, len_out, eta) are taken from the fresh run.
+#   Fields 7+ are PRESERVED from the previous golden: in a v0.4.9 golden field 7 is the runtime
+#   BAND that `gate_v047.sh arm2 --band` filters on, while a fresh row carries xyz_sha there.
+#   Splicing whole rows would silently break --band for exactly the rows this release touched.
+#   Every changed field-2 (input) hash was verified DETERMINISTIC and lever-attributable by
+#   re-encoding in a FRESH PROCESS per lever setting -- in-process perception memos would
+#   otherwise let the second encode reuse the first one's answer.
+#   ⚠ CORRECTED 2026-07-28. An earlier version of this comment claimed field 3 was a stochastic
+#   generation and that neither flipped row was lever-caused. BOTH CLAIMS WERE WRONG.
+#   Generation is SEEDED (MetalloGenAdapter seed=42) and reproduces exactly across runs.
+#   Measured honestly end-to-end with tools/generator_ab_honest.py (--repeat 2, 0 non-determinism):
+#       HEKFEL_comp_0  byte_exact TRUE with the lever off, FALSE with it on -> a REAL REGRESSION
+#       FOJJUM_comp_0  byte_exact FALSE both ways -> no regression (the old golden's TRUE came
+#                      from arm2's CIRCULAR predicate, get_oin_string(result.mol), not an
+#                      independent re-perception)
+#   ⚠ arm2 is a BYTE-IDENTITY gate, not an accuracy instrument: it scores with the generator's own
+#   bond graph, which OIN_INDEP_SCORE replaced in v0.4.8 at a 9.6% false-positive rate. Do not read
+#   these hashes as a round-trip verdict.
+#   See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md
+#   See docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md
+# MANIFEST_SHA256=da37bac68385482a65eeec1531a8d4ae0549b502c9f9bb5ca770c7d25cdeba51
 #DONE 325

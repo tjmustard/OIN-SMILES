@@ -94,6 +94,17 @@ ALLOW = [
     "fold_*.json",
     "attach_class_audit.json",
     "prefilter_*.json",
+    # v0.4.14. The end-to-end A/B outputs are the load-bearing ones: `reso_full_ab.json` names
+    # every one of the 78 gains and 7 losses behind the +1.42 headline, and `v0413_atrisk_ab.json`
+    # is the measurement that corrected v0.4.13's published +3.42 to ~+2.82. Neither is reproducible
+    # from prose. `reso_movers_exact.json` is the coordinate-derived affected population -- the
+    # thing that made a ~55 CPU-h sweep unnecessary -- and a later release re-deriving it is exactly
+    # the diff this tree exists to support.
+    "veto_*.json",
+    "resonance_*.json",
+    "reso_*.json",
+    "*_ab.json",
+    "generator_ab*.json",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -127,6 +138,51 @@ PROVENANCE = [
     (
         r"^transition_(fold|veto)\.json$",
         "tools/fold_transition_sim.py --sweep <frozen sweep> --arm {0}",
+    ),
+    (
+        r"^veto_outcomes\.json$",
+        "tools/veto_outcome_audit.py --sweep <frozen sweep> --dataset <cat> --dataset <photo>"
+        "   (which of fold_parity's FIVE outcomes each reverted molecule got: 222/222"
+        " vetoed_collapse, 0 no_evidence, over 393/393 movers)",
+    ),
+    (
+        r"^veto_residue_chirality\.json$",
+        "tools/veto_residue_chirality.py --outcomes veto_outcomes.json --sweep <frozen sweep>"
+        "   (183/222 MIRROR_MATCH: the round trip built the ENANTIOMER)",
+    ),
+    (
+        r"^resonance_transition\.json$",
+        "tools/resonance_transition_sim.py --sweep <frozen sweep> --baseline-byte-exact 3794"
+        "   (OFFLINE re-score. Reported +78/0 losses; SUPERSEDED by reso_full_ab.json --"
+        " an offline re-score cannot express a loss)",
+    ),
+    (
+        r"^resonance_key_invariance\.json$",
+        "tools/fold_key_invariance.py --sweep <frozen sweep> --lever OIN_RESONANCE_DONOR_FOLD"
+        " --holding OIN_CANONICAL_DONOR_FOLD"
+        "   (9669 compared, 228 moved, 0 keys changed. ⚠ bounds ACCEPTANCE, not embedding)",
+    ),
+    (
+        r"^reso_movers_exact\.json$",
+        "tools/lever_string_movers.py --lever OIN_RESONANCE_DONOR_FOLD --holding"
+        " OIN_CANONICAL_DONOR_FOLD --holding OIN_FOLD_PARITY_VETO"
+        "   (93 of 5000 move encode(input) -- the coordinate-derived affected population)",
+    ),
+    (
+        r"^reso_full_ab\.json$",
+        "tools/generator_ab_honest.py --lever OIN_RESONANCE_DONOR_FOLD over all 182 affected"
+        "   (THE v0.4.14 HEADLINE: 78 gains, 7 losses, net +71 = +1.42 pts, n=182 of 182)",
+    ),
+    (
+        r"^v0413_atrisk_ab\.json$",
+        "tools/generator_ab_honest.py --lever OIN_CANONICAL_DONOR_FOLD over 40 of v0.4.13's 197"
+        " at-risk molecules (seed 13)"
+        "   (6 losses = 15% => ~30 over the population => v0.4.13's true net ~+2.82, NOT +3.42)",
+    ),
+    (
+        r"^(atrisk_generator_ab|hekfel_honest_ab|generator_ab_honest)\.json$",
+        "tools/generator_ab_honest.py --lever OIN_RESONANCE_DONOR_FOLD (sampling pass,"
+        " superseded by reso_full_ab.json)",
     ),
     (
         r"^ab_.*\.json$",

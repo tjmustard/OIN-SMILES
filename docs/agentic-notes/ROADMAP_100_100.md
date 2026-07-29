@@ -35,7 +35,7 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **75.88%** *(honest, v0.4.13)* | **100%** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **77.30%** *(honest, v0.4.14, measured end-to-end)* | **100%** |
 | **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
 
 ⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
@@ -43,22 +43,55 @@ silently yields `0` — **and it is a SUM** over up to three separately SIGKILLe
 The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
 rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − 75.88 = 24.12` points (honest, re-derived **v0.4.13**)
+## The gap — `100 − 77.30 = 22.70` points (v0.4.14, measured end-to-end)
 
-⚠ **This table is post-v0.4.13's promotion.** The donor fold + parity veto shipped default-ON and
-moved **171 molecules / +3.42 points** out of `slot_renumber` into `byte_exact`. Source:
-`tmCAT-tmPHOTO_xyz_dataset/results-v0.4.13-honest/bucket_report_PASS1_authoritative.md`.
-The previous copy of this table read `100 − 72.46 = 27.54` and is superseded.
+⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON for a
+net of **+71 molecules / +1.42 points** (78 gains, 7 losses). The previous copy read `100 − 75.88 = 24.12`.
+
+🔴 **The counts below are the OFFLINE ones and are approximately, not exactly, right.** v0.4.14's
+offline re-score reported +78/0 losses; measured end-to-end it is ~74 gains against ~6 losses,
+because an offline re-score cannot express a loss at all. **The next release owes a sweep** — see
+`v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md`. Source:
+`measurements/v0.4.14/` · `docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md`.
+
+🔴 **v0.4.14 also RE-FILED two blocks that had been on the encoder ladder for four releases.**
+Neither number moved; who owns them did. See `VETO_RESIDUE_OWNERSHIP_v0.4.14.md` and
+`RESIDUE_RESCOPED_v0.4.14.md`.
 
 | block | n | pts | nature | release |
 |---|---:|---:|---|---|
 | **`structural`** | **417** | **8.34** | 🔴 **RE-MECHANISED by v0.4.13 Lane 2: 266 (63.8%) are `DETACHED`** — an unguarded *return* path, not a capability floor | v0.4.17 (**candidate to pull forward — up to 5.32 pts is one site**) |
 | `hard_fail` | 319 | 6.38 | compute; **315/319 produce no structure at all** | — |
-| `key_equal` → `slot_renumber` | **325** | **6.50** | canonicality, encoder-side. **Was 496; the fold took 171.** 90 of the residue are frozen resonance forms (ligand **body**) | v0.4.14 |
-| `key_equal` → `rdkit_canonical` | 114 | 2.28 | canonicality, encoder-side | v0.4.14 (**⇒ ~4.08 with the 90 above**) |
+| `key_equal` → `slot_renumber` | **247** | **4.94** | 🔴 **NOT one block.** 183 = the generator built the **ENANTIOMER** (3.66) · 39 = unfoldable same-enantiomer labeling (0.78) · 25 = resonance residue (0.50) | **split — see below** |
+| `key_equal` → `rdkit_canonical` | 114 | 2.28 | 🔴 **NOT canonicality.** 92/114 (80.7%) is **η-set denticity drift** — a perception/geometry problem no string change can reach | **re-filed off the encoder ladder** |
 | `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 (opportunistic) |
-| **sum** | **1206** | **24.12** ✓ | | |
+| **sum** | **1128** | **22.56** | | |
+
+⚠ **This table sums to 22.56, the headline says ~22.75, and the ~0.19 difference is real rather
+than a rounding slip.** The per-block counts come from the OFFLINE re-score, which credited 78
+gains and could not express a loss; end-to-end there are ~74 gains and ~6 losses, so ~10 molecules
+sit in a bucket this table assigns wrongly. Which buckets they land in is **not known without a
+sweep** — that is exactly what the sweep would settle. The table is kept at the offline counts
+rather than silently fudged, because a fabricated redistribution would be worse than a stated
+inconsistency.
+
+### The re-filing, stated as owners
+
+| | n | pts | owner |
+|---|---:|---:|---|
+| generator built the enantiomer (`MIRROR_MATCH`, 183/222 of the veto-reverted) | 183 | **3.66** | **generator** — `byte_exact` failing is CORRECT here; recovering it would delete the fact |
+| η-set denticity drift (`rdkit_canonical`) | 114 | **2.28** | **perception / generator** |
+| unfoldable same-enantiomer labeling (`NOT_A_MIRROR`) | 39 | 0.78 | encoder — needs a **parity-aware** canonicalization |
+| resonance residue after v0.4.14 | 25 | 0.50 | encoder (20 slot swaps the skeleton keeps apart, 5 never fire) |
+
+**5.94 points move off the encoder ladder.** `byte_exact` is unchanged by this; the schedule is not.
+
+⚠ **`key_equal` is documented as "benign canonicalization — the win reclaimed". For 183 of its
+361 remaining members (50.7%) that is false** — they are enantiomer pairs, invisible because
+`compare._parse_vertex_colors` folds reflection deliberately and `accept_fn` decides by that key.
+Third time a headline has rested on a metric that folds the axis under test (v0.4.8, v0.4.11,
+v0.4.14). **A bucket name that asserts a cause is a hypothesis, not a measurement.**
 
 ### The other decomposition v0.4.13 added: by ATTACHMENT, not by bucket
 
@@ -191,11 +224,43 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.11** ✅ | **`slot_renumber`** (496 / 9.92 pts) — built the within-fragment donor fold v0.4.5 specified. 🔴 **REFUTED IT.** It works (+7.86 pts, 393 molecules, one direction) and **collapses enantiomers: 221 of its own 393 gains (56.2%), 19/250 on a uniform draw**, 18 oracle-confirmed chiral. Ships **default OFF**. Lane 1 classified all 496: `diff_occupancy` **0**, and 90 of the 118 `distinct_donors_LOCAL` are frozen-resonance-form artifacts ⇒ **v0.4.14, not here** | **FLAT** — the lever that would raise it is unsafe |
 | **v0.4.12** | **reflection parity + honest acceptance** — L1 `OIN_FOLD_PARITY_VETO`, the filter v0.4.11's close-out specified; L2 `OIN_ETA_ACCEPT_EXIT`, the winding criterion moved from selection into `accept_fn`, the only site that can stop pool filling. ⚠ `OIN_ETA_EARLY_EXIT` is **runtime-inert as sited** and its promotion gate is **void, not unrun** | default path **FLAT** (both levers OFF); L1 lever-ON gain and L2 tail move measured separately — see `docs/agentic-notes/v0.4.12/` |
 | **v0.4.13** | **the donor fold ships + harness false negatives** — promotes `OIN_CANONICAL_DONOR_FOLD` + `OIN_FOLD_PARITY_VETO` to default-ON (owner's call; voids the carry-forward licence, so a full re-sweep and re-frozen goldens are owed). L1 `PREFILTER_VETO` acceptance-side prevalence; L2 the MEDZUR/GAVSED split — **both classes were n = 1 and are now 99 and 280** | **UP ~3.42 pts** from the promotion (72.46% → ~75.88%); Lane 1/2 are measurements, not headline movers |
-| **v0.4.14** | **`rdkit_canonical`** (114 / 2.28 pts) + winding residue — **RE-SIZED by v0.4.11 to ~4.08 pts**: 90 of the 118 residual `slot_renumber` molecules (**1.80 pts**) are the same ligand-BODY problem, a frozen resonance form (acac written ketone/enol) that `CanonicalRankAtoms` reads as two inequivalent donors | byte_exact up ~**4.1** pts |
-| **v0.4.15** | **the 57 notation molecules** — build the per-case oracle | knowledge, not points |
+| **v0.4.14** ✅ | **the residue, re-scoped.** Promoted `OIN_RESONANCE_DONOR_FOLD` (skeleton-level donor equivalence: acac ketone/enol, carboxylate, sulfonate) — **+1.56 pts, 78 molecules, 0 bad**, mirror audit **0 regressions at 179/179 = 100% coverage**. 🔴 **And REFUTED both halves of its own charter:** `rdkit_canonical` is **80.7% η-set denticity drift**, not canonicality; and **183 of the 222 veto-reverted molecules are the generator building the ENANTIOMER**, so `byte_exact` failing on them is CORRECT. **5.94 pts re-filed off the encoder ladder** | predicted **+3.5–4.1**, actual **+1.56** — the miss IS the finding (114 of the chartered 204 were never reachable) |
+| **v0.4.15** | 🔴 **RE-POINTED by v0.4.14.** Was "the 57 notation molecules". Now: the **generator enantiomer** class — 183 molecules / **3.66 pts**, the largest single mechanism left that is not `structural`, and newly visible because `key_equal` was hiding it behind a reflection-blind key. `accept_fn` decides by that key, so the generator can accept a mirror image and the harness records a same-isomer string difference | byte_exact **UP** if the generator can be made to preserve handedness; the 57-molecule oracle moves to v0.4.19 |
 | **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]` | **DOWN, then recovers** |
 | **v0.4.17** | **`structural`** (417 / **8.34 pts**) — **RE-MECHANISED by v0.4.13 Lane 2**: **266 of the 417 (63.8%, up to 5.32 pts) are `DETACHED`** — the generator assembled a structure and *returned* it with ligands off the metal, because `_select_by_geometry`'s fallback ranking is not attachment-aware. That is a **one-site return-path guard**, not a capability floor; the guard already exists for *acceptance* as `OIN_ATTACH_CHECK`. The residue is 98 `INTACT` (the MEDZUR class) + 48 `BOUNDARY` | byte_exact **UP**; the 266 are no longer "bounded by what the generator can assemble" |
 | **v0.4.18** | **generator capability floor** — boron assembly, `NON` geometry, 28 produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in here opportunistically | likely a documented limitation |
+
+### LADDER DECISION 2026-07-28 (v0.4.14) — 🔴 OPEN, needs the project owner
+
+```
+Change:   v0.4.15  was  the 57 notation molecules (knowledge, not points)
+          proposed  is  the GENERATOR ENANTIOMER class -- 183 mol / 3.66 pts
+
+Because:  v0.4.14 measured that 183 of the 222 molecules the parity veto reverts are
+          MIRROR_MATCH: the round trip encodes byte-for-byte as the input's own
+          mirror (tools/veto_residue_chirality.py, 222/222 classified, 0 excluded).
+          They sat in `key_equal/slot_renumber` -- a bucket documented as "benign
+          canonicalization" -- because compare._parse_vertex_colors folds reflection
+          deliberately. accept_fn decides by that same key, so the GENERATOR accepted
+          a mirror-image structure and the harness scored it as a string difference.
+
+          At 3.66 pts it is the largest single mechanism left outside `structural`,
+          and unlike `structural` its mechanism is already named.
+
+⚠ NOT AN ENCODER LANE, and that is the whole point of raising it. No canonicalization
+  change should ever "recover" these 183 -- doing so would raise byte_exact by
+  deleting the fact that the generator produced the wrong enantiomer. That is
+  v0.4.11's refuted move with a different lever.
+
+⚠ COMPETES WITH the still-open v0.4.13 decision below (`structural`'s 266 DETACHED,
+  up to 5.32 pts, also one site). Both are now candidates to displace v0.4.15, and
+  they are not mutually exclusive -- but they are both GENERATOR lanes, and the
+  encoder ladder has 1.28 pts of reachable work left in total (39 NOT_A_MIRROR +
+  25 resonance residue). The honest reading is that the ENCODER ladder is nearly
+  exhausted and the remaining distance to 100% is mostly generator work.
+
+Owner decision required. Recorded 2026-07-28 by the v0.4.14 session; NOT self-approved.
+```
 
 ### LADDER DECISION 2026-07-27 — accepted, by the project owner
 

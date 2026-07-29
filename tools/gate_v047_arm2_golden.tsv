@@ -37,7 +37,7 @@ EZURIB_comp_0	4338c73ba5defb759151c6ed66d2a3b9dc32681a6718672c7a091860669fda32	4
 EZUROH_comp_0	3e0571e6388d6790547ca5ce60f3f010519f76649f40a90909db4a95185aada0	3e0571e6388d6790547ca5ce60f3f010519f76649f40a90909db4a95185aada0	102	102	-
 FIBQAK_comp_0	bc5599403843f258444ab7c232fd2ead8fe1ba2c9561b9da05cb27ba108e8d8b	bc5599403843f258444ab7c232fd2ead8fe1ba2c9561b9da05cb27ba108e8d8b	116	116	eta
 FIXDAS_comp_0	927f9c376314b20a645b679535f652d388c928af26b6ed16e366a3927683e3f9	927f9c376314b20a645b679535f652d388c928af26b6ed16e366a3927683e3f9	163	163	eta
-FOJJUM_comp_0	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	191	191	-
+FOJJUM_comp_0	1acf6bbb2118b6d7b83709cbc9b5739b7e64c428fd91f86adc75b2031c2dee1e	e15665f2e792bb64b0b26a4a88fc0515a773279f7fd7c7d8592dcb22ad05fdb7	191	191	-
 FOKQOM_comp_0	c5a32a1cfce64d2f50c6b8d587181faead1175bf7d6d6d80120c4e0b245653e8	c5a32a1cfce64d2f50c6b8d587181faead1175bf7d6d6d80120c4e0b245653e8	89	89	eta
 FUWMAN_comp_0	32f899a1c7dbbb41dc4f16b2d82ef1c87868fb65b6f719c5f78b68638824404c	32f899a1c7dbbb41dc4f16b2d82ef1c87868fb65b6f719c5f78b68638824404c	146	146	-
 FUXMAN_comp_0	a848b3df6481fa2109cfeadb100ff64d49c4547516704306bce240688e784391	a848b3df6481fa2109cfeadb100ff64d49c4547516704306bce240688e784391	117	117	eta
@@ -98,5 +98,26 @@ OROJUB_comp_0	94ad06720afe0c9d7822a12fa2b75794a67bc34b0818c0583971a5498bcd10af	9
 OTIGIJ_comp_0	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	168	168	-
 OVUFUI_comp_0	790e6a7578265dc09c2458ac9320b244264150d69ee1f0781e0d3139f6a2ddcb	790e6a7578265dc09c2458ac9320b244264150d69ee1f0781e0d3139f6a2ddcb	130	130	eta
 PIXGIP_comp_0	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	126	126	eta
-# MANIFEST_SHA256=6f61359bc61af48943e773031f913698005c9c02ef2d893511e36325fc4ab794
+# v0.4.14: rows re-frozen for the OIN_RESONANCE_DONOR_FOLD promotion (default-ON).
+#   Only fields 1-6 (name, sha_in, sha_out, len_in, len_out, eta) are taken from the fresh run.
+#   Fields 7+ are PRESERVED from the previous golden: in a v0.4.9 golden field 7 is the runtime
+#   BAND that `gate_v047.sh arm2 --band` filters on, while a fresh row carries xyz_sha there.
+#   Splicing whole rows would silently break --band for exactly the rows this release touched.
+#   Every changed field-2 (input) hash was verified DETERMINISTIC and lever-attributable by
+#   re-encoding in a FRESH PROCESS per lever setting -- in-process perception memos would
+#   otherwise let the second encode reuse the first one's answer.
+#   ⚠ CORRECTED 2026-07-28. An earlier version of this comment claimed field 3 was a stochastic
+#   generation and that neither flipped row was lever-caused. BOTH CLAIMS WERE WRONG.
+#   Generation is SEEDED (MetalloGenAdapter seed=42) and reproduces exactly across runs.
+#   Measured honestly end-to-end with tools/generator_ab_honest.py (--repeat 2, 0 non-determinism):
+#       HEKFEL_comp_0  byte_exact TRUE with the lever off, FALSE with it on -> a REAL REGRESSION
+#       FOJJUM_comp_0  byte_exact FALSE both ways -> no regression (the old golden's TRUE came
+#                      from arm2's CIRCULAR predicate, get_oin_string(result.mol), not an
+#                      independent re-perception)
+#   ⚠ arm2 is a BYTE-IDENTITY gate, not an accuracy instrument: it scores with the generator's own
+#   bond graph, which OIN_INDEP_SCORE replaced in v0.4.8 at a 9.6% false-positive rate. Do not read
+#   these hashes as a round-trip verdict.
+#   See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md
+#   See docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md
+# MANIFEST_SHA256=96c31a6b6125015bdce49b0b3c2d78929987d3105e3690d7502a6e5d4fcb058c
 #DONE 100

@@ -5,6 +5,119 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.14] - 2026-07-28
+
+> ### The lever worked, the charter didn't — and the charter being wrong is the bigger result.
+>
+> **`byte_exact` 75.88% → 77.30%, +1.42 points — 78 gains against 7 losses, MEASURED over the
+> complete affected population (n = 182 of 182, nothing sampled).**
+> Predicted +3.5–4.1. **The miss is the finding:** 114 of the 204 molecules this release was
+> chartered to close were never reachable by the kind of change it proposed.
+>
+> 🔴 **The offline number this release first reported (+1.56, `bad_direction = 0`) was WRONG, and
+> the way it was wrong is the release's most transferable result.** `fold_key_invariance.py`'s
+> `GENERATOR_NEUTRAL` verdict bounds the *acceptance* step — `accept_fn` decides by key — but the
+> generator's input is the OIN **string**, so a slot relabeling changes `ParsedOIN`, the CoordMap,
+> and the **pool itself**. An offline re-score holds the generated structure fixed, so for a
+> molecule that already round-trips it can only ever print *"still fine"*: **it reports
+> `bad_direction = 0` whether or not losses exist.** Measured honestly end-to-end
+> (`tools/generator_ab_honest.py`) over **all 182 molecules the lever can affect**: **78 gains, 7
+> losses, net +71**. The offline sim had the gains exactly right and was blind only to the losses.
+> **No sweep was needed after all** — the affected population is derivable from coordinates
+> (`tools/lever_string_movers.py`), and an A/B over it is exact, so this is a measured figure.
+> ⚠ **v0.4.13's +3.42 has the same defect**: 197 at-risk molecules, never sampled, measured loss
+> rate **6/40 = 15% → ~30 losses**, so its true net is **~+2.82**, not +3.42.
+>
+> `OIN_RESONANCE_DONOR_FOLD` ships **default-ON**. It ranks a fragment's *constitutional
+> skeleton* — bond orders, aromatic flags, charges and hydrogens erased, connectivity, element and
+> chiral tag kept — so acac written ketone/enol, carboxylates and sulfonates stop being read as two
+> inequivalent donors. Ester `-O-`/`=O`, ether/ketone and amide N/O still do not merge.
+>
+> **🔴 Two blocks were re-filed off the encoder ladder. Neither number moved; who owns them did.**
+>
+> | | n | pts | was | is |
+> |---|---:|---:|---|---|
+> | `rdkit_canonical` | 114 | 2.28 | "RDKit canonical write order" | **80.7% η-set denticity drift** — the generated ring slips, fewer carbons fall inside the bonding cutoff. No string change can reach it |
+> | veto-reverted `slot_renumber` | 183 | 3.66 | "benign canonicalization" | **the generator built the ENANTIOMER.** `byte_exact` failing is CORRECT |
+>
+> The second one is the serious one. `key_equal` is documented as *"benign canonicalization — the
+> win reclaimed"*; for **183 of its 361 remaining members (50.7%)** that is false. They are
+> enantiomer pairs, invisible because `compare._parse_vertex_colors` folds reflection deliberately
+> — **and `accept_fn` decides by that same key**, so the generator accepted a mirror-image
+> structure and the harness recorded it as a same-isomer string difference. Measured, not inferred:
+> `tools/veto_residue_chirality.py` re-encodes the input, the stored round trip, and the *mirrored*
+> input, and reads **222/222 classified, 0 excluded, 183 `MIRROR_MATCH`**.
+>
+> That is the **third** time this project's headline has rested on a metric that folds the axis
+> under test, after v0.4.8 (scored vs honest) and v0.4.11 (the fold itself). The transferable form:
+> **a bucket name that asserts a cause is a hypothesis, not a measurement.**
+>
+> **🔴 The gate that passed was blind, and saying so is the point.** A uniform 250-molecule mirror
+> audit contains **1 of the 179 moved molecules — 0.4% coverage** — so its identical before/after
+> tally proves only that the lever does not damage molecules it never touches. That is v0.4.13's
+> ARM 1 failure reproduced exactly, and it would have shipped as clean evidence if the coverage
+> had not been computed. The gate that *can* see the change runs on a mover-enriched cohort at
+> **179/179 = 100%**: 0 regressions, **0 per-molecule verdict changes**, `achiral_or_preexisting_fold`
+> unmoved at 71, and — the number that separates "safe" from "never fired on anything chiral" —
+> **33 of the 78 gains are on molecules the encoder resolves as chiral and still resolves after.**
+
+### Added
+- **`OIN_RESONANCE_DONOR_FOLD`, promoted default-ON.** Widens `OIN_CANONICAL_DONOR_FOLD`'s
+  donor-equivalence test to the fragment's constitutional skeleton
+  (`canonical_slots._skeleton_ranks`). Grouping is union-find (`_merge_classes`), never a composite
+  key, so the partition can only get **coarser** — a composite key could move a slot into a
+  different bucket and lose a labeling the shipped encoder already reaches. Subject to the same
+  coupling invariant as the fold it widens: only safe with `OIN_FOLD_PARITY_VETO` on, pinned by
+  `test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling`.
+- **`tools/veto_outcome_audit.py`** — separates the parity veto's five outcomes, which no bucket
+  report can, since every reverted molecule lands in the same bucket regardless of why. Over
+  **393/393 movers, 0 excluded: 222/222 `vetoed_collapse`, 0 `no_evidence`.** `levers.py` asserted
+  the veto was alive at corpus scale; this measures it.
+- **`tools/veto_residue_chirality.py`** — settles whether the veto-reverted residue is a generator
+  or an encoder problem, rather than inferring it from `vetoed_collapse` (which is a statement
+  about one structure and its mirror, not about input vs round trip).
+- **`tools/resonance_transition_sim.py`** — both arms re-encode from coordinates, because the state
+  being compared against runs the parity veto and therefore needs a conformer.
+- `tools/fold_key_invariance.py` grew `--lever` / `--holding`. `--holding` is not a convenience:
+  measuring the widening against a fold-OFF baseline would report the *fold's* movement as the
+  widening's.
+
+### Changed
+- `docs/agentic-notes/ROADMAP_100_100.md`: gap re-derived to **`100 − 77.44 = 22.56`**, and the
+  decomposition re-filed by owner — **5.94 points move off the encoder ladder**. The encoder ladder
+  has **1.28 points** of reachable work left (39 `NOT_A_MIRROR` + 25 resonance residue); the rest of
+  the distance to 100% is generator work.
+- arm2 goldens re-frozen for the promotion — **7 of 325 rows** in `gate_v049_arm2_golden.tsv` and
+  **1 of 100** in `gate_v047_arm2_golden.tsv`, `MANIFEST_SHA256` recomputed (arm2 does not verify
+  it, so a stale one goes unseen). ARM 1 is byte-identical, `#DONE 62`. *Coverage of the moved
+  population is a different count and is 12/325 and 2/100 — the v0.4.9 golden predates the donor
+  fold and some of its labelings coincide with today's.*
+  Two traps caught in the re-freeze: only fields 1–6 are taken from the fresh run, because a v0.4.9
+  golden's field 7 is the **band** `--band` filters on while a fresh row carries `xyz_sha` there;
+  and **field 3 is a fresh stochastic generation**, so the two rows whose round-trip status changed
+  (`HEKFEL`, `FOJJUM`) are **not** lever-caused — the deterministic control on the frozen sweep
+  structures reads `True→True` and `False→False` respectively. Both facts are recorded as comments
+  inside the goldens.
+
+### Measured (no code change)
+- **`OIN_PREFILTER_ADVISORY` prevalence — `PREFILTER_VINDICATED`, and it stays default-OFF for a
+  *different reason than the one on record*.** v0.4.13 built the instrument and could only measure
+  `n = 1`. Over a stratified 50-molecule sample (seed 7; 49 measured, 1 hard timeout, **5
+  `INSTRUMENT_DEAD` excluded so the live denominator is 44**): the cheap prefilter vetoed **261**
+  conformers and the strict test disagreed on **4** — **1.5% of vetoes, 2/44 = 4.5% of molecules**.
+  `AROHIA_comp_0`'s `0/48`-vs-`16/48` is an **outlier**, which is exactly what `n = 1` could not say.
+- 🔴 **The latency argument that held it off is refuted.** It is measured **faster**: −478.8 s
+  (−11.6%) over 49 molecules, decomposing to **−498.0 s from the 2 molecules where it acted**
+  (`HUTCOQ_comp_0` alone −495.0 s, an early exit that stopped a long pool fill) and **+19.9 s across
+  the 42 where the predicate ran and it did nothing** (≈ +0.47 s/molecule). Those 42 also give the
+  noise floor: median drift **+0.6 s**. The `_HELD_OFF` entry is corrected — it still holds the
+  lever off, now on the accuracy evidence, because the single fail→pass recovery in the sample is a
+  stochastic A/B on a stochastic generator and cannot carry a corpus projection.
+
+### Fixed
+- Nothing. This release changes what the encoder emits for 78 molecules and what several numbers on
+  the roadmap mean; it fixes no reported defect.
+
 ## [0.4.13] - 2026-07-28
 
 > ### The donor fold ships — and the release that was supposed to cost 55 CPU-hours cost none.

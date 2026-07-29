@@ -309,6 +309,107 @@ def _min_slot(frag: str):
     return min(slots) if slots else _NO_SLOT
 
 
+def _skeleton_ranks(mol):
+    """``CanonicalRankAtoms`` classes of a fragment's **constitutional skeleton**, or ``None``.
+
+    This is the v0.4.14 widening (``OIN_RESONANCE_DONOR_FOLD``). It exists because the strict
+    ranking below reads a **frozen resonance form** as two inequivalent donors:
+
+        acac  ``CC(=O{0})C=C(C)O{1}``          strict ranks 2 / 3   -> never exchanged
+        sulfonate ``O{0}S(=O)(=O{2})...``      strict ranks 2 / 0   -> never exchanged
+
+    Both write one donor as a ketone and its partner as an enol/anion, which is a property of
+    the Kekulé structure the perceiver happened to emit, not of the ligand -- the real ligand is
+    delocalized and its two donors are the same atom. Measured on the v0.4.8 corpus: **101 of
+    the 103** ``key_equal/slot_renumber`` molecules the v0.4.13 fold cannot reach fail on
+    exactly this, ``same_colour_DIFFERENT_rank``.
+
+    The skeleton erases only that bookkeeping -- bond orders, aromatic flags, formal charges and
+    hydrogen counts -- and keeps **connectivity, element and chiral tag**. So it merges what
+    resonance makes equivalent and still refuses what constitution makes different:
+
+        acac O / O            merge      (resonance pair)
+        carboxylate O / O     merge      (resonance pair)
+        ester  -O- / =O       REFUSE     (one is 2-connected, one terminal)
+        ether O / ketone O    REFUSE     (different neighbourhoods)
+        amide  N / O          REFUSE     (different elements)
+
+    ⚠ **Chirality is deliberately retained** -- tags survive the flattening and
+    ``CanonicalRankAtoms``' ``includeChirality`` default of ``True`` consumes them, so this
+    widening does not DISCARD stereochemical information the v0.4.11 strict ranking already
+    used. That is the whole of the claim, and the stronger-sounding version is false: measured
+    on a diol pair, the C2-symmetric ``(R,R)`` arms do **not** merge (over-conservative, a missed
+    fold -- the safe direction) while the meso ``(R,S)`` arms **do**, because they are
+    enantiotopic. Folding an enantiotopic pair is a reflection, and the guard against it is
+    ``fold_parity``'s per-molecule veto, not this ranking. Zeroing charges and hydrogens is safe
+    here; clearing chiral tags would additionally throw away what the strict ranking had.
+
+    Returns ``None`` on any RDKit failure, which the caller treats as "do not widen" -- the
+    same conservative degradation as an unknown geometry.
+    """
+    from rdkit import Chem
+
+    try:
+        rw = Chem.RWMol(mol)
+        for b in rw.GetBonds():
+            b.SetBondType(Chem.BondType.SINGLE)
+            b.SetIsAromatic(False)
+        for a in rw.GetAtoms():
+            a.SetFormalCharge(0)
+            a.SetNoImplicit(True)
+            a.SetNumExplicitHs(0)
+            a.SetIsAromatic(False)
+        skel = rw.GetMol()
+        # Ring perception only. A full sanitize would run the valence check, and the flattened
+        # skeleton is deliberately valence-invalid (a pyridine N with three single bonds and no
+        # charge); rejecting it there would silently disable the widening on every aromatic
+        # ligand -- i.e. on most of the population this exists for.
+        Chem.SanitizeMol(skel, Chem.SANITIZE_SYMMRINGS | Chem.SANITIZE_ADJUSTHS)
+        return list(Chem.CanonicalRankAtoms(skel, breakTies=False))
+    except Exception:  # noqa: BLE001 -- an unrankable skeleton simply does not widen the fold
+        return None
+
+
+def _merge_classes(slots, key_of, alt_key_of):
+    """Group ``slots`` by ``key_of``, then merge groups that also agree under ``alt_key_of``.
+
+    Union-find rather than a single composite key, because the widening must be a **coarsening**
+    of the strict grouping and nothing else. Keying on the pair would let a slot whose alternate
+    key differs land in a *different* bucket than it does today, which could make the candidate
+    set smaller rather than larger and lose a labeling the shipped encoder can reach. Two slots
+    end up together iff they agree under ``key_of`` **or** under ``alt_key_of`` (transitively),
+    so the partition can only get coarser.
+    """
+    parent = {s: s for s in slots}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    for keyfn in (key_of, alt_key_of):
+        seen: dict = {}
+        for s in slots:
+            k = keyfn(s)
+            if k is None:
+                continue
+            if k in seen:
+                union(seen[k], s)
+            else:
+                seen[k] = s
+
+    out: dict = {}
+    for s in slots:
+        out.setdefault(find(s), []).append(s)
+    return list(out.values())
+
+
 def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) -> list[dict]:
     """Slot permutations exchanging **interchangeable donors within one fragment**.
 
@@ -317,7 +418,8 @@ def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) ->
     fragment may be exchanged when both hold:
 
     (a) their donor atoms lie in the same ``CanonicalRankAtoms(breakTies=False)`` symmetry
-        class of that fragment, and
+        class of that fragment -- or, with ``OIN_RESONANCE_DONOR_FOLD`` on, in the same class
+        of its constitutional skeleton (see :func:`_skeleton_ranks`), and
     (b) they carry the same vertex colour.
 
     Always includes the identity, so the caller's candidate set is a superset of the
@@ -353,6 +455,9 @@ def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) ->
 
     from .compare import _parse_fragment
     from .inline import OINInlineHandler, _count_smiles_atoms_before
+    from .levers import lever_enabled
+
+    resonance = lever_enabled("OIN_RESONANCE_DONOR_FOLD")
 
     buckets_all: list[tuple[int, ...]] = []
     for frag in frags:
@@ -373,13 +478,28 @@ def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) ->
             ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
         except Exception:  # noqa: BLE001  -- an unrankable fragment simply does not fold
             continue
-        by_class: dict[tuple, list[int]] = {}
-        for slot, atoms in sorted(slot_atoms.items()):
-            if any(i >= len(ranks) for i in atoms):
-                continue
-            key = (tuple(sorted(ranks[i] for i in atoms)), vcolor.get(slot))
-            by_class.setdefault(key, []).append(slot)
-        buckets_all.extend(tuple(sorted(s)) for s in by_class.values() if len(s) > 1)
+        usable = [
+            slot
+            for slot, atoms in sorted(slot_atoms.items())
+            if not any(i >= len(ranks) for i in atoms)
+        ]
+
+        def _strict_key(slot, _ranks=ranks, _atoms=slot_atoms):
+            return (tuple(sorted(_ranks[i] for i in _atoms[slot])), vcolor.get(slot))
+
+        skel = _skeleton_ranks(mol) if resonance else None
+
+        def _skel_key(slot, _skel=skel, _atoms=slot_atoms):
+            # ``None`` means "this key has no opinion", and `_merge_classes` skips it. That is
+            # what makes the lever-off path byte-identical: with no skeleton there is no second
+            # pass, so the partition is exactly the strict grouping it was before.
+            if _skel is None or any(i >= len(_skel) for i in _atoms[slot]):
+                return None
+            return (tuple(sorted(_skel[i] for i in _atoms[slot])), vcolor.get(slot))
+
+        for group in _merge_classes(usable, _strict_key, _skel_key):
+            if len(group) > 1:
+                buckets_all.append(tuple(sorted(group)))
 
     if not buckets_all:
         return [{}]
