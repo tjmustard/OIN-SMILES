@@ -50,6 +50,8 @@ $V tools/generator_ab_honest.py --cohort-dir <cohort-v0.4.5-5k> \
 | drawn from the **78 claimed gains** (seed 7) | 20 | **19 real gains, 0 losses** |
 | drawn from the **39 movers already `byte_exact`** (seed 11) | 20 | **0 gains, 3 REAL LOSSES** |
 | `HEKFEL_comp_0`, `--repeat 2` | 1 | **REAL LOSS**, `OFF=True → ON=False`, 0 non-determinism |
+| **the COMPLETE affected population** | **182** | **78 gains, 7 losses, net +71** |
+| v0.4.13's at-risk population (seed 13) | 40 | **0 gains, 6 REAL LOSSES** |
 
 **`GENERATED output moved` — 10 of 20 and 8 of 20 respectively.** That counter is the direct
 observation of the hole: the lever changed the string the generator consumes, so it embedded
@@ -76,17 +78,29 @@ this one measurement.
 
 ## 4. Corrected headline
 
-| | claimed (offline) | corrected (honest end-to-end) |
-|---|---|---|
-| gains | 78 | **~74** (19/20 sampled confirmed = 95%) |
-| losses | **0** | **~6** (3/20 sampled of 39 at-risk = 15%) |
-| net | +78 mol / **+1.56 pts** | **~+68 mol / ~+1.36 pts** |
-| `byte_exact` | 77.44% | **~77.25%** |
+| | claimed (offline) | sample estimate | **MEASURED, full population** |
+|---|---|---|---|
+| gains | 78 | ~74 | **78** |
+| losses | **0** | ~6 | **7** |
+| net | +78 mol / **+1.56 pts** | ~+68 / ~+1.36 | **+71 mol / +1.42 pts** |
+| `byte_exact` | 77.44% | ~77.25% | **77.30%** |
 
-Range over the plausible corners of both samples: **+0.94 to +1.51 points.** The lever stays
-**default-ON** — it is net-positive across the entire range — but the release ships a **point
-estimate with a stated method**, not a measured figure. **The exact number requires a sweep**, and
-that sweep is now owed.
+`n = 182 of 182`, nothing sampled. **No sweep was needed after all.** The population a lever can
+affect is derivable from coordinates (`tools/lever_string_movers.py`): 93 molecules move
+`encode(input)`, and the union with the generated-side movers is 182. Every other molecule receives
+a byte-identical input string, and generation is seeded, so it is unchanged **by construction**. An
+A/B over the affected set is therefore *exact*, at a fraction of a ~55 CPU-h sweep.
+
+**The offline sim had the GAINS exactly right (78).** It was blind only to the losses — which is its
+defining limitation rather than bad luck: it re-encodes a *fixed* structure, so for a molecule that
+already round-trips it can only print "still fine".
+
+### v0.4.13 has the same defect, and it is larger
+
+Its at-risk population — movers that were already `byte_exact` — is **197**, and was never sampled.
+Measured on 40 of them (seed 13): **6 losses, 15%**, implying **~30 losses** against 171 claimed
+gains. So v0.4.13's true net is **~+2.82 points, not +3.42**. Its gain side is not sampled here, so
+that figure is an upper bound.
 
 ## 5. What the losses actually are — and why they are a v0.4.15 finding
 

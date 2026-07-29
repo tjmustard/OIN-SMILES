@@ -35,7 +35,7 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **~77.25%** *(v0.4.14, point estimate — a sweep is owed)* | **100%** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **77.30%** *(honest, v0.4.14, measured end-to-end)* | **100%** |
 | **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
 
 ⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
@@ -43,10 +43,10 @@ silently yields `0` — **and it is a SUM** over up to three separately SIGKILLe
 The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
 rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − ~77.25 = ~22.75` points (v0.4.14 point estimate; **a sweep is owed**)
+## The gap — `100 − 77.30 = 22.70` points (v0.4.14, measured end-to-end)
 
 ⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON for a
-net of **~+68 molecules / ~+1.36 points**. The previous copy read `100 − 75.88 = 24.12`.
+net of **+71 molecules / +1.42 points** (78 gains, 7 losses). The previous copy read `100 − 75.88 = 24.12`.
 
 🔴 **The counts below are the OFFLINE ones and are approximately, not exactly, right.** v0.4.14's
 offline re-score reported +78/0 losses; measured end-to-end it is ~74 gains against ~6 losses,

@@ -9,7 +9,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 > ### The lever worked, the charter didn't — and the charter being wrong is the bigger result.
 >
-> **`byte_exact` 75.88% → ~77.25%, ~+1.36 points (point estimate), ~74 gains against ~6 losses.**
+> **`byte_exact` 75.88% → 77.30%, +1.42 points — 78 gains against 7 losses, MEASURED over the
+> complete affected population (n = 182 of 182, nothing sampled).**
 > Predicted +3.5–4.1. **The miss is the finding:** 114 of the 204 molecules this release was
 > chartered to close were never reachable by the kind of change it proposed.
 >
@@ -20,9 +21,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > and the **pool itself**. An offline re-score holds the generated structure fixed, so for a
 > molecule that already round-trips it can only ever print *"still fine"*: **it reports
 > `bad_direction = 0` whether or not losses exist.** Measured honestly end-to-end
-> (`tools/generator_ab_honest.py`): 19/20 sampled gains are real, **3/20 sampled molecules that
-> were already `byte_exact` LOSE**, and `HEKFEL_comp_0` is a confirmed regression. v0.4.13
-> cancelled a chartered 55 CPU-h sweep on this same licence; **a sweep is now owed.**
+> (`tools/generator_ab_honest.py`) over **all 182 molecules the lever can affect**: **78 gains, 7
+> losses, net +71**. The offline sim had the gains exactly right and was blind only to the losses.
+> **No sweep was needed after all** — the affected population is derivable from coordinates
+> (`tools/lever_string_movers.py`), and an A/B over it is exact, so this is a measured figure.
+> ⚠ **v0.4.13's +3.42 has the same defect**: 197 at-risk molecules, never sampled, measured loss
+> rate **6/40 = 15% → ~30 losses**, so its true net is **~+2.82**, not +3.42.
 >
 > `OIN_RESONANCE_DONOR_FOLD` ships **default-ON**. It ranks a fragment's *constitutional
 > skeleton* — bond orders, aromatic flags, charges and hydrogens erased, connectivity, element and

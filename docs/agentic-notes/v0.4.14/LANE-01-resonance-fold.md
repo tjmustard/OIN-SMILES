@@ -1,7 +1,7 @@
 # v0.4.14 Lane 1 — `OIN_RESONANCE_DONOR_FOLD`, built, measured, promoted
 
-**Result: `byte_exact` 75.88% → ~77.25%, ~+1.36 points (point estimate), ~74 gains against ~6
-losses.**
+**Result: `byte_exact` 75.88% → 77.30%, +1.42 points — 78 gains, 7 losses, net +71. MEASURED over
+all 182 molecules the lever can affect (n = 182 of 182).**
 
 > 🔴 **SUPERSEDED IN PART.** This lane first reported **+1.56 points, 0 in a bad direction**, from
 > an offline re-score. That instrument **cannot express a loss** — see

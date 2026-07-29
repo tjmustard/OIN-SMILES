@@ -152,8 +152,8 @@ import os
 #: to the SAME coupling invariant as the fold it widens: only safe with OIN_FOLD_PARITY_VETO on,
 #: pinned by test_resonance_donor_fold::TestResonanceFoldInheritsTheVetoCoupling.
 #:
-#: WHAT IT BUYS: **~+1.36 points (point estimate), ~74 gains against ~6 losses**, byte_exact
-#: 75.88% -> ~77.25%.
+#: WHAT IT BUYS: **+1.42 points -- 78 gains, 7 losses, net +71 molecules**, byte_exact
+#: 75.88% -> 77.30%. MEASURED end-to-end over all 182 molecules the lever can affect.
 #:
 #: 🔴 THE FIRST NUMBER THIS LEVER SHIPPED WITH (+1.56, bad_direction = 0) WAS WRONG. It came from an
 #: offline re-score licensed by fold_key_invariance.py reading 0 keys changed. That verdict bounds
@@ -161,13 +161,19 @@ import os
 #: so a slot relabeling changes ParsedOIN, the CoordMap, and the POOL ITSELF. An offline re-score
 #: holds the generated structure fixed, so for a molecule that already round-trips it can only ever
 #: print "still fine": it reports bad_direction = 0 whether or not losses exist.
-#: Measured honestly end-to-end (tools/generator_ab_honest.py, seeded generator, --repeat verified):
-#:     20 sampled from the 78 claimed gains  -> 19 real gains, 0 losses
-#:     20 sampled from the 39 movers that were ALREADY byte_exact -> 0 gains, 3 REAL LOSSES
-#:     HEKFEL_comp_0 -> REAL LOSS (OFF=True, ON=False), 0 non-determinism over 2 repeats
-#: Extrapolated: ~74 gains, ~6 losses, net ~+68 molecules. Range over both samples' plausible
-#: corners: +0.94 to +1.51 points. Net-positive across the whole range, which is why it stays ON --
-#: but this is a POINT ESTIMATE WITH A METHOD, not a measured figure, and A SWEEP IS OWED.
+#: Measured honestly end-to-end (tools/generator_ab_honest.py, seeded generator), over the COMPLETE
+#: affected population rather than a sample -- tools/lever_string_movers.py derives it from
+#: coordinates (93 molecules move encode(input); union with the generated-side movers is 182), and
+#: every other molecule is unchanged BY CONSTRUCTION because it receives an identical input string:
+#:     n = 182 of 182   78 REAL GAINS   7 REAL LOSSES   net +71
+#: So no sweep was needed: the affected set is derivable, and an A/B over it is exact.
+#: The offline sim had the GAINS exactly right (78) and was blind only to the losses -- which is its
+#: defining limitation, not bad luck: it re-encodes a FIXED structure, so for a molecule that
+#: already round-trips it can only ever print "still fine".
+#: ⚠ The 7 losses are NOT the encoder emitting a wrong string. The encoder is canonical in both
+#: arms; the GENERATOR, handed an equally valid but differently-LABELLED input, builds a worse
+#: structure. The generator's output depends on the slot labeling of its input and it should not.
+#: Every future canonicalization lever pays this, which is why it is a v0.4.15 lane.
 #: See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md.
 #:
 #: WHY THE GAINS ARE THE RIGHT ONES. All 78 land inside the 103-molecule class the v0.4.13 fold
