@@ -85,7 +85,12 @@ ALLOW = [
     # loss motivated this tool -- the two mirror arms are the same kind of file as v0.4.11's
     # vanished 19/250 audit, and `fold_transition_veto.json` names all 171 molecules behind the
     # +3.42 headline, which no prose in `docs/` reproduces.
-    "mirror_arm*.json",
+    # ⚠ `mirror_*` deliberately, NOT `mirror_arm*`. The narrower pattern was written first and
+    # silently dropped `mirror_cat_{promoted,noveto}.json` -- the arms that reproduce v0.4.12's
+    # PUBLISHED gate (19 -> 0), i.e. half the evidence the v0.4.13 promotion rests on. Caught only
+    # because the dry-run's file list was read line by line against the scratchpad. A too-narrow
+    # allowlist fails exactly like a broken instrument: it prints a plausible total.
+    "mirror_*.json",
     "fold_*.json",
     "attach_class_audit.json",
     "prefilter_*.json",
@@ -131,8 +136,15 @@ PROVENANCE = [
     # v0.4.13's instruments.
     (
         r"^mirror_arm([AB])_(\w+)\.json$",
-        "tools/mirror_audit_donor_fold.py --dataset <cohort> --n 250 --seed 7"
-        "   (arm {0}: {1}; arm B sets OIN_FOLD_PARITY_VETO=0)",
+        "tools/mirror_audit_donor_fold.py --dataset <cohort-v0.4.5-5k> --n 250 --seed 7"
+        "   (arm {0}: {1}; the noveto arm sets OIN_FOLD_PARITY_VETO=0) -- mixed cat+photo draw,"
+        " reads 33 collapses -> 0",
+    ),
+    (
+        r"^mirror_cat_(\w+)\.json$",
+        "tools/mirror_audit_donor_fold.py --dataset <cat> --n 250 --seed 7"
+        "   ({0}; the noveto arm sets OIN_FOLD_PARITY_VETO=0) -- CAT-ONLY draw, reproduces"
+        " v0.4.12's published 19 -> 0 with achiral unmoved at 157",
     ),
     (
         r"^fold_transition_(fold|veto)\.json$",

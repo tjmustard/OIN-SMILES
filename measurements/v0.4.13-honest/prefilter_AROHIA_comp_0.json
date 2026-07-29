@@ -1,0 +1,49 @@
+{
+  "verdict": "DEFECT_CONFIRMED",
+  "n_molecules": 1,
+  "totals": {
+    "off": {
+      "adapter.prefilter_veto_overridden": 0,
+      "adapter.prefilter_veto_confirmed": 0,
+      "adapter.prefilter_cheap_pass": 0,
+      "adapter.prefilter_veto_advisory": 0
+    },
+    "on": {
+      "adapter.prefilter_veto_overridden": 2,
+      "adapter.prefilter_veto_confirmed": 1,
+      "adapter.prefilter_cheap_pass": 0,
+      "adapter.prefilter_veto_advisory": 3
+    }
+  },
+  "n_recovered": 0,
+  "elapsed_off_s": 22.73,
+  "elapsed_on_s": 2.52,
+  "rows": [
+    {
+      "molecule": "AROHIA_comp_0",
+      "off": {
+        "counts": {
+          "embed.best_rejected_returned": 11,
+          "pool.attempts_spent": 1,
+          "adapter.early_exit_miss": 1
+        },
+        "elapsed_s": 22.73,
+        "passed": true,
+        "error": null
+      },
+      "on": {
+        "counts": {
+          "adapter.prefilter_veto_advisory": 3,
+          "adapter.prefilter_veto_confirmed": 1,
+          "adapter.prefilter_veto_overridden": 2,
+          "pool.attempts_spent": 1,
+          "adapter.early_exit_hit": 1
+        },
+        "elapsed_s": 2.52,
+        "passed": true,
+        "error": null
+      },
+      "recovered": false
+    }
+  ]
+}

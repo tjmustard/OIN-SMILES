@@ -57,16 +57,29 @@ meet, and the reason each lever's charter has to name the others it can interact
 ## 4. What the fixture says
 
 `AROHIA_comp_0`, the two-point gate (the answer is known independently, so a zero here means the
-lever is not wired):
+lever is not wired). **Scored honestly** — the distinction matters, see §5.3:
 
-| | |
-|---|---:|
-| cheap veto, strict **ACCEPTS** (`overridden`) | **2** |
-| cheap veto, strict rejects (`confirmed`) | 1 |
-| molecules recovered (fail → pass) | **0 / 1** |
+| | lever OFF | lever ON |
+|---|---|---|
+| `prefilter_veto_overridden` | — | **2** |
+| `prefilter_veto_confirmed` | — | 1 |
+| how acceptance ended | `early_exit_**miss**` | `early_exit_**hit**` |
+| what was returned | `embed.best_rejected_returned: 11` — a **previously-rejected** conformer, via the geometry fallback | a conformer the strict test **accepted** |
+| round-trips (honest) | **True** | **True** |
+| elapsed | 22.73 s | **2.52 s** |
 
-**Both halves are results.** The prefilter does reject conformers the strict test would take — and
-overriding it did **not** make this molecule round-trip.
+**Read the `recovered = 0` correctly: it is 0 because BOTH arms already pass, not because both
+fail.** The accuracy delta on this molecule is genuinely nil.
+
+**What does change is how the pass is obtained.** With the lever off, `accept_fn` accepts
+*nothing* and `_select_by_geometry` hands back a conformer acceptance had already rejected — the
+same unguarded-fallback path that Lane 2 measures at **280 molecules corpus-wide** (the GAVSED
+class). With the lever on, one of the two overridden conformers is *accepted on its merits*, and
+the molecule finishes **9× faster**.
+
+So on n = 1 the lever converts *"accept nothing, return a reject and hope"* into *"accept a
+conformer the independent test endorses"*, at the same honest verdict. Whether that is worth
+anything at corpus scale is exactly the unmeasured question.
 
 ## 5. Three reasons these numbers are not what they look like
 
@@ -78,13 +91,24 @@ overriding it did **not** make this molecule round-trip.
 2. **The −20 s latency delta is not a speed claim.** It is early exit, and it was taken on a loaded
    machine besides. v0.4.12 measured `UQUXAG_comp_0` at 17.93 s loaded vs 11.06 s clean — a 62%
    inflation, comparable to the whole effect — and discarded the loaded run.
-3. **🔴 The first version of this tool scored with the CIRCULAR predicate.** It used
-   `get_oin_string(res.mol, coords)` — the generator's own bond graph, the exact thing v0.4.8
-   replaced — copied from the older A/B tools in `tools/`. That is uniquely wrong *here*: this
-   lane's entire subject is a disagreement between the cheap and strict predicates, so scoring the
-   outcome with the cheap one judges the lever by the very test it exists to override, and would
-   report "recovered nothing" **by construction**. Fixed to re-perceive the written XYZ. The
-   verdict on AROHIA did not change — but it was unquotable until it did.
+3. **🔴 The first version of this tool scored with the CIRCULAR predicate, and it INVERTED the
+   answer.** It used `get_oin_string(res.mol, coords)` — the generator's own bond graph, the exact
+   thing v0.4.8 replaced — copied from the older A/B tools in `tools/`. Uniquely wrong *here*,
+   because this lane's entire subject is a cheap-vs-strict disagreement: scoring the outcome with
+   the cheap predicate judges the lever by the very test it exists to override.
+
+   **It did not merely blur the result — it reversed it:**
+
+   | scored with | lever OFF | lever ON |
+   |---|---|---|
+   | `get_oin_string(res.mol, coords)` — circular | `passed=False` | `passed=False` |
+   | `XYZToSMILES().convert(<written xyz>)` — honest | **`passed=True`** | **`passed=True`** |
+
+   Identical telemetry, opposite verdict. The circular predicate calls `AROHIA_comp_0` a **double
+   failure** when independent re-perception says it round-trips in both arms — a live, single-
+   molecule instance of the 8 false negatives v0.4.8 measured, reproduced by accident while
+   building something else. Anything written from the first run would have said "the molecule
+   fails either way"; the truth is "it passes either way, by different routes".
 
 ## 6. Why this stops here
 

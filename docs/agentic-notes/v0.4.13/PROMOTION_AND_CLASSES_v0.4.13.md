@@ -166,16 +166,22 @@ state its gate's *coverage of the moved population*, not just its verdict.
 ## 6. Lane 1 — the prefilter defect is real, and overriding it recovers nothing here
 
 `OIN_PREFILTER_ADVISORY` is built, registered default-OFF, and instrumented. The wiring gate on
-`AROHIA_comp_0` — where the answer is known independently — reads:
+`AROHIA_comp_0` — where the answer is known independently — reads, **scored honestly**:
 
-| | |
-|---|---:|
-| cheap veto, strict **ACCEPTS** (`overridden`) | **2** |
-| cheap veto, strict rejects (`confirmed`) | 1 |
-| molecules recovered (fail → pass) | **0 / 1** |
+| | lever OFF | lever ON |
+|---|---|---|
+| `prefilter_veto_overridden` / `_confirmed` | — | **2** / 1 |
+| how acceptance ended | `early_exit_`**`miss`** | `early_exit_`**`hit`** |
+| what was returned | a **previously-rejected** conformer, via the geometry fallback | a conformer the strict test **accepted** |
+| round-trips (honest) | **True** | **True** |
+| elapsed | 22.73 s | **2.52 s** |
 
-So the defect is **confirmed** — the cheap prefilter does reject conformers the strict test takes —
-and **overriding it did not make the molecule round-trip**. Both halves are results.
+The defect is **confirmed**: the cheap prefilter rejects conformers the strict test takes. But
+**`recovered = 0` because both arms already pass**, not because both fail — the accuracy delta on
+this molecule is nil. What changes is *how* the pass is obtained: lever-off, `accept_fn` accepts
+nothing and `_select_by_geometry` returns a conformer acceptance had already rejected — the same
+unguarded fallback Lane 2 measures at **280 molecules corpus-wide**. Lever-on, a conformer is
+accepted on its merits, 9× faster.
 
 Three cautions, all of which change how the numbers read:
 
@@ -185,12 +191,13 @@ Three cautions, all of which change how the numbers read:
    defect observed until it stopped mattering, not a smaller one.
 2. **The negative latency delta (−20 s) is not a speed claim** — it is early exit, and it was
    measured on a loaded machine besides.
-3. **The first version of this tool scored the outcome with `get_oin_string(res.mol, coords)`** —
-   the generator's own bond graph, the circular predicate v0.4.8 replaced. That is uniquely wrong
-   *here*, because this lane's entire subject is a disagreement between the cheap and strict
-   predicates: scoring with the cheap one judges the lever by the very test it exists to override.
-   Fixed to re-perceive the written XYZ. The verdict did not change on AROHIA, but it would have
-   been unquotable.
+3. **🔴 The first version of this tool scored with `get_oin_string(res.mol, coords)` — the
+   circular predicate v0.4.8 replaced — and it INVERTED the answer.** Identical telemetry, opposite
+   verdict: circular reads `passed=False` in **both** arms, honest reads `passed=True` in **both**.
+   Anything written from that run would have said "the molecule fails either way"; the truth is "it
+   passes either way, by different routes". A live single-molecule instance of the 8 false
+   negatives v0.4.8 measured, reproduced by accident while building something else — and a
+   reminder that the circular predicate still lurks in the older A/B tools this one was copied from.
 
 **Corpus prevalence is NOT measured.** n = 1 is exactly what the charter forbids quoting, so this
 lane is honestly incomplete and is handed to v0.4.14 with its instrument built and gated.
