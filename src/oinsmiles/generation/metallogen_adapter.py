@@ -24,6 +24,7 @@ from ..generator3d import (
     # Re-exported so the three generation-failure types are importable from one place;
     # BudgetExhaustedError is raised inside generator3d (that is where the deadline
     # lives) but belongs to the same vocabulary as the two defined below.
+    ACCEPT_INCUMBENT,
     BudgetExhaustedError,  # noqa: F401 -- public re-export, see docstring above
     clash,
     generate_3d_structures,
@@ -32,7 +33,7 @@ from ..generator3d import (
     om,
 )
 from ..oin.axial import mol_axial_token, parse_axial_token
-from ..oin.compare import canonical_roundtrip_key
+from ..oin.compare import canonical_roundtrip_key, normalize_oin_for_comparison
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
 from ..oin.levers import lever_enabled
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
@@ -1540,6 +1541,35 @@ def _reencode_oin(mol):
                 pass
 
 
+def _string_exact_match(parsed, full) -> bool:
+    """Does ``full`` equal the requested OIN under the benign comparison normalization?
+
+    ``OIN_ACCEPT_STRING_EXACT`` (v0.4.15 Lane 2). The round-trip key deliberately folds
+    reflection -- ``compare._parse_vertex_colors`` colours every donor of a ligand with that
+    ligand's WHOLE body, so a transposition of two same-coloured donors (an odd permutation,
+    i.e. a reflection) is invisible to the vertex signature. The normalized STRING keeps absolute
+    slot numbers, so it sees exactly that. Measured over the 183 known ``MIRROR_MATCH``
+    molecules on the v0.4.14 baseline sweep: normalized strings differ 183/183, keys agree
+    183/183.
+
+    Normalized rather than raw, deliberately. Raw carries the metal ``@OH``/``@SP`` labels, which
+    the encoder documents as atom-order-dependent and not reproducible, so requiring raw equality
+    would reject nearly everything. ``normalize_oin_for_comparison`` strips precisely those and
+    keeps slots and winding -- strictly between the key (too loose) and raw (too strict).
+
+    Returns ``True`` when there is nothing to compare or the comparison raises: a conformer is
+    never demoted on ignorance, only on evidence.
+    """
+    try:
+        target = getattr(parsed, "original_oin", None)
+        if not target or not full:
+            return True
+        return normalize_oin_for_comparison(full) == normalize_oin_for_comparison(target)
+    except Exception:
+        logger.debug("string-exact comparison failed for a conformer", exc_info=True)
+        return True
+
+
 def _reencode_key_matches(
     parsed,
     m,
@@ -1680,6 +1710,12 @@ def _reencode_key_matches(
         # strict independent test ACCEPTS it -- a conformer that the shipped default silently
         # discards. This is the lane's whole quantity.
         _telemetry.record("adapter.prefilter_veto_overridden")
+    # OIN_ACCEPT_STRING_EXACT (v0.4.15 Lane 2): the key matched, but the key FOLDS REFLECTION.
+    # Ask the question the metric actually asks -- do the strings agree -- and if not, hand back
+    # ACCEPT_INCUMBENT so the pool keeps looking while this conformer stays available.
+    if lever_enabled("OIN_ACCEPT_STRING_EXACT") and not _string_exact_match(parsed, full):
+        _telemetry.record("adapter.string_exact_incumbent")
+        return ACCEPT_INCUMBENT
     return True
 
 
@@ -1827,19 +1863,28 @@ def _select_by_geometry_impl(
         )
         if target_key is not None:
             require_no_stretch = clash.STRETCHED_BOND_ENABLED
+            # OIN_ACCEPT_STRING_EXACT: the first key-matching-but-string-different conformer,
+            # kept so this re-scan still returns something when no conformer is string-exact.
+            _string_incumbent = None
             for m in mols:
                 cmol = build_contract_mol(parsed, m)
                 if cmol is None:
                     continue
+                _verdict = _reencode_key_matches(
+                    parsed,
+                    m,
+                    target_key,
+                    cmol=cmol,
+                    require_no_stretch=require_no_stretch,
+                    cache=reencode_cache,
+                )
+                if _verdict is ACCEPT_INCUMBENT and _string_incumbent is None:
+                    _string_incumbent = (m, cmol)
                 if (
-                    _reencode_key_matches(
-                        parsed,
-                        m,
-                        target_key,
-                        cmol=cmol,
-                        require_no_stretch=require_no_stretch,
-                        cache=reencode_cache,
-                    )
+                    # ⚠ `is True`, not truthiness: ACCEPT_INCUMBENT is a truthy object, and
+                    # reading it as acceptance here would return the very conformer the lever
+                    # exists to step over.
+                    _verdict is True
                     and (target_axial is None or mol_axial_token(cmol) == target_axial)
                     and (
                         # Reproduce the requested Delta/Lambda, not merely the fac/mer key.
@@ -1858,6 +1903,12 @@ def _select_by_geometry_impl(
                         logger.debug("accept-first(eta): conformer matched the requested winding")
                         _telemetry.record("adapter.early_exit_hit_eta")
                         return m, cmol
+            if _string_incumbent is not None:
+                # No conformer was string-exact, but one carried the requested key. That is what
+                # the pre-lever code returned here, so this is the no-regression floor.
+                logger.debug("accept-first: no string-exact conformer; returning the incumbent")
+                _telemetry.record("adapter.string_exact_early_exit_incumbent")
+                return _string_incumbent
             _telemetry.record("adapter.early_exit_miss", n_mols=len(mols))
 
     target = _norm_geo_code(parsed.geo_code)
@@ -2281,7 +2332,7 @@ class MetalloGenAdapter:
                     cmol = build_contract_mol(parsed, mg_mol)
                     if cmol is None:
                         return False
-                    if _reencode_key_matches(
+                    _verdict = _reencode_key_matches(
                         parsed,
                         mg_mol,
                         _pk,
@@ -2289,7 +2340,13 @@ class MetalloGenAdapter:
                         require_no_stretch=_rns,
                         cache=_cache,
                         independent_confirm=_ic,
-                    ) and (_ax is None or mol_axial_token(cmol) == _ax):
+                    )
+                    if _verdict is ACCEPT_INCUMBENT:
+                        # Propagate the sentinel rather than collapsing it to True. Truthiness
+                        # here would accept the conformer this lever exists to step over; False
+                        # would throw away the only fallback the pool has.
+                        return ACCEPT_INCUMBENT
+                    if _verdict and (_ax is None or mol_axial_token(cmol) == _ax):
                         return True
                     # The key did not match. For an eta molecule the key is STRICTER than the
                     # test that ultimately decides success (_select_by_geometry's winding
