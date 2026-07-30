@@ -117,6 +117,15 @@ ALLOW = [
     # allowlist failure the `mirror_arm*` note above records, one release later.
     "attach_*.json",
     "string_exact_*.json",
+    # The v0.4.15 three-arm A/B output. ⚠ CHECKED BEFORE THE ARMS FINISHED, and it is as well:
+    # none of `*_ab.json`, `generator_ab*.json`, `ab_*.json` or `cohort_*.json` matches
+    # `lane1_pop_*.json`, so the release's LOAD-BEARING measurement would have been dropped in
+    # silence -- the third time this allowlist has been one pattern too narrow (see the
+    # `mirror_arm*` and `attach_class_audit.json` notes above). Verified by running the real
+    # fnmatch over the real filenames rather than by reading the list.
+    "lane1_*.json",
+    "lane2_*.json",
+    "both_*.json",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -169,6 +178,25 @@ PROVENANCE = [
         "tools/veto_residue_chirality.py --outcomes veto_outcomes.json --sweep <frozen sweep>"
         "   (183/222 MIRROR_MATCH on the v0.4.8 corpus; 201/242 re-derived on the v0.4.14"
         " baseline sweep: the round trip built the ENANTIOMER)",
+    ),
+    (
+        r"^(lane1|lane2|both)_pop_(.+)\.json$",
+        "tools/run_v0415_arms.sh {0}   (v0.4.15 three-arm A/B over population {1}, via"
+        " generator_ab_honest.py -- REAL generation, scored by re-perceiving the WRITTEN XYZ."
+        " `both` holds OIN_ATTACH_RETURN on and varies OIN_ACCEPT_STRING_EXACT, i.e. Lane 2's"
+        " MARGINAL effect. ⚠ The first run of these arms was VOID: the tool's own"
+        " sys.path.insert overrode PYTHONPATH and every arm imported main's oinsmiles, where"
+        " neither lever exists, so both sides ran identical code and returned a flawless null."
+        " The runner now invokes the tool out of the arm's own checkout and refuses to start"
+        " unless oinsmiles resolves there)",
+    ),
+    (
+        r"^selection_pool_probe.*\.json$|^string_exact_pool_probe.*\.json$",
+        "tools/selection_pool_probe.py --lever <NAME> --molecules-file <population>"
+        "   (counts, per molecule, how many candidate conformers a lever EXAMINED AND REJECTED."
+        " A zero-recovery result is only a finding once the rejection count is NON-ZERO;"
+        " otherwise it is a wiring failure. ⚠ run it out of the tree under test -- it has the"
+        " same sys.path.insert property)",
     ),
     (
         r"^attach_return_preflight\.json$",
