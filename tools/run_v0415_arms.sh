@@ -64,15 +64,35 @@ if [ ! -d "$SRC/src" ]; then
   exit 1
 fi
 
-# Each arm runs against ITS OWN checkout. An A/B through one tree cannot isolate the code under
-# test -- the lever is read at runtime here, but the worktree is what carries the lane's code.
+# 🔴 EACH ARM MUST RUN THE TOOL OUT OF ITS OWN CHECKOUT, and PYTHONPATH IS NOT ENOUGH.
+#
+# `generator_ab_honest.py` line 78 does
+#     sys.path.insert(0, <dirname(__file__)>/../src)
+# which puts ITS OWN checkout's src at position 0 and therefore OVERRIDES PYTHONPATH. The first
+# version of this script set PYTHONPATH=$SRC/src but invoked $MAIN/tools/generator_ab_honest.py,
+# so all six arms imported MAIN's oinsmiles -- where neither v0.4.15 lever exists. Both sides of
+# every A/B ran identical code and every arm returned a perfectly clean
+# "0 gains, 0 losses, output moved 0". A broken A/B prints exactly the null a real one would.
+#
+# Invoking $SRC/tools/... turns that self-locating insert from a trap into the guarantee: the
+# tool, the code it imports and the lever under test all come from one tree. PYTHONPATH is kept
+# as a belt-and-braces second signal, not as the mechanism.
+TOOL=$SRC/tools/generator_ab_honest.py
 export PYTHONPATH=$SRC/src
+
+# Prove it before spending hours: the resolved package must live under $SRC, not $MAIN.
+resolved=$("$V" -c "import sys,os; sys.path.insert(0, os.path.join('$SRC','src')); import oinsmiles; print(oinsmiles.__file__)")
+case "$resolved" in
+  "$SRC"/src/oinsmiles/*) echo "  code under test: $resolved" ;;
+  *) echo "🔴 REFUSING: oinsmiles resolves to $resolved, not $SRC/src -- the arm would measure the wrong tree" >&2
+     exit 1 ;;
+esac
 
 echo "=== $WHICH: lever $LEVER, code $SRC ==="
 for p in $POPS; do
   n=$(grep -cvE '^\s*(#|$)' "$POP/$p.txt")
   echo "--- $p (n=$n) -> $OUT/${WHICH}_${p}.json"
-  nohup "$V" "$MAIN/tools/generator_ab_honest.py" \
+  nohup "$V" "$TOOL" \
       --cohort-dir "$COHORT" \
       --molecules-file "$POP/$p.txt" \
       --lever "$LEVER" \
