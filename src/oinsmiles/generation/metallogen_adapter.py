@@ -1732,6 +1732,33 @@ def _axial_report_miss(n_candidates, n_blind, target_axial, *, key):
     _telemetry.record("adapter.axial_miss", n_blind=n_blind, **{key: n_candidates})
 
 
+def _attach_rank(cmol):
+    """``0`` when every claimed coordination site still holds an atom, ``1`` when one is empty.
+
+    A sort key that demotes a detached conformer below an attached one.
+
+    ``OIN_ATTACH_RETURN`` (v0.4.15 Lane 1). The attachment predicate has existed since v0.4.7
+    but only ever guarded ACCEPTANCE; `OIN_ATTACH_CHECK`'s own lever entry names the gap it
+    left -- "GAVSED (acceptance rejected everything, and _select_by_geometry's fallback ranking
+    never consults this check -- the check guards ACCEPTANCE, not RETURN)". This is that check,
+    on the return path.
+
+    🔴 Returns ``0`` unconditionally when the lever is off, so every sort and scan below
+    collapses to exactly its pre-lever order and the default path is byte-identical. It also
+    returns ``0`` when there is no contract mol to judge: a conformer is never demoted on
+    ignorance, only on evidence, which keeps the direction of any error PERMISSIVE.
+
+    Coordinate-only, via :func:`~oinsmiles.generation.attach_check.conformer_ligands_attached`.
+    A detached ligand keeps its bond, so a ``GetBonds()``-based test would certify precisely
+    what this exists to catch.
+    """
+    if not lever_enabled("OIN_ATTACH_RETURN"):
+        return 0
+    if cmol is None:
+        return 0
+    return 0 if conformer_ligands_attached(cmol) else 1
+
+
 def _select_by_geometry_impl(
     parsed, mols, honor_winding=True, early_exit=False, reencode_cache=None
 ):
@@ -1863,13 +1890,19 @@ def _select_by_geometry_impl(
     target = _norm_geo_code(parsed.geo_code)
     expected_n = _expected_coordination_number(parsed.geo_code)
 
-    scored = []  # (clash_vdw, fit_rmsd, energy_rank, mol, contract_mol)
+    scored = []  # (attach_bad, clash_vdw, fit_rmsd, energy_rank, mol, contract_mol)
+    # Every contract mol this loop builds, in energy order, whether or not the conformer
+    # classified as the target geometry: (rank, mol, contract_mol). The fallback exit below
+    # reuses them rather than rebuilding, so an attachment-preferring fallback costs the
+    # attachment check only -- not a second `build_contract_mol` per conformer.
+    built = []
     if target and expected_n is not None:
         for rank, m in enumerate(mols):
             try:
                 cmol = build_contract_mol(parsed, m)
                 if cmol is None:
                     continue
+                built.append((rank, m, cmol))
                 vecs = _coordination_vectors(cmol, expected_n)
                 if vecs is None:
                     continue
@@ -1885,11 +1918,17 @@ def _select_by_geometry_impl(
                 # and re-perceives as detached -> round-trip regression (see clash.py). When
                 # disabled, clash=0 for all -> (0, fit, rank) == the pre-A3 (fit, rank) order.
                 clash_vdw = clash.mol_clash_count(m) if clash.VDW_ACCEPTANCE_ENABLED else 0
-                scored.append((clash_vdw, fit, rank, m, cmol))
+                # OIN_ATTACH_RETURN: attachment leads the sort, ahead of clash/fit/energy. A
+                # conformer that classifies as the target geometry can still have a ligand off
+                # the metal -- geometry classification reads the coordination sphere it CAN
+                # see, so a detached eta ring simply leaves a sphere that still fits a
+                # lower-denticity template. Lever off -> 0 for every conformer -> the sort
+                # collapses to the pre-lever (clash, fit, rank).
+                scored.append((_attach_rank(cmol), clash_vdw, fit, rank, m, cmol))
             except Exception:
                 logger.debug("geometry perception failed for a conformer", exc_info=True)
                 continue
-        scored.sort(key=lambda t: (t[0], t[1], t[2]))
+        scored.sort(key=lambda t: (t[0], t[1], t[2], t[3]))
 
     # Axial-aware narrowing (Y2 P2): when the requested OIN carries an atropisomer token
     # (` |ax:-|`), keep only conformers whose own axial token reproduces it. The embed sets
@@ -1902,9 +1941,9 @@ def _select_by_geometry_impl(
     # requested OIN and a freshly embedded conformer with different atom numbering.
     if target_axial:
         if scored:
-            # t[4] is the CONTRACT mol: raw pool conformers are unsanitized, so axial
+            # t[5] is the CONTRACT mol: raw pool conformers are unsanitized, so axial
             # perception must run on the same prepared mol the re-encode uses.
-            keep, blind = _axial_narrow(scored, lambda t: t[4], target_axial)
+            keep, blind = _axial_narrow(scored, lambda t: t[5], target_axial)
             if keep:
                 logger.debug(
                     "axial-aware selection: %d/%d conformers match token %r",
@@ -1939,9 +1978,12 @@ def _select_by_geometry_impl(
     target_windings = _eta_winding_multiset(getattr(parsed, "original_oin", None))
     if honor_winding and target_windings:
         if scored:
-            candidates = [(m, cmol) for (_clash, _fit, _rank, m, cmol) in scored]
+            candidates = [(m, cmol) for (_att, _clash, _fit, _rank, m, cmol) in scored]
         else:
             candidates = [(m, None) for m in mols]
+        # OIN_ATTACH_RETURN: the first winding match whose ligands are OFF the metal, kept so a
+        # molecule whose every winding match is detached still returns one rather than nothing.
+        detached_match = None
         for m, cmol in candidates:
             if cmol is None:
                 cmol = build_contract_mol(parsed, m)
@@ -1950,8 +1992,27 @@ def _select_by_geometry_impl(
             if oin is None:
                 continue
             if _eta_winding_multiset(oin) == target_windings:
+                # ⚠ The early exit is PRESERVED, deliberately. This scan pays `_reencode_oin`,
+                # measured at 48-57 s per eta/haptic conformer, so turning it into a full scan
+                # to rank matches would cost far more than the lane can win. Instead a detached
+                # match is stepped over and remembered: with the lever off `_attach_rank` is 0
+                # and this returns on the first match exactly as before.
+                if _attach_rank(cmol):
+                    if detached_match is None:
+                        detached_match = (m, cmol)
+                    _telemetry.record("adapter.attach_return_winding_skip")
+                    continue
                 logger.debug("winding-aware selection: matched eta winding %s", target_windings)
                 return m, cmol if cmol is not None else build_contract_mol(parsed, m)
+        if detached_match is not None:
+            # Every winding match had a ligand off the metal. Returning the first is exactly
+            # what the pre-lever code did, so this is the no-regression floor, not a new answer.
+            logger.debug(
+                "winding-aware selection: all %s-winding matches detached; returning the first",
+                target_windings,
+            )
+            _telemetry.record("adapter.attach_return_winding_all_detached")
+            return detached_match
         logger.debug(
             "winding-aware selection: no conformer matched eta winding %s; "
             "falling back to geometry/energy",
@@ -1964,7 +2025,7 @@ def _select_by_geometry_impl(
         )
 
     if scored:
-        clash_vdw, fit, rank, m, cmol = scored[0]
+        attach_bad, clash_vdw, fit, rank, m, cmol = scored[0]
         logger.debug(
             "geometry-aware selection: chose energy-rank %d as %s "
             "(vdW clashes %d, template fit %.4f, target %s) from %d matching conformer(s)",
@@ -1975,10 +2036,53 @@ def _select_by_geometry_impl(
             target,
             len(scored),
         )
+        if attach_bad:
+            # The BEST geometry-classified conformer still has a site empty, i.e. every one of
+            # them does -- attachment leads the sort. Say so: this is a molecule the pool cannot
+            # currently satisfy, and counting it is how the lane's residual gets measured
+            # instead of inferred.
+            _telemetry.record("adapter.attach_return_all_scored_detached", n_scored=len(scored))
         return m, cmol
 
     # Fallback: lowest-energy conformer -- the pre-selection default behavior.
     _telemetry.record("adapter.geometry_select_fallthrough", target=target, n_mols=len(mols))
+    # OIN_ATTACH_RETURN: this is the site `OIN_ATTACH_CHECK`'s lever entry names as its own
+    # residual -- "acceptance rejected everything, and _select_by_geometry's fallback ranking
+    # never consults this check". Prefer the lowest-energy conformer whose claimed sites are all
+    # populated over the lowest-energy conformer full stop. `built` is already in energy order,
+    # so the first attached entry IS the lowest-energy attached one, and reusing it avoids a
+    # second build_contract_mol per conformer.
+    if lever_enabled("OIN_ATTACH_RETURN") and built:
+        for rank, m, cmol in built:
+            if not _attach_rank(cmol):
+                if rank != 0:
+                    logger.debug(
+                        "attach-aware fallback: energy-rank 0 has a site empty; "
+                        "returning rank %d instead",
+                        rank,
+                    )
+                    _telemetry.record("adapter.attach_return_fallback_promoted", rank=rank)
+                return m, cmol
+        # No conformer in the pool holds all its claimed sites. Returning the lowest-energy one
+        # is the pre-lever answer, so this is non-regressive -- but it is also the honest
+        # generator-capability finding, and OIN_ATTACH_RETURN_STRICT is what converts it into a
+        # loud failure instead of a plausible wrong structure.
+        _telemetry.record("adapter.attach_return_none_attached", n_mols=len(mols))
+        if lever_enabled("OIN_ATTACH_RETURN_STRICT"):
+            # RAISE rather than return None. Both call sites do `get_xyz_string(chosen_mol)` on
+            # the next line, so a None would surface as an AttributeError from deep inside the
+            # xyz writer -- a real failure reported as a mystery. This is the same idiom the
+            # OIN-direct path already uses for "no conformers", so the harness buckets it as the
+            # honest `hard_fail` it is.
+            logger.warning(
+                "attach-aware fallback: no conformer of %d holds every claimed coordination "
+                "site; failing loudly rather than returning a detached structure",
+                len(mols),
+            )
+            raise ValueError(
+                f"OIN_ATTACH_RETURN_STRICT: none of {len(mols)} conformers holds every "
+                f"coordination site claimed by OIN {parsed.original_oin!r}"
+            )
     return mols[0], build_contract_mol(parsed, mols[0])
 
 
