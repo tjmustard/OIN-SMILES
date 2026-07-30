@@ -105,6 +105,12 @@ ALLOW = [
     "reso_*.json",
     "*_ab.json",
     "generator_ab*.json",
+    # v0.4.14 baseline sweep. The run itself is 261 MB and gitignored; these are the parts a later
+    # release actually diffs. `per_molecule_extract.tsv` is the load-bearing one -- it re-derives the
+    # bucket table, the key_equal sub-split and the runtime percentiles WITHOUT the raw run, which
+    # is the whole point of this tree (v0.4.11's mirror-audit JSON is gone for want of exactly this).
+    "per_molecule_extract.tsv",
+    "RUN.md",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -168,6 +174,24 @@ PROVENANCE = [
         "tools/fold_key_invariance.py --sweep <frozen sweep> --lever OIN_RESONANCE_DONOR_FOLD"
         " --holding OIN_CANONICAL_DONOR_FOLD"
         "   (9669 compared, 228 moved, 0 keys changed. ⚠ bounds ACCEPTANCE, not embedding)",
+    ),
+    (
+        r"^per_molecule_extract\.tsv$",
+        "derived from results-v0.4.14-sweep/individual_reports (N=5000): molecule, status,"
+        " tier_passed, bucket under BOTH scored and honest, subclass, and the NESTED"
+        " metrics.elapsed_s. Re-derives the authoritative table and the runtime percentiles"
+        " without the 261 MB run",
+    ),
+    (
+        r"^RUN\.md$",
+        "hand-written provenance for the v0.4.14 baseline sweep: 6 shards 1-BASED,"
+        " --mol-timeout 300, shipped lever defaults, BLAS threads capped to 1, and why"
+        " systemd's OOMPolicy could not be used on a --scope",
+    ),
+    (
+        r"^bucket_report_PASS1_authoritative\.md$",
+        "tools/roundtrip_bucket_report.py --results-dir <sweep> --score honest, frozen"
+        "   (THE v0.4.14 ABSOLUTE BASELINE: byte_exact 3858/5000 = 77.16%, gap 22.84)",
     ),
     (
         r"^reso_sample_definitions\.json$",
