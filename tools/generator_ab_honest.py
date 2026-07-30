@@ -139,7 +139,15 @@ def main():
 
     if not os.path.isdir(args.cohort_dir):
         sys.exit(f"🔴 --cohort-dir {args.cohort_dir} is not a directory")
-    names = [n.strip() for n in open(args.molecules_file) if n.strip()]
+    # ⚠ `#` comments are SKIPPED. The sample-membership files in `measurements/` carry their
+    # provenance on a leading `#` line -- a rate without its sample is not reproducible -- and
+    # without this the header would be read as a molecule name, land in `input_missing`, and
+    # silently shift every count by one. That is the same failure mode as v0.4.14's missing
+    # trailing newline, which merged two names and dropped the one molecule a run existed to
+    # settle.
+    names = [
+        n.strip() for n in open(args.molecules_file) if n.strip() and not n.lstrip().startswith("#")
+    ]
     if not names:
         sys.exit("🔴 REFUSING: molecules file is empty")
 
