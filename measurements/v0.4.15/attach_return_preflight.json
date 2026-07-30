@@ -1,0 +1,4252 @@
+{
+ "sweep": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-sweep",
+ "populations": {
+  "byte_exact_DETACHED": {
+   "n": 52,
+   "tally": {
+    "SITES_HELD": 51,
+    "SITE_LOST": 1
+   },
+   "rows": [
+    {
+     "molecule": "AKUKOG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "AROTAE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "BATDOS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "BOYROX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "COBBAY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "COBBAY_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "DUMDEW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "ERIQON_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FACFEW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "FUVXAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "GAKSET_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "GAVSED_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 10
+    },
+    {
+     "molecule": "GOTWUJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "GUSRAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HOHFUF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HOTRUF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "IGITOI_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "JIXTES_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "JUWSOJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LIRBUK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "NEVCUO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "NIGPOK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "NONNEL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OHOZAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OSIBID_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "PEMLOK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "PETHAY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "PIPPIQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "QAZLOV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "QEKLAU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "QIRGUW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QIZNIW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "RAYSOC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "RIBZAG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "ROHMIM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "SAGBEK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TILXIX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TOMKAH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "UXENIV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VUDHUY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "VUMWIK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WECWOQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "WEPMUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WOMQAR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "XEPCEA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "XEYVEE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "XILBIF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "XUPQEF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "ZEDXEL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 13
+    },
+    {
+     "molecule": "ZEQQAQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "ZIHPUD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "ZUJXAD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    }
+   ]
+  },
+  "structural_DETACHED": {
+   "n": 301,
+   "tally": {
+    "SITE_LOST": 289,
+    "SITES_HELD": 12
+   },
+   "rows": [
+    {
+     "molecule": "ADEZOY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "AHUKIZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "AJOKIV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "APAGOO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "APOTOO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "BADPOO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "BADPUU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "BAJBAS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "BEPSUN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "BERZAC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "BIKRUL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "BIXCAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "BOCGEH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "BOCHIM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "BOMTAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "CAHQEJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "CAHQOT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CAZXIM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "CEDXER_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "CESFIR_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "CIMCIL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "COFBAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "COMXUY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "CUWHIM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "DERMET_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "DERMIX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "DILYOM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "DILZOQ_comp_2",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "DIYWAM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "EBAMEA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "EDANEF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EJUKOK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "EKOHIW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EMUGAU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EQAGEK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "ESEXIK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "ETACIL_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ETILUP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "EVUHUZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "EWALET_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "EWUQOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "EYEBOA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "EZUROH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "FECSUC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "FEDQUD_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "FENQAQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "FEPZIK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FEPZOQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FESFUG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FESKUK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "FIBQAK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "FIMMUK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "FOGCIN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 2,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FOHFIT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "FOJWOR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "FOKQOM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "FULBIZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "FUQZAT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FUSNAK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FUXMAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FUYYAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "FUYYEF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "GACTAG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "GALZOK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "GARXAZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "GAYSOO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "GIMWAA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "GULPAG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "HATGAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "HEJKEM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "HEPSOL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 2,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "HEWKOL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "HIPQIH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "HOHTAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "IBAZIW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "ICUCAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "ICUYUC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IGOBOX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "IGOBUD_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "IHIKEP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "IHIZEE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "INUWUL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "IWUGIR_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "IXUTAW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "IZUHAM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "JAFFOL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "JEDPIU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "JETNEC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "JIVFOK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "JOBNUK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "JOFXOS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "JUXPAV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "KADVER_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "KAKNUI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "KALHUD_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "KAQDEL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KEWYAM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "KEXCOI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "KIHVIH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "KIPBAP_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "KIRVOY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "KIRWEP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "KURBAC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LABJEG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "LACNOU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LARQAY_comp_2",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LASFER_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "LASSOQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "LASVUZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LASXUB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "LAZYAO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "LEJBEH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "LIHREB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LIJVEG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "LIKJIB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LOFLAU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "LOFMOJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LOJMUS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LOMFUQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "LUSBEI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "LUSZUW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "LUZDAL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LUZGIY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "MAMPEW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "MECXEY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "MENJAT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "MEVFAU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "MIFJIV_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "MIHLIY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "MIKDOA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "MIMHEW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MIQWEO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MOJYAL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MOPVEU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "MOZNIA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MUBNAY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MUNWAU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MUTCEK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "MUTCIO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "NAGQOE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NAKHAI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NAKJUH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "NAYSOX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "NISHAZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NIVGEG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NONSUG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NONTAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "NOVYUU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "NOYQID_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "NUJFUV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "NUZXIQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "OCIKAO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "OCUKAA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OHIQON_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "OJOWAL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OKAPEX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 7,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OKEWEI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ONUGIO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "OPEHOI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "OSIBEZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "OTIGIJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OVUFUI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "OVUGET_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OWEXIZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 4,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "OZUZEQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 8,
+     "actual_sites": 7,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "PANHUJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "PAXJUT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "PEBLUF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "PEQQAG_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "PERHEC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "PERPIO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "PERYUJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "PIGXAG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "PIKLOM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "PIKROS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "PIXGIP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PIXGUB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PIXHIQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PIZBUW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "POZSIG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "PUGVOC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "PUNPEV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "QAQZAK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "QASRUA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "QEBKUG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QEFSOJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "QEYMAJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QIDNEX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QIHBIU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "QOHZOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QOQMUF_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QOSKAL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "QUHKIO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "QULZON_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "QUVYOX_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "RAXVAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "RECKUH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "REKFAQ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "RIFPOO_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "RIGHOF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "RILBOG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "RIQNUC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "RIXROH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "RIXVAX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "ROCZAN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "ROGYES_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ROHZEV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "ROZNIE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "RUKVAU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "RULWEB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "RURHUH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "RUSLIC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "RUYDUM_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "SADMOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SANNIE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "SIJROU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "SOMWOI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "SOQHEL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "SOQHIP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "SOSPEW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "SUSGOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "TAXSOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "TEKQAE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TELSEL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "TEQHIG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "TEVSEV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "TICNUP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TIXWEC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "TOFWES_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TOGKOR_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "TOHCAX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TOVTOP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TOWWUX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "TUXGOK_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "UCIYOX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "UDARIC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "UHATAY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "ULOQET_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "ULORIY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "UNAFOG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "USEKAF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VAHMID_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VAJVOS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VAQRAH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VATQUE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VATRAL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VECYOU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VEMQIP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VIGXOZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VIGYES_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VIMVUL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VIMWAS_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VIQQOB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VIQSAP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "VOCDEY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VOCSOY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "VOGBEZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VOJMAL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "VUGJEN_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "VUGNUI_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WACFAI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "WAGGUG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WAVDED_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "WAVXID_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "WAVXOJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WEHXUE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WEPJOS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WERQOC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WEYDOW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "WIBTAD_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "WIWRIE_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "WIXLUL_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WOFGUT_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WUNYAF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "WUSJAW_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "WUYWET_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "XAGPAZ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "XANKAA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "XATXOH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 5,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XECSIJ_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    },
+    {
+     "molecule": "XECTAA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "XEVMIV_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "XEWSID_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XIXPUR_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XUWHAA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "XUZHAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "YEHHUP_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "YEYVAB_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "YIMVOG_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 6,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "YOWBUI_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "YUYSES_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "ZELKUY_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "ZOGXIF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 2,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "ZOTZUF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ZOVDOF_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 3,
+     "actual_sites": 1,
+     "actual_donors": 1
+    },
+    {
+     "molecule": "ZOVKEC_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ZUCKOZ_comp_1",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ZUFZUX_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ZUGBUA_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ZUGCAH_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "ZUYVEU_comp_0",
+     "verdict": "SITE_LOST",
+     "claimed_sites": 4,
+     "actual_sites": 0,
+     "actual_donors": 0
+    }
+   ]
+  },
+  "byte_exact_INTACT_control": {
+   "n": 250,
+   "tally": {
+    "SITES_HELD": 250
+   },
+   "rows": [
+    {
+     "molecule": "ABEVEL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "ACUWUT_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "AHAQUX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "AKEGUU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "AMAXOB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "AQENIV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "ARUGIE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "AXOGOL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "AZOGIF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BAJMIK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "BEBJAW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BEVNOH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BIDXOD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BIXROS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BODPEQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BOLSAY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BOXPAG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BUJNAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "BUYWEY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "CAQXEY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "CAXZUX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CEPCAD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CEVPEA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CINMOE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CISCUE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "CIVVUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "COHGEO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "COQXEN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CUCNAR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "CUNWUF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "DAHNEH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "DAPZOL_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "DAWJAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "DEFJOP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "DEXDEQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "DIDTIW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "DIPZAD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "DOFLIV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "DOSGAV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "DUKMED_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "EBESIQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "EDANAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EFEVAO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "EGIGUY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EHURUV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EKEBEC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "EMAFON_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EPADUW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ERAQOE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "ETEFIU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EVUHAF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "EXAXIL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "FAHLUY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "FAWREC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "FEHSOD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "FEQCIO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "FEXSOS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "FIGGUY_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FITXOY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FOLKOH_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "FOSWOA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "FUGBAM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "GABTUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "GANSUL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "GAYCAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "GELYUU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "GIDCIG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "GILWAA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "GOBMEP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "GUKBOF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "GUXHOX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "HAHCUQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HAVHAP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HEFSOD_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HEXFAS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "HIGFUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "HIPTAC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "HOBBOS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "HOKJAU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "HUBJUJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "HUXJIV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "IBUGET_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IDIGUA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "IFIJOY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "IHOFAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "IJOCAN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "ILIVAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IMIYIO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IPOQEK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "ISOQIS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IVISIR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "IYUBAF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "IZORIZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "JAMFUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "JAYNAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "JEMVED_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "JEXHAW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "JIMXEL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "JIYVEU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "JOJDUI_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "JUFVUB_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "KADHUV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "KAPNIB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KAWSEI_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "KEJHAL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KETKEZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KIDJAJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "KILWAF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KIVZEX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "KOCGUE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "KOPHUS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 13
+    },
+    {
+     "molecule": "KUKMIN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LAMWON_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LAZKAZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LEKRAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LEYWOE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LIMBAL_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "LISNIN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LOKCAS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "LOVCOQ_comp_3",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "LUTQIC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "MALYUV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MASNIF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MEBBAY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "MIDCIM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MIKDUI_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "MIRJOP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "MIYBEE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "MOPWUK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MOWFAG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MUJHOP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "MUZKAT_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NALGUD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NARFIY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "NEKJUJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NETMOR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "NEZNEO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NIPREK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NIYZED_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "NOKDIC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "NOPTES_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NUDSEK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "NUXTUV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OCOPIG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 12
+    },
+    {
+     "molecule": "ODUJED_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OGUYAQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OJERUR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "OKOQIO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "OQACUF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OROWOJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "OVIJAG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "OYUFOE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "PAKWAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 10
+    },
+    {
+     "molecule": "PAXWOD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PEMDES_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "PETJIK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "PIJWOW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PIWHUZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "POSCOQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "PUJPEP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QABSIY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QALVEG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QASWUC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 11
+    },
+    {
+     "molecule": "QAYMUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "QEHTAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QETYEU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QIGZUD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QIZTAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QOSFOU_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QOZCEP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "QUHZAV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "QUNHOX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "RAHREX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "RAMPOM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "RAVROY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "RERCUP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "RIFVEJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "RITRUJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "ROHFAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "RUGBAW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "RUXDUK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SAQLEE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SATGOM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "SEHPIG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SIBXOS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SILLAD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "SIVJOZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "SODFAV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SOMDEG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SOVBEM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SUCNUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "SUWHEY_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "TAJBEO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TAQTUB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TAZYUP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 3
+    },
+    {
+     "molecule": "TEMCIA_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "TEWREU_comp_1",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TIHLIF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "TIRQIW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "TOFYAR_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TUDREQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "TUVWOW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "UCOHAX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "UFOZEV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "UKUROH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "UNEHOK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "UREKEJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "UVOWAE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "UWULEF_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 5
+    },
+    {
+     "molecule": "VABMIX_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VAWDUV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VEKWEQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "VEZGEO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "VIHDOH_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "VIMPUD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VODXOC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "VOLHIQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 7
+    },
+    {
+     "molecule": "VOYJIC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "VUFVAV_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "VUNVOQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WAFCUE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WAQXER_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WAWJAI_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "WECHAQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WEJMOQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "WEPFII_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WEWREW_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 5,
+     "actual_sites": 5,
+     "actual_donors": 13
+    },
+    {
+     "molecule": "WIBCAO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WILXAT_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "WISCIN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 9
+    },
+    {
+     "molecule": "WIZHES_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WOGREQ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WOWCES_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WUDHIN_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "WUMXOT_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "WUVGOK_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XAHNIE_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XAMSAG_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XAVXUP_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 3,
+     "actual_sites": 3,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XEKJIJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "XEQPOZ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XEZSUS_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XIJFII_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XIPCAB_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XIXNID_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 8
+    },
+    {
+     "molecule": "XOCREO_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 2,
+     "actual_sites": 2,
+     "actual_donors": 2
+    },
+    {
+     "molecule": "XOLFEM_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    },
+    {
+     "molecule": "XOVMEC_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XUDFAD_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 6,
+     "actual_sites": 6,
+     "actual_donors": 6
+    },
+    {
+     "molecule": "XUQDUJ_comp_0",
+     "verdict": "SITES_HELD",
+     "claimed_sites": 4,
+     "actual_sites": 4,
+     "actual_donors": 4
+    }
+   ]
+  }
+ }
+}

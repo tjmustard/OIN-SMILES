@@ -111,6 +111,12 @@ ALLOW = [
     # is the whole point of this tree (v0.4.11's mirror-audit JSON is gone for want of exactly this).
     "per_molecule_extract.tsv",
     "RUN.md",
+    # v0.4.15. ⚠ `attach_*`, not `attach_class_audit.json` -- the narrow name was already in this
+    # list and would have silently dropped `attach_return_preflight.json`, which is the file that
+    # sized Lane 1's exposure at 1/52 rather than the charter's 52/52. That is the same too-narrow
+    # allowlist failure the `mirror_arm*` note above records, one release later.
+    "attach_*.json",
+    "string_exact_*.json",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -161,7 +167,18 @@ PROVENANCE = [
     (
         r"^veto_residue_chirality\.json$",
         "tools/veto_residue_chirality.py --outcomes veto_outcomes.json --sweep <frozen sweep>"
-        "   (183/222 MIRROR_MATCH: the round trip built the ENANTIOMER)",
+        "   (183/222 MIRROR_MATCH on the v0.4.8 corpus; 201/242 re-derived on the v0.4.14"
+        " baseline sweep: the round trip built the ENANTIOMER)",
+    ),
+    (
+        r"^attach_return_preflight\.json$",
+        "tools/attach_return_preflight.py --sweep <frozen sweep>"
+        "   (v0.4.15 Lane 1 pre-flight. Does the GUARD's predicate -- a claimed coordination"
+        " SITE holding nothing, coordinate-only -- fire where `coordination_report` says"
+        " DETACHED? Target structural/DETACHED 289/301 = 96.0%; exposure byte_exact/DETACHED"
+        " 1/52 = 1.9%, so the charter's 52-molecule exposure over-stated it 52x; control"
+        " byte_exact/INTACT 250/250 SITES_HELD, which is what makes the 1.9% a reading rather"
+        " than a broken claim count)",
     ),
     (
         r"^resonance_transition\.json$",
