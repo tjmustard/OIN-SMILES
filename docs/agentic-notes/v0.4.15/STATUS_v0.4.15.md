@@ -59,7 +59,54 @@ Early throughput suggests **~4–8 h**. ⚠ System load average reads ~18, but t
 `npm exec ccstatusline` churn, **not** contention on the arms — per-process CPU% is the direct
 evidence and a starved process would read low, not 90%.
 
-## 🔴 The finding that is already shaping the release
+## 🔴 PARTIAL RE-RUN RESULTS (in flight) — and the scope decision is what makes Lane 2 work
+
+Controls **complete**, and they are clean:
+
+| arm | n | gains | losses | runtime ratio ON/OFF |
+|---|---:|---:|---:|---:|
+| L1 `byte_exact`/DETACHED control | 52 | 0 | **0** | 1.008 |
+| L1 `byte_exact`/INTACT control | 200 | 0 | **0** | 1.006 |
+| L2 `byte_exact`/INTACT control | 200 | 0 | **0** | 1.001 |
+
+**452 control molecules, zero regressions, and essentially zero runtime cost** — both levers are
+free on the population that already passes, because those molecules accept on an early conformer
+and neither predicate ever fires. The cost lands only where the pool actually fills.
+
+Target arms **partial**:
+
+| arm | done | gains | losses | output moved |
+|---|---:|---:|---:|---:|
+| L2 `key_equal` (365) | 50 | **9** | 0 | 9 |
+| L2 `MIRROR_MATCH` (201) | 45 | **0** | 0 | 0 |
+| L1 `SITE_LOST` (289) | 22 | 0 | 0 | 4 |
+
+### 🔴 The decomposition, which is the release's real finding
+
+**All of Lane 2's gain is in the `slot_renumber` portion of `key_equal` — none of it is in the
+enantiomer class.** 9 of the first 50 `key_equal` molecules became `byte_exact` (~18%), while 0 of
+45 `MIRROR_MATCH` molecules did.
+
+That splits Lane 2 cleanly in two:
+
+* **`slot_renumber`**: the pool *does* contain a string-exact conformer; acceptance was stopping on
+  a merely-key-equal one first. A genuine selection bug, and the lever fixes it.
+* **The 201 enantiomers**: the pool contains exactly **one** key-matching conformer and it is the
+  mirror (telemetry §8). No acceptance predicate can fix these — **construction must**.
+
+⚠ **Had Lane 2 been scoped to the chartered 201, it would have recovered ZERO.** The
+owner-accepted widening to all 365 `key_equal` (2026-07-29) is the only reason the lane works. The
+charter's framing — "the enantiomer class is the target, `slot_renumber` is a different lane" —
+was measured wrong: the enantiomers are the *unreachable* part and `slot_renumber` is the
+*reachable* part.
+
+Lane 1 is moving structures (4 of 22) without yet converting one, i.e. it promotes attached
+conformers that still fail re-perception — the MEDZUR shape, where attachment is necessary but not
+sufficient.
+
+**These are partials. Do not quote them as rates.**
+
+## The earlier finding, now correctly scoped to the enantiomers only
 
 Lane 2's lever **fires correctly and recovers nothing** on the molecules probed so far. Telemetry
 (`OIN_TELEMETRY=1`) on AFADOC_comp_0 and AGAVIQ_comp_0:
