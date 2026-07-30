@@ -264,7 +264,64 @@ pool contain a better conformer at all?* Lane 1 needs an attached one, Lane 2 ne
 correctly-handed one. A near-zero result in either is a statement about construction, not about
 the predicate.
 
-## 9. Instruments added this release
+## 9. 🔴 THE SEVENTH INSTRUMENT: six A/B arms measured the wrong tree, and looked perfect doing it
+
+**Read this before quoting any arm number from this release.**
+
+The first run of all six arms returned `0 gains, 0 losses, GENERATED output moved 0` over 1107
+molecule-pairs. It was believed for about an hour. It was measuring nothing.
+
+`tools/generator_ab_honest.py` line 78:
+
+```python
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+```
+
+The runner set `PYTHONPATH=$SRC/src` (the lane's worktree) but invoked
+`$MAIN/tools/generator_ab_honest.py`. **The tool's own insert lands at position 0 and overrides
+`PYTHONPATH`**, so every arm imported *main's* `oinsmiles`:
+
+```
+MAIN tree has OIN_ATTACH_RETURN  : False      <-- what all six arms measured
+attach tree has OIN_ATTACH_RETURN: True
+```
+
+Both sides of every A/B ran identical code. A clean null is the *only* thing that experiment could
+have produced.
+
+**How it was caught, which is the transferable part.** Not by inspection — by writing
+`tools/selection_pool_probe.py` to prove the levers *fire* before believing any null. It reported
+"the lever never fired" on 30 molecules whose telemetry had shown it firing minutes earlier. **Two
+instruments disagreeing surfaced it; either one alone reads as a clean result.** The v0.4.14 rule
+("ask what a broken version would print") is necessary but not sufficient — here the broken version
+and the real version print the same thing, so the only defence is a *second* instrument measuring
+the mechanism rather than the outcome.
+
+Same family as v0.4.9's `gate_v047.sh` silently picking a sibling venv and v0.4.13's `run_sweep.sh`
+sibling-glob trap. **Third occurrence.** Now guarded rather than noted: the runner resolves
+`oinsmiles.__file__` and refuses to start unless it lives under the arm's own tree, and it invokes
+the tool *out of that tree* so the self-locating insert becomes the guarantee instead of the trap.
+
+⚠ **`selection_pool_probe.py` has the same `sys.path.insert` property.** Run it out of the tree
+under test.
+
+The invalid arms are kept at `results-v0.4.15-arms/INVALID-wrong-tree/` — they are the evidence.
+
+### What survived the invalidation
+
+| evidence | status | why |
+|---|---|---|
+| §8 telemetry (AFADOC, AGAVIQ, ADEZOY, AHUKIZ, AJOKIV, APAGOO) | ✅ **valid** | inline scripts, `PYTHONPATH` only, no tool `sys.path.insert` |
+| Lane 1 pre-flight (289/301, 1/52, 0/250) | ✅ **valid** | offline, reads stored geometry via main's `attach_check`, which exists on main |
+| all three suites (1007 / 1027 / 1039 OK) | ✅ **valid** | run as `python -m unittest` from inside each worktree |
+| the six arm JSONs | 🔴 **void** | measured main |
+
+So the **"construction, not selection" hypothesis is still supported** — by the telemetry, which
+shows Lane 1 rejecting 10–16 detached winding-matching conformers per molecule and Lane 2 finding
+exactly one key-matching conformer that is the mirror. But its **population-scale rate is not yet
+measured.** The re-run is in flight.
+
+## 10. Instruments added this release
 
 - **`tools/attach_return_preflight.py`** — the guard's predicate vs the bucket's verdict, with a
   mandatory control arm. §3.

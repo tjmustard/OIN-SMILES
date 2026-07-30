@@ -23,6 +23,23 @@ record that survives.
 All three suites green with **every lever unset**, so the default path is byte-identical. Nothing
 has been pushed, per the standing instruction on this repo.
 
+## 🔴 CORRECTION 2026-07-30: the first six arms were VOID — they measured main's tree
+
+`generator_ab_honest.py` line 78 inserts its own `../src` at `sys.path[0]`, which **overrides
+`PYTHONPATH`**. The runner set `PYTHONPATH` to the lane's worktree but invoked *main's* copy of the
+tool, so all six arms imported main's `oinsmiles` — where neither lever exists — and both sides of
+every A/B ran identical code. They returned a flawless `0 gains / 0 losses / output moved 0` over
+1107 molecule-pairs.
+
+Caught by `tools/selection_pool_probe.py` contradicting the telemetry, not by inspection. Fixed by
+invoking `$SRC/tools/generator_ab_honest.py` plus a hard refusal that resolves
+`oinsmiles.__file__` and exits unless it is under the arm's tree. Void JSONs kept at
+`results-v0.4.15-arms/INVALID-wrong-tree/`. Full write-up: §9 of
+`BASELINE_SWEEP_CORRECTIONS_v0.4.15.md`.
+
+**Still valid:** every telemetry reading below, the Lane 1 pre-flight, and all three suites.
+**Void:** the six arm JSONs. Arms re-launched from the correct trees 2026-07-30.
+
 ## Running
 
 `tools/run_v0415_arms.sh lane1` and `lane2`, launched 2026-07-29 23:13, output to
