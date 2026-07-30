@@ -213,7 +213,58 @@ differently against them. **Lane 2's predicate does not depend on this** (it is 
 encode comparison, not a veto reading), so it is not a blocker. But it is unexplained, and a
 `kept = 0` reading is exactly what a broken outcome classifier would also print.
 
-## 8. Instruments added this release
+## 8. 🔴 IN-FLIGHT: Lane 2's lever fires correctly and recovers nothing on the first two molecules
+
+The lever was smoke-tested before the population arms were launched, on the "ask what a broken
+version would print" rule. It printed the *right* nothing, and the telemetry says why.
+
+A/B over 3 known `MIRROR_MATCH` molecules, real generation, honest scoring:
+
+```
+byte_exact  OFF=False ON=False   3     REAL gains 0   REAL losses 0
+input string moved: 0                  GENERATED output moved: 0
+```
+
+Telemetry on two of them, `OIN_TELEMETRY=1 OIN_ACCEPT_STRING_EXACT=1`:
+
+| site | AFADOC_comp_0 | AGAVIQ_comp_0 |
+|---|---:|---:|
+| `adapter.string_exact_incumbent` | 2 | 5 |
+| `pool.accept_incumbent_recorded` | **1** | **1** |
+| `pool.accept_incumbent_returned` | 1 | 1 |
+| `adapter.string_exact_early_exit_incumbent` | 1 | 1 |
+| result | `key_equal`, not `norm_equal` | same |
+
+**The wiring is live and the predicate fires.** `early_exit` defaults to on
+(`os.environ.get("OIN_EARLY_EXIT", "1") != "0"`), so `accept_fn` is built on the default path;
+`accept_incumbent_recorded` proves the sentinel reached the pool filler, and
+`accept_incumbent_returned` proves the retain-incumbent path executed. The null is **not** a
+wiring failure — which is the distinction the whole smoke test existed to draw.
+
+🔴 **`accept_incumbent_recorded = 1` is the finding.** Exactly **one** conformer in the entire pool
+carried the requested key, and it was the mirror. The pool does not hold an alternative
+handedness, so **no acceptance predicate can fix these molecules — only construction can.** That
+is Lane 2's chartered Q4 ("is the correct handedness anywhere in its pool?") answered *negative*
+for these two, and the charter was right to demand it before a fix:
+
+> Shipping a filter that rejects the mirror without knowing the pool holds an alternative converts
+> 183 silent wrong answers into 183 loud failures and lowers the headline.
+
+The retain-incumbent design means that does **not** happen here — the incumbent comes back and
+nothing regresses — but it also means the lever costs latency and buys nothing on this sample.
+
+**Two molecules are not a rate.** The population arms (201 `MIRROR_MATCH`, 365 `key_equal`, plus a
+200-molecule `byte_exact` control) are what settle it. If the rate holds, **Lane 2 is refuted as a
+`byte_exact` lever** and its result is a generator-capability finding for a later release rather
+than an acceptance bug — a legitimate outcome, and the fourth time this project has ended a lane
+by refuting its own plan.
+
+⚠ Note for whoever reads the arms: both lanes hinge on the **same** unmeasured quantity — *does the
+pool contain a better conformer at all?* Lane 1 needs an attached one, Lane 2 needs a
+correctly-handed one. A near-zero result in either is a statement about construction, not about
+the predicate.
+
+## 9. Instruments added this release
 
 - **`tools/attach_return_preflight.py`** — the guard's predicate vs the bucket's verdict, with a
   mandatory control arm. §3.
