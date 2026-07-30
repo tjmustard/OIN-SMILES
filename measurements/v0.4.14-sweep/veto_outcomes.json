@@ -1,0 +1,1719 @@
+{
+  "sweep": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-sweep",
+  "n_reports": 5000,
+  "n_movers": 245,
+  "n_measured": 242,
+  "kept": 0,
+  "reverted": 242,
+  "reverted_split": {
+    "decided_against": 242
+  },
+  "outcomes_kept": {},
+  "outcomes_reverted": {
+    "vetoed_collapse | fold_inactive": 117,
+    "fold_inactive | vetoed_collapse": 87,
+    "vetoed_collapse | vetoed_collapse": 38
+  },
+  "per_molecule": [
+    {
+      "molecule": "AFADOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "AGAVIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "AXESAY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "AYOSOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "AYOVUH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "BELYUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "BIXTOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "BOFLIT_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "BOJKAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "BOSRAE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "BOSYUF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "CAGSIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "CAPZID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "CAQNUE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "CEBYAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "COFCIL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "DALHEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "DAXZUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DEFBUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DEVFUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "DIDTOC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DIQVEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "DOFWIG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DOMZEL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DORTIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "DUZLAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "ECEYUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "EKIWEB_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "EPEJUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "EPIBOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "EPIMIB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ESOSOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "EVADUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "EYALEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "FAJDEB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "FAMRET_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "FANSAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "FEDYUI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "FEFWUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "FIDNUE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "FIXXES_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "FUYXII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "GAKZOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "GESYAG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "GIHTAT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "GIJBOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "GIMKIY_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "GIXRIR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "GIYBAU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "GOWQOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "GUNXEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "HATRUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "HEDKAF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "HEGMAK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "HIJHAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "HODVOO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "HUZLEV_comp_2",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "ICIGAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ICUXOV_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "IFIBIK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "IGAWOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "IGIGUC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "IHIROI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "IKEKUF_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "IKIDOX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ILEPAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "IPIQIJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "IPISUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "IRUCUU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ISAPUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "IYOKAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "JAKKOW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "JAMFOV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "JATCAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "JIPPEG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "JIWYEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "JOCMUK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "JOFSAB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "JUDMEC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KAMFAI_comp_2",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KAWHIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "KECFII_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KEFTEV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "KEJKUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KITHED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KITHIH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "KOKGUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "KOPBAU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "KOWXIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "KUMDAY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "LAMVIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "LEGKIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "LEMKAS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "LEYTAL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "LIHYAF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "LIKZUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "LILLEZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "LOHFEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "MAKNOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "MARJIZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "MAWZIV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "MIDPUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "MIGVEF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "MIPCOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "MIQCOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "MITHIH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "MIWKIN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "MOZRIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NANYUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NANZOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NAPYEJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NASKEY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NAXQOS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NEMDUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NIHHAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NISDOJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NIWTIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NOBKOG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NOFTOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NOLXAQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "NOZLAR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NUDXUG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NUFXAP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "NUXSIK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OBALUA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OBOHOD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OGEKOD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OJEKET_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "OJELEU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "OMOBUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OVELOR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OVEQAI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "OVOTOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "OYUKOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "PEWWOF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "PIJZOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "PIYDAD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "POFQUZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "POJDEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "POJDUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "PUNTAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "PUWMID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "PUYBIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "QAYRUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "QEVNUB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "QEWDEC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "QICVUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "QIKFEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "QOJRUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "QOQGEK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "QOQGIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RANBIT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "RANRAB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RARJEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "RAWCEY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RECKAN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "REKDAO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RILGIE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RUQKAQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "RURMUO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "RURTAA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SAVCUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SEHQED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SEQPIO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "SICLOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "SIDNUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "SIHRIM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "SITHOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SITHUA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SIXROJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "SUDQEP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "SURFEQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TAKTUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TAYDUV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TEPBAT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TEPBEX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TILGOM_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "TIQWUN_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TOGMOT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "TOQXEE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "TORHUD_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "TORJEP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "UGUQIX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "UHINAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "UHIPEI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "UQIMAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "UROPOH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "VAKKAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VICROR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VIFMOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "VIMQAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "VISBUV_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VISDOS_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VISVEA_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "VIWKIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VIYDIS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "VIZKEW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "VOHYAU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "WAKRUX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WENCOI_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WENDAV_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WENDID_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WEVNUJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "WOBLUX_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "WOPXAB_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WUVNUW_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "WUVPAE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "WUWNOT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "WUXKUW_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XADXOP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XAWHOU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "XEFROQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XEHLOO_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XEJGOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XESHAH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XEXMIZ_comp_1",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "XEXMUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XEZTED_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "XIPQIY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XISBAC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "XISBEH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XIVTUS_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XIXPEB_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XIXPIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XONHIU_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "XOVMIG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "XUZMIQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "YAJYAJ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "YEJFIC_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "YIVFOY_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "YOHZIF_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "YOMPUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "YOZVIT_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "YOZVOZ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "YUSBOE_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "YUYZUP_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ZASYUQ_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ZIPHIR_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    },
+    {
+      "molecule": "ZIRNUL_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "fold_inactive",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ZITLOG_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ZOSKOK_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "vetoed_collapse"
+    },
+    {
+      "molecule": "ZUSSAH_comp_0",
+      "before": "key_equal/slot_renumber",
+      "after": "key_equal/slot_renumber",
+      "outcome_input": "vetoed_collapse",
+      "outcome_generated": "fold_inactive"
+    }
+  ],
+  "excluded_drift": [
+    "EJOWIK_comp_0",
+    "ENABEA_comp_0",
+    "IBEGEE_comp_0"
+  ],
+  "excluded_unavailable": []
+}
