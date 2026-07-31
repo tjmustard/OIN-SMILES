@@ -77,12 +77,37 @@ Target arms:
 
 | arm | done | gains | losses | output moved |
 |---|---:|---:|---:|---:|
-| L2 `MIRROR_MATCH` (201) | **201 ✅ COMPLETE** | **1** (`TAYDUV_comp_0`) | **0** | 1 |
-| L2 `key_equal` (365) | 129 | **19** | 0 | 19 |
-| L1 `SITE_LOST` (289) | 100 | **0** | 0 | 16 |
+| L2 `key_equal` (365) | **365 ✅** | **48** | **0** | 48 |
+| L2 `MIRROR_MATCH` (201) | **201 ✅** | **1** (`TAYDUV_comp_0`) | **0** | 1 |
+| L1 `SITE_LOST` (289) | 250 | **0** | 0 | 46 |
 
-⚠ The enantiomer arm's final figure is **1 of 201 = 0.5%**, not the 0 an earlier partial showed.
-Essentially zero, but **not literally zero** — quote 1/201.
+### Lane 2 — MEASURED: +48 molecules = **+0.96 pts**, zero losses
+
+The decomposition, computed against the frozen `MIRROR_MATCH` membership:
+
+| subset | n | gains | rate |
+|---|---:|---:|---:|
+| **non-enantiomer** (`slot_renumber` / `rdkit_canonical`) | 164 | **47** | **28.7%** |
+| enantiomer (`MIRROR_MATCH`) | 201 | 1 | **0.5%** |
+
+**28.7% vs 0.5% — a 57× difference.** Everything the lane recovers is outside the class the
+charter aimed it at. Scoped to the chartered 201 it would have returned +1 molecule.
+
+### 🔴 And the cost is severe: 4.00× runtime on the affected population
+
+| | OFF | ON |
+|---|---:|---:|
+| total elapsed over the 365 | 4294 s | **17191 s** (**4.00×**) |
+| of the 365, `> 30 s` | 30 | **122** (**4.1×**) |
+
+Extrapolated to the corpus: **+0.96 pts `byte_exact`** against **+92 molecules over 30 s**
+(678 → ~770, +13.6%) and ~+3.6 CPU-h on a 38.7 CPU-h sweep. The roadmap's target is
+`byte_exact` 100% **and** `max(elapsed_s) < 30 s`, so this is close to a wash between the two
+halves of the goal and is **an owner decision, not a default I should pick**. It is exactly the
+predicted direction (">30 s UP, materially"), at the top of the predicted magnitude.
+
+The lane is non-regressive in accuracy (0 losses across 365 + 200 control) and the whole cost is
+latency — as designed. But "free" it is not.
 
 ### 🔴 The decomposition, which is the release's real finding
 
