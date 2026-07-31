@@ -289,18 +289,36 @@ def _print_knee_curve(scored):
 
 
 def _cost_at_bound(row, n):
-    """Elapsed this molecule would have spent under bound ``n`` (``None`` = unbounded)."""
+    """Elapsed this molecule would have spent under bound ``n`` (``None`` = unbounded).
+
+    ⚠ THE STAMPS DO NOT COVER THE WHOLE GENERATION, and treating them as if they did understates
+    runtime at exactly the end of the curve where the decision sits. A stamp is taken inside the
+    pool-fill loop, but a molecule also pays for everything AFTER the loop -- selection, the
+    return path, writing out. Measured as `elapsed_s` minus the last in-loop stamp, that tail is
+    real and it is paid at EVERY bound, including bound 0.
+
+    So the cost at a bound is `stamp_at_stop + tail`, and at a bound beyond the molecule's last
+    evaluation it is exactly `elapsed_s` again -- which is the arithmetic identity that says the
+    unbounded row and the large-bound rows must agree. An earlier version returned the bare stamp
+    and made every bounded row look cheaper than it is.
+    """
     full = row.get("elapsed_s") or 0.0
     if n is None:
         return full
-    mb = row.get("min_bound")
+    stamps = {int(k): v for k, v in (row.get("t_at_bound") or {}).items() if v is not None}
+    hit_t, mb = row.get("hit_t"), row.get("min_bound")
+
+    # When did in-loop activity last happen, in the unbounded run that produced this row?
+    last = hit_t if (mb is not None and hit_t is not None) else (max(stamps.values(), default=None))
+    tail = max(0.0, full - last) if last is not None else 0.0
+
     if mb is not None and mb <= n:
-        # Recovered at this bound: it stops at the hit, exactly as the unbounded run did.
-        return row.get("hit_t") or full
-    stamps = row.get("t_at_bound") or {}
-    at = [v for k, v in stamps.items() if int(k) <= n and v is not None]
-    # No stamp at or below the bound means the molecule never got that far; it cost what it cost.
-    return max(at) if at else full
+        # Recovered at this bound: stops at the hit, exactly as the unbounded run did.
+        return (hit_t if hit_t is not None else full - tail) + tail
+    at = [v for k, v in stamps.items() if k <= n]
+    # No stamp at or below the bound means the molecule never got that far -- it ran to completion
+    # and cost what it cost.
+    return (max(at) + tail) if at else full
 
 
 if __name__ == "__main__":
