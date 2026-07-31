@@ -224,6 +224,20 @@ def _greedy_enabled(ff_params):
     )
 
 
+#: ``accept_fn`` verdict meaning "acceptable as a FALLBACK, but keep looking for something
+#: better". Introduced by v0.4.15 Lane 2 (``OIN_ACCEPT_STRING_EXACT``), whose predicate is
+#: strictly narrower than the round-trip key: a conformer can carry the requested key and still
+#: be the wrong enantiomer, because ``compare._parse_vertex_colors`` folds reflection. Rejecting
+#: such a conformer outright would be a real regression -- an accepted conformer is returned as
+#: the SOLE pool member, so rejecting it lets the energy-sorted pool hand back a DIFFERENT mol.
+#: Returning this instead keeps the incumbent available, which is what makes a stricter
+#: acceptance predicate cost latency rather than accuracy.
+#:
+#: A sentinel rather than ``True``/``False`` because both of those already mean something here,
+#: and because a bool-returning ``accept_fn`` must keep working untouched.
+ACCEPT_INCUMBENT = object()
+
+
 def generate_3d_structures(
     m_smiles,
     num_conformers=1,
@@ -249,6 +263,13 @@ def generate_3d_structures(
     satisfies it, and that single conformer is returned directly (skipping the pool
     sort/dedup/clash-rerank and the optimizer pass -- re-optimization could perturb it off the
     matched key). The default ``None`` leaves both attempt loops byte-identical to pristine.
+
+    ``accept_fn`` may also return :data:`ACCEPT_INCUMBENT` -- "good enough to fall back on, not
+    good enough to stop for". The pool then keeps filling, and if it exhausts without a full
+    acceptance the FIRST such conformer is returned instead of the energy-sorted pool. That makes
+    a stricter acceptance predicate non-regressive by construction: the incumbent is exactly the
+    conformer a looser predicate would have stopped on and returned. A plain ``bool`` return is
+    unaffected, so every pre-existing caller keeps its behaviour.
 
     ff_params: optional dict of TMCOptimizer convergence knobs
     (ff_max_iters, ff_force_tol, ff_energy_tol, d_converge, num_relaxation).
@@ -463,9 +484,14 @@ def generate_3d_structures(
     # returned directly. ``accept_fn is None`` (default) => this never fires => byte-identical.
     early_hit = None
 
+    # The first conformer ``accept_fn`` called ACCEPT_INCUMBENT: acceptable to fall back on, not
+    # to stop for. Returned only if the pool exhausts with no ``early_hit``. Stays None unless an
+    # accept_fn actually returns the sentinel, so this is byte-identical for every other caller.
+    incumbent_hit = None
+
     def _file_and_maybe_stop(positions, scale):
         """File a conformer, then test it against ``accept_fn``; True => stop building the pool."""
-        nonlocal early_hit
+        nonlocal early_hit, incumbent_hit
         accepted = _try_accept(positions, scale)
         if accept_fn is not None and accepted is not None and early_hit is None:
             # OIN_ENFORCE_BUDGET: do not START an accept_fn call we cannot afford.
@@ -482,7 +508,15 @@ def generate_3d_structures(
                 logger.debug("budget reached; skipping the accept_fn re-encode")
                 return False
             try:
-                if accept_fn(accepted):
+                verdict = accept_fn(accepted)
+                if verdict is ACCEPT_INCUMBENT:
+                    # Keep filling, but remember the FIRST one -- it is the conformer a looser
+                    # predicate would have stopped on, so returning it later reproduces the
+                    # pre-lever answer exactly.
+                    if incumbent_hit is None:
+                        incumbent_hit = accepted
+                        _telemetry.record("pool.accept_incumbent_recorded")
+                elif verdict:
                     early_hit = accepted
                     return True
             except Exception:
@@ -687,6 +721,16 @@ def generate_3d_structures(
         # accept stamp was taken on this exact geometry. Unreachable when accept_fn is None.
         _record_attempts(1)
         return [early_hit]
+
+    if incumbent_hit is not None:
+        # The pool exhausted without a full acceptance, but a conformer met the OLD, looser
+        # predicate. Return it on exactly the same terms `early_hit` would have been returned on
+        # -- which is the point: this is byte-identical to what the pre-lever run produced, so a
+        # stricter acceptance predicate can only cost latency here, never accuracy.
+        logger.debug("accept_fn found no full match; returning the recorded incumbent conformer")
+        _telemetry.record("pool.accept_incumbent_returned")
+        _record_attempts(1)
+        return [incumbent_hit]
 
     if not successful_mols and stereo_rejects:
         # No embed reproduced the requested stereochemistry within the attempt
