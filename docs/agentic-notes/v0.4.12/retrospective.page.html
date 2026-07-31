@@ -1,4 +1,4 @@
-<title>OIN-SMILES v0.4.4 → v0.4.14 — accuracy &amp; speed retrospective</title>
+<title>OIN-SMILES v0.4.4 → v0.4.15 — accuracy &amp; speed retrospective</title>
 
 <style>
 /* ─── tokens ─────────────────────────────────────────────────────────── */
@@ -675,7 +675,7 @@ pre.prompt {
       </figcaption>
       <div class="chartbox">
         <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 22.84-point accuracy gap, largest first. structural is the largest at 9.68 points.">
-          <g class="hit"><title>structural — 484 molecules — 9.68 points. 301 of 484 are DETACHED — the generator returned a structure with ligands off the metal. A one-site return-path guard, not a capability floor. v0.4.15 Lane 1.</title>
+          <g class="hit"><title>structural — 484 molecules — 9.68 points. 301 of 484 are DETACHED. v0.4.15 built the return-path guard and REFUTED the &quot;one-site guard, not a capability floor&quot; reading: it changed the returned structure 51 times across 289 molecules and improved it 0 times. NOT reachable by selection — construction.</title>
             <text class="rowlab" x="222" y="26" text-anchor="end">structural</text>
             <text class="rowsub" x="222" y="39" text-anchor="end">n=484</text>
             <rect class="bar" x="232" y="14" width="425.9" height="20" rx="4" fill="var(--data)"></rect>
@@ -687,13 +687,13 @@ pre.prompt {
             <rect class="bar" x="232" y="48" width="234.1" height="20" rx="4" fill="var(--data)"></rect>
             <text class="val" x="460.1" y="62" text-anchor="end" style="fill:var(--surface)">5.32</text>
           </g>
-          <g class="hit"><title>slot_renumber — 252 molecules — 5.04 points. NOT one block: a majority are the generator building the ENANTIOMER, which the reflection-blind comparison key cannot see. v0.4.15 Lane 2.</title>
+          <g class="hit"><title>slot_renumber — 252 molecules — 5.04 points. NOT one block: 201 of 252 are the generator building the ENANTIOMER, which the reflection-blind comparison key cannot see. v0.4.15 measured those as NOT reachable by acceptance — 1 of 201 — because the pool holds exactly one key-matching conformer and it is the mirror.</title>
             <text class="rowlab" x="222" y="94" text-anchor="end">slot_renumber</text>
             <text class="rowsub" x="222" y="107" text-anchor="end">n=252</text>
             <rect class="bar" x="232" y="82" width="221.8" height="20" rx="4" fill="var(--data)"></rect>
             <text class="val" x="447.8" y="96" text-anchor="end" style="fill:var(--surface)">5.04</text>
           </g>
-          <g class="hit"><title>rdkit_canonical — 113 molecules — 2.26 points. NOT canonicality — 80.7% is eta-set denticity drift, a perception/geometry problem no string change reaches. Re-filed off the encoder ladder.</title>
+          <g class="hit"><title>rdkit_canonical — 113 molecules — 2.26 points. NOT canonicality — no string change reaches it, which is why v0.4.14 re-filed it off the ENCODER ladder. But v0.4.15 recovered 43 of 113 (38.1%) from the GENERATOR side — the highest rate of any block. Reachability is a property of a mechanism, not of a block.</title>
             <text class="rowlab" x="222" y="128" text-anchor="end">rdkit_canonical</text>
             <text class="rowsub" x="222" y="141" text-anchor="end">n=113</text>
             <rect class="bar" x="232" y="116" width="99.4" height="20" rx="4" fill="var(--data)"></rect>
