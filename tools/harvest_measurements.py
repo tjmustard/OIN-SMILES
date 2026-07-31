@@ -345,7 +345,15 @@ def collect(src: Path) -> list[tuple[int, Path]]:
     """Allowlisted files under ``src``, each within the per-file cap."""
     out: list[tuple[int, Path]] = []
     for dirpath, dirnames, files in os.walk(src):
-        dirnames[:] = [d for d in dirnames if d not in PRUNE_DIRS]
+        # ⚠ `INVALID*` is pruned by PREFIX, not by exact name, and it is not cosmetic. v0.4.15 kept
+        # its void arms beside the real ones as `INVALID-wrong-tree/`, and those files carry the
+        # SAME BASENAMES -- so without this the harvester copies both and one silently overwrites
+        # the other, publishing a measurement that was already known to be wrong. Caught in the
+        # dry run only because the file list was read line by line and showed
+        # `lane1_pop_L1_target_site_lost.json` twice at two different sizes.
+        dirnames[:] = [
+            d for d in dirnames if d not in PRUNE_DIRS and not d.upper().startswith("INVALID")
+        ]
         for f in files:
             if not _wanted(f):
                 continue

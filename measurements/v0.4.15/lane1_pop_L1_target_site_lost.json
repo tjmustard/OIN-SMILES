@@ -1,0 +1,4349 @@
+{
+  "lever": "OIN_ATTACH_RETURN",
+  "cohort_dir": "tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
+  "n_requested": 289,
+  "n_scored": 289,
+  "gains": [],
+  "losses": [],
+  "net": 0,
+  "input_moved": 0,
+  "output_moved": 51,
+  "nondeterministic": [],
+  "rows": [
+    {
+      "molecule": "ADEZOY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 173.67,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 168.71,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "AHUKIZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 89.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 90.15,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "AJOKIV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 42.49,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 43.95,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "APAGOO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.67,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 37.73,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "APOTOO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 21.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.38,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BADPOO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.11,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.9,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BADPUU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.61,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.78,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BAJBAS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 130.73,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 133.05,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BEPSUN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.79,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.54,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BERZAC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.55,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.61,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BIKRUL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 47.01,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 46.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "BIXCAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.24,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.16,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BOCGEH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.9,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BOCHIM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 8.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 8.86,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "BOMTAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 61.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 63.13,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "CAHQEJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 56.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 57.74,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "CAHQOT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 152.75,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 157.48,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "CAZXIM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 25.78,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.01,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "CEDXER_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.14,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "CESFIR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 36.52,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 37.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "CIMCIL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.68,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "COFBAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 109.6,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 101.96,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "COMXUY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 45.8,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 45.67,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "CUWHIM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.7,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.13,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "DERMET_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 50.8,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 51.42,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "DERMIX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 52.85,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 53.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "DILYOM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 37.34,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 38.06,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "DILZOQ_comp_2",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.73,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 56.16,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "DIYWAM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 60.32,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 61.45,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EBAMEA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 252.82,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 256.23,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "EDANEF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 13.24,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 13.4,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EJUKOK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 24.16,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.93,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EKOHIW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.85,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.79,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EMUGAU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.12,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.58,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EQAGEK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 19.07,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.07,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ESEXIK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.32,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 35.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "ETACIL_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 9.06,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EVUHUZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 48.96,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 48.2,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "EWALET_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 9.11,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.56,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EWUQOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 38.33,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 39.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EYEBOA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 47.99,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 49.04,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "EZUROH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 49.75,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 49.48,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FECSUC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.99,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.91,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FEDQUD_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 30.69,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 30.96,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FENQAQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.87,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 19.42,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FEPZIK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.91,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.41,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FEPZOQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.81,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.93,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FESFUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.35,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FESKUK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 32.34,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 33.09,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FIBQAK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 55.62,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 55.64,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "FIMMUK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 40.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 40.44,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FOGCIN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FOHFIT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.41,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.89,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FOKQOM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 46.75,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FULBIZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 51.95,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 54.49,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FUQZAT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.95,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.59,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FUSNAK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.33,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.37,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "FUXMAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 52.45,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 52.92,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FUYYAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.51,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "FUYYEF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.69,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 14.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GACTAG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.8,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.18,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GALZOK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.82,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 55.36,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GARXAZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 25.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GAYSOO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 19.04,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GIMWAA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.43,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 56.6,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "GULPAG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.76,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.76,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "HATGAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.58,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.16,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "HEJKEM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.17,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 25.08,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "HEPSOL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 8.5,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 8.13,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "HEWKOL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 80.17,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 83.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "HIPQIH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 61.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 63.41,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "HOHTAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 53.23,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 54.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IBAZIW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 56.31,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 56.87,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ICUCAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 24.67,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.55,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IGOBOX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 8.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.73,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IGOBUD_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 6.71,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 6.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IHIKEP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 7.15,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 7.63,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IHIZEE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 43.14,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 45.23,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "INUWUL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 33.2,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 33.49,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IWUGIR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.65,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.76,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IXUTAW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 41.81,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 43.86,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "IZUHAM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.59,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.89,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JAFFOL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 34.4,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 35.45,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JEDPIU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 59.73,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 59.71,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JETNEC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.42,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 23.08,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JIVFOK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 78.89,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 80.15,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JOBNUK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.4,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.21,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JOFXOS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.58,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.75,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "JUXPAV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 44.16,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 52.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KADVER_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 48.16,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 49.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "KAKNUI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 175.46,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 176.83,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "KALHUD_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.0,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "KAQDEL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 58.88,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 58.35,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KEWYAM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.79,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KEXCOI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.89,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.06,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KIPBAP_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 42.85,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 44.8,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KIRVOY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 56.56,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KIRWEP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.4,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.42,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KURBAC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.99,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.52,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LABJEG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.88,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 14.98,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LACNOU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 82.84,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 82.11,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LARQAY_comp_2",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.09,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 21.58,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LASFER_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.76,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 19.3,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LASSOQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 40.38,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 40.47,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LASVUZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.69,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LASXUB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 32.34,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 33.31,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LAZYAO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 39.58,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 39.84,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LEJBEH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 30.6,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 31.09,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LIHREB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 10.63,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 10.63,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LIJVEG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.81,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LIKJIB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 38.14,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 37.75,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LOFLAU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.47,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.36,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LOFMOJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LOJMUS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.69,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.39,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LOMFUQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 41.74,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 40.12,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LUSBEI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 75.78,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 74.64,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LUSZUW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 66.76,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 69.34,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "LUZDAL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 144.74,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 144.9,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LUZGIY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 43.87,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 45.93,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MAMPEW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.45,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.92,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MECXEY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.62,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 55.33,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MENJAT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 87.84,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 88.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MEVFAU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 49.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MIFJIV_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 171.21,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 172.05,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MIHLIY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 134.22,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 135.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "MIKDOA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.18,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.66,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MIQWEO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 74.23,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 74.94,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MOJYAL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.47,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MOPVEU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 48.89,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 49.17,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MOZNIA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 19.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 19.44,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MUBNAY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 46.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.02,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MUNWAU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.72,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MUTCEK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 47.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.84,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MUTCIO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.88,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.12,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NAGQOE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 143.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 144.28,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NAKHAI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.83,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NAKJUH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 32.5,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 32.76,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NAYSOX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.21,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.86,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NISHAZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 47.63,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NIVGEG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.51,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.79,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NONSUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.35,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.51,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NONTAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 29.69,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 31.33,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NOVYUU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 36.04,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "NOYQID_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 9.82,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 10.16,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NUJFUV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.46,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "NUZXIQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.88,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 23.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "OCIKAO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.35,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.78,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OCUKAA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 55.92,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 53.71,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "OHIQON_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.94,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.87,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OKAPEX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 96.39,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 108.19,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OKEWEI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.34,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ONUGIO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.44,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OPEHOI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 51.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 58.12,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OSIBEZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 21.45,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.05,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OTIGIJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 63.75,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 62.82,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "OVUFUI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 46.12,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.24,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OVUGET_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 41.38,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 43.52,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "OZUZEQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 239.9,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 235.34,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PANHUJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.37,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.38,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PAXJUT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 81.14,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 85.1,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PEBLUF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.63,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "PEQQAG_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.18,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 35.1,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PERHEC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 42.29,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 46.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PERPIO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.37,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 21.29,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PERYUJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.78,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIGXAG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 10.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 10.42,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIKLOM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 78.4,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 79.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIKROS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.44,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 26.9,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "PIXGIP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 55.27,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 57.35,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIXGUB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.24,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 54.5,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIXHIQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 52.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 53.06,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "PIZBUW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 21.25,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 21.56,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "POZSIG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 93.83,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 94.07,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "PUNPEV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.66,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 19.39,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QAQZAK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 44.15,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 44.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QASRUA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.95,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.84,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QEBKUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 177.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 180.33,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QEFSOJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.37,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.79,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QEYMAJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 50.43,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.17,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QIDNEX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.01,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.81,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QIHBIU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.79,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "QOHZOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 49.79,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 52.83,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QOQMUF_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 34.2,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 34.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QOSKAL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 24.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.73,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QUHKIO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.33,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 23.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QULZON_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 25.78,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 25.76,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QUVYOX_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 57.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 57.33,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RAXVAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.23,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RECKUH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.81,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.98,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "REKFAQ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 83.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 82.69,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIFPOO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.98,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 26.5,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIGHOF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 13.14,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 13.49,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RILBOG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.27,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 35.59,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIQNUC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 34.09,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 33.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIXROH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.26,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.56,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIXVAX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 75.89,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 74.58,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ROCZAN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.62,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ROGYES_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 30.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 33.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ROHZEV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.88,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.94,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "ROZNIE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.48,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RUKVAU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 63.72,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 68.21,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RULWEB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 10.2,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.94,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "RURHUH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 30.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 32.58,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "RUSLIC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 35.5,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 41.58,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "RUYDUM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 80.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.23,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "SADMOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 76.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 89.19,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SANNIE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 9.29,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.47,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SIJROU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.78,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.11,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SOMWOI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 42.31,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 44.54,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SOQHEL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 144.27,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 142.82,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SOQHIP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 50.9,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.71,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SOSPEW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 45.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 45.96,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "SUSGOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 97.05,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 97.25,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TAXSOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.44,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TEKQAE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.39,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.31,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TELSEL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 24.75,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 24.42,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TEQHIG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 62.78,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 63.06,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TEVSEV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 66.58,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 64.78,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TIXWEC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.26,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TOFWES_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.68,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TOGKOR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 77.67,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 80.87,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "TOHCAX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.22,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.54,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TOVTOP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.25,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TOWWUX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 78.87,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 78.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "TUXGOK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 18.73,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 18.49,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "UCIYOX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 15.14,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 16.1,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "UDARIC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 135.65,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 136.24,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "UHATAY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 9.7,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 10.0,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ULOQET_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 75.98,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 76.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ULORIY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 167.42,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 166.74,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "UNAFOG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 48.32,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 50.54,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "USEKAF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 21.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 21.68,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VAHMID_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.52,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 14.87,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "VAJVOS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 54.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 54.86,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VAQRAH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 52.04,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 54.92,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VATQUE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.72,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.52,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VATRAL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 29.7,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 30.92,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VECYOU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 43.91,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 45.9,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VEMQIP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 109.59,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 109.35,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIGXOZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 22.04,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.71,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIGYES_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 60.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 60.88,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIMVUL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.86,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 13.0,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIMWAS_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.19,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.93,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIQQOB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.15,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.64,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VIQSAP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 19.27,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.15,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VOCDEY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 31.82,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 32.13,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VOCSOY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 46.59,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 49.5,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VOGBEZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 47.37,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VOJMAL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 31.22,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.53,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VUGJEN_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 33.97,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 34.61,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "VUGNUI_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 38.77,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 38.54,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WACFAI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.41,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "WAGGUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 61.59,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 62.23,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WAVDED_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 67.01,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 68.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WAVXID_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 41.74,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 42.47,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WAVXOJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 14.82,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WEHXUE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 29.11,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.49,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WERQOC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.86,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.2,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WEYDOW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.34,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.99,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WIBTAD_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 128.51,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 129.33,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WIWRIE_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 26.51,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 27.31,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WIXLUL_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 45.07,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 44.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "WOFGUT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 232.57,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 236.32,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "WUNYAF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.7,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.72,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WUSJAW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 25.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 25.51,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "WUYWET_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 70.16,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 71.43,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XAGPAZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 11.8,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 11.45,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XATXOH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 204.41,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 204.79,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XECSIJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 94.33,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 95.3,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XECTAA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 12.03,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 12.82,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XEVMIV_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 20.3,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 20.53,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XIXPUR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 117.99,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 119.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XUWHAA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 28.56,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.8,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "XUZHAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 29.46,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 29.35,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "YEHHUP_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.22,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 17.7,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "YEYVAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 42.03,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 42.95,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "YIMVOG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 37.1,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 38.57,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "YOWBUI_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 8.47,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 8.99,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "YUYSES_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 23.06,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 23.64,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZELKUY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 58.92,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 65.16,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZOGXIF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 16.03,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 15.03,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "ZOTZUF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 46.87,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 47.38,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZOVDOF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 13.18,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 13.41,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZOVKEC_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 27.9,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 28.25,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "ZUCKOZ_comp_1",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 68.03,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 68.61,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZUFZUX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 59.76,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 61.76,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZUGBUA_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 51.42,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 53.62,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZUGCAH_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 86.98,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 89.97,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ZUYVEU_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 108.41,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 109.56,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    }
+  ]
+}
