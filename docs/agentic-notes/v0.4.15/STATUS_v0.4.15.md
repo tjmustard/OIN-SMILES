@@ -73,13 +73,16 @@ Controls **complete**, and they are clean:
 free on the population that already passes, because those molecules accept on an early conformer
 and neither predicate ever fires. The cost lands only where the pool actually fills.
 
-Target arms **partial**:
+Target arms:
 
 | arm | done | gains | losses | output moved |
 |---|---:|---:|---:|---:|
-| L2 `key_equal` (365) | 50 | **9** | 0 | 9 |
-| L2 `MIRROR_MATCH` (201) | 45 | **0** | 0 | 0 |
-| L1 `SITE_LOST` (289) | 22 | 0 | 0 | 4 |
+| L2 `MIRROR_MATCH` (201) | **201 ✅ COMPLETE** | **1** (`TAYDUV_comp_0`) | **0** | 1 |
+| L2 `key_equal` (365) | 129 | **19** | 0 | 19 |
+| L1 `SITE_LOST` (289) | 100 | **0** | 0 | 16 |
+
+⚠ The enantiomer arm's final figure is **1 of 201 = 0.5%**, not the 0 an earlier partial showed.
+Essentially zero, but **not literally zero** — quote 1/201.
 
 ### 🔴 The decomposition, which is the release's real finding
 
