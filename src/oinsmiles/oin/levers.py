@@ -520,6 +520,33 @@ _HELD_OFF = {
         "and bound secondary amines (P3) are NOT covered, so report a count rather than claiming "
         "the class goes to zero."
     ),
+    "OIN_STRING_EXACT_BOUND": (
+        "v0.4.16 Lane 1: bound the extra search OIN_ACCEPT_STRING_EXACT costs, in units of "
+        "accept_fn evaluations AFTER the first ACCEPT_INCUMBENT. INTEGER-valued -- read with "
+        "`lever_int`, never `lever_enabled`, because 0 is a meaningful setting here.\n"
+        "🔴 WHY A BOUND EXISTS AT ALL. v0.4.15 measured the lever at +48 molecules / +0.96 pts "
+        "with ZERO losses over 565 -- and at 4.00x runtime, `>30 s` 30 -> 122 on its 365-molecule "
+        "population (~678 -> ~770 corpus-wide). The roadmap targets byte_exact 100% AND "
+        "max(elapsed_s) < 30 s, so ~+1 point of one half against ~+1.8 of the other is close to a "
+        "wash. The cost has a known mechanism: the lever declines to STOP the pool, so the pool "
+        "fills to budget. Measured from the frozen arm, the 317 molecules that never gain consume "
+        "16149 s of the lever's 17191 s -- 93.9% of the entire bill buys nothing.\n"
+        "WHY BOUNDING IS SAFE, AND WHY THAT IS STRUCTURAL RATHER THAN HOPEFUL. `incumbent_hit` is "
+        "the FIRST conformer whose verdict is ACCEPT_INCUMBENT and it is returned as the sole "
+        "pool member regardless of how much longer the pool fills. So truncating after N further "
+        "evaluations changes the answer ONLY for a molecule whose string-exact hit lies beyond N. "
+        "Every molecule that never hits is answer-neutral by construction.\n"
+        "⚠ THE ONE HOLE, WHICH IS COUNTED RATHER THAN ASSUMED AWAY. A molecule that records NO "
+        "incumbent falls through to the energy-sorted pool, where truncation is NOT "
+        "answer-neutral. Those are excluded from any derived curve and stated with their count.\n"
+        "BOUND 0 IS THE WIRING GATE. It returns the incumbent the instant it is recorded, which "
+        "is byte-identically what the lever-OFF arm returns. Any deviation is a wiring bug, not a "
+        "finding -- the direct answer to this project's standing rule that an instrument whose "
+        "BROKEN version would print the same thing has measured nothing.\n"
+        "COUPLED WITH OIN_ACCEPT_STRING_EXACT, the way OIN_CANONICAL_DONOR_FOLD and "
+        "OIN_FOLD_PARITY_VETO are coupled: promoting the lever WITHOUT the bound reinstates the "
+        "full 4.00x. Promote both or neither."
+    ),
     "OIN_H_FAITHFUL": (
         "The OIN_CANONICAL_BODY interaction that blocked this in v0.4.5 is FIXED: both of "
         "canonical_body_emit's MolToSmiles writes now go through h_faithful_smiles, so the "
@@ -686,6 +713,34 @@ def lever_enabled(name: str, override=None) -> bool:
     if raw is None:
         return name in _DEFAULT_ON
     return raw.strip().lower() not in _FALSEY
+
+
+def lever_int(name: str, default=None):
+    """Read an INTEGER-valued lever. Returns ``default`` when unset or unparseable.
+
+    ``lever_enabled`` cannot express this one, and the difference is not stylistic.
+    ``OIN_STRING_EXACT_BOUND=0`` is a MEANINGFUL setting -- "stop the moment an incumbent is
+    recorded", which reproduces the lever-OFF answer byte-for-byte -- so ``0`` must be
+    distinguishable from *unset*. Under ``lever_enabled`` both read as disabled and the whole
+    bound-0 wiring gate becomes unrunnable.
+
+    ⚠ This is the exact shape of the trap the boolean reader exists to stop
+    (``os.environ.get`` returns ``"0"`` as truthy and ENABLES), so it is spelled out rather than
+    inlined at the call site: a bare ``int(os.environ.get(name, default))`` raises on unset and on
+    garbage, and a bare ``os.environ.get(name) or default`` silently turns ``"0"`` into the
+    default -- which would make bound-0 mean *unbounded*, i.e. the loudest possible wrong answer.
+
+    Negative values are rejected to ``default``: a negative bound has no meaning here, and
+    accepting one would silently disable the bound rather than fail.
+    """
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw.strip())
+    except (TypeError, ValueError):
+        return default
+    return default if value < 0 else value
 
 
 def default_on() -> frozenset:

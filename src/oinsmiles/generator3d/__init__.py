@@ -252,6 +252,7 @@ def generate_3d_structures(
     metal_complex=None,
     accept_fn=None,
     enforce_budget=None,
+    incumbent_bound=None,
 ):
     """Generate 3D structures from an m-SMILES string.
 
@@ -304,6 +305,25 @@ def generate_3d_structures(
         no ``fork``/``RLIMIT_CPU`` machinery is required.
       * an empty pool at the deadline raises ``BudgetExhaustedError`` instead of
         returning ``[]``.
+
+    incumbent_bound: cap how far the pool keeps filling AFTER the first
+    :data:`ACCEPT_INCUMBENT` verdict, counted in ``accept_fn`` evaluations
+    (``OIN_STRING_EXACT_BOUND``; ``None`` = unbounded, the v0.4.15 behaviour). This is
+    the runtime half of the ``OIN_ACCEPT_STRING_EXACT`` trade: the lever's whole cost is
+    that it declines to stop the pool, and on the frozen v0.4.15 arm the 317 molecules
+    that never gain consume 93.9% of its bill.
+
+    **Bounding is answer-neutral except where it is the point.** ``incumbent_hit`` is the
+    FIRST such conformer and is returned as the sole pool member regardless of how much
+    longer the pool fills, so truncating changes the answer only for a molecule whose
+    string-exact hit lies beyond the bound. ``incumbent_bound=0`` therefore reproduces
+    the lever-OFF answer byte-for-byte -- which is the wiring gate, not a degenerate case.
+
+    ⚠ Answer-neutral **only once an incumbent exists**. A molecule that never records one
+    falls through to the energy-sorted pool below, where a shorter pool genuinely can
+    select differently. The bound is armed by ``incumbent_hit``, so it cannot fire before
+    then; a caller deriving a recovered-vs-bound curve must still exclude the molecules
+    that never record an incumbent, and say how many it excluded.
     """
     import time
 
@@ -489,9 +509,22 @@ def generate_3d_structures(
     # accept_fn actually returns the sentinel, so this is byte-identical for every other caller.
     incumbent_hit = None
 
+    # OIN_STRING_EXACT_BOUND bookkeeping. ``_since_incumbent`` counts accept_fn evaluations made
+    # AFTER the incumbent was recorded; ``bounded_stop`` says the bound ended the search.
+    #
+    # 🔴 A SEPARATE FLAG, NOT ``early_hit``. Stopping by assigning ``early_hit`` would look like it
+    # works -- both loops break on it -- and would return the conformer through the `return
+    # [early_hit]` path at the top, which means "a conformer INDEPENDENTLY re-encoded to the
+    # requested key and we stopped for it". That is precisely the claim the bound must NOT make:
+    # the conformer it stops on is the incumbent, i.e. the one whose string did NOT match. The
+    # verdict would be indistinguishable in the return value and wrong in the telemetry, which is
+    # this project's recurring failure mode rather than a hypothetical.
+    _since_incumbent = 0
+    bounded_stop = False
+
     def _file_and_maybe_stop(positions, scale):
         """File a conformer, then test it against ``accept_fn``; True => stop building the pool."""
-        nonlocal early_hit, incumbent_hit
+        nonlocal early_hit, incumbent_hit, _since_incumbent, bounded_stop
         accepted = _try_accept(positions, scale)
         if accept_fn is not None and accepted is not None and early_hit is None:
             # OIN_ENFORCE_BUDGET: do not START an accept_fn call we cannot afford.
@@ -507,6 +540,10 @@ def generate_3d_structures(
             if embed_deadline is not None and time.monotonic() > embed_deadline:
                 logger.debug("budget reached; skipping the accept_fn re-encode")
                 return False
+            # Whether an incumbent existed BEFORE this evaluation. The distinction is the whole
+            # off-by-one: the evaluation that RECORDS the incumbent is not one of the extra
+            # evaluations the bound is meant to cap, so it must not advance the counter.
+            _had_incumbent = incumbent_hit is not None
             try:
                 verdict = accept_fn(accepted)
                 if verdict is ACCEPT_INCUMBENT:
@@ -518,7 +555,31 @@ def generate_3d_structures(
                         _telemetry.record("pool.accept_incumbent_recorded")
                 elif verdict:
                     early_hit = accepted
+                    # THE ORDINAL IS WHY ONE RUN SUFFICES. `min_bound` is the smallest
+                    # incumbent_bound at which this molecule is still recovered, recorded so the
+                    # whole recovered-vs-bound curve is arithmetic over a single unbounded run
+                    # rather than one full run per candidate bound.
+                    #
+                    # It is recorded as the ANSWER (the minimum bound) rather than as the raw
+                    # counter precisely so no consumer has to re-derive the +1 -- the reader of a
+                    # frozen JSON six months from now cannot see this loop.
+                    _telemetry.record(
+                        "pool.string_exact_hit",
+                        min_bound=int(_since_incumbent + 1) if _had_incumbent else 0,
+                        had_incumbent=bool(_had_incumbent),
+                    )
                     return True
+                # Count only evaluations made once an incumbent ALREADY existed -- before that
+                # there is nothing to fall back on and the bound must not be able to fire.
+                if incumbent_hit is not None:
+                    if _had_incumbent:
+                        _since_incumbent += 1
+                    if incumbent_bound is not None and _since_incumbent >= incumbent_bound:
+                        # bound=0 lands here on the recording evaluation itself (0 >= 0), which
+                        # is what makes it byte-identical to the lever-OFF arm.
+                        bounded_stop = True
+                        _telemetry.record("pool.incumbent_bound_stop", bound=int(incumbent_bound))
+                        return True
             except Exception:
                 logger.debug("accept_fn raised on a conformer; ignoring", exc_info=True)
         return False
@@ -711,7 +772,11 @@ def generate_3d_structures(
                 if _file_and_maybe_stop(positions, scale):
                     break
             no_progress = 0 if len(successful_mols) > pool_before else no_progress + 1
-            if early_hit is not None:
+            # ⚠ `bounded_stop` as well as `early_hit`. The inner `for positions in batch` loop
+            # above breaks only ITSELF, so without this the outer loop would embed a fresh batch
+            # and the bound would cap nothing on the batched path -- a lever that fires, logs, and
+            # saves no time, which is exactly the shape of v0.4.12's ETA_EARLY_EXIT.
+            if early_hit is not None or bounded_stop:
                 break
 
     if early_hit is not None:
