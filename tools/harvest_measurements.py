@@ -110,6 +110,11 @@ ALLOW = [
     # bucket table, the key_equal sub-split and the runtime percentiles WITHOUT the raw run, which
     # is the whole point of this tree (v0.4.11's mirror-audit JSON is gone for want of exactly this).
     "per_molecule_extract.tsv",
+    # v0.4.14 residue: the golden re-freeze rows (provenance for which arm2 rows moved and why)
+    # and the SUPERSEDED scored A/B, kept precisely because it is the artifact behind a documented
+    # error -- it was scored with arm2's circular predicate and produced a wrong conclusion.
+    "arm2_refreeze_rows.tsv",
+    "gain_generator_ab.tsv",
     "RUN.md",
     # v0.4.15. ⚠ `attach_*`, not `attach_class_audit.json` -- the narrow name was already in this
     # list and would have silently dropped `attach_return_preflight.json`, which is the file that
@@ -219,6 +224,17 @@ PROVENANCE = [
         "tools/fold_key_invariance.py --sweep <frozen sweep> --lever OIN_RESONANCE_DONOR_FOLD"
         " --holding OIN_CANONICAL_DONOR_FOLD"
         "   (9669 compared, 228 moved, 0 keys changed. ⚠ bounds ACCEPTANCE, not embedding)",
+    ),
+    (
+        r"^arm2_refreeze_rows\.tsv$",
+        "tools/gate_arm2_roundtrip_one.py over the 13 v0.4.14 golden movers -- the rows spliced"
+        " into gate_v047/v049_arm2_golden.tsv (fields 1-6 only; field 7 is the --band column)",
+    ),
+    (
+        r"^gain_generator_ab\.tsv$",
+        "SUPERSEDED. tools/gate_arm2_roundtrip_one.py A/B over 20 v0.4.14 gains -- scored with"
+        " arm2's CIRCULAR predicate (get_oin_string(result.mol)) and therefore wrong. Kept as the"
+        " artifact behind a documented error; the correct measurement is reso_full_ab.json",
     ),
     (
         r"^per_molecule_extract\.tsv$",

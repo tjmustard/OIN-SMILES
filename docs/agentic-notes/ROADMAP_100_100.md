@@ -35,15 +35,15 @@ Both goals are one goal, and neither is currently measurable.
 
 | goal | metric | today | target |
 |---|---|---|---|
-| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **77.30%** *(honest, v0.4.14, measured end-to-end)* | **100%** |
-| **B — speed** | per-molecule wall-clock against an **enforced** budget | **994/5000 = 19.88%** over 30 s; median 7.19 s | **< 30 s, p100** |
+| **A — accuracy** | `byte_exact`, scored by **independent** re-perception of the generated XYZ | **77.16%** *(v0.4.14 baseline sweep, n=5000 — the first REAL generator sweep since v0.4.6)* | **100%** |
+| **B — speed** | per-molecule wall-clock against an **enforced** budget | **678/5000 = 13.56%** over 30 s; median **4.01 s**; max 728.8 s | **< 30 s, p100** |
 
 ⚠ Two live traps in one field. `metrics.elapsed_s` is **nested** — read from the top level it
 silently yields `0` — **and it is a SUM** over up to three separately SIGKILLed harness attempts.
 The old "max 759.9 s against a 300 s budget" headline was the second trap: all 4658 single-attempt
 rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`.
 
-## The gap — `100 − 77.30 = 22.70` points (v0.4.14, measured end-to-end)
+## The gap — `100 − 77.16 = 22.84` points (v0.4.14 baseline sweep, n=5000)
 
 ⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON for a
 net of **+71 molecules / +1.42 points** (78 gains, 7 losses). The previous copy read `100 − 75.88 = 24.12`.

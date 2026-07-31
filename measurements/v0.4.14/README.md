@@ -4,7 +4,9 @@ Written by `tools/harvest_measurements.py`. **Do not hand-edit** — rerun the t
 
 | file | bytes | sha256 | produced by |
 |---|---:|---|---|
+| `arm2_refreeze_rows.tsv` | 2882 | `3a236585a438f462` | tools/gate_arm2_roundtrip_one.py over the 13 v0.4.14 golden movers -- the rows spliced into gate_v047/v049_arm2_golden.tsv (fields 1-6 only; field 7 is the --band column) |
 | `atrisk_generator_ab.json` | 6751 | `94b4eb9f1b849f31` | tools/generator_ab_honest.py --lever OIN_RESONANCE_DONOR_FOLD (sampling pass, superseded by reso_full_ab.json) |
+| `gain_generator_ab.tsv` | 8900 | `f9df8be347b490e4` | SUPERSEDED. tools/gate_arm2_roundtrip_one.py A/B over 20 v0.4.14 gains -- scored with arm2's CIRCULAR predicate (get_oin_string(result.mol)) and therefore wrong. Kept as the artifact behind a documented error; the correct measurement is reso_full_ab.json |
 | `generator_ab_honest.json` | 7167 | `8b49290034bf631b` | tools/generator_ab_honest.py --lever OIN_RESONANCE_DONOR_FOLD (sampling pass, superseded by reso_full_ab.json) |
 | `hekfel_honest_ab.json` | 994 | `08fde66e79675261` | tools/generator_ab_honest.py --lever OIN_RESONANCE_DONOR_FOLD (sampling pass, superseded by reso_full_ab.json) |
 | `mirror_cat_control_resoff.json` | 20530 | `83ff2c17de5d0aee` | tools/mirror_audit_donor_fold.py --dataset <cat cohort> --n cat   (OIN_RESONANCE_DONOR_FOLD=control_resoff; the `movers` draw is the MOVER-ENRICHED cohort at 179/179 coverage -- the `cat` draw holds only 1 mover in 250 = 0.4% and is a general-population control, NOT evidence about this lever) |
@@ -21,12 +23,14 @@ Written by `tools/harvest_measurements.py`. **Do not hand-edit** — rerun the t
 | `v0413_atrisk_ab.json` | 13195 | `67fce9fa08911851` | tools/generator_ab_honest.py --lever OIN_CANONICAL_DONOR_FOLD over 40 of v0.4.13's 197 at-risk molecules (seed 13)   (6 losses = 15% => ~30 over the population => v0.4.13's true net ~+2.82, NOT +3.42) |
 | `v0413_gains_ab.json` | 8769 | `c7c66e67220dc478` | tools/generator_ab_honest.py --lever OIN_CANONICAL_DONOR_FOLD over 25 of v0.4.13's 171 claimed gains (seed 17), resonance held OFF in both arms   (22/25 = 88% real => ~150 gains; with ~30 losses, v0.4.13's true net is ~+2.42 pts) |
 | `veto_outcomes.json` | 86571 | `df9312f92d35d796` | tools/veto_outcome_audit.py --sweep <frozen sweep> --dataset <cat> --dataset <photo>   (which of fold_parity's FIVE outcomes each reverted molecule got: 222/222 vetoed_collapse, 0 no_evidence, over 393/393 movers) |
-| `veto_residue_chirality.json` | 18176 | `f4a096265472eac1` | tools/veto_residue_chirality.py --outcomes veto_outcomes.json --sweep <frozen sweep>   (183/222 MIRROR_MATCH: the round trip built the ENANTIOMER) |
+| `veto_residue_chirality.json` | 18176 | `f4a096265472eac1` | tools/veto_residue_chirality.py --outcomes veto_outcomes.json --sweep <frozen sweep>   (183/222 MIRROR_MATCH on the v0.4.8 corpus; 201/242 re-derived on the v0.4.14 baseline sweep: the round trip built the ENANTIOMER) |
 
 Source paths at harvest time:
 
 ```
+arm2_refreeze_rows.tsv  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/arm2_refreeze_rows.tsv
 atrisk_generator_ab.json  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/atrisk_generator_ab.json
+gain_generator_ab.tsv  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/gain_generator_ab.tsv
 generator_ab_honest.json  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/generator_ab_honest.json
 hekfel_honest_ab.json  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/hekfel_honest_ab.json
 mirror_cat_control_resoff.json  <-  tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-lane1/mirror_cat_control_resoff.json
