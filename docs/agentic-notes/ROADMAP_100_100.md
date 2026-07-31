@@ -60,9 +60,9 @@ Neither number moved; who owns them did. See `VETO_RESIDUE_OWNERSHIP_v0.4.14.md`
 
 | block | n | pts | nature | release |
 |---|---:|---:|---|---|
-| **`structural`** | **417** | **8.34** | 🔴 **RE-MECHANISED by v0.4.13 Lane 2: 266 (63.8%) are `DETACHED`** — an unguarded *return* path, not a capability floor | v0.4.17 (**candidate to pull forward — up to 5.32 pts is one site**) |
+| **`structural`** | **484** | **9.68** | 🔴 **RE-MEASURED v0.4.15: 301 (62.2%) `DETACHED`, of which 289 fail the guard's own predicate — and a return-path guard recovers 0 of them.** Not a return-path bug: attachment necessary, NOT sufficient | **v0.4.17 CONSTRUCTION** (selection is exhausted here) |
 | `hard_fail` | 319 | 6.38 | compute; **315/319 produce no structure at all** | — |
-| `key_equal` → `slot_renumber` | **247** | **4.94** | 🔴 **NOT one block.** 183 = the generator built the **ENANTIOMER** (3.66) · 39 = unfoldable same-enantiomer labeling (0.78) · 25 = resonance residue (0.50) | **split — see below** |
+| `key_equal` → `slot_renumber` | **252** | **5.04** | 🔴 **SPLIT MEASURED v0.4.15: the non-enantiomer part is REACHABLE (28.7%, +48 mol behind `OIN_ACCEPT_STRING_EXACT`); the 201 enantiomers are NOT (0.5%) — the pool holds one key-matching conformer and it is the mirror** | reachable half **available now**; enantiomers → v0.4.16 CONSTRUCTION |
 | `key_equal` → `rdkit_canonical` | 114 | 2.28 | 🔴 **NOT canonicality.** 92/114 (80.7%) is **η-set denticity drift** — a perception/geometry problem no string change can reach | **re-filed off the encoder ladder** |
 | `facmer_divergent` | 16 | 0.32 | wrong isomer | v0.4.15 |
 | `encode_fail` | 15 | 0.30 | encoder coverage | v0.4.18 (opportunistic) |
@@ -225,10 +225,54 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.12** | **reflection parity + honest acceptance** — L1 `OIN_FOLD_PARITY_VETO`, the filter v0.4.11's close-out specified; L2 `OIN_ETA_ACCEPT_EXIT`, the winding criterion moved from selection into `accept_fn`, the only site that can stop pool filling. ⚠ `OIN_ETA_EARLY_EXIT` is **runtime-inert as sited** and its promotion gate is **void, not unrun** | default path **FLAT** (both levers OFF); L1 lever-ON gain and L2 tail move measured separately — see `docs/agentic-notes/v0.4.12/` |
 | **v0.4.13** | **the donor fold ships + harness false negatives** — promotes `OIN_CANONICAL_DONOR_FOLD` + `OIN_FOLD_PARITY_VETO` to default-ON (owner's call; voids the carry-forward licence, so a full re-sweep and re-frozen goldens are owed). L1 `PREFILTER_VETO` acceptance-side prevalence; L2 the MEDZUR/GAVSED split — **both classes were n = 1 and are now 99 and 280** | **UP ~3.42 pts** from the promotion (72.46% → ~75.88%); Lane 1/2 are measurements, not headline movers |
 | **v0.4.14** ✅ | **the residue, re-scoped.** Promoted `OIN_RESONANCE_DONOR_FOLD` (skeleton-level donor equivalence: acac ketone/enol, carboxylate, sulfonate) — **+1.56 pts, 78 molecules, 0 bad**, mirror audit **0 regressions at 179/179 = 100% coverage**. 🔴 **And REFUTED both halves of its own charter:** `rdkit_canonical` is **80.7% η-set denticity drift**, not canonicality; and **183 of the 222 veto-reverted molecules are the generator building the ENANTIOMER**, so `byte_exact` failing on them is CORRECT. **5.94 pts re-filed off the encoder ladder** | predicted **+3.5–4.1**, actual **+1.56** — the miss IS the finding (114 of the chartered 204 were never reachable) |
-| **v0.4.15** | 🔴 **RE-POINTED by v0.4.14, owner-accepted 2026-07-28. THE GENERATOR OWNS THE GAP.** Two lanes: **L1 `structural`/`DETACHED`** (266 mol, up to **5.32 pts**) wires the attachment guard that already exists for *acceptance* (`OIN_ATTACH_CHECK`) into the *return* path; **L2 the generator ENANTIOMER class** (183 mol, **3.66 pts**) — `accept_fn` decides by a reflection-blind key, so the generator can accept a mirror image and the harness records it as a same-isomer string difference. Resolves BOTH standing open decisions (v0.4.13's and v0.4.14's) together | byte_exact **UP 2–6 pts** (wide on purpose); `> 30 s` **UP** — both lanes make acceptance stricter |
-| **v0.4.16** | **information-adding tokens** — P1 `\|mc:±\|`, P2 `\|ax:±\|`, P3 `[N@]`. ⚠ v0.4.15 L2 *uses* the Δ/Λ descriptor as an acceptance test without emitting it; this release is where emitting it lands, and emitting makes the generator responsible for reproducing it | **DOWN, then recovers** |
+| **v0.4.15** ✅ | 🔴 **BOTH LANES MEASURED; ONE REFUTED, ONE RE-AIMED BY ITS OWN DATA.** Baseline re-established by the first real generator sweep since v0.4.6: **77.16%** — the charter's "over-stated base, really ~74.88%" alarm is **REFUTED** (0.14 pts, not 2.4). **L1 `OIN_ATTACH_RETURN`: 0 gains of 289, 51 structures moved, 0 losses, ratio 1.01 — REFUTED as an accuracy lever.** The guard promotes a better-attached conformer and re-perception still disagrees: attachment necessary, NOT sufficient, at scale. **L2 `OIN_ACCEPT_STRING_EXACT`: +48 mol / +0.96 pts, 0 losses — but 28.7% on the non-enantiomer 164 vs 0.5% on the 201 enantiomers (57×).** Everything it recovers is OUTSIDE the class the charter aimed it at. Both ship **default OFF**; L2's default is an open owner decision (4.00× runtime, `>30 s` 30→122 on its population) | predicted **+2 to +7**, actual **0.00 at the shipped default** (+0.96 available behind L2). The miss IS the finding |
+| **v0.4.16** | 🔴 **RE-POINTED by v0.4.15's data — emitting `|mc:±|` is now the WRONG next move.** v0.4.15 measured the pool: for the enantiomer class it holds **exactly ONE key-matching conformer and it is the mirror** (`pool.accept_incumbent_recorded = 1`). Emitting the token makes the generator responsible for reproducing a handedness it demonstrably does not build, converting 201 silent wrong answers into 201 loud failures for no gain. **This release should be CONSTRUCTION: make the embed able to produce both handednesses at all** (P2 `|ax:±|` / P3 `[N@]` may still stand — they were never measured this way) | **DOWN, then recovers** — unchanged, but now for a measured reason |
 | **v0.4.17** | **generator capability floor** — boron assembly, `NON` geometry, produced-nothing. **Encode floor R3** (15 / 0.30 pts) folded in opportunistically. ⚠ RE-SIZED: `structural` is no longer this release's subject — v0.4.13 measured 63.8% of it as `DETACHED`, a return-path guard, and v0.4.15 L1 now owns it | likely a documented limitation |
 | **v0.4.18** | **the 57 notation molecules** — build the per-case oracle. Plus the encoder ladder's remaining **1.28 pts**: 39 `NOT_A_MIRROR` (parity-aware canonicalization) + the 25-molecule resonance residue | knowledge, not points |
+
+### LADDER DECISION 2026-07-30 (v0.4.15) — **MEASURED, awaiting owner sign-off**
+
+```
+Baseline  77.16% byte_exact (n=5000, first REAL generator sweep since v0.4.6).
+          The v0.4.15 charter's "over-stated base, really ~74.88%" alarm is REFUTED:
+          the published 77.30% was over-stated by 0.14 pts, not 2.4. What the offline
+          re-score chain drifted was bucket COMPOSITION (structural +67, hard_fail -53),
+          not the headline.
+
+Result:   v0.4.15 ships FLAT at 77.16%. Both levers land default-OFF.
+
+          L1 OIN_ATTACH_RETURN        0 gains / 289   REFUTED as an accuracy lever
+          L2 OIN_ACCEPT_STRING_EXACT +48 gains / 365  works, default is an owner call
+
+🔴 THE TWO FINDINGS THAT RE-AIM THE LADDER:
+
+  1. SELECTION IS EXHAUSTED FOR structural/DETACHED. L1 fires hard -- 10-16
+     winding-matching conformers per molecule, EVERY ONE detached -- promotes a
+     better-attached conformer 51 times, and improves the answer ZERO times.
+     Attachment is necessary, not sufficient. The 6.02 pts in that bucket are NOT
+     reachable by a return-path predicate.
+
+  2. THE ENANTIOMER CLASS IS A CONSTRUCTION PROBLEM, NOT AN ACCEPTANCE ONE.
+     pool.accept_incumbent_recorded = 1: exactly ONE key-matching conformer in the
+     whole pool, and it is the mirror. L2 recovers 28.7% of the non-enantiomer 164
+     and 0.5% of the 201 enantiomers -- 57x apart.
+
+     ⇒ v0.4.16's chartered plan to EMIT |mc:±| is now the wrong next move. Emitting
+       makes the generator responsible for reproducing a handedness it does not build,
+       turning 201 silent wrong answers into 201 loud failures for no gain. v0.4.16
+       should be CONSTRUCTION: make the embed able to produce both handednesses at all.
+
+⚠ AND THE SCOPE CALL IS WHAT SAVED THE RELEASE. Scoped to the chartered 201 enantiomers,
+  L2 would have shipped +1 molecule. The owner-accepted widening to all 365 key_equal
+  (2026-07-29) is the entire lane. The charter's framing -- "enantiomers are the target,
+  slot_renumber is a later lane" -- was measured backwards.
+
+OPEN OWNER DECISION: promote OIN_ACCEPT_STRING_EXACT?
+  FOR      +48 molecules = +0.96 pts, ZERO losses across 565 molecules
+  AGAINST  4.00x runtime on its population; >30 s 30 -> 122 there, ~678 -> ~770 corpus-wide
+  The target is byte_exact 100% AND max(elapsed_s) < 30 s, so this is ~+1 pt of one half
+  against ~+1.8 pts of the other. If promoted, a full 5k sweep becomes MANDATORY.
+```
 
 ### LADDER DECISION 2026-07-28 (v0.4.14) — **ACCEPTED by the project owner**
 

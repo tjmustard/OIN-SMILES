@@ -5,6 +5,83 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.15] - 2026-07-30
+
+> ### FLAT at 77.16% — and the release's value is two measured refutations.
+>
+> **The absolute baseline was never over-stated.** The v0.4.15 charter opened, in three separate
+> files, with "the absolute baseline is NOT trustworthy — v0.4.14's 77.30% is a measured delta on
+> an over-stated base, v0.4.13's 75.88% really measures ~74.88%". The first real generator sweep
+> since v0.4.6 (n=5000, 38.7 CPU-h) reads **77.16%**. The published figure was over-stated by
+> **0.14 points**. What the offline re-score chain actually drifted is bucket *composition*
+> (`structural` +67, `hard_fail` −53) — an offline re-score holds the structure fixed, so it
+> cannot see the generator re-filing its own failures.
+>
+> **Both lanes ship default-OFF, so the headline is unchanged. Neither lane failed to build; both
+> were measured, and the measurements are the deliverable.**
+
+### Added
+- `OIN_ATTACH_RETURN` / `OIN_ATTACH_RETURN_STRICT` (default OFF) — v0.4.7's coordinate-only
+  attachment predicate on the **return** path, at all three exits of `_select_by_geometry_impl`.
+  Closes the gap `OIN_ATTACH_CHECK`'s own lever entry names as its third residual class.
+- `OIN_ACCEPT_STRING_EXACT` (default OFF) — acceptance compares the OIN **string**, not only the
+  reflection-blind round-trip key, with a new `generator3d.ACCEPT_INCUMBENT` verdict that keeps a
+  stricter predicate non-regressive by construction.
+- `tools/attach_return_preflight.py`, `tools/selection_pool_probe.py`, `tools/run_v0415_arms.sh`.
+
+### Measured
+- **Lane 1 — REFUTED as an accuracy lever.** 0 gains of 289, **51 structures moved**, 0 losses
+  across 541 molecules, runtime ratio **1.01×**. The guard fires hard (10–16 winding-matching
+  conformers per molecule, every one detached), promotes a better-attached conformer 51 times, and
+  improves the answer zero times. **Attachment is necessary, not sufficient** — the MEDZUR shape
+  confirmed at scale. `structural`'s 9.68 points are not reachable by a return-path predicate.
+- **Lane 2 — works, outside the class it was aimed at.** +48 molecules (**+0.96 pts**), **0 losses**
+  across 565, at **4.00× runtime** (`>30 s` 30 → 122 on its population). Decomposition:
+  **28.7%** recovery on the non-enantiomer 164 vs **0.5%** on the 201 enantiomers — **57× apart**.
+- **The enantiomer class is a construction problem.** `pool.accept_incumbent_recorded = 1`: exactly
+  one key-matching conformer in the whole pool, and it is the mirror. No acceptance predicate can
+  fix it.
+
+### Changed
+- Baseline re-established at **77.16%** (n=5000). `structural` 484, `key_equal` 365
+  (`slot_renumber` 252 / `rdkit_canonical` 113), `hard_fail` 266, `facmer_divergent` 15,
+  `encode_fail` 12. `>30 s` **678 (13.56%)**, median 4.01 s — ⚠ not like-for-like, this sweep
+  capped BLAS threads to 1 and the v0.4.6 sweep did not.
+- Roadmap re-aimed: **v0.4.16 should be construction, not emitting `|mc:±|`.** Emitting makes the
+  generator responsible for reproducing a handedness it demonstrably does not build.
+
+### Fixed
+- 🔴 `tools/generator_ab_honest.py`'s `sys.path.insert` **overrides `PYTHONPATH`**. The first run of
+  all six A/B arms imported main's `oinsmiles` — where neither lever exists — so both sides ran
+  identical code and returned a flawless "0 gains, 0 losses" over 1107 molecule-pairs. Caught only
+  because a second instrument (`selection_pool_probe.py`) contradicted the telemetry. The runner now
+  invokes the tool from the arm's own checkout and refuses to start unless `oinsmiles` resolves
+  there.
+- `harvest_measurements.py`: `ALLOW` extended for `attach_*`, `string_exact_*`, `lane1_*`, `lane2_*`,
+  `both_*` — the arm JSONs matched nothing and the release's load-bearing evidence would have been
+  dropped in silence. `INVALID*` directories now pruned by prefix, after a dry run queued six
+  filenames **twice** (the void arms share basenames with the real ones).
+- `generator_ab_honest.py` skips `#` comments, so a population file's provenance header is no longer
+  read as a molecule name.
+
+### Prediction vs actual
+| | predicted | actual |
+|---|---|---|
+| `byte_exact` | +2 to +7 pts | **0.00 at the shipped default** (+0.96 available behind Lane 2) |
+| `> 30 s` | UP, materially | **confirmed** — 4.0× on Lane 2's population |
+
+The miss is the finding: the prediction assumed both lanes' target buckets were *reachable by
+selection*. One is not reachable at all, and the other is reachable only outside the subset the
+charter named.
+
+### Not done, deliberately
+- **No full re-sweep.** Both levers ship default-OFF, so the shipped default is unchanged and the
+  v0.4.14 baseline sweep *is* v0.4.15's measurement. Re-running 38.7 CPU-h to reproduce an
+  unchanged default would be waste. **If `OIN_ACCEPT_STRING_EXACT` is promoted, a sweep becomes
+  mandatory.**
+- **No combined (`both`) arm.** With Lane 1 default-OFF, "both" is not a shipping configuration and
+  has no default to defend.
+
 ## [0.4.14] - 2026-07-28
 
 > ### The lever worked, the charter didn't — and the charter being wrong is the bigger result.
