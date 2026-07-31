@@ -42,12 +42,56 @@ import argparse
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 WIN_SITES = (
     "adapter.attach_return_fallback_promoted",  # Lane 1 changed the returned conformer
 )
+
+
+def _knee_row(events, elapsed):
+    """Per-molecule inputs to the v0.4.16 recovered-vs-bound curve.
+
+    ``min_bound`` is the smallest ``OIN_STRING_EXACT_BOUND`` at which this molecule is still
+    recovered, taken straight from the ``pool.string_exact_hit`` event so no consumer re-derives
+    an off-by-one from a loop it cannot see. ``None`` means no string-exact conformer was ever
+    found, i.e. the molecule is not recovered at ANY bound.
+
+    ``has_incumbent`` is the honesty field. A molecule that never records an incumbent falls
+    through to the energy-sorted pool, where truncating the search is NOT answer-neutral -- so it
+    must be EXCLUDED from the derived curve rather than counted as a safe zero. Recording it per
+    molecule is what makes that exclusion statable instead of silent.
+
+    ``t_at_bound`` maps bound -> elapsed seconds when the molecule would have stopped there, from
+    the ``pool.accept_eval`` stamps. That is the runtime half of the curve, derived from the same
+    single run as the accuracy half.
+    """
+    hit, has_incumbent, t_incumbent = None, False, None
+    t_at_bound = {}
+    for event in events:
+        site, detail = event.get("site"), event.get("detail") or {}
+        if site == "pool.accept_incumbent_recorded":
+            has_incumbent = True
+            t_incumbent = detail.get("t")
+        elif site == "pool.string_exact_hit":
+            hit = detail
+        elif site == "pool.accept_eval":
+            t_at_bound[int(detail.get("since_incumbent", 0))] = detail.get("t")
+    # Bound 0 stops the instant the incumbent is recorded, so its cost is that stamp.
+    if t_incumbent is not None:
+        t_at_bound.setdefault(0, t_incumbent)
+    return {
+        "elapsed_s": elapsed,
+        "has_incumbent": has_incumbent,
+        "min_bound": (hit or {}).get("min_bound") if hit else None,
+        "hit_t": (hit or {}).get("t") if hit else None,
+        "n_post_incumbent_evals": max(t_at_bound) if t_at_bound else 0,
+        "t_at_bound": {str(k): v for k, v in sorted(t_at_bound.items())},
+    }
+
+
 FIRE_SITES = (
     "adapter.attach_return_winding_skip",
     "adapter.attach_return_winding_all_detached",
@@ -100,13 +144,17 @@ def main() -> int:
                 optimizer=None, ensemble_size=1, timeout=args.timeout, ff_params=None
             )
             err = None
+            t0 = time.monotonic()
             try:
                 gen.generate(oin_in)
             except Exception as exc:  # noqa: BLE001 -- a failed generation is data
                 err = f"generate:{type(exc).__name__}"
+            elapsed = round(time.monotonic() - t0, 3)
             counts = _telemetry.counts()
+            events = _telemetry.snapshot()
         fired = {k: v for k, v in counts.items() if k in FIRE_SITES}
         won = {k: v for k, v in counts.items() if k in WIN_SITES}
+        knee = _knee_row(events, elapsed)
         rows.append(
             {
                 "molecule": mol,
@@ -114,10 +162,13 @@ def main() -> int:
                 "fired": fired,
                 "won": won,
                 "n_rejected": sum(fired.values()),
+                **knee,
             }
         )
         print(
-            f"  [{i}/{len(names)}] {mol} rejected={sum(fired.values())} won={sum(won.values())}",
+            f"  [{i}/{len(names)}] {mol} rejected={sum(fired.values())} won={sum(won.values())}"
+            f" min_bound={knee['min_bound']} evals={knee['n_post_incumbent_evals']}"
+            f" elapsed={elapsed}s",
             flush=True,
         )
 
@@ -150,8 +201,68 @@ def main() -> int:
         )
     if not n_fired:
         print("\n  🔴 the lever never fired -- this is a WIRING failure, not a finding.")
+
+    _print_knee_curve(scored)
+
     print(f"\nwrote {args.out_json}")
     return 0
+
+
+def _print_knee_curve(scored):
+    """recovered(N) and runtime(N) for OIN_STRING_EXACT_BOUND, from this one run.
+
+    Both curves come from the SAME unbounded run, which is the point: `incumbent_hit` is the
+    first ACCEPT_INCUMBENT conformer and is returned whatever the pool does afterwards, so
+    bounding at N changes the answer only for a molecule whose hit lies beyond N. That makes a
+    per-bound re-run unnecessary -- and this is arithmetic over recorded ordinals, not a model.
+
+    ⚠ DERIVED, NOT MEASURED. A derived curve is a prediction; the chosen point still has to be
+    confirmed by a live arm. That distinction is exactly the hole v0.4.13/v0.4.14 fell into when
+    an offline re-score was read as an end-to-end result.
+    """
+    usable = [r for r in scored if r.get("has_incumbent")]
+    excluded = [r for r in scored if not r.get("has_incumbent")]
+    if not usable:
+        print("\n  🔴 no molecule recorded an incumbent -- no curve is derivable from this run.")
+        return
+
+    hits = [r for r in usable if r.get("min_bound") is not None]
+    ceiling = len(hits)
+    bounds = sorted({r["min_bound"] for r in hits} | {0}) if hits else [0]
+
+    print(f"\n=== DERIVED recovered-vs-bound (n={len(usable)} usable) ===")
+    print(f"  🔴 EXCLUDED (no incumbent recorded, truncation NOT answer-neutral): {len(excluded)}")
+    print("     Those are not zeros -- they are unmeasurable by this method and need a live arm.")
+    print(
+        f"\n  {'bound':>6} | {'recovered':>9} | {'of ceiling':>10} | {'total_s':>9} | {'>30 s':>6}"
+    )
+    print(f"  {'-' * 6}-+-{'-' * 9}-+-{'-' * 10}-+-{'-' * 9}-+-{'-' * 6}")
+    for n in bounds + [None]:
+        recovered = ceiling if n is None else sum(1 for r in hits if r["min_bound"] <= n)
+        total, over = 0.0, 0
+        for r in usable:
+            t = _cost_at_bound(r, n)
+            total += t
+            over += t > 30
+        label = "inf" if n is None else str(n)
+        pct = f"{100.0 * recovered / ceiling:.1f}%" if ceiling else "n/a"
+        print(f"  {label:>6} | {recovered:>9} | {pct:>10} | {total:>9.0f} | {over:>6}")
+    print(f"\n  ceiling (recovered at an unbounded search): {ceiling}")
+
+
+def _cost_at_bound(row, n):
+    """Elapsed this molecule would have spent under bound ``n`` (``None`` = unbounded)."""
+    full = row.get("elapsed_s") or 0.0
+    if n is None:
+        return full
+    mb = row.get("min_bound")
+    if mb is not None and mb <= n:
+        # Recovered at this bound: it stops at the hit, exactly as the unbounded run did.
+        return row.get("hit_t") or full
+    stamps = row.get("t_at_bound") or {}
+    at = [v for k, v in stamps.items() if int(k) <= n and v is not None]
+    # No stamp at or below the bound means the molecule never got that far; it cost what it cost.
+    return max(at) if at else full
 
 
 if __name__ == "__main__":

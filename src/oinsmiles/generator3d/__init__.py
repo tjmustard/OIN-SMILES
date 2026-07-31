@@ -432,6 +432,12 @@ def generate_3d_structures(
     # max_attempts budget (ZIHGEE ~1696 s) before giving up.
     deadline = (time.monotonic() + embed_time_budget) if embed_time_budget else None
 
+    # Anchor for the per-evaluation elapsed stamps below. Taken unconditionally because
+    # `time.monotonic()` is already called on the line above and one more read costs nothing,
+    # and because making it conditional on telemetry would make the timeline start at a
+    # different place in the instrumented and uninstrumented runs.
+    _t0 = time.monotonic()
+
     # OIN_ENFORCE_BUDGET. Read through lever_enabled(), never os.environ.get -- "0" is a
     # non-empty string and would ENABLE the lever; that trap cost 23 test failures across
     # two promotions and test_levers::TestNoTestUnsetsAPromotedLever lints for it. An
@@ -552,7 +558,9 @@ def generate_3d_structures(
                     # pre-lever answer exactly.
                     if incumbent_hit is None:
                         incumbent_hit = accepted
-                        _telemetry.record("pool.accept_incumbent_recorded")
+                        _telemetry.record(
+                            "pool.accept_incumbent_recorded", t=round(time.monotonic() - _t0, 3)
+                        )
                 elif verdict:
                     early_hit = accepted
                     # THE ORDINAL IS WHY ONE RUN SUFFICES. `min_bound` is the smallest
@@ -567,6 +575,7 @@ def generate_3d_structures(
                         "pool.string_exact_hit",
                         min_bound=int(_since_incumbent + 1) if _had_incumbent else 0,
                         had_incumbent=bool(_had_incumbent),
+                        t=round(time.monotonic() - _t0, 3),
                     )
                     return True
                 # Count only evaluations made once an incumbent ALREADY existed -- before that
@@ -574,6 +583,16 @@ def generate_3d_structures(
                 if incumbent_hit is not None:
                     if _had_incumbent:
                         _since_incumbent += 1
+                    # The RUNTIME half of the knee curve. Stamping elapsed at each post-incumbent
+                    # evaluation is what lets total-runtime(N) be derived from the same single
+                    # unbounded run as recovered(N): a molecule bounded at N stops here, so its
+                    # cost at that bound is this stamp. A no-op unless OIN_TELEMETRY=1 with a
+                    # collecting() context, so the production path is unchanged.
+                    _telemetry.record(
+                        "pool.accept_eval",
+                        since_incumbent=int(_since_incumbent),
+                        t=round(time.monotonic() - _t0, 3),
+                    )
                     if incumbent_bound is not None and _since_incumbent >= incumbent_bound:
                         # bound=0 lands here on the recording evaluation itself (0 >= 0), which
                         # is what makes it byte-identical to the lever-OFF arm.
