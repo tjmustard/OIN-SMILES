@@ -104,15 +104,53 @@ FIRE_SITES = (
 )
 
 
+def merge(paths, out_json=None) -> int:
+    """Combine sharded knee runs into ONE curve, and refuse to print a partial one silently.
+
+    The run is sharded round-robin for wall-clock, but the curve is a property of the whole
+    population -- three per-shard curves are three samples, not a result. This concatenates the
+    rows and re-derives once.
+    """
+    rows, seen = [], set()
+    for path in paths:
+        payload = json.load(open(path))
+        for row in payload.get("rows", []):
+            # A molecule appearing twice would double-count it in every bound. Shards are
+            # disjoint by construction, so this is a cheap assertion rather than a real merge.
+            name = row.get("molecule")
+            if name in seen:
+                print(f"🔴 REFUSING: {name} appears in more than one shard", file=sys.stderr)
+                return 1
+            seen.add(name)
+            rows.append(row)
+    scored = [r for r in rows if "fired" in r]
+    print(f"=== MERGED {len(paths)} shards: {len(rows)} rows, {len(scored)} scored ===")
+    # 🔴 Completeness is a ROW COUNT. A shard that died mid-run still leaves a plausible JSON.
+    print("⚠ Check this against the population size before quoting anything below.\n")
+    _print_knee_curve(scored)
+    if out_json:
+        with open(out_json, "w") as fh:
+            json.dump({"n_rows": len(rows), "n_scored": len(scored), "rows": rows}, fh, indent=1)
+        print(f"\nwrote {out_json}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--molecules-file", required=True)
-    ap.add_argument("--cohort-dir", required=True)
-    ap.add_argument("--lever", required=True)
+    ap.add_argument("--merge", nargs="+", help="combine sharded knee JSONs and re-derive the curve")
+    ap.add_argument("--molecules-file")
+    ap.add_argument("--cohort-dir")
+    ap.add_argument("--lever")
     ap.add_argument("--limit", type=int, default=25)
     ap.add_argument("--timeout", type=int, default=300)
-    ap.add_argument("--out-json", required=True)
+    ap.add_argument("--out-json")
     args = ap.parse_args()
+
+    if args.merge:
+        return merge(args.merge, args.out_json)
+    for required in ("molecules_file", "cohort_dir", "lever", "out_json"):
+        if not getattr(args, required):
+            ap.error(f"--{required.replace('_', '-')} is required unless --merge is given")
 
     os.environ["OIN_TELEMETRY"] = "1"
     os.environ[args.lever] = "1"
