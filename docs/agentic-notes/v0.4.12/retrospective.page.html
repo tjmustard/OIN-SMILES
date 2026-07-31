@@ -275,7 +275,7 @@ pre.prompt {
 <header class="masthead">
   <div class="wrap">
     <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.13</p>
-    <h1>Eleven releases, two questions, and two scoreboards that were lying.</h1>
+    <h1>Twelve releases, two questions, and two scoreboards that were lying.</h1>
     <p class="dek">
       Accuracy and speed across every point release since v0.4.4 — including the release where the
       headline number fell ten points on purpose, the release that built a fix worth eight points
@@ -718,10 +718,10 @@ pre.prompt {
         <div class="tw"><table>
           <thead><tr><th>Block</th><th class="num">n</th><th class="num">points</th><th>owner</th></tr></thead>
           <tbody>
-            <tr><td>structural</td><td class="num">484</td><td class="num">9.68</td><td>generator — v0.4.15 Lane 1</td></tr>
+            <tr><td>structural</td><td class="num">484</td><td class="num">9.68</td><td><strong>301 NOT selection-reachable</strong> — v0.4.15 L1 recovered 0 of 289</td></tr>
             <tr><td>hard_fail</td><td class="num">266</td><td class="num">5.32</td><td>compute</td></tr>
-            <tr><td>slot_renumber</td><td class="num">252</td><td class="num">5.04</td><td>generator — v0.4.15 Lane 2</td></tr>
-            <tr><td>rdkit_canonical</td><td class="num">113</td><td class="num">2.26</td><td>perception / generator</td></tr>
+            <tr><td>slot_renumber</td><td class="num">252</td><td class="num">5.04</td><td><strong>201 enantiomers NOT reachable</strong> (1 of 201) — construction</td></tr>
+            <tr><td>rdkit_canonical</td><td class="num">113</td><td class="num">2.26</td><td>🟢 <strong>38.1% REACHABLE</strong> — 43 mol recovered by v0.4.15 L2</td></tr>
             <tr><td>facmer_divergent</td><td class="num">15</td><td class="num">0.30</td><td>—</td></tr>
             <tr><td>encode_fail</td><td class="num">12</td><td class="num">0.24</td><td>encoder — v0.4.18</td></tr>
             <tr><td><strong>sum</strong></td><td class="num"><strong>1142</strong></td><td class="num"><strong>22.84</strong></td><td></td></tr>
@@ -1542,6 +1542,88 @@ pre.prompt {
       <p class="suite">Suite: 1007 OK</p>
     </article>
 
+    <article class="rel" id="v0415">
+      <div class="rel-head">
+        <span class="ver">v0.4.15</span><h3>Two lanes built to spec, and the data refuted both targets</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>Zero, by design</span>
+      </div>
+      <p class="strap">
+        Released as tag <code>v0.4.15</code>. Three levers added, <strong>all default-OFF</strong> &mdash;
+        so <strong>nothing changed for a user</strong>. Its value is two measured refutations and a
+        partition of the remaining gap by <em>what has been shown to reach it</em>.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Zero, by design &mdash; and the zero is two different findings.</strong>
+          <em>Lane 1</em> wired v0.4.7&rsquo;s coordinate-only attachment predicate into the
+          <strong>return</strong> path. Over the 289 molecules where the guard&rsquo;s own predicate
+          fires: <strong>0 gains, 0 losses, 51 structures changed</strong>. It fires hard &mdash;
+          telemetry shows <strong>10&ndash;16 winding-matching conformers per molecule and every one
+          detached</strong> &mdash; promotes a better-attached conformer 51 times, and improves the
+          answer zero times. <strong>Attachment is necessary, not sufficient</strong>, now a measured
+          class rather than a single-molecule anecdote.
+          <br><br>
+          <em>Lane 2</em> replaced its charter outright. The chartered fix &mdash; use the
+          &Delta;/&Lambda; descriptor as an acceptance test &mdash; <strong>cannot work</strong>:
+          acceptance needs a reference handedness and the generator&rsquo;s only input is the OIN
+          string. Measured replacement: over the 183 known mirror molecules the
+          <strong>normalized strings differ 183/183 while the comparison keys agree
+          183/183</strong>. Result <strong>+48 molecules (+0.96 points), 0 losses over 565</strong>.
+        </dd>
+        <dt>The decomposition</dt>
+        <dd>
+          Of the 48 gains, <strong>43 are <span class="mono">rdkit_canonical</span> and 5 are
+          <span class="mono">slot_renumber</span></strong> &mdash; <strong>28.7%</strong> recovery on
+          the non-enantiomer 164 against <strong>0.5% (1 of 201)</strong> on the enantiomers.
+          <strong>57&times; apart.</strong> Everything the lane recovers is <em>outside</em> the class
+          it was aimed at; scoped as chartered it would have shipped <strong>+1 molecule</strong>.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>None on the default path &mdash; both levers ship OFF.</strong> Lane 1 is free
+          (1.01&times;). Lane 2 costs <strong>4.00&times;</strong> on its 365 molecules,
+          <span class="mono">&gt; 30 s</span> <strong>30 &rarr; 122</strong> there
+          (~678 &rarr; ~770 corpus-wide). That is why its +0.96 points is <em>held</em>, not taken:
+          roughly <strong>+1 point of Goal A against ~+1.8 points of Goal B</strong>.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>Its own charter&rsquo;s headline claim.</strong> That opened, in three files, with
+          &ldquo;the absolute baseline is NOT trustworthy &mdash; v0.4.13 really measures
+          ~74.88%&rdquo;. The sweep reads <strong>77.16%</strong>: over-stated by <strong>0.14</strong>
+          points, not 2.4.
+          <br><br>
+          <strong>v0.4.14&rsquo;s write-off of <span class="mono">rdkit_canonical</span>.</strong> It
+          was re-filed as &ldquo;&eta;-set denticity drift, not reachable by canonicalization&rdquo;
+          and removed from the ladder. Lane 2 recovered <strong>43 of its 113 &mdash; 38.1%, the
+          highest rate of any block measured</strong>. Both statements are true: v0.4.14&rsquo;s was
+          about the <em>encoder</em>; the block is reachable from the <em>generator</em>.
+          <strong>Reachability is a property of a mechanism, not of a block.</strong>
+          <br><br>
+          <strong>Emitting the &Delta;/&Lambda; token as v0.4.16&rsquo;s plan.</strong> The pool holds
+          <strong>exactly one</strong> key-matching conformer and it <em>is</em> the mirror. Emitting
+          would make the generator responsible for a handedness it does not build.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          <strong>All six A/B arms were run twice, because the first six measured the wrong tree.</strong>
+          The measuring tool does <span class="mono">sys.path.insert(0, &lt;its own&gt;/../src)</span>,
+          which <strong>overrides <span class="mono">PYTHONPATH</span></strong> &mdash; so every arm
+          imported <span class="mono">main</span>&rsquo;s package, where neither lever exists, both
+          sides ran identical code, and the result was a flawless
+          <em>&ldquo;0 gains, 0 losses&rdquo;</em> across 1107 molecule-pairs. Believed for an hour.
+          <br><br>
+          It was caught only because a <strong>second</strong> instrument, written to prove a lever
+          <em>fires</em> before believing any null, contradicted the telemetry.
+          <strong>The standing rule &ldquo;ask what a broken version would print&rdquo; is necessary
+          and not sufficient</strong> &mdash; here the broken and the working version print the same
+          thing. Third occurrence of this family; now guarded by a hard refusal rather than a note.
+        </dd>
+      </dl>
+      <p class="suite">Suite: <strong>1039 OK</strong> &middot; no full sweep, deliberately &mdash; both levers ship OFF, so the shipped default is unchanged and the v0.4.14 sweep <em>is</em> this release&rsquo;s measurement</p>
+    </article>
+
     <article class="rel" id="sweep">
       <div class="rel-head">
         <span class="ver">sweep</span><h3>The baseline sweep — run for this refresh</h3>
@@ -1596,8 +1678,11 @@ pre.prompt {
           <tr><td>The <strong>CIP memo's promotion gate</strong> has not been run, so the largest measured single speed win stays off</td><td>Full 328-molecule cohort with the lever on, ~10 CPU-h sharded</td></tr>
           <tr><td>The <strong>five bucket-report cohorts are still not comparable</strong>. The two sweeps share a cohort and seed but not a code version or thread configuration</td><td>Closer than anything before, still not a time series &mdash; accept it, or re-run v0.4.6's code</td></tr>
           <tr><td>The <strong>eta acceptance lever has no runtime claim at all</strong></td><td>Re-run its A/B on a quiet box</td></tr>
+          <tr><td><strong>Whether <span class="mono">OIN_ACCEPT_STRING_EXACT</span>&rsquo;s 4.00&times; cost can be bought down</strong> &mdash; it decides whether the only reachable 0.96 points get taken</td><td>The cost has a known mechanism (the lever declines to stop the pool). Plot recovered-molecules against a bounded extra search and take the knee. <strong>Nobody has run it.</strong></td></tr>
+          <tr><td><strong>Whether the generator can build the correct enantiomer at all.</strong> The pool holds one key-matching conformer and it is the mirror &mdash; but <span class="mono">TAYDUV_comp_0</span> is <strong>1 of 201</strong>, so the correct handedness is <em>rare, not categorically absent</em></td><td>Force the pool wide and measure the rate. The answer decides whether 4.02 points are a budget problem, a sampling problem, or a documented limitation</td></tr>
+          <tr><td><strong>3.74 points have never been characterised</strong> &mdash; the MEDZUR class (110), <span class="mono">BOUNDARY</span> (62) and <span class="mono">facmer_divergent</span> (15)</td><td>Classify all 187 by mechanism. v0.4.15 proved why this matters: two of its lanes were aimed at blocks whose reachability was asserted from a bucket name rather than measured</td></tr>
           <tr><td><strong>CLOSED — <span class="mono">PREFILTER_VETO</span> prevalence: 1.5% of vetoes, 4.5% of molecules.</strong> Its latency objection is <strong>refuted</strong> — measured faster. <strong>Still unknown: the recovery count</strong>, since the only one measured came from a stochastic A/B</td><td>A non-A/B count via <span class="mono">probe_accept_gap.py</span> over the 26 molecules where the prefilter actually vetoes</td></tr>
-          <tr><td>The <strong>52 passing molecules that read &ldquo;ligands detached&rdquo;</strong> are unexplained (was 48) &mdash; either the notation does not express the lost contact, or the check is over-sensitive at that tolerance</td><td>Run the oracle and a clash count on those 52</td></tr>
+          <tr><td><strong>CLOSED &mdash; the 52 passing molecules that read &ldquo;ligands detached&rdquo;.</strong> The second explanation was right: <strong>51 of 52 hold every claimed coordination site</strong> under the guard&rsquo;s own predicate. They lose 1&ndash;3 <em>light or ambiguous</em> donors (H, Si, B, F), often with the actual count unchanged or higher</td><td><strong>Two different tests:</strong> the bucket asks &ldquo;did the donor set change&rdquo;, the guard asks &ldquo;did a site go empty&rdquo;. A bucket&rsquo;s verdict is not a guard&rsquo;s verdict</td></tr>
           <tr><td>The <strong>MEDZUR class &mdash; now 111 molecules, attachment intact and re-perception still disagreeing</strong> &mdash; has no mechanism. Sized twice, understood no better</td><td>A mechanism, not another count</td></tr>
           <tr><td><strong>The mechanism splits are one cohort behind the bucket table.</strong> Only <span class="mono">structural</span>'s detached split (301 of 484) is re-derived on the v0.4.14 sweep; the enantiomer count, the &eta;-set share and the resonance residue are all from the older corpus</td><td>Re-run those three audits on the new sweep</td></tr>
         </tbody>

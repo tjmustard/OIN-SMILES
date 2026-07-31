@@ -2,8 +2,8 @@
 
 <!-- artifact-url: https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e -->
 
-**Scope:** v0.4.4 (2026-07-23) through v0.4.14 (2026-07-28). Eleven releases.
-**Baseline commit:** `main` @ `c8aa4078`, tag `v0.4.14`, `pyproject` 0.4.14.
+**Scope:** v0.4.4 (2026-07-23) through v0.4.15 (2026-07-30). Twelve releases.
+**Baseline commit:** `main` @ tag `v0.4.15`, `pyproject` 0.4.15.
 ⚠ `main` moves under this project — re-read the tip before trusting any SHA here.
 **Method:** committed evidence, **plus one 5000-molecule generator sweep run for this refresh** —
 the first since v0.4.6, and the reason several figures below moved. Everything else is read, not
@@ -51,6 +51,23 @@ look too small, and they happened to cancel.
 **And the machine got much faster without anyone claiming credit for it** — molecules taking over
 30 seconds went from 994 to 678, and the typical one from 7.2 seconds to 4.0.
 
+The twelfth release then went looking for the next four points in two obvious-looking places — and
+**found that neither could be reached the way everyone assumed.** One built a check that makes sure
+the rebuilt molecule hasn't dropped a piece; it changed the answer 51 times and made it right
+**zero** times, because *every* candidate the machine had built was broken in the same way. The
+other found the machine sometimes builds a perfect **mirror image** — correct in every respect
+except handedness, like a left glove where a right one was asked for — and discovered the machine
+only ever builds *one* candidate for those, and it is the mirror. **You cannot pick a better answer
+out of a bag that only contains the wrong one.**
+
+That release found 48 molecules it *could* fix — but almost none of them were in the place it was
+aiming. And taking them makes the machine four times slower on the molecules it touches, so the fix
+is built, measured, and deliberately left switched off until someone decides whether that trade is
+worth it.
+
+**The useful conclusion: about two-thirds of what's left can't be fixed by choosing better. The
+machine has to build differently.** That is a much more specific to-do list than "get to 100".
+
 So: **more accurate than v0.4.4, yes. More accurate than v0.4.6 — yes, and now measured by actually
 rebuilding everything rather than re-grading old work. And much harder to fool.**
 
@@ -80,6 +97,7 @@ releases, and **moved up for the first time at v0.4.13**.
 | **v0.4.13** | **Real gain, but SMALLER THAN PUBLISHED** — fold + parity veto promoted together | published `byte_exact` **72.46% → 75.88%** (+3.42); **measured ~+2.42** — ~150 real gains against **~30 losses** its instrument could not see |
 | **v0.4.14** | **Real gain — `OIN_RESONANCE_DONOR_FOLD` promoted** | **+1.42 pts measured end-to-end** (78 gains, **7 losses**, n=182 of 182). Also re-filed **5.94 pts** off the encoder ladder without moving a molecule |
 | **the sweep** | **First real generator sweep since v0.4.6** | **`byte_exact` 3858/5000 = 77.16%** honest (86.88% scored — a **9.72-pt** gap) |
+| **v0.4.15** | **Zero, by design — both lanes measured, both ship OFF** | L1 **0 gains of 289** (51 structures moved, 0 improved); L2 **+48 available** (+0.96 pts, 0 losses) but held at **4.00×** runtime |
 
 The v0.4.8 drop is the one that needs explaining, and it is not a regression. The harness had been
 scoring a round trip with `get_oin_string(gen_result.mol, coords)` — the *generator's own bond
@@ -124,6 +142,7 @@ corpus-wide number, which is much better than the stale one.**
 | **v0.4.10** | Deleted a discarded `.index()` scan that eigendecomposed a Coulomb matrix per candidate — **on by default, no lever**: `CAHQEJ_comp_0` **−32.9%**, `FOSNEI_comp_0` **+0.3% (nil)** |
 | **v0.4.11–v0.4.13** | None claimed. v0.4.13's promotion was argued **generator-neutral by measurement** — 0 of 9669 keys moved. ⚠ v0.4.14 showed that argument bounds *acceptance*, not *embedding*: the generator consumes the **string**, so runtime **can** move. It was never measured either way |
 | **v0.4.14** | None claimed on the default path. Measured on the 182 molecules its lever touches: **+57.4% total CPU**, `> 30 s` 29 → 36, worst molecule **+511.5 s** — a real cost, on a small population |
+| **v0.4.15** | **None on the default path — both levers ship OFF.** L1 measured **free** (1.01×, 0 gains). L2 measured **4.00×** on its 365 molecules, `> 30 s` **30 → 122** there (~678 → ~770 corpus-wide): the reason its +0.96 pts is *held*, not taken |
 
 **The headline speed figure is no longer stale.** The v0.4.6-era `994/5000 = 19.88% over 30 s,
 median 7.19 s` stood unmeasured for eight releases. The sweep run for this refresh reads:
@@ -144,11 +163,19 @@ magnitude as approximate. Goal B (`max(elapsed_s) < 30 s`) is still **not delive
 ### What actually improved most
 
 Neither number. What improved most is the project's ability to tell a real result from a fake one.
-Between v0.4.4 and v0.4.14 the unit suite went **551 → 1007**, and the instruments added in that
+Between v0.4.4 and v0.4.15 the unit suite went **551 → 1039**, and the instruments added in that
 window — the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
 coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, the
-59%-false-positive cohort, the dead gate arm, and the enantiomer collapse. Five releases that moved
+59%-false-positive cohort, the dead gate arm, and the enantiomer collapse. Six releases that moved
 no points each removed a way of being wrong.
+
+**v0.4.15 added the sharpest one yet, and it is a rule rather than a tool.** Its six A/B arms first
+returned a flawless *"0 gains, 0 losses"* over 1107 molecule-pairs — because a `sys.path.insert`
+inside the measuring tool silently overrode `PYTHONPATH` and both arms ran identical code. The
+standing rule *"ask what a broken version would print"* does not catch that: **here the broken and
+the working version print the same thing.** What caught it was a **second** instrument built to
+verify the *mechanism* (does the lever fire?) rather than the *outcome* (did the metric move?).
+Two instruments disagreeing is the signal; either alone reads clean.
 
 **v0.4.13 is the return on that, and v0.4.14 is the bill.** The gain v0.4.13 banks is the fix
 v0.4.11 built and refused, shippable only once an instrument existed that could see the damage — but
@@ -183,20 +210,34 @@ coverage of the moved population, not its verdict.
 > published 77.30% was only 0.14 off, but by **two errors cancelling**: the chain over-stated the
 > lever deltas and under-stated the base.
 >
-> **The 22.84 points that remain are decomposed by mechanism, not just by bucket.** Of the 777
-> genuine failures, **315 are the generator returning a structure with ligands off the metal** —
-> a one-site guard, not a capability limit — and a further class is the generator returning the
-> **mirror image**, which the comparison key is blind to by design.
+> **v0.4.15 then tested both of those decompositions by building them — and refuted both.**
+> "A one-site guard, not a capability limit" was wrong: the return-path guard **changed the
+> returned structure 51 times across 289 molecules and improved it zero times.** The mirror class
+> was wrong in the other direction: it is real, but **1 of 201 is recoverable** because the pool
+> holds exactly one key-matching conformer and it *is* the mirror.
+>
+> **So the gap is now partitioned by measured reachability, not by bucket name:** 0.96 points are
+> reachable today (behind a lever held off on cost), **10.04 points are proven unreachable by any
+> selection predicate**, 3.74 have never been characterised, and 5.54 produce no structure at all.
+> **15.36 of 22.84 points (67%) require the generator to BUILD something different** — not to
+> choose differently, and not to emit differently.
 
 > ### Is it faster?
 >
-> **Yes, and corpus-wide for the first time since v0.4.6.** `> 30 s` went **994 → 678**
+> **Yes, and corpus-wide for the first time since v0.4.6 — but v0.4.15 found where the next
+> accuracy point would cost speed.** `> 30 s` went **994 → 678**
 > (19.88% → **13.56%**) and the median **7.19 s → 4.01 s**. Nobody claimed this: three default-path
 > optimisations landed (v0.4.4, v0.4.5, v0.4.10) and every release since measured none, so the
 > improvement accumulated unattributed. On individual molecules the removed costs are worth up to
 > **−86.7%**, and the largest single win (`VAFMIA_comp_0`, 81.89 s → 10.87 s) still sits behind a
 > lever that ships **off**. ⚠ The sweep capped BLAS threads and the v0.4.6 run did not, so treat the
 > magnitude as approximate. Goal B (`max(elapsed_s) < 30 s`) is **not delivered** — max is 728.8 s.
+>
+> **v0.4.15 made the trade explicit for the first time.** Its Lane 2 recovers +0.96 accuracy points
+> and costs **4.00×** runtime on the molecules it touches — `> 30 s` 30 → 122 there, ~678 → ~770
+> corpus-wide. Roughly **+1 point of Goal A against ~+1.8 points of Goal B.** The two goals have
+> been stated together since v0.4.4; this is the first release where a shipped lever had to choose
+> between them, and it is why the lever is held rather than taken.
 
 ---
 
@@ -879,6 +920,80 @@ re-derive 3858 / 77.16% / median 4.01 s / >30 s 678 exactly**.
 
 ---
 
+### v0.4.15 — two lanes built to spec, and the data refuted both targets
+
+**What shipped.** `OIN_ATTACH_RETURN` + `OIN_ATTACH_RETURN_STRICT` (Lane 1) and
+`OIN_ACCEPT_STRING_EXACT` (Lane 2), all three **added and default-OFF**. **Nothing was promoted, so
+nothing changed for a user.** The default path is byte-identical: 1039 tests pass with every lever
+unset.
+
+**Accuracy: Zero, by design — and the zero is two different findings.**
+
+*Lane 1* wired v0.4.7's coordinate-only attachment predicate into the **return** path, closing the
+gap `OIN_ATTACH_CHECK`'s own lever entry names as its residual ("the check guards ACCEPTANCE, not
+RETURN"). Measured over the 289 molecules where the guard's own predicate fires: **0 gains,
+0 losses, 51 structures changed, runtime 1.01×.** The lever fires hard — telemetry shows **10–16
+winding-matching conformers per molecule and every one detached** — promotes a better-attached
+conformer 51 times, and improves the answer zero times. **Attachment is necessary, not sufficient**,
+which had been a single-molecule anecdote (MEDZUR) and is now a measured class.
+
+*Lane 2* replaced the charter's approach outright. The chartered fix — use `metal_config` as an
+acceptance predicate — **cannot work**: acceptance needs a reference handedness and the generator's
+only input is the OIN string, which is why the helicity branch already in the adapter is dead code.
+Measured replacement: over the 183 known `MIRROR_MATCH` molecules, **normalized strings differ
+183/183 while the comparison keys agree 183/183** — the handedness survives normalization and is
+folded only by the key. Result: **+48 molecules (+0.96 pts), 0 losses over 565.**
+
+**The decomposition is the finding.** Of the 48 gains, **43 are `rdkit_canonical` and 5 are
+`slot_renumber`** — **28.7%** recovery on the non-enantiomer 164 against **0.5%** (1 of 201) on the
+enantiomers. **57× apart.** Everything the lane recovers is *outside* the class it was aimed at;
+scoped as chartered, the release would have shipped **+1 molecule**.
+
+**Speed: none on the default path.** Lane 1 is free (1.01×). Lane 2 costs **4.00×** on its 365
+molecules, `> 30 s` **30 → 122** there — which is why its +0.96 points is held rather than taken.
+
+**Refuted.**
+- 🔴 **The charter's own headline claim.** It opened, in three files, with "the absolute baseline is
+  NOT trustworthy — v0.4.13 really measures ~74.88%". The sweep reads **77.16%**: over-stated by
+  **0.14** points, not 2.4. What the offline chain drifted was bucket *composition*
+  (`structural` +67, `hard_fail` −53), which an offline re-score cannot see because it holds the
+  structure fixed.
+- 🔴 **v0.4.14's write-off of `rdkit_canonical`.** It was re-filed as "80.7% η-set denticity drift,
+  not reachable by canonicalization, do not re-propose a string fix" and removed from the ladder.
+  Lane 2 recovered **43 of its 113 — 38.1%, the highest rate of any block measured.** Both
+  statements are true: v0.4.14's was about the *encoder* and stands; the block is reachable from the
+  *generator*. **Reachability is a property of a mechanism, not of a block** — and the project made
+  that error in both directions in consecutive releases.
+- 🔴 **Emitting `|mc:±|` as v0.4.16's plan.** `pool.accept_incumbent_recorded = 1`: exactly one
+  key-matching conformer exists and it is the mirror. Emitting would make the generator responsible
+  for a handedness it does not build — 201 silent wrong answers become 201 loud failures for no
+  gain.
+
+**What it cost.** 🔴 **All six A/B arms were run twice, because the first six measured the wrong
+tree.** `generator_ab_honest.py` does `sys.path.insert(0, <its own>/../src)`, which **overrides
+`PYTHONPATH`** — so every arm imported `main`'s `oinsmiles`, where neither lever exists, both sides
+of each A/B ran identical code, and the result was a flawless *"0 gains, 0 losses, output moved 0"*
+across 1107 molecule-pairs. It was believed for an hour. It was caught only because a **second**
+instrument (`selection_pool_probe.py`, written to prove a lever *fires* before believing any null)
+contradicted the telemetry.
+
+**The standing rule "ask what a broken version would print" is necessary and not sufficient** — here
+the broken and working versions print the same thing. The defence that worked was a second
+instrument measuring the *mechanism* rather than the *outcome*. Third occurrence of this family
+after v0.4.9's sibling venv and v0.4.13's sibling glob; now guarded by a hard refusal rather than a
+note. Also caught before publication: the harvester would have **silently dropped every arm JSON**
+(no pattern matched `lane1_pop_*.json`) and then, once fixed, would have let the *void* arms
+overwrite the real ones — they share basenames.
+
+**No full sweep, deliberately.** Both levers ship OFF, so the shipped default is unchanged and the
+v0.4.14 baseline sweep *is* v0.4.15's measurement. Re-running 38.7 CPU-h to reproduce an unchanged
+default would be waste. **If `OIN_ACCEPT_STRING_EXACT` is promoted, a sweep becomes mandatory.**
+No combined arm, for the same reason: with Lane 1 off, "both" is not a shipping configuration.
+
+Suite: **1039 OK**.
+
+---
+
 ## What is not known
 
 Stated explicitly, because the gaps are as decision-relevant as the numbers.
@@ -906,19 +1021,38 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    outlier. Its latency objection is **refuted** — measured *faster*. **What is still unknown is the
    recovery count**, because the only one measured came from a stochastic A/B; a non-A/B count needs
    `probe_accept_gap.py` over the 26 molecules where the prefilter actually vetoes.
-7. **The 48 `byte_exact` molecules that read `DETACHED` are unexplained.** Either the notation does
-   not express the lost metal contact, or `coordination.intact` is over-sensitive at that
-   tolerance — the 1593-molecule `BOUNDARY` band says the second is possible. Neither was tested.
-8. **The MEDZUR class — now 111 molecules on the fresh sweep, attachment intact and re-perception
-   still disagreeing — has no mechanism.** Sized twice, understood no better than when it was n = 1.
-9. **The mechanism splits are one cohort behind the bucket table.** The enantiomer count (183), the
-   η-set share of `rdkit_canonical` (80.7%) and the resonance residue (25) were all measured on
-   `results-v0.4.8-honest`. Only `structural`'s `DETACHED` split has been re-derived on the v0.4.14
-   sweep (**301 of 484**). The mechanisms are properties of the code and are expected to hold; the
-   counts are not current.
+7. ~~**The `byte_exact` molecules that read `DETACHED` are unexplained.**~~ **CLOSED by v0.4.15:
+   the second explanation was right.** Of the 52 on the fresh sweep, **51 hold every claimed
+   coordination site** under the guard's own predicate — they lose 1–3 *light or ambiguous* donors
+   (H, Si, B, F) with the actual count often unchanged or higher. `coordination_report` asks "did
+   the donor set change"; `ligands_attached` asks "did a site go empty". **Two different tests, and
+   the bucket's verdict is not the guard's verdict.**
+8. **The MEDZUR class still has no mechanism — and v0.4.15 made it the single largest unknown.**
+   110 molecules / **2.20 pts**, attachment intact and re-perception still disagreeing, sized three
+   times now and understood no better than at n = 1. With `BOUNDARY` (62 / 1.24) and
+   `facmer_divergent` (15 / 0.30) that is **3.74 points nobody has characterised** — and v0.4.15
+   proved *why that matters*: two of its lanes were aimed at blocks whose reachability had been
+   asserted from a bucket name rather than measured. **v0.4.16 Lane 2 is chartered to close this.**
+9. ~~**The mechanism splits are one cohort behind the bucket table.**~~ **Largely CLOSED by
+   v0.4.15**: the enantiomer count is re-derived at **201 of 242** and `structural`'s split at
+   **301 of 484**, both on the v0.4.14 sweep. **Still one cohort behind:** the η-set share of
+   `rdkit_canonical` (80.7%) and the 25-molecule resonance residue. ⚠ And the η-set figure now
+   carries a caveat — v0.4.15 recovered **38.1% of `rdkit_canonical` from the generator side**, so
+   whatever share is genuinely η-set drift, it is **not** the share that is unreachable.
 10. **Why runtime improved is unexplained.** Median more than halved with no release claiming it.
     Candidates include v0.4.10's default-ON deletion finally being seen at corpus scale and the
     thread caps, but nothing separates them.
+11. **Whether `OIN_ACCEPT_STRING_EXACT`'s 4.00× cost can be bought down is unmeasured** — and it
+    decides whether the only reachable 0.96 points get taken. The cost has a known mechanism (the
+    lever declines to stop the pool, so the pool fills to budget), so a bounded extra search is the
+    obvious experiment: plot recovered-molecules against the bound and take the knee. **Nobody has
+    run it.** v0.4.16 Lane 1 is chartered to.
+12. **Whether the generator can build the correct enantiomer *at all* is unmeasured.** v0.4.15
+    showed the pool holds exactly one key-matching conformer and it is the mirror — but it also
+    found **`TAYDUV_comp_0`, 1 of 201**. So the correct handedness is **rare, not categorically
+    absent**, and "the generator cannot build it" is not yet established. Forcing the pool wide and
+    measuring the rate is v0.4.17's first deliverable, and the answer decides whether 4.02 points
+    are a budget problem, a sampling problem, or a documented limitation.
 
 ---
 
@@ -928,34 +1062,54 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
 N = 5000, honest scoring — a real generator run, not a re-score. Supersedes the 24.12 and 27.54
 copies of this table.
 
-| block | n | pts | nature | owning release |
+| block | n | pts | selection-reachable? | evidence |
 |---|---:|---:|---|---|
-| **`structural`** | **484** | **9.68** | 🔴 **301 (62.2%) are `DETACHED`** — an unguarded *return* path, not a capability floor. Re-derived on this sweep | **v0.4.15 Lane 1 — 6.02 pts at one site** |
-| `key_equal` → `slot_renumber` | 252 | 5.04 | 🔴 **not one block.** A majority are the generator building the **ENANTIOMER**; the rest split between an unfoldable labeling and the resonance residue | **v0.4.15 Lane 2** (count being re-derived) |
-| `hard_fail` | 266 | 5.32 | compute; **262/266 produce no structure at all** | — |
-| `key_equal` → `rdkit_canonical` | 113 | 2.26 | 🔴 **not canonicality** — η-set denticity drift, a perception/geometry problem no string change reaches | **re-filed off the encoder ladder** |
-| `facmer_divergent` | 15 | 0.30 | wrong isomer | — |
-| `encode_fail` | 12 | 0.24 | encoder coverage | v0.4.18 |
+| `key_equal` → `rdkit_canonical` | 113 | 2.26 | 🟢 **38.1% — 43 mol, 0.86 pts** | v0.4.15 L2 arm |
+| `slot_renumber`, non-enantiomer | 51 | 1.02 | 🟢 partial — 5 mol | v0.4.15 L2 arm |
+| `slot_renumber` → **enantiomers** | 201 | **4.02** | 🔴 **NO — 1 of 201 (0.5%)** | v0.4.15 L2 arm + telemetry |
+| `structural` → `DETACHED` | 301 | **6.02** | 🔴 **NO — 0 of 289** | v0.4.15 L1 arm |
+| `structural` → `INTACT` (MEDZUR) | 110 | 2.20 | ⚪ **UNMEASURED** | — |
+| `structural` → `BOUNDARY` | 62 | 1.24 | ⚪ **UNMEASURED** | — |
+| `structural` → `NO_STRUCTURE` | 11 | 0.22 | 🔴 nothing generated | audit |
+| `hard_fail` | 266 | **5.32** | 🔴 **262 produce NOTHING** | audit |
+| `facmer_divergent` | 15 | 0.30 | ⚪ unmeasured (11 also `DETACHED`) | audit |
+| `encode_fail` | 12 | 0.24 | 🔴 encoder floor | — |
 | **sum** | **1142** | **22.84** ✓ | | |
 
-**5.94 points moved off the encoder ladder at v0.4.14 without a single molecule changing bucket** —
-`rdkit_canonical` to perception, and the enantiomer class to the generator. The encoder ladder has
-**~1.28 points** of reachable work left; the rest of the distance to 100% is generator work. That is
-a conclusion this roadmap had never stated, and four releases were scheduled against it.
+🔴 **v0.4.15 replaced "owning release" with "measured reachability", because the old column was
+wrong twice.** A block's reachability is a property of **a mechanism**, not of the block — and this
+project asserted it without one in both directions in consecutive releases. v0.4.14 wrote
+`rdkit_canonical` off the ladder as "not reachable by canonicalization" (true, and about the
+*encoder*) which was then read as "not reachable"; v0.4.15's generator-side lever recovered **38.1%
+of it — the highest rate of any block on this table**. In the same release, two lanes were aimed at
+`structural`/`DETACHED` and the enantiomer class, and **both turned out to be construction-blocked**.
 
-**The failure side also has a second decomposition now — by mechanism rather than by bucket.**
-Over the same 767 genuine failures: **280 `DETACHED`** (the generator returned a structure with
-ligands off the metal), **99 `INTACT`** (attachment fine, re-perception still disagrees), 53
-`BOUNDARY`, 335 `NO_STRUCTURE`. Two independently-written tools partition that set and agree to
-within ~5 molecules.
+**The totals that matter:**
 
-✅ **The sequencing question was decided.** `LADDER DECISION 2026-07-28 (v0.4.14)`, **accepted by the
-project owner**, resolves both standing open decisions at once: **v0.4.15 takes both generator
-lanes** — `structural`/`DETACHED` (301 mol, 6.02 pts) *and* the enantiomer class — displacing "the
-57 notation molecules", which moves to v0.4.18 alongside the encoder ladder's last 1.28 points.
-Accepted **with a known confound**: two headline movers in one release means neither can be
-attributed without reading both apart, so the mitigation is mandatory — a separate default-OFF lever
-per lane, **three** measured arms (L1-only, L2-only, both), and separate commits.
+| | pts | |
+|---|---:|---|
+| reachable **today** | **0.96** | built and measured, held off on a 4.00× runtime cost |
+| **proven NOT reachable by selection** | **10.04** | 201 enantiomers + 301 `DETACHED` |
+| never characterised | 3.74 | MEDZUR 110, BOUNDARY 62, `facmer` 15 |
+| produce **nothing** | 5.54 | the floor |
+| encoder residue + `encode_fail` | 1.52 | |
+
+**15.36 of 22.84 points (67%) require the generator to BUILD something different** — not to choose
+differently, and not to emit differently. That is the single most consequential number in this
+document, and it did not exist before v0.4.15.
+
+**5.94 points moved off the encoder ladder at v0.4.14 without a single molecule changing bucket.**
+The encoder ladder has **~1.28 points** of reachable work left. ⚠ But note the correction above:
+0.86 of the `rdkit_canonical` points came *back*, from the generator side.
+
+✅ **The v0.4.15 sequencing decision was taken, executed, and its premise refuted.**
+`LADDER DECISION 2026-07-28` sent v0.4.15 at both generator lanes, accepted with a known confound
+(two headline movers). The confound never materialised — **neither lane moved the headline.** The
+mitigation still paid for itself: separate default-OFF levers and separate arms are what allowed
+"L1 recovers 0" and "L2 recovers 48, none of them where we aimed" to be *separate* statements
+instead of one unattributable number. The ladder is now re-pointed on the table above —
+**v0.4.16** prices the 0.96 and characterises the 3.74; **v0.4.17** is construction; **v0.4.18**
+states the floor and derives the achievable ceiling.
 
 **The other structural fact:** the two goals are one goal. Of the 340 failures in the v0.4.6 sweep,
 **78.8% never test the notation** — 240 are generator timeouts and 28 produced nothing. The
@@ -973,7 +1127,10 @@ the failure mix has moved materially — `hard_fail` 319 → 266, `structural` 4
 
 | what | where |
 |---|---|
-| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.14] |
+| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.15] |
+| **The measured reachability map — the partition this document's gap table is built on** | **`docs/agentic-notes/v0.4.15/REACHABILITY_MAP_v0.4.15.md`** |
+| **v0.4.15's six A/B arms + the five frozen populations** | **`measurements/v0.4.15/`** (13 files: every arm's per-molecule verdict and every population's membership, so each rate is reproducible) |
+| v0.4.15 lanes, both refutations, and the void-arm postmortem | `docs/agentic-notes/v0.4.15/LANE-attach-return.md`, `LANE-enantiomer-accept.md`, `BASELINE_SWEEP_CORRECTIONS_v0.4.15.md` |
 | **The v0.4.14 baseline sweep — the absolute, and the per-molecule extract that re-derives it** | **`measurements/v0.4.14-sweep/`** (6 files: the authoritative honest table, the scored-vs-honest comparison, `RUN.md`, and `per_molecule_extract.tsv`) |
 | **v0.4.14's frozen instruments** | **`measurements/v0.4.14/`** (18 files, incl. the full 182-molecule A/B, v0.4.13's corrected at-risk measurement, and every sample's seed + membership) |
 | The generator-neutrality hole, and both corrected headlines | `docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md` |
