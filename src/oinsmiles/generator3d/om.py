@@ -260,7 +260,7 @@ class MetalComplex:
                 break
         if len(candidate_positions) == 0:
             logger.debug("No valid embedding found ...")
-            exit()
+            raise RuntimeError("No valid embedding found: all conformer embed attempts failed.")
         return candidate_positions
 
     def print_coordinate_list(self):
@@ -344,7 +344,7 @@ def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
             break
     if metal_index is None:
         logger.debug("Metal was not found !!!")
-        exit()
+        raise RuntimeError("Metal atom was not found in the molecule.")
 
     broken_adj_matrix = np.copy(adj_matrix)
     ligands = []
@@ -415,7 +415,7 @@ def construct_metal_complex(z_list, adj_matrix, geometry_name=None):
 
     if geometry_name is None:
         logger.debug("Geometry not specified")
-        exit()
+        raise RuntimeError("Cannot build MetalComplex: geometry_name is None.")
 
     metal_complex = MetalComplex(geometry_name, center_atom, ligands, chg, multiplicity)
     metal_complex.metal_index = metal_index
