@@ -35,7 +35,7 @@ from ..generator3d import (
 from ..oin.axial import mol_axial_token, parse_axial_token
 from ..oin.compare import canonical_roundtrip_key, normalize_oin_for_comparison
 from ..oin.hydrogen import hydrogen_faithfulness_enabled
-from ..oin.levers import lever_enabled
+from ..oin.levers import lever_enabled, lever_int
 from ..oin.metal_config import parse_metal_config_token, token_for_mol
 from ..utils.perception_tmc import _has_boron_cage
 from . import _telemetry
@@ -2479,6 +2479,14 @@ class MetalloGenAdapter:
                 seed=self.seed,
                 accept_fn=accept_fn,
                 metal_complex=prebuilt_complex,
+                # OIN_STRING_EXACT_BOUND (v0.4.16 Lane 1): cap the extra pool filling that
+                # OIN_ACCEPT_STRING_EXACT costs. None (unset) = unbounded = the v0.4.15
+                # behaviour, so this is a no-op for every caller that does not set it.
+                #
+                # ⚠ `lever_int`, NOT `lever_enabled`: 0 is a meaningful bound here (stop the
+                # moment an incumbent is recorded, which reproduces the lever-OFF answer
+                # byte-for-byte) and must survive as 0 rather than collapsing to "off".
+                incumbent_bound=lever_int("OIN_STRING_EXACT_BOUND"),
             )
         if not mols:
             # Name the assembly path that was actually used. `msmiles` is populated ONLY when

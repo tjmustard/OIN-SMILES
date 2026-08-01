@@ -1,0 +1,43 @@
+# v0.4.16 bound-0 WIRING GATE subset: the 40 cheapest incumbent-recording molecules from the
+# knee run. Cheapest deliberately -- this arm tests a CODE PATH (does bound 0 reproduce the
+# lever-OFF answer byte-for-byte), not a rate, so molecule cost is irrelevant to what it shows.
+YAXWEA_comp_0
+CETLUJ_comp_0
+COTTAJ_comp_0
+TAQLUS_comp_0
+BARRES_comp_0
+PEWWOF_comp_0
+YAJYAJ_comp_0
+HEFKOT_comp_0
+JOCMUK_comp_0
+SIHRIM_comp_0
+UXOCAN_comp_0
+FEBNEH_comp_0
+FAHCEY_comp_0
+TESCIE_comp_0
+WOGWEU_comp_0
+UMENEG_comp_0
+GOWQOY_comp_0
+VISDOS_comp_1
+SIDNUQ_comp_0
+IBEGEE_comp_0
+QOSJOY_comp_0
+EQOKOL_comp_0
+CEBYAK_comp_0
+XESCAB_comp_0
+TAYDUV_comp_0
+XADXOP_comp_0
+RUZNUW_comp_0
+PAKVAA_comp_0
+EJOWIK_comp_0
+FOLKEX_comp_0
+NOPXUM_comp_0
+EBUMOG_comp_0
+LAMVIE_comp_0
+XIXPIF_comp_0
+KUMHIK_comp_0
+XEFROQ_comp_0
+FIXXES_comp_0
+XIXPEB_comp_0
+ISAPUO_comp_0
+XISBAC_comp_0

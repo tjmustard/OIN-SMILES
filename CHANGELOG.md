@@ -5,6 +5,70 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.16] - 2026-07-31
+
+> ### FLAT at 77.16% — the trade is priced, and it does not close.
+>
+> **The headline did not move, and for Lane 1 that is the measured answer rather than a
+> shortfall.** v0.4.15 left +48 molecules (+0.96 pts, 0 losses) behind a 4.00× runtime cost, on
+> the theory that the cost was a reclaimable tail. This release built the bound that would reclaim
+> it and found **the two halves of the promotion bar are mutually unreachable**: keeping ≥ 75% of
+> the gain needs bound ≥ 12, which costs `> 30 s` = 104 against a limit of 52; staying inside the
+> runtime limit needs bound ≤ 3, which keeps 19 of 48.
+>
+> **The shape is the finding, not the threshold.** To keep 79% of the gain you pay 89% of the
+> runtime penalty — the frontier is close to linear, so bounding moves *along* the v0.4.15 trade
+> rather than improving it. The charter's mechanism hypothesis is refuted: the cost is not a
+> wasted tail (`early_hit` already stopped both fill loops), it is that each post-incumbent
+> conformer is a full embed **plus** a full `XYZToSMILES` re-encode.
+>
+> **Lane 2 re-points the next two releases.** The 187 molecules the roadmap carried for three
+> releases as "nobody knows why" are **82% PERCEPTION, 14.5% construction**.
+
+### Added
+- `OIN_STRING_EXACT_BOUND` (default **unset** = unbounded) — caps the extra pool filling
+  `OIN_ACCEPT_STRING_EXACT` pays for, in `accept_fn` evaluations after the first
+  `ACCEPT_INCUMBENT`. Coupled with that lever: promoting one without the other reinstates the full
+  4.00×.
+- `lever_int()` beside `lever_enabled()` — for levers where **`0` is a meaningful value** and must
+  be distinguishable from unset. `OIN_STRING_EXACT_BOUND=0` reproduces the lever-OFF answer
+  byte-for-byte, which is the release's wiring gate.
+- `tools/freeze_sweep_extract.py` — a whole 5000-molecule sweep in **0.26 MB** (the directory is
+  268 MB), verified to reproduce the authoritative bucket report exactly. Carries no geometries.
+- `tools/run_v0416_knee.sh`, `tools/run_v0416_confirm.sh`; `--merge` and the ordinal telemetry in
+  `tools/selection_pool_probe.py`; `--characterise` in `tools/attach_class_audit.py`.
+
+### Measured
+- **Lane 1 — HOLD.** Full recovered-vs-bound curve over 365 molecules, with runtime and `> 30 s`
+  at every point. Validated at four points the derivation could not fake: ceiling **48** against
+  v0.4.15's independently measured **48** (exact); bound-0 runtime 4534 s vs 4294 s (+5.6%);
+  unbounded 16418 s vs 17191 s (−4.5%); and a live bound-0 gate reading **0 gains, 0 losses, 0
+  generated output moved** over 40 molecules.
+- **Lane 2 — the 187 characterised**, 0 unaccounted, every class read. Over the 172 `structural`
+  INTACT+BOUNDARY: **PERCEPTION 141 (82.0%) · CONSTRUCTION 25 (14.5%) · STEREO 6 (3.5%)**.
+  `facmer_divergent` is **100% `ARRANGEMENT_ONLY`** — the one block whose name was a measurement
+  rather than a hypothesis.
+
+### Method
+- **A knee curve is arithmetic, not a parameter sweep.** `incumbent_hit` is returned whatever the
+  pool does afterwards, so bounding at *N* changes the answer only for molecules whose hit lies
+  beyond *N*. Recording each molecule's `min_bound` makes both curves derivable from **one** run;
+  the charter had budgeted 1–2 h *per point*.
+
+### Fixed
+- 🔴 **A normalizer that was wrong 57 times in 109.** String-level heavy-atom normalization vs an
+  RDKit canonical comparison: `SKELETON` 74/172 (43%) against 4/172 (2.3%) — **a factor of 18**,
+  and the broken version would have *confirmed* the roadmap's existing assumption. Caught because
+  a read example disagreed with the instrument.
+- 🔴 **The derived runtime curve understated every bounded row** — the cost model ignored the
+  post-loop tail, and the error grew with the bound, biasing toward promoting.
+- `harvest_measurements.py`'s `ALLOW` was one pattern too narrow **for the fourth consecutive
+  release**; verified with `fnmatch` over the real filenames rather than by reading the list.
+
+### Not done, deliberately
+- **No 5k sweep.** The shipped default did not change — the same reason v0.4.15 skipped its own.
+  The baseline of record remains `results-v0.4.14-sweep` at 77.16%.
+
 ## [0.4.15] - 2026-07-30
 
 > ### FLAT at 77.16% — and the release's value is two measured refutations.
