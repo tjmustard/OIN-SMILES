@@ -932,6 +932,7 @@ def get_molecule_info_from_sdf(sdf_directory):
             e = tmp[3:].strip()
         if not s.isdigit() or not e.isdigit():
             logger.debug("WRONG SDF; Error occurs during parsing bond block ...")
+            continue
         s = int(s) - 1
         e = int(e) - 1
         adj_matrix[s][e] = 1
