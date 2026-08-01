@@ -675,7 +675,7 @@ pre.prompt {
       </figcaption>
       <div class="chartbox">
         <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 22.84-point accuracy gap, largest first. structural is the largest at 9.68 points.">
-          <g class="hit"><title>structural — 484 molecules — 9.68 points. 301 of 484 are DETACHED. v0.4.15 built the return-path guard and REFUTED the &quot;one-site guard, not a capability floor&quot; reading: it changed the returned structure 51 times across 289 molecules and improved it 0 times. NOT reachable by selection — construction.</title>
+          <g class="hit"><title>structural — 484 molecules — 9.68 points. NOT one block and NOT one mechanism. DETACHED 301 (6.02): a return-path guard changed the returned structure 51 times across 289 molecules and improved it 0 times — construction. INTACT+BOUNDARY 172 (3.44): v0.4.16 measured these 82% PERCEPTION — the heavy-atom graph is already correct and bond orders/aromaticity/H differ; only 25 molecules are construction. NO_STRUCTURE 11 (0.22).</title>
             <text class="rowlab" x="222" y="26" text-anchor="end">structural</text>
             <text class="rowsub" x="222" y="39" text-anchor="end">n=484</text>
             <rect class="bar" x="232" y="14" width="425.9" height="20" rx="4" fill="var(--data)"></rect>
@@ -699,7 +699,7 @@ pre.prompt {
             <rect class="bar" x="232" y="116" width="99.4" height="20" rx="4" fill="var(--data)"></rect>
             <text class="val" x="325.4" y="130" text-anchor="end" style="fill:var(--surface)">2.26</text>
           </g>
-          <g class="hit"><title>facmer_divergent — 15 molecules — 0.30 points. Wrong isomer: the donor arrangement differs.</title>
+          <g class="hit"><title>facmer_divergent — 15 molecules — 0.30 points. Wrong isomer: the donor arrangement differs. v0.4.16 CONFIRMED this at 100% — metal and ligand bodies agree and only the arrangement signature differs. The one block on this chart whose name was a measurement rather than a hypothesis.</title>
             <text class="rowlab" x="222" y="162" text-anchor="end">facmer_divergent</text>
             <text class="rowsub" x="222" y="175" text-anchor="end">n=15</text>
             <rect class="bar" x="232" y="150" width="13.2" height="20" rx="4" fill="var(--data)"></rect>
@@ -718,7 +718,7 @@ pre.prompt {
         <div class="tw"><table>
           <thead><tr><th>Block</th><th class="num">n</th><th class="num">points</th><th>owner</th></tr></thead>
           <tbody>
-            <tr><td>structural</td><td class="num">484</td><td class="num">9.68</td><td><strong>301 NOT selection-reachable</strong> — v0.4.15 L1 recovered 0 of 289</td></tr>
+            <tr><td>structural</td><td class="num">484</td><td class="num">9.68</td><td><strong>Three mechanisms.</strong> 301 DETACHED not selection-reachable (v0.4.15 L1 recovered 0 of 289); <strong>172 are 82% PERCEPTION</strong> (v0.4.16); 11 produce nothing</td></tr>
             <tr><td>hard_fail</td><td class="num">266</td><td class="num">5.32</td><td>compute</td></tr>
             <tr><td>slot_renumber</td><td class="num">252</td><td class="num">5.04</td><td><strong>201 enantiomers NOT reachable</strong> (1 of 201) — construction</td></tr>
             <tr><td>rdkit_canonical</td><td class="num">113</td><td class="num">2.26</td><td>🟢 <strong>38.1% REACHABLE</strong> — 43 mol recovered by v0.4.15 L2</td></tr>
