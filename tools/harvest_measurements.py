@@ -131,6 +131,18 @@ ALLOW = [
     "lane1_*.json",
     "lane2_*.json",
     "both_*.json",
+    # v0.4.16. `knee_*` is the recovered-vs-bound evidence behind the OIN_STRING_EXACT_BOUND
+    # promote/hold call -- the per-molecule `min_bound` ordinals that no prose reproduces, and the
+    # only artifact a later release can diff to ask whether the knee moved. `pop_*.txt` is the
+    # SAMPLE MEMBERSHIP: a rate without its sample is not reproducible, and v0.4.15's own
+    # populations live in measurements/ for exactly that reason.
+    #
+    # ⚠ VERIFIED BY RUNNING fnmatch OVER THIS RELEASE'S ACTUAL FILENAMES, not by reading the list.
+    # Checked before adding: `knee_shard1.json`, `knee_curve_v0416.json` and `pop_all.txt` matched
+    # NOTHING here, so a fourth consecutive release would have silently dropped its evidence while
+    # the dry-run printed a plausible total. That is the same failure mode as a broken instrument.
+    "knee_*.json",
+    "pop_*.txt",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
