@@ -143,6 +143,18 @@ ALLOW = [
     # the dry-run printed a plausible total. That is the same failure mode as a broken instrument.
     "knee_*.json",
     "pop_*.txt",
+    # v0.4.16, second pass. Both of these were written into `measurements/` BY HAND because the
+    # harvester would not have taken them, which is the same failure the ALLOW list keeps having --
+    # noticed here only because the patterns were re-run through fnmatch rather than eyeballed.
+    #
+    # `cohort-*_manifest.json` is the SAMPLE DEFINITION: seed, n, dedup priority and all N molecule
+    # names. Every accuracy figure this project has ever published is a rate over one of these, and
+    # a rate without its sample is not reproducible. `MANIFEST*` did not match (wrong case, wrong
+    # position) and neither did `cohort_*.json` (underscore, not hyphen).
+    # `sweep_extract_*.jsonl.gz` is a whole sweep's per-molecule rows -- the thing that lets a later
+    # release re-derive a bucket table instead of re-quoting prose.
+    "cohort-*_manifest.json",
+    "sweep_extract_*.jsonl.gz",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
