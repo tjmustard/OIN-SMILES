@@ -1,0 +1,3591 @@
+{
+ "lever": "OIN_ACCEPT_STRING_EXACT",
+ "molecules_file": "shard2.txt",
+ "n_requested": 122,
+ "n_scored": 122,
+ "n_molecules_where_lever_FIRED": 120,
+ "n_molecules_where_lever_CHANGED_the_answer": 0,
+ "total_candidate_conformers_rejected": 967,
+ "rows": [
+  {
+   "molecule": "AFADOC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 174.009,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 7,
+   "t_at_bound": {
+    "0": 36.437,
+    "1": 75.081,
+    "2": 77.223,
+    "3": 102.422,
+    "4": 106.494,
+    "5": 109.848,
+    "6": 152.024,
+    "7": 173.942
+   }
+  },
+  {
+   "molecule": "AXESAY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 12.056,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.492,
+    "1": 2.444,
+    "2": 4.761,
+    "3": 5.569,
+    "4": 6.48,
+    "5": 7.432,
+    "6": 8.362,
+    "7": 9.235,
+    "8": 10.577,
+    "9": 11.974
+   }
+  },
+  {
+   "molecule": "BALTOY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 26.984,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 15,
+   "t_at_bound": {
+    "0": 14.259,
+    "1": 14.998,
+    "2": 16.35,
+    "3": 17.523,
+    "4": 18.167,
+    "5": 18.887,
+    "6": 19.766,
+    "7": 21.064,
+    "8": 21.747,
+    "9": 22.419,
+    "10": 23.165,
+    "11": 23.812,
+    "12": 24.84,
+    "13": 25.551,
+    "14": 26.168,
+    "15": 26.911
+   }
+  },
+  {
+   "molecule": "BELYUP_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 11,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 14,
+   "elapsed_s": 15.733,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.11,
+    "1": 3.157,
+    "2": 5.454,
+    "3": 6.129,
+    "4": 7.409,
+    "5": 8.881,
+    "6": 9.489,
+    "7": 13.752,
+    "8": 14.755,
+    "9": 15.518
+   }
+  },
+  {
+   "molecule": "BIXTOU_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 12.548,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.217,
+    "1": 2.825,
+    "2": 4.885,
+    "3": 5.497,
+    "4": 6.242,
+    "5": 7.624,
+    "6": 8.223,
+    "7": 8.941,
+    "8": 10.01,
+    "9": 12.301
+   }
+  },
+  {
+   "molecule": "BOSRAE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 43.754,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 24.334,
+    "1": 28.631,
+    "2": 31.624,
+    "3": 33.998,
+    "4": 36.879,
+    "5": 39.292,
+    "6": 43.685
+   }
+  },
+  {
+   "molecule": "CAPZID_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 12.706,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.907,
+    "1": 2.924,
+    "2": 5.249,
+    "3": 6.275,
+    "4": 7.3,
+    "5": 8.855,
+    "6": 9.778,
+    "7": 10.58,
+    "8": 11.804,
+    "9": 12.64
+   }
+  },
+  {
+   "molecule": "CETLUJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 1.962,
+   "has_incumbent": true,
+   "min_bound": 1,
+   "hit_t": 1.695,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {
+    "0": 1.032
+   }
+  },
+  {
+   "molecule": "COFCIL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 15.347,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.158,
+    "1": 8.267,
+    "2": 9.893,
+    "3": 10.586,
+    "4": 11.42,
+    "5": 12.392,
+    "6": 12.999,
+    "7": 13.633,
+    "8": 14.715,
+    "9": 15.306
+   }
+  },
+  {
+   "molecule": "DAXZUZ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 13.183,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.997,
+    "1": 2.211,
+    "2": 3.684,
+    "3": 4.152,
+    "4": 4.797,
+    "5": 5.829,
+    "6": 6.427,
+    "7": 7.087,
+    "8": 7.852,
+    "9": 13.013
+   }
+  },
+  {
+   "molecule": "DIDTOC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 12.471,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.648,
+    "1": 3.234,
+    "2": 4.665,
+    "3": 5.667,
+    "4": 6.625,
+    "5": 7.518,
+    "6": 8.996,
+    "7": 9.921,
+    "8": 10.884,
+    "9": 12.089
+   }
+  },
+  {
+   "molecule": "DOFWIG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 15.646,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.823,
+    "1": 3.149,
+    "2": 4.526,
+    "3": 6.044,
+    "4": 7.642,
+    "5": 9.351,
+    "6": 11.01,
+    "7": 12.472,
+    "8": 13.918,
+    "9": 15.119
+   }
+  },
+  {
+   "molecule": "DOYRUE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 11.996,
+   "has_incumbent": true,
+   "min_bound": 10,
+   "hit_t": 11.959,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 4.473,
+    "1": 4.9,
+    "2": 5.794,
+    "3": 6.776,
+    "4": 7.069,
+    "5": 7.855,
+    "6": 8.722,
+    "7": 8.934,
+    "8": 9.361,
+    "9": 10.149
+   }
+  },
+  {
+   "molecule": "EBUMOG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 6.98,
+   "has_incumbent": true,
+   "min_bound": 1,
+   "hit_t": 6.592,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {
+    "0": 3.395
+   }
+  },
+  {
+   "molecule": "EJOWIK_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 6.802,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.641,
+    "1": 1.615,
+    "2": 3.212,
+    "3": 3.633,
+    "4": 4.371,
+    "5": 4.781,
+    "6": 5.182,
+    "7": 5.697,
+    "8": 6.432,
+    "9": 6.761
+   }
+  },
+  {
+   "molecule": "EPEJUG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 88.983,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.923,
+    "1": 5.83,
+    "2": 11.931,
+    "3": 14.204,
+    "4": 18.165,
+    "5": 20.404,
+    "6": 24.634,
+    "7": 45.085,
+    "8": 63.928,
+    "9": 88.088
+   }
+  },
+  {
+   "molecule": "EQOKOL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 5.462,
+   "has_incumbent": true,
+   "min_bound": 1,
+   "hit_t": 5.418,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {
+    "0": 3.379
+   }
+  },
+  {
+   "molecule": "EVADUC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 50.708,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 5.345,
+    "1": 10.047,
+    "2": 14.813,
+    "3": 20.314,
+    "4": 24.841,
+    "5": 32.055,
+    "6": 38.553,
+    "7": 40.87,
+    "8": 44.88,
+    "9": 49.234
+   }
+  },
+  {
+   "molecule": "FAJDEB_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 17.903,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.3,
+    "1": 5.55,
+    "2": 9.02,
+    "3": 10.257,
+    "4": 11.694,
+    "5": 12.761,
+    "6": 13.789,
+    "7": 15.353,
+    "8": 16.932,
+    "9": 17.842
+   }
+  },
+  {
+   "molecule": "FEBNEH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 4.175,
+   "has_incumbent": true,
+   "min_bound": 1,
+   "hit_t": 4.13,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {
+    "0": 2.448
+   }
+  },
+  {
+   "molecule": "FEQCEM_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 24.803,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 27,
+   "t_at_bound": {
+    "0": 4.835,
+    "1": 5.908,
+    "2": 6.517,
+    "3": 7.317,
+    "4": 8.152,
+    "5": 8.405,
+    "6": 9.085,
+    "7": 9.904,
+    "8": 10.384,
+    "9": 10.7,
+    "10": 10.999,
+    "11": 11.405,
+    "12": 12.079,
+    "13": 12.967,
+    "14": 13.385,
+    "15": 14.826,
+    "16": 15.461,
+    "17": 16.164,
+    "18": 16.949,
+    "19": 18.075,
+    "20": 19.51,
+    "21": 20.183,
+    "22": 20.95,
+    "23": 21.409,
+    "24": 22.744,
+    "25": 23.462,
+    "26": 24.072,
+    "27": 24.751
+   }
+  },
+  {
+   "molecule": "FIHGOV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 339.667,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 124.836,
+    "1": 183.581,
+    "2": 218.07,
+    "3": 274.126,
+    "4": 325.564
+   }
+  },
+  {
+   "molecule": "FOLKEX_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 6.83,
+   "has_incumbent": true,
+   "min_bound": 1,
+   "hit_t": 6.776,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {
+    "0": 4.457
+   }
+  },
+  {
+   "molecule": "GAKZOK_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 39.911,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 29,
+   "t_at_bound": {
+    "0": 7.93,
+    "1": 9.188,
+    "2": 10.213,
+    "3": 10.918,
+    "4": 12.09,
+    "5": 13.408,
+    "6": 14.119,
+    "7": 14.909,
+    "8": 16.304,
+    "9": 17.227,
+    "10": 17.878,
+    "11": 19.288,
+    "12": 20.458,
+    "13": 21.43,
+    "14": 22.235,
+    "15": 22.807,
+    "16": 23.548,
+    "17": 24.823,
+    "18": 25.76,
+    "19": 27.525,
+    "20": 28.234,
+    "21": 29.502,
+    "22": 30.605,
+    "23": 33.46,
+    "24": 34.144,
+    "25": 36.055,
+    "26": 36.616,
+    "27": 37.975,
+    "28": 38.694,
+    "29": 39.578
+   }
+  },
+  {
+   "molecule": "GESYAG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 48.77,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 2,
+   "t_at_bound": {
+    "0": 4.195,
+    "1": 17.58,
+    "2": 20.913
+   }
+  },
+  {
+   "molecule": "GIMKIY_comp_1",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 594.396,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 3.93,
+    "1": 6.339,
+    "2": 16.68,
+    "3": 19.23,
+    "4": 594.315
+   }
+  },
+  {
+   "molecule": "GOWQOY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 4.995,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.667,
+    "1": 1.528,
+    "2": 2.424,
+    "3": 2.756,
+    "4": 3.135,
+    "5": 3.384,
+    "6": 3.67,
+    "7": 4.051,
+    "8": 4.543,
+    "9": 4.912
+   }
+  },
+  {
+   "molecule": "HACYEQ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 351.972,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 49.452,
+    "1": 100.75,
+    "2": 164.093,
+    "3": 205.791,
+    "4": 246.149,
+    "5": 291.309,
+    "6": 332.265
+   }
+  },
+  {
+   "molecule": "HEFKOT_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 3.735,
+   "has_incumbent": true,
+   "min_bound": 2,
+   "hit_t": 3.697,
+   "n_post_incumbent_evals": 1,
+   "t_at_bound": {
+    "0": 0.8,
+    "1": 1.792
+   }
+  },
+  {
+   "molecule": "HIJPUM_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 79.801,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 1,
+   "t_at_bound": {
+    "0": 74.908,
+    "1": 79.745
+   }
+  },
+  {
+   "molecule": "HOLLUR_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 28.335,
+   "has_incumbent": true,
+   "min_bound": 14,
+   "hit_t": 28.273,
+   "n_post_incumbent_evals": 13,
+   "t_at_bound": {
+    "0": 7.065,
+    "1": 7.936,
+    "2": 9.631,
+    "3": 11.179,
+    "4": 13.404,
+    "5": 14.471,
+    "6": 15.434,
+    "7": 16.485,
+    "8": 18.756,
+    "9": 20.561,
+    "10": 22.168,
+    "11": 24.558,
+    "12": 25.619,
+    "13": 26.629
+   }
+  },
+  {
+   "molecule": "IBEGEE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 5.291,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.648,
+    "1": 1.541,
+    "2": 2.222,
+    "3": 2.587,
+    "4": 3.042,
+    "5": 3.64,
+    "6": 4.009,
+    "7": 4.44,
+    "8": 4.813,
+    "9": 5.157
+   }
+  },
+  {
+   "molecule": "ICUXOV_comp_1",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 10.345,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.215,
+    "1": 3.085,
+    "2": 4.82,
+    "3": 5.375,
+    "4": 6.16,
+    "5": 6.657,
+    "6": 7.478,
+    "7": 9.091,
+    "8": 9.693,
+    "9": 10.288
+   }
+  },
+  {
+   "molecule": "IGAWOF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 17.683,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.232,
+    "1": 4.254,
+    "2": 6.296,
+    "3": 7.96,
+    "4": 9.249,
+    "5": 12.114,
+    "6": 13.026,
+    "7": 14.233,
+    "8": 15.541,
+    "9": 17.123
+   }
+  },
+  {
+   "molecule": "IHIROI_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 13.479,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.282,
+    "1": 3.386,
+    "2": 5.614,
+    "3": 6.566,
+    "4": 7.459,
+    "5": 8.279,
+    "6": 9.342,
+    "7": 10.462,
+    "8": 12.459,
+    "9": 13.423
+   }
+  },
+  {
+   "molecule": "ILEPAR_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 10.48,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.705,
+    "1": 2.571,
+    "2": 4.214,
+    "3": 4.857,
+    "4": 5.576,
+    "5": 6.534,
+    "6": 7.445,
+    "7": 8.319,
+    "8": 9.423,
+    "9": 10.407
+   }
+  },
+  {
+   "molecule": "IPISUV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 9.518,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.182,
+    "1": 2.876,
+    "2": 3.812,
+    "3": 4.453,
+    "4": 5.401,
+    "5": 5.954,
+    "6": 6.707,
+    "7": 7.732,
+    "8": 8.727,
+    "9": 9.255
+   }
+  },
+  {
+   "molecule": "IYOKAI_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 12.964,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.596,
+    "1": 3.76,
+    "2": 6.818,
+    "3": 7.522,
+    "4": 8.559,
+    "5": 9.216,
+    "6": 9.913,
+    "7": 10.944,
+    "8": 11.821,
+    "9": 12.651
+   }
+  },
+  {
+   "molecule": "IZUDOX_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 3,
+   "elapsed_s": 30.851,
+   "has_incumbent": true,
+   "min_bound": 10,
+   "hit_t": 30.793,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 11.266,
+    "1": 15.077,
+    "2": 19.342,
+    "3": 20.266,
+    "4": 20.8,
+    "5": 22.913,
+    "6": 23.608,
+    "7": 25.09,
+    "8": 26.355,
+    "9": 27.509
+   }
+  },
+  {
+   "molecule": "JAMFOV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 20.419,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.813,
+    "1": 1.973,
+    "2": 3.191,
+    "3": 3.567,
+    "4": 4.235,
+    "5": 7.623,
+    "6": 8.001,
+    "7": 8.581,
+    "8": 20.002,
+    "9": 20.382
+   }
+  },
+  {
+   "molecule": "JEQLOJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 26.414,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 26,
+   "t_at_bound": {
+    "0": 5.262,
+    "1": 5.645,
+    "2": 6.224,
+    "3": 7.024,
+    "4": 8.606,
+    "5": 8.928,
+    "6": 9.348,
+    "7": 10.726,
+    "8": 11.761,
+    "9": 12.473,
+    "10": 13.364,
+    "11": 13.975,
+    "12": 14.401,
+    "13": 15.655,
+    "14": 16.026,
+    "15": 16.729,
+    "16": 17.891,
+    "17": 18.49,
+    "18": 19.345,
+    "19": 20.04,
+    "20": 21.249,
+    "21": 22.073,
+    "22": 22.597,
+    "23": 23.493,
+    "24": 24.905,
+    "25": 25.357,
+    "26": 26.366
+   }
+  },
+  {
+   "molecule": "JOCMUK_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 11,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 14,
+   "elapsed_s": 3.99,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.33,
+    "1": 0.808,
+    "2": 1.473,
+    "3": 1.571,
+    "4": 1.771,
+    "5": 2.079,
+    "6": 2.176,
+    "7": 2.324,
+    "8": 3.475,
+    "9": 3.961
+   }
+  },
+  {
+   "molecule": "JUDMEC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 24.79,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.467,
+    "1": 4.815,
+    "2": 7.327,
+    "3": 8.947,
+    "4": 10.953,
+    "5": 13.213,
+    "6": 14.907,
+    "7": 16.945,
+    "8": 22.392,
+    "9": 24.201
+   }
+  },
+  {
+   "molecule": "KAWHIC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 11.915,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.031,
+    "1": 2.672,
+    "2": 5.506,
+    "3": 6.266,
+    "4": 8.182,
+    "5": 9.015,
+    "6": 10.253,
+    "7": 10.647,
+    "8": 11.236,
+    "9": 11.858
+   }
+  },
+  {
+   "molecule": "KEJKUG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 15.45,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.207,
+    "1": 2.878,
+    "2": 5.405,
+    "3": 6.155,
+    "4": 7.553,
+    "5": 9.272,
+    "6": 10.398,
+    "7": 11.672,
+    "8": 13.921,
+    "9": 15.174
+   }
+  },
+  {
+   "molecule": "KITHIH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 12.846,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.715,
+    "1": 2.963,
+    "2": 4.474,
+    "3": 5.887,
+    "4": 6.645,
+    "5": 7.847,
+    "6": 9.14,
+    "7": 9.854,
+    "8": 10.94,
+    "9": 12.338
+   }
+  },
+  {
+   "molecule": "KOWXIF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 8.811,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.839,
+    "1": 2.03,
+    "2": 4.162,
+    "3": 4.439,
+    "4": 5.183,
+    "5": 6.434,
+    "6": 6.717,
+    "7": 7.302,
+    "8": 8.466,
+    "9": 8.762
+   }
+  },
+  {
+   "molecule": "LAMVIE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 7.081,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.767,
+    "1": 1.325,
+    "2": 2.281,
+    "3": 2.731,
+    "4": 3.23,
+    "5": 4.319,
+    "6": 4.797,
+    "7": 5.289,
+    "8": 6.44,
+    "9": 7.043
+   }
+  },
+  {
+   "molecule": "LERLEC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 14.483,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 16,
+   "t_at_bound": {
+    "0": 7.863,
+    "1": 8.461,
+    "2": 8.92,
+    "3": 9.604,
+    "4": 9.842,
+    "5": 10.057,
+    "6": 10.608,
+    "7": 10.848,
+    "8": 11.238,
+    "9": 11.533,
+    "10": 12.345,
+    "11": 12.593,
+    "12": 12.899,
+    "13": 13.256,
+    "14": 13.529,
+    "15": 14.04,
+    "16": 14.442
+   }
+  },
+  {
+   "molecule": "LIKZUD_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 10.435,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.485,
+    "1": 2.93,
+    "2": 3.955,
+    "3": 4.999,
+    "4": 5.621,
+    "5": 6.173,
+    "6": 7.154,
+    "7": 8.12,
+    "8": 9.335,
+    "9": 10.103
+   }
+  },
+  {
+   "molecule": "LUWYOR_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 8.674,
+   "has_incumbent": true,
+   "min_bound": 11,
+   "hit_t": 8.624,
+   "n_post_incumbent_evals": 10,
+   "t_at_bound": {
+    "0": 4.18,
+    "1": 4.562,
+    "2": 4.958,
+    "3": 5.222,
+    "4": 5.51,
+    "5": 5.719,
+    "6": 6.23,
+    "7": 6.546,
+    "8": 6.777,
+    "9": 7.087,
+    "10": 7.516
+   }
+  },
+  {
+   "molecule": "MAWZIV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 11,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 14,
+   "elapsed_s": 20.443,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.201,
+    "1": 3.468,
+    "2": 6.212,
+    "3": 7.543,
+    "4": 9.075,
+    "5": 12.229,
+    "6": 13.691,
+    "7": 17.538,
+    "8": 19.008,
+    "9": 20.369
+   }
+  },
+  {
+   "molecule": "MIDPUL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 19.799,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 31,
+   "t_at_bound": {
+    "0": 0.878,
+    "1": 2.233,
+    "2": 3.819,
+    "3": 4.236,
+    "4": 4.708,
+    "5": 5.609,
+    "6": 6.009,
+    "7": 6.438,
+    "8": 6.914,
+    "9": 7.301,
+    "10": 7.575,
+    "11": 8.35,
+    "12": 8.708,
+    "13": 9.518,
+    "14": 10.008,
+    "15": 10.732,
+    "16": 11.76,
+    "17": 12.17,
+    "18": 12.73,
+    "19": 13.837,
+    "20": 14.174,
+    "21": 14.524,
+    "22": 15.008,
+    "23": 15.343,
+    "24": 15.919,
+    "25": 16.404,
+    "26": 16.765,
+    "27": 17.109,
+    "28": 17.614,
+    "29": 18.151,
+    "30": 18.792,
+    "31": 19.649
+   }
+  },
+  {
+   "molecule": "MIQCOH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 80.962,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 17,
+   "t_at_bound": {
+    "0": 41.303,
+    "1": 43.189,
+    "2": 44.679,
+    "3": 47.356,
+    "4": 49.986,
+    "5": 52.27,
+    "6": 55.313,
+    "7": 58.028,
+    "8": 60.321,
+    "9": 63.127,
+    "10": 65.104,
+    "11": 69.376,
+    "12": 70.592,
+    "13": 72.505,
+    "14": 74.313,
+    "15": 77.114,
+    "16": 78.958,
+    "17": 80.897
+   }
+  },
+  {
+   "molecule": "MOQXAT_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 13.829,
+   "has_incumbent": true,
+   "min_bound": 21,
+   "hit_t": 13.789,
+   "n_post_incumbent_evals": 20,
+   "t_at_bound": {
+    "0": 3.68,
+    "1": 3.937,
+    "2": 4.419,
+    "3": 5.027,
+    "4": 5.514,
+    "5": 5.843,
+    "6": 6.293,
+    "7": 6.725,
+    "8": 7.069,
+    "9": 7.924,
+    "10": 8.541,
+    "11": 8.851,
+    "12": 9.234,
+    "13": 9.677,
+    "14": 10.404,
+    "15": 10.695,
+    "16": 11.549,
+    "17": 11.811,
+    "18": 12.071,
+    "19": 12.43,
+    "20": 13.3
+   }
+  },
+  {
+   "molecule": "NANYUZ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 18.429,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.925,
+    "1": 5.4,
+    "2": 8.559,
+    "3": 9.672,
+    "4": 11.048,
+    "5": 12.263,
+    "6": 13.281,
+    "7": 14.654,
+    "8": 16.887,
+    "9": 18.382
+   }
+  },
+  {
+   "molecule": "NASKEY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 24.368,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.095,
+    "1": 5.849,
+    "2": 9.76,
+    "3": 11.26,
+    "4": 13.871,
+    "5": 16.677,
+    "6": 18.199,
+    "7": 20.551,
+    "8": 22.461,
+    "9": 23.935
+   }
+  },
+  {
+   "molecule": "NIHHAP_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 224.203,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 14,
+   "t_at_bound": {
+    "0": 131.113,
+    "1": 149.787,
+    "2": 154.039,
+    "3": 155.928,
+    "4": 158.798,
+    "5": 163.079,
+    "6": 169.889,
+    "7": 177.944,
+    "8": 179.803,
+    "9": 184.727,
+    "10": 187.884,
+    "11": 192.142,
+    "12": 195.437,
+    "13": 215.473,
+    "14": 223.141
+   }
+  },
+  {
+   "molecule": "NIWTIY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 18.556,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.709,
+    "1": 4.45,
+    "2": 6.952,
+    "3": 8.659,
+    "4": 9.827,
+    "5": 11.341,
+    "6": 12.96,
+    "7": 15.028,
+    "8": 16.911,
+    "9": 18.033
+   }
+  },
+  {
+   "molecule": "NOLXAQ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 16.238,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.098,
+    "1": 3.832,
+    "2": 5.888,
+    "3": 7.088,
+    "4": 8.948,
+    "5": 10.17,
+    "6": 12.017,
+    "7": 13.353,
+    "8": 15.168,
+    "9": 15.882
+   }
+  },
+  {
+   "molecule": "NOPXUM_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 6.86,
+   "has_incumbent": true,
+   "min_bound": 7,
+   "hit_t": 6.804,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 2.306,
+    "1": 3.769,
+    "2": 4.05,
+    "3": 4.749,
+    "4": 5.539,
+    "5": 5.79,
+    "6": 6.267
+   }
+  },
+  {
+   "molecule": "NUFXAP_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 36.063,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.047,
+    "1": 5.919,
+    "2": 8.256,
+    "3": 9.287,
+    "4": 11.647,
+    "5": 15.193,
+    "6": 16.241,
+    "7": 18.481,
+    "8": 23.041,
+    "9": 36.007
+   }
+  },
+  {
+   "molecule": "OBOHOD_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 15.548,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.079,
+    "1": 3.85,
+    "2": 6.155,
+    "3": 7.385,
+    "4": 8.269,
+    "5": 9.766,
+    "6": 11.133,
+    "7": 12.005,
+    "8": 13.78,
+    "9": 15.127
+   }
+  },
+  {
+   "molecule": "OJEKET_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 18.814,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 12.672,
+    "1": 13.836,
+    "2": 14.603,
+    "3": 15.47,
+    "4": 16.442,
+    "5": 17.966,
+    "6": 18.762
+   }
+  },
+  {
+   "molecule": "OMOBUO_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 29.605,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 7,
+   "t_at_bound": {
+    "0": 6.243,
+    "1": 7.567,
+    "2": 8.897,
+    "3": 10.346,
+    "4": 11.29,
+    "5": 20.848,
+    "6": 21.426,
+    "7": 29.182
+   }
+  },
+  {
+   "molecule": "OVOTOK_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 28.468,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 3.877,
+    "1": 6.552,
+    "2": 10.17,
+    "3": 13.081,
+    "4": 14.95,
+    "5": 17.427,
+    "6": 20.081,
+    "7": 22.7,
+    "8": 24.972,
+    "9": 27.449
+   }
+  },
+  {
+   "molecule": "PEWWOF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 3.662,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.382,
+    "1": 0.967,
+    "2": 1.647,
+    "3": 1.805,
+    "4": 2.082,
+    "5": 2.349,
+    "6": 2.514,
+    "7": 2.769,
+    "8": 3.039,
+    "9": 3.63
+   }
+  },
+  {
+   "molecule": "PIQREP_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 36.289,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 29,
+   "t_at_bound": {
+    "0": 5.308,
+    "1": 6.531,
+    "2": 8.077,
+    "3": 8.479,
+    "4": 9.785,
+    "5": 10.56,
+    "6": 10.95,
+    "7": 12.095,
+    "8": 13.149,
+    "9": 13.587,
+    "10": 14.468,
+    "11": 15.476,
+    "12": 16.007,
+    "13": 16.654,
+    "14": 17.857,
+    "15": 18.405,
+    "16": 19.859,
+    "17": 21.413,
+    "18": 22.0,
+    "19": 23.47,
+    "20": 25.136,
+    "21": 26.108,
+    "22": 27.575,
+    "23": 27.901,
+    "24": 29.293,
+    "25": 29.908,
+    "26": 31.881,
+    "27": 34.007,
+    "28": 35.496,
+    "29": 36.239
+   }
+  },
+  {
+   "molecule": "POJDEA_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 14.508,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.004,
+    "1": 3.066,
+    "2": 6.159,
+    "3": 7.114,
+    "4": 7.926,
+    "5": 9.527,
+    "6": 10.448,
+    "7": 11.396,
+    "8": 13.209,
+    "9": 14.435
+   }
+  },
+  {
+   "molecule": "PUNTAV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 9.63,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.179,
+    "1": 3.021,
+    "2": 4.463,
+    "3": 5.499,
+    "4": 6.008,
+    "5": 6.54,
+    "6": 7.429,
+    "7": 8.15,
+    "8": 8.732,
+    "9": 9.594
+   }
+  },
+  {
+   "molecule": "QAKHUF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 29.518,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 8.539,
+    "1": 16.254,
+    "2": 18.87,
+    "3": 19.956,
+    "4": 21.178,
+    "5": 23.612,
+    "6": 24.886,
+    "7": 26.243,
+    "8": 28.239,
+    "9": 29.475
+   }
+  },
+  {
+   "molecule": "QEVNUB_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 28.882,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.215,
+    "1": 6.549,
+    "2": 10.026,
+    "3": 13.2,
+    "4": 15.154,
+    "5": 17.194,
+    "6": 22.025,
+    "7": 23.414,
+    "8": 25.466,
+    "9": 28.807
+   }
+  },
+  {
+   "molecule": "QIGYUC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 96.331,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 28,
+   "t_at_bound": {
+    "0": 13.612,
+    "1": 17.824,
+    "2": 23.179,
+    "3": 27.778,
+    "4": 32.429,
+    "5": 34.463,
+    "6": 35.611,
+    "7": 37.31,
+    "8": 38.525,
+    "9": 41.23,
+    "10": 44.188,
+    "11": 45.964,
+    "12": 49.215,
+    "13": 51.525,
+    "14": 52.752,
+    "15": 54.257,
+    "16": 57.893,
+    "17": 60.573,
+    "18": 65.276,
+    "19": 67.683,
+    "20": 68.64,
+    "21": 69.741,
+    "22": 71.064,
+    "23": 73.098,
+    "24": 76.36,
+    "25": 82.305,
+    "26": 84.959,
+    "27": 90.464,
+    "28": 96.252
+   }
+  },
+  {
+   "molecule": "QIXGOW_comp_1",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 20.818,
+   "has_incumbent": true,
+   "min_bound": 10,
+   "hit_t": 20.755,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 8.3,
+    "1": 9.955,
+    "2": 10.767,
+    "3": 11.523,
+    "4": 12.131,
+    "5": 13.514,
+    "6": 14.906,
+    "7": 16.515,
+    "8": 17.476,
+    "9": 19.85
+   }
+  },
+  {
+   "molecule": "QOQGIO_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 10.888,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.272,
+    "1": 3.163,
+    "2": 5.113,
+    "3": 5.706,
+    "4": 6.499,
+    "5": 8.127,
+    "6": 8.6,
+    "7": 9.354,
+    "8": 10.281,
+    "9": 10.848
+   }
+  },
+  {
+   "molecule": "QUXNAZ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 49.675,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 14.824,
+    "1": 25.969,
+    "2": 30.107,
+    "3": 32.98,
+    "4": 36.022,
+    "5": 39.568,
+    "6": 41.797,
+    "7": 43.966,
+    "8": 47.004,
+    "9": 49.614
+   }
+  },
+  {
+   "molecule": "RARJEA_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 23.804,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.771,
+    "1": 4.282,
+    "2": 6.736,
+    "3": 8.122,
+    "4": 9.382,
+    "5": 12.467,
+    "6": 13.783,
+    "7": 15.298,
+    "8": 21.869,
+    "9": 23.261
+   }
+  },
+  {
+   "molecule": "REFPOH_comp_0",
+   "error": null,
+   "fired": {},
+   "won": {},
+   "n_rejected": 0,
+   "elapsed_s": 24.328,
+   "has_incumbent": false,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {}
+  },
+  {
+   "molecule": "RILGIE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 47.952,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 8,
+   "t_at_bound": {
+    "0": 6.658,
+    "1": 10.564,
+    "2": 14.655,
+    "3": 27.78,
+    "4": 30.973,
+    "5": 33.265,
+    "6": 35.35,
+    "7": 39.007,
+    "8": 47.344
+   }
+  },
+  {
+   "molecule": "RURMUO_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 21.48,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.728,
+    "1": 5.13,
+    "2": 7.415,
+    "3": 9.51,
+    "4": 11.174,
+    "5": 12.735,
+    "6": 14.635,
+    "7": 16.714,
+    "8": 18.593,
+    "9": 20.698
+   }
+  },
+  {
+   "molecule": "SARKEC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 347.846,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 5,
+   "t_at_bound": {
+    "0": 3.908,
+    "1": 4.463,
+    "2": 5.053,
+    "3": 6.071,
+    "4": 6.966,
+    "5": 7.548
+   }
+  },
+  {
+   "molecule": "SEHQED_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 46.135,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 18.654,
+    "1": 24.377,
+    "2": 28.307,
+    "3": 31.209,
+    "4": 36.353,
+    "5": 40.289,
+    "6": 44.611
+   }
+  },
+  {
+   "molecule": "SIDNUQ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 5.232,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 2.741,
+    "1": 3.686,
+    "2": 4.096,
+    "3": 4.343,
+    "4": 4.628,
+    "5": 4.817,
+    "6": 5.195
+   }
+  },
+  {
+   "molecule": "SISBOM_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 21.616,
+   "has_incumbent": true,
+   "min_bound": 5,
+   "hit_t": 21.542,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 2.776,
+    "1": 6.06,
+    "2": 10.887,
+    "3": 16.284,
+    "4": 18.288
+   }
+  },
+  {
+   "molecule": "SIXROJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 170.473,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.788,
+    "1": 18.992,
+    "2": 21.428,
+    "3": 59.293,
+    "4": 61.557,
+    "5": 66.079,
+    "6": 95.706,
+    "7": 132.414,
+    "8": 137.083,
+    "9": 170.37
+   }
+  },
+  {
+   "molecule": "SURFEQ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 9.488,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.755,
+    "1": 2.376,
+    "2": 4.451,
+    "3": 5.188,
+    "4": 6.391,
+    "5": 6.759,
+    "6": 7.426,
+    "7": 8.229,
+    "8": 8.563,
+    "9": 9.439
+   }
+  },
+  {
+   "molecule": "TAQLUS_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 13,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 16,
+   "elapsed_s": 3.17,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 31,
+   "t_at_bound": {
+    "0": 0.249,
+    "1": 0.366,
+    "2": 0.48,
+    "3": 0.601,
+    "4": 0.72,
+    "5": 0.825,
+    "6": 0.906,
+    "7": 1.011,
+    "8": 1.124,
+    "9": 1.22,
+    "10": 1.315,
+    "11": 1.393,
+    "12": 1.469,
+    "13": 1.545,
+    "14": 1.581,
+    "15": 1.683,
+    "16": 1.795,
+    "17": 1.891,
+    "18": 1.974,
+    "19": 2.054,
+    "20": 2.151,
+    "21": 2.229,
+    "22": 2.31,
+    "23": 2.385,
+    "24": 2.447,
+    "25": 2.523,
+    "26": 2.606,
+    "27": 2.698,
+    "28": 2.787,
+    "29": 2.848,
+    "30": 3.002,
+    "31": 3.146
+   }
+  },
+  {
+   "molecule": "TEPBEX_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 10.951,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.767,
+    "1": 2.488,
+    "2": 5.084,
+    "3": 5.955,
+    "4": 6.685,
+    "5": 7.429,
+    "6": 8.199,
+    "7": 9.071,
+    "8": 10.213,
+    "9": 10.897
+   }
+  },
+  {
+   "molecule": "TILGOM_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 247.831,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 5.376,
+    "1": 23.411,
+    "2": 29.913,
+    "3": 46.696,
+    "4": 70.427,
+    "5": 72.846,
+    "6": 137.986,
+    "7": 172.215,
+    "8": 216.195,
+    "9": 246.242
+   }
+  },
+  {
+   "molecule": "TOQXEE_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 9.604,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.217,
+    "1": 2.149,
+    "2": 3.372,
+    "3": 4.18,
+    "4": 5.12,
+    "5": 5.995,
+    "6": 6.478,
+    "7": 7.23,
+    "8": 8.108,
+    "9": 9.197
+   }
+  },
+  {
+   "molecule": "TORLAN_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 18.895,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 15,
+   "t_at_bound": {
+    "0": 10.787,
+    "1": 11.594,
+    "2": 11.871,
+    "3": 12.391,
+    "4": 13.025,
+    "5": 13.404,
+    "6": 13.93,
+    "7": 14.616,
+    "8": 15.053,
+    "9": 15.588,
+    "10": 16.274,
+    "11": 16.524,
+    "12": 17.168,
+    "13": 17.687,
+    "14": 18.053,
+    "15": 18.844
+   }
+  },
+  {
+   "molecule": "UHINAC_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 14.526,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.903,
+    "1": 3.052,
+    "2": 4.69,
+    "3": 5.866,
+    "4": 7.031,
+    "5": 7.965,
+    "6": 9.372,
+    "7": 10.843,
+    "8": 12.655,
+    "9": 14.007
+   }
+  },
+  {
+   "molecule": "ULOJAH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 9.04,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 5,
+   "t_at_bound": {
+    "0": 5.011,
+    "1": 5.479,
+    "2": 5.915,
+    "3": 6.609,
+    "4": 7.739,
+    "5": 9.003
+   }
+  },
+  {
+   "molecule": "UROPOH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 14,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 17,
+   "elapsed_s": 57.153,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 30,
+   "t_at_bound": {
+    "0": 1.5,
+    "1": 3.634,
+    "2": 4.271,
+    "3": 11.476,
+    "4": 12.053,
+    "5": 12.693,
+    "6": 13.621,
+    "7": 14.192,
+    "8": 20.051,
+    "9": 21.497,
+    "10": 22.295,
+    "11": 23.378,
+    "12": 24.015,
+    "13": 24.759,
+    "14": 26.303,
+    "15": 26.931,
+    "16": 27.305,
+    "17": 33.211,
+    "18": 39.571,
+    "19": 41.056,
+    "20": 41.74,
+    "21": 43.241,
+    "22": 44.068,
+    "23": 44.632,
+    "24": 46.46,
+    "25": 47.146,
+    "26": 47.719,
+    "27": 48.493,
+    "28": 54.768,
+    "29": 56.176,
+    "30": 56.931
+   }
+  },
+  {
+   "molecule": "VAFQEY_comp_0",
+   "error": null,
+   "fired": {},
+   "won": {},
+   "n_rejected": 0,
+   "elapsed_s": 22.608,
+   "has_incumbent": false,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 0,
+   "t_at_bound": {}
+  },
+  {
+   "molecule": "VARTOZ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 73.274,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 28,
+   "t_at_bound": {
+    "0": 8.33,
+    "1": 10.164,
+    "2": 12.896,
+    "3": 14.554,
+    "4": 16.172,
+    "5": 17.397,
+    "6": 19.485,
+    "7": 21.386,
+    "8": 26.801,
+    "9": 28.288,
+    "10": 30.339,
+    "11": 32.179,
+    "12": 33.395,
+    "13": 35.172,
+    "14": 37.833,
+    "15": 39.763,
+    "16": 41.345,
+    "17": 45.659,
+    "18": 49.438,
+    "19": 50.887,
+    "20": 54.16,
+    "21": 55.454,
+    "22": 57.502,
+    "23": 59.657,
+    "24": 61.476,
+    "25": 63.667,
+    "26": 66.929,
+    "27": 71.389,
+    "28": 73.207
+   }
+  },
+  {
+   "molecule": "VIMQAJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 8.521,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.27,
+    "1": 2.2,
+    "2": 3.317,
+    "3": 4.106,
+    "4": 4.683,
+    "5": 5.912,
+    "6": 6.376,
+    "7": 6.899,
+    "8": 7.581,
+    "9": 8.192
+   }
+  },
+  {
+   "molecule": "VISVEA_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 8.583,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 5.297,
+    "1": 6.357,
+    "2": 7.333,
+    "3": 7.748,
+    "4": 8.543
+   }
+  },
+  {
+   "molecule": "VIZKEW_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 9.671,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.767,
+    "1": 2.456,
+    "2": 4.537,
+    "3": 5.295,
+    "4": 6.095,
+    "5": 7.135,
+    "6": 7.895,
+    "7": 8.477,
+    "8": 8.893,
+    "9": 9.623
+   }
+  },
+  {
+   "molecule": "VUNBAJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 322.447,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 2,
+   "t_at_bound": {
+    "0": 56.978,
+    "1": 134.832,
+    "2": 321.891
+   }
+  },
+  {
+   "molecule": "WAVLUA_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 1,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 2,
+   "elapsed_s": 25.923,
+   "has_incumbent": true,
+   "min_bound": 3,
+   "hit_t": 24.846,
+   "n_post_incumbent_evals": 2,
+   "t_at_bound": {
+    "0": 4.562,
+    "1": 15.263,
+    "2": 19.902
+   }
+  },
+  {
+   "molecule": "WENDAV_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 10,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 13,
+   "elapsed_s": 38.84,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.729,
+    "1": 3.101,
+    "2": 3.661,
+    "3": 4.253,
+    "4": 8.628,
+    "5": 9.201,
+    "6": 9.882,
+    "7": 36.413,
+    "8": 37.43,
+    "9": 38.623
+   }
+  },
+  {
+   "molecule": "WOBLUX_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 7,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 10,
+   "elapsed_s": 43.368,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 8.433,
+    "1": 13.367,
+    "2": 18.097,
+    "3": 23.35,
+    "4": 30.844,
+    "5": 32.875,
+    "6": 35.554,
+    "7": 39.938,
+    "8": 41.883,
+    "9": 43.282
+   }
+  },
+  {
+   "molecule": "WOPXAB_comp_1",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 11,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 14,
+   "elapsed_s": 13.756,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.294,
+    "1": 3.261,
+    "2": 5.486,
+    "3": 6.343,
+    "4": 7.665,
+    "5": 9.282,
+    "6": 10.137,
+    "7": 11.278,
+    "8": 12.572,
+    "9": 13.458
+   }
+  },
+  {
+   "molecule": "WUVNUW_comp_1",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 8.062,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.118,
+    "1": 2.511,
+    "2": 3.722,
+    "3": 4.208,
+    "4": 4.926,
+    "5": 5.481,
+    "6": 5.999,
+    "7": 6.703,
+    "8": 7.387,
+    "9": 8.016
+   }
+  },
+  {
+   "molecule": "WUXKUW_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 154.415,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 4.787,
+    "1": 15.491,
+    "2": 19.246,
+    "3": 48.173,
+    "4": 52.453,
+    "5": 58.151,
+    "6": 106.731,
+    "7": 111.52,
+    "8": 119.716,
+    "9": 152.956
+   }
+  },
+  {
+   "molecule": "XAWJEL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 2,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 5,
+   "elapsed_s": 24.474,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 7,
+   "t_at_bound": {
+    "0": 22.892,
+    "1": 23.174,
+    "2": 23.354,
+    "3": 23.48,
+    "4": 23.854,
+    "5": 24.104,
+    "6": 24.306,
+    "7": 24.447
+   }
+  },
+  {
+   "molecule": "XEJGOK_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 6,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 9,
+   "elapsed_s": 295.358,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 6,
+   "t_at_bound": {
+    "0": 91.448,
+    "1": 124.652,
+    "2": 157.781,
+    "3": 187.463,
+    "4": 220.151,
+    "5": 253.068,
+    "6": 282.585
+   }
+  },
+  {
+   "molecule": "XESCAB_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1
+   },
+   "won": {},
+   "n_rejected": 4,
+   "elapsed_s": 5.536,
+   "has_incumbent": true,
+   "min_bound": 12,
+   "hit_t": 5.499,
+   "n_post_incumbent_evals": 11,
+   "t_at_bound": {
+    "0": 0.665,
+    "1": 1.364,
+    "2": 2.341,
+    "3": 2.563,
+    "4": 2.76,
+    "5": 3.001,
+    "6": 3.375,
+    "7": 3.51,
+    "8": 3.754,
+    "9": 3.996,
+    "10": 4.835,
+    "11": 5.248
+   }
+  },
+  {
+   "molecule": "XEXMUL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 32.85,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 17.84,
+    "1": 21.614,
+    "2": 25.486,
+    "3": 30.532,
+    "4": 31.895
+   }
+  },
+  {
+   "molecule": "XIPQIY_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 13.431,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 7,
+   "t_at_bound": {
+    "0": 5.66,
+    "1": 6.619,
+    "2": 7.475,
+    "3": 8.826,
+    "4": 9.789,
+    "5": 11.402,
+    "6": 12.433,
+    "7": 12.982
+   }
+  },
+  {
+   "molecule": "XISCIL_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 13.489,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 26,
+   "t_at_bound": {
+    "0": 3.141,
+    "1": 3.635,
+    "2": 3.75,
+    "3": 3.979,
+    "4": 4.36,
+    "5": 5.21,
+    "6": 5.412,
+    "7": 5.929,
+    "8": 6.362,
+    "9": 6.612,
+    "10": 7.311,
+    "11": 8.128,
+    "12": 8.413,
+    "13": 8.601,
+    "14": 8.918,
+    "15": 9.716,
+    "16": 10.375,
+    "17": 10.564,
+    "18": 11.017,
+    "19": 11.319,
+    "20": 11.46,
+    "21": 11.666,
+    "22": 11.89,
+    "23": 12.117,
+    "24": 12.64,
+    "25": 12.857,
+    "26": 13.457
+   }
+  },
+  {
+   "molecule": "XIXPIF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 7.126,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.866,
+    "1": 1.583,
+    "2": 2.715,
+    "3": 3.316,
+    "4": 3.977,
+    "5": 4.417,
+    "6": 5.075,
+    "7": 5.837,
+    "8": 6.228,
+    "9": 6.872
+   }
+  },
+  {
+   "molecule": "XOVMIG_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 3,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 6,
+   "elapsed_s": 27.359,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 3.589,
+    "1": 7.382,
+    "2": 10.536,
+    "3": 12.86,
+    "4": 14.664,
+    "5": 16.299,
+    "6": 19.241,
+    "7": 20.899,
+    "8": 22.709,
+    "9": 26.291
+   }
+  },
+  {
+   "molecule": "YAJYEO_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 310.809,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 8,
+   "t_at_bound": {
+    "0": 42.949,
+    "1": 88.429,
+    "2": 134.826,
+    "3": 147.191,
+    "4": 207.723,
+    "5": 237.02,
+    "6": 250.264,
+    "7": 285.985,
+    "8": 310.721
+   }
+  },
+  {
+   "molecule": "YICXEO_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 72.436,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 21,
+   "t_at_bound": {
+    "0": 31.466,
+    "1": 34.16,
+    "2": 35.462,
+    "3": 36.457,
+    "4": 37.154,
+    "5": 38.107,
+    "6": 40.163,
+    "7": 42.509,
+    "8": 47.285,
+    "9": 49.105,
+    "10": 52.004,
+    "11": 52.711,
+    "12": 55.72,
+    "13": 57.326,
+    "14": 58.383,
+    "15": 60.346,
+    "16": 61.052,
+    "17": 65.963,
+    "18": 67.08,
+    "19": 67.91,
+    "20": 69.808,
+    "21": 72.397
+   }
+  },
+  {
+   "molecule": "YOHZIF_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 5,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 8,
+   "elapsed_s": 19.697,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.201,
+    "1": 5.063,
+    "2": 8.343,
+    "3": 9.667,
+    "4": 11.107,
+    "5": 13.3,
+    "6": 14.467,
+    "7": 16.189,
+    "8": 18.442,
+    "9": 19.655
+   }
+  },
+  {
+   "molecule": "YOZVOZ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 12.252,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 1.155,
+    "1": 3.165,
+    "2": 5.26,
+    "3": 5.94,
+    "4": 7.198,
+    "5": 8.766,
+    "6": 9.387,
+    "7": 10.177,
+    "8": 11.38,
+    "9": 12.015
+   }
+  },
+  {
+   "molecule": "YUYZUP_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 14.108,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 4,
+   "t_at_bound": {
+    "0": 9.681,
+    "1": 10.608,
+    "2": 11.665,
+    "3": 12.893,
+    "4": 13.799
+   }
+  },
+  {
+   "molecule": "ZIPHIR_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 4,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 7,
+   "elapsed_s": 17.64,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 2.016,
+    "1": 4.267,
+    "2": 7.283,
+    "3": 8.974,
+    "4": 10.44,
+    "5": 11.533,
+    "6": 13.194,
+    "7": 14.607,
+    "8": 16.226,
+    "9": 17.227
+   }
+  },
+  {
+   "molecule": "ZITLUJ_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 9,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 12,
+   "elapsed_s": 138.126,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 11.767,
+    "1": 27.353,
+    "2": 49.82,
+    "3": 60.983,
+    "4": 71.874,
+    "5": 93.472,
+    "6": 104.57,
+    "7": 115.596,
+    "8": 127.167,
+    "9": 138.072
+   }
+  },
+  {
+   "molecule": "ZUSSAH_comp_0",
+   "error": null,
+   "fired": {
+    "adapter.string_exact_incumbent": 8,
+    "pool.accept_incumbent_recorded": 1,
+    "pool.accept_incumbent_returned": 1,
+    "adapter.string_exact_early_exit_incumbent": 1
+   },
+   "won": {},
+   "n_rejected": 11,
+   "elapsed_s": 41.088,
+   "has_incumbent": true,
+   "min_bound": null,
+   "hit_t": null,
+   "n_post_incumbent_evals": 9,
+   "t_at_bound": {
+    "0": 0.703,
+    "1": 1.59,
+    "2": 3.568,
+    "3": 4.298,
+    "4": 36.78,
+    "5": 37.472,
+    "6": 38.26,
+    "7": 38.683,
+    "8": 40.009,
+    "9": 41.042
+   }
+  }
+ ]
+}

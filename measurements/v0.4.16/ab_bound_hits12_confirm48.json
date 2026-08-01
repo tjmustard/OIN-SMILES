@@ -1,0 +1,398 @@
+{
+ "what": "v0.4.16 Lane 1 live confirmation of the DERIVED recovered-vs-bound curve, at bound 12.",
+ "why_two_directional": "An arm containing only molecules the bound KEEPS cannot discriminate. The first attempt was killed at 30/48 and, because the population file was sorted by min_bound, every completed row was a keep -- 30/30 agreement that confirmed nothing. Same shape as v0.4.13's 'ARM 1 is BLIND'. The 18 remaining, 10 of them DROP cases, were re-run to close it.",
+ "bound": 12,
+ "n": 48,
+ "derived_keep": 38,
+ "live_keep_gained": 38,
+ "derived_drop": 10,
+ "live_drop_not_gained": 10,
+ "losses": 0,
+ "agreement": "48/48",
+ "rows": [
+  {
+   "molecule": "CETLUJ_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "COTTAJ_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "EBUMOG_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "EQOKOL_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "FEBNEH_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "FOLKEX_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "ILONON_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "KAFYUL_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "UMENEG_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "XEQRUI_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "YAXWEA_comp_0",
+   "min_bound": 1,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "BARRES_comp_0",
+   "min_bound": 2,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "HEFKOT_comp_0",
+   "min_bound": 2,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "PAKVAA_comp_0",
+   "min_bound": 2,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "WOGWEU_comp_0",
+   "min_bound": 2,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "FAHCEY_comp_0",
+   "min_bound": 3,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "RUZNUW_comp_0",
+   "min_bound": 3,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "UXOCAN_comp_0",
+   "min_bound": 3,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "WAVLUA_comp_0",
+   "min_bound": 3,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "JALTIC_comp_1",
+   "min_bound": 5,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "SISBIG_comp_0",
+   "min_bound": 5,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "SISBOM_comp_0",
+   "min_bound": 5,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "TAYDUV_comp_0",
+   "min_bound": 5,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "OLEZEM_comp_0",
+   "min_bound": 6,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "NOPXUM_comp_0",
+   "min_bound": 7,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "KUMHIK_comp_0",
+   "min_bound": 8,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "VOHNEN_comp_0",
+   "min_bound": 9,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "DOYRUE_comp_0",
+   "min_bound": 10,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "IZUDOX_comp_0",
+   "min_bound": 10,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "QIXGOW_comp_1",
+   "min_bound": 10,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "arm killed at 30/48; rows recovered from its log"
+  },
+  {
+   "molecule": "WAWMUF_comp_0",
+   "min_bound": 10,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "LUWYOR_comp_0",
+   "min_bound": 11,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "QOSJOY_comp_0",
+   "min_bound": 11,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "CIMZAZ_comp_0",
+   "min_bound": 12,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "NONDUR_comp_0",
+   "min_bound": 12,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "OCUXUG_comp_0",
+   "min_bound": 12,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "QIHBUG_comp_0",
+   "min_bound": 12,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "XESCAB_comp_0",
+   "min_bound": 12,
+   "off_byte_exact": false,
+   "on_byte_exact": true,
+   "output_moved": true,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "BIDBAT_comp_0",
+   "min_bound": 13,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "HOLLUR_comp_0",
+   "min_bound": 14,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "QUCXUJ_comp_0",
+   "min_bound": 16,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "MEVSEO_comp_0",
+   "min_bound": 19,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "MOQXAT_comp_0",
+   "min_bound": 21,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "ABOZEW_comp_0",
+   "min_bound": 22,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "RIYHEM_comp_0",
+   "min_bound": 23,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "ICEROX_comp_0",
+   "min_bound": 24,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "KENQOJ_comp_0",
+   "min_bound": 25,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  },
+  {
+   "molecule": "PIBDEK_comp_0",
+   "min_bound": 25,
+   "off_byte_exact": false,
+   "on_byte_exact": false,
+   "output_moved": false,
+   "source": "ab_bound_hits12_rest.json"
+  }
+ ]
+}

@@ -1,0 +1,293 @@
+{
+  "lever": "OIN_ACCEPT_STRING_EXACT",
+  "cohort_dir": "tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
+  "n_requested": 18,
+  "n_scored": 18,
+  "gains": [
+    "WAWMUF_comp_0",
+    "LUWYOR_comp_0",
+    "QOSJOY_comp_0",
+    "CIMZAZ_comp_0",
+    "XESCAB_comp_0",
+    "NONDUR_comp_0",
+    "OCUXUG_comp_0",
+    "QIHBUG_comp_0"
+  ],
+  "losses": [],
+  "net": 8,
+  "input_moved": 0,
+  "output_moved": 8,
+  "nondeterministic": [],
+  "rows": [
+    {
+      "molecule": "WAWMUF_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 102.0,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 163.37,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "LUWYOR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 4.21,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 8.19,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "QOSJOY_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 2.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 5.22,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "CIMZAZ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 50.61,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 86.27,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "XESCAB_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 0.93,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 5.77,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "NONDUR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 4.97,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 11.15,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "OCUXUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 2.48,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 8.07,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "QIHBUG_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 5.26,
+        "error": null
+      },
+      "on": {
+        "byte_exact": true,
+        "elapsed_s": 13.47,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": true
+    },
+    {
+      "molecule": "BIDBAT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 4.68,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.72,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "HOLLUR_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 7.54,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 25.34,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "QUCXUJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 17.08,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 34.59,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MEVSEO_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 3.64,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 9.36,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "MOQXAT_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 3.74,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 8.75,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ABOZEW_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 1.72,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 6.82,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "RIYHEM_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 3.13,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 13.2,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "ICEROX_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 6.46,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 22.67,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "KENQOJ_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 1.98,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 5.52,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    },
+    {
+      "molecule": "PIBDEK_comp_0",
+      "off": {
+        "byte_exact": false,
+        "elapsed_s": 2.24,
+        "error": null
+      },
+      "on": {
+        "byte_exact": false,
+        "elapsed_s": 10.73,
+        "error": null
+      },
+      "input_string_moved": false,
+      "output_string_moved": false
+    }
+  ]
+}

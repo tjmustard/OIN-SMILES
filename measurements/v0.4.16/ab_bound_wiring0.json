@@ -1,6 +1,6 @@
 {
   "lever": "OIN_ACCEPT_STRING_EXACT",
-  "cohort_dir": "/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
+  "cohort_dir": "tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
   "n_requested": 40,
   "n_scored": 40,
   "gains": [],
