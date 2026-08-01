@@ -160,6 +160,12 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")
+    # Fold legacy '^' winding marker → '>' so that {n^} and {n>} compare equal.
+    # oin/inline.py documents '^' as a synonym for '>' on parse; _parse_vertex_colors
+    # also folds it, but leaving it here ensures the *string* form is canonical too,
+    # which matters for any consumer that compares normalized strings directly
+    # (e.g. the OIN_ACCEPT_STRING_EXACT lever).
+    s = re.sub(r"\{(\d+)\^", r"{\1>", s)
     # Winding markers ({n>} / {n<}) are intentionally NOT stripped -- they carry
     # eta-ligand stereochemistry that the round trip must verify (see docstring).
     # Collapse multiple consecutive dots and strip trailing dots
