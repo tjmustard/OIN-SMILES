@@ -850,10 +850,19 @@ pre.prompt {
     <div class="callout">
       <span class="lbl">Trap 1 — the bucket reports are not a time series</span>
       They come from five different cohorts: 6719 (v0.4.2 capstone), 3917 (v0.4.4 regression,
-      deliberately adversarial), 936 (v0.4.5 re-baseline), 5000 (seed-42 sweep). Every accuracy
-      figure here carries its N and its cohort. <strong>Do not draw a line between two of
-      them.</strong> The only genuine like-for-like comparison in this document is
-      scored-vs-honest at v0.4.8, which classifies <em>the same 5000 reports</em> two ways.
+      deliberately adversarial), 936 (v0.4.5 re-baseline), 5000 (v0.4.6 seed-42 sweep) and 5000
+      (v0.4.14 baseline sweep). Every accuracy figure here carries its N and its cohort.
+      <strong>Do not draw a line between two of them.</strong> <em>Two</em> comparisons are genuine
+      like-for-like: scored-vs-honest at v0.4.8 and again at v0.4.14, each classifying
+      <em>the same 5000 reports</em> two ways &mdash; <strong>10.34</strong> and
+      <strong>9.72</strong> points. The v0.4.6 and v0.4.14 sweeps share a cohort and a seed but not
+      a code version or a thread configuration: closer than anything else here, still not a series.
+      <br><br>
+      ✅ <strong>Every figure in that list is now independently checkable, which it was not
+      before.</strong> All five cohorts are frozen as per-molecule extracts and each re-derives its
+      published headline exactly &mdash; 81.19 / 44.91 / 60.26 / 82.80 / 72.46 / 77.16, six for six
+      &mdash; and the <strong>sample definitions</strong> (seed, N, dedup priority, every molecule
+      name) are frozen beside them. Untracked until v0.4.16.
     </div>
 
     <div class="callout">
@@ -1720,6 +1729,27 @@ pre.prompt {
           <strong>48</strong>, both runtime endpoints within <strong>5%</strong>, a live bound-0 gate
           reading <strong>0 gains, 0 losses, 0 output moved</strong>, and a live arm agreeing
           <strong>48 of 48 in both directions</strong>.
+        </dd>
+        <dd>
+          <strong>Durability, and a self-inflicted error in it.</strong> A post-tag audit found two
+          larger gaps than the one the release had closed: the <strong>cohort manifests had never
+          been tracked</strong> — the sample under every corpus figure this project has published —
+          and only the <em>current</em> baseline had a per-molecule extract, so v0.4.6-sweep and
+          v0.4.8-honest, the two the entire 10.34-point correction rests on, were summary-only.
+          Both closed: <strong>seven sweeps, 46,769 molecules, 2.4 MB</strong>, each re-deriving its
+          published headline exactly.
+        </dd>
+        <dd>
+          🔴 <strong>The extract tool leaked local paths into a public tree — the same mistake twice
+          in one session.</strong> The manifests were scrubbed by hand <em>because</em>
+          <span class="mono">measurements/</span> is public; the tool written minutes later had no
+          scrub. <strong>1421 rows</strong> carried an absolute source path — not through any field
+          that looks path-shaped, but through <span class="mono">error</span>, because a Python
+          traceback embeds them. The harvester has refused on this since v0.4.12;
+          <strong>a tool writing into the same tree by a different door has to apply the same guard,
+          or the guard only covers the door nobody uses.</strong> Fixed at the tool and all extracts
+          regenerated — but one file reached the remote first, because a sibling session pushed
+          <span class="mono">main</span> mid-session.
         </dd>
         <dd>
           ⚠ <strong>The first version of that confirmation arm was worthless and looked

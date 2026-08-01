@@ -303,6 +303,16 @@ Three traps, all of which this project has already fallen into once and document
    ⚠ The v0.4.6 and v0.4.14 sweeps share a cohort and a seed but **not** a code version or a thread
    configuration — they are the closest thing to a time series here, and still not one.
 
+   ✅ **Every figure in that list is now independently checkable, which it was not before.** All
+   five cohorts are frozen as per-molecule extracts in `measurements/`, and each re-derives its
+   published headline exactly through the real classifier rather than a re-implementation —
+   81.19 / 44.91 / 60.26 / 82.80 / 72.46 / 77.16, six for six. **The sample definitions are frozen
+   too** (`measurements/cohorts/`): seed, N, the dedup priority, and every molecule name. Until
+   v0.4.16 those manifests were untracked, so the corpus under every headline this project has
+   published lived one `rm -rf` from being unreproducible — while the *lane* populations had been
+   frozen since v0.4.15 under the rule "a rate without its sample is not reproducible". The rule
+   was right; it had just never been pointed at the corpus.
+
 2. **`metrics.elapsed_s` is nested and is a SUM.** Read from the top level it silently yields `0`.
    It also accumulates up to three separately SIGKILLed harness attempts, so the retired headline
    "max 759.9 s against a 300 s budget" was arithmetic on a sum — all 4658 single-attempt rows in
@@ -1127,6 +1137,24 @@ was sorted, so when it was killed at 30 of 48 every completed row happened to be
 bound *keeps* — 30/30 agreement, confirming nothing about the bound. An arm containing only cases
 your mechanism accepts cannot discriminate. The 10 discriminating molecules were re-run to close it.
 
+**Durability, and a self-inflicted error in it.** The release froze the corpus of record as a
+per-molecule extract — 5000 rows in 0.26 MB against 268 MB for the directory — and a post-tag
+audit then found two larger gaps: the **cohort manifests had never been tracked** (the sample
+under every corpus figure this project has published), and only the *current* baseline had an
+extract, so v0.4.6-sweep and v0.4.8-honest — the two the entire 10.34-point correction rests
+on — were summary-only. Both closed; seven sweeps now frozen and each re-derives its headline
+exactly.
+
+🔴 **The extract tool leaked local paths into a public tree, and it was the same mistake twice
+in one session.** The cohort manifests were scrubbed by hand *because* `measurements/` is
+public — and the tool written minutes later had no scrub. **1421 rows** carried an absolute
+source path, not through any field that looks path-shaped but through `error`, because a
+Python traceback embeds them. `harvest_measurements.py` has refused on this since v0.4.12; a
+tool writing into the same tree by a different door has to apply the same guard, or the guard
+only covers the door nobody uses. Fixed at the tool, all extracts regenerated, whole-tree
+audit clean — but one file reached the remote first, because a sibling session pushed `main`
+mid-session.
+
 **No full sweep, deliberately** — the shipped default did not change, the same reason v0.4.15
 skipped its own.
 
@@ -1286,7 +1314,8 @@ the failure mix has moved materially — `hard_fail` 319 → 266, `structural` 4
 | **v0.4.16 — the 187 characterised, with a read example per class** | **`docs/agentic-notes/v0.4.16/LANE-characterise-the-unmeasured.md`** |
 | **v0.4.16 — the two method results, and the three instruments that lied first** | **`docs/agentic-notes/v0.4.16/METHOD_one_run_beats_a_parameter_sweep_v0.4.16.md`** |
 | **v0.4.16's frozen evidence** | **`measurements/v0.4.16/`** (12 files: the per-molecule `min_bound` ordinals behind the curve, the 48/48 live confirmation with each row's provenance, the classification with every class's membership, and every population's list) |
-| **The corpus of record, in one file** | **`measurements/v0.4.14-sweep/sweep_extract_v0.4.14-sweep.jsonl.gz`** — all 5000 rows, 0.26 MB, verified to reproduce the authoritative bucket report exactly. ⚠ No geometries: a mirror audit or clash re-score still needs the original directory |
+| **Every sweep in this document, per molecule** | **`measurements/*/sweep_extract_*.jsonl.gz`** — seven sweeps, **46,769 molecules in 2.4 MB**, each verified to re-derive its published headline exactly. Covers all five cohorts in the figure above plus v0.4.0 (25,197) and v0.4.8-honest. ⚠ No geometries: a mirror audit or clash re-score still needs the original directory |
+| **The sample definitions** | **`measurements/cohorts/`** — seed, N, dedup priority and every molecule name for all four cohorts. Untracked until v0.4.16, and 1033 basenames exist in both dataset subdirs, so the dedup priority is load-bearing: a cohort rebuilt with a different one is a different cohort that looks identical |
 | **The measured reachability map — the partition this document's gap table is built on** | **`docs/agentic-notes/v0.4.15/REACHABILITY_MAP_v0.4.15.md`** |
 | **v0.4.15's six A/B arms + the five frozen populations** | **`measurements/v0.4.15/`** (13 files: every arm's per-molecule verdict and every population's membership, so each rate is reproducible) |
 | v0.4.15 lanes, both refutations, and the void-arm postmortem | `docs/agentic-notes/v0.4.15/LANE-attach-return.md`, `LANE-enantiomer-accept.md`, `BASELINE_SWEEP_CORRECTIONS_v0.4.15.md` |
