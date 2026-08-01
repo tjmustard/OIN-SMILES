@@ -41,3 +41,28 @@ ls tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k | wc -l              # MUST equal 
 
 A dangling symlink is the silent failure mode: the sweep runs, produces a plausible short table, and
 exits 0.
+
+## 🔴 When the dataset vanishes — the failure and the fix, in one place
+
+**A `Kulik_TMC_Dataset` checkout and back DELETES 26,232 files.** `git status` stays clean
+throughout, because the tree is gitignored, and every cohort symlink is left dangling. Nothing
+warns you; the next sweep simply measures a fraction of the corpus and reports a confident number.
+
+```bash
+# 1. Confirm it is this and not something else — a non-zero count is the signature.
+find tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k -xtype l | wc -l
+
+# 2. Restore the deleted files from the branch that holds them.
+git restore --source=Kulik_TMC_Dataset --worktree -- tmCAT-tmPHOTO_xyz_dataset/
+
+# 3. Re-check. This must read 0 before any sweep, A/B or benchmark is started.
+find tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k -xtype l | wc -l
+```
+
+This was written up in a v0.4.13 lane note and lived there — line 85 of a release-specific
+document, three releases back — which is not where anyone hitting the problem looks. It is repeated
+here because the *check* is here, and the check is worth little without the *fix* beside it.
+
+`tools/run_sweep.sh`, `tools/run_v0415_arms.sh`, `tools/run_v0416_knee.sh` and
+`tools/run_v0416_confirm.sh` all refuse to start on a non-zero dangling count. Anything new that
+reads a cohort should do the same.
