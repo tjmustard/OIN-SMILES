@@ -1,0 +1,21 @@
+# v0.4.16: the hit molecules not reached before the first bound-12 arm was killed. These are
+# the DISCRIMINATING half -- most have min_bound > 12, so the bound must EXCLUDE them. An arm
+# containing only molecules the bound keeps confirms nothing about the bound.
+WAWMUF_comp_0
+LUWYOR_comp_0
+QOSJOY_comp_0
+CIMZAZ_comp_0
+XESCAB_comp_0
+NONDUR_comp_0
+OCUXUG_comp_0
+QIHBUG_comp_0
+BIDBAT_comp_0
+HOLLUR_comp_0
+QUCXUJ_comp_0
+MEVSEO_comp_0
+MOQXAT_comp_0
+ABOZEW_comp_0
+RIYHEM_comp_0
+ICEROX_comp_0
+KENQOJ_comp_0
+PIBDEK_comp_0
