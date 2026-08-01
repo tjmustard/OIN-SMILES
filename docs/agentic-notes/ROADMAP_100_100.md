@@ -230,6 +230,62 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.17** | 🔴 **RE-POINTED 2026-07-30 — CONSTRUCTION: build what selection cannot find.** The old "structural is no longer this release's subject, v0.4.15 L1 owns it" is superseded: **L1 was REFUTED**, so structural returns as a construction problem. Owns the **10.04 pts v0.4.15 proved unreachable by any selection predicate** — L1 the **201 enantiomers** (4.02; first deliverable is *can the embed produce both handednesses at all*, not a fix — `TAYDUV_comp_0` proves it is rare, not absent), L2 the **301 `DETACHED`** (6.02; 87.2% haptic, whole Cp/arene groups lost, 10–16 pool conformers all detached). ⚠ Cheapest decisive experiment: does `clean_geometry` **relaxation** detach rings that embedded correctly? | honest — **may go DOWN**; a documented limitation is an acceptable outcome |
 | **v0.4.18** | 🔴 **RE-POINTED 2026-07-30 — THE FLOOR, stated with evidence.** `hard_fail` 266 (5.32, of which **262 produce NOTHING**) + `NO_STRUCTURE` 11 + `facmer` 15 + `encode_fail` 12, then the encoder ladder's last **1.28 pts** (39 `NOT_A_MIRROR` + 25 resonance residue) and the 57 notation molecules. ⚠ `OIN3DGenerator(timeout=)` is ADVISORY and `elapsed_s` is a SUM — **separate budget-exhaustion from genuine incapacity or the floor is over-stated**. **Product: the honest achievable ceiling** = 100 − produce-nothing floor − construction limit − notation-undecided, each with its evidence | **FLAT or DOWN** — the product is a defensible limit, not points |
 
+### LADDER DECISION 2026-07-31 (v0.4.16) — **MEASURED**
+
+```
+Baseline  UNCHANGED at 77.16% byte_exact. No sweep was run and none was owed: the
+          shipped default did not change, the same reason v0.4.15 skipped its own.
+          Corpus of record remains results-v0.4.14-sweep, now also frozen as
+          measurements/v0.4.14-sweep/sweep_extract_*.jsonl.gz (all 5000 rows, 0.26 MB,
+          verified to reproduce the authoritative bucket report exactly).
+
+Result:   v0.4.16 ships FLAT. Both lanes delivered; neither moved the headline.
+
+🔴 FINDING 1 — THE STRING-EXACT TRADE DOES NOT CLOSE, AND THE SHAPE IS WHY.
+
+  OIN_ACCEPT_STRING_EXACT's +48 molecules / +0.96 pts sat behind a 4.00x runtime cost,
+  on the theory that the cost was a reclaimable tail: 317 molecules that never gain
+  consume 93.9% of the bill. v0.4.16 built the bound and priced it over all 365.
+
+    >= 75% of the 48 recovered   needs bound >= 12  ->  >30 s = 104  (limit 52)
+    >30 s <= 52                  needs bound <=  3  ->  recovered 19 (limit 36)
+
+  Mutually unreachable, by a factor of four in the bound. To keep 79% of the gain you
+  pay 89% of the runtime penalty -- the frontier is close to linear, so bounding moves
+  ALONG the v0.4.15 trade rather than improving it. The mechanism hypothesis is refuted:
+  the tail was not wasted (`early_hit` already stopped both fill loops); the cost is
+  that each post-incumbent conformer is a full embed PLUS a full XYZToSMILES re-encode,
+  so the EARLY extra conformers are the expensive ones.
+
+  ⇒ The +0.96 is still available and still costs ~1.8 pts of the runtime half. It is a
+    STANDING OWNER DECISION, not a lane. No further engineering will make it cheaper.
+
+🔴 FINDING 2 — `structural` IS THREE MECHANISMS, AND THE BIGGEST IS PERCEPTION.
+
+  All 187 previously-uncharacterised molecules classified, 0 unaccounted, every class
+  read against an example. Over the 172 structural INTACT+BOUNDARY:
+
+    PERCEPTION    141   82.0%   2.82 pts   heavy-atom graph ALREADY CORRECT
+    CONSTRUCTION   25   14.5%   0.50 pts
+    STEREO          6    3.5%   0.12 pts
+
+  ⇒ v0.4.17 keeps DETACHED (301 / 6.02) and DECLINES the 172 -- a construction lane
+    aimed at a perception block is the wrong mechanism, the error this ladder has now
+    made in both directions in consecutive releases.
+  ⇒ 141 molecules / 2.82 pts now have a MEASURED MECHANISM AND NO OWNER. They need a
+    PERCEPTION lane -- candidate v0.4.19. Recorded in both v0.4.17 and v0.4.18 rather
+    than left to be rediscovered: that is exactly how 2.26 points sat out v0.4.14.
+  ⇒ facmer_divergent is 100% ARRANGEMENT_ONLY -- the one block on this board whose name
+    was a measurement rather than a hypothesis.
+
+⚠ AND THE INSTRUMENTS LIED THREE TIMES BEFORE THEY AGREED.
+  A string-level heavy-atom normalizer was wrong 57 times in 109 and printed SKELETON at
+  43% where the canonical comparison reads 2.3% -- a factor of 18, and the WRONG version
+  CONFIRMED this roadmap's existing assumption, which is why it would not have been
+  questioned. Caught only because a read example disagreed with the instrument. See
+  docs/agentic-notes/v0.4.16/METHOD_one_run_beats_a_parameter_sweep_v0.4.16.md.
+```
+
 ### LADDER DECISION 2026-07-30 (v0.4.15) — **MEASURED, awaiting owner sign-off**
 
 ```
