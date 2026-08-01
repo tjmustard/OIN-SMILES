@@ -92,6 +92,7 @@ could not fake:
 | bound-0 runtime | 4534 s | 4294 s (+5.6%) |
 | unbounded runtime | 16418 s | 17191 s (−4.5%) |
 | live bound-0 gate | — | **0 gains, 0 losses, 0 output moved** over 40 |
+| live bound-12 arm | 38 keep / 10 drop | **38 / 10 — 48 of 48, both directions** |
 
 Bound 0 does not merely reach lever-OFF's *verdict*; it produces **byte-identical output**. A
 broken bound and a working one agree at large *N* and differ at 0 — that is the check that

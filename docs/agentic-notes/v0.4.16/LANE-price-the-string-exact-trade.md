@@ -93,6 +93,29 @@ That last field is the strong form: bound 0 does not merely reach the same *verd
 it produces **byte-identical generated output**. A broken bound and a working one agree at large
 *N* and differ at 0 — this is the check that separates them, and it passes.
 
+### 🔴 The live bound-12 arm: 48 of 48, in BOTH directions
+
+The derivation predicts, per molecule, whether bound 12 still recovers it. Run live over **all 48**
+hit molecules:
+
+| | derived | live | |
+|---|---:|---:|---|
+| KEEP (`min_bound` ≤ 12) — must gain | 38 | **38** | agree |
+| DROP (`min_bound` > 12) — must **not** gain | 10 | **10** | agree |
+| losses | 0 | **0** | |
+
+**48/48, 100%, both directions.** And the 10 dropped molecules read `out_moved=False` — the bound
+stopped the search and returned output byte-identical to the OFF arm, which is what a correct
+truncation must do.
+
+⚠ **The two-directional part is the whole point, and the first attempt did not have it.** The
+population file was sorted by `min_bound`, so when an arm was killed at 30 of 48 every completed
+row happened to be a molecule the bound *keeps*. That arm read 30/30 agreement and confirmed
+nothing about the bound — an arm containing only cases the mechanism accepts cannot discriminate.
+Same shape as v0.4.13's *"ARM 1 is BLIND — 0 of 62 fixtures are fold-movers, so PASS ≠
+validation"*. The 18 remaining molecules, 10 of which are the discriminating ones, were re-run
+specifically to close it.
+
 Run conditions were verified comparable to the frozen arm before anything was quoted: **0.99×
 total, 0.95× median** over the same molecules. Load biases *accuracy* here, not just timing —
 the generator timeout is advisory, so starvation shrinks the pool.
