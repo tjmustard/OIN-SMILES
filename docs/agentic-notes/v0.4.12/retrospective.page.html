@@ -1,4 +1,4 @@
-<title>OIN-SMILES v0.4.4 → v0.4.15 — accuracy &amp; speed retrospective</title>
+<title>OIN-SMILES v0.4.4 → v0.4.16 — accuracy &amp; speed retrospective</title>
 
 <style>
 /* ─── tokens ─────────────────────────────────────────────────────────── */
@@ -274,7 +274,7 @@ pre.prompt {
 
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.15</p>
+    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.16</p>
     <h1>Twelve releases, two questions, and two scoreboards that were lying.</h1>
     <p class="dek">
       Accuracy and speed across every point release since v0.4.4 — including the release where the
@@ -468,7 +468,7 @@ pre.prompt {
     <h3 style="margin-top:34px;font-size:18px;">What actually improved most</h3>
     <p style="margin-top:10px;">
       Neither number. What improved most is the project's ability to tell a real result from a fake
-      one. The unit suite went <strong>551 → 1007</strong>, and the instruments added in that window —
+      one. The unit suite went <strong>551 → 1050</strong>, and the instruments added in that window —
       the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
       coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, a
       59%-false-positive cohort, a dead gate arm, and an enantiomer collapse.
@@ -865,7 +865,7 @@ pre.prompt {
 
     <div class="callout">
       <span class="lbl">Trap 3 — suite count is a rigour proxy, not accuracy</span>
-      551 → 1007 tests means the project can detect more kinds of wrongness. It does not mean the
+      551 → 1050 tests means the project can detect more kinds of wrongness. It does not mean the
       notation got better.
     </div>
   </section>
@@ -1624,6 +1624,112 @@ pre.prompt {
       <p class="suite">Suite: <strong>1039 OK</strong> &middot; no full sweep, deliberately &mdash; both levers ship OFF, so the shipped default is unchanged and the v0.4.14 sweep <em>is</em> this release&rsquo;s measurement</p>
     </article>
 
+    <article class="rel" id="v0416">
+      <div class="rel-head">
+        <span class="ver">v0.4.16</span><h3>The trade gets a price, and the price does not come down</h3>
+        <span class="chip" data-state="flat"><span class="dot"></span>Zero, by design</span>
+      </div>
+      <p class="strap">
+        Released as tag <code>v0.4.16</code>. One lever added, <strong>default-unset</strong> &mdash;
+        so <strong>nothing changed for a user</strong>. The release exists to <em>price a decision</em>
+        rather than move a number, and to close the last uncharacterised block in the gap.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Zero, by design.</strong> v0.4.15 left <strong>+48 molecules (+0.96 pts,
+          0 losses)</strong> behind a <strong>4.00&times;</strong> runtime cost, on the theory that
+          the cost was a reclaimable tail &mdash; the lever declines to <em>stop</em> the pool, and
+          the <strong>317 molecules that never gain consume 93.9% of its bill</strong>. This release
+          built the bound that would reclaim it and measured the whole curve over all 365 molecules.
+          <strong>The two halves of the promotion bar are mutually unreachable:</strong> keeping
+          &ge;&nbsp;75% of the 48 needs bound&nbsp;&ge;&nbsp;12, which costs
+          <span class="mono">&gt;&nbsp;30&nbsp;s</span>&nbsp;=&nbsp;<strong>104</strong> against a
+          limit of 52; staying inside the runtime limit needs bound&nbsp;&le;&nbsp;3, which keeps
+          <strong>19</strong> of 48.
+        </dd>
+        <dd>
+          <strong>The shape is the finding, not the threshold.</strong> To keep 79% of the gain you
+          pay <strong>89%</strong> of the runtime penalty. The frontier is close to linear, so
+          bounding moves <em>along</em> v0.4.15&rsquo;s trade rather than improving it. The
+          charter&rsquo;s mechanism hypothesis is <strong>refuted</strong>: the tail was never wasted
+          (the early-exit already stopped both fill loops), and the cost is that each extra conformer
+          is a full embed <em>plus</em> a full re-perception &mdash; so the <em>early</em> extras are
+          the expensive ones.
+        </dd>
+        <dt>The 187 &ldquo;unexplained&rdquo; molecules</dt>
+        <dd>
+          Carried for three releases as <em>&ldquo;attachment fine, re-perception still disagrees,
+          nobody knows why&rdquo;</em>. All 187 classified, <strong>0 unaccounted</strong>, every
+          class read against an example. Over the 172
+          <span class="mono">structural</span> INTACT+BOUNDARY:
+          <strong>PERCEPTION 141 (82.0%) &middot; CONSTRUCTION 25 (14.5%) &middot; STEREO 6
+          (3.5%)</strong> &mdash; the heavy-atom graph is <em>already correct</em> in 82% of them and
+          what differs is bond orders, aromaticity, charge or hydrogen count.
+          <span class="mono">facmer_divergent</span> is <strong>100% arrangement-only</strong>: the
+          one block on the board whose name was a measurement rather than a hypothesis.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>None on the default path, and none available.</strong> That is the release&rsquo;s
+          result rather than an omission.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>That bounding could rescue the string-exact trade.</strong> It cannot. The +0.96
+          points remains available, still costs ~1.8 points of the speed goal, and is now a
+          <strong>standing owner decision, not a lane</strong> &mdash; no further engineering makes
+          it cheaper.
+        </dd>
+        <dd>
+          <strong>That <span class="mono">structural</span> is one block with one mechanism.</strong>
+          It is three: DETACHED 301 (6.02, construction), INTACT+BOUNDARY 172 (3.44,
+          <strong>82% perception</strong>), NO_STRUCTURE 11 (0.22). v0.4.17 had been sized to take
+          all of it as construction work and now declines the middle third.
+        </dd>
+        <dd>
+          <strong>The charter&rsquo;s own framing of BOUNDARY</strong>, which called it &ldquo;the
+          attachment call is inside the tolerance band&rdquo; &mdash; i.e. treated it as a
+          <em>cause</em>. Over the molecules that round-trip <strong>perfectly</strong>, BOUNDARY is
+          <strong>35.4%</strong> and INTACT is <strong>63.0%</strong>. Neither discriminates;
+          BOUNDARY is the modal state of a <em>passing</em> molecule.
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          🔴 <strong>Three instruments produced a plausible, precise, wrong answer before anything
+          agreed.</strong> (1) A <strong>normalizer wrong 57 times in 109</strong> &mdash; a coin
+          flip. SMILES ring-closure digits are arbitrary labels, so an identical graph written two
+          ways read as different. It printed the construction share at <strong>43%</strong> where the
+          canonical comparison reads <strong>2.3%</strong> &mdash; a factor of 18, and
+          <strong>the broken version confirmed the roadmap&rsquo;s existing assumption</strong>,
+          which is exactly why it would not have been questioned. Caught only because a
+          <em>read example</em> disagreed with the instrument. (2) A derived runtime curve that
+          understated every bounded row, with the error growing toward the decision point and
+          biasing toward <em>promoting</em>. (3) A process-name match that reported live workers for
+          an arm dead for minutes, and then silently killed a confirmation arm at 30 of 48.
+        </dd>
+        <dd>
+          <strong>The method result is the transferable one.</strong> A knee curve is
+          <strong>arithmetic, not a parameter sweep</strong>: the accepted fallback conformer is
+          returned whatever the pool does afterwards, so bounding at <em>N</em> changes the answer
+          only for molecules whose hit lies beyond <em>N</em>. One instrumented run replaces the
+          1&ndash;2 hours <em>per point</em> the charter budgeted &mdash; validated at four points it
+          could not fake: ceiling <strong>48</strong> against v0.4.15&rsquo;s independently measured
+          <strong>48</strong>, both runtime endpoints within <strong>5%</strong>, a live bound-0 gate
+          reading <strong>0 gains, 0 losses, 0 output moved</strong>, and a live arm agreeing
+          <strong>48 of 48 in both directions</strong>.
+        </dd>
+        <dd>
+          ⚠ <strong>The first version of that confirmation arm was worthless and looked
+          perfect.</strong> The population was sorted, so when it was killed at 30 of 48 every
+          completed row happened to be a molecule the bound <em>keeps</em> &mdash; 30/30 agreement,
+          confirming nothing. <strong>An arm containing only cases your mechanism accepts cannot
+          discriminate.</strong>
+        </dd>
+      </dl>
+      <p class="suite">Suite: <strong>1050 OK</strong> &middot; no full sweep, deliberately &mdash; the shipped default did not change, the same reason v0.4.15 skipped its own</p>
+    </article>
+
     <article class="rel" id="sweep">
       <div class="rel-head">
         <span class="ver">sweep</span><h3>The baseline sweep — run for this refresh</h3>
@@ -1680,7 +1786,7 @@ pre.prompt {
           <tr><td>The <strong>eta acceptance lever has no runtime claim at all</strong></td><td>Re-run its A/B on a quiet box</td></tr>
           <tr><td><strong>Whether <span class="mono">OIN_ACCEPT_STRING_EXACT</span>&rsquo;s 4.00&times; cost can be bought down</strong> &mdash; it decides whether the only reachable 0.96 points get taken</td><td>The cost has a known mechanism (the lever declines to stop the pool). Plot recovered-molecules against a bounded extra search and take the knee. <strong>Nobody has run it.</strong></td></tr>
           <tr><td><strong>Whether the generator can build the correct enantiomer at all.</strong> The pool holds one key-matching conformer and it is the mirror &mdash; but <span class="mono">TAYDUV_comp_0</span> is <strong>1 of 201</strong>, so the correct handedness is <em>rare, not categorically absent</em></td><td>Force the pool wide and measure the rate. The answer decides whether 4.02 points are a budget problem, a sampling problem, or a documented limitation</td></tr>
-          <tr><td><strong>3.74 points have never been characterised</strong> &mdash; the MEDZUR class (110), <span class="mono">BOUNDARY</span> (62) and <span class="mono">facmer_divergent</span> (15)</td><td>Classify all 187 by mechanism. v0.4.15 proved why this matters: two of its lanes were aimed at blocks whose reachability was asserted from a bucket name rather than measured</td></tr>
+          <tr><td><s>3.74 points have never been characterised</s> &mdash; <strong>CLOSED by v0.4.16.</strong> All 187 classified, 0 unaccounted: <strong>2.82 perception, 0.62 construction+stereo, 0.30 arrangement-only</strong>. Every point in the gap now has a measured mechanism attached &mdash; the first time that has been true</td><td><strong>What is still unknown is whose fault the perception is.</strong> A mis-assignment on a faithful geometry (fixable, up to 2.82 pts) and a correct assignment on a distorted one (construction, ~0 by that route) are indistinguishable in these strings. That split is v0.4.19&rsquo;s first deliverable</td></tr>
           <tr><td><strong>CLOSED — <span class="mono">PREFILTER_VETO</span> prevalence: 1.5% of vetoes, 4.5% of molecules.</strong> Its latency objection is <strong>refuted</strong> — measured faster. <strong>Still unknown: the recovery count</strong>, since the only one measured came from a stochastic A/B</td><td>A non-A/B count via <span class="mono">probe_accept_gap.py</span> over the 26 molecules where the prefilter actually vetoes</td></tr>
           <tr><td><strong>CLOSED &mdash; the 52 passing molecules that read &ldquo;ligands detached&rdquo;.</strong> The second explanation was right: <strong>51 of 52 hold every claimed coordination site</strong> under the guard&rsquo;s own predicate. They lose 1&ndash;3 <em>light or ambiguous</em> donors (H, Si, B, F), often with the actual count unchanged or higher</td><td><strong>Two different tests:</strong> the bucket asks &ldquo;did the donor set change&rdquo;, the guard asks &ldquo;did a site go empty&rdquo;. A bucket&rsquo;s verdict is not a guard&rsquo;s verdict</td></tr>
           <tr><td>The <strong>MEDZUR class &mdash; now 111 molecules, attachment intact and re-perception still disagreeing</strong> &mdash; has no mechanism. Sized twice, understood no better</td><td>A mechanism, not another count</td></tr>

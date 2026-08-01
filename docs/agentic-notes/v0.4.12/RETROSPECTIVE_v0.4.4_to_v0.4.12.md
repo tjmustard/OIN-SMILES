@@ -65,8 +65,25 @@ aiming. And taking them makes the machine four times slower on the molecules it 
 is built, measured, and deliberately left switched off until someone decides whether that trade is
 worth it.
 
+The thirteenth release tried to make that trade affordable. The slowness has an obvious-looking
+cause — when the machine can't find a perfect answer it keeps searching to the end of its budget,
+and **94% of that searching is done on molecules that never find one**. So: put a limit on how far
+past a good-enough answer it keeps looking, and find the sweet spot.
+
+**There is no sweet spot.** Measured at every possible limit, keeping 79% of the benefit costs 89%
+of the slowdown. The cost and the benefit rise together, because the *first* few extra attempts are
+the expensive ones, not the last. So the trade is exactly as bad as it was, it is now priced, and
+nobody has to wonder again.
+
+That release also finally explained a group of 187 molecules that had been filed under "nobody
+knows why" for three releases. **In 82% of them the machine built the right skeleton and the
+*reader* disagreed about the details** — which bonds are double, where the hydrogens sit. That
+matters because the next release had been planned on the assumption they were build failures, and
+they mostly are not.
+
 **The useful conclusion: about two-thirds of what's left can't be fixed by choosing better. The
-machine has to build differently.** That is a much more specific to-do list than "get to 100".
+machine has to build differently — and a further chunk may not be a building problem at all, but a
+reading one.** That is a much more specific to-do list than "get to 100".
 
 So: **more accurate than v0.4.4, yes. More accurate than v0.4.6 — yes, and now measured by actually
 rebuilding everything rather than re-grading old work. And much harder to fool.**
@@ -98,6 +115,7 @@ releases, and **moved up for the first time at v0.4.13**.
 | **v0.4.14** | **Real gain — `OIN_RESONANCE_DONOR_FOLD` promoted** | **+1.42 pts measured end-to-end** (78 gains, **7 losses**, n=182 of 182). Also re-filed **5.94 pts** off the encoder ladder without moving a molecule |
 | **the sweep** | **First real generator sweep since v0.4.6** | **`byte_exact` 3858/5000 = 77.16%** honest (86.88% scored — a **9.72-pt** gap) |
 | **v0.4.15** | **Zero, by design — both lanes measured, both ship OFF** | L1 **0 gains of 289** (51 structures moved, 0 improved); L2 **+48 available** (+0.96 pts, 0 losses) but held at **4.00×** runtime |
+| **v0.4.16** | **Zero, by design — the release prices a decision rather than moving a number** | bounding the search is **refuted as a rescue**: keeping 79% of the +48 costs **89%** of the runtime penalty. Separately, the 187 "unexplained" molecules are **82% perception, not construction** |
 
 The v0.4.8 drop is the one that needs explaining, and it is not a regression. The harness had been
 scoring a round trip with `get_oin_string(gen_result.mol, coords)` — the *generator's own bond
@@ -143,6 +161,7 @@ corpus-wide number, which is much better than the stale one.**
 | **v0.4.11–v0.4.13** | None claimed. v0.4.13's promotion was argued **generator-neutral by measurement** — 0 of 9669 keys moved. ⚠ v0.4.14 showed that argument bounds *acceptance*, not *embedding*: the generator consumes the **string**, so runtime **can** move. It was never measured either way |
 | **v0.4.14** | None claimed on the default path. Measured on the 182 molecules its lever touches: **+57.4% total CPU**, `> 30 s` 29 → 36, worst molecule **+511.5 s** — a real cost, on a small population |
 | **v0.4.15** | **None on the default path — both levers ship OFF.** L1 measured **free** (1.01×, 0 gains). L2 measured **4.00×** on its 365 molecules, `> 30 s` **30 → 122** there (~678 → ~770 corpus-wide): the reason its +0.96 pts is *held*, not taken |
+| **v0.4.16** | **None, and none available — that is the release's result.** The full curve over all 365: bound 3 holds `> 30 s` to **52** but keeps only 19 of 48; bound 12 keeps 38 and costs `> 30 s` **104**. The frontier is close to linear, so a limit moves *along* v0.4.15's trade instead of improving it |
 
 **The headline speed figure is no longer stale.** The v0.4.6-era `994/5000 = 19.88% over 30 s,
 median 7.19 s` stood unmeasured for eight releases. The sweep run for this refresh reads:
@@ -163,7 +182,7 @@ magnitude as approximate. Goal B (`max(elapsed_s) < 30 s`) is still **not delive
 ### What actually improved most
 
 Neither number. What improved most is the project's ability to tell a real result from a fake one.
-Between v0.4.4 and v0.4.15 the unit suite went **551 → 1039**, and the instruments added in that
+Between v0.4.4 and v0.4.16 the unit suite went **551 → 1050**, and the instruments added in that
 window — the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
 coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, the
 59%-false-positive cohort, the dead gate arm, and the enantiomer collapse. Six releases that moved
@@ -188,6 +207,17 @@ number under the correct heading, and a byte-identity gate whose PASS was meanin
 **0 of its 62 fixtures were among the molecules the change moved**. The lesson generalises past
 this project: *a gate that cannot see your change is not evidence about your change* — state its
 coverage of the moved population, not its verdict.
+
+**v0.4.16 hit that same rule twice more, and added a harder case.** Its confirmation arm was killed
+partway through a population that happened to be *sorted*, so every completed row was a molecule the
+change keeps: **30/30 agreement, confirming nothing**, because an arm containing only cases your
+mechanism accepts cannot discriminate. And its classifier was a **normalizer** — the component that
+decides whether two things are "the same" — which is the one place "ask what a broken version would
+print" fails hardest: a string-level heavy-atom comparison disagreed with a canonical one on **57 of
+109** molecules, a coin flip, and printed a clean table that **agreed with the roadmap's existing
+assumption**. It was caught only because a *read example* contradicted it. **When a normalizer
+decides your headline, validate it against an independent canonical comparison** — not against your
+reading of a handful of cases, and least of all against your expectations.
 
 ---
 
@@ -218,9 +248,20 @@ coverage of the moved population, not its verdict.
 >
 > **So the gap is now partitioned by measured reachability, not by bucket name:** 0.96 points are
 > reachable today (behind a lever held off on cost), **10.04 points are proven unreachable by any
-> selection predicate**, 3.74 have never been characterised, and 5.54 produce no structure at all.
+> selection predicate**, and 5.54 produce no structure at all.
 > **15.36 of 22.84 points (67%) require the generator to BUILD something different** — not to
 > choose differently, and not to emit differently.
+>
+> **v0.4.16 closed the last uncharacterised block and split it three ways.** The 3.74 points that
+> had never been looked at are now: **2.82 PERCEPTION** — the generated heavy-atom skeleton is
+> already correct and the re-reading disagrees about bond orders, aromaticity or hydrogens —
+> **0.50 construction**, and **0.12 stereo inversion**. That does not move `byte_exact`, but it
+> moves the *schedule*: a release had been sized to take all of it as build work.
+>
+> It also priced the one reachable point and found the price fixed. **Bounding the search is
+> refuted as a rescue**: keeping 79% of the +48 costs 89% of the runtime penalty, because the
+> *early* extra attempts are the expensive ones. The +0.96 is still available, still costs ~1.8
+> points of the speed goal, and is now a standing decision rather than an open engineering task.
 
 > ### Is it faster?
 >
@@ -238,6 +279,14 @@ coverage of the moved population, not its verdict.
 > corpus-wide. Roughly **+1 point of Goal A against ~+1.8 points of Goal B.** The two goals have
 > been stated together since v0.4.4; this is the first release where a shipped lever had to choose
 > between them, and it is why the lever is held rather than taken.
+>
+> **v0.4.16 tried to remove that choice and could not.** The obvious move is to cap how far past a
+> good-enough answer the generator keeps searching — 94% of the extra cost is spent on molecules
+> that never find a better one. Measured at every bound over all 365: **there is no favourable
+> setting.** Keeping 79% of the accuracy costs 89% of the slowdown; the two rise together, because
+> the *first* extra conformers are the expensive ones (each is a full embed plus a full
+> re-perception), not the last. **The trade is exactly as bad as v0.4.15 found it — and now it is
+> priced, so no future release need re-open it as an engineering question.**
 
 ---
 
@@ -260,7 +309,7 @@ Three traps, all of which this project has already fallen into once and document
    the 5k sweep finish within **0.2 s** of their cap. The harness enforces to ε ≈ 0.2 s.
    *(`v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`)*
 
-3. **Suite count is a rigour proxy, not an accuracy metric.** 551 → 1007 tests means the project
+3. **Suite count is a rigour proxy, not an accuracy metric.** 551 → 1050 tests means the project
    can detect more kinds of wrongness. It does not mean the notation got better.
 
 ---
@@ -994,6 +1043,97 @@ Suite: **1039 OK**.
 
 ---
 
+### v0.4.16 — the trade gets a price, and the price does not come down
+
+**What shipped.** `OIN_STRING_EXACT_BOUND` **added and default-unset**, plus `lever_int()` beside
+`lever_enabled()` for levers where `0` is a meaningful value. **Nothing was promoted, so nothing
+changed for a user.** 11 levers default-ON, 17 held OFF — unchanged from v0.4.15.
+
+**Accuracy: Zero, by design — the release exists to price a decision, not to move a number.**
+
+v0.4.15 left **+48 molecules (+0.96 pts, 0 losses)** behind a **4.00×** runtime cost, on the theory
+that the cost was a reclaimable tail: the lever declines to *stop* the pool, and the **317
+molecules that never gain consume 93.9% of its bill**. v0.4.16 built the bound that would reclaim
+it and measured the whole curve over all 365 molecules.
+
+**The two halves of the promotion bar are mutually unreachable:**
+
+| | needs | and then gives |
+|---|---|---|
+| keep ≥ 75% of the 48 | bound **≥ 12** | `> 30 s` = **104** against a limit of 52 |
+| `> 30 s` ≤ 52 | bound **≤ 3** | recovered **19** of 48 |
+
+**The shape is the finding, not the threshold.** To keep 79% of the gain you pay 89% of the runtime
+penalty — the frontier is close to linear, so bounding moves *along* the v0.4.15 trade rather than
+improving it. **The charter's mechanism hypothesis is refuted**: the tail was never wasted
+(`early_hit` already stopped both fill loops), and the cost is that each extra conformer is a full
+embed **plus** a full re-perception, so the *early* extras are the expensive ones.
+
+**Speed: none on the default path**, and none available. That is the point of the release.
+
+**The second lane characterised a block the roadmap had carried for three releases as
+*"nobody knows why"*.** All **187** molecules classified, 0 unaccounted, every class read against
+an example. Over the 172 `structural` INTACT+BOUNDARY:
+
+**PERCEPTION 141 (82.0%) · CONSTRUCTION 25 (14.5%) · STEREO 6 (3.5%)**
+
+The heavy-atom graph is *already correct* in 82% of them; what differs is bond orders, aromaticity,
+charge or hydrogen count. `facmer_divergent` is **100% `ARRANGEMENT_ONLY`** — the one block on the
+board whose name turned out to be a measurement rather than a hypothesis.
+
+**Refuted.**
+- 🔴 **That bounding could rescue the string-exact trade.** It cannot. The +0.96 points remains
+  available and still costs ~1.8 points of the runtime half; it is now a **standing owner decision,
+  not a lane**, because no further engineering makes it cheaper.
+- 🔴 **That `structural` is one block with one mechanism.** It is three: `DETACHED` 301 (6.02,
+  construction), INTACT+BOUNDARY 172 (3.44, **82% perception**), `NO_STRUCTURE` 11 (0.22). v0.4.17
+  had been sized to take all of it as construction work and now declines the middle third.
+- 🔴 **The charter's own framing of `BOUNDARY`**, which called it "the attachment call is inside the
+  tolerance band" — i.e. treated it as a *cause*. Over the molecules that round-trip **perfectly**,
+  BOUNDARY is **35.4%** and INTACT is **63.0%**. Neither discriminates; BOUNDARY is the modal state
+  of a *passing* molecule.
+
+**What it cost. 🔴 Three instruments produced a plausible, precise, wrong answer before anything
+agreed.**
+
+1. **A normalizer wrong 57 times in 109 — a coin flip.** The heavy-atom comparison began as string
+   normalization; SMILES ring-closure digits and atom ordering are arbitrary labels, so an
+   identical graph written two ways read as different. It printed `SKELETON` at **74/172 (43%)**
+   where the canonical comparison reads **4/172 (2.3%)** — **a factor of 18**, and *both* look like
+   a finished measurement. **The broken version confirmed the roadmap's existing assumption**, which
+   is exactly why it would not have been questioned. Caught only because a **read example
+   disagreed with the instrument**; neither alone sufficed, since the eyeball read was too shallow
+   on a 300-character macrocycle and the tool was confident.
+2. **A derived runtime curve that understated every bounded row**, by ignoring the work after the
+   pool loop. The error grew with the bound — worst exactly where the decision sits — and biased
+   toward *promoting*.
+3. **`pgrep -f` matching its own `bash -c` body**, a trap already in this project's notes, reported
+   three live workers for an arm that had been dead for minutes; the same mistake in a different
+   form (`ps | grep` matching the watcher's own command line) then cost a confirmation arm, silently
+   SIGTERMed at 30 of 48 without writing its output.
+
+**The method result is the transferable one.** A knee curve is **arithmetic, not a parameter
+sweep**: the accepted fallback conformer is returned whatever the pool does afterwards, so bounding
+at *N* changes the answer only for molecules whose hit lies beyond *N*. Recording each molecule's
+minimum viable bound makes both curves derivable from **one** run — the charter had budgeted 1–2
+hours *per point*. That is legitimate only because it was checked rather than assumed, at four
+points the derivation could not fake: the recovered ceiling **48** against v0.4.15's independently
+measured **48** (exact); both runtime endpoints within **5%** of the frozen arm; a live
+bound-0 gate reading **0 gains, 0 losses, 0 output moved**; and a live bound-12 arm agreeing
+**48 of 48, in both directions**.
+
+⚠ **The first version of that confirmation arm was worthless and looked perfect.** The population
+was sorted, so when it was killed at 30 of 48 every completed row happened to be a molecule the
+bound *keeps* — 30/30 agreement, confirming nothing about the bound. An arm containing only cases
+your mechanism accepts cannot discriminate. The 10 discriminating molecules were re-run to close it.
+
+**No full sweep, deliberately** — the shipped default did not change, the same reason v0.4.15
+skipped its own.
+
+Suite: **1050 OK**.
+
+---
+
 ## What is not known
 
 Stated explicitly, because the gaps are as decision-relevant as the numbers.
@@ -1027,12 +1167,16 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    (H, Si, B, F) with the actual count often unchanged or higher. `coordination_report` asks "did
    the donor set change"; `ligands_attached` asks "did a site go empty". **Two different tests, and
    the bucket's verdict is not the guard's verdict.**
-8. **The MEDZUR class still has no mechanism — and v0.4.15 made it the single largest unknown.**
-   110 molecules / **2.20 pts**, attachment intact and re-perception still disagreeing, sized three
-   times now and understood no better than at n = 1. With `BOUNDARY` (62 / 1.24) and
-   `facmer_divergent` (15 / 0.30) that is **3.74 points nobody has characterised** — and v0.4.15
-   proved *why that matters*: two of its lanes were aimed at blocks whose reachability had been
-   asserted from a bucket name rather than measured. **v0.4.16 Lane 2 is chartered to close this.**
+8. ~~**The MEDZUR class still has no mechanism.**~~ **CLOSED by v0.4.16, and the answer re-points
+   the ladder.** All 187 classified, 0 unaccounted, every class read against an example. Over the
+   172 `structural` INTACT+BOUNDARY: **PERCEPTION 141 (82.0%) · CONSTRUCTION 25 (14.5%) · STEREO 6
+   (3.5%)** — the heavy-atom graph is *already correct* in 82% and what differs is bond orders,
+   aromaticity, charge or hydrogen count. `facmer_divergent` is **100% `ARRANGEMENT_ONLY`**, i.e.
+   its bucket name was a measurement rather than a hypothesis — the only one on the board that was.
+   ⚠ **What is still unknown is whose fault the perception is**: a mis-assignment on a faithful
+   geometry (fixable by perception, up to 2.82 pts) and a correct assignment on a distorted one
+   (construction, ~0 by that route) are indistinguishable in these strings. That split is v0.4.19's
+   first deliverable.
 9. ~~**The mechanism splits are one cohort behind the bucket table.**~~ **Largely CLOSED by
    v0.4.15**: the enantiomer count is re-derived at **201 of 242** and `structural`'s split at
    **301 of 484**, both on the v0.4.14 sweep. **Still one cohort behind:** the η-set share of
@@ -1042,11 +1186,13 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
 10. **Why runtime improved is unexplained.** Median more than halved with no release claiming it.
     Candidates include v0.4.10's default-ON deletion finally being seen at corpus scale and the
     thread caps, but nothing separates them.
-11. **Whether `OIN_ACCEPT_STRING_EXACT`'s 4.00× cost can be bought down is unmeasured** — and it
-    decides whether the only reachable 0.96 points get taken. The cost has a known mechanism (the
-    lever declines to stop the pool, so the pool fills to budget), so a bounded extra search is the
-    obvious experiment: plot recovered-molecules against the bound and take the knee. **Nobody has
-    run it.** v0.4.16 Lane 1 is chartered to.
+11. ~~**Whether `OIN_ACCEPT_STRING_EXACT`'s 4.00× cost can be bought down is unmeasured.**~~
+    **CLOSED by v0.4.16: it cannot.** The knee experiment was run over all 365 molecules and there
+    is no favourable bound — keeping 79% of the +48 costs **89%** of the runtime penalty, because
+    the *early* extra conformers are the expensive ones (each is a full embed plus a full
+    re-perception), not a wasted tail. **The +0.96 points is still available, still costs ~1.8
+    points of the speed goal, and is now a standing owner decision rather than an open engineering
+    question.**
 12. **Whether the generator can build the correct enantiomer *at all* is unmeasured.** v0.4.15
     showed the pool holds exactly one key-matching conformer and it is the mirror — but it also
     found **`TAYDUV_comp_0`, 1 of 201**. So the correct handedness is **rare, not categorically
@@ -1068,11 +1214,11 @@ copies of this table.
 | `slot_renumber`, non-enantiomer | 51 | 1.02 | 🟢 partial — 5 mol | v0.4.15 L2 arm |
 | `slot_renumber` → **enantiomers** | 201 | **4.02** | 🔴 **NO — 1 of 201 (0.5%)** | v0.4.15 L2 arm + telemetry |
 | `structural` → `DETACHED` | 301 | **6.02** | 🔴 **NO — 0 of 289** | v0.4.15 L1 arm |
-| `structural` → `INTACT` (MEDZUR) | 110 | 2.20 | ⚪ **UNMEASURED** | — |
-| `structural` → `BOUNDARY` | 62 | 1.24 | ⚪ **UNMEASURED** | — |
+| `structural` → `INTACT` (MEDZUR) | 110 | 2.20 | 🟡 **85.5% PERCEPTION**, 10.9% construction, 3.6% stereo | v0.4.16 L2 |
+| `structural` → `BOUNDARY` | 62 | 1.24 | 🟡 **75.8% PERCEPTION**, 21.0% construction, 3.2% stereo | v0.4.16 L2 |
 | `structural` → `NO_STRUCTURE` | 11 | 0.22 | 🔴 nothing generated | audit |
 | `hard_fail` | 266 | **5.32** | 🔴 **262 produce NOTHING** | audit |
-| `facmer_divergent` | 15 | 0.30 | ⚪ unmeasured (11 also `DETACHED`) | audit |
+| `facmer_divergent` | 15 | 0.30 | 🟡 **100% `ARRANGEMENT_ONLY`** (11 also `DETACHED`) | v0.4.16 L2 |
 | `encode_fail` | 12 | 0.24 | 🔴 encoder floor | — |
 | **sum** | **1142** | **22.84** ✓ | | |
 
@@ -1088,11 +1234,17 @@ of it — the highest rate of any block on this table**. In the same release, tw
 
 | | pts | |
 |---|---:|---|
-| reachable **today** | **0.96** | built and measured, held off on a 4.00× runtime cost |
+| reachable **today** | **0.96** | built and measured, held on a 4.00× runtime cost **that v0.4.16 proved cannot be bounded away** |
 | **proven NOT reachable by selection** | **10.04** | 201 enantiomers + 301 `DETACHED` |
-| never characterised | 3.74 | MEDZUR 110, BOUNDARY 62, `facmer` 15 |
+| **PERCEPTION** — mechanism known, no owner until v0.4.19 | **2.82** | graph already correct; bond orders / aromaticity / H differ |
+| construction + stereo inside the old "uncharacterised" block | 0.62 | folds into v0.4.17 |
+| `facmer_divergent` — arrangement only | 0.30 | 11 of 15 also `DETACHED` |
 | produce **nothing** | 5.54 | the floor |
 | encoder residue + `encode_fail` | 1.52 | |
+
+⚪ **The "never characterised" row is gone.** v0.4.16 closed it: the 3.74 points split
+**2.82 perception / 0.62 construction+stereo / 0.30 arrangement**. Every point in the gap now has a
+measured mechanism attached to it — which is the first time that has been true.
 
 **15.36 of 22.84 points (67%) require the generator to BUILD something different** — not to choose
 differently, and not to emit differently. That is the single most consequential number in this
@@ -1108,8 +1260,10 @@ The encoder ladder has **~1.28 points** of reachable work left. ⚠ But note the
 mitigation still paid for itself: separate default-OFF levers and separate arms are what allowed
 "L1 recovers 0" and "L2 recovers 48, none of them where we aimed" to be *separate* statements
 instead of one unattributable number. The ladder is now re-pointed on the table above —
-**v0.4.16** prices the 0.96 and characterises the 3.74; **v0.4.17** is construction; **v0.4.18**
-states the floor and derives the achievable ceiling.
+**v0.4.16** priced the 0.96 and characterised the 3.74 — *both done, and both came back negative
+for the headline*; **v0.4.17** is construction; **v0.4.18** states the floor and derives the
+achievable ceiling; **v0.4.19** is new, chartered by v0.4.16's measurement, and owns the 2.82
+perception points that no existing release wanted.
 
 **The other structural fact:** the two goals are one goal. Of the 340 failures in the v0.4.6 sweep,
 **78.8% never test the notation** — 240 are generator timeouts and 28 produced nothing. The
@@ -1127,7 +1281,12 @@ the failure mix has moved materially — `hard_fail` 319 → 266, `structural` 4
 
 | what | where |
 |---|---|
-| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.15] |
+| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.16] |
+| **v0.4.16 — the priced trade, with the full recovered-vs-bound curve** | **`docs/agentic-notes/v0.4.16/LANE-price-the-string-exact-trade.md`** |
+| **v0.4.16 — the 187 characterised, with a read example per class** | **`docs/agentic-notes/v0.4.16/LANE-characterise-the-unmeasured.md`** |
+| **v0.4.16 — the two method results, and the three instruments that lied first** | **`docs/agentic-notes/v0.4.16/METHOD_one_run_beats_a_parameter_sweep_v0.4.16.md`** |
+| **v0.4.16's frozen evidence** | **`measurements/v0.4.16/`** (12 files: the per-molecule `min_bound` ordinals behind the curve, the 48/48 live confirmation with each row's provenance, the classification with every class's membership, and every population's list) |
+| **The corpus of record, in one file** | **`measurements/v0.4.14-sweep/sweep_extract_v0.4.14-sweep.jsonl.gz`** — all 5000 rows, 0.26 MB, verified to reproduce the authoritative bucket report exactly. ⚠ No geometries: a mirror audit or clash re-score still needs the original directory |
 | **The measured reachability map — the partition this document's gap table is built on** | **`docs/agentic-notes/v0.4.15/REACHABILITY_MAP_v0.4.15.md`** |
 | **v0.4.15's six A/B arms + the five frozen populations** | **`measurements/v0.4.15/`** (13 files: every arm's per-molecule verdict and every population's membership, so each rate is reproducible) |
 | v0.4.15 lanes, both refutations, and the void-arm postmortem | `docs/agentic-notes/v0.4.15/LANE-attach-return.md`, `LANE-enantiomer-accept.md`, `BASELINE_SWEEP_CORRECTIONS_v0.4.15.md` |
