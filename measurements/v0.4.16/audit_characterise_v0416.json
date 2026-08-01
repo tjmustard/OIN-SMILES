@@ -1,5 +1,5 @@
 {
-  "results_dir": "/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-sweep",
+  "results_dir": "tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-sweep",
   "n_bucket_report": 5000,
   "n_reports_read": 5000,
   "n_missing": 0,

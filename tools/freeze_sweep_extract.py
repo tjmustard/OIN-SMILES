@@ -88,6 +88,25 @@ def extract_row(report: dict) -> dict:
     return row
 
 
+def _scrub(text: str, root: Path) -> tuple[str, bool]:
+    """Reuse the harvester's scrubber -- ``measurements/`` is a PUBLIC tree.
+
+    🔴 THIS WAS MISSING FROM THE FIRST VERSION AND IT MATTERED. A report's ``error`` field carries
+    Python traceback text, and a traceback embeds ABSOLUTE SOURCE PATHS
+    (``/home/<user>/.../metallogen_adapter.py``). Measured across the seven historical sweeps this
+    tool freezes: **1421 rows** carried one. Nothing in the field list looks path-shaped, which is
+    exactly why it was missed -- ``input_xyz`` was deliberately excluded and that felt sufficient.
+
+    ``harvest_measurements.py`` has refused on surviving local paths since v0.4.12; a tool that
+    writes into the same tree by a different door has to apply the same guard, or the guard only
+    covers the door nobody uses.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from harvest_measurements import scrub
+
+    return scrub(text, root)
+
+
 def build(results_dir: Path) -> tuple[bytes, int]:
     paths = sorted(glob.glob(str(results_dir / "individual_reports" / "*.json")))
     if not paths:
@@ -103,6 +122,12 @@ def build(results_dir: Path) -> tuple[bytes, int]:
             rows.append({"molecule": Path(path).stem, "status": None, "error": f"unreadable:{exc}"})
     rows.sort(key=lambda r: r.get("molecule") or "")
     raw = "\n".join(json.dumps(r, separators=(",", ":"), sort_keys=True) for r in rows)
+    raw, still = _scrub(raw, Path.cwd())
+    if still:
+        sys.exit(
+            "🔴 REFUSING: a local path survives scrubbing and `measurements/` is PUBLIC. "
+            "Widen the scrubber rather than publishing this."
+        )
     buf = gzip.compress(raw.encode(), mtime=0)
     return buf, len(rows)
 
