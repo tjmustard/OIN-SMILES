@@ -1658,8 +1658,8 @@ pre.prompt {
           <span class="mono">&gt;&nbsp;30&nbsp;s</span>&nbsp;=&nbsp;<strong>104</strong> against a
           limit of 52; staying inside the runtime limit needs bound&nbsp;&le;&nbsp;3, which keeps
           <strong>19</strong> of 48.
-        </dd>
-        <dd>
+        
+          <br><br>
           <strong>The shape is the finding, not the threshold.</strong> To keep 79% of the gain you
           pay <strong>89%</strong> of the runtime penalty. The frontier is close to linear, so
           bounding moves <em>along</em> v0.4.15&rsquo;s trade rather than improving it. The
@@ -1691,14 +1691,14 @@ pre.prompt {
           points remains available, still costs ~1.8 points of the speed goal, and is now a
           <strong>standing owner decision, not a lane</strong> &mdash; no further engineering makes
           it cheaper.
-        </dd>
-        <dd>
+        
+          <br><br>
           <strong>That <span class="mono">structural</span> is one block with one mechanism.</strong>
           It is three: DETACHED 301 (6.02, construction), INTACT+BOUNDARY 172 (3.44,
           <strong>82% perception</strong>), NO_STRUCTURE 11 (0.22). v0.4.17 had been sized to take
           all of it as construction work and now declines the middle third.
-        </dd>
-        <dd>
+        
+          <br><br>
           <strong>The charter&rsquo;s own framing of BOUNDARY</strong>, which called it &ldquo;the
           attachment call is inside the tolerance band&rdquo; &mdash; i.e. treated it as a
           <em>cause</em>. Over the molecules that round-trip <strong>perfectly</strong>, BOUNDARY is
@@ -1718,7 +1718,14 @@ pre.prompt {
           understated every bounded row, with the error growing toward the decision point and
           biasing toward <em>promoting</em>. (3) A process-name match that reported live workers for
           an arm dead for minutes, and then silently killed a confirmation arm at 30 of 48.
+          <br><br>
+          ⚠ <strong>The first version of that confirmation arm was worthless and looked
+          perfect.</strong> The population was sorted, so when it was killed at 30 of 48 every
+          completed row happened to be a molecule the bound <em>keeps</em> &mdash; 30/30 agreement,
+          confirming nothing. <strong>An arm containing only cases your mechanism accepts cannot
+          discriminate.</strong>
         </dd>
+        <dt>The method result</dt>
         <dd>
           <strong>The method result is the transferable one.</strong> A knee curve is
           <strong>arithmetic, not a parameter sweep</strong>: the accepted fallback conformer is
@@ -1730,6 +1737,7 @@ pre.prompt {
           reading <strong>0 gains, 0 losses, 0 output moved</strong>, and a live arm agreeing
           <strong>48 of 48 in both directions</strong>.
         </dd>
+        <dt>Durability</dt>
         <dd>
           <strong>Durability, and a self-inflicted error in it.</strong> A post-tag audit found two
           larger gaps than the one the release had closed: the <strong>cohort manifests had never
@@ -1738,8 +1746,7 @@ pre.prompt {
           v0.4.8-honest, the two the entire 10.34-point correction rests on, were summary-only.
           Both closed: <strong>seven sweeps, 46,769 molecules, 2.4 MB</strong>, each re-deriving its
           published headline exactly.
-        </dd>
-        <dd>
+          <br><br>
           🔴 <strong>The extract tool leaked local paths into a public tree — the same mistake twice
           in one session.</strong> The manifests were scrubbed by hand <em>because</em>
           <span class="mono">measurements/</span> is public; the tool written minutes later had no
@@ -1750,13 +1757,6 @@ pre.prompt {
           or the guard only covers the door nobody uses.</strong> Fixed at the tool and all extracts
           regenerated — but one file reached the remote first, because a sibling session pushed
           <span class="mono">main</span> mid-session.
-        </dd>
-        <dd>
-          ⚠ <strong>The first version of that confirmation arm was worthless and looked
-          perfect.</strong> The population was sorted, so when it was killed at 30 of 48 every
-          completed row happened to be a molecule the bound <em>keeps</em> &mdash; 30/30 agreement,
-          confirming nothing. <strong>An arm containing only cases your mechanism accepts cannot
-          discriminate.</strong>
         </dd>
       </dl>
       <p class="suite">Suite: <strong>1050 OK</strong> &middot; no full sweep, deliberately &mdash; the shipped default did not change, the same reason v0.4.15 skipped its own</p>
