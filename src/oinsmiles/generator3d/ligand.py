@@ -183,15 +183,15 @@ class Ligand:
 
     def print_coordinate_list(self):
         """Print the coordinate list."""
-        coordinate_list = self.coordinate_list()
-        if coordinate_list is None:
-            coordinate_list = self.get_coordinate_list()
+        atom_list = self.molecule.atom_list
+        coordinate_list = self.molecule.get_coordinate_list()
         n = len(coordinate_list)
 
         logger.debug(n)
         logger.debug("")
-        for i in range(n):
-            symbol, x, y, z = self.coordinate_list[i]
+        for i, atom in enumerate(atom_list):
+            symbol = atom.get_element()
+            x, y, z = coordinate_list[i]
             print_x = f"{x:.6f}"
             print_y = f"{y:.6f}"
             print_z = f"{z:.6f}"
