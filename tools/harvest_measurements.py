@@ -155,6 +155,18 @@ ALLOW = [
     # release re-derive a bucket table instead of re-quoting prose.
     "cohort-*_manifest.json",
     "sweep_extract_*.jsonl.gz",
+    # v0.4.17 census (C1-C4). The per-molecule verdicts of four instruments that never touched the
+    # generator, gzipped so each sits under PER_FILE_CAP (raw they are 1-3.5 MB each), plus the
+    # 5,000-row attribution table they join into and the small cross-tabs. A later release asks
+    # "did the fault partition move?" and can only answer it by diffing THESE, per molecule.
+    # ⚠ VERIFIED BY RUNNING fnmatch OVER results-census/ (the `census_*` prefix is written by
+    # tools/census/attribution_table.py --gz precisely so ONE pattern covers the set).
+    "census_*.jsonl.gz",
+    "attribution_table.tsv.gz",
+    "attribution_summary.json",
+    "collisions.json",
+    "string_sufficiency_summary.json",
+    "g_crosstab.json",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -180,6 +192,40 @@ TOTAL_CAP = 5 * 1024 * 1024
 #: ``UNKNOWN`` rather than given a plausible-looking guess -- a figure without its command is an
 #: order of magnitude, not a measurement.
 PROVENANCE = [
+    (
+        r"^census_g_verdict(_control-mirror)?\.jsonl\.gz$|^g_crosstab\.json$",
+        "tools/census/g_vs_input.py [--control mirror] [--crosstab]"
+        "   (census C1: the neutral ruler -- element-labelled distance graph + donor-direction"
+        " spheres + signed volumes, NO oinsmiles import -- judges every generated structure"
+        " against its input; the mirror control gives every input's ruler chirality)",
+    ),
+    (
+        r"^census_e_selfconsistency\.jsonl\.gz$|^census_veto_probe(_chiral|_renumber)?\.jsonl\.gz$",
+        "tools/census/e_selfconsistency.py / tools/census/veto_probe.py"
+        "   (census C2: eleven encodes per input -- identity, rewrite, rotation, 3 renumberings,"
+        " 3 x 0.02 A noise, mirror; the veto probe re-encodes with OIN_FOLD_PARITY_VETO and the"
+        " fold off to name the mechanism behind achiral molecules with two strings)",
+    ),
+    (
+        r"^census_parseback(_gen)?\.jsonl\.gz$|^census_pflags\.jsonl\.gz$"
+        r"|^collisions\.json$|^string_sufficiency_summary\.json$",
+        "tools/census/string_sufficiency.py {parseback [--side gen] | collide | pflags"
+        " --charge-probe | summary}   (census C3: smiles_1 read back to a graph with NO 3D vs"
+        " the ruler's input graph; natural-twin collision scan; perception flags with the"
+        " stated charge honoured through a patched entry point)",
+    ),
+    (
+        r"^mirror_probe\.json$",
+        "tools/census/mirror_probe.py   (census C1: does E(mirror x) differ from E(x) on a"
+        " sample of ruler-achiral vs ruler-chiral inputs -- the estimate C2 then measured over"
+        " the whole cohort)",
+    ),
+    (
+        r"^attribution_(table\.tsv\.gz|summary\.json)$",
+        "tools/census/attribution_table.py --gz   (census C4: the join -- one fault per molecule,"
+        " first rule that fires, passes included; bucket column reproduces bucket_report_honest;"
+        " UNATTRIBUTED printed as a number)",
+    ),
     (
         r"^mirror_audit_seed(\d+)_veto_(on|off)\.json$",
         "tools/mirror_audit_donor_fold.py --dataset <cat> --n 250 --seed {0}"
