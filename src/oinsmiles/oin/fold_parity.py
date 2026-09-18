@@ -49,6 +49,21 @@ free once the structure has been encoded once. Only ``inline_mirror`` needs perc
 is computed **only when the fold actually changes the string** -- when ``S_rot == S_fold`` there
 is nothing to veto and the mirror is never built.
 
+v0.4.17 -- WHAT THIS MODULE WAS POLICING, AND WHEN IT STANDS DOWN
+=================================================================
+The sentence above -- "a fragment's automorphism says nothing about the parity..." -- is true of
+what the fold calls an automorphism, and that is the defect: ``_donor_swap_permutations`` permutes
+each symmetry class of a fragment INDEPENDENTLY, which is not an automorphism at all. A ligand's
+C2 axis moves every class at once; swapping one class alone relabels the complex as a different
+arrangement (the mirror image, for a cis-alpha tetradentate). The veto below catches that after
+the fact, from strings, and cannot tell a collapsed enantiomer pair from an achiral molecule whose
+two hands SHOULD share a string -- so it fires on one hand of 568 achiral molecules (census C2).
+
+With ``OIN_EXACT_DONOR_FOLD`` on, the candidate set holds only labelings induced by true fragment
+automorphisms, every candidate describes the molecule in hand, and :func:`resolve` returns the
+fold directly (outcome ``exact_fold``): no mirror, no veto, nothing to police. Everything below
+this line describes the default path, which that lever leaves byte-identical.
+
 PRESENTATION-INVARIANCE
 =======================
 The veto predicate is a function of the STRUCTURE, not of the incoming atom numbering: both

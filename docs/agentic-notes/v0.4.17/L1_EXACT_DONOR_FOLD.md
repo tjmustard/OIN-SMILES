@@ -128,7 +128,40 @@ run below.
 same eleven presentations per molecule as C2, so every column is comparable line by line.
 Output `results-v0.4.17-exactfold/e_selfconsistency_exact.jsonl`.
 
-<!-- LIVE-RESULTS -->
+`#DONE 5000`, 6,909 s wall, stderr empty, `INSTRUMENT` 0, `MISSING` 0. Report:
+`tools/v0417/exact_fold_live_report.py` (reads both files, encodes nothing).
+
+**Read this row first — it is what licenses the offline audit.** For all 2,443 audited
+molecules the string the live encoder emitted equals the audit's prediction, for x **and** for
+its mirror: **2,443/2,443 and 2,443/2,443**. Molecules where the live string equals the SHIPPED
+one although the audit predicted a change — what a lever that never reached the encoder would
+print: **0**.
+
+| | shipped | exact fold | |
+|---|---:|---:|---|
+| base encoded (of 5,000) | 4,987 | 4,989 | two fewer 300 s timeouts — no veto encodes |
+| again / rewrite / rotate not byte-stable | 0 | 0 | determinism floor unchanged |
+| **achiral & `E(mirror) ≠ E(x)`** — NON-CANONICAL | **670** | **120** | −550, the audit's number exactly |
+| chiral & `E(mirror) == E(x)` — NON-INJECTIVE | 146 | 163 | +17, the pairs of § "The 17" |
+| **renumber drift at slot level** (3 renumberings) | **494** | **33** | −461; C2 attributed 464 to the veto |
+| renumber drift at KEY level (perception) | 255 | 255 | membership changed on **0** molecules |
+| `E1_NONCANONICAL` failures now mirror-stable | 0 / 266 | **252 / 266** | |
+| CPU-h for the 55,000 encodes | 17.76 | 13.29 | ⚠ not like-for-like load (10 vs 9 workers + a unit suite); direction only |
+
+The key-level row is the control that matters: a lever that touched perception would move it,
+and it moved on no molecule. The 120 that remain are the 102 (§ "Not done") plus the 18.
+
+**Movers — the generator A/B population, derived from coordinates.** `E(x)` changes for
+**392 / 4,987**: `key_equal` 166, `byte_exact` 132, `structural` 54, `hard_fail` 40; by census
+fault `E1_NONCANONICAL` 158, `NONE` 117, `G_CONSTRUCTION` 48, `G_NOTHING` 25, other 44. List:
+`results-v0.4.17-exactfold/exact_fold_movers.txt`. This is the INPUT side only. A molecule whose
+input string does not move can still change verdict because the re-encode of its generated
+structure does — 252 − 158 = at least 94 `E1_NONCANONICAL` failures are of that kind — so the A/B
+population is this list ∪ the generated-side movers (`tools/lever_string_movers.py`).
+
+**What this run does not say.** It is an encoder-only run. It cannot show a generator-side loss
+among the 132 passing movers, which now hand the generator a differently-labelled string
+(v0.4.14 measured 7 such losses in 182). That is L1b.
 
 ## What was built
 
