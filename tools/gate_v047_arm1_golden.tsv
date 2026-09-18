@@ -1,3 +1,9 @@
+# v0.4.17 RE-FREEZE -- 2 of 62 rows, OIN_EXACT_DONOR_FOLD promoted to default-ON (owner decision 2026-09-18).
+#   KAXVOX_comp_0, VOacac2. CONTROL: with OIN_EXACT_DONOR_FOLD=0 this tree reproduces the v0.4.16 golden
+#   byte-identically (MANIFEST 6c2417e1..., #DONE 62), so the two rows are the lever and nothing else.
+#   For BOTH, the frozen v0.4.16 string was one of TWO the encoder emitted for that one file depending on
+#   input atom order (10 renumberings: VOacac2 8/2, KAXVOX 6/4) and differed from the mirror image's.
+#   The rows below are what every renumbering AND the mirror image now encode to (10/10, mirror same).
 ABUVUP	228c457cf646bc1cd4c733d916a5c9e4ad3cd73ad99cfd1e41e1c21fc0bd3855	112	-
 AGUFEN	c771a21ef9cf6571cbc0b685348fb31de4de8b3e892c1b0edd3adb37e2ff1a54	145	-
 AROTAE_comp_0	a049bfb10ad7112e35813dc41fbab6ca7d60dbce99945afea71d2e49d0ac9339	160	-
@@ -18,7 +24,7 @@ HgI3	79da347149280d8543a9b851225edc914fefe80320f2648a5ac85d066708fb89	29	-
 IROXET_comp_0	1a225b5e8c402d6a450d5ec6650dec0ca53eb5e555ee1c3de74cf1c0b3dbcd96	74	-
 JEGKOW	7eb4b8ff64a6a44e75b78fcfbaf470ce90515b216fbf77ba5bc45471efae8df9	48	-
 JOTJEK_comp_0	6f3ac4818c71f1f27da4d7f315c391f3cf217d309afa80e60e9aa316cd3f0298	91	-
-KAXVOX_comp_0	6c5be4761c3a733f78016289ecfe1093a40cf6b347c40b3031d46319cc8a7b37	125	-
+KAXVOX_comp_0	fbab2d43662c5efba72ff6b330bc2dcd82607e4cfc877dbac176435cf507c10c	125	-
 KAXWAK_comp_0	59e016d355e6e44d2df59c7d150211795ea02f7900a6c63583f73e476195412b	130	-
 KIXXOF_comp_0	00fb1f78178202eb978bdb50ff9bf62725b3c63d7f24bed23d9f711031ed8cf8	170	eta
 LEZWAO_comp_0	ERROR:OINEncodeError:molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [7, 8, 9, 10, 11, 12, 45, 46, 47, 48, 49, 50]; the perceived bond orders are unusable (Explicit valence for atom # 45 C, 5, is greater than permitted)	-	-
@@ -53,7 +59,7 @@ TiCp2Me2	4fbba2e3d22cd0eacaf98341d9df1aadd76ae669e9c592548e048651eb548835	104	et
 TransPlatin	20795f7dbf39d9583b9ba4e325d3b7e918ed1503f230d90fdc4b0a38dc563719	34	-
 ULODUU_comp_0	3651a1319235494a76010de8d32298f8019b3c411f45cb3379756b4738a99701	192	eta
 VEJXOZ_comp_0	6e4d79000691849d4587b055e50797e44662f8ca53c997b9159a839b22ca0e37	148	eta
-VOacac2	8d6af14b48105669fb7e06a74991370f894e8ab187b1bb01af5a792765d3d67f	52	-
+VOacac2	95eca8e439cc6ea1f9ddcb35d0da182e2d7d22f92fbaf1de89affcf4d76c43c9	52	-
 YESKOZ	022683955ede4e06728e74e81cfe1d6957daa84b2c6e16c0db311246fbd79832	99	-
 ZUMNEC	4301e46fee7c4550e238eed69cdc1eba6f1c14268d6a2c08f4609b1c29a80376	59	-
 Zeises_salt	5794691fa49d32c5d04e130a40a84ba73ee6dd8ff457c3e0aab645b66f05b0b7	51	eta
@@ -61,5 +67,5 @@ fac-Ir(ppy)3	2dd786c5fd8044661c1f4fd515f411041824496a8ef3484b9c4374fc7608528e	80
 mer-Ir(ppy)3	912f83d9ab858ba1c9192b3643c27852c638602d2f6873909742153d13024a5d	80	-
 ticat3_generated_broken	f42608a64ce4c83ff0d7a74363bc487937e29a20188797909f96a62d70aa4896	156	eta
 # molecules=62 fixtures_dir=/home/tjmustard/Documents/GitHub/OIN-SMILES/tests/fixtures
-# MANIFEST_SHA256=6c2417e16b2ebb98a8414ccf66b747f8c88648ce6701c59372d193b09817ffd1
+# MANIFEST_SHA256=4b76bfafa3686021c9cc00820dfaa91f0b4a7cbcb59c86aa2c48cf8ae10a2175
 #DONE 62

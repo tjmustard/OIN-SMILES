@@ -1,9 +1,10 @@
 # v0.4.17 L1 — the donor fold swaps look-alikes, not symmetries
 
 **Branch** `research/v0417-encoder-canonicality` (worktree `../oin-v0417`, off `research/census`).
-**Lever** `OIN_EXACT_DONOR_FOLD`, default **OFF**. **Status:** built, unit-tested, gated offline
+**Lever** `OIN_EXACT_DONOR_FOLD`, **default ON since 2026-09-18** (owner decision). **Status:** built, unit-tested, gated offline
 (exact), live over the full cohort, and A/B'd through the generator on its complete mover set
-(§ L1b: **+273 self-consistent / +265 verified, 3 / 4 losses**). Not promoted.
+(§ L1b: **+273 self-consistent / +265 verified, 3 / 4 losses**). **Promoted; the sweep it owes is
+running** (§ Promotion).
 
 ## Headline
 
@@ -251,9 +252,73 @@ now `byte_exact`. The census filed these as `G_NOTHING`, "the compute floor". Fo
 the floor was the encoder asking for the impossible — and in-orbit `hard_fail` barely moves
 (15 → 14), so this is the string, not the saved veto time.
 
-**Not decided here.** Promotion is a default change: it voids the carry-forward licence and owes
-a full sweep and re-frozen goldens. The A/B says what that sweep should read — 82.62 / 74.54,
-±0.06 — and is the evidence for that decision, not the decision.
+**Decided afterwards by the owner: promote** (§ Promotion). The A/B says what the sweep it owes
+should read — 82.62 / 74.54, ±0.06.
+
+## Promotion — default-ON, and what the suite said when the default flipped
+
+**Owner decision 2026-09-18: promote.** `OIN_EXACT_DONOR_FOLD` joins `levers._DEFAULT_ON`; its
+evidence block sits above that set in the file's own convention. `OIN_FOLD_PARITY_VETO` stays ON
+and becomes **inert, not wrong** — `OIN_EXACT_DONOR_FOLD=0` brings the bucket fold and its veto
+back together, and the coupling invariant stays pinned for that path.
+
+Flipping the default failed **9 of 1,059** tests. Two were bookkeeping (`held off` → `promoted`).
+The other seven were the finding.
+
+**The veto's own three "oracle-confirmed enantiomer" fixtures collapse under the exact fold** —
+`BIWDIV`, `CIHVAT`, `OJEKET` (`tests/fixtures/fold_parity/`), the molecules v0.4.12 built the veto
+on and v0.4.13 promoted it against. That had to be understood before anything launched:
+
+| fixture | the two "enantiomer" strings differ in | renumber x 12×, SHIPPED encoder | exact fold |
+|---|---|---|---|
+| `BIWDIV` Co(pincer)₂ | the two amide N of ONE pincer, `{4}`↔`{5}` | lands on the **mirror's** string **8 / 12** | one string, 12 / 12, both hands |
+| `CIHVAT` Mo(phen)(CO)₂Br(allyl) | the two N of the phenanthroline, `{0}`↔`{2}` | **7 / 12** | one string, 12 / 12 |
+| `OJEKET` Zn(tripod)(ONO₂) | the two thione S of one tripod, `{1}`↔`{2}` | **6 / 12** | one string, 12 / 12 |
+
+The shipped encoder never separated these enantiomers. It emitted one of two strings per
+structure, chosen by input atom order, and `TestTheVetoSeparatesConfirmedEnantiomers` compared
+**one presentation of each hand**. `TestPresentationInvariance` — the test `fold_parity`'s
+docstring cited as "asserted, not assumed" — drew **one** renumbering per fixture: one toss of
+what is measured above as a fair coin, three times lucky. The oracle that confirmed them chiral
+(`tools/injectivity/oracle.py`) is a whole-molecule rigid superposition whose own docstring says
+it "conflates conformation with configuration"; the census ruler, which reads configuration
+only, calls all three achiral. What differs between the hands is a twist.
+
+This is the class the owner accepted as "the 17", met again in the project's own gate fixtures.
+It is recorded rather than quietly re-pinned because it retires the evidence v0.4.13 was
+promoted on: v0.4.11's "collapses enantiomers in 221 of 393 gains" and the veto's "19 → 0" mirror
+audit were both reading this coin.
+
+**What changed in the suite, and why each change is not a re-pin:**
+
+- `test_fold_parity.py` — every veto test now pins `OIN_EXACT_DONOR_FOLD="0"` (written, never
+  unset: the veto path only exists there). `TestPresentationInvariance` is **replaced** by
+  `TestTheVetoPathIsNotPresentationInvariant`, which pins a measured renumbering per fixture that
+  sends x onto its mirror's string, and `TestTheExactFoldGivesTheseOneStableString` (both hands
+  + four renumberings → one string; outcome `exact_fold`). A test that asserted a false invariant
+  and passed on one draw is gone; the refutation is what is pinned.
+- `test_exact_donor_fold.py` — `TestLeverIsHeldOff` → `TestLeverIsPromoted` (unset means ON, `=0`
+  disables); `TestOffIsByteIdentical` → `TestUnsetIsTheExactFold` (unset ≡ `"1"`; `"0"` still
+  selects the bucket fold, shown on a fixture where the two differ).
+- `test_chelate_locked_ez.py` — `VOacac2`'s expected string re-pinned. The v0.4.16 string was one
+  of **two** the encoder emitted for that one file (10 renumberings: 8 / 2) and differed from
+  its mirror's; VO(acac)₂ is C2v and now has one. Each acac still spans two cis basal vertices.
+- `fold_parity.py` — the PRESENTATION-INVARIANCE paragraph is kept and marked false, with the
+  measurement. No behaviour change.
+
+**Gate ARM 1** (62 fixtures): lever `=0` reproduces the v0.4.16 golden **byte-identically**
+(`#DONE 62`), so the OFF path is untouched; lever ON moves **2 of 62** rows, `KAXVOX` (6 / 4 under
+renumbering before, 10 / 10 now) and `VOacac2`. Re-frozen, reason recorded inside the golden.
+**ARM 2** goldens: 6 of 100 (`v047`) and 30 of 325 (`v049`) rows are movers; their re-freeze needs
+real generation on a quiet box and is **owed after the sweep**, not run beside it.
+
+**The sweep.** `tools/v0417/launch_sweep.sh` → the project's own `tools/run_sweep.sh`, the
+sweep-of-record configuration (same cohort, 6 shards, `--mol-timeout 300`, BLAS=1), **no `OIN_*`
+variable set** — the run tests the shipped default, and `run_config.json`'s lever block must be
+empty. Launched from the commit that carries this section. Read with
+`tools/v0417/post_sweep.sh` → `sweep_two_numbers.py`, whose predicate was validated **before the
+data existed**: over the sweep of record it reproduces the census exactly, 5,000 / 3,858 / 3,462.
+Expected: **82.62% self-consistent, 74.54% verified, ± 0.06.**
 
 ## What was built
 
@@ -264,6 +329,7 @@ a full sweep and re-frozen goldens. The A/B says what that sweep should read —
 | `src/oinsmiles/oin/levers.py` | `_HELD_OFF["OIN_EXACT_DONOR_FOLD"]` with the evidence and the open question |
 | `tests/unit/test_exact_donor_fold.py` | 9 tests on six real cohort pairs, incl. the defect pinned (bucket collapses `VOLGOV`, exact does not) |
 | `tools/v0417/autofold_audit.py` | the offline gate |
+| `tools/v0417/launch_sweep.sh`, `post_sweep.sh`, `sweep_two_numbers.py` | the promotion's sweep: launcher wrapper, reader, and the two-number predicate (control: 3,858 / 3,462 on the record) |
 | `tools/v0417/exact_fold_live_report.py`, `automorphism_extension_check.py` | live-vs-offline report; the pendant-stripping premise |
 | `tools/v0417/generated_side_movers.py`, `run_generator_ab.sh`, `post_generator_ab.sh`, `generator_ab_report.py` | L1b: population, the two harness arms, post-processing, the two-number report |
 
@@ -287,8 +353,7 @@ Two implementation facts worth keeping:
 - **The generator's label dependence.** L1b's four losses are all of this kind. It is a
   generator lane (the CoordMap should not care which of two automorphic donors is called `{2}`),
   and every future canonicality lever pays it until it is closed.
-- **Promotion.** Owes the A/B and both numbers (verified 69.24 / self-consistent 77.16). The
-  owner's call on the 17 is made (accept).
+- **ARM 2 golden re-freeze** (36 mover rows) and `/freeze-measurements` — after the sweep.
 
 ## Traps this lane added
 

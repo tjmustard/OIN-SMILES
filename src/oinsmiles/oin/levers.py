@@ -203,6 +203,75 @@ import os
 #: an encoder lever. Two rows flipped round-trip status in the re-freeze and NEITHER is this
 #: lever's doing -- the control on the frozen sweep structures reads HEKFEL True->True and FOJJUM
 #: False->False. Recorded as comments inside the goldens so a future diff does not misread them.
+#: OIN_EXACT_DONOR_FOLD joined this set in v0.4.17, by owner decision (2026-09-18).
+#:
+#: WHAT IT IS. The donor fold above permutes every symmetry class of a fragment INDEPENDENTLY
+#: (``canonical_slots._donor_swap_permutations``). A ligand automorphism moves all of its classes
+#: AT ONCE, so a one-class swap is not a symmetry of the ligand: it relabels the complex as a
+#: different arrangement -- the mirror image, for a cis-alpha tetradentate. That over-fold is why
+#: v0.4.11 collapsed enantiomers, why v0.4.12 built a veto, and why that veto -- deciding from
+#: strings whether a collapse is an enantiomer pair or an achiral molecule -- fired on ONE hand of
+#: 568 achiral molecules (census C2: ``E1_NONCANONICAL``, 266 failures / 5.32 pts). This lever
+#: folds over the slot permutations induced by TRUE fragment automorphisms
+#: (``_donor_automorphism_permutations``); ``fold_parity.resolve`` then returns the fold directly.
+#:
+#: 🔴 IT MAKES ``OIN_FOLD_PARITY_VETO`` INERT, NOT WRONG. With only automorphisms in the candidate
+#: set every candidate describes the molecule in hand, a mirror pair's candidate sets are disjoint
+#: by construction, and there is nothing to veto. The coupling invariant above is a statement about
+#: the BUCKET fold and stays pinned: set this lever to "0" and the veto is load-bearing again, the
+#: instant it is needed. Do not demote the veto because it "does nothing".
+#:
+#: WHAT IT BUYS -- measured THROUGH THE GENERATOR on the lever's COMPLETE mover set (504 molecules
+#: = 392 whose E(x) moves + those whose re-encode of the generated structure moves; every other
+#: molecule gets the same two strings and is unchanged by construction). The sweep harness,
+#: --mol-timeout 300, OFF and ON arms run SIMULTANEOUSLY so load is common to both
+#: (tools/v0417/run_generator_ab.sh; dead-lever check 392; noise floor 3/504 vs the sweep of
+#: record):
+#:     self-consistent   276 gains   3 losses   net +273     77.16% -> 82.62%
+#:     VERIFIED          269 gains   4 losses   net +265     69.24% -> 74.54%
+#: VERIFIED is the census predicate: the neutral ruler judges the generated STRUCTURE against the
+#: input. Both numbers move together, which is what rules out the failure mode a canonicality lever
+#: is prone to -- teaching the second encode to agree with a wrong structure.
+#:
+#: THE LOSSES. All four are GENERATOR-side: an equally valid, differently LABELLED input and a
+#: worse structure (AQENIV axial ligands detached, KOBNUN a contact re-read eta2, QALWEH Cp* re-read
+#: eta4, VEKWEQ verified-only). None is a wrong string. It is the dependence v0.4.14 measured
+#: (7 in 182) and it is still open: every canonicality lever pays it until the generator stops
+#: caring which of two automorphic donors is called {2}.
+#:
+#: WHAT ELSE IT FIXED, and nobody was looking for. The bucket fold's lex-min can land on a
+#: non-automorphic candidate, and then the encoder emits a labeling OUTSIDE the input's own orbit:
+#: a string for an arrangement the input is not, often one that cannot be built. 65 molecules.
+#: 19 of them were 300 s generation timeouts and 16 now run (ROLYIB 300 s -> 3 s, byte_exact);
+#: in-orbit hard_fail is 15 -> 14, so it is the string and not the saved veto time. The census
+#: filed these under G_NOTHING, "the compute floor". Runtime over the 504: sum elapsed
+#: 6.19 h -> 2.93 h; >30 s 110 -> 58.
+#:
+#: THE GATES THAT PROMOTED IT, each with what a broken one would print.
+#:   * offline audit on the census's stored strings, exact because the slot post-pass is a pure
+#:     string function: positive control 5,792/5,792; 550 of the 568 vetoed achiral pairs unified.
+#:   * the same prediction against the LIVE encoder over the full cohort: 2,443/2,443 for x and for
+#:     its mirror; a dead lever would match the SHIPPED column instead, and that count is 0.
+#:   * renumber drift at slot level 494 -> 33 while KEY-level (perception) drift is 255 -> 255 with
+#:     membership changed on 0 molecules -- the control that the lever touches labels and
+#:     nothing else.
+#:   * pendant stripping never invents a symmetry: 13,716 pruned automorphisms, 0 without a
+#:     full-graph extension, negative control refused 7,953/7,953.
+#:
+#: ⚠ WHAT IT COSTS, accepted rather than avoided.
+#:   * 18 pairs the census called achiral stay SPLIT. They are chiral by how a ligand wraps (Hf/Zr
+#:     bis(phenolate)-bis(ether) cis-alpha, helical pentadentates); the census ruler matches donors
+#:     by class and shares the bucket fold's blind spot. Correct, and it reads as a non-gain.
+#:   * 17 of the 36 pairs the veto "protected" are UNIFIED -- OWNER DECISION 2026-09-18: ACCEPT.
+#:     Their two strings differ only in which of two AUTOMORPHIC atoms carries which integer
+#:     (PEBVEZ is tmeda written forwards and backwards); the chirality is real but lives where the
+#:     string does not look (a metal-bound N-H / C-H centre with its tag cleared -- Y1 P3 -- or a
+#:     conformational twist), and 13 of the 17 already flipped under renumbering. Census
+#:     "chiral & same" is 163, not 146, from here on. The repair is to encode the centre.
+#:   * It changes the default answer for 392 inputs, which VOIDS the carry-forward licence:
+#:     v0.4.17 owes a full sweep (expected 82.62 / 74.54, +/-0.06) and re-frozen ARM 1 / ARM 2
+#:     goldens, and no table measured before it may be quoted beside the new headline.
+#: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -211,6 +280,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_EXACT_DONOR_FOLD",
         "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
         "OIN_RESONANCE_DONOR_FOLD",
@@ -692,60 +762,6 @@ _HELD_OFF = {
         "_CIP_REPARSE_MEMO_MAX so a long single-interpreter sweep cannot grow it without limit, "
         "and _reparse_cip_memo_clear() lets a per-molecule gate guarantee isolation the way "
         "_ac2bo_memo_clear() does for perception."
-    ),
-    "OIN_EXACT_DONOR_FOLD": (
-        "v0.4.17 Lane 1. Replaces the donor fold's BUCKET-WISE swaps with the slot permutations "
-        "induced by TRUE automorphisms of each fragment "
-        "(canonical_slots._donor_automorphism_permutations), and makes fold_parity.resolve skip "
-        "its veto -- with only automorphisms in the candidate set there is no collapse to veto.\n"
-        "WHY: _donor_swap_permutations permutes every symmetry class of a fragment independently. "
-        "A ligand's C2 axis moves ALL its classes at once; swapping one class alone is not a "
-        "symmetry of the ligand and yields a labeling that describes a different arrangement (the "
-        "mirror image, for a cis-alpha tetradentate). That over-fold is why the fold collapsed "
-        "enantiomers in v0.4.11, why v0.4.12 needed a veto, and why that veto -- deciding from "
-        "strings whether a collapse is an enantiomer pair or an achiral molecule -- fires on ONE "
-        "hand of 568 achiral molecules (census C2: E1_NONCANONICAL, 266 failures / 5.32 pts).\n"
-        "MEASURED OFFLINE, EXACTLY (tools/v0417/autofold_audit.py; the slot post-pass is a pure "
-        "string function, and the positive control reproduces the encoder on 5,792/5,792 stored "
-        "strings): of the 568 vetoed achiral pairs the exact fold gives x and its mirror ONE "
-        "string on 550. The other 18 it keeps split, and reading them says it is right to: Hf/Zr "
-        "bis(phenolate)-bis(ether) cis-alpha wraps, helical pentadentates, clathrochelates -- "
-        "C2/D3-chiral complexes the census ruler read as achiral because it matches donors by "
-        "class, the same blind spot as the bucket fold. Of the 36 ruler-chiral pairs the veto "
-        "protects it keeps 19 split BY CONSTRUCTION and unifies 17.\n"
-        "THE 17 -- DECIDED BY THE OWNER 2026-09-18: ACCEPT. Read one by one they are "
-        "pairs whose two strings differ ONLY in which of two automorphic atoms carries which slot "
-        "integer (tmeda N/N', the two pyrazolyl arms of a tripod) -- a difference that names no "
-        "property of a molecule. The chirality is real but lives where the string does not look: "
-        "a metal-bound N-H or C-H centre with its tag cleared (the Y1 audit's P3 blind spot), or a "
-        "conformational twist of a D2d sphere. 13 of the 17 already change string under three "
-        "random renumberings with the SHIPPED encoder, so the split being lost was not stable. "
-        "They move census 'chiral & same' from 146 to 163 and are counted there from now on; "
-        "the repair is to encode the centre (Y1 P3), not to keep a label that renumbering flips.\n"
-        "CONFIRMED LIVE over the full cohort (tools/census/e_selfconsistency.py under the lever, "
-        "same seeds as census C2; tools/v0417/exact_fold_live_report.py): the offline prediction "
-        "equals the emitted string on 2,443/2,443 molecules for x and for its mirror. "
-        "achiral-and-E(mirror)!=E(x) 670 -> 120; slot-level drift under renumbering 494 -> 33; "
-        "KEY-level (perception) drift 255 -> 255 with membership changed on 0 molecules, which is "
-        "the control showing the lever touches labels and nothing else; determinism floor 0.\n"
-        "A/B'd THROUGH THE GENERATOR on its COMPLETE mover set -- 504 molecules = 392 whose E(x) "
-        "moves + those whose re-encode of the generated structure moves; everything else is "
-        "unchanged by construction (tools/v0417/run_generator_ab.sh: the sweep harness, "
-        "--mol-timeout 300, OFF and ON arms run simultaneously; dead-lever check 392, noise floor "
-        "3 flips vs the sweep of record):\n"
-        "    self-consistent  276 gains  3 losses  net +273   77.16% -> 82.62%\n"
-        "    VERIFIED         269 gains  4 losses  net +265   69.24% -> 74.54%\n"
-        "Both numbers move together, so the lever is not teaching the second encode to agree with "
-        "a wrong structure. All four losses are GENERATOR-side (an equally valid, differently "
-        "labelled input and a worse structure -- v0.4.14's open dependence), none a wrong string. "
-        "Runtime over the 504: sum elapsed 6.19 h -> 2.93 h, >30 s 110 -> 58, hard_fail 36 -> 19. "
-        "The bucket fold had been emitting a labeling OUTSIDE the input's own orbit for 65 "
-        "molecules -- a string for an arrangement that cannot be built -- and 19 of them were "
-        "300 s generation timeouts; 16 now run (ROLYIB 300 s -> 3 s, byte_exact).\n"
-        "HELD OFF only because promotion is the owner's call: a default change voids the "
-        "carry-forward licence and owes a full sweep and re-frozen goldens. The A/B says what that "
-        "sweep should read. If promoted, OIN_FOLD_PARITY_VETO becomes inert "
-        "rather than wrong; the fold/veto coupling invariant above applies to the BUCKET fold only."
     ),
 }
 

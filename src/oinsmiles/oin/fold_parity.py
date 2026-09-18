@@ -71,6 +71,16 @@ arms of the comparison are re-derived from coordinates, and ``canonicalize_oin_s
 already presentation-invariant on each. So two presentations of one complex reach the same
 verdict and emit the same string. This is asserted, not assumed --
 ``tests/unit/test_fold_parity.py`` renumbers the input and requires the verdict to hold.
+
+🔴 v0.4.17: THE PARAGRAPH ABOVE IS FALSE, and is kept because the error is the lesson.
+``canonicalize_oin_slots`` is presentation-invariant given its INPUT string, but the input string
+is not: which of two automorphic donors the SMILES writer reaches first is decided by atom order,
+so ``S_rot`` differs between two presentations of one structure, and with it the early
+``S_rot == S_fold`` return and the veto's verdict. The test cited drew ONE renumbering per
+fixture; twelve send each "confirmed enantiomer" onto its MIRROR'S string 8, 7 and 6 times
+(``TestTheVetoPathIsNotPresentationInvariant``). Census C2 measured the same thing corpus-wide:
+471 of 494 slot-level renumber drifts are vetoed on some presentation. The exact fold does not
+have this defect, because its candidate set is closed under the relabeling that atom order picks.
 """
 
 from __future__ import annotations

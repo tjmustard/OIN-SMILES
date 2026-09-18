@@ -39,6 +39,11 @@ COLLAPSE_FIXTURES = ["BIWDIV_comp_0", "CIHVAT_comp_0", "OJEKET_comp_0"]
 
 FOLD = "OIN_CANONICAL_DONOR_FOLD"
 VETO = "OIN_FOLD_PARITY_VETO"
+#: v0.4.17 promoted the exact fold, under which ``resolve`` returns before the veto is consulted.
+#: Every test here that is ABOUT the veto therefore pins this to "0" -- written, never unset: an
+#: unset lever takes the promoted default, and these tests would silently become exact-fold tests
+#: asserting veto behaviour. (The same one-line fix as the 23 failures of v0.4.5 / v0.4.6.)
+EXACT = "OIN_EXACT_DONOR_FOLD"
 
 
 def _read(path):
@@ -58,8 +63,9 @@ def _write(syms, xyz):
     return fh.name
 
 
-def _encode(path, fold, veto):
-    with mock.patch.dict(os.environ, {FOLD: "1" if fold else "0", VETO: "1" if veto else "0"}):
+def _encode(path, fold, veto, exact=False):
+    levers = {FOLD: "1" if fold else "0", VETO: "1" if veto else "0", EXACT: "1" if exact else "0"}
+    with mock.patch.dict(os.environ, levers):
         return XYZToSMILES().convert(str(path))
 
 
@@ -277,25 +283,86 @@ class TestSuffixLeverInteraction(unittest.TestCase):
                 )
 
 
-class TestPresentationInvariance(unittest.TestCase):
-    """The verdict must be a property of the STRUCTURE, not of the input atom numbering."""
+def _renumbered(name, k):
+    """One pinned renumbering of a fixture: ``(path, syms, xyz)``. Caller unlinks ``path``."""
+    syms, xyz = _read(FIXTURES / f"{name}.xyz")
+    order = np.random.default_rng([17, k]).permutation(len(syms))
+    return _write([syms[i] for i in order], xyz[order])
 
-    def test_renumbering_the_input_does_not_move_the_answer(self):
-        rng = np.random.default_rng(42)
-        for name in COLLAPSE_FIXTURES:
+
+class TestTheVetoPathIsNotPresentationInvariant(unittest.TestCase):
+    """🔴 v0.4.17 REFUTATION of this module's own claim, pinned so it cannot be re-believed.
+
+    Through v0.4.16 this class was ``TestPresentationInvariance``: ONE renumbering per fixture
+    (``default_rng(42)``), asserting the veto's answer did not move. It passed, and
+    ``fold_parity``'s docstring cited it: "asserted, not assumed".
+
+    It was one toss of a fair coin, three times. Twelve renumberings of each fixture send the
+    deposited structure onto its MIRROR'S string 8, 7 and 6 times. The two strings of a "confirmed
+    enantiomer pair" differ only in which of two AUTOMORPHIC donors carries which slot integer
+    (BIWDIV: the two amide N of one pincer; CIHVAT: the two N of a phenanthroline; OJEKET: the two
+    thione S of one tripod), and which of two automorphic atoms the SMILES writer reaches first is
+    decided by input atom order. So the veto did not separate these enantiomers. It emitted one of
+    two strings per molecule, and ``TestTheVetoSeparatesConfirmedEnantiomers`` compared ONE
+    presentation of each hand.
+
+    The oracle that "confirmed" them chiral is a whole-molecule rigid superposition; its docstring
+    says it "conflates conformation with configuration". The census ruler, which reads
+    configuration only, calls all three achiral. What differs between the hands is a twist.
+
+    The permutations are pinned (``default_rng([17, k])``) to ones measured to flip. If this test
+    ever FAILS, the veto path became presentation-invariant and this docstring is out of date --
+    that would be good news, and worth understanding before the assertion is touched.
+    """
+
+    #: fixture -> k with ``E(renumbered x) == E(mirror x)`` on the veto path
+    FLIPS = {"BIWDIV_comp_0": 3, "CIHVAT_comp_0": 0, "OJEKET_comp_0": 3}
+
+    def test_a_renumbering_sends_x_to_its_mirrors_string(self):
+        for name, k in self.FLIPS.items():
             with self.subTest(name):
-                src = FIXTURES / f"{name}.xyz"
-                syms, xyz = _read(src)
-                order = rng.permutation(len(syms))
-                shuffled = _write([syms[i] for i in order], xyz[order])
+                x, m = _pair(name, fold=True, veto=True)
+                self.assertNotEqual(x, m, f"{name}: precondition -- one presentation separates")
+                path = _renumbered(name, k)
                 try:
                     self.assertEqual(
-                        _encode(src, fold=True, veto=True),
-                        _encode(shuffled, fold=True, veto=True),
-                        f"{name}: the veto's verdict must not depend on input numbering",
+                        _encode(path, fold=True, veto=True),
+                        m,
+                        f"{name}: renumbering [17, {k}] was measured to land on the MIRROR's string",
                     )
                 finally:
-                    os.unlink(shuffled)
+                    os.unlink(path)
+
+
+class TestTheExactFoldGivesTheseOneStableString(unittest.TestCase):
+    """What v0.4.17 ships for the same three molecules: one string, from any presentation.
+
+    ⚠ This is a LOSS of nothing and must not be read as one. The exact fold unifies each pair
+    because their strings never differed in anything a molecule has. If conformational or
+    atropisomeric handedness is to be carried it needs its own token (Y2's ``|ax:|``, Y1 P3's
+    bound-centre tag), not a slot integer on one of two interchangeable atoms.
+    """
+
+    def test_both_hands_and_every_renumbering_agree(self):
+        for name in COLLAPSE_FIXTURES:
+            with self.subTest(name):
+                x = _encode(FIXTURES / f"{name}.xyz", fold=True, veto=True, exact=True)
+                syms, xyz = _read(FIXTURES / f"{name}.xyz")
+                mirrored = xyz.copy()
+                mirrored[:, 2] *= -1.0
+                mpath = _write(syms, mirrored)
+                paths = [mpath] + [_renumbered(name, k) for k in range(4)]
+                try:
+                    for path in paths:
+                        self.assertEqual(_encode(path, fold=True, veto=True, exact=True), x)
+                finally:
+                    for path in paths:
+                        os.unlink(path)
+
+    def test_the_veto_is_not_consulted(self):
+        fold_parity._state.outcome = None  # last_outcome() is sticky per thread
+        _encode(FIXTURES / f"{COLLAPSE_FIXTURES[0]}.xyz", fold=True, veto=True, exact=True)
+        self.assertEqual(fold_parity.last_outcome(), "exact_fold")
 
 
 if __name__ == "__main__":

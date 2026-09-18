@@ -1,4 +1,6 @@
-"""``OIN_EXACT_DONOR_FOLD`` -- fold over true fragment automorphisms, not symmetry buckets (v0.4.17).
+"""``OIN_EXACT_DONOR_FOLD`` -- fold over true fragment automorphisms, not symmetry buckets.
+
+Built and promoted to default-ON in v0.4.17.
 
 WHAT IS BEING PINNED, AND WHY EACH TEST EXISTS
 ==============================================
@@ -11,7 +13,7 @@ induces. Four properties, and only the first two are what the lever is *for*:
 1. an achiral complex and its mirror image get ONE string, with no mirror encode;
 2. a complex that is chiral only through how a ligand WRAPS (cis-alpha) keeps two strings --
    and the bucket fold demonstrably does not, which is the defect in one fixture;
-3. it is byte-identical to the shipped encoder when off;
+3. unset means ON, and ``=0`` still returns the bucket fold and its veto;
 4. the emitted string is invariant to which member of its own orbit it was handed.
 
 The fixtures are rotation-only strings of real cohort molecules (census ``veto_probe.jsonl``,
@@ -90,10 +92,24 @@ def _perms(fn, oin):
     return fn(frags, vcolor)
 
 
-class TestLeverIsHeldOff(unittest.TestCase):
-    def test_default_off_with_a_reason(self):
-        self.assertNotIn(LEVER, default_on())
-        self.assertIn(LEVER, held_off())
+class TestLeverIsPromoted(unittest.TestCase):
+    """Default-ON since v0.4.17 (owner decision 2026-09-18). Was ``TestLeverIsHeldOff``.
+
+    Inverted rather than deleted, for the reason ``test_fold_parity.TestDefaultOn`` gives: the
+    property worth pinning is that UNSET resolves to the shipped answer and ``=0`` still disables.
+    """
+
+    def test_default_on_and_no_longer_held_off(self):
+        self.assertIn(LEVER, default_on())
+        self.assertNotIn(LEVER, held_off())
+
+    def test_unset_means_on(self):
+        env = {k: v for k, v in os.environ.items() if k != LEVER}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertTrue(lever_enabled(LEVER))
+
+    def test_explicit_zero_disables(self):
+        """Load-bearing: ``=0`` is the one spelling that brings the bucket fold AND its veto back."""
         with mock.patch.dict(os.environ, {LEVER: "0"}):
             self.assertFalse(lever_enabled(LEVER))
 
@@ -131,13 +147,30 @@ class TestWrapChiralityIsNotFolded(unittest.TestCase):
         self.assertEqual({k for k, v in moved[0].items() if k != v}, {0, 1, 2, 4})
 
 
-class TestOffIsByteIdentical(unittest.TestCase):
-    def test_unset_and_zero_agree_on_every_fixture(self):
+class TestUnsetIsTheExactFold(unittest.TestCase):
+    """Was ``TestOffIsByteIdentical`` (unset == "0") while the lever was held off.
+
+    After promotion that equality is FALSE by design, and a test still asserting it would be
+    asserting the old default. What must hold now: unset is byte-identical to "1", and "0" is
+    still reachable and still the bucket fold -- it differs on exactly the fixtures the fold
+    fires on, so this cannot pass on a lever that stopped reaching the post-pass.
+    """
+
+    def test_unset_agrees_with_one_on_every_fixture(self):
+        env = {k: v for k, v in os.environ.items() if k != LEVER}
         for _name, x, m in ACHIRAL + WRAP_CHIRAL:
             for s in (x, m):
-                with _env(False):
-                    off = canonicalize_oin_slots(s)
-                self.assertEqual(off, canonicalize_oin_slots(s))  # ambient: the shipped default
+                with _env(True):
+                    on = canonicalize_oin_slots(s)
+                with mock.patch.dict(os.environ, env, clear=True):
+                    self.assertEqual(on, canonicalize_oin_slots(s))
+
+    def test_zero_still_selects_the_bucket_fold(self):
+        _name, x, m = WRAP_CHIRAL[0]
+        with _env(False):
+            self.assertEqual(canonicalize_oin_slots(x), canonicalize_oin_slots(m))
+        with _env(True):
+            self.assertNotEqual(canonicalize_oin_slots(x), canonicalize_oin_slots(m))
 
 
 class TestOrbitInvariance(unittest.TestCase):

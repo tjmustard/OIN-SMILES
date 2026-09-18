@@ -155,7 +155,12 @@ class TestEncoderSuppression(unittest.TestCase):
 
     def test_voacac2_emits_no_direction_markers(self):
         oin = XYZToSMILES().convert(os.path.join(_FIXTURES, "VOacac2.xyz"))
-        self.assertEqual(oin, "[V_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}")
+        # Slot labels re-pinned in v0.4.17 (OIN_EXACT_DONOR_FOLD promoted). The string this
+        # asserted through v0.4.16, ``...O{4}.CC(=O{2})C=C(C)O{3}``, was one of TWO the encoder
+        # emitted for this one file: 10 renumberings gave it 8 times and the string below twice,
+        # and the mirror image always gave the one below. VO(acac)2 is C2v -- it has one string
+        # now, from every presentation. Each acac still spans two CIS basal vertices (1,3 / 2,4).
+        self.assertEqual(oin, "[V_SPY].O{0}.CC(=O{1})C=C(C)O{3}.CC(=O{2})C=C(C)O{4}")
         self.assertNotIn("/", oin)
         self.assertNotIn("\\", oin)
 
