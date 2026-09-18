@@ -109,7 +109,11 @@ other seventeen are unified, and I am not going to claim that is free. What they
 
 So these move census "chiral & same" from 146 to 163. The honest reading is that they were always
 in that class and the veto was hiding it behind presentation noise; the fix is to encode the
-centre (Y1 P3), not to keep the label. **This is an owner decision** and is listed as one below.
+centre (Y1 P3), not to keep the label.
+
+> **DECIDED by the owner, 2026-09-18: ACCEPT the 17.** They are counted as NON-INJECTIVE
+> (146 → 163) from here on, and the repair is the Y1 P3 lane — encode the metal-bound N–H / C–H
+> centre — not a veto kept alive for these shapes.
 
 ## Side finding — the shipped string can describe a different arrangement
 
@@ -192,8 +196,8 @@ Two implementation facts worth keeping:
   bit is genuinely needed — and it must be **automorphism-based**, or it will collapse the 18.
 - **Generator A/B.** The string is the generator's input (v0.4.14's hole); an offline audit
   cannot express a loss. The mover set is derivable from the live run (`base` moved).
-- **Promotion.** Owes the A/B, both numbers (verified 69.24 / self-consistent 77.16), and the
-  owner's call on the 17.
+- **Promotion.** Owes the A/B and both numbers (verified 69.24 / self-consistent 77.16). The
+  owner's call on the 17 is made (accept).
 
 ## Traps this lane added
 
