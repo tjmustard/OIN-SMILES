@@ -2,7 +2,8 @@
 
 **Branch** `research/v0417-encoder-canonicality` (worktree `../oin-v0417`, off `research/census`).
 **Lever** `OIN_EXACT_DONOR_FOLD`, default **OFF**. **Status:** built, unit-tested, gated offline
-(exact) and live (full cohort). Not promoted; no sweep owed yet.
+(exact), live over the full cohort, and A/B'd through the generator on its complete mover set
+(§ L1b: **+273 self-consistent / +265 verified, 3 / 4 losses**). Not promoted.
 
 ## Headline
 
@@ -167,6 +168,93 @@ population is this list ∪ the generated-side movers (`tools/lever_string_mover
 among the 132 passing movers, which now hand the generator a differently-labelled string
 (v0.4.14 measured 7 such losses in 182). That is L1b.
 
+## L1b — the generator A/B: +273 self-consistent, +265 verified, 3 and 4 losses
+
+**Population 504, derived from coordinates.** Input-side movers 392 (`E(x)` changes) ∪
+generated-side movers 286 (`E` of the stored generated structure changes;
+`tools/v0417/generated_side_movers.py`, 4,748 structures × 2 arms, OFF arm == sweep of record on
+**4,743/4,743**); 174 are in both. 249 of the 266 `E1_NONCANONICAL` failures are inside. Every
+other molecule has the same input string and the same re-encode in both arms, so it is unchanged
+**by construction** and the A/B over the 504 is exact, not a sample.
+
+**Instrument.** The sweep harness itself (`tools/test_dataset_roundtrip.py --mol-timeout 300`,
+BLAS=1, g-xTB) — not `generator_ab_honest.py`, which keeps one bit per arm and discards the
+structure the verified number is computed from. OFF and ON arms ran **at the same time**, three
+shards each (`tools/v0417/run_generator_ab.sh`), so whatever the box did it did to both. Both
+arms: lane tree, commit `de4a9d2c`, `xtb_available=True`, 504/504 reports, no traceback.
+
+| read in this order | |
+|---|---|
+| **dead-lever check** — `smiles_1` differs between arms | **392**, exactly the input movers |
+| **noise floor** — OFF arm vs sweep of record, pass/fail flips | **3 / 504** (all `hard_fail` → pass: a quieter box) |
+
+| | pass OFF | pass ON | gains | losses | net | headline (n = 5,000) |
+|---|---:|---:|---:|---:|---:|---|
+| **self-consistent** (`byte_exact`, honest) | 135 | 408 | 276 | **3** | **+273** | 77.16% → **82.62%** (+5.46) |
+| **VERIFIED** (census predicate, ruler on the arm's own structures) | 119 | 384 | 269 | **4** | **+265** | 69.24% → **74.54%** (+5.30) |
+
+The two columns move together, which is the point of carrying both: this lever is not teaching
+the second encode to agree with a wrong structure. 223 of the 269 verified gains are
+`E1_NONCANONICAL`; 225 of the 249 in the cohort now pass (still failing: 18 `structural`,
+5 `key_equal`, 1 `hard_fail`).
+
+Bucket transitions: `key_equal → byte_exact` 244 · `structural → byte_exact` 18 ·
+**`hard_fail → byte_exact` 13** · `hard_fail → structural` 6 · `encode_fail → byte_exact` 1.
+Gains by side: 184 input-moved, 92 generated-side only.
+
+**The losses, each read.** All four are generator-side — an equally valid, differently
+*labelled* input string and a worse structure, the dependence v0.4.14 measured (7 in 182) and
+which is still open:
+
+| molecule | what the ON arm built |
+|---|---|
+| `AQENIV` Co(dmgH)₂(py)(R) | both axial ligands detached; re-read as `[Co_SPL]` (`SPHERE_DIFF`) |
+| `KOBNUN` Ni bis(thiosemicarbazone) | a short M···N contact re-read as η² `N{1>}N{1}` |
+| `QALWEH` Cp\*V(O)(silsesquioxane) | Cp\* re-read η⁴ — one ring carbon lost its slot |
+| `VEKWEQ` Os PNP pincer (verified only) | still `byte_exact`; the ruler reads `LIGAND_DIFF` on the structure |
+
+3 of 132 passing input movers = 2.3%. The exact fold did not emit a wrong string for any of them.
+
+**What the offline prediction got wrong, in both directions.** Holding the generated structure
+fixed predicted 247 gains and 8 losses. Live: the generated-side-only molecules matched the
+prediction on **111 / 112** (exact by construction, one nondeterministic). Of the **8 predicted
+losses, 7 did not happen** — handed the new string, the generator built a structure that
+re-encodes to it. And 35 molecules predicted to stay failing (or with no stored structure at
+all) passed. An offline re-score cannot express a loss *or a recovery* on an input mover; v0.4.14
+recorded the first half of that sentence.
+
+**Runtime — the veto was being paid per conformer.** `accept_fn` re-encodes every conformer in
+the pool, and each re-encode of a fold-active molecule ran the veto's two extra encodes.
+
+| over the 504 | OFF | ON |
+|---|---:|---:|
+| Σ `elapsed_s` | 6.19 h | **2.93 h** |
+| median | 7.0 s | 3.6 s |
+| > 30 s | 110 | **58** |
+| > 300 s | 30 | **9** |
+| `hard_fail` | 36 | **19** |
+
+**The `hard_fail` recoveries are the side finding, measured over the whole cohort.** The shipped
+`E(x)` lies outside the input's own orbit — a labeling for an arrangement the input is not — for
+**65 of the 392 input movers** (the 33 of § "Side finding" were the audited subset). In the A/B:
+
+| shipped string | n | OFF pass → ON pass | OFF `hard_fail` → ON `hard_fail` |
+|---|---:|---|---|
+| **outside** the input's orbit | 65 | 24 → **49** | **19 → 3** |
+| inside it (relabeled only) | 327 | 111 → 267 | 15 → 14 |
+
+19 molecules leave `hard_fail` (13 to `byte_exact`, 6 to `structural`); **all 19 were 300 s
+generation timeouts in the OFF arm and 16 of the 19 carried an out-of-orbit string.** The
+generator was asked for an arrangement that cannot be built and searched until it was killed:
+`ROLYIB` 300 s → **3 s**, `TEGVOR` 300 s → 4 s, `ONOXOG` 300 s → 5 s, `DAQDAB` 565 s → 8 s, all
+now `byte_exact`. The census filed these as `G_NOTHING`, "the compute floor". For these sixteen
+the floor was the encoder asking for the impossible — and in-orbit `hard_fail` barely moves
+(15 → 14), so this is the string, not the saved veto time.
+
+**Not decided here.** Promotion is a default change: it voids the carry-forward licence and owes
+a full sweep and re-frozen goldens. The A/B says what that sweep should read — 82.62 / 74.54,
+±0.06 — and is the evidence for that decision, not the decision.
+
 ## What was built
 
 | file | change |
@@ -176,6 +264,8 @@ among the 132 passing movers, which now hand the generator a differently-labelle
 | `src/oinsmiles/oin/levers.py` | `_HELD_OFF["OIN_EXACT_DONOR_FOLD"]` with the evidence and the open question |
 | `tests/unit/test_exact_donor_fold.py` | 9 tests on six real cohort pairs, incl. the defect pinned (bucket collapses `VOLGOV`, exact does not) |
 | `tools/v0417/autofold_audit.py` | the offline gate |
+| `tools/v0417/exact_fold_live_report.py`, `automorphism_extension_check.py` | live-vs-offline report; the pendant-stripping premise |
+| `tools/v0417/generated_side_movers.py`, `run_generator_ab.sh`, `post_generator_ab.sh`, `generator_ab_report.py` | L1b: population, the two harness arms, post-processing, the two-number report |
 
 Two implementation facts worth keeping:
 
@@ -194,8 +284,9 @@ Two implementation facts worth keeping:
   "apical"; a template artifact), 15 fragment order, 11 η winding char, 13 carry inverted `@`
   tags (chiral by the string's own account). The first three groups are where C2's achirality
   bit is genuinely needed — and it must be **automorphism-based**, or it will collapse the 18.
-- **Generator A/B.** The string is the generator's input (v0.4.14's hole); an offline audit
-  cannot express a loss. The mover set is derivable from the live run (`base` moved).
+- **The generator's label dependence.** L1b's four losses are all of this kind. It is a
+  generator lane (the CoordMap should not care which of two automorphic donors is called `{2}`),
+  and every future canonicality lever pays it until it is closed.
 - **Promotion.** Owes the A/B and both numbers (verified 69.24 / self-consistent 77.16). The
   owner's call on the 17 is made (accept).
 
