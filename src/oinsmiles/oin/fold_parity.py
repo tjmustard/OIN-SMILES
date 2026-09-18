@@ -70,6 +70,7 @@ logger = logging.getLogger(__name__)
 
 FOLD_LEVER = "OIN_CANONICAL_DONOR_FOLD"
 VETO_LEVER = "OIN_FOLD_PARITY_VETO"
+EXACT_LEVER = "OIN_EXACT_DONOR_FOLD"
 
 #: Re-entrancy guard. The veto encodes a mirrored structure, and that encode runs through the
 #: very post-pass that calls this module. Without the guard it would recurse until the stack
@@ -276,6 +277,17 @@ def resolve(inline_oin: str, tmc_mol, xyz_coords) -> str:
     # The veto only has an opinion about the donor fold. With the fold itself off there is no
     # widened candidate set to police, so this is a no-op by construction.
     if not lever_enabled(FOLD_LEVER):
+        return canonicalize_oin_slots(inline_oin)
+
+    # v0.4.17: the exact fold widens the candidate set by TRUE fragment automorphisms only, so
+    # every candidate describes the molecule in hand and a mirror pair's candidate sets are
+    # disjoint by construction -- there is no collapse to veto. Running the veto anyway would be
+    # worse than redundant: its right conjunct ``S_fold == S_fold_m`` is exactly what an ACHIRAL
+    # molecule now satisfies, so it would fire on the 550 pairs the exact fold exists to unify
+    # and re-create the one-hand split the census measured. It also saves the two reconstruction
+    # encodes. The outcome is noted so a probe can see this branch was taken rather than infer it.
+    if lever_enabled(EXACT_LEVER):
+        _note("exact_fold")
         return canonicalize_oin_slots(inline_oin)
 
     _note("pending")
