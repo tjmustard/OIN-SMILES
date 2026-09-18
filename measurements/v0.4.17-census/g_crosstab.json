@@ -1,0 +1,93 @@
+{
+ "byte_exact": {
+  "ISO!+ARRANGEMENT_DIFF": 2,
+  "ISO!+DIFFERENT": 12,
+  "ISO!+MIRROR": 9,
+  "ISO!+NO_STEREO": 337,
+  "ISO!+SAME": 103,
+  "ISO!+SAME_PARTIAL": 6,
+  "ISO!+UNDECIDED_FLAT": 4,
+  "ISO+ARRANGEMENT_DIFF": 28,
+  "ISO+DIFFERENT": 72,
+  "ISO+MIRROR": 27,
+  "ISO+MIRROR_PARTIAL": 1,
+  "ISO+NO_STEREO": 1763,
+  "ISO+SAME": 940,
+  "ISO+SAME_PARTIAL": 86,
+  "ISO+UNDECIDED_FLAT": 45,
+  "ISO~+ARRANGEMENT_DIFF": 6,
+  "ISO~+DIFFERENT": 5,
+  "ISO~+MIRROR": 4,
+  "ISO~+NO_STEREO": 89,
+  "ISO~+SAME": 76,
+  "ISO~+SAME_PARTIAL": 5,
+  "ISO~+UNDECIDED_FLAT": 2,
+  "LIGAND_DIFF": 77,
+  "SPHERE_DIFF": 159
+ },
+ "encode_fail": {
+  "NO_STRUCTURE": 12
+ },
+ "facmer_divergent": {
+  "ISO+NO_STEREO": 1,
+  "ISO~+NO_STEREO": 1,
+  "LIGAND_DIFF": 1,
+  "SPHERE_DIFF": 12
+ },
+ "hard_fail": {
+  "ISO!+DIFFERENT": 1,
+  "ISO+ARRANGEMENT_DIFF": 1,
+  "ISO+DIFFERENT": 1,
+  "ISO+NO_STEREO": 9,
+  "ISO+SAME": 1,
+  "ISO~+NO_STEREO": 1,
+  "LIGAND_DIFF": 4,
+  "NO_STRUCTURE": 240,
+  "SPHERE_DIFF": 8
+ },
+ "key_equal/rdkit_canonical": {
+  "ISO!+NO_STEREO": 1,
+  "ISO+MIRROR": 1,
+  "ISO+NO_STEREO": 12,
+  "ISO+SAME": 2,
+  "ISO~+ARRANGEMENT_DIFF": 1,
+  "ISO~+MIRROR": 3,
+  "ISO~+NO_STEREO": 8,
+  "ISO~+SAME": 20,
+  "ISO~+SAME_PARTIAL": 2,
+  "ISO~+UNDECIDED_FLAT": 1,
+  "LIGAND_DIFF": 4,
+  "SPHERE_DIFF": 58
+ },
+ "key_equal/slot_renumber": {
+  "ISO!+NO_STEREO": 11,
+  "ISO+ARRANGEMENT_DIFF": 1,
+  "ISO+DIFFERENT": 2,
+  "ISO+MIRROR": 3,
+  "ISO+NO_STEREO": 177,
+  "ISO+SAME": 20,
+  "ISO+SAME_PARTIAL": 1,
+  "ISO+UNDECIDED_FLAT": 8,
+  "ISO~+ARRANGEMENT_DIFF": 1,
+  "ISO~+NO_STEREO": 18,
+  "ISO~+UNDECIDED_FLAT": 1,
+  "LIGAND_DIFF": 2,
+  "SPHERE_DIFF": 7
+ },
+ "structural": {
+  "ISO!+DIFFERENT": 1,
+  "ISO!+NO_STEREO": 2,
+  "ISO!+SAME": 1,
+  "ISO+DIFFERENT": 5,
+  "ISO+MIRROR": 4,
+  "ISO+NO_STEREO": 74,
+  "ISO+SAME": 20,
+  "ISO+SAME_PARTIAL": 2,
+  "ISO+UNDECIDED_FLAT": 7,
+  "ISO~+DIFFERENT": 2,
+  "ISO~+NO_STEREO": 21,
+  "ISO~+SAME": 14,
+  "LIGAND_DIFF": 13,
+  "SPHERE_DIFF": 318
+ }
+}

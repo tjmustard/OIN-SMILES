@@ -1,0 +1,1989 @@
+{
+ "summary": {
+  "n_inputs": 5000,
+  "n_formula_groups": 4881,
+  "n_iso_pairs_tested": 123,
+  "n_clusters_multi": 47,
+  "n_molecules_in_multi": 110,
+  "n_sibling_refcodes": 18,
+  "n_pairs_judged": 102,
+  "pair_classes": {
+   "NON_CANONICAL": 50,
+   "CONSISTENT": 35,
+   "DISTINGUISHED": 17
+  },
+  "pair_classes_siblings": {
+   "CONSISTENT": 12,
+   "DISTINGUISHED": 3
+  },
+  "clusters_with_multiple_strings": 18,
+  "n_strings_shared_across_clusters": 0,
+  "n_molecules_in_graph_collisions": 0
+ },
+ "clusters": [
+  {
+   "cluster": "KEDMAI_comp_1",
+   "size": 2,
+   "members": [
+    "ADEKUS_comp_4",
+    "KEDMAI_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "Cl4Fe1H0",
+   "n_heavy": 5
+  },
+  {
+   "cluster": "MUZZUC_comp_0",
+   "size": 2,
+   "members": [
+    "AFIROW_comp_0",
+    "MUZZUC_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C56H44O2P2Pt1S2",
+   "n_heavy": 63
+  },
+  {
+   "cluster": "ATAGUZ_comp_2",
+   "size": 2,
+   "members": [
+    "ATAGUZ_comp_0",
+    "ATAGUZ_comp_2"
+   ],
+   "n_strings": 1,
+   "formula": "C23Cl2H28Hg1N2O10S3",
+   "n_heavy": 41
+  },
+  {
+   "cluster": "BODBAY_comp_1",
+   "size": 2,
+   "members": [
+    "BODBAY_comp_0",
+    "BODBAY_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C38H55N2Ni1O1P1",
+   "n_heavy": 43
+  },
+  {
+   "cluster": "BUJNEB_comp_0",
+   "size": 3,
+   "members": [
+    "BUJLUP_comp_0",
+    "BUJNAX_comp_0",
+    "BUJNEB_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C28Cl2H24N2Zn1",
+   "n_heavy": 33
+  },
+  {
+   "cluster": "BULJUO_comp_0",
+   "size": 2,
+   "members": [
+    "BULJEY_comp_0",
+    "BULJUO_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C36H34N2Pt1Si2",
+   "n_heavy": 41
+  },
+  {
+   "cluster": "CABSEG_comp_1",
+   "size": 2,
+   "members": [
+    "CABSEG_comp_0",
+    "CABSEG_comp_1"
+   ],
+   "n_strings": 2,
+   "formula": "C16H16N2O6W1",
+   "n_heavy": 25
+  },
+  {
+   "cluster": "XOLFEM_comp_0",
+   "size": 2,
+   "members": [
+    "CIVJEZ_comp_0",
+    "XOLFEM_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "Br3C2H6O1Pd1S1",
+   "n_heavy": 8
+  },
+  {
+   "cluster": "COBBAY_comp_1",
+   "size": 2,
+   "members": [
+    "COBBAY_comp_0",
+    "COBBAY_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C25F18H27N1O2W1",
+   "n_heavy": 47
+  },
+  {
+   "cluster": "CUCNAR_comp_0",
+   "size": 2,
+   "members": [
+    "CUCMOE_comp_0",
+    "CUCNAR_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C28Cl2H36N4Pd1S2",
+   "n_heavy": 37
+  },
+  {
+   "cluster": "DOFCAE_comp_2",
+   "size": 2,
+   "members": [
+    "DOFCAE_comp_0",
+    "DOFCAE_comp_2"
+   ],
+   "n_strings": 1,
+   "formula": "B1C24Co1H44N2P2",
+   "n_heavy": 30
+  },
+  {
+   "cluster": "SEMPOP_comp_0",
+   "size": 11,
+   "members": [
+    "DOGQEX_comp_0",
+    "HAMGAD_comp_0",
+    "HAMGEH_comp_0",
+    "HAMJEK_comp_0",
+    "HAMJOU_comp_0",
+    "HAMKAH_comp_0",
+    "HAMKOV_comp_0",
+    "JIVRIP_comp_0",
+    "SEMPEF_comp_0",
+    "SEMPIJ_comp_0",
+    "SEMPOP_comp_0"
+   ],
+   "n_strings": 6,
+   "formula": "C44H28N4Zn1",
+   "n_heavy": 49
+  },
+  {
+   "cluster": "YOVXOY_comp_0",
+   "size": 2,
+   "members": [
+    "DUJLAX_comp_0",
+    "YOVXOY_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C18Cl2H20N2O4Pt1",
+   "n_heavy": 27
+  },
+  {
+   "cluster": "EQIXEJ_comp_0",
+   "size": 2,
+   "members": [
+    "EQIXAF_comp_0",
+    "EQIXEJ_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C40H42Ir1N4",
+   "n_heavy": 45
+  },
+  {
+   "cluster": "UTIWEB_comp_1",
+   "size": 2,
+   "members": [
+    "EVETUW_comp_0",
+    "UTIWEB_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C28Cu1H32N8",
+   "n_heavy": 37
+  },
+  {
+   "cluster": "EVIQUX_comp_1",
+   "size": 2,
+   "members": [
+    "EVIQUX_comp_0",
+    "EVIQUX_comp_1"
+   ],
+   "n_strings": 2,
+   "formula": "C26Co1H25N2O5",
+   "n_heavy": 34
+  },
+  {
+   "cluster": "FESFUH_comp_0",
+   "size": 3,
+   "members": [
+    "FESFER_comp_0",
+    "FESFOB_comp_0",
+    "FESFUH_comp_0"
+   ],
+   "n_strings": 3,
+   "formula": "C33F4H24Ir1N3O2",
+   "n_heavy": 43
+  },
+  {
+   "cluster": "XIZFAQ_comp_0",
+   "size": 3,
+   "members": [
+    "FOGYIL_comp_1",
+    "PIZKEP_comp_2",
+    "XIZFAQ_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "Au1Cl2H0",
+   "n_heavy": 3
+  },
+  {
+   "cluster": "GEGYUO_comp_0",
+   "size": 2,
+   "members": [
+    "FOTBAT_comp_0",
+    "GEGYUO_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C28H24Ir1N4",
+   "n_heavy": 33
+  },
+  {
+   "cluster": "GAQWUR_comp_0",
+   "size": 2,
+   "members": [
+    "GAMJAG_comp_0",
+    "GAQWUR_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C32Cl2H26Zr1",
+   "n_heavy": 35
+  },
+  {
+   "cluster": "IFAJAB_comp_0",
+   "size": 2,
+   "members": [
+    "GUHJOI_comp_0",
+    "IFAJAB_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C36Cl2H30P2Pt1",
+   "n_heavy": 41
+  },
+  {
+   "cluster": "HEFSOD_comp_1",
+   "size": 2,
+   "members": [
+    "HEFSOD_comp_0",
+    "HEFSOD_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "Br1C22Cu1H29N5O2",
+   "n_heavy": 31
+  },
+  {
+   "cluster": "HIKCIQ_comp_0",
+   "size": 2,
+   "members": [
+    "HIKCAI_comp_0",
+    "HIKCIQ_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C52H49N2O2P4Ru1",
+   "n_heavy": 61
+  },
+  {
+   "cluster": "HOZZON_comp_1",
+   "size": 2,
+   "members": [
+    "HOZZON_comp_0",
+    "HOZZON_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C16H16Mo1N2O6",
+   "n_heavy": 25
+  },
+  {
+   "cluster": "IXUGAL_comp_0",
+   "size": 2,
+   "members": [
+    "IXUFUE_comp_0",
+    "IXUGAL_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C19H13N4O2S1V1",
+   "n_heavy": 27
+  },
+  {
+   "cluster": "RILBOG_comp_0",
+   "size": 2,
+   "members": [
+    "JAFFOL_comp_0",
+    "RILBOG_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C31H50Ir1N1P1",
+   "n_heavy": 34
+  },
+  {
+   "cluster": "JEGKEM_comp_1",
+   "size": 2,
+   "members": [
+    "JEGKEM_comp_0",
+    "JEGKEM_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C20Cl1H30N3P1Rh1",
+   "n_heavy": 26
+  },
+  {
+   "cluster": "PILXEO_comp_0",
+   "size": 2,
+   "members": [
+    "JINGET_comp_0",
+    "PILXEO_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C25Cl2H31N3O1Pd1S1",
+   "n_heavy": 33
+  },
+  {
+   "cluster": "WEYGAK_comp_0",
+   "size": 3,
+   "members": [
+    "JIPGAR_comp_0",
+    "JOCCOV_comp_0",
+    "WEYGAK_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C10Cl2H8N2Pd1",
+   "n_heavy": 15
+  },
+  {
+   "cluster": "YAYDEK_comp_0",
+   "size": 2,
+   "members": [
+    "LARQIG_comp_0",
+    "YAYDEK_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C54Cu1H40N4P2",
+   "n_heavy": 61
+  },
+  {
+   "cluster": "MOSWOI_comp_2",
+   "size": 2,
+   "members": [
+    "MOSWOI_comp_0",
+    "MOSWOI_comp_2"
+   ],
+   "n_strings": 1,
+   "formula": "C34H45Mn1N3O3",
+   "n_heavy": 41
+  },
+  {
+   "cluster": "VAKKAV_comp_0",
+   "size": 2,
+   "members": [
+    "NIZJEN_comp_0",
+    "VAKKAV_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "Au1C60H48P4",
+   "n_heavy": 65
+  },
+  {
+   "cluster": "NUQTOK_comp_0",
+   "size": 3,
+   "members": [
+    "NUQTAW_comp_0",
+    "NUQTEA_comp_0",
+    "NUQTOK_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C31Cl1H23N1P1Pt1S1",
+   "n_heavy": 36
+  },
+  {
+   "cluster": "ODUGEZ_comp_0",
+   "size": 2,
+   "members": [
+    "OCUKUS_comp_0",
+    "ODUGEZ_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C41Cl2H36Zr1",
+   "n_heavy": 44
+  },
+  {
+   "cluster": "PIZGOW_comp_0",
+   "size": 2,
+   "members": [
+    "PIZGIQ_comp_0",
+    "PIZGOW_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C21Cl2H28N4O1Ru1S1",
+   "n_heavy": 30
+  },
+  {
+   "cluster": "SORHEN_comp_0",
+   "size": 2,
+   "members": [
+    "QIJSOR_comp_0",
+    "SORHEN_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C20H20N2Ni1O2",
+   "n_heavy": 25
+  },
+  {
+   "cluster": "TAXBOM_comp_0",
+   "size": 4,
+   "members": [
+    "RAXDUR_comp_0",
+    "SIYQOJ_comp_0",
+    "SIYQUP_comp_0",
+    "TAXBOM_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C15Cl1H11N3Pt1",
+   "n_heavy": 20
+  },
+  {
+   "cluster": "SASBEW_comp_0",
+   "size": 2,
+   "members": [
+    "SASBAS_comp_0",
+    "SASBEW_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C38Cl2H28N2O2P2Pt1",
+   "n_heavy": 47
+  },
+  {
+   "cluster": "SIDNUQ_comp_0",
+   "size": 2,
+   "members": [
+    "SIDNOK_comp_0",
+    "SIDNUQ_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "Br2C21H26N2O1Zn1",
+   "n_heavy": 27
+  },
+  {
+   "cluster": "SUCNUB_comp_1",
+   "size": 2,
+   "members": [
+    "SUCNUB_comp_0",
+    "SUCNUB_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C29H22N2O2Pt1",
+   "n_heavy": 34
+  },
+  {
+   "cluster": "TEBXIH_comp_0",
+   "size": 2,
+   "members": [
+    "TEBXED_comp_0",
+    "TEBXIH_comp_0"
+   ],
+   "n_strings": 1,
+   "formula": "C28H42Mn1P4",
+   "n_heavy": 33
+  },
+  {
+   "cluster": "UNEGEB_comp_1",
+   "size": 2,
+   "members": [
+    "UNEGEB_comp_0",
+    "UNEGEB_comp_1"
+   ],
+   "n_strings": 2,
+   "formula": "C37Cl2H34N2P2Ru1",
+   "n_heavy": 44
+  },
+  {
+   "cluster": "VIBJEY_comp_3",
+   "size": 2,
+   "members": [
+    "VIBJEY_comp_0",
+    "VIBJEY_comp_3"
+   ],
+   "n_strings": 1,
+   "formula": "C45H40Ir1P2",
+   "n_heavy": 48
+  },
+  {
+   "cluster": "WEJMUW_comp_0",
+   "size": 2,
+   "members": [
+    "WEJMOQ_comp_0",
+    "WEJMUW_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C27F4H20Ir1N3O2",
+   "n_heavy": 37
+  },
+  {
+   "cluster": "WEXGAJ_comp_1",
+   "size": 2,
+   "members": [
+    "WEXGAJ_comp_0",
+    "WEXGAJ_comp_1"
+   ],
+   "n_strings": 1,
+   "formula": "C52Cl2H42P2Pd1",
+   "n_heavy": 57
+  },
+  {
+   "cluster": "YUXZUN_comp_0",
+   "size": 2,
+   "members": [
+    "XIPJOV_comp_0",
+    "YUXZUN_comp_0"
+   ],
+   "n_strings": 2,
+   "formula": "C8Cl4H18N2O2Pt1",
+   "n_heavy": 17
+  },
+  {
+   "cluster": "YERFOR_comp_2",
+   "size": 2,
+   "members": [
+    "YERFOR_comp_0",
+    "YERFOR_comp_2"
+   ],
+   "n_strings": 1,
+   "formula": "Au1C22H40N4",
+   "n_heavy": 27
+  }
+ ],
+ "pairs": [
+  {
+   "a": "ADEKUS_comp_4",
+   "b": "KEDMAI_comp_1",
+   "cluster": "KEDMAI_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "AFIROW_comp_0",
+   "b": "MUZZUC_comp_0",
+   "cluster": "MUZZUC_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "hard_fail",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "ATAGUZ_comp_0",
+   "b": "ATAGUZ_comp_2",
+   "cluster": "ATAGUZ_comp_2",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "hard_fail",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "BODBAY_comp_0",
+   "b": "BODBAY_comp_1",
+   "cluster": "BODBAY_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "BUJLUP_comp_0",
+   "b": "BUJNAX_comp_0",
+   "cluster": "BUJNEB_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "BUJLUP_comp_0",
+   "b": "BUJNEB_comp_0",
+   "cluster": "BUJNEB_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "BULJEY_comp_0",
+   "b": "BULJUO_comp_0",
+   "cluster": "BULJUO_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "CABSEG_comp_0",
+   "b": "CABSEG_comp_1",
+   "cluster": "CABSEG_comp_1",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "CIVJEZ_comp_0",
+   "b": "XOLFEM_comp_0",
+   "cluster": "XOLFEM_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "COBBAY_comp_0",
+   "b": "COBBAY_comp_1",
+   "cluster": "COBBAY_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "CUCMOE_comp_0",
+   "b": "CUCNAR_comp_0",
+   "cluster": "CUCNAR_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "ARRANGEMENT_DIFF",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOFCAE_comp_0",
+   "b": "DOFCAE_comp_2",
+   "cluster": "DOFCAE_comp_2",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "hard_fail",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMGAD_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMGEH_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMJEK_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMJOU_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMKAH_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DOGQEX_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "HAMJEK_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "HAMJOU_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "HAMKAH_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGAD_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "HAMJEK_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "HAMJOU_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "HAMKAH_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMGEH_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJEK_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJEK_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJEK_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJEK_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJEK_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJOU_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJOU_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJOU_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJOU_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMJOU_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKAH_comp_0",
+   "b": "HAMKOV_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKAH_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKAH_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKAH_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKAH_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKOV_comp_0",
+   "b": "JIVRIP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKOV_comp_0",
+   "b": "SEMPEF_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKOV_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HAMKOV_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JIVRIP_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "hard_fail",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JIVRIP_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "hard_fail",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SEMPEF_comp_0",
+   "b": "SEMPIJ_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "hard_fail",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SEMPEF_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "hard_fail",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SEMPIJ_comp_0",
+   "b": "SEMPOP_comp_0",
+   "cluster": "SEMPOP_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "hard_fail",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "DUJLAX_comp_0",
+   "b": "YOVXOY_comp_0",
+   "cluster": "YOVXOY_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "EQIXAF_comp_0",
+   "b": "EQIXEJ_comp_0",
+   "cluster": "EQIXEJ_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "EVETUW_comp_0",
+   "b": "UTIWEB_comp_1",
+   "cluster": "UTIWEB_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "SAME",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "EVIQUX_comp_0",
+   "b": "EVIQUX_comp_1",
+   "cluster": "EVIQUX_comp_1",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FESFER_comp_0",
+   "b": "FESFOB_comp_0",
+   "cluster": "FESFUH_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FESFER_comp_0",
+   "b": "FESFUH_comp_0",
+   "cluster": "FESFUH_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FESFOB_comp_0",
+   "b": "FESFUH_comp_0",
+   "cluster": "FESFUH_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FOGYIL_comp_1",
+   "b": "PIZKEP_comp_2",
+   "cluster": "XIZFAQ_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FOGYIL_comp_1",
+   "b": "XIZFAQ_comp_0",
+   "cluster": "XIZFAQ_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "FOTBAT_comp_0",
+   "b": "GEGYUO_comp_0",
+   "cluster": "GEGYUO_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "GAMJAG_comp_0",
+   "b": "GAQWUR_comp_0",
+   "cluster": "GAQWUR_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "GUHJOI_comp_0",
+   "b": "IFAJAB_comp_0",
+   "cluster": "IFAJAB_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "ARRANGEMENT_DIFF",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HEFSOD_comp_0",
+   "b": "HEFSOD_comp_1",
+   "cluster": "HEFSOD_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HIKCAI_comp_0",
+   "b": "HIKCIQ_comp_0",
+   "cluster": "HIKCIQ_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "SAME",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "HOZZON_comp_0",
+   "b": "HOZZON_comp_1",
+   "cluster": "HOZZON_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "SAME",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "IXUFUE_comp_0",
+   "b": "IXUGAL_comp_0",
+   "cluster": "IXUGAL_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JAFFOL_comp_0",
+   "b": "RILBOG_comp_0",
+   "cluster": "RILBOG_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JEGKEM_comp_0",
+   "b": "JEGKEM_comp_1",
+   "cluster": "JEGKEM_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JINGET_comp_0",
+   "b": "PILXEO_comp_0",
+   "cluster": "PILXEO_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "SAME",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JIPGAR_comp_0",
+   "b": "JOCCOV_comp_0",
+   "cluster": "WEYGAK_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "JIPGAR_comp_0",
+   "b": "WEYGAK_comp_0",
+   "cluster": "WEYGAK_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "LARQIG_comp_0",
+   "b": "YAYDEK_comp_0",
+   "cluster": "YAYDEK_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "structural",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "MOSWOI_comp_0",
+   "b": "MOSWOI_comp_2",
+   "cluster": "MOSWOI_comp_2",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "NIZJEN_comp_0",
+   "b": "VAKKAV_comp_0",
+   "cluster": "VAKKAV_comp_0",
+   "class": "NON_CANONICAL",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "key_equal",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "NUQTAW_comp_0",
+   "b": "NUQTEA_comp_0",
+   "cluster": "NUQTOK_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "NUQTAW_comp_0",
+   "b": "NUQTOK_comp_0",
+   "cluster": "NUQTOK_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "OCUKUS_comp_0",
+   "b": "ODUGEZ_comp_0",
+   "cluster": "ODUGEZ_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "SAME",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "PIZGIQ_comp_0",
+   "b": "PIZGOW_comp_0",
+   "cluster": "PIZGOW_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "ARRANGEMENT_DIFF",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "QIJSOR_comp_0",
+   "b": "SORHEN_comp_0",
+   "cluster": "SORHEN_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "structural",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "RAXDUR_comp_0",
+   "b": "SIYQOJ_comp_0",
+   "cluster": "TAXBOM_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "RAXDUR_comp_0",
+   "b": "SIYQUP_comp_0",
+   "cluster": "TAXBOM_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "RAXDUR_comp_0",
+   "b": "TAXBOM_comp_0",
+   "cluster": "TAXBOM_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SASBAS_comp_0",
+   "b": "SASBEW_comp_0",
+   "cluster": "SASBEW_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "ARRANGEMENT_DIFF",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SIDNOK_comp_0",
+   "b": "SIDNUQ_comp_0",
+   "cluster": "SIDNUQ_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "key_equal",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "SUCNUB_comp_0",
+   "b": "SUCNUB_comp_1",
+   "cluster": "SUCNUB_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "TEBXED_comp_0",
+   "b": "TEBXIH_comp_0",
+   "cluster": "TEBXIH_comp_0",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "UNEGEB_comp_0",
+   "b": "UNEGEB_comp_1",
+   "cluster": "UNEGEB_comp_1",
+   "class": "DISTINGUISHED",
+   "stereo": "MIRROR",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "VIBJEY_comp_0",
+   "b": "VIBJEY_comp_3",
+   "cluster": "VIBJEY_comp_3",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "WEJMOQ_comp_0",
+   "b": "WEJMUW_comp_0",
+   "cluster": "WEJMUW_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "WEXGAJ_comp_0",
+   "b": "WEXGAJ_comp_1",
+   "cluster": "WEXGAJ_comp_1",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "XIPJOV_comp_0",
+   "b": "YUXZUN_comp_0",
+   "cluster": "YUXZUN_comp_0",
+   "class": "DISTINGUISHED",
+   "stereo": "DIFFERENT",
+   "graph": "ISO",
+   "sphere": "ARRANGEMENT_DIFF",
+   "same_string": false,
+   "sibling": false,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  },
+  {
+   "a": "YERFOR_comp_0",
+   "b": "YERFOR_comp_2",
+   "cluster": "YERFOR_comp_2",
+   "class": "CONSISTENT",
+   "stereo": "NO_STEREO",
+   "graph": "ISO",
+   "sphere": "SAME",
+   "same_string": true,
+   "sibling": true,
+   "bucket_a": "byte_exact",
+   "bucket_b": "byte_exact",
+   "h_decoration": "SAME"
+  }
+ ],
+ "graph_collisions": []
+}

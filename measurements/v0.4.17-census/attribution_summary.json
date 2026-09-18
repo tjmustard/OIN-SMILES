@@ -1,0 +1,249 @@
+{
+ "n_rows": 5000,
+ "bucket": {
+  "byte_exact": 3858,
+  "key_equal": 365,
+  "facmer_divergent": 15,
+  "structural": 484,
+  "hard_fail": 266,
+  "encode_fail": 12
+ },
+ "outcome": {
+  "PASS": 3858,
+  "FAIL": 1142
+ },
+ "fault": {
+  "NONE": 3462,
+  "G_CONSTRUCTION": 597,
+  "E1_NONCANONICAL": 266,
+  "E2_P_OTHER": 67,
+  "E1_GRAPH": 132,
+  "E1_HCOUNT": 84,
+  "G_NOTHING": 104,
+  "P_DETACHED": 18,
+  "E1_NOT_ENCODED": 106,
+  "E2_P_FRAGILE": 81,
+  "P_E1_COVERAGE": 12,
+  "E1_NONINJECTIVE": 34,
+  "G_HANDEDNESS": 9,
+  "DATA_MULTI": 10,
+  "G_HCOUNT": 7,
+  "G_DIASTEREOMER": 11
+ },
+ "fault_x_bucket": {
+  "NONE": {
+   "byte_exact": 3462
+  },
+  "G_CONSTRUCTION": {
+   "key_equal": 67,
+   "facmer_divergent": 13,
+   "structural": 313,
+   "byte_exact": 201,
+   "hard_fail": 3
+  },
+  "E1_NONCANONICAL": {
+   "key_equal": 235,
+   "structural": 30,
+   "facmer_divergent": 1
+  },
+  "E2_P_OTHER": {
+   "structural": 36,
+   "key_equal": 30,
+   "facmer_divergent": 1
+  },
+  "E1_GRAPH": {
+   "byte_exact": 52,
+   "hard_fail": 59,
+   "structural": 14,
+   "key_equal": 7
+  },
+  "E1_HCOUNT": {
+   "hard_fail": 71,
+   "byte_exact": 4,
+   "key_equal": 1,
+   "structural": 8
+  },
+  "G_NOTHING": {
+   "hard_fail": 104
+  },
+  "P_DETACHED": {
+   "hard_fail": 18
+  },
+  "E1_NOT_ENCODED": {
+   "byte_exact": 106
+  },
+  "E2_P_FRAGILE": {
+   "structural": 65,
+   "key_equal": 15,
+   "hard_fail": 1
+  },
+  "P_E1_COVERAGE": {
+   "encode_fail": 12
+  },
+  "E1_NONINJECTIVE": {
+   "byte_exact": 33,
+   "key_equal": 1
+  },
+  "G_HANDEDNESS": {
+   "structural": 4,
+   "key_equal": 5
+  },
+  "DATA_MULTI": {
+   "hard_fail": 10
+  },
+  "G_HCOUNT": {
+   "structural": 7
+  },
+  "G_DIASTEREOMER": {
+   "structural": 7,
+   "key_equal": 4
+  }
+ },
+ "fail_partition": {
+  "G_CONSTRUCTION": 396,
+  "E1_NONCANONICAL": 266,
+  "E2_P_OTHER": 67,
+  "E1_HCOUNT": 80,
+  "E1_GRAPH": 80,
+  "G_NOTHING": 104,
+  "P_DETACHED": 18,
+  "E2_P_FRAGILE": 81,
+  "P_E1_COVERAGE": 12,
+  "G_HANDEDNESS": 9,
+  "DATA_MULTI": 10,
+  "G_HCOUNT": 7,
+  "G_DIASTEREOMER": 11,
+  "E1_NONINJECTIVE": 1
+ },
+ "fail_partition_pts": {
+  "G_CONSTRUCTION": 7.92,
+  "E1_NONCANONICAL": 5.32,
+  "E2_P_OTHER": 1.34,
+  "E1_HCOUNT": 1.6,
+  "E1_GRAPH": 1.6,
+  "G_NOTHING": 2.08,
+  "P_DETACHED": 0.36,
+  "E2_P_FRAGILE": 1.62,
+  "P_E1_COVERAGE": 0.24,
+  "G_HANDEDNESS": 0.18,
+  "DATA_MULTI": 0.2,
+  "G_HCOUNT": 0.14,
+  "G_DIASTEREOMER": 0.22,
+  "E1_NONINJECTIVE": 0.02
+ },
+ "fail_sub": {
+  "NONE": {},
+  "G_CONSTRUCTION": {
+   "DETACHED": 331,
+   "SPHERE_DIFF": 60,
+   "LIGAND_DIFF": 5
+  },
+  "E1_NONCANONICAL": {
+   "veto one-hand (C2)": 266
+  },
+  "E2_P_OTHER": {
+   "SAME": 30,
+   "NO_STEREO": 37
+  },
+  "E1_GRAPH": {
+   "SPHERE_DIFF": 39,
+   "LIGAND_DIFF": 41
+  },
+  "E1_HCOUNT": {
+   "h_diff=3": 13,
+   "h_diff=1": 42,
+   "h_diff=2": 11,
+   "h_diff=4": 6,
+   "h_diff=9": 1,
+   "h_diff=6": 2,
+   "h_diff=8": 1,
+   "h_diff=12": 1,
+   "h_diff=5": 2,
+   "h_diff=14": 1
+  },
+  "G_NOTHING": {
+   "TIMEOUT": 95,
+   "NOCONF": 9
+  },
+  "P_DETACHED": {
+   "components in=3 str=9": 3,
+   "components in=2 str=2": 2,
+   "components in=3 str=4": 2,
+   "components in=4 str=4": 3,
+   "components in=3 str=3": 1,
+   "components in=4 str=6": 1,
+   "components in=4 str=5": 1,
+   "components in=3 str=5": 2,
+   "components in=1 str=1": 1,
+   "components in=3 str=6": 2
+  },
+  "E1_NOT_ENCODED": {},
+  "E2_P_FRAGILE": {
+   "key": 73,
+   "string": 8
+  },
+  "P_E1_COVERAGE": {
+   "TIMEOUT_OTHER": 12
+  },
+  "E1_NONINJECTIVE": {
+   "MIRROR": 1
+  },
+  "G_HANDEDNESS": {
+   "MIRROR": 9
+  },
+  "DATA_MULTI": {
+   "components in=3 str=3": 7,
+   "components in=4 str=4": 2,
+   "components in=2 str=2": 1
+  },
+  "G_HCOUNT": {
+   "": 7
+  },
+  "G_DIASTEREOMER": {
+   "CENTRES": 8,
+   "ARRANGEMENT": 3
+  }
+ },
+ "metric_false_pass": {
+  "G_CONSTRUCTION": 201,
+  "E1_GRAPH": 52,
+  "E1_NOT_ENCODED": 106,
+  "E1_NONINJECTIVE": 33,
+  "E1_HCOUNT": 4
+ },
+ "metric_false_pass_n": 396,
+ "fail_by_owner": {
+  "G": 527,
+  "E1": 427,
+  "E2": 148,
+  "P": 30,
+  "DATA": 10
+ },
+ "rule_fired": {
+  "7": 3462,
+  "4": 597,
+  "6": 421,
+  "2": 244,
+  "3": 104,
+  "5": 160,
+  "1": 12
+ },
+ "unattributed": 0,
+ "crosscheck": {
+  "G_CONSTRUCTION_n": 597,
+  "audit_DETACHED_all": 419,
+  "audit_DETACHED_among_fail": 367,
+  "G_CONSTRUCTION_and_DETACHED_fail": 317,
+  "slot_renumber_by_fault": {
+   "G_CONSTRUCTION": 8,
+   "E1_NONCANONICAL": 227,
+   "E2_P_OTHER": 3,
+   "E2_P_FRAGILE": 4,
+   "G_DIASTEREOMER": 4,
+   "E1_GRAPH": 2,
+   "E1_HCOUNT": 1,
+   "G_HANDEDNESS": 3
+  }
+ },
+ "pts_per_molecule": 0.02
+}

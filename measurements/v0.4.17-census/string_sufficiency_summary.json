@@ -1,0 +1,465 @@
+{
+ "n_rows": 5000,
+ "parseback_n": 5000,
+ "parser_graph_x_bucket": {
+  "byte_exact": {
+   "ISO": 3770,
+   "SPHERE_DIFF": 37,
+   "ISO_MARGINAL": 17,
+   "ISO_CLASH": 19,
+   "LIGAND_DIFF": 15
+  },
+  "key_equal": {
+   "ISO": 358,
+   "LIGAND_DIFF": 1,
+   "SPHERE_DIFF": 6
+  },
+  "facmer_divergent": {
+   "ISO": 13,
+   "ISO_CLASH": 1,
+   "ISO_MARGINAL": 1
+  },
+  "structural": {
+   "ISO": 456,
+   "ISO_CLASH": 4,
+   "ISO_MARGINAL": 10,
+   "SPHERE_DIFF": 11,
+   "LIGAND_DIFF": 3
+  },
+  "hard_fail": {
+   "ISO": 183,
+   "SPHERE_DIFF": 25,
+   "LIGAND_DIFF": 52,
+   "ISO_MARGINAL": 4,
+   "ISO_CLASH": 2
+  },
+  "encode_fail": {
+   "NO_STRING": 12
+  }
+ },
+ "adapter_graph_x_bucket": {
+  "byte_exact": {
+   "ISO": 3770,
+   "SPHERE_DIFF": 37,
+   "ISO_MARGINAL": 17,
+   "ISO_CLASH": 19,
+   "LIGAND_DIFF": 15
+  },
+  "key_equal": {
+   "ISO": 358,
+   "LIGAND_DIFF": 1,
+   "SPHERE_DIFF": 6
+  },
+  "facmer_divergent": {
+   "ISO": 13,
+   "ISO_CLASH": 1,
+   "ISO_MARGINAL": 1
+  },
+  "structural": {
+   "ISO": 456,
+   "ISO_CLASH": 4,
+   "ISO_MARGINAL": 10,
+   "SPHERE_DIFF": 11,
+   "LIGAND_DIFF": 3
+  },
+  "hard_fail": {
+   "ISO": 175,
+   "SPHERE_DIFF": 22,
+   "ADAPTER_FAIL": 28,
+   "LIGAND_DIFF": 37,
+   "ISO_MARGINAL": 2,
+   "ISO_CLASH": 2
+  },
+  "encode_fail": {
+   "NO_STRING": 12
+  }
+ },
+ "parser_h_x_bucket": {
+  "byte_exact": {
+   "DIFF": 2604,
+   "SAME": 1202,
+   "None": 52
+  },
+  "key_equal": {
+   "SAME": 142,
+   "DIFF": 216,
+   "None": 7
+  },
+  "facmer_divergent": {
+   "DIFF": 8,
+   "SAME": 7
+  },
+  "structural": {
+   "DIFF": 318,
+   "SAME": 152,
+   "None": 14
+  },
+  "hard_fail": {
+   "DIFF": 132,
+   "None": 77,
+   "SAME": 57
+  },
+  "encode_fail": {
+   "None": 12
+  }
+ },
+ "adapter_h_x_bucket": {
+  "byte_exact": {
+   "SAME": 3802,
+   "None": 52,
+   "DIFF": 4
+  },
+  "key_equal": {
+   "SAME": 357,
+   "None": 7,
+   "DIFF": 1
+  },
+  "facmer_divergent": {
+   "SAME": 15
+  },
+  "structural": {
+   "SAME": 462,
+   "None": 14,
+   "DIFF": 8
+  },
+  "hard_fail": {
+   "SAME": 108,
+   "DIFF": 71,
+   "None": 87
+  },
+  "encode_fail": {
+   "None": 12
+  }
+ },
+ "unslotted_x_bucket": {
+  "byte_exact": {
+   "False": 3858
+  },
+  "key_equal": {
+   "False": 365
+  },
+  "facmer_divergent": {
+   "False": 15
+  },
+  "structural": {
+   "False": 484
+  },
+  "hard_fail": {
+   "False": 238,
+   "True": 28
+  },
+  "encode_fail": {
+   "False": 12
+  }
+ },
+ "str_valence_x_bucket": {
+  "byte_exact": {
+   "False": 3020,
+   "True": 838
+  },
+  "key_equal": {
+   "True": 170,
+   "False": 195
+  },
+  "facmer_divergent": {
+   "False": 6,
+   "True": 9
+  },
+  "structural": {
+   "True": 258,
+   "False": 226
+  },
+  "hard_fail": {
+   "False": 129,
+   "True": 137
+  },
+  "encode_fail": {
+   "False": 12
+  }
+ },
+ "adapter_errors": {
+  "ValueError: Geometry code 'NON' not supported by MetalloGen mapping.": 3,
+  "UncoordinatedFragmentError: Fragment 2 ('[O-2]') has no binding slot; ": 2,
+  "UncoordinatedFragmentError: Fragment 3 ('c1ccc(-c2nc3ccccc3nc2-c2ccccc": 2,
+  "UncoordinatedFragmentError: Fragment 4 ('[BH4]') has no binding slot; ": 2,
+  "UncoordinatedFragmentError: Fragment 5 ('Fc1c(F)c(F)c(B(c2c(F)c(F)c(F)": 2,
+  "UncoordinatedFragmentError: Fragment 3 ('[O-2]') has no binding slot; ": 2,
+  "UncoordinatedFragmentError: Fragment 3 ('CC(=O)[O-]') has no binding s": 1,
+  "UncoordinatedFragmentError: Fragment 3 ('II') has no binding slot; unc": 1,
+  "UncoordinatedFragmentError: Fragment 3 ('O=S(=O)([O-])C(F)(F)F') has n": 1,
+  "UncoordinatedFragmentError: Fragment 4 ('C1CCOC1') has no binding slot": 1,
+  "UncoordinatedFragmentError: Fragment 6 ('ClCCl') has no binding slot; ": 1,
+  "UncoordinatedFragmentError: Fragment 2 ('[BH4]') has no binding slot; ": 1
+ },
+ "byte_exact_C1_nonISO_x_parseback": {
+  "SPHERE_DIFF | ISO | ISO": 136,
+  "SPHERE_DIFF | SPHERE_DIFF | SPHERE_DIFF": 20,
+  "LIGAND_DIFF | ISO | ISO": 48,
+  "LIGAND_DIFF | ISO_CLASH | ISO_CLASH": 15,
+  "LIGAND_DIFF | LIGAND_DIFF | LIGAND_DIFF": 14,
+  "SPHERE_DIFF | ISO_MARGINAL | ISO_MARGINAL": 2,
+  "SPHERE_DIFF | LIGAND_DIFF | LIGAND_DIFF": 1
+ },
+ "parseback_gen_n": 4748,
+ "gen_parser_graph_x_bucket": {
+  "byte_exact": {
+   "ISO": 3003,
+   "ISO_CLASH": 471,
+   "SPHERE_DIFF": 218,
+   "ISO_MARGINAL": 103,
+   "LIGAND_DIFF": 63
+  },
+  "key_equal": {
+   "SPHERE_DIFF": 96,
+   "ISO": 240,
+   "ISO_CLASH": 15,
+   "ISO_MARGINAL": 11,
+   "LIGAND_DIFF": 3
+  },
+  "facmer_divergent": {
+   "SPHERE_DIFF": 8,
+   "ISO": 7
+  },
+  "structural": {
+   "SPHERE_DIFF": 93,
+   "ISO": 342,
+   "ISO_MARGINAL": 31,
+   "LIGAND_DIFF": 11,
+   "ISO_CLASH": 7
+  },
+  "hard_fail": {
+   "NO_STRING": 5,
+   "ISO": 15,
+   "SPHERE_DIFF": 2,
+   "ISO_CLASH": 3,
+   "ISO_MARGINAL": 1
+  }
+ },
+ "gen_adapter_h_x_bucket": {
+  "byte_exact": {
+   "SAME": 3576,
+   "None": 281,
+   "DIFF": 1
+  },
+  "key_equal": {
+   "None": 99,
+   "SAME": 264,
+   "DIFF": 2
+  },
+  "facmer_divergent": {
+   "None": 9,
+   "SAME": 4,
+   "DIFF": 2
+  },
+  "structural": {
+   "None": 350,
+   "DIFF": 22,
+   "SAME": 112
+  },
+  "hard_fail": {
+   "None": 10,
+   "SAME": 15,
+   "DIFF": 1
+  }
+ },
+ "pflags_n": 5000,
+ "charge_stated_x_bucket": {
+  "byte_exact": {
+   "0": 1542,
+   "None": 1508,
+   "1": 541,
+   "-2": 150,
+   "-4": 52,
+   "-1": 54,
+   "-3": 4,
+   "2": 5,
+   "-8": 1,
+   "-6": 1
+  },
+  "key_equal": {
+   "None": 172,
+   "0": 98,
+   "1": 83,
+   "-2": 4,
+   "-1": 7,
+   "2": 1
+  },
+  "facmer_divergent": {
+   "1": 4,
+   "None": 8,
+   "0": 2,
+   "-2": 1
+  },
+  "structural": {
+   "0": 146,
+   "None": 247,
+   "-2": 17,
+   "1": 65,
+   "-1": 8,
+   "-4": 1
+  },
+  "hard_fail": {
+   "0": 84,
+   "None": 145,
+   "1": 27,
+   "2": 1,
+   "-4": 3,
+   "-1": 3,
+   "-2": 3
+  },
+  "encode_fail": {
+   "None": 12
+  }
+ },
+ "os_in_allowed_x_bucket": {
+  "byte_exact": {
+   "True": 2995,
+   "False": 863
+  },
+  "key_equal": {
+   "True": 241,
+   "False": 124
+  },
+  "facmer_divergent": {
+   "False": 3,
+   "True": 12
+  },
+  "structural": {
+   "True": 328,
+   "False": 155,
+   "None": 1
+  },
+  "hard_fail": {
+   "True": 159,
+   "False": 104,
+   "None": 3
+  },
+  "encode_fail": {
+   "None": 11,
+   "False": 1
+  }
+ },
+ "os_if_honoured_x_bucket": {
+  "byte_exact": {
+   "True": 564,
+   "False": 244
+  },
+  "facmer_divergent": {
+   "True": 4,
+   "False": 1
+  },
+  "structural": {
+   "True": 70,
+   "False": 21
+  },
+  "key_equal": {
+   "True": 80,
+   "False": 15
+  },
+  "hard_fail": {
+   "True": 22,
+   "False": 15
+  }
+ },
+ "probe_equal_x_bucket": {
+  "byte_exact": {
+   "True": 803,
+   "False": 5
+  },
+  "facmer_divergent": {
+   "True": 5
+  },
+  "structural": {
+   "True": 89,
+   "False": 2
+  },
+  "key_equal": {
+   "True": 92,
+   "False": 3
+  },
+  "hard_fail": {
+   "True": 37
+  }
+ },
+ "probe_fired": 1031,
+ "probe_control_equal": 1036,
+ "probe_n": 1036,
+ "radical_x_bucket": {
+  "byte_exact": {
+   "False": 3195,
+   "True": 663
+  },
+  "key_equal": {
+   "False": 349,
+   "True": 16
+  },
+  "facmer_divergent": {
+   "True": 3,
+   "False": 12
+  },
+  "structural": {
+   "False": 424,
+   "True": 60
+  },
+  "hard_fail": {
+   "False": 197,
+   "True": 69
+  },
+  "encode_fail": {
+   "False": 12
+  }
+ },
+ "charged_carbon_x_bucket": {
+  "byte_exact": {
+   "True": 1549,
+   "False": 2309
+  },
+  "key_equal": {
+   "True": 172,
+   "False": 193
+  },
+  "facmer_divergent": {
+   "False": 5,
+   "True": 10
+  },
+  "structural": {
+   "True": 299,
+   "False": 185
+  },
+  "hard_fail": {
+   "True": 145,
+   "False": 121
+  },
+  "encode_fail": {
+   "False": 11,
+   "True": 1
+  }
+ },
+ "stated_charged_x_C2_fragile": {
+  "charged=False fragile=False": 3237,
+  "charged=False fragile=True": 714,
+  "charged=True fragile=True": 223,
+  "charged=True fragile=False": 813
+ },
+ "collisions": {
+  "n_inputs": 5000,
+  "n_formula_groups": 4881,
+  "n_iso_pairs_tested": 123,
+  "n_clusters_multi": 47,
+  "n_molecules_in_multi": 110,
+  "n_sibling_refcodes": 18,
+  "n_pairs_judged": 102,
+  "pair_classes": {
+   "NON_CANONICAL": 50,
+   "CONSISTENT": 35,
+   "DISTINGUISHED": 17
+  },
+  "pair_classes_siblings": {
+   "CONSISTENT": 12,
+   "DISTINGUISHED": 3
+  },
+  "clusters_with_multiple_strings": 18,
+  "n_strings_shared_across_clusters": 0,
+  "n_molecules_in_graph_collisions": 0
+ }
+}
