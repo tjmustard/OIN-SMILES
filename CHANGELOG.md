@@ -5,6 +5,105 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.17] - 2026-09-19
+
+> ### 77.16% → **82.72%** self-consistent · 69.24% → **74.60%** VERIFIED — the defect was the fold.
+>
+> **Two numbers from now on.** *Self-consistent* is `byte_exact` under the honest score,
+> `E(x) == E(G(E(x)))`. *VERIFIED* is a pass whose **string** describes the input (parse-back
+> clean) **and** whose **generated structure** a neutral ruler finds graph-isomorphic to the input
+> with no stereo element mirrored or changed. The census measured the gap between them — 396
+> passes the metric cannot see into — and a canonicality lever can raise the first number by
+> teaching the second encode to agree with a wrong structure. Only the second says it did not.
+>
+> **The census came first** (owner-approved): every one of the 5,000 molecules given exactly one
+> fault before a lane was chosen, `UNATTRIBUTED 0`. It moved `slot_renumber` — 252 molecules,
+> 5.04 pts, filed for three releases as enantiomers the generator could not build — onto the
+> **encoder**: 234 of them are achiral and `E(mirror x) ≠ E(x)`.
+>
+> **The handoff prescribed an achirality test for the parity veto. The veto was not the defect.**
+> The donor fold permutes each symmetry class of a fragment *independently*; a ligand's C2 axis
+> moves all of its classes at once, so a one-class swap is not a symmetry of the ligand — it
+> relabels the complex as a different arrangement (the mirror image, for a cis-α tetradentate).
+> That over-fold is why v0.4.11 collapsed enantiomers, why v0.4.12 built a veto, and why the veto
+> fired on one hand of 568 achiral molecules. Folding over **true fragment automorphisms** needs
+> no veto and no mirror encode.
+
+### Added
+- **`OIN_EXACT_DONOR_FOLD` — default-ON (owner decision 2026-09-18).**
+  `canonical_slots._donor_automorphism_permutations`: the candidate set is rotations × the slot
+  permutations induced by real automorphisms (`GetSubstructMatches(useChirality=True)` on a
+  pendant-stripped, class-pinned skeleton). `fold_parity.resolve` returns the fold directly.
+  🔴 It makes `OIN_FOLD_PARITY_VETO` **inert, not wrong**: `=0` brings the bucket fold back and
+  the veto is load-bearing again at once. The fold/veto coupling stays pinned.
+- **The fault-attribution census**, `tools/census/` — a neutral ruler that judges the generated
+  structure *without the encoder* (C1), encoder self-consistency over eleven presentations of
+  every input (C2), parse-back with no 3D (C3), and the join (C4).
+- `tools/v0417/` — the offline gate (`autofold_audit.py`, exact because the slot post-pass is a
+  pure string function), the generator A/B and sweep launchers, `sweep_two_numbers.py` (refuses to
+  print unless it first reproduces the census's 5000 / 3858 / 3462), and the ARM 2 re-freeze
+  instruments.
+- **`/refreeze-goldens`** — the ARM 2 goldens are re-frozen from a **full** gate run at every
+  promotion, never from a predicted mover list.
+
+### Changed
+- **The default answer moves for 392 inputs**, which voids the carry-forward licence: the baseline
+  of record is now **`results-v0.4.17-sweep`** (`measurements/v0.4.17-sweep/`). No table measured
+  before it may be quoted beside the new headline.
+- Gate goldens. **ARM 1: 2 of 62** (`KAXVOX`, `VOacac2`; lever `=0` reproduces the old manifest).
+  **ARM 2: 51 of 425**, from a full run, each row with one recorded reason — 40 moved by this
+  lever, **15 already stale** (below). None went `in==out → in≠out`; 21 went the other way
+  (ARM 2's predicate is circular: byte identity, not accuracy).
+- 9 of 1,059 tests broke at promotion. 2 were bookkeeping. 7 were the veto's three
+  "oracle-confirmed enantiomer" fixtures — and under the *shipped* encoder a renumbered `x` already
+  encoded to its **mirror's** string 8, 7 and 6 times in 12. They were a coin, drawn once per
+  fixture. Replaced by a pinned refutation and an exact-fold property test. Suite **1,064**.
+
+### Measured
+- **The sweep** (shipped defaults, 5,000 molecules, 6 h 42 min): self-consistent **4,136 = 82.72%**,
+  VERIFIED **3,730 = 74.60%**. `byte_exact` 4136 · `structural` 479 · `hard_fail` 236 ·
+  `key_equal` 122 (`slot_renumber` **252 → 5**) · `facmer` 16 · `encode_fail` 11. Runtime: Σ
+  38.7 → 33.2 h, median 4.01 → 3.32 s, `> 30 s` 678 → 579.
+- **The lever, isolated** — the real harness over its complete 504-molecule mover set, OFF and ON
+  arms run *simultaneously*: self-consistent **+273** (276 gains / 3 losses), VERIFIED **+265**
+  (269 / 4); dead-lever check 392; noise floor 3/504. The sweep reproduces the ON arm on 504/504
+  and 4,494 of 4,496 non-movers are unchanged. All four losses are **generator-side label
+  dependence** — an equally valid, differently labelled input and a worse structure.
+- **65 shipped strings described an arrangement the input is not**, often one that cannot be
+  built: the bucket fold's lex-min can land outside the input's own orbit. 19 were 300 s timeouts
+  and 16 now run (`ROLYIB` 300 s → 3 s). The census had filed them under "the compute floor".
+- Offline gate: 550 of the 568 vetoed achiral pairs unified, positive control 5,792/5,792;
+  offline == live on 2,443/2,443. Renumber drift at slot level **494 → 33**; at key level
+  255 → 255 with membership changed on 0 — the lever touches labels and nothing else.
+- **Census**: 22.84 pts = G 10.54 · E1 8.54 · E2 2.96 · P 0.60 · data 0.20. The string is wrong
+  for 59% of `hard_fail`. `E` is non-canonical for 670 achiral molecules and non-injective for 146
+  chiral ones. Frozen: `measurements/v0.4.17-census/`.
+
+### Fixed
+- 🔴 **15 of 425 ARM 2 golden rows had been wrong since v0.4.13** and nothing said so: earlier
+  re-freezes re-ran only predicted movers, and ARM 2 runs in full only at a release.
+  `OIN_CANONICAL_DONOR_FOLD=0` alone restores 14 of 14 field-2 ones. This release's own mover list
+  would have missed **19 of the 51 rows it owed**.
+- 🔴 **"ARM 2's field 3 is a fresh stochastic generation" is false** — in `levers.py`, in the
+  v0.4.14 entry below, and in this release's first handoff. Generation is seeded; the full gate
+  reproduced all 368 untouched gated rows six shards wide. Marked, not deleted.
+- The freeze: `harvest_measurements.py` copies a `.gz` **unscrubbed** (scrub before compressing),
+  would have kept 1 of 20 staged files (allowlist), and rebuilds a release's index from the
+  *current picks only* (a second harvest must re-stage the whole set).
+
+### Not done, deliberately
+- **18 pairs the census called achiral stay split.** They are chiral by how a ligand wraps; the
+  census ruler matches donors by class and shares the bucket fold's blind spot.
+- **17 of the 36 pairs the veto "protected" are unified — owner decision: ACCEPT.** Their strings
+  differ only in which of two *automorphic* atoms carries which integer; the chirality is real but
+  lives where the string does not look (a metal-bound N–H / C–H centre, Y1 P3). Census
+  "chiral & same" is 163, not 146, from here on. The repair is to encode the centre.
+- **The generator's label dependence** (the four losses) is a generator lane and is still open.
+- **The gate scores a SIGKILLed row as a string mismatch** (`EQEROI`, `MUKGUW`): the full ARM 2
+  gate fails on them on a loaded box whatever the golden says. Owner's call.
+- The census table is **stale for every mover**. Re-attributing the v0.4.17 sweep is the next job;
+  the gap is 17.28 / 25.40 and both numbers still lean on the old table.
+
 ## [0.4.16] - 2026-07-31
 
 > ### FLAT at 77.16% — the trade is priced, and it does not close.
@@ -235,7 +334,8 @@ charter named.
   fold and some of its labelings coincide with today's.*
   Two traps caught in the re-freeze: only fields 1–6 are taken from the fresh run, because a v0.4.9
   golden's field 7 is the **band** `--band` filters on while a fresh row carries `xyz_sha` there;
-  and **field 3 is a fresh stochastic generation**, so the two rows whose round-trip status changed
+  and **field 3 is a fresh stochastic generation** *(⚠ FALSE — corrected in 0.4.17: generation is
+  seeded and ARM 2 is deterministic; `HEKFEL` was a real regression)*, so the two rows whose round-trip status changed
   (`HEKFEL`, `FOJJUM`) are **not** lever-caused — the deterministic control on the frozen sweep
   structures reads `True→True` and `False→False` respectively. Both facts are recorded as comments
   inside the goldens.
