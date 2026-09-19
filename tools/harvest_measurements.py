@@ -167,6 +167,18 @@ ALLOW = [
     "collisions.json",
     "string_sufficiency_summary.json",
     "g_crosstab.json",
+    # v0.4.17 L1 (exact donor fold) + the v0.4.17 baseline sweep. Everything is staged by
+    # tools/v0417/freeze_stage.py under ONE prefix, scrubbed BEFORE it is gzipped -- this tool
+    # copies a .gz verbatim, so a path inside one would be published unscrubbed.
+    # ⚠ VERIFIED BY RUNNING fnmatch OVER THE STAGED FILENAMES, not by reading this list: before
+    # these four lines, 19 of the 20 staged files matched NOTHING (only `bucket_report_honest.md`
+    # did), and the dry run would have printed a plausible 15 KB total for a release whose
+    # evidence is 1 MB. `v0417_pop_*.txt` also does not match `pop_*.txt` -- a prefix moves it.
+    "v0417_*.jsonl.gz",
+    "v0417_*.json.gz",
+    "v0417_*.json",
+    "v0417_*.txt",
+    "v0417_*.md",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -219,6 +231,74 @@ PROVENANCE = [
         "tools/census/mirror_probe.py   (census C1: does E(mirror x) differ from E(x) on a"
         " sample of ruler-achiral vs ruler-chiral inputs -- the estimate C2 then measured over"
         " the whole cohort)",
+    ),
+    (
+        r"^v0417_sweep_(RUN\.md|run_config\.json)$",
+        "tools/v0417/launch_sweep.sh -> tools/run_sweep.sh <cohort-v0.4.5-5k> <out> 6 300"
+        "   (THE v0.4.17 BASELINE SWEEP: commit 814abff3, SHIPPED DEFAULTS -- the lever block in"
+        " run_config.json is EMPTY on purpose, that is the thing under test -- 6 shards 1-BASED,"
+        " --mol-timeout 300, BLAS=1. RUN.md is hand-written provenance)",
+    ),
+    (
+        r"^v0417_sweep_two_numbers\.txt$",
+        "tools/v0417/post_sweep.sh -> tools/v0417/sweep_two_numbers.py --sweep <sweep>"
+        "   (THE v0.4.17 HEADLINE: self-consistent 4136/5000 = 82.72%, VERIFIED 3730/5000 = 74.60%."
+        " The predicate's control runs first and must reproduce the census on the v0.4.14 sweep of"
+        " record, 5000 / 3858 / 3462, or nothing is printed)",
+    ),
+    (
+        r"^v0417_(sweep|ab_(off|on))_g_verdict\.jsonl\.gz$",
+        "tools/census/g_vs_input.py --cohort <cohort> --sweep <run> --out <run>"
+        "   (the census's neutral ruler on the GENERATED STRUCTURES of {0}: the structure half of"
+        " the VERIFIED predicate. No oinsmiles import)",
+    ),
+    (
+        r"^v0417_sweep_parseback\.jsonl\.gz$",
+        "tools/census/string_sufficiency.py parseback --sweep <sweep> --out <sweep>"
+        "   (smiles_1 of the NEW sweep read back to a graph with no 3D: the string half of the"
+        " VERIFIED predicate, RE-DERIVED rather than carried from the census -- 1 of 5000 verdicts"
+        " moved under the relabeling)",
+    ),
+    (
+        r"^v0417_autofold_audit\.json\.gz$",
+        "tools/v0417/autofold_audit.py   (L1a OFFLINE GATE, exact because the slot post-pass is a"
+        " pure string function: bucket fold vs exact fold applied to the census's stored"
+        " rotation-only strings. Positive control 5792/5792; 550 of the 568 vetoed achiral pairs"
+        " unified; 18 kept split are chiral by wrap; 17 of the 36 protected pairs unified)",
+    ),
+    (
+        r"^v0417_automorphism_extension_check\.json$",
+        "tools/v0417/automorphism_extension_check.py   (does pendant stripping invent a symmetry?"
+        " 13716 pruned automorphisms over 7968 fragment checks, 0 without a full-graph extension;"
+        " negative control refused 7953/7953)",
+    ),
+    (
+        r"^v0417_e_selfconsistency_exact\.jsonl\.gz$",
+        "OIN_EXACT_DONOR_FOLD=1 tools/census/e_selfconsistency.py --name e_selfconsistency_exact"
+        "   (census C2 re-run unchanged under the lever, same seeds: eleven presentations of every"
+        " input. Diff against census_e_selfconsistency.jsonl.gz: achiral-and-differs 670 -> 120,"
+        " slot-level renumber drift 494 -> 33, KEY-level 255 -> 255 with membership changed on 0)",
+    ),
+    (
+        r"^v0417_generated_side_movers\.jsonl\.gz$|^v0417_pop_generated_side_movers\.txt$",
+        "tools/v0417/generated_side_movers.py   (every stored generated structure of the v0.4.14"
+        " sweep encoded lever OFF and ON: 286 of 4743 move. OFF == the sweep of record on"
+        " 4743/4743)",
+    ),
+    (
+        r"^v0417_pop_(input_side_movers|ab_union_movers)\.txt$",
+        "tools/v0417/exact_fold_live_report.py (input side, 392) / union with the generated side"
+        "   (SAMPLE MEMBERSHIP of the generator A/B: 504 = 392 u 286, 174 in both. Every other"
+        " molecule gets the same two strings in both arms and is unchanged by construction --"
+        " which the sweep then measured: 4494 of 4496)",
+    ),
+    (
+        r"^v0417_generator_ab_report\.txt$|^v0417_ab_(gains|losses)\.txt$"
+        r"|^v0417_ab_(off|on)_bucket_report_honest\.json\.gz$",
+        "tools/v0417/run_generator_ab.sh <union movers> ; tools/v0417/post_generator_ab.sh"
+        "   (L1b: the REAL sweep harness over the 504 movers, OFF and ON arms run SIMULTANEOUSLY,"
+        " commit de4a9d2c. Self-consistent 276 gains / 3 losses, VERIFIED 269 / 4; dead-lever"
+        " check 392; noise floor 3/504 vs the sweep of record)",
     ),
     (
         r"^attribution_(table\.tsv\.gz|summary\.json)$",
