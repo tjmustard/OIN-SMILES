@@ -1,0 +1,106 @@
+{
+ "changed_movers": 316,
+ "changed_non_movers": 14,
+ "fail_by_owner_new": {
+  "DATA": 10,
+  "E1": 169,
+  "E2": 175,
+  "G": 481,
+  "P": 29
+ },
+ "fail_by_owner_old": {
+  "DATA": 10,
+  "E1": 427,
+  "E2": 148,
+  "G": 527,
+  "P": 30
+ },
+ "fail_new": {
+  "DATA_MULTI": 10,
+  "E1_GRAPH": 77,
+  "E1_HCOUNT": 79,
+  "E1_NONCANONICAL": 12,
+  "E1_NONINJECTIVE": 1,
+  "E2_P_FRAGILE": 101,
+  "E2_P_OTHER": 74,
+  "G_CONSTRUCTION": 386,
+  "G_DIASTEREOMER": 7,
+  "G_HANDEDNESS": 5,
+  "G_HCOUNT": 7,
+  "G_NOTHING": 76,
+  "P_DETACHED": 18,
+  "P_E1_COVERAGE": 11
+ },
+ "fail_old": {
+  "DATA_MULTI": 10,
+  "E1_GRAPH": 80,
+  "E1_HCOUNT": 80,
+  "E1_NONCANONICAL": 266,
+  "E1_NONINJECTIVE": 1,
+  "E2_P_FRAGILE": 81,
+  "E2_P_OTHER": 67,
+  "G_CONSTRUCTION": 396,
+  "G_DIASTEREOMER": 11,
+  "G_HANDEDNESS": 9,
+  "G_HCOUNT": 7,
+  "G_NOTHING": 104,
+  "P_DETACHED": 18,
+  "P_E1_COVERAGE": 12
+ },
+ "false_pass_new": {
+  "E1_GRAPH": 55,
+  "E1_HCOUNT": 5,
+  "E1_NONINJECTIVE": 37,
+  "E1_NOT_ENCODED": 109,
+  "G_CONSTRUCTION": 200
+ },
+ "false_pass_old": {
+  "E1_GRAPH": 52,
+  "E1_HCOUNT": 4,
+  "E1_NONINJECTIVE": 33,
+  "E1_NOT_ENCODED": 106,
+  "G_CONSTRUCTION": 201
+ },
+ "n": 5000,
+ "n_movers": 504,
+ "transitions_movers": {
+  "E1_NONCANONICAL -> E1_NOT_ENCODED": 1,
+  "E1_NONCANONICAL -> E2_P_FRAGILE": 12,
+  "E1_NONCANONICAL -> E2_P_OTHER": 7,
+  "E1_NONCANONICAL -> G_CONSTRUCTION": 4,
+  "E1_NONCANONICAL -> G_NOTHING": 1,
+  "E1_NONCANONICAL -> NONE": 223,
+  "E1_NOT_ENCODED -> NONE": 2,
+  "E2_P_FRAGILE -> NONE": 5,
+  "E2_P_OTHER -> NONE": 5,
+  "G_CONSTRUCTION -> E2_P_FRAGILE": 1,
+  "G_CONSTRUCTION -> NONE": 19,
+  "G_DIASTEREOMER -> E1_NOT_ENCODED": 3,
+  "G_DIASTEREOMER -> NONE": 1,
+  "G_HANDEDNESS -> E1_NONINJECTIVE": 2,
+  "G_HANDEDNESS -> NONE": 2,
+  "G_NOTHING -> E1_NONINJECTIVE": 1,
+  "G_NOTHING -> E1_NOT_ENCODED": 2,
+  "G_NOTHING -> E2_P_FRAGILE": 5,
+  "G_NOTHING -> G_CONSTRUCTION": 2,
+  "G_NOTHING -> NONE": 14,
+  "NONE -> E2_P_OTHER": 2,
+  "NONE -> G_CONSTRUCTION": 2
+ },
+ "transitions_non_movers": {
+  "E1_NONCANONICAL -> E2_P_FRAGILE": 3,
+  "E1_NONCANONICAL -> E2_P_OTHER": 3,
+  "E1_NOT_ENCODED -> E1_NONINJECTIVE": 1,
+  "G_NOTHING -> E2_P_FRAGILE": 4,
+  "G_NOTHING -> G_CONSTRUCTION": 1,
+  "G_NOTHING -> NONE": 1,
+  "P_E1_COVERAGE -> G_NOTHING": 1
+ },
+ "verified_gap_by_owner_new": {
+  "DATA": 10,
+  "E1": 375,
+  "E2": 175,
+  "G": 681,
+  "P": 29
+ }
+}

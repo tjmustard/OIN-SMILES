@@ -1,0 +1,58 @@
+DENOMINATOR 5000 molecules   movers 504   non-movers 4496
+
+1. FAIL partition    old 1142 = 22.84 pts    new 864 = 17.28 pts
+   fault                old    pts     new    pts    delta
+   G_CONSTRUCTION       396   7.92     386   7.72      -10
+   E2_P_FRAGILE          81   1.62     101   2.02      +20
+   E1_HCOUNT             80   1.60      79   1.58       -1
+   E1_GRAPH              80   1.60      77   1.54       -3
+   G_NOTHING            104   2.08      76   1.52      -28
+   E2_P_OTHER            67   1.34      74   1.48       +7
+   P_DETACHED            18   0.36      18   0.36       +0
+   E1_NONCANONICAL      266   5.32      12   0.24     -254
+   P_E1_COVERAGE         12   0.24      11   0.22       -1
+   DATA_MULTI            10   0.20      10   0.20       +0
+   G_DIASTEREOMER        11   0.22       7   0.14       -4
+   G_HCOUNT               7   0.14       7   0.14       +0
+   G_HANDEDNESS           9   0.18       5   0.10       -4
+   E1_NONINJECTIVE        1   0.02       1   0.02       +0
+   by owner:  G 527->481 (9.62 pts)   E2 148->175 (3.50 pts)   E1 427->169 (3.38 pts)   P 30->29 (0.58 pts)   DATA 10->10 (0.20 pts)
+
+2. passes that carry a fault (metric false passes)   old 396   new 406
+   G_CONSTRUCTION       201     200       -1
+   E1_NOT_ENCODED       106     109       +3
+   E1_GRAPH              52      55       +3
+   E1_NONINJECTIVE       33      37       +4
+   E1_HCOUNT              4       5       +1
+   old: self-consistent 3858 = 77.16%   VERIFIED 3462 = 69.24%   gap to 100: 22.84 / 30.76
+   new: self-consistent 4136 = 82.72%   VERIFIED 3730 = 74.60%   gap to 100: 17.28 / 25.40
+   NEW verified gap by owner (FAIL + false pass): G 681 (13.62)   E1 375 (7.50)   E2 175 (3.50)   P 29 (0.58)   DATA 10 (0.20)
+
+3. transitions old fault -> new fault
+   MOVERS: 504 molecules, 188 keep their fault, 316 change (62.7%)
+       223  E1_NONCANONICAL    -> NONE
+        19  G_CONSTRUCTION     -> NONE
+        14  G_NOTHING          -> NONE
+        12  E1_NONCANONICAL    -> E2_P_FRAGILE
+         7  E1_NONCANONICAL    -> E2_P_OTHER
+         5  G_NOTHING          -> E2_P_FRAGILE
+         5  E2_P_FRAGILE       -> NONE
+         5  E2_P_OTHER         -> NONE
+         4  E1_NONCANONICAL    -> G_CONSTRUCTION
+         3  G_DIASTEREOMER     -> E1_NOT_ENCODED
+         2  NONE               -> G_CONSTRUCTION
+         2  E1_NOT_ENCODED     -> NONE
+         2  G_NOTHING          -> E1_NOT_ENCODED
+         2  G_HANDEDNESS       -> NONE
+      outcome: PASS->FAIL 3   FAIL->PASS 279
+   NON-MOVERS: 4496 molecules, 4482 keep their fault, 14 change (0.3%)
+         4  G_NOTHING          -> E2_P_FRAGILE
+         3  E1_NONCANONICAL    -> E2_P_FRAGILE
+         3  E1_NONCANONICAL    -> E2_P_OTHER
+         1  G_NOTHING          -> G_CONSTRUCTION
+         1  G_NOTHING          -> NONE
+         1  E1_NOT_ENCODED     -> E1_NONINJECTIVE
+         1  P_E1_COVERAGE      -> G_NOTHING
+      outcome: PASS->FAIL 0   FAIL->PASS 2
+
+wrote reattribution_diff.json
