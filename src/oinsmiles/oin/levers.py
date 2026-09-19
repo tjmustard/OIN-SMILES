@@ -783,6 +783,36 @@ _HELD_OFF = {
         "and _reparse_cip_memo_clear() lets a per-molecule gate guarantee isolation the way "
         "_ac2bo_memo_clear() does for perception."
     ),
+    "OIN_ETA_COVALENT_TARGET": (
+        "v0.4.18 L2, EXPERIMENTAL -- under measurement, not yet A/B'd through the harness. "
+        "`clean_geometry.ff_clean` multiplies an eta group's target distance by an upstream "
+        "'elongation' factor (1.1 for eta2-4, 1.2 for eta5-9, 1.6 beyond). Measured over 1,378 "
+        "eta groups, the real M-C(eta) distance is 1.008 x the covalent sum S, and the encoder's "
+        "bonding cutoff S + 0.45 A is ~1.20 x S: the generator aims the ring at the edge of what "
+        "the encoder will call bonded. This lever targets S instead. The census files 343 "
+        "molecules / 6.86 pts under G_CONSTRUCTION/DETACHED, 86% of them eta-bound. Held off "
+        "until a generator A/B reports BOTH numbers -- self-consistent and VERIFIED -- with its "
+        "losses."
+    ),
+    "OIN_VDW_EXEMPT_BINDING": (
+        "v0.4.18 L2, EXPERIMENTAL -- under measurement. The FF-scan's vdW guard (default ON since "
+        "v0.4.3 A5) perceives bonds by distance: bonded inside 1.3 x sum(R_cov), a clash if "
+        "non-bonded inside 0.75 x sum(R_vdW). For small metals the bond threshold lies INSIDE the "
+        "clash threshold -- Fe-C 2.70 vs 2.81 A, Co 2.63 vs 2.78, Ni 2.60 vs 2.78 -- so an eta "
+        "ring stepping toward the metal registers five new clashes on its first 0.1 A step, it is "
+        "reverted and the scan stops: the ring stays at the dummy-atom embed's ~2.87 A whatever "
+        "the target. This exempts the metal's own binding atoms, which are bonded by construction "
+        "-- ALL of them, but only in a complex that has an eta group, so a non-eta molecule is "
+        "byte-identical by construction (eta atoms alone kept 20 of 22 probe gains: a sigma donor "
+        "crosses the zone too). Census: Fe 45 detached vs 4 verified, Co 21 vs 2, Ni 39 vs 11. "
+        "Held off until a generator A/B reports both numbers with its losses."
+    ),
+    "OIN_ETA_TARGET_UNSCALED": (
+        "v0.4.18 L2, EXPERIMENTAL, only read when OIN_ETA_COVALENT_TARGET is on. The conformer "
+        "pool sweeps a GLOBAL scale 0.8..1.2 that multiplies every metal-ligand target; this takes "
+        "it back out for the eta face alone, so the ring sits at S in every conformer rather than "
+        "at 0.8 S..1.2 S. Held off for the same reason as its parent."
+    ),
 }
 
 
