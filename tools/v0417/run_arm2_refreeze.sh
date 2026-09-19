@@ -19,6 +19,11 @@
 # back byte-for-byte; where it does not, the golden was stale before v0.4.17 and the recorded
 # reason has to say so.
 #
+# REUSE AT THE NEXT PROMOTION (.claude/commands/refreeze-goldens.md) -- three variables, all optional:
+#   REFREEZE_LEVER   the lever being promoted; `off` sets it to 0        (default OIN_EXACT_DONOR_FOLD)
+#   REFREEZE_OUT     run directory, inside the dataset tree, never /tmp  (default: this lane's)
+#   REFREEZE_TAG     names the units and the control cohorts             (default v0.4.17)
+#
 # The gate exits non-zero on a mismatch. Here that is the expected result, not a failure: the
 # rows land in --out either way, and `#DONE n` is what says a shard finished.
 set -euo pipefail
@@ -26,15 +31,18 @@ set -euo pipefail
 ARM="${1:?usage: $0 on|off|verify}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DATA=/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset
-OUT="$DATA/results-v0.4.17-exactfold/arm2_refreeze"
+LEVER="${REFREEZE_LEVER:-OIN_EXACT_DONOR_FOLD}"
+OUT="${REFREEZE_OUT:-$DATA/results-v0.4.17-exactfold/arm2_refreeze}"
+TAG="${REFREEZE_TAG:-v0.4.17}"
+UNIT="oin-${TAG//./}-arm2"   # systemd unit names take no dots gracefully: v0.4.17 -> v0417
 SHARDS=6
 
 case "$ARM" in
   on)  LEVER_ENV=(); C047="$DATA/cohort-v047-slow100"; C049="$DATA/cohort-v049-strata" ;;
-  off) LEVER_ENV=(-E OIN_EXACT_DONOR_FOLD=0)
-       C047="$DATA/cohort-v0.4.17-arm2-control-v047"; C049="$DATA/cohort-v0.4.17-arm2-control-v049" ;;
+  off) LEVER_ENV=(-E "$LEVER=0")
+       C047="$DATA/cohort-$TAG-arm2-control-v047"; C049="$DATA/cohort-$TAG-arm2-control-v049" ;;
   verify) LEVER_ENV=()
-       C047="$DATA/cohort-v0.4.17-arm2-control-v047"; C049="$DATA/cohort-v0.4.17-arm2-control-v049" ;;
+       C047="$DATA/cohort-$TAG-arm2-control-v047"; C049="$DATA/cohort-$TAG-arm2-control-v049" ;;
   *)   echo "usage: $0 on|off|verify" >&2; exit 2 ;;
 esac
 
@@ -72,11 +80,11 @@ for i in $(seq 1 $SHARDS); do
     cmd+="--out '$OUT/$ARM/${tag}_$i.tsv' > '$OUT/$ARM/${tag}_$i.log' 2>&1 || true; "
   done
   cmd+="date -Is > '$OUT/$ARM/DONE_$i'"
-  systemd-run --user --unit="oin-v0417-arm2-$ARM-$i" \
-    --description="v0.4.17 ARM 2 re-freeze, arm $ARM, shard $i/$SHARDS" \
+  systemd-run --user --unit="$UNIT-$ARM-$i" \
+    --description="$TAG ARM 2 re-freeze, arm $ARM ($LEVER), shard $i/$SHARDS" \
     -p OOMPolicy=continue -p MemoryMax=14G \
     "${LEVER_ENV[@]}" -E PATH="$PATH" \
     -E OMP_NUM_THREADS=1 -E OPENBLAS_NUM_THREADS=1 -E MKL_NUM_THREADS=1 -E NUMEXPR_NUM_THREADS=1 \
     /bin/bash -c "$cmd"
 done
-echo "launched oin-v0417-arm2-$ARM-{1..$SHARDS}. Finished when $OUT/$ARM/DONE_{1..$SHARDS} all exist."
+echo "launched $UNIT-$ARM-{1..$SHARDS}. Finished when $OUT/$ARM/DONE_{1..$SHARDS} all exist."

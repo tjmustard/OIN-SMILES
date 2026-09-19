@@ -62,12 +62,22 @@ def _encode(xyz: Path, extra: dict):
 
 
 def main():
+    global OUT
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--out-dir", type=Path, help=f"where the audits live (default: {OUT})")
+    ap.add_argument(
+        "--base-lever",
+        default="OIN_EXACT_DONOR_FOLD",
+        help="the lever being promoted; held at 0 in EVERY arm so the base is the pre-promotion encoder",
+    )
     ap.add_argument("--jobs", type=int, default=6)
     args = ap.parse_args()
+    OUT = args.out_dir or OUT
+    BASE.clear()
+    BASE[args.base_lever] = "0"
 
     rows = {}
     for tag in COHORTS:

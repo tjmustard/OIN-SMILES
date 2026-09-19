@@ -289,7 +289,8 @@ import os
 #:     OIN_CANONICAL_DONOR_FOLD to "0" ALONE restores every one, so they date from v0.4.13 --
 #:     because v0.4.13 and v0.4.14 re-froze only the rows a PREDICTED mover list named, and arm2 is
 #:     run in full only at a release. A predicted list cannot see a row nobody predicted (this
-#:     lane's own would have missed 19 of the 51). Re-freeze from a FULL run, every promotion.
+#:     lane's own would have missed 19 of the 51). Re-freeze from a FULL run, every promotion:
+#:     /refreeze-goldens (.claude/commands/refreeze-goldens.md) -- OWNER DECISION 2026-09-19.
 #: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md and ARM2_REFREEZE.md.
 _DEFAULT_ON = frozenset(
     {

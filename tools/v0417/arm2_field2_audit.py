@@ -62,12 +62,12 @@ def _worker(xyz: str):
     print(json.dumps(out), flush=True)
 
 
-def _encode(xyz: Path, arm: str, timeout: float):
+def _encode(xyz: Path, arm: str, timeout: float, lever: str = LEVER):
     env = {k: v for k, v in os.environ.items() if not k.startswith("OIN_")}
     env.update(OPENBLAS_NUM_THREADS="1", OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
     env.pop("PYTHONPATH", None)
     if arm == "off":
-        env[LEVER] = "0"
+        env[lever] = "0"
     try:
         p = subprocess.run(
             [sys.executable, str(HERE), "--one", str(xyz)],
@@ -137,6 +137,11 @@ def main():
     ap.add_argument("--jobs", type=int, default=6)
     ap.add_argument("--timeout", type=float, default=300.0)
     ap.add_argument(
+        "--lever",
+        default=LEVER,
+        help="the default-ON lever being promoted; the `off` arm sets it to 0 (default: %(default)s)",
+    )
+    ap.add_argument(
         "--reclassify",
         action="store_true",
         help="re-derive `class` from the shas already in --out; encodes nothing",
@@ -159,7 +164,11 @@ def main():
         xyz = args.cohort_dir / f"{row[0]}.xyz"
         if not xyz.exists():
             return row, {"error": "input missing"}, {"error": "input missing"}
-        return row, _encode(xyz, "off", args.timeout), _encode(xyz, "shipped", args.timeout)
+        return (
+            row,
+            _encode(xyz, "off", args.timeout, args.lever),
+            _encode(xyz, "shipped", args.timeout, args.lever),
+        )
 
     with ThreadPoolExecutor(args.jobs) as pool:
         results = list(pool.map(one, rows))

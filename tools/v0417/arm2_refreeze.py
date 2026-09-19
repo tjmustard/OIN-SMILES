@@ -52,8 +52,11 @@ GOLDENS = {
 }
 
 
+COHORT_TAG = "v0.4.17"
+
+
 def control_cohort(tag: str) -> Path:
-    return DATA / f"cohort-v0.4.17-arm2-control-{tag}"
+    return DATA / f"cohort-{COHORT_TAG}-arm2-control-{tag}"
 
 
 def golden_rows(path: Path):
@@ -291,8 +294,15 @@ def cmd_rows(_args):
 
 
 def main():
+    global OUT, COHORT_TAG
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument("--out-dir", type=Path, help=f"run directory (default: {OUT})")
+    ap.add_argument(
+        "--cohort-tag",
+        help="names the control cohorts, cohort-<tag>-arm2-control-v04{7,9} (default: v0.4.17);"
+        " must match run_arm2_refreeze.sh's REFREEZE_TAG",
     )
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("diff")
@@ -301,6 +311,8 @@ def main():
     sp.add_argument("--write", action="store_true")
     sp.add_argument("--comment-file", help="the '# v0.4.17: ...' block to put at the top")
     args = ap.parse_args()
+    OUT = args.out_dir or OUT
+    COHORT_TAG = args.cohort_tag or COHORT_TAG
     {"diff": cmd_diff, "splice": cmd_splice, "rows": cmd_rows}[args.cmd](args)
 
 
