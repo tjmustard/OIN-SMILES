@@ -45,6 +45,10 @@ rows finish within **0.2 s** of their cap. See `v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9
 
 ## The gap — `100 − 77.16 = 22.84` points (v0.4.14 baseline sweep, n=5000)
 
+🔴 **SUPERSEDED 2026-09-17 by the CENSUS** — the table below is by BUCKET; the census partitions the same
+22.84 pts by FAULT with `UNATTRIBUTED = 0`. See **CENSUS DECISION 2026-09-17** under *The ladder* and
+`v0.4.17/CENSUS.md`. Kept for the record.
+
 ⚠ **This table is post-v0.4.14's promotion.** `OIN_RESONANCE_DONOR_FOLD` shipped default-ON for a
 net of **+71 molecules / +1.42 points** (78 gains, 7 losses). The previous copy read `100 − 75.88 = 24.12`.
 
@@ -230,6 +234,45 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.17** | 🔴 **RE-POINTED 2026-07-30 — CONSTRUCTION: build what selection cannot find.** The old "structural is no longer this release's subject, v0.4.15 L1 owns it" is superseded: **L1 was REFUTED**, so structural returns as a construction problem. Owns the **10.04 pts v0.4.15 proved unreachable by any selection predicate** — L1 the **201 enantiomers** (4.02; first deliverable is *can the embed produce both handednesses at all*, not a fix — `TAYDUV_comp_0` proves it is rare, not absent), L2 the **301 `DETACHED`** (6.02; 87.2% haptic, whole Cp/arene groups lost, 10–16 pool conformers all detached). ⚠ Cheapest decisive experiment: does `clean_geometry` **relaxation** detach rings that embedded correctly? | honest — **may go DOWN**; a documented limitation is an acceptable outcome |
 | **v0.4.18** | 🔴 **RE-POINTED 2026-07-30 — THE FLOOR, stated with evidence.** `hard_fail` 266 (5.32, of which **262 produce NOTHING**) + `NO_STRUCTURE` 11 + `facmer` 15 + `encode_fail` 12, then the encoder ladder's last **1.28 pts** (39 `NOT_A_MIRROR` + 25 resonance residue) and the 57 notation molecules. ⚠ `OIN3DGenerator(timeout=)` is ADVISORY and `elapsed_s` is a SUM — **separate budget-exhaustion from genuine incapacity or the floor is over-stated**. **Product: the honest achievable ceiling** = 100 − produce-nothing floor − construction limit − notation-undecided, each with its evidence | **FLAT or DOWN** — the product is a defensible limit, not points |
 | **v0.4.19** | 🟢 **NEW, created by v0.4.16's measurement — it was not on the ladder.** `structural`'s INTACT+BOUNDARY were carried three releases as "nobody knows why" and v0.4.17 was sized to take them as construction; the classification says **82% is PERCEPTION**, so v0.4.17 declines them and v0.4.18 is the floor. **THE PERCEPTION LANE: 141 molecules / 2.82 pts** (`PERCEPTION` 122 + `GEOM_CODE` 19) — heavy-atom graph already correct, bond orders / aromaticity / charge / H differ. 🔴 **Deliverable 1 is not a fix: it is whether the PERCEIVER is wrong or the GEOMETRY is.** Re-perceive the input XYZ and the generated XYZ through the same path; if the input reads correctly and the generated one does not, the geometry moved and these 2.82 pts fold into v0.4.17's problem instead. **That negative is also a product** — it raises the confidence of v0.4.18's ceiling statement | **UP up to 2.82, or a measured FOLD into the construction block** |
+
+### CENSUS DECISION 2026-09-17 — **MEASURED (C1–C4), the ladder below it is re-pointed**
+
+🔴 **Every molecule of the n=5,000 baseline sweep now carries ONE fault, assigned by the first rule
+that fires in pipeline order, by four instruments that never route the encoder through the
+generator or the generator through the encoder.** `UNATTRIBUTED = 0`. Table:
+`measurements/v0.4.17-census/attribution_table.tsv.gz`; write-up `v0.4.17/CENSUS.md`; chunks
+`v0.4.17/CENSUS_C{1,2,3}_*.md`.
+
+| fault | n | pts | owner |
+|---|---:|---:|---|
+| `G_CONSTRUCTION` (331 `DETACHED`, 60 donor set, 5 ligand bond) | 396 | **7.92** | generator |
+| `E1_NONCANONICAL` (achiral by the ruler, `E(mirror x) ≠ E(x)`: the parity veto fires on one hand; **227 of the 252 `slot_renumber`**) | 266 | **5.32** | encoder |
+| `G_NOTHING` (95 timeouts + 9 no-conformer, WITH a faithful string) | 104 | 2.08 | generator / budget |
+| `E2_P_FRAGILE` (the input's own string moves under renumbering / 0.02 Å noise) | 81 | 1.62 | perception |
+| `E1_HCOUNT` (string H count ≠ input; 71 `hard_fail`) | 80 | 1.60 | encoder (serializer) |
+| `E1_GRAPH` (string graph ≠ input; 59 `hard_fail`) | 80 | 1.60 | encoder / perception |
+| `E2_P_OTHER` (correct structure, string still differs) | 67 | 1.34 | perception |
+| `P_DETACHED` 18 · `P_E1_COVERAGE` 12 · `G_DIASTEREOMER` 11 · `DATA_MULTI` 10 · `G_HANDEDNESS` **9** · `G_HCOUNT` 7 · `E1_NONINJECTIVE` 1 | 68 | 1.36 | mixed |
+| **sum** | **1,142** | **22.84** | G 10.54 · E1 8.54 · E2 2.96 · P 0.60 · data 0.20 |
+
+**And 396 of the 3,858 passes carry a fault the metric cannot see** (201 wrong graph with a right
+string, 106 a stereo element the notation does not carry, 56 a wrong string built faithfully, 33 a
+byte-identical mirror image). **Verified accuracy is 69.24%; 77.16% is self-agreement.** Every
+sweep from here reports both.
+
+**What it changes, row by row:**
+- **v0.4.17 → ENCODER CANONICALITY, not construction.** "L1 the 201 enantiomers" is **9 molecules**
+  (`G_HANDEDNESS`); the 252 `slot_renumber` are 227× `E1_NONCANONICAL`, one mechanism
+  (`oin/fold_parity.py::resolve`, C2), offline, 5.32 pts — the largest encoder block and the only
+  one with a named line of code. Then L2 `DETACHED` **331 / 6.62** as construction.
+- **v0.4.18 → THE SERIALIZER, then the floor.** "262 produce nothing" is **104**: 158 of the 266
+  `hard_fail` have a string that does not describe the input, and 84 of its 179 timeouts are the
+  generator building the wrong molecule. `E1_HCOUNT` + `E1_GRAPH` = 3.20 pts, gate =
+  `tools/census/string_sufficiency.py parseback` (offline, 15 s). The compute floor is 2.08.
+- **v0.4.19 → PERCEPTION 148 / 2.96, MEASURED** (was the 141 / 2.82 estimate): `E2_P_FRAGILE` 81
+  is a defect of the input's own perception, no generator involved.
+- The charge hardcode (`XYZToSMILES.convert` sets `charge = 0`) is a lossiness, not a lane: honouring
+  it moves 10 of 1,036 strings (C3).
 
 ### LADDER DECISION 2026-07-31 (v0.4.16) — **MEASURED**
 
