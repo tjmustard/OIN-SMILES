@@ -1,0 +1,13 @@
+CONTROL on the sweep of record: n=5000 self=3858 verified=3462   expected 5000 / 3858 / 3462   OK
+
+results-v0.4.17-sweep   DENOMINATOR n=5000  (must be 5000)
+   buckets: {'byte_exact': 4136, 'structural': 479, 'hard_fail': 236, 'key_equal': 122, 'facmer_divergent': 16, 'encode_fail': 11}
+   self-consistent   4136 / 5000 = 82.72%   (record 77.16%)
+   VERIFIED          3730 / 5000 = 74.60%   (record 69.24%)
+   passes the metric cannot verify: 406
+        200  structure: graph differs (or no ruler verdict)
+        103  structure: stereo DIFFERENT
+         55  E1_GRAPH
+         42  structure: stereo MIRROR
+          5  E1_HCOUNT
+          1  structure: stereo MIRROR_PARTIAL

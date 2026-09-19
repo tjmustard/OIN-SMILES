@@ -1,0 +1,14 @@
+{
+ "tally": {
+  "skipped: fewer than 2 slots (never folded)": 2381,
+  "fragments checked": 7968,
+  "atoms stripped": 35226,
+  "pruned automorphisms checked": 13716,
+  "skipped: unparseable": 38
+ },
+ "failures": [],
+ "negative_control": {
+  "extended": 0,
+  "refused": 7953
+ }
+}

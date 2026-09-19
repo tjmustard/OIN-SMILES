@@ -1,0 +1,41 @@
+1. COMPLETENESS   cohort=504
+   off reports=504  bucketed=504  ruler verdicts=473  xtb_available=True  commit=de4a9d2c  tree=['<checkout:oin-v0417>/src/oinsmiles/__init__.py']
+   on  reports=504  bucketed=504  ruler verdicts=491  xtb_available=True  commit=de4a9d2c  tree=['<checkout:oin-v0417>/src/oinsmiles/__init__.py']
+   scored in BOTH arms: 504/504
+
+2. DEAD-LEVER CHECK   smiles_1 differs between arms: 392  (0 = lever never fired)
+
+3. NOISE FLOOR   OFF arm vs sweep of record, pass/fail flips: 3/504  (now pass 3, now fail 0)
+
+4. TRANSITIONS  OFF -> ON
+   self-consistent (byte_exact)
+      pass OFF=135  pass ON=408  of 504
+      GAINS 276   LOSSES 3   NET +273
+      gains: input moved 184 / generated side only 92;  losses: input moved 3 / generated side only 0
+      gains by census fault : {'E1_NONCANONICAL': 225, 'G_CONSTRUCTION': 16, 'G_NOTHING': 14, 'E2_P_FRAGILE': 5, 'E2_P_OTHER': 5, 'G_DIASTEREOMER': 4, 'G_HANDEDNESS': 4, 'E1_GRAPH': 2, 'E1_HCOUNT': 1}
+      losses by census fault: {'NONE': 3}
+      loss transitions      : {'structural': 2, 'key_equal': 1}
+      PROJECTION on n=5000: 77.16% -> 82.62%  (+5.46 pts; noise floor +/-0.06)
+   VERIFIED (ruler on the structure)
+      pass OFF=119  pass ON=384  of 504
+      GAINS 269   LOSSES 4   NET +265
+      gains: input moved 180 / generated side only 89;  losses: input moved 4 / generated side only 0
+      gains by census fault : {'E1_NONCANONICAL': 223, 'G_CONSTRUCTION': 19, 'G_NOTHING': 12, 'E2_P_FRAGILE': 5, 'E2_P_OTHER': 5, 'E1_NOT_ENCODED': 2, 'G_HANDEDNESS': 2, 'G_DIASTEREOMER': 1}
+      losses by census fault: {'NONE': 4}
+      loss transitions      : {'structural': 2, 'key_equal': 1, 'byte_exact': 1}
+      PROJECTION on n=5000: 69.24% -> 74.54%  (+5.30 pts; noise floor +/-0.06)
+
+   bucket transitions (off -> on):
+       244  key_equal -> byte_exact
+        18  structural -> byte_exact
+        13  hard_fail -> byte_exact
+         6  hard_fail -> structural
+         2  byte_exact -> structural
+         2  key_equal -> structural
+         2  structural -> key_equal
+         1  structural -> hard_fail
+         1  byte_exact -> key_equal
+         1  key_equal -> hard_fail
+         1  encode_fail -> byte_exact
+
+5. RUNTIME  sum elapsed_s  OFF=6.19 h  ON=2.93 h
