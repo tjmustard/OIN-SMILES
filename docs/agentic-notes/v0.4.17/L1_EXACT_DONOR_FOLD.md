@@ -3,8 +3,8 @@
 **Branch** `research/v0417-encoder-canonicality` (worktree `../oin-v0417`, off `research/census`).
 **Lever** `OIN_EXACT_DONOR_FOLD`, **default ON since 2026-09-18** (owner decision). **Status:** built, unit-tested, gated offline
 (exact), live over the full cohort, and A/B'd through the generator on its complete mover set
-(§ L1b: **+273 self-consistent / +265 verified, 3 / 4 losses**). **Promoted; the sweep it owes is
-running** (§ Promotion).
+(§ L1b: **+273 self-consistent / +265 verified, 3 / 4 losses**). **Promoted, and swept: 82.72% self-consistent /
+74.60% verified** (§ The sweep) — the new baseline of record.
 
 ## Headline
 
@@ -315,10 +315,72 @@ real generation on a quiet box and is **owed after the sweep**, not run beside i
 **The sweep.** `tools/v0417/launch_sweep.sh` → the project's own `tools/run_sweep.sh`, the
 sweep-of-record configuration (same cohort, 6 shards, `--mol-timeout 300`, BLAS=1), **no `OIN_*`
 variable set** — the run tests the shipped default, and `run_config.json`'s lever block must be
-empty. Launched from the commit that carries this section. Read with
+empty. Launched from the commit that carries this section (`814abff3`); result in § "The sweep". Read with
 `tools/v0417/post_sweep.sh` → `sweep_two_numbers.py`, whose predicate was validated **before the
 data existed**: over the sweep of record it reproduces the census exactly, 5,000 / 3,858 / 3,462.
 Expected: **82.62% self-consistent, 74.54% verified, ± 0.06.**
+
+## The sweep — 82.72% self-consistent, 74.60% verified
+
+`results-v0.4.17-sweep`, n = 5,000, launched from `814abff3`, shipped defaults — `run_config.json`
+lever block **empty**, no `OIN_*` in a live shard's environment — sweep-of-record configuration
+(6 shards, `--mol-timeout 300`, BLAS=1, g-xTB). All six shards exited 0; `#DONE 5000`; 6 h 42 min.
+Read by `tools/v0417/post_sweep.sh`; the reader's control ran first and reproduced the census on
+the sweep of record, 5,000 / 3,858 / 3,462.
+
+| | sweep of record (v0.4.14) | **v0.4.17** | A/B predicted |
+|---|---:|---:|---:|
+| **self-consistent** (`byte_exact`, honest) | 3,858 = 77.16% | **4,136 = 82.72%** | 82.62% |
+| **VERIFIED** (string describes the input AND the ruler passes the structure) | 3,462 = 69.24% | **3,730 = 74.60%** | 74.54% |
+| passes the metric cannot verify | 396 | 406 | |
+
+**It decomposes exactly, which is the claim.** The A/B said every molecule outside its 504 movers
+is unchanged by construction. Measured:
+
+- on the 504 movers the sweep's pass/fail verdict equals the A/B's ON arm on **504 / 504**
+  (408 pass in both) — the seeded generator reproduced itself in a different run, on a different
+  day's load;
+- of the 4,496 non-movers, **4,494 are unchanged**; the other 2 are `hard_fail` timeouts that
+  finished this time;
+- so self-consistent **+278 = +273 (the lever) + 3 (the A/B's own noise-floor flips against the
+  record) + 2 (non-mover timeouts)**; verified +268 = +265 + 3. Losses: 3 and 4, all movers, all
+  the generator-side ones of § L1b. **The lever is worth +5.46 / +5.30 points; +0.10 / +0.06 is
+  run-to-run**, in the direction of fewer timeouts, and should not be booked as accuracy.
+- `smiles_1` equals the exact-fold encoder run's string on **4,988 / 4,988**;
+- re-deriving parse-back from the NEW strings moves **1 of 5,000** string-fault verdicts — "a
+  slot relabeling cannot change these" was an assumption in § L1b; it is now a measurement.
+
+| bucket | record | v0.4.17 | |
+|---|---:|---:|---:|
+| `byte_exact` | 3,858 | **4,136** | +278 |
+| `key_equal` | 365 | 122 | −243 — **`slot_renumber` 252 → 5**; `rdkit_canonical` 113 → 117 |
+| `structural` | 484 | 479 | −5 |
+| `hard_fail` | 266 | 236 | −30 |
+| `facmer_divergent` | 15 | 16 | +1 |
+| `encode_fail` | 12 | 11 | −1 |
+
+| runtime (`metrics.elapsed_s`, nested, a SUM) | record | v0.4.17 |
+|---|---:|---:|
+| Σ | 38.7 h | **33.2 h** |
+| median | 4.01 s | 3.32 s |
+| > 30 s | 678 (13.56%) | **579 (11.58%)** |
+| > 300 s | 214 | 180 |
+| max | 729 s | 698 s |
+
+**This is the new baseline of record.** v0.4.14's carry-forward licence is void; nothing measured
+against it may be quoted beside 82.72 / 74.60. The gap is now **17.28 pts self-consistent,
+25.40 verified**, and the census's fault partition no longer sums to it. By census fault, among
+the molecules that FAILED the sweep of record: `E1_NONCANONICAL` 266 → **41 still failing** (225
+now pass; the 41 are 29 `structural`, 10 `key_equal`, 2 other — the 102-pair residual, the 5
+mis-attributed wrap-chiral rows, and generator-side failures the label defect had been hiding);
+`G_NOTHING` 104 → 86 (18 now pass — the unbuildable strings). 864 failures remain; read against
+the OLD table they are `G_CONSTRUCTION` 380, `G_NOTHING` 86, `E1_HCOUNT` 79, `E1_GRAPH` 77,
+`E2_P_FRAGILE` 76, `E2_P_OTHER` 62, `E1_NONCANONICAL` 41, other 63 — indicative only, because a
+mover's old fault describes a string it no longer has. The next lane should be chosen from a
+re-attribution of THIS sweep, not from that table.
+
+⚠ Not frozen. `results-v0.4.17-sweep/` and `results-v0.4.17-exactfold/` are gitignored;
+`/freeze-measurements` writes to the PUBLIC `measurements/` tree on `main` and is the owner's call.
 
 ## What was built
 
