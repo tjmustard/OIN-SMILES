@@ -4,6 +4,7 @@
              field 2 against tools/v0417/arm2_field2_audit.py, and build the control cohorts
              (symlink dirs) holding exactly the rows `on` did not reproduce
     splice   read the `off` control for those rows, give each ONE reason, and write the goldens
+    rows     merge each arm's shards into one sorted TSV with a #DONE trailer, for freezing
 
 THE REASON IS THE POINT. A row that differs from the golden is not thereby a row the v0.4.17 lever
 moved. Generation is seeded, so with ``OIN_EXACT_DONOR_FOLD=0`` a healthy golden row comes back
@@ -272,17 +273,35 @@ def cmd_splice(args):
     )
 
 
+def cmd_rows(_args):
+    """One sorted TSV per arm, for freezing: the shards are an artefact of how the run was split."""
+    for arm in ("on", "off", "verify"):
+        merged = {}
+        for tag in GOLDENS:
+            for m, f in fresh_rows(arm, tag).items():
+                merged[(tag, m)] = f
+        body = ["\t".join([tag] + f) for (tag, _m), f in sorted(merged.items())]
+        (OUT / f"{arm}_rows.tsv").write_text(
+            "# golden\tname\tsha_in\tsha_out\tlen_in\tlen_out\teta\txyz_sha(observation)\tstatus"
+            f"   -- arm `{arm}`: {(OUT / arm / 'COMMIT').read_text().split()[0][:8]}\n"
+            + "\n".join(body)
+            + f"\n#DONE {len(body)}\n"
+        )
+        print(f"{arm}_rows.tsv: {len(body)} rows")
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("diff")
+    sub.add_parser("rows")
     sp = sub.add_parser("splice")
     sp.add_argument("--write", action="store_true")
     sp.add_argument("--comment-file", help="the '# v0.4.17: ...' block to put at the top")
     args = ap.parse_args()
-    {"diff": cmd_diff, "splice": cmd_splice}[args.cmd](args)
+    {"diff": cmd_diff, "splice": cmd_splice, "rows": cmd_rows}[args.cmd](args)
 
 
 if __name__ == "__main__":

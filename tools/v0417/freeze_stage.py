@@ -32,6 +32,7 @@ from pathlib import Path
 
 DATA = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
 SWEEP, XF = DATA / "results-v0.4.17-sweep", DATA / "results-v0.4.17-exactfold"
+A2 = XF / "arm2_refreeze"
 STAGE = XF / "freeze"
 PER_FILE_CAP = 512 * 1024  # the harvester's; a staged file over it would be silently skipped
 
@@ -67,6 +68,19 @@ PLAN = [
     (XF / "ab_on/bucket_report_honest.json", "l1/v0417_ab_on_bucket_report_honest.json.gz", True),
     (XF / "ab_off/g_verdict.jsonl", "l1/v0417_ab_off_g_verdict.jsonl.gz", True),
     (XF / "ab_on/g_verdict.jsonl", "l1/v0417_ab_on_g_verdict.jsonl.gz", True),
+    # --- the ARM 2 golden re-freeze (docs/agentic-notes/v0.4.17/ARM2_REFREEZE.md) ----------------
+    # In the SAME release directory as L1 on purpose: the harvester rebuilds a release's index from
+    # the current picks only, so a second harvest from a directory holding just these files would
+    # leave the 14 L1 files on disk and erase them from README.md.
+    (A2 / "arm2_refreeze_rows.tsv", "l1/v0417_arm2_refreeze_rows.tsv", False),
+    (A2 / "field2_audit_v047.jsonl", "l1/v0417_arm2_field2_audit_v047.jsonl.gz", True),
+    (A2 / "field2_audit_v049.jsonl", "l1/v0417_arm2_field2_audit_v049.jsonl.gz", True),
+    (A2 / "stale_cause.jsonl", "l1/v0417_arm2_stale_cause.jsonl.gz", True),
+    (A2 / "stale_cause.txt", "l1/v0417_arm2_stale_cause.txt", False),
+    (A2 / "diff_on.txt", "l1/v0417_arm2_diff_full_gate_vs_old_goldens.txt", False),
+    (A2 / "on_rows.tsv", "l1/v0417_arm2_rows_on_full_gate.tsv.gz", True),
+    (A2 / "off_rows.tsv", "l1/v0417_arm2_rows_off_control.tsv", False),
+    (A2 / "verify_rows.tsv", "l1/v0417_arm2_rows_verify_real_gate.tsv", False),
 ]
 
 
@@ -86,7 +100,9 @@ def main():
         if not src.exists():
             sys.exit(f"ABORT: {src} is missing -- refusing to stage a partial release")
         raw = src.read_text()
-        if src.suffix == ".jsonl" and not raw.rstrip().splitlines()[-1].startswith("#DONE"):
+        if src.suffix in (".jsonl", ".tsv") and not (
+            raw.rstrip().splitlines()[-1].startswith("#DONE")
+        ):
             sys.exit(f"ABORT: {src} has no #DONE trailer -- an unfinished run must not be frozen")
         clean = scrub(raw)
         n_scrubbed += clean != raw

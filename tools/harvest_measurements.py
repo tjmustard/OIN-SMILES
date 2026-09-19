@@ -179,6 +179,8 @@ ALLOW = [
     "v0417_*.json",
     "v0417_*.txt",
     "v0417_*.md",
+    "v0417_*.tsv",
+    "v0417_*.tsv.gz",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -299,6 +301,42 @@ PROVENANCE = [
         "   (L1b: the REAL sweep harness over the 504 movers, OFF and ON arms run SIMULTANEOUSLY,"
         " commit de4a9d2c. Self-consistent 276 gains / 3 losses, VERIFIED 269 / 4; dead-lever"
         " check 392; noise floor 3/504 vs the sweep of record)",
+    ),
+    (
+        r"^v0417_arm2_refreeze_rows\.tsv$",
+        "tools/v0417/arm2_refreeze.py splice --write   (THE RE-FREEZE: 51 of 425 ARM 2 golden rows,"
+        " one reason each -- LEVER 36 / STALE+LEVER 4 / STALE 11. Columns: old row, lever-off row,"
+        " re-frozen fields 2-6; fields 7+ of a golden are preserved, never spliced)",
+    ),
+    (
+        r"^v0417_arm2_field2_audit_v04[79]\.jsonl\.gz$",
+        "tools/v0417/arm2_field2_audit.py --golden <golden> --cohort-dir <cohort>   (field 2 of"
+        " EVERY golden row, encode-only, fresh process per lever setting: shipped vs"
+        " OIN_EXACT_DONOR_FOLD=0. 15 of 425 rows were stale BEFORE v0.4.17; a worker importing a"
+        " foreign oinsmiles aborts the run, as does a lever that fires on 0 rows)",
+    ),
+    (
+        r"^v0417_arm2_stale_cause\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_stale_cause.py   (which lever left the rows stale: the pre-lane encoder,"
+        " then each other default-ON lever set to 0 ALONE, 14 molecules x 13 arms."
+        " OIN_CANONICAL_DONOR_FOLD=0 restores 14 of 14 -> stale since v0.4.13)",
+    ),
+    (
+        r"^v0417_arm2_(rows_on_full_gate\.tsv\.gz|diff_full_gate_vs_old_goldens\.txt)$",
+        "tools/v0417/run_arm2_refreeze.sh on ; tools/v0417/arm2_refreeze.py diff|rows   (the FULL"
+        " gate, all 425 rows of both ARM 2 goldens, shipped defaults, 6 shards, commit f5f507ef,"
+        " against the goldens as they stood: 38 field-2 + 13 field-3-only mismatches, 2 killed)",
+    ),
+    (
+        r"^v0417_arm2_rows_off_control\.tsv$",
+        "tools/v0417/run_arm2_refreeze.sh off   (OIN_EXACT_DONOR_FOLD=0 on the 53 unreproduced"
+        " rows, commit 6cf9b185: a healthy old row comes back byte-for-byte -- 36 did)",
+    ),
+    (
+        r"^v0417_arm2_rows_verify_real_gate\.tsv$",
+        "tools/v0417/run_arm2_refreeze.sh verify   (tools/gate_v047.sh arm2 ITSELF reading the"
+        " re-frozen goldens, commit 1a3a1075: 51 of 51 re-frozen rows pass; the only mismatches are"
+        " EQEROI and MUKGUW, SIGKILLed at --hard-timeout in all three runs and never re-frozen)",
     ),
     (
         r"^attribution_(table\.tsv\.gz|summary\.json)$",
