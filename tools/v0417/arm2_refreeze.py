@@ -18,9 +18,12 @@ re-frozen for a field the gate does not read.
 
 WHAT IS SPLICED. Fields 1-6 (name, sha_in, sha_out, len_in, len_out, eta) come from the fresh `on`
 row. Fields 7+ are PRESERVED: in a v0.4.9 golden field 7 is the runtime band ``--band`` filters on,
-while a fresh row carries ``xyz_sha`` there (v0.4.14 found this by breaking it). A fresh row with no
-``sha_out`` is NOT spliced by this tool -- whether that is a budget or a defect is a judgement, and
-it aborts so that a person makes it.
+while a fresh row carries ``xyz_sha`` there (v0.4.14 found this by breaking it). Where the golden's
+field 3 is ``NO_STRUCTURE@Ns`` the sentinel is KEPT and only ``sha_in``/``len_in`` are taken: that
+row gates field 2 alone, and whether this box assembles a structure inside the budget today is a
+fact about the box. A fresh row with no ``sha_out`` where the golden had one, and any
+``NO_STRUCTURE_DET`` row, is NOT spliced by this tool -- budget or defect is a judgement, and it
+aborts so that a person makes it.
 
 ``# MANIFEST_SHA256`` is recomputed: ARM 2 never verifies it, so a stale one goes unseen.
 
@@ -105,9 +108,18 @@ def _audit(tag):
 def cmd_diff(_args):
     for tag, (gpath, cohort) in GOLDENS.items():
         G, F, A = golden_rows(gpath), fresh_rows("on", tag), _audit(tag)
-        tally, owed = Counter(), []
+        tally, owed, killed = Counter(), [], []
         for g in G:
-            v, field = gate_verdict(g, F.get(g[0]))
+            f = F.get(g[0])
+            v, field = gate_verdict(g, f)
+            # The gate SIGKILLs a molecule at --hard-timeout and synthesises a HARD_TIMEOUT@ row,
+            # which it then scores as a field-2 MISMATCH. It never saw smiles_1: the kill landed
+            # in the generator, after an encode that may be perfectly healthy. That is a fact
+            # about the box's load, so it is counted apart and settled by the encode-only audit.
+            if v == "MISMATCH" and f[1].startswith("HARD_TIMEOUT@"):
+                tally["KILLED_gate_says_MISMATCH_f2"] += 1
+                killed.append(g[0])
+                continue
             tally[v if field is None else f"MISMATCH_f{field}"] += 1
             if v in ("MISMATCH", "MISSING"):
                 owed.append((g[0], field, F.get(g[0], [""] * 8)[-1]))
@@ -131,6 +143,15 @@ def cmd_diff(_args):
                 f"audit only: {sorted(by_audit - by_gate)}"
             )
         print(f"    field 2: gate and encode-only audit agree on all {len(by_gate)} rows")
+        for m in killed:
+            a = A[m]
+            ok = a["shipped"].get("sha") == a["golden_sha1"] and a["class"] == "SAME"
+            print(
+                f"    KILLED {m:22s} audit: {a['class']}, golden f3={dict((g[0], g[2]) for g in G)[m]}"
+                f"  -> {'no re-freeze owed' if ok else 'UNSETTLED'}"
+            )
+            if not ok:
+                sys.exit(f"ABORT: {m} was killed AND the audit does not clear it. Re-run it alone.")
 
         cdir = control_cohort(tag)
         cdir.mkdir(exist_ok=True)
@@ -139,8 +160,11 @@ def cmd_diff(_args):
         for m, field, status in owed:
             os.symlink(os.path.realpath(cohort / f"{m}.xyz"), cdir / f"{m}.xyz")
             print(f"    owed  {m:22s} field {field}   fresh status: {status[:70]}")
+        for m in killed:  # in the control too: `off` must be killed as well, or it IS the lever
+            os.symlink(os.path.realpath(cohort / f"{m}.xyz"), cdir / f"{m}.xyz")
         (OUT / f"owed_{tag}.txt").write_text("".join(f"{m}\n" for m, _f, _s in owed))
-        print(f"    control cohort: {len(owed)} rows -> {cdir.name}")
+        (OUT / f"killed_{tag}.txt").write_text("".join(f"{m}\n" for m in killed))
+        print(f"    control cohort: {len(owed)} owed + {len(killed)} killed -> {cdir.name}")
     sys.stdout.flush()
 
 
@@ -154,7 +178,10 @@ def cmd_splice(args):
             _audit(tag),
         )
         owed = (OUT / f"owed_{tag}.txt").read_text().split()
-        if set(OFF) != set(owed):
+        killed = (OUT / f"killed_{tag}.txt").read_text().split()
+        for m in killed:
+            print(f"    KILLED in `on`: {m:22s} `off` row: {OFF[m][1][:24]} {OFF[m][-1][:40]}")
+        if set(OFF) != set(owed) | set(killed):
             sys.exit(
                 f"ABORT: {tag} control ran {sorted(set(OFF) ^ set(owed))} differently from owed"
             )
@@ -165,10 +192,18 @@ def cmd_splice(args):
                 new.append(g)
                 continue
             on, off = ON[m], OFF[m]
-            if not on[1] or not on[2]:
+            # A NO_STRUCTURE@Ns golden gates field 2 ONLY: whether this box assembles a structure
+            # inside the budget today is a fact about the box. Keep the sentinel; compare, and
+            # splice, field 2 alone. (7 of v049's field-2 movers are such rows.)
+            budget_row = g[2].startswith("NO_STRUCTURE@")
+            if g[2] == "NO_STRUCTURE_DET":
+                sys.exit(
+                    f"ABORT: {m} was frozen as a DETERMINISTIC no-structure. Decide it by hand."
+                )
+            if not on[1] or (not on[2] and not budget_row):
                 sys.exit(f"ABORT: {m} has no fresh sha_out ({on[-1][:80]}). Decide it by hand.")
             off_ok = gate_verdict(g, off)[0] != "MISMATCH"
-            moved = (on[1], on[2]) != (off[1], off[2])
+            moved = on[1] != off[1] if budget_row else (on[1], on[2]) != (off[1], off[2])
             reason = "LEVER" if off_ok else ("STALE+LEVER" if moved else "STALE")
             if off_ok and not moved:
                 sys.exit(
@@ -177,7 +212,9 @@ def cmd_splice(args):
                 )
             healed = A[m]["class"] != "SENTINEL" and A[m]["shipped"].get("sha") == g[1]
             reasons[m] = (reason, 2 if on[1] != g[1] else 3, healed)
-            new.append(on[:6] + g[6:])
+            new.append(
+                [m, on[1], g[2], on[3], g[4], g[5]] + g[6:] if budget_row else on[:6] + g[6:]
+            )
         report.append((tag, gpath, G, new, reasons))
         print(
             f"\n=== {tag}: {len(reasons)} of {len(G)} rows re-frozen   "
