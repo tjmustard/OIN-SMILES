@@ -521,6 +521,176 @@ def _donor_swap_permutations(frags: list[str], vcolor: dict, cap: int = 4096) ->
     return out
 
 
+#: Substructure self-matches enumerated per fragment before the exact fold gives up on it.
+_AUTOMORPHISM_MATCH_CAP = 50000
+
+
+def _automorphism_query(mol, resonance: bool, keep: set):
+    """``(query_mol, original_index_of_each_query_atom)`` for enumerating ``mol``'s automorphisms.
+
+    Two reductions, both of which can only REMOVE candidate automorphisms, never invent one:
+
+    * With ``resonance`` the graph is flattened exactly as :func:`_skeleton_ranks` flattens it
+      (bond orders, aromatic flags, charges, hydrogens) **and radicals are zeroed**. The
+      substructure matcher reads radical counts where ``CanonicalRankAtoms`` does not, so a
+      corrole whose one pyrrole was perceived as ``[CH][CH]`` has skeleton classes A~B, C~D and
+      not one non-trivial match until the radicals go (``LAMTAX_comp_0``).
+    * Pendant decoration is stripped: non-``keep`` leaves are removed to a fixpoint (t-Bu, CF3,
+      alkyl tails; rings stay), and every surviving atom's FULL-graph symmetry class is pinned as
+      its isotope. A ligand with eight t-Bu groups has 6^8 automorphisms that all act identically
+      on its donors; pinning the full-graph class means the stripped graph cannot map two atoms
+      whose pendant environments differed, so nothing is gained by the stripping but time.
+    """
+    from rdkit import Chem
+
+    if resonance:
+        rw = Chem.RWMol(mol)
+        for b in rw.GetBonds():
+            b.SetBondType(Chem.BondType.SINGLE)
+            b.SetIsAromatic(False)
+        for a in rw.GetAtoms():
+            a.SetFormalCharge(0)
+            a.SetNoImplicit(True)
+            a.SetNumExplicitHs(0)
+            a.SetIsAromatic(False)
+            a.SetNumRadicalElectrons(0)
+        work = rw.GetMol()
+        Chem.SanitizeMol(work, Chem.SANITIZE_SYMMRINGS | Chem.SANITIZE_ADJUSTHS)
+    else:
+        work = Chem.Mol(mol)
+    ranks = list(Chem.CanonicalRankAtoms(work, breakTies=False))
+
+    keep = set(keep)
+    for a in work.GetAtoms():
+        if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
+            keep.add(a.GetIdx())
+            keep.update(nb.GetIdx() for nb in a.GetNeighbors())
+    alive = set(range(work.GetNumAtoms()))
+    nbrs = {a.GetIdx(): [nb.GetIdx() for nb in a.GetNeighbors()] for a in work.GetAtoms()}
+    deg = {i: len(v) for i, v in nbrs.items()}
+    changed = True
+    while changed:
+        changed = False
+        for i in sorted(alive):
+            if i in keep or deg[i] > 1:
+                continue
+            alive.discard(i)
+            for nb in nbrs[i]:
+                if nb in alive:
+                    deg[nb] -= 1
+            changed = True
+
+    rw = Chem.RWMol(work)
+    for a in rw.GetAtoms():
+        a.SetIsotope(int(ranks[a.GetIdx()]) + 1)
+    for i in sorted(set(nbrs) - alive, reverse=True):
+        rw.RemoveAtom(i)
+    return rw.GetMol(), sorted(alive)
+
+
+def _donor_automorphism_permutations(frags: list[str], vcolor: dict, cap: int = 4096) -> list[dict]:
+    """Slot permutations induced by **true automorphisms** of each fragment (v0.4.17).
+
+    The exact counterpart of :func:`_donor_swap_permutations`, selected by
+    ``OIN_EXACT_DONOR_FOLD``. Same signature, same return shape, always contains the identity.
+
+    WHAT THE BUCKET FOLD GETS WRONG. It permutes each symmetry class of a fragment
+    **independently**. A ligand automorphism does not work that way: the C2 axis of a linear
+    tetradentate ``t1-i1-i2-t2`` exchanges the terminal pair AND the inner pair in one move.
+    Exchanging the terminals alone is not a symmetry of the ligand, and the labeling it produces
+    describes a different arrangement -- the mirror image when the ligand wraps cis-alpha. That
+    single fact is why the bucket fold needed ``fold_parity``'s veto, and why the veto then had
+    to guess, from strings, whether a collapse was an enantiomer pair or an achiral molecule.
+
+    WHY THIS ONE NEEDS NO VETO. Every permutation returned here is the action on the slots of a
+    graph automorphism that preserves the fragment's chiral tags (``useChirality=True``). So
+    every candidate ``p.a.L`` (``p`` a proper rotation, ``a`` from this set) describes the same
+    molecule as ``L``, to the full extent the string describes a molecule at all. Two consequences:
+
+    * a chiral complex and its mirror image have DISJOINT candidate sets -- nothing to veto;
+    * an achiral complex's mirror labeling is ``g.L.a`` for some rotation ``g`` and automorphism
+      ``a``, so it lies in the complex's OWN candidate set -- one string for both hands, with no
+      achirality test and no mirror encode.
+
+    Measured offline on the census probe strings (``tools/v0417/autofold_audit.py``, positive
+    control 5,792/5,792): of the 568 achiral pairs the veto splits, this unifies 550; the other
+    18 are cis-alpha / helical wraps that the census ruler mis-read as achiral and the bucket
+    fold collapses. See ``docs/agentic-notes/v0.4.17/``.
+
+    A fragment that cannot be enumerated (unparseable, matcher error, more than
+    ``_AUTOMORPHISM_MATCH_CAP`` matches) contributes the identity only -- a missed fold, the same
+    conservative direction as an unknown geometry.
+    """
+    from itertools import product
+
+    from .compare import _parse_fragment
+    from .inline import OINInlineHandler, _count_smiles_atoms_before
+    from .levers import lever_enabled
+
+    resonance = lever_enabled("OIN_RESONANCE_DONOR_FOLD")
+
+    per_frag: list[list[dict]] = []
+    for frag in frags:
+        if OINInlineHandler.METAL_REGEX.search(frag):
+            continue
+        slot_atoms: dict[int, set] = {}
+        for m in OINInlineHandler.SLOT_REGEX.finditer(frag):
+            prefix = OINInlineHandler.SLOT_REGEX.sub("", frag[: m.start()])
+            slot_atoms.setdefault(int(m.group(1)), set()).add(
+                _count_smiles_atoms_before(prefix, len(prefix))
+            )
+        if len(slot_atoms) < 2:
+            continue  # one donor cannot be exchanged with anything
+        mol = _parse_fragment(OINInlineHandler.SLOT_REGEX.sub("", frag))
+        if mol is None:
+            continue
+        donors = {i for atoms in slot_atoms.values() for i in atoms}
+        if any(i >= mol.GetNumAtoms() for i in donors):
+            continue
+        try:
+            query, order = _automorphism_query(mol, resonance, donors)
+            matches = query.GetSubstructMatches(
+                query, uniquify=False, useChirality=True, maxMatches=_AUTOMORPHISM_MATCH_CAP
+            )
+        except Exception:  # noqa: BLE001  -- an unmatchable fragment simply does not fold
+            continue
+        if len(matches) >= _AUTOMORPHISM_MATCH_CAP:
+            continue
+
+        pos = {old: k for k, old in enumerate(order)}
+        by_atoms = {frozenset(atoms): slot for slot, atoms in slot_atoms.items()}
+        perms: dict[tuple, dict] = {}
+        for match in matches:
+            mapping: dict | None = {}
+            for slot, atoms in slot_atoms.items():
+                target = by_atoms.get(frozenset(order[match[pos[i]]] for i in atoms))
+                # Same vertex colour, for the reason `_donor_swap_permutations` gives: the
+                # exchange must stay inside the colored-vertex signature's kernel.
+                if target is None or vcolor.get(target) != vcolor.get(slot):
+                    mapping = None
+                    break
+                mapping[slot] = target
+            if mapping is not None:
+                perms[tuple(sorted(mapping.items()))] = mapping
+        if len(perms) > 1:
+            per_frag.append([perms[k] for k in sorted(perms)])
+
+    if not per_frag:
+        return [{}]
+    total = 1
+    for p in per_frag:
+        total *= len(p)
+        if total > cap:
+            return [{}]
+    out = []
+    for combo in product(*per_frag):
+        mapping = {}
+        for m in combo:
+            mapping.update(m)
+        out.append(mapping)
+    return out
+
+
 def _render(frags: list[str], metal_pos, mapping: dict):
     """Apply ``mapping`` and re-sort the fragments. Returns ``(string, sort_key_tuple)``.
 
@@ -597,11 +767,16 @@ def canonical_slot_relabeling(oin_string: str) -> tuple[dict[int, int], str]:
     # the emitted string and the returned map are both byte-identical to the old behaviour.
     from .levers import lever_enabled
 
-    donor_perms = (
-        _donor_swap_permutations(frags, vcolor)
-        if lever_enabled("OIN_CANONICAL_DONOR_FOLD")
-        else [{}]
-    )
+    #
+    # v0.4.17: ``OIN_EXACT_DONOR_FOLD`` swaps the bucket-wise generator for the one that returns
+    # only true fragment automorphisms. It refines the fold, so it is read only when the fold is
+    # on; with it off this expression is unchanged.
+    if not lever_enabled("OIN_CANONICAL_DONOR_FOLD"):
+        donor_perms = [{}]
+    elif lever_enabled("OIN_EXACT_DONOR_FOLD"):
+        donor_perms = _donor_automorphism_permutations(frags, vcolor)
+    else:
+        donor_perms = _donor_swap_permutations(frags, vcolor)
 
     best_key = None
     best_map: dict[int, int] = {}

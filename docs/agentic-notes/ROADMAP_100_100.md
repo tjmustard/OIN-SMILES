@@ -235,6 +235,34 @@ atoms. A string comparison cannot see them. Use `tools/roundtrip_bucket_report.p
 | **v0.4.18** | 🔴 **RE-POINTED 2026-07-30 — THE FLOOR, stated with evidence.** `hard_fail` 266 (5.32, of which **262 produce NOTHING**) + `NO_STRUCTURE` 11 + `facmer` 15 + `encode_fail` 12, then the encoder ladder's last **1.28 pts** (39 `NOT_A_MIRROR` + 25 resonance residue) and the 57 notation molecules. ⚠ `OIN3DGenerator(timeout=)` is ADVISORY and `elapsed_s` is a SUM — **separate budget-exhaustion from genuine incapacity or the floor is over-stated**. **Product: the honest achievable ceiling** = 100 − produce-nothing floor − construction limit − notation-undecided, each with its evidence | **FLAT or DOWN** — the product is a defensible limit, not points |
 | **v0.4.19** | 🟢 **NEW, created by v0.4.16's measurement — it was not on the ladder.** `structural`'s INTACT+BOUNDARY were carried three releases as "nobody knows why" and v0.4.17 was sized to take them as construction; the classification says **82% is PERCEPTION**, so v0.4.17 declines them and v0.4.18 is the floor. **THE PERCEPTION LANE: 141 molecules / 2.82 pts** (`PERCEPTION` 122 + `GEOM_CODE` 19) — heavy-atom graph already correct, bond orders / aromaticity / charge / H differ. 🔴 **Deliverable 1 is not a fix: it is whether the PERCEIVER is wrong or the GEOMETRY is.** Re-perceive the input XYZ and the generated XYZ through the same path; if the input reads correctly and the generated one does not, the geometry moved and these 2.82 pts fold into v0.4.17's problem instead. **That negative is also a product** — it raises the confidence of v0.4.18's ceiling statement | **UP up to 2.82, or a measured FOLD into the construction block** |
 
+### LADDER DECISION 2026-09-18 (v0.4.17 L1) — **MEASURED, promoted by the project owner**
+
+`OIN_EXACT_DONOR_FOLD` is default-ON. **New baseline of record: `results-v0.4.17-sweep`,
+82.72% self-consistent / 74.60% VERIFIED** (was 77.16 / 69.24). Carry both numbers, always.
+
+- The census's prescription for `E1_NONCANONICAL` — a geometric achirality test in
+  `fold_parity.resolve` — was not what was built. The defect was the FOLD: it permuted a ligand's
+  symmetry classes independently, which is not an automorphism. Folding over true fragment
+  automorphisms needs no veto, no achirality test and no mirror encode.
+- Measured through the generator on the lever's complete mover set (504), then by a full sweep
+  that reproduced that A/B on 504 / 504 movers with 4,494 / 4,496 non-movers unchanged:
+  **the lever is +273 self-consistent / +265 verified; `slot_renumber` 252 → 5.**
+- 65 shipped strings described an arrangement that cannot be built; `hard_fail` 266 → 236. Part
+  of the census's `G_NOTHING` "compute floor" was the encoder.
+- The v0.4.12 veto never separated its own three "confirmed enantiomer" fixtures: under the
+  shipped encoder a renumbering of x gave its mirror's string 8, 7 and 6 times in 12. The
+  evidence v0.4.13's veto promotion rested on was this coin. The veto stays ON and is inert.
+- Accepted by the owner: 17 formerly "protected" pairs are unified (NON-INJECTIVE 146 → 163);
+  the repair is Y1 P3 (encode the metal-bound N–H / C–H centre).
+
+**What this re-points.** The gap is 17.28 / 25.40 and the census table no longer partitions it.
+Next, in order: (1) re-attribute the v0.4.17 sweep (the census tools run on it unchanged — the
+ruler and parse-back already have); (2) L1d, the 102-pair residual (42 are an `SPY` template
+artifact; any achirality bit must be AUTOMORPHISM-based or it collapses the 18 wrap-chiral
+pairs); (3) the generator's dependence on slot LABELS (every loss in two releases' canonicality
+A/Bs — 7 in v0.4.14, 4 here); then L2 `DETACHED` and v0.4.18's serializer as already laddered.
+Full record: `docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md`.
+
 ### CENSUS DECISION 2026-09-17 — **MEASURED (C1–C4), the ladder below it is re-pointed**
 
 🔴 **Every molecule of the n=5,000 baseline sweep now carries ONE fault, assigned by the first rule

@@ -49,6 +49,21 @@ free once the structure has been encoded once. Only ``inline_mirror`` needs perc
 is computed **only when the fold actually changes the string** -- when ``S_rot == S_fold`` there
 is nothing to veto and the mirror is never built.
 
+v0.4.17 -- WHAT THIS MODULE WAS POLICING, AND WHEN IT STANDS DOWN
+=================================================================
+The sentence above -- "a fragment's automorphism says nothing about the parity..." -- is true of
+what the fold calls an automorphism, and that is the defect: ``_donor_swap_permutations`` permutes
+each symmetry class of a fragment INDEPENDENTLY, which is not an automorphism at all. A ligand's
+C2 axis moves every class at once; swapping one class alone relabels the complex as a different
+arrangement (the mirror image, for a cis-alpha tetradentate). The veto below catches that after
+the fact, from strings, and cannot tell a collapsed enantiomer pair from an achiral molecule whose
+two hands SHOULD share a string -- so it fires on one hand of 568 achiral molecules (census C2).
+
+With ``OIN_EXACT_DONOR_FOLD`` on, the candidate set holds only labelings induced by true fragment
+automorphisms, every candidate describes the molecule in hand, and :func:`resolve` returns the
+fold directly (outcome ``exact_fold``): no mirror, no veto, nothing to police. Everything below
+this line describes the default path, which that lever leaves byte-identical.
+
 PRESENTATION-INVARIANCE
 =======================
 The veto predicate is a function of the STRUCTURE, not of the incoming atom numbering: both
@@ -56,6 +71,16 @@ arms of the comparison are re-derived from coordinates, and ``canonicalize_oin_s
 already presentation-invariant on each. So two presentations of one complex reach the same
 verdict and emit the same string. This is asserted, not assumed --
 ``tests/unit/test_fold_parity.py`` renumbers the input and requires the verdict to hold.
+
+🔴 v0.4.17: THE PARAGRAPH ABOVE IS FALSE, and is kept because the error is the lesson.
+``canonicalize_oin_slots`` is presentation-invariant given its INPUT string, but the input string
+is not: which of two automorphic donors the SMILES writer reaches first is decided by atom order,
+so ``S_rot`` differs between two presentations of one structure, and with it the early
+``S_rot == S_fold`` return and the veto's verdict. The test cited drew ONE renumbering per
+fixture; twelve send each "confirmed enantiomer" onto its MIRROR'S string 8, 7 and 6 times
+(``TestTheVetoPathIsNotPresentationInvariant``). Census C2 measured the same thing corpus-wide:
+471 of 494 slot-level renumber drifts are vetoed on some presentation. The exact fold does not
+have this defect, because its candidate set is closed under the relabeling that atom order picks.
 """
 
 from __future__ import annotations
@@ -70,6 +95,7 @@ logger = logging.getLogger(__name__)
 
 FOLD_LEVER = "OIN_CANONICAL_DONOR_FOLD"
 VETO_LEVER = "OIN_FOLD_PARITY_VETO"
+EXACT_LEVER = "OIN_EXACT_DONOR_FOLD"
 
 #: Re-entrancy guard. The veto encodes a mirrored structure, and that encode runs through the
 #: very post-pass that calls this module. Without the guard it would recurse until the stack
@@ -276,6 +302,17 @@ def resolve(inline_oin: str, tmc_mol, xyz_coords) -> str:
     # The veto only has an opinion about the donor fold. With the fold itself off there is no
     # widened candidate set to police, so this is a no-op by construction.
     if not lever_enabled(FOLD_LEVER):
+        return canonicalize_oin_slots(inline_oin)
+
+    # v0.4.17: the exact fold widens the candidate set by TRUE fragment automorphisms only, so
+    # every candidate describes the molecule in hand and a mirror pair's candidate sets are
+    # disjoint by construction -- there is no collapse to veto. Running the veto anyway would be
+    # worse than redundant: its right conjunct ``S_fold == S_fold_m`` is exactly what an ACHIRAL
+    # molecule now satisfies, so it would fire on the 550 pairs the exact fold exists to unify
+    # and re-create the one-hand split the census measured. It also saves the two reconstruction
+    # encodes. The outcome is noted so a probe can see this branch was taken rather than infer it.
+    if lever_enabled(EXACT_LEVER):
+        _note("exact_fold")
         return canonicalize_oin_slots(inline_oin)
 
     _note("pending")
