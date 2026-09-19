@@ -181,6 +181,10 @@ ALLOW = [
     "v0417_*.md",
     "v0417_*.tsv",
     "v0417_*.tsv.gz",
+    # v0.4.18: the census re-run on the v0.4.17 sweep, staged by tools/census/stage_reattribution.py
+    # under ONE prefix. Its table cannot be called `attribution_table.tsv.gz`: PROVENANCE is keyed
+    # on the filename alone and that name already says "the v0.4.14 sweep".
+    "v0418_census_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -337,6 +341,33 @@ PROVENANCE = [
         "tools/v0417/run_arm2_refreeze.sh verify   (tools/gate_v047.sh arm2 ITSELF reading the"
         " re-frozen goldens, commit 1a3a1075: 51 of 51 re-frozen rows pass; the only mismatches are"
         " EQEROI and MUKGUW, SIGKILLed at --hard-timeout in all three runs and never re-frozen)",
+    ),
+    (
+        r"^v0418_census_(attribution_table\.tsv\.gz|attribution_summary\.json|attribution\.txt)$",
+        "tools/census/attribution_table.py --sweep <results-v0.4.17-sweep> --out <reattr> + one path"
+        " per instrument   (THE CENSUS RE-RUN ON THE v0.4.17 SWEEP: 5000 rows, one fault each,"
+        " UNATTRIBUTED 0. FAIL 864 = 17.28 pts: G 9.62 / E2 3.50 / E1 3.38 / P 0.58 / data 0.20."
+        " NONE = 3730 = the VERIFIED count sweep_two_numbers.py printed, or the tool aborts)",
+    ),
+    (
+        r"^v0418_census_control_on_the_record_sweep\.txt$",
+        "tools/census/attribution_table.py --write-to <scratch>   (CONTROL, run first: the"
+        " parameterised tool on the v0.4.14 record sweep reproduces measurements/v0.4.17-census/"
+        "attribution_table.tsv.gz BYTE-FOR-BYTE)",
+    ),
+    (
+        r"^v0418_census_reattribution_diff\.(txt|json)$",
+        "tools/census/reattribution_diff.py --old <census table> --new <new table> --movers <504>"
+        "   (where each fault WENT, split by mover: 4482 of 4496 non-movers keep theirs -- the"
+        " noise floor of attribution is 14 molecules / 0.28 pts)",
+    ),
+    (
+        r"^v0418_census_(parseback_gen|pflags)\.jsonl\.gz$|^v0418_census_attach_class_audit\.json\.gz$",
+        "tools/census/string_sufficiency.py parseback --side gen | pflags --charge-probe ;"
+        " tools/attach_class_audit.py   (the three SWEEP-DEPENDENT instruments, derived on the"
+        " v0.4.17 sweep. The other inputs are frozen where they were made: g_verdict + parseback in"
+        " v0.4.17-sweep/, e_selfconsistency_exact in v0.4.17/, the mirror ruler + twin clusters in"
+        " v0.4.17-census/)",
     ),
     (
         r"^attribution_(table\.tsv\.gz|summary\.json)$",
