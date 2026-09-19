@@ -203,6 +203,13 @@ import os
 #: an encoder lever. Two rows flipped round-trip status in the re-freeze and NEITHER is this
 #: lever's doing -- the control on the frozen sweep structures reads HEKFEL True->True and FOJJUM
 #: False->False. Recorded as comments inside the goldens so a future diff does not misread them.
+#: 🔴 THE FOUR LINES ABOVE ARE WRONG and are kept only so the retraction has something to point at.
+#: The goldens' own header retracted them on 2026-07-28 and this file was never told: generation is
+#: SEEDED (MetalloGenAdapter seed=42), arm2's field 3 is DETERMINISTIC, and HEKFEL was a real
+#: regression. v0.4.17 measured it at scale -- the full gate, 6 shards wide, reproduced all 368
+#: untouched gated rows (328 of them on both fields) -- so a changed out-hash IS attributable:
+#: re-run the row with the lever at "0" and see whether the old one comes back
+#: (tools/v0417/run_arm2_refreeze.sh off).
 #: OIN_EXACT_DONOR_FOLD joined this set in v0.4.17, by owner decision (2026-09-18).
 #:
 #: WHAT IT IS. The donor fold above permutes every symmetry class of a fragment INDEPENDENTLY
@@ -271,7 +278,18 @@ import os
 #:   * It changes the default answer for 392 inputs, which VOIDS the carry-forward licence:
 #:     v0.4.17 owes a full sweep (expected 82.62 / 74.54, +/-0.06) and re-frozen ARM 1 / ARM 2
 #:     goldens, and no table measured before it may be quoted beside the new headline.
-#: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md.
+#:     PAID. Sweep: 82.72 / 74.60 (measurements/v0.4.17-sweep/). ARM 1: 2 of 62 rows. ARM 2: the
+#:     FULL gate was run, all 425 rows, and 51 were re-frozen (6 of 100, 45 of 325). This lever
+#:     moved 40 of them (5 + 35; 12 on field 3 alone, 6 of those on no mover list). Of the 51, none
+#:     went from in==out to in!=out and 21 went the other way (arm2's CIRCULAR predicate -- byte
+#:     identity, not accuracy).
+#:   * 🔴 AND IT FOUND A DEBT THAT WAS NOT THIS LEVER'S: 15 of the 51 (2 + 13; 4 of them ALSO
+#:     moved by the lever) did not come back with the lever at "0" either. They were stale BEFORE
+#:     v0.4.17 -- 14 on field 2, last reproduced by the v0.4.8 sweeps and by none since -- because
+#:     v0.4.13 and v0.4.14 re-froze only the rows a sweep PREDICTED would move, and arm2 is run in
+#:     full only at a release. A predicted list cannot see a row nobody predicted. Re-freeze from
+#:     a FULL run, every promotion.
+#: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md and ARM2_REFREEZE.md.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",

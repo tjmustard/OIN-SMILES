@@ -179,8 +179,6 @@ def cmd_splice(args):
         )
         owed = (OUT / f"owed_{tag}.txt").read_text().split()
         killed = (OUT / f"killed_{tag}.txt").read_text().split()
-        for m in killed:
-            print(f"    KILLED in `on`: {m:22s} `off` row: {OFF[m][1][:24]} {OFF[m][-1][:40]}")
         if set(OFF) != set(owed) | set(killed):
             sys.exit(
                 f"ABORT: {tag} control ran {sorted(set(OFF) ^ set(owed))} differently from owed"
@@ -215,18 +213,25 @@ def cmd_splice(args):
             new.append(
                 [m, on[1], g[2], on[3], g[4], g[5]] + g[6:] if budget_row else on[:6] + g[6:]
             )
-        report.append((tag, gpath, G, new, reasons))
+        for m in killed:
+            if not OFF[m][1].startswith("HARD_TIMEOUT@"):
+                sys.exit(
+                    f"ABORT: {m} was killed in `on` but NOT in `off` -- the lever is involved."
+                )
+        report.append((tag, gpath, G, new, reasons, killed, OFF))
         print(
             f"\n=== {tag}: {len(reasons)} of {len(G)} rows re-frozen   "
             f"{dict(Counter(r for r, _f, _h in reasons.values()))}"
         )
         for m, (reason, field, _h) in sorted(reasons.items()):
             print(f"    {m:22s} {reason:12s} first gated field that moved: {field}")
+        for m in killed:
+            print(f"    {m:22s} KILLED in BOTH arms -- not re-frozen, and not the lever")
 
     if not args.write:
         print("\n(dry run -- pass --write to rewrite the goldens)")
         return
-    for tag, gpath, _G, new, reasons in report:
+    for tag, gpath, _G, new, reasons, killed, _OFF in report:
         old_comments = [
             ln
             for ln in gpath.read_text().splitlines()
@@ -237,19 +242,31 @@ def cmd_splice(args):
             f"#   {m}\t{reason}\tfield {field}"
             for m, (reason, field, _h) in sorted(reasons.items())
         ]
+        block += [
+            f"#   {m}\tNOT RE-FROZEN\tSIGKILLed at --hard-timeout with the lever on AND off. The"
+            " gate scores the synthesised HARD_TIMEOUT@ row as a field-2 MISMATCH without ever"
+            " seeing smiles_1; encode-only, field 2 is unchanged. A loaded box FAILS here."
+            for m in killed
+        ]
         data = ["\t".join(r) for r in new]
         manifest = "\n".join(data)
         digest = hashlib.sha256(manifest.encode()).hexdigest()
-        text = "\n".join(block + old_comments + data + [f"# MANIFEST_SHA256={digest}"])
+        # Layout is the goldens' own: data rows, then comment blocks NEWEST FIRST, then the
+        # manifest line and #DONE last. Hoisting the comments would rewrite a hundred lines of diff
+        # for nothing, in a file whose diff is how the next session finds out what moved.
+        text = "\n".join(data + block + old_comments + [f"# MANIFEST_SHA256={digest}"])
         gpath.write_text(text + f"\n#DONE {len(data)}\n")
         print(f"wrote {gpath.name}: {len(data)} rows, MANIFEST_SHA256={digest}")
-    rows = [
-        f"{tag}\t{m}\t{reason}\t{field}\t" + "\t".join(next(r for r in new if r[0] == m)[:6])
-        for tag, _p, _G, new, reasons in report
-        for m, (reason, field, _h) in sorted(reasons.items())
-    ]
+    rows = []
+    for tag, _p, G, new, reasons, _k, OFF in report:
+        old_by, new_by = {g[0]: g for g in G}, {r[0]: r for r in new}
+        for m, (reason, field, _h) in sorted(reasons.items()):
+            before = [old_by[m][1], old_by[m][2], OFF[m][1], OFF[m][2]]
+            rows.append("\t".join([tag, m, reason, str(field)] + before + new_by[m][1:6]))
     (OUT / "arm2_refreeze_rows.tsv").write_text(
-        "# golden\tmolecule\treason\tfirst_moved_field\tfields 1-6 of the re-frozen row\n"
+        "# golden\tmolecule\treason\tfirst_moved_field\told_sha_in\told_sha_out"
+        "\tleveroff_sha_in\tleveroff_sha_out\tnew_sha_in\tnew_sha_out\tnew_len_in\tnew_len_out"
+        "\teta   (new_* = fields 2-6 of the re-frozen row; fields 7+ of the golden are preserved)\n"
         + "\n".join(rows)
         + f"\n#DONE {len(rows)}\n"
     )

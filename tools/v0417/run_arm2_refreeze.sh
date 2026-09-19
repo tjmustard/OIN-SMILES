@@ -4,6 +4,9 @@
 #   run_arm2_refreeze.sh on              the FULL gate, shipped defaults (no OIN_* set), 425 rows
 #   run_arm2_refreeze.sh off             OIN_EXACT_DONOR_FOLD=0, ONLY the rows `on` could not
 #                                        reproduce (tools/v0417/arm2_refreeze.py diff writes them)
+#   run_arm2_refreeze.sh verify          AFTER the splice: shipped defaults again, on those same
+#                                        rows, so the REAL gate -- not this lane's re-implementation
+#                                        of its comparison -- is what reads the re-frozen goldens
 #
 # WHY THE FULL GATE AND NOT "THE MOVERS". v0.4.13 and v0.4.14 each re-ran only the rows a sweep
 # predicted would move. tools/v0417/arm2_field2_audit.py found rows that were ALREADY stale when
@@ -20,7 +23,7 @@
 # rows land in --out either way, and `#DONE n` is what says a shard finished.
 set -euo pipefail
 
-ARM="${1:?usage: $0 on|off}"
+ARM="${1:?usage: $0 on|off|verify}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DATA=/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset
 OUT="$DATA/results-v0.4.17-exactfold/arm2_refreeze"
@@ -30,7 +33,9 @@ case "$ARM" in
   on)  LEVER_ENV=(); C047="$DATA/cohort-v047-slow100"; C049="$DATA/cohort-v049-strata" ;;
   off) LEVER_ENV=(-E OIN_EXACT_DONOR_FOLD=0)
        C047="$DATA/cohort-v0.4.17-arm2-control-v047"; C049="$DATA/cohort-v0.4.17-arm2-control-v049" ;;
-  *)   echo "usage: $0 on|off" >&2; exit 2 ;;
+  verify) LEVER_ENV=()
+       C047="$DATA/cohort-v0.4.17-arm2-control-v047"; C049="$DATA/cohort-v0.4.17-arm2-control-v049" ;;
+  *)   echo "usage: $0 on|off|verify" >&2; exit 2 ;;
 esac
 
 if [ -n "$(git -C "$HERE" status --porcelain)" ]; then
