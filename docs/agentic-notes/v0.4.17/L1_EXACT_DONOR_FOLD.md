@@ -309,8 +309,11 @@ audit were both reading this coin.
 **Gate ARM 1** (62 fixtures): lever `=0` reproduces the v0.4.16 golden **byte-identically**
 (`#DONE 62`), so the OFF path is untouched; lever ON moves **2 of 62** rows, `KAXVOX` (6 / 4 under
 renumbering before, 10 / 10 now) and `VOacac2`. Re-frozen, reason recorded inside the golden.
-**ARM 2** goldens: 6 of 100 (`v047`) and 30 of 325 (`v049`) rows are movers; their re-freeze needs
-real generation on a quiet box and is **owed after the sweep**, not run beside it.
+**ARM 2** goldens: 6 of 100 (`v047`) and 30 of 325 (`v049`) rows are *predicted* movers; their
+re-freeze needs real generation on a quiet box and was **owed after the sweep**, not run beside it.
+**PAID 2026-09-19, from a FULL gate run: 51 of 425 rows, not 36** — 40 moved by this lever, 15 were
+already stale (since v0.4.13's donor fold), and the predicted list would have missed 19 of the 51.
+See `ARM2_REFREEZE.md`.
 
 **The sweep.** `tools/v0417/launch_sweep.sh` → the project's own `tools/run_sweep.sh`, the
 sweep-of-record configuration (same cohort, 6 shards, `--mol-timeout 300`, BLAS=1), **no `OIN_*`
@@ -415,7 +418,10 @@ Two implementation facts worth keeping:
 - **The generator's label dependence.** L1b's four losses are all of this kind. It is a
   generator lane (the CoordMap should not care which of two automorphic donors is called `{2}`),
   and every future canonicality lever pays it until it is closed.
-- **ARM 2 golden re-freeze** (36 mover rows) and `/freeze-measurements` — after the sweep.
+- ~~**ARM 2 golden re-freeze** (36 mover rows) and `/freeze-measurements` — after the sweep.~~
+  Both DONE (`ARM2_REFREEZE.md`; `measurements/v0.4.17{,-sweep}/`). Left open by the re-freeze: the
+  gate scores a SIGKILLed row as a string mismatch (`EQEROI`, `MUKGUW` fail on a loaded box), and
+  field 8 of the v0.4.9 golden is a stale observation column.
 
 ## Traps this lane added
 

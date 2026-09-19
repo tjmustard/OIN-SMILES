@@ -113,6 +113,10 @@ PIXGIP_comp_0	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	1
 #                    sweeps (2026-07-26) and by no stored sweep since (v0.4.14 sweep, 2026-07-29):
 #                    it went stale in v0.4.9-v0.4.14, whose re-freezes re-ran only the rows a sweep
 #                    predicted. ARM 2 is run in full only at a release, so nothing said so.
+#                    CAUSE, by intervention (tools/v0417/arm2_stale_cause.py, one lever off at a
+#                    time): OIN_CANONICAL_DONOR_FOLD=0 ALONE restores 14 of 14 stale field-2
+#                    molecules -> stale since the v0.4.13 promotion, not v0.4.14's. KIHHUG (field 3)
+#                    was not traced.
 #       STALE+LEVER  both
 #   Field 2 of EVERY row was also audited encode-only, in a fresh process per lever setting
 #   (tools/v0417/arm2_field2_audit.py). The gate and the audit name the same rows, exactly.

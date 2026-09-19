@@ -285,10 +285,11 @@ import os
 #:     identity, not accuracy).
 #:   * 🔴 AND IT FOUND A DEBT THAT WAS NOT THIS LEVER'S: 15 of the 51 (2 + 13; 4 of them ALSO
 #:     moved by the lever) did not come back with the lever at "0" either. They were stale BEFORE
-#:     v0.4.17 -- 14 on field 2, last reproduced by the v0.4.8 sweeps and by none since -- because
-#:     v0.4.13 and v0.4.14 re-froze only the rows a sweep PREDICTED would move, and arm2 is run in
-#:     full only at a release. A predicted list cannot see a row nobody predicted. Re-freeze from
-#:     a FULL run, every promotion.
+#:     v0.4.17 -- 14 on field 2, last reproduced by the v0.4.8 sweeps and by none since; setting
+#:     OIN_CANONICAL_DONOR_FOLD to "0" ALONE restores every one, so they date from v0.4.13 --
+#:     because v0.4.13 and v0.4.14 re-froze only the rows a PREDICTED mover list named, and arm2 is
+#:     run in full only at a release. A predicted list cannot see a row nobody predicted (this
+#:     lane's own would have missed 19 of the 51). Re-freeze from a FULL run, every promotion.
 #: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md and ARM2_REFREEZE.md.
 _DEFAULT_ON = frozenset(
     {
