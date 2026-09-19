@@ -1,0 +1,63 @@
+
+=== v047: 100 golden rows, 100 fresh rows (0 ungated: [])
+    {'COMPARED': 94, 'MISMATCH_f2': 6}
+    field 2: gate and encode-only audit agree on all 6 rows
+    owed  DIDROZ_comp_0          field 2   fresh status: OK
+    owed  FOJJUM_comp_0          field 2   fresh status: OK
+    owed  GAMFOS_comp_0          field 2   fresh status: OK
+    owed  IXUTAW_comp_0          field 2   fresh status: OK
+    owed  JUXPID_comp_0          field 2   fresh status: OK
+    owed  KELQOI_comp_0          field 2   fresh status: OK
+    control cohort: 6 owed + 0 killed -> cohort-v0.4.17-arm2-control-v047
+
+=== v049: 325 golden rows, 328 fresh rows (3 ungated: ['GOHWOQ_comp_0', 'ULODUU_comp_0', 'XIQKOY_comp_0'])
+    {'COMPARED': 234, 'DET': 5, 'KILLED_gate_says_MISMATCH_f2': 2, 'MISMATCH_f2': 32, 'MISMATCH_f3': 13, 'OBSERVE': 4, 'SHA1_ONLY': 35}
+    field 2: gate and encode-only audit agree on all 32 rows
+    KILLED EQEROI_comp_0          audit: SAME, golden f3=NO_STRUCTURE@300s  -> no re-freeze owed
+    KILLED MUKGUW_comp_0          audit: SAME, golden f3=NO_STRUCTURE@300s  -> no re-freeze owed
+    owed  DEVFUG_comp_0          field 2   fresh status: OK
+    owed  ECIGAZ_comp_0          field 2   fresh status: OK
+    owed  FOJJUM_comp_0          field 2   fresh status: OK
+    owed  FOSNEI_comp_0          field 3   fresh status: OK
+    owed  FUQZAT_comp_0          field 2   fresh status: OK
+    owed  GIFXOJ_comp_0          field 2   fresh status: OK
+    owed  GIMKIY_comp_1          field 2   fresh status: OK
+    owed  HACYEQ_comp_0          field 3   fresh status: OK
+    owed  HEKFEL_comp_0          field 2   fresh status: OK
+    owed  HIKCAI_comp_0          field 2   fresh status: OK
+    owed  HIKCIQ_comp_0          field 2   fresh status: OK
+    owed  HIMFAM_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  IGAWOF_comp_0          field 3   fresh status: OK
+    owed  IMEPAS_comp_0          field 2   fresh status: OK
+    owed  IRUCUU_comp_0          field 3   fresh status: OK
+    owed  JUXPID_comp_0          field 2   fresh status: OK
+    owed  KEHNOA_comp_0          field 3   fresh status: OK
+    owed  KIHHUG_comp_0          field 3   fresh status: OK
+    owed  KUPVEX_comp_0          field 2   fresh status: OK
+    owed  LIRBUK_comp_0          field 2   fresh status: OK
+    owed  MEXWUH_comp_0          field 2   fresh status: OK
+    owed  NEGVOL_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  OMOBIC_comp_0          field 3   fresh status: OK
+    owed  PAKWAB_comp_0          field 2   fresh status: OK
+    owed  PODZEO_comp_0          field 2   fresh status: OK
+    owed  QIDHEQ_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  RIXVAX_comp_0          field 2   fresh status: OK
+    owed  RUSKOG_comp_0          field 2   fresh status: OK
+    owed  SUDQEP_comp_0          field 3   fresh status: OK
+    owed  TIFHAR_comp_0          field 2   fresh status: OK
+    owed  TOGKOR_comp_0          field 2   fresh status: OK
+    owed  TORHUD_comp_0          field 2   fresh status: OK
+    owed  ULIDIE_comp_0          field 3   fresh status: OK
+    owed  ULORAQ_comp_0          field 3   fresh status: OK
+    owed  UNEGEB_comp_0          field 2   fresh status: OK
+    owed  UWULEE_comp_0          field 2   fresh status: OK
+    owed  VEQFUT_comp_0          field 2   fresh status: OK
+    owed  WAQXAP_comp_0          field 2   fresh status: OK
+    owed  WUWNOT_comp_0          field 3   fresh status: OK
+    owed  XENZAS_comp_0          field 2   fresh status: OK
+    owed  XEXMIZ_comp_1          field 2   fresh status: OK
+    owed  XUWLEH_comp_0          field 2   fresh status: OK
+    owed  ZELKUY_comp_0          field 3   fresh status: OK
+    owed  ZOYYUJ_comp_0          field 3   fresh status: OK
+    owed  ZUGBUA_comp_0          field 2   fresh status: OK
+    control cohort: 45 owed + 2 killed -> cohort-v0.4.17-arm2-control-v049
