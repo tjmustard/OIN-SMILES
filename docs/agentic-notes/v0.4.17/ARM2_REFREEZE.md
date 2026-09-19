@@ -195,6 +195,13 @@ checked). No single post-splice invocation covered all
 Results: `results-v0.4.17-exactfold/arm2_refreeze/` (`on/`, `off/`, `verify/`, the two audits,
 `arm2_refreeze_rows.tsv`, the `.BEFORE.tsv` goldens).
 
+**Frozen**: `measurements/v0.4.17/v0417_arm2_*` (9 files, local `main`, not pushed) — the 51 rows
+with their reasons, both audits, the cause trace, and the rows of all three gate runs. Every number
+in this note's header re-derives from that directory alone, and its 51 rows equal the committed
+golden rows on fields 2–6. ⚠ The harvester rebuilds a release's index from the *current picks only*:
+the nine files were staged **with** L1's fourteen and the set re-harvested, or the index would have
+lost the fourteen.
+
 ## 9. Not done / caveats
 
 - **Field 8** of a v0.4.9 golden (the v0.4.8 honest-class transition, e.g. `key->FAIL`) is preserved
