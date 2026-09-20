@@ -244,7 +244,7 @@ class TMCOptimizer:
                     )
                 ref_d = sum_d / len(info[0])
                 if len(info[0]) > 1 and lever_enabled("OIN_ETA_COVALENT_TARGET"):
-                    # v0.4.18 L2 (EXPERIMENTAL, default OFF). The upstream "elongation of haptic
+                    # v0.4.18 L2 (default ON). The upstream "elongation of haptic
                     # interaction" below aims an eta5 ring at 1.2 x the covalent-radius sum S.
                     # MEASURED over 1,378 eta groups of the cohort, the real M-C(eta) distance is
                     # 1.008 x S -- and the ENCODER calls an atom bonded inside S + 0.45 A, which is
@@ -539,7 +539,7 @@ class TMCOptimizer:
                             # -> round-trip regression (see clash.py). Disabled -> this is
                             # the pre-A3 ``ff_success = True; break`` (byte-identical).
                             if clash.VDW_ACCEPTANCE_ENABLED:
-                                # v0.4.18 L2 (EXPERIMENTAL, default OFF). The metal's own binding
+                                # v0.4.18 L2 (default ON). The metal's own binding
                                 # atoms are bonded by construction; perceived by distance they
                                 # are a CLASH for every small metal while they cross the dead
                                 # zone between 0.75*sum(R_vdW) and 1.3*sum(R_cov) -- so a Cp ring

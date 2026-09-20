@@ -292,6 +292,48 @@ import os
 #:     lane's own would have missed 19 of the 51). Re-freeze from a FULL run, every promotion:
 #:     /refreeze-goldens (.claude/commands/refreeze-goldens.md) -- OWNER DECISION 2026-09-19.
 #: See docs/agentic-notes/v0.4.17/L1_EXACT_DONOR_FOLD.md and ARM2_REFREEZE.md.
+#:
+#: v0.4.18 PROMOTED OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING -- OWNER DECISION 2026-09-20
+#: ("Promote now and do the selection as the next lane"). GENERATOR-side, both in
+#: generator3d/clean_geometry.py::ff_clean; neither touches a string the encoder emits.
+#:
+#: WHAT THEY REPAIR. The census re-run files 343 molecules / 6.86 pts under
+#: G_CONSTRUCTION/DETACHED, 86% eta-bound, and that defect is a DISTANCE: eta carbons a median
+#: +0.73 A too far from the metal (+0.17 A even in verified passes; Fe +0.84, Co +0.78, Ni +0.71).
+#:   * COVALENT_TARGET: upstream multiplied an eta group's target by 1.1 (eta2-4) / 1.2 (eta5-9),
+#:     "elongation of haptic interaction". Real M-C(eta) over 1,378 groups is 1.008 x the covalent
+#:     sum S, and the ENCODER's contact cutoff S + 0.45 A is ~1.20 x S: the ring was aimed at the
+#:     edge of the bonding range. The factor is dropped.
+#:   * EXEMPT_BINDING: the FF scan's vdW guard perceives bonds by distance, and for a small metal
+#:     the bond threshold lies INSIDE the clash threshold (Fe-C 2.70 vs 2.81 A; Co, Ni, Cu, Pt, Zn,
+#:     Au) -- a ring stepping toward the metal registers clashes, the step is reverted, the scan
+#:     stops. The metal's own binding atoms are exempt: all of them, but only in a complex that
+#:     HAS an eta group, so a non-eta molecule cannot reach either lever.
+#:
+#: THE GATE THAT PROMOTED THEM: a harness A/B over ALL 1,146 eta-bound molecules of the 5k cohort
+#: (the ones that pass are where a loss would come from), both arms at once. Controls: smiles_1
+#: identical in both arms and in the sweep of record (a generator-side lever must not move it);
+#: 798 generated structures differ (a dead lever prints 0 and the report aborts); NOISE FLOOR ZERO
+#: -- the OFF arm reproduced the v0.4.17 sweep byte-for-byte on 1,063/1,063 structures.
+#:     self-consistent  +195 / -29   82.72 -> 86.04% projected
+#:     VERIFIED         +189 / -39   74.60 -> 77.60% projected
+#:     DETACHED with coordination intact 5 -> 168 of 295; sum elapsed_s 14.03 -> 11.77 h.
+#:
+#: ⚠ WHAT IT COSTS, accepted rather than avoided.
+#:   * 39 VERIFIED PASSES ARE LOST (Ru 11, Zr 8, Ir 6, Rh 5 -- metals with no dead zone, so this
+#:     is COVALENT_TARGET). The pool sweeps a global scale 0.8..1.2, first acceptable wins; the 0.8
+#:     conformer used to carry an eta target of 0.8 x 1.2 = 0.96 S -- right BY ACCIDENT -- and now
+#:     carries 0.8 S, is rejected, and a later scale wins with the ring farther out.
+#:   * OIN_ETA_TARGET_UNSCALED (eta target = S at every scale) was run as a full third arm and is
+#:     DOMINATED: +203/-51, +179/-59. But the two configurations break DIFFERENT molecules -- a
+#:     per-molecule oracle is +222 verified with no losses. The right eta target is per-molecule;
+#:     the NEXT LANE puts both in one pool and selects on coordination (never on the round trip:
+#:     18 of the 39 losses still pass it byte-exact).
+#:   * It changes what the generator builds for ~800 eta molecules, which VOIDS the carry-forward
+#:     licence of results-v0.4.17-sweep: v0.4.18 owes a full sweep (expected 86.04 / 77.60, and
+#:     +/-0 if generation stays as deterministic as it was in the A/B), an ARM 1 check, and ARM 2
+#:     goldens re-frozen from a FULL gate run (/refreeze-goldens).
+#: See docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md; evidence measurements/v0.4.18-l2/.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -300,12 +342,14 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_ETA_COVALENT_TARGET",
         "OIN_EXACT_DONOR_FOLD",
         "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
         "OIN_RESONANCE_DONOR_FOLD",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
+        "OIN_VDW_EXEMPT_BINDING",
     }
 )
 
@@ -783,35 +827,17 @@ _HELD_OFF = {
         "and _reparse_cip_memo_clear() lets a per-molecule gate guarantee isolation the way "
         "_ac2bo_memo_clear() does for perception."
     ),
-    "OIN_ETA_COVALENT_TARGET": (
-        "v0.4.18 L2, EXPERIMENTAL -- under measurement, not yet A/B'd through the harness. "
-        "`clean_geometry.ff_clean` multiplies an eta group's target distance by an upstream "
-        "'elongation' factor (1.1 for eta2-4, 1.2 for eta5-9, 1.6 beyond). Measured over 1,378 "
-        "eta groups, the real M-C(eta) distance is 1.008 x the covalent sum S, and the encoder's "
-        "bonding cutoff S + 0.45 A is ~1.20 x S: the generator aims the ring at the edge of what "
-        "the encoder will call bonded. This lever targets S instead. The census files 343 "
-        "molecules / 6.86 pts under G_CONSTRUCTION/DETACHED, 86% of them eta-bound. Held off "
-        "until a generator A/B reports BOTH numbers -- self-consistent and VERIFIED -- with its "
-        "losses."
-    ),
-    "OIN_VDW_EXEMPT_BINDING": (
-        "v0.4.18 L2, EXPERIMENTAL -- under measurement. The FF-scan's vdW guard (default ON since "
-        "v0.4.3 A5) perceives bonds by distance: bonded inside 1.3 x sum(R_cov), a clash if "
-        "non-bonded inside 0.75 x sum(R_vdW). For small metals the bond threshold lies INSIDE the "
-        "clash threshold -- Fe-C 2.70 vs 2.81 A, Co 2.63 vs 2.78, Ni 2.60 vs 2.78 -- so an eta "
-        "ring stepping toward the metal registers five new clashes on its first 0.1 A step, it is "
-        "reverted and the scan stops: the ring stays at the dummy-atom embed's ~2.87 A whatever "
-        "the target. This exempts the metal's own binding atoms, which are bonded by construction "
-        "-- ALL of them, but only in a complex that has an eta group, so a non-eta molecule is "
-        "byte-identical by construction (eta atoms alone kept 20 of 22 probe gains: a sigma donor "
-        "crosses the zone too). Census: Fe 45 detached vs 4 verified, Co 21 vs 2, Ni 39 vs 11. "
-        "Held off until a generator A/B reports both numbers with its losses."
-    ),
     "OIN_ETA_TARGET_UNSCALED": (
-        "v0.4.18 L2, EXPERIMENTAL, only read when OIN_ETA_COVALENT_TARGET is on. The conformer "
-        "pool sweeps a GLOBAL scale 0.8..1.2 that multiplies every metal-ligand target; this takes "
-        "it back out for the eta face alone, so the ring sits at S in every conformer rather than "
-        "at 0.8 S..1.2 S. Held off for the same reason as its parent."
+        "v0.4.18 L2, only read when OIN_ETA_COVALENT_TARGET is on. The conformer pool sweeps a "
+        "global 0.8..1.2 diversity scale that is already inside an eta group's target; this "
+        "takes it back out for the eta face, so the ring is aimed at S in every conformer. "
+        "MEASURED AS A FULL "
+        "THIRD ARM over all 1,146 eta-bound molecules and DOMINATED as a default: +203/-51 "
+        "self-consistent and +179/-59 VERIFIED against +195/-29 and +189/-39 without it. It "
+        "attaches more rings (DETACHED intact 182 vs 168 of 295) and breaks more passes. NOT "
+        "USELESS: it repairs 18 of the promoted pair's 39 verified losses, and a per-molecule "
+        "choice between the two is +222 verified with no losses -- it is one half of the next "
+        "lane's pool, not a default. Do not re-run it as one."
     ),
 }
 
