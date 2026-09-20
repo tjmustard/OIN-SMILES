@@ -67,7 +67,8 @@ def _encode(xyz: Path, arm: str, timeout: float, lever: str = LEVER):
     env.update(OPENBLAS_NUM_THREADS="1", OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
     env.pop("PYTHONPATH", None)
     if arm == "off":
-        env[lever] = "0"
+        for name in lever.split(","):  # v0.4.18: several levers promoted together
+            env[name] = "0"
     try:
         p = subprocess.run(
             [sys.executable, str(HERE), "--one", str(xyz)],
@@ -142,6 +143,12 @@ def main():
         help="the default-ON lever being promoted; the `off` arm sets it to 0 (default: %(default)s)",
     )
     ap.add_argument(
+        "--generator-side",
+        action="store_true",
+        help="the lever acts in the GENERATOR: field 2 must move on 0 rows (inverts the dead-lever"
+        " abort). Whether the lever fired is then shown by the gate run's field 3, not here.",
+    )
+    ap.add_argument(
         "--reclassify",
         action="store_true",
         help="re-derive `class` from the shas already in --out; encodes nothing",
@@ -201,7 +208,18 @@ def main():
     for k in CLASSES:
         names = [r[0].replace("_comp_0", "") for r, o, s in results if _classify(r[1], o, s) == k]
         print(f"  {tally[k]:4d}  {k}" + (f"   {' '.join(sorted(names))}" if k != "SAME" else ""))
-    if not fired:
+    if args.generator_side:
+        # Field 2 is the encode of the INPUT. A generator-side lever cannot move it, so here the
+        # audit is a CONTROL with the opposite sign: any row it "fired" on means the lever reaches
+        # the encoder after all. What is left to read is STALE -- golden != shipped, lever or no.
+        if fired:
+            sys.exit(
+                f"ABORT: a GENERATOR-side lever moved field 2 on {fired} rows -- it is not one"
+            )
+        print(
+            "  generator-side: field 2 moved on 0 rows, as it must; field 3 is the gate run's to say"
+        )
+    elif not fired:
         sys.exit(
             "ABORT: the lever fired on 0 rows -- a dead lever and a clean audit print the same"
         )
