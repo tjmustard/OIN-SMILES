@@ -5,7 +5,8 @@
 > behind default-OFF levers. **Harness A/B over all 1,146 η-bound molecules, noise floor zero:
 > self-consistent +195 / −29 → 82.72 → 86.04%; VERIFIED +189 / −39 → 74.60 → 77.60%.** A third
 > lever is refuted as a default (§5b) — but the two configurations break *different* molecules, and
-> a per-molecule choice is worth another +1.44 verified pts. **Promotion is the owner's call (§5c).**
+> a per-molecule choice is worth another +1.44 verified pts. **PROMOTED by the owner 2026-09-20;
+> the sweep landed on the prediction: 86.10% / 77.66% (§5d). Next lane: the per-molecule selection.**
 
 Branch `research/v0418-eta-detached` (off `research/v0417-reattribution`), 2026-09-19. Owner request:
 "Next lane" — the census re-run named it: `G_CONSTRUCTION / DETACHED`, 343 molecules / 6.86 pts,
@@ -209,6 +210,51 @@ verified losses still round-trip byte-exact, so that selector must not be the ro
 Projections are exact up to a noise floor of zero: a non-η molecule cannot reach either lever, and the
 OFF arm reproduced the sweep of record byte-for-byte. `OIN_ETA_TARGET_UNSCALED` stays a recorded
 negative as a *default*; it is one half of the follow-up's pool.
+
+## 5d. PROMOTED — and the sweep landed on the prediction
+
+**Owner decision 2026-09-20: "Promote now and do the selection as the next lane."** Both levers
+joined `levers._DEFAULT_ON` at `2d2708db`.
+
+**What the suite said when the default flipped: nothing.** 1,067 of 1,067 green — no test looked at
+how far a generated η ring sits from its metal. So the promotion pins one, on the project's flagship
+η fixture (`tests/unit/test_eta_construction_levers.py`):
+
+| Ferrocene | Fe–C (real 2.05 Å) | coordination | honest round trip | time |
+|---|---:|---|---|---:|
+| levers `"0"` — what shipped through v0.4.17 | **2.85 Å** | NOT intact | **fails** | 3.0 s |
+| shipped defaults | **2.12 Å** | intact | holds | 0.3 s |
+
+Both halves are pinned, so the defect stays reproducible at `"0"` and the A/B's OFF arm stays meaningful.
+ARM 1 (encode-only) passes byte-identically under shipped defaults and with both levers at `"0"`
+(`#DONE 62`, manifest `4b76bfaf…`): 0 of 62 rows move.
+
+**The sweep** — `tools/v0418/launch_sweep.sh`, shipped defaults (empty lever block), 6 shards,
+`--mol-timeout 300`, 6 h 24 min, 5,000 / 5,000 — is the new baseline of record,
+`results-v0.4.18-sweep`:
+
+| | v0.4.17 sweep | A/B predicted | **v0.4.18 sweep** |
+|---|---:|---:|---:|
+| self-consistent | 82.72% | 86.04% | **86.10%** (4,305) |
+| **VERIFIED** | 74.60% | 77.60% | **77.66%** (3,883) |
+
+`tools/v0418/sweep_vs_ab.py` checked the two claims the projection stood on rather than repeating them:
+
+- **a non-η molecule cannot reach either lever** → 3,713 / 3,713 non-η structures byte-identical to the
+  v0.4.17 sweep's;
+- **generation is deterministic at this load** → 1,068 / 1,068 η structures byte-identical to the A/B's
+  ON arm's;
+- `smiles_1` differs from the v0.4.17 sweep on **0** of 5,000; VERIFIED computed two ways (string
+  faults re-derived from this sweep's parse-back, and carried from the census table): 3,883 both times.
+- A dead promotion would print the η half identical to the *old* sweep. 264 of 1,146 are — the
+  molecules the levers do not move — not all of them.
+
+Seven verdicts differ from what the projection used, **all** of them rows that were `hard_fail` at the
+300 s budget there and finished here (3 → `byte_exact`, 4 → `structural`). So +169 = **+166 (the
+levers) + 3 (budget boundary)**, and +153 verified = +150 + 3. Book the levers at **+3.32 / +3.00 pts**.
+Every one of the 28 / 38 losses is an η molecule. Buckets: `structural` 479 → 320, `hard_fail` 236 → 228,
+`facmer_divergent` 16 → 7, `key_equal` 122 → 129. Runtime: Σ `elapsed_s` 33.18 → 31.17 h; > 30 s
+579 → 515; max 698 → 660 s.
 
 ## 6. Found on the way, NOT this lane
 
