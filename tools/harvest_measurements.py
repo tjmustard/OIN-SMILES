@@ -185,6 +185,8 @@ ALLOW = [
     # under ONE prefix. Its table cannot be called `attribution_table.tsv.gz`: PROVENANCE is keyed
     # on the filename alone and that name already says "the v0.4.14 sweep".
     "v0418_census_*",
+    # v0.4.18 L2 (eta construction), staged by tools/v0418/freeze_stage.py under ONE prefix.
+    "v0418_l2_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -368,6 +370,47 @@ PROVENANCE = [
         " v0.4.17 sweep. The other inputs are frozen where they were made: g_verdict + parseback in"
         " v0.4.17-sweep/, e_selfconsistency_exact in v0.4.17/, the mirror ruler + twin clusters in"
         " v0.4.17-census/)",
+    ),
+    (
+        r"^v0418_l2_eta_distance_(identity|audit)\.txt$|^v0418_l2_eta_distance_audit\.jsonl\.gz$",
+        "tools/v0418/eta_distance_audit.py [--identity]   (HOW FAR from the metal the generator puts"
+        " each ligand, no atom mapping: ligands matched by formula, k shortest M-X distances."
+        " Identity control 0.000 A. On the v0.4.17 sweep: eta groups +0.728 A in DETACHED, +0.170 A"
+        " in verified passes; sigma -0.313 A. The .jsonl.gz is the run's rows ROUNDED to 3 dp by"
+        " tools/v0418/freeze_stage.py to fit the per-file cap)",
+    ),
+    (
+        r"^v0418_l2_(eta_(path|target|exempt|scoped|rescoped|all3)_probe|noneta_identity_probe)\.txt$"
+        r"|^v0418_l2_probe[34]_classes\.json$",
+        "tools/v0418/eta_path_probe.py --names <file> --arms <...>   (fresh-process SAMPLES, honest"
+        " round trip: path = DG vs the rigid placer (ruled out); target/exempt = M1, M2 and both on"
+        " 39 detached + 36 verified controls (4 -> 26, controls 36/36); scoped/rescoped = the"
+        " exemption's scope; noneta = 25/25 non-eta structures byte-identical; all3 = the third"
+        " lever on the A/B's own 47 losses + 45 gains. SAMPLES, NOT VERDICTS: the 36 controls"
+        " could not see the 7.5% loss rate the harness A/B then measured)",
+    ),
+    (
+        r"^v0418_l2_eta_ab_report(_on3)?\.(txt|json)$",
+        "tools/v0418/run_eta_ab.sh [on3] -> post_eta_ab.sh [on3] -> eta_ab_report.py [--on-arm on3]"
+        "   (THE HARNESS A/B over all 1146 eta-bound molecules. M1+M2: self-consistent +195/-29,"
+        " VERIFIED +189/-39 -> 86.04% / 77.60% projected. All three levers (_on3): +203/-51,"
+        " +179/-59 -- DOMINATED. Noise floor ZERO: smiles_1 identical, OFF == the sweep of record"
+        " on 1063/1063 structures. NO DEFAULT CHANGED: both levers ship OFF)",
+    ),
+    (
+        r"^v0418_l2_ab_(off|on|on3)_(g_verdict\.jsonl|bucket_report_honest\.json)\.gz$",
+        "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py   (per arm:"
+        " the honest bucket and the neutral ruler's verdict on THAT ARM'S structure for every one"
+        " of the 1146. With v0.4.18-census/v0418_census_attribution_table.tsv.gz these re-derive"
+        " both headline pairs: tools/v0418/freeze_stage.py --verify <this dir>)",
+    ),
+    (
+        r"^v0418_l2_ab_rows\.tsv\.gz$|^v0418_l2_ab_commits\.tsv$",
+        "tools/v0418/freeze_stage.py   (MADE at staging time from 3438 structure files + 3438"
+        " harness reports too large to freeze: per molecule and arm the sha256 of the generated"
+        " structure (the dead-lever check: 798 / 875 differ from OFF), coordination.intact,"
+        " elapsed_s, and the sweep of record's sha256 (the noise floor); and the commit each arm"
+        " was launched from -- src/ is identical between them)",
     ),
     (
         r"^attribution_(table\.tsv\.gz|summary\.json)$",
