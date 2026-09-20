@@ -1,0 +1,37 @@
+DENOMINATOR 32 molecules x 2 arms   src=<checkout:oin-v0418>/src
+molecule         metal |                                 dg |                         cov_exempt
+IXAHIZ_comp_0          |      ERROR:UncoordinatedFra     0s |      ERROR:UncoordinatedFra     0s
+FEGBEA_comp_1          |      BUILT                      0s |      BUILT                      0s
+ERAQOE_comp_0          |      BUILT                      0s |      BUILT                      0s
+BOXYET_comp_0          |      BUILT                      0s |      BUILT                      0s
+ETACOR_comp_0          |      BUILT                      0s |      BUILT                      0s
+FEJFAD_comp_0          |      BUILT                      0s |      BUILT                      0s
+QOBSOR_comp_0          |      BUILT                      0s |      BUILT                      0s
+NULVEV_comp_0          |      BUILT                      0s |      BUILT                      0s
+DEJHEF_comp_0          |      ERROR:UncoordinatedFra     0s |      ERROR:UncoordinatedFra     0s
+LOQVAP_comp_0          |      BUILT                      0s |      BUILT                      0s
+XIPJOV_comp_0          |      BUILT                      0s |      BUILT                      0s
+KOJPEF_comp_0          |      BUILT                      0s |      BUILT                      0s
+ITOQIS_comp_0          |      ERROR:UncoordinatedFra     0s |      ERROR:UncoordinatedFra     0s
+VEXXIH_comp_0          |      BUILT                      0s |      BUILT                      0s
+FEHFOP_comp_0          |      BUILT                      1s |      BUILT                      0s
+KUQHIP_comp_0          |      BUILT                      0s |      BUILT                      0s
+TONPAP_comp_1          |      BUILT                      0s |      BUILT                      0s
+GUVJUD_comp_1          |      BUILT                      0s |      BUILT                      0s
+WAHXOV_comp_1          |      ERROR:UncoordinatedFra     0s |      ERROR:UncoordinatedFra     0s
+SADKAM_comp_0          |      BUILT                      0s |      BUILT                      0s
+OGEKUJ_comp_2          |      BUILT                      0s |      BUILT                      0s
+KEDMAI_comp_1          |      BUILT                      0s |      BUILT                      0s
+ADEKUS_comp_4          |      BUILT                      0s |      BUILT                      0s
+WEHGOH_comp_0          |      BUILT                      0s |      BUILT                      0s
+ILELOA_comp_0          |      ERROR:ValueError           0s |      ERROR:ValueError           0s
+BEKLUA_comp_0          |      ERROR:ValueError           0s |      ERROR:ValueError           0s
+RULMOA_comp_2          |      ERROR:ValueError           0s |      ERROR:ValueError           0s
+HEHJOW_comp_0          |      BUILT                      0s |      BUILT                      0s
+OFAXUR_comp_0          |      BUILT                      1s |      BUILT                      1s
+RONHEK_comp_0          |      BUILT                      0s |      BUILT                      1s
+JITGUR_comp_0          |      BUILT                      0s |      BUILT                      0s
+IBEGEE_comp_0          |      BUILT                      0s |      BUILT                      0s
+dg     built 25/32   intact 25   honest byte-exact 25   sum elapsed 11s
+cov_exempt built 25/32   intact 25   honest byte-exact 25   sum elapsed 10s
+ALLDONE

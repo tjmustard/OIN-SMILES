@@ -1,0 +1,4 @@
+arm	launched_from
+off	4ca0d705e6ae8231a11e45d3fdcdc4f5a10e36ae feat(v0.4.18): L2 eta construction -- two levers, default OFF, and the instruments that found them
+on	4ca0d705e6ae8231a11e45d3fdcdc4f5a10e36ae feat(v0.4.18): L2 eta construction -- two levers, default OFF, and the instruments that found them
+on3	1b12674532a40d7f2d449d23c4a26429feadc47c data(v0.4.18): L2 harness A/B -- +166 self-consistent / +150 VERIFIED of 1,146; the losses have one mechanism

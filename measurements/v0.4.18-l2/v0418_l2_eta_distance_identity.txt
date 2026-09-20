@@ -1,0 +1,14 @@
+DENOMINATOR 5000   status {'OK': 5000}   identity=True
+unmatched ligands: 0 in 0 molecules
+
+inflation = mean generated M-X distance minus mean input M-X distance, in Angstrom
+  ETA contact groups
+    VERIFIED_PASS     n= 862  median +0.000  p10 -0.000  p90 +0.000   atoms still in band  99.8%
+    DETACHED          n= 449  median +0.000  p10 -0.000  p90 +0.000   atoms still in band  99.0%
+    other_FAIL        n= 510  median +0.000  p10 -0.000  p90 +0.000   atoms still in band  99.2%
+    other_false_PASS  n= 364  median +0.000  p10 -0.000  p90 +0.000   atoms still in band  99.2%
+  SIGMA contact groups
+    VERIFIED_PASS     n=12845  median +0.000  p10 -0.013  p90 +0.000   atoms still in band 100.0%
+    DETACHED          n= 855  median +0.000  p10 -0.008  p90 +0.000   atoms still in band  99.9%
+    other_FAIL        n=1279  median +0.000  p10 -0.010  p90 +0.000   atoms still in band  99.9%
+    other_false_PASS  n=1208  median +0.000  p10 -0.018  p90 +0.000   atoms still in band  99.9%

@@ -1,0 +1,29 @@
+DENOMINATOR 24 molecules x 2 arms   src=<checkout:oin-v0418>/src
+molecule         metal |                                 dg |                              rigid
+IGOBUD_comp_0    Fe    |      +0.78A  0/5  detach --     7s |      ERROR:ValueError           0s
+EWALET_comp_0    Fe    |      +0.79A  0/5  detach --     9s |      ERROR:ValueError           0s
+IGOBOX_comp_0    Fe    |      +0.80A  0/5  detach --    10s |      ERROR:ValueError           2s
+NIVGEG_comp_0    Fe    |      +0.95A  0/5  detach --    13s |      ERROR:ValueError           3s
+SOMKOX_comp_0    Co    |      +1.04A  0/10 detach --     4s |      -0.16A 10/10 INTACT RT     0s
+BOCHIM_comp_0    Co    |      +0.78A  0/5  detach --     8s |      +0.45A  0/5  INTACT --     1s
+IHIKEP_comp_0    Co    |      +0.87A  0/5  detach --     7s |      ERROR:ValueError           1s
+FEPZOQ_comp_0    Ni    |      +0.69A  0/5  detach --    13s |      +0.02A  5/5  INTACT RT     1s
+XEYLIX_comp_0    Ni    |      +0.64A  2/6  detach --    11s |      +0.64A  2/6  detach --    12s
+FEPZIK_comp_0    Ni    |      +0.69A  0/5  detach --    13s |      +0.02A  5/5  INTACT RT     1s
+JOCRAV_comp_0    Ru    |      +0.30A  4/6  detach --     2s |      +0.30A  4/6  detach --     2s
+UWALOU_comp_0    Ru    |      +0.57A  0/6  detach --     2s |      BUILT                      2s
+BIDBAT_comp_0    Ru    |      +0.57A  2/6  detach --     5s |      +0.64A  0/6  detach --     7s
+PIPPIQ_comp_0    Zr    |      +0.11A 10/11 detach RT     2s |      +0.11A 10/11 detach RT     2s
+ABOZEW_comp_0    Zr    |      +0.55A  3/10 detach --     2s |      +0.55A  3/10 detach --     2s
+HEFKOT_comp_0    Ti    |      +0.23A  5/7  detach --     1s |      +0.23A  5/7  detach --     1s
+WECWOQ_comp_0    Ti    |      +0.06A  8/9  detach RT     1s |      +0.06A  8/9  detach RT     1s
+UKUMAP_comp_0    Rh    |      +0.48A  2/5  detach --     9s |      +0.48A  2/5  detach --     9s
+BAXMEU_comp_0    Ru    |      +0.32A  6/6  INTACT RT     1s |      +0.61A  0/6  detach --     1s
+BETKUI_comp_0    Ru    |      +0.34A  6/6  INTACT RT     1s |      +0.34A  6/6  INTACT RT     1s
+KUPJOW_comp_0    Zr    |      +0.19A 10/10 INTACT RT     1s |      +0.70A  0/10 detach --     1s
+JAYLOK_comp_0    Zr    |      +0.16A  5/5  INTACT RT     1s |      ERROR:ValueError          22s
+BOJJOA_comp_1    Rh    |      +0.28A  5/5  INTACT RT     0s |      +0.67A  0/5  detach --     1s
+OCOPIG_comp_0    Ti    |      +0.20A 10/10 INTACT RT     0s |      +0.65A  0/10 detach --     1s
+dg     built 24/24   intact 6   honest byte-exact 8   sum elapsed 122s
+rigid  built 18/24   intact 6   honest byte-exact 6   sum elapsed 74s
+rc=0

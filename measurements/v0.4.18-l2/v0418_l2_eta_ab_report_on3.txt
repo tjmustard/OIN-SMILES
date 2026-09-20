@@ -1,0 +1,56 @@
+1. COMPLETENESS   cohort=1146   ON arm = ab_on3
+   off launched from 4ca0d705e6ae8231a11e45d3fdcdc4f5a10e36ae feat(v0.4.18): L2 eta construction -- two levers, default O
+   off reports=1146  bucketed=1146  ruler verdicts=1069  xtb_available=True  commit=4ca0d705  tree=['<checkout:oin-v0418>/src/oinsmiles/__init__.py']
+   on  launched from 1b12674532a40d7f2d449d23c4a26429feadc47c data(v0.4.18): L2 harness A/B -- +166 self-consistent / +15
+   on  reports=1146  bucketed=1146  ruler verdicts=1078  xtb_available=True  commit=1b126745  tree=['<checkout:oin-v0418>/src/oinsmiles/__init__.py']
+   scored in BOTH arms: 1146/1146
+
+2. INPUT CONTROL   smiles_1 differs OFF vs ON: 0   OFF vs sweep of record: 0   (both MUST be 0: the levers are generator-side)   encoded in one arm only: 0 (encode budget under load)
+   DEAD-LEVER CHECK   structure in both arms 1066, of which DIFFERENT 875  (0 = the levers never fired);  built only ON 12, only OFF 3
+
+3. NOISE FLOOR   OFF arm vs sweep of record: pass/fail flips 0/1146 (now pass 0, now fail 0);  structures byte-identical 1063/1063
+
+4. TRANSITIONS  OFF -> ON
+   self-consistent (byte_exact)
+      pass OFF=658  pass ON=810  of 1146
+      GAINS 203   LOSSES 51   NET +152
+      gains  by census fault: {'G_CONSTRUCTION/DETACHED': 149, 'G_CONSTRUCTION/SPHERE_DIFF': 11, 'E2_P_OTHER/NO_STEREO': 10, 'G_NOTHING/TIMEOUT': 8, 'E2_P_OTHER/SAME': 6, 'E1_GRAPH/SPHERE_DIFF': 5, 'G_HCOUNT': 4, 'G_DIASTEREOMER/CENTRES': 3}
+      gains  by metal       : {'Ru': 38, 'Ni': 35, 'Fe': 30, 'Co': 18, 'Ir': 16, 'Rh': 13, 'Ti': 12, 'Zr': 9, 'Pt': 8, 'Mo': 8, 'Cr': 6, 'Pd': 2}
+      losses by census fault: {'NONE': 36, 'G_CONSTRUCTION/SPHERE_DIFF': 9, 'G_CONSTRUCTION/DETACHED': 2, 'E1_NOT_ENCODED/MIRROR/MIRROR': 1, 'E1_NONINJECTIVE/MIRROR': 1, 'G_CONSTRUCTION/LIGAND_DIFF': 1, 'E1_NOT_ENCODED/DIFFERENT/CENTRES': 1}
+      losses by metal       : {'Ti': 12, 'Zr': 10, 'Ru': 8, 'Rh': 5, 'Mn': 4, 'Cr': 4, 'Ir': 4, 'Ni': 1, 'Mo': 1, 'Hf': 1, 'Pd': 1}
+      loss transitions      : {'byte_exact->key_equal': 47, 'byte_exact->structural': 4}
+      PROJECTION on n=5000: 82.72% -> 85.76%  (+3.04 pts; noise floor +/-0.00)
+   VERIFIED (ruler on the structure)
+      pass OFF=518  pass ON=638  of 1146
+      GAINS 179   LOSSES 59   NET +120
+      gains  by census fault: {'G_CONSTRUCTION/DETACHED': 118, 'G_CONSTRUCTION/SPHERE_DIFF': 26, 'E2_P_OTHER/NO_STEREO': 10, 'G_NOTHING/TIMEOUT': 5, 'E2_P_OTHER/SAME': 4, 'G_HCOUNT': 3, 'E1_NONCANONICAL/veto one-hand (C2)': 3, 'G_CONSTRUCTION/LIGAND_DIFF': 3}
+      gains  by metal       : {'Ni': 31, 'Ru': 26, 'Fe': 25, 'Ir': 16, 'Co': 15, 'Rh': 13, 'Ti': 13, 'Pt': 8, 'Zr': 8, 'Mo': 6, 'Cr': 5, 'Pd': 4}
+      losses by census fault: {'NONE': 59}
+      losses by metal       : {'Ru': 19, 'Zr': 8, 'Ti': 7, 'Rh': 5, 'Ir': 5, 'Cr': 5, 'Mn': 4, 'Os': 2, 'W': 1, 'Mo': 1, 'Hf': 1, 'Pd': 1}
+      loss transitions      : {'byte_exact->key_equal': 33, 'byte_exact->byte_exact': 23, 'byte_exact->structural': 3}
+      PROJECTION on n=5000: 74.60% -> 77.00%  (+2.40 pts; noise floor +/-0.00)
+
+   bucket transitions (off -> on):
+       161  structural -> byte_exact
+        47  byte_exact -> key_equal
+        29  structural -> key_equal
+        29  key_equal -> byte_exact
+         9  hard_fail -> byte_exact
+         5  structural -> facmer_divergent
+         4  facmer_divergent -> byte_exact
+         4  byte_exact -> structural
+         4  facmer_divergent -> key_equal
+         3  facmer_divergent -> structural
+         3  structural -> hard_fail
+         1  key_equal -> structural
+         1  hard_fail -> key_equal
+
+5. THE STRUCTURES   by census class (the v0.4.17 sweep's attribution)
+   class                 n | intact OFF  intact ON | eta infl OFF  eta infl ON | in band OFF  in band ON
+   VERIFIED_PASS       518 |        508        497 |       +0.207       +0.272 |       95.1%       90.6%
+   DETACHED            295 |          5        182 |       +0.760       +0.350 |       16.9%       62.5%
+   other_FAIL          197 |         75         97 |       +0.380       +0.276 |       55.6%       72.2%
+   other_false_PASS    136 |        132        128 |       +0.272       +0.283 |       74.5%       83.5%
+   all                1146 |        720        904   (unmatched ligands, counted not dropped: OFF 39, ON 35)
+
+6. RUNTIME  sum elapsed_s  OFF=14.03 h  ON=11.25 h   >30 s: OFF 315  ON 222   max: OFF 708 s  ON 648 s
