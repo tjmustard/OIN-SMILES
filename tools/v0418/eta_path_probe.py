@@ -46,6 +46,14 @@ ARMS = {
     "cov_unscaled": (None, {"OIN_ETA_COVALENT_TARGET": "1", "OIN_ETA_TARGET_UNSCALED": "1"}),
     "exempt": (None, {"OIN_VDW_EXEMPT_BINDING": "1"}),
     "cov_exempt": (None, {"OIN_ETA_COVALENT_TARGET": "1", "OIN_VDW_EXEMPT_BINDING": "1"}),
+    "all3": (
+        None,
+        {
+            "OIN_ETA_COVALENT_TARGET": "1",
+            "OIN_ETA_TARGET_UNSCALED": "1",
+            "OIN_VDW_EXEMPT_BINDING": "1",
+        },
+    ),
 }
 
 

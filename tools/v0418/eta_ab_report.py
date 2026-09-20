@@ -121,6 +121,7 @@ def main():
         type=Path,
         default=MAIN / "results-v0.4.17-reattribution/attribution_table.tsv",
     )
+    ap.add_argument("--on-arm", default="on", help="directory suffix of the ON arm: on | on3")
     ap.add_argument("--out", type=Path)
     ap.add_argument(
         "--smoke",
@@ -142,9 +143,15 @@ def main():
 
     # ---- 1. completeness -------------------------------------------------------------------
     arms, reps = {}, {}
-    print(f"1. COMPLETENESS   cohort={len(cohort)}   {(args.ab / 'AB_COMMIT').read_text().strip()}")
+    dirs = {"off": args.ab / "ab_off", "on": args.ab / f"ab_{args.on_arm}"}
+    sfx = "" if args.on_arm == "on" else f"_{args.on_arm}"
+    print(f"1. COMPLETENESS   cohort={len(cohort)}   ON arm = ab_{args.on_arm}")
     for a in ("off", "on"):
-        d = args.ab / f"ab_{a}"
+        d = dirs[a]
+        for c in (d / "AB_COMMIT", args.ab / "AB_COMMIT"):  # per-arm since the on3 run
+            if c.exists():
+                print(f"   {a:3s} launched from {c.read_text().strip()[:100]}")
+                break
         arms[a] = _arm(d, args.cohort)
         reps[a] = {
             p.stem: json.loads(p.read_text()) for p in (d / "individual_reports").glob("*.json")
@@ -187,7 +194,7 @@ def main():
     if in_moved or in_vs_rec:
         _abort(f"the input side moved ({(in_moved + in_vs_rec)[:5]}) -- contamination")
     sha = {
-        a: {m: _sha(args.ab / f"ab_{a}" / "structures" / f"{m}_generated.xyz") for m in both}
+        a: {m: _sha(dirs[a] / "structures" / f"{m}_generated.xyz") for m in both}
         for a in ("off", "on")
     }
     built_both = [m for m in both if sha["off"][m] and sha["on"][m]]
@@ -263,8 +270,8 @@ def main():
             f"{100 * (base + net) / N_COHORT:.2f}%  ({net / (N_COHORT / 100):+.2f} pts; noise floor "
             f"+/-{len(flip) / (N_COHORT / 100):.2f})"
         )
-        (args.ab / f"ab_gains_{key}.txt").write_text("\n".join(gains) + "\n")
-        (args.ab / f"ab_losses_{key}.txt").write_text("\n".join(losses) + "\n")
+        (args.ab / f"ab_gains_{key}{sfx}.txt").write_text("\n".join(gains) + "\n")
+        (args.ab / f"ab_losses_{key}{sfx}.txt").write_text("\n".join(losses) + "\n")
         report[key] = {
             "pass_off": sum(off.values()),
             "pass_on": sum(on.values()),
@@ -294,7 +301,7 @@ def main():
     unmatched = Counter()
     for a in arms:
         for m in both:
-            g = args.ab / f"ab_{a}" / "structures" / f"{m}_generated.xyz"
+            g = dirs[a] / "structures" / f"{m}_generated.xyz"
             if not g.exists():
                 continue
             cmp_ = audit.compare((args.cohort / f"{m}.xyz").read_text(), g.read_text())
