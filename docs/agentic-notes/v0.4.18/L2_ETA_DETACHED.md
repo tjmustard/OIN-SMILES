@@ -2,8 +2,10 @@
 
 > **The generator puts an η ring a median +0.73 Å too far from the metal in the DETACHED class
 > (+0.17 Å even in verified passes).** Two mechanisms, both in `generator3d/clean_geometry.py`, both
-> behind default-OFF levers. Probe: honest round trip **4 → 26 of 39** detached, controls 36/36,
-> 0 losses. **Harness A/B over all 1,146 η-bound molecules: §5.**
+> behind default-OFF levers. **Harness A/B over all 1,146 η-bound molecules, noise floor zero:
+> self-consistent +195 / −29 → 82.72 → 86.04%; VERIFIED +189 / −39 → 74.60 → 77.60%.** A third
+> lever is refuted as a default (§5b) — but the two configurations break *different* molecules, and
+> a per-molecule choice is worth another +1.44 verified pts. **Promotion is the owner's call (§5c).**
 
 Branch `research/v0418-eta-detached` (off `research/v0417-reattribution`), 2026-09-19. Owner request:
 "Next lane" — the census re-run named it: `G_CONSTRUCTION / DETACHED`, 343 molecules / 6.86 pts,
@@ -164,7 +166,49 @@ generation is deterministic, so the full arm is exact: `run_eta_ab.sh on3` (6 sh
 processes on the box; the first run's OFF arm reproduced the sweep of record byte-for-byte, which
 is the licence not to re-run OFF), read with `post_eta_ab.sh on3`.
 
-_Results go here._
+### The full arm REFUTES it as a replacement — and says what the real lever is
+
+`ab_on3` (all three levers, commit `1b126745`, `src/` identical to `4ca0d705`), read against the same
+`ab_off`. Controls: 1,146 / 1,146, `smiles_1` differs 0, 875 structures differ, noise floor 0.
+
+| | M1 + M2 (`on`) | M1 + M2 + unscaled (`on3`) |
+|---|---:|---:|
+| self-consistent | +195 / −29 = **+166** → 86.04% | +203 / −51 = +152 → 85.76% |
+| **VERIFIED** | +189 / −39 = **+150** → **77.60%** | +179 / −59 = +120 → 77.00% |
+| DETACHED intact (of 295) | 168 | **182** |
+| verified-pass η inflation (OFF +0.207 Å) | **+0.060 Å** | +0.272 Å |
+| Σ `elapsed_s` (OFF 14.03 h) | 11.77 h | 11.25 h |
+
+**`on3` attaches more rings and breaks more passes.** It is not the configuration to promote, and
+the mechanism in §5 is only half the story: the third lever repairs 18 of `on`'s 39 verified losses
+and creates 38 new ones (Ru 12, Ti 6, Cr 5, Mn 4, Zr 4).
+
+**The finding is in the overlap.** The two configurations fix and break *different molecules*:
+
+| verified | `on` | `on3` | both | only `on` | only `on3` |
+|---|---:|---:|---:|---:|---:|
+| gains | 189 | 179 | 146 | 43 | 33 |
+| losses | 39 | 59 | 21 | 18 | 38 |
+
+An oracle that picked the best arm per molecule would be **+222 verified, 0 losses → 79.04%**
+(`off ∪ on` alone: +189 → 78.38%), against +150 for the best single configuration. The right η target
+is a **per-molecule** quantity, and the pool's "first acceptable conformer wins" cannot see it. v0.4.15
+found selection exhausted (0 of 289) *because every conformer in the pool was detached*; with these
+levers the pool can hold attached ones. **Follow-up, not this lane: put both targets in ONE pool and
+select on coordination — ceiling +72 molecules / 1.44 verified pts over `on`.** 18 of `on`'s 39
+verified losses still round-trip byte-exact, so that selector must not be the round trip.
+
+## 5c. What is on the table for the owner
+
+| option | self-consistent | VERIFIED | losses (verified) | owes |
+|---|---|---|---:|---|
+| leave both OFF | 82.72% | 74.60% | — | nothing |
+| **promote M1 + M2** | **86.04%** (+3.32) | **77.60%** (+3.00) | 39 of 518 η passes | full sweep, ARM 1 re-freeze, `/refreeze-goldens` |
+| promote all three | 85.76% | 77.00% | 59 | same — and it is dominated |
+
+Projections are exact up to a noise floor of zero: a non-η molecule cannot reach either lever, and the
+OFF arm reproduced the sweep of record byte-for-byte. `OIN_ETA_TARGET_UNSCALED` stays a recorded
+negative as a *default*; it is one half of the follow-up's pool.
 
 ## 6. Found on the way, NOT this lane
 
