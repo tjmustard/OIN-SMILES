@@ -323,6 +323,29 @@ ZOGLIS_comp_0	d84ca28c0837bc3443fc9f2c8f342823ed1886738623c29b17d743ae7294d2dc	d
 ZOGXIF_comp_0	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	93	93	-	b30_60	byte->FAIL
 ZOYYUJ_comp_0	73e30efe6b7dbc1f31498950ebef86b0a7228d5065ebfac770da00d1a5b2bccf	c53daa573e0f4557ac53e0bf769ecbdf0022a168f4d7cf4eb7b6e3d3033a119e	86	83	-	b300_plus	FAIL->byte
 ZUGBUA_comp_0	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	117	117	eta	b60_300	byte->FAIL
+# v0.4.18: FULL gate run for the OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promotion
+#   (default-ON, owner decision 2026-09-20) -- 0 ROWS RE-FROZEN, AND THAT ZERO IS A FINDING ABOUT
+#   THIS GATE, not about the levers.
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit 2921aa67
+#   (research/v0418-eta-detached; src/ == 2d2708db, the promotion). All 100 + 272 compared rows
+#   reproduce (42 SHA1-only, 5 deterministic no-structure, 4 observe). Field 2 of every row was audited encode-only with
+#   --generator-side: 421 SAME + 4 sentinels, moved on 0 rows, 0 stale -- the levers do not reach
+#   the encoder and the v0.4.17 full re-freeze holds.
+#   THE LEVERS FIRED. Against the v0.4.17 full run (pre-lever code, same goldens, same 428 rows):
+#   138 of 198 eta rows built a DIFFERENT structure (xyz sha, the fresh row's observation column);
+#   0 of 202 non-eta rows did. Field 3 differs on 0 of 400.
+#   WHY ARM 2 CANNOT SEE IT. tools/gate_arm2_roundtrip_one.py computes smiles_2 as
+#   get_oin_string(result.mol, coords) -- through the GENERATOR'S OWN bond graph. Whether an eta ring
+#   sits 2.1 A or 2.9 A from its metal never enters: the metal-ring bonds are read off result.mol.
+#   That is the pre-v0.4.8 "scored" path (false-pass rate 9.6%, 28.1% haptic). The harness's HONEST
+#   score re-perceives the coordinates and moved on +197 / -28 of the 5,000 for this same change
+#   (results-v0.4.18-sweep: 86.10% self-consistent / 77.66% VERIFIED). FEPZIK_comp_0: field 3 is
+#   identical with the levers on and at "0" while the honest round trip goes FAIL -> PASS.
+#   ARM 2 therefore gates the ENCODER and the generator's GRAPH + stereo, not what the generator
+#   BUILDS. A construction regression would pass it. Open with the owner: an honest observation
+#   column (XYZToSMILES().convert on the generated xyz) beside field 3.
+#   EQEROI_comp_0	NOT RE-FROZEN	SIGKILLed at --hard-timeout with the lever on AND off. The gate scores the synthesised HARD_TIMEOUT@ row as a field-2 MISMATCH without ever seeing smiles_1; encode-only, field 2 is unchanged. A loaded box FAILS here.
+#   MUKGUW_comp_0	NOT RE-FROZEN	SIGKILLed at --hard-timeout with the lever on AND off. The gate scores the synthesised HARD_TIMEOUT@ row as a field-2 MISMATCH without ever seeing smiles_1; encode-only, field 2 is unchanged. A loaded box FAILS here.
 # v0.4.17: rows re-frozen for the OIN_EXACT_DONOR_FOLD promotion (default-ON) -- AND rows that were
 #   ALREADY STALE, which this release did not cause. Read the per-row reason below: the rows are
 #   not all the same kind of change.

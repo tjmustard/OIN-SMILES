@@ -5,6 +5,60 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+> ### 82.72% → **86.10%** self-consistent · 74.60% → **77.66%** VERIFIED — DETACHED was a distance.
+>
+> The census re-run on the v0.4.17 sweep filed 343 molecules / 6.86 pts under
+> `G_CONSTRUCTION / DETACHED`, 86% of them η-bound. v0.4.15 had closed the *selection* door (0 of
+> 289: every conformer in the pool was detached), so the first instrument was a ruler, not a
+> hypothesis: the generator puts η carbons a median **+0.73 Å** too far from the metal in that class
+> (+0.17 Å even in verified passes; Fe +0.84, Co +0.78, Ni +0.71). **Ferrocene itself was being built
+> detached** — Fe–C 2.85 Å against a real 2.05 Å, honest round trip failing — and no test looked.
+
+### Added
+- **`OIN_ETA_COVALENT_TARGET` + `OIN_VDW_EXEMPT_BINDING` — default-ON (owner decision 2026-09-20).**
+  Both in `generator3d/clean_geometry.py::ff_clean`; neither touches a string the encoder emits.
+  *Target:* upstream multiplied an η group's target distance by 1.1 / 1.2 ("elongation of haptic
+  interaction"); real M–C(η) over 1,378 groups is 1.008 × the covalent sum, and the encoder's contact
+  cutoff is ~1.20 × — the ring was aimed at the edge of the bonding range. *Exemption:* the FF scan's
+  vdW guard perceives bonds by distance, and for a small metal the bond threshold lies **inside** the
+  clash threshold (Fe–C 2.70 vs 2.81 Å; Co, Ni, Cu, Pt, Zn, Au), so a ring stepping toward the metal
+  was reverted on its first step. The metal's own binding atoms are now exempt — all of them, but
+  only in a complex that has an η group, so a non-η molecule cannot reach either lever.
+- `tools/v0418/` — the mapping-free distance audit, the fresh-process path probe, the harness A/B
+  (`run_eta_ab.sh` → `eta_ab_report.py`, which **inverts** v0.4.17's dead-lever check: a
+  generator-side lever must leave `smiles_1` identical and is shown to fire on generated-structure
+  hashes), the sweep launcher, and `sweep_vs_ab.py`, which *checks* the two claims a projection
+  stands on instead of repeating them.
+- `tests/unit/test_eta_construction_levers.py` pins ferrocene both ways: attached under shipped
+  defaults, detached at `"0"` — the defect stays reproducible.
+- `/refreeze-goldens` accepts several levers promoted together (comma-separated) and a
+  **generator-side** lever (`arm2_field2_audit.py --generator-side` inverts the dead-lever abort).
+
+### Changed
+- **What the generator builds moves for ~800 η molecules**, which voids the carry-forward licence: the
+  baseline of record is now **`results-v0.4.18-sweep`**. The harness A/B over all 1,146 η-bound
+  molecules (noise floor zero) predicted 86.04 / 77.60; the sweep landed on **86.10 / 77.66**, with
+  3,713 / 3,713 non-η structures byte-identical to the v0.4.17 sweep and 1,068 / 1,068 η structures
+  byte-identical to the A/B's ON arm. `structural` 479 → 320; molecules over 30 s 579 → 515.
+- **39 verified passes are lost and accepted** (Ru 11, Zr 8, Ir 6, Rh 5): the pool's 0.8-scale
+  conformer used to carry an η target of 0.8 × 1.2 = 0.96 × the covalent sum — right *by accident*.
+  `OIN_ETA_TARGET_UNSCALED` (target = the covalent sum at every scale) was run as a full third arm
+  and is **dominated** (+179 / −59 verified) — but the two configurations break *different*
+  molecules: a per-molecule choice is +222 verified with no losses. That is the next lane.
+- Gate goldens. **ARM 1: 0 of 62** (encode-only; byte-identical with the levers on and at `"0"`).
+  **ARM 2: 0 of 425**, from a full run — see *Found*.
+
+### Found
+- 🔴 **ARM 2 cannot see what the generator builds.** Its `smiles_2` is
+  `get_oin_string(result.mol, coords)` — through the generator's own bond graph, the pre-v0.4.8
+  *scored* path. In the full gate run 138 of 198 η rows built a different structure than under
+  v0.4.17 and field 3 moved on **0**. It gates the encoder and the generator's graph + stereo; a
+  construction regression passes it, and did for every release that shipped ferrocene detached.
+  Recorded in the goldens. Open: an honest observation column beside field 3.
+- σ bonds in verified passes are a median **0.31 Å too short** (the pool's global 0.8 scale wins).
+  Invisible to both accuracy numbers. Parked with the generation lane.
+
+
 ## [0.4.17] - 2026-09-19
 
 > ### 77.16% → **82.72%** self-consistent · 69.24% → **74.60%** VERIFIED — the defect was the fold.

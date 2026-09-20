@@ -256,6 +256,37 @@ Every one of the 28 / 38 losses is an η molecule. Buckets: `structural` 479 →
 `facmer_divergent` 16 → 7, `key_equal` 122 → 129. Runtime: Σ `elapsed_s` 33.18 → 31.17 h; > 30 s
 579 → 515; max 698 → 660 s.
 
+## 5e. `/refreeze-goldens` — 0 of 425 rows, and the zero is a finding about the GATE
+
+The full ARM 2 gate was run (every row of both goldens, shipped defaults, 6 shards), per the owner's
+rule. **Every compared row reproduced: 100 of 100 and 272 of 272** (+42 SHA1-only, 5 deterministic
+no-structure, 4 observe). The real gate's own shard verdicts: 10 PASS, 2 FAIL — `EQEROI` and `MUKGUW`,
+SIGKILLed at the hard timeout with the levers on **and** at `"0"`, as in every run since v0.4.17.
+
+A zero is a finding only once the lever is shown to fire, so:
+
+| check | result |
+|---|---|
+| field 2, all 425 rows, encode-only, `--generator-side` | 421 SAME + 4 sentinels · moved 0 · **stale 0** — the levers do not reach the encoder, and the v0.4.17 full re-freeze holds |
+| structures vs the v0.4.17 full run (pre-lever code, same rows) | **138 of 198 η rows built a DIFFERENT structure; 0 of 202 non-η rows did** |
+| field 3 (the gated re-encode) vs that run | differs on **0 of 400** |
+
+**The levers fired in the gate, and the gate cannot see it.** `tools/gate_arm2_roundtrip_one.py`
+computes `smiles_2 = get_oin_string(result.mol, coords)` — through the **generator's own bond graph**.
+Whether a ring sits 2.1 Å or 2.9 Å from its metal never enters; the metal–ring bonds are read off
+`result.mol`. That is the pre-v0.4.8 *scored* path (false-pass rate 9.6%, 28.1% on haptics). On
+`FEPZIK_comp_0` field 3 is identical with the levers on and at `"0"` while the honest round trip goes
+FAIL → PASS. The harness's honest score moved on +197 / −28 molecules for this same change.
+
+So **ARM 2 gates the encoder and the generator's graph + stereo, not what the generator BUILDS.** A
+construction regression — the exact class of defect this lane repaired — would pass it, and it passed
+it for every release that shipped ferrocene detached. The goldens carry a v0.4.18 block saying so
+(0 data rows changed; manifests unchanged: `59fe3710…`, `be0c2398…`).
+
+**Open with the owner:** add an honest observation column to the ARM 2 runner
+(`XYZToSMILES().convert` on the generated xyz) beside field 3 — first as an observed column, then
+gated once a full run has frozen it. It costs one independent encode per row.
+
 ## 6. Found on the way, NOT this lane
 
 - **σ bonds in verified passes are a median 0.31 Å too SHORT.** Cause: the conformer pool sweeps a
