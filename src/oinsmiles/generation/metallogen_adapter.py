@@ -2347,6 +2347,10 @@ class MetalloGenAdapter:
                 "early_exit",
             ]
         }
+        # OIN_ETA_RETARGET (v0.4.18 selection lane, default OFF): only a complex that HAS an eta
+        # group is told about it, so a non-eta molecule is byte-identical by construction.
+        if needs_winding and lever_enabled("OIN_ETA_RETARGET"):
+            clean_ff_params["eta_retarget"] = True
 
         # SL1 generate-until-key-exact early-exit. When enabled, hand the engine an
         # ``accept_fn`` that returns True as soon as an embedded conformer INDEPENDENTLY

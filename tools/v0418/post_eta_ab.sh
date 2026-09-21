@@ -13,7 +13,7 @@ MAIN=/home/tjmustard/Documents/GitHub/OIN-SMILES
 DATA=$MAIN/tmCAT-tmPHOTO_xyz_dataset
 PY=$MAIN/.venv/bin/python
 COHORT=$DATA/cohort-v0.4.18-eta
-OUT=$DATA/results-v0.4.18-eta-detached
+OUT=${AB_OUT:-$DATA/results-v0.4.18-eta-detached}
 ON=${1:-on}
 export PYTHONPATH=$HERE/src
 
@@ -34,4 +34,4 @@ for arm in off "$ON"; do
   $PY tools/census/g_vs_input.py --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 10 > "$d/g_verdict.log" 2>&1
 done
 sfx=""; [ "$ON" = on ] || sfx="_$ON"
-$PY tools/v0418/eta_ab_report.py --on-arm "$ON" --out "$OUT/eta_ab_report$sfx.json" | tee "$OUT/eta_ab_report$sfx.txt"
+$PY tools/v0418/eta_ab_report.py --ab "$OUT" ${AB_REPORT_ARGS:-} --on-arm "$ON" --out "$OUT/eta_ab_report$sfx.json" | tee "$OUT/eta_ab_report$sfx.txt"

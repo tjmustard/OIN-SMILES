@@ -839,6 +839,20 @@ _HELD_OFF = {
         "choice between the two is +222 verified with no losses -- it is one half of the next "
         "lane's pool, not a default. Do not re-run it as one."
     ),
+    "OIN_ETA_RETARGET": (
+        "v0.4.18 selection lane, EXPERIMENTAL -- under measurement. The right eta target is "
+        "PER-MOLECULE: the L2 A/B's two configurations (target = scale x S, shipped; target = S, "
+        "OIN_ETA_TARGET_UNSCALED) fix and break DIFFERENT molecules, +222 verified for a "
+        "per-molecule oracle against +150 for the better one. The FF scan never checks that a "
+        "binding group REACHED its target, so ff_clean now counts the declared binding atoms it "
+        "left outside the encoder's contact cutoff (an observation, always computed). With this "
+        "lever on, an eta conformer that failed to clean or left a donor out is cleaned ONCE MORE "
+        "from the same embedding with the eta target at S, and the one with more donors in is "
+        "kept -- one conformer per attempt, so the attempt/seed sequence is the shipped one and a "
+        "conformer that arrived is never touched. Offline bound (tools/v0418/selection_sim.py): "
+        "an input-free 'every declared donor arrived' choice between the two arms is +45 / -1 "
+        "verified of 1,146. Held off until a harness A/B reports both numbers with its losses."
+    ),
 }
 
 

@@ -122,6 +122,12 @@ def main():
         default=MAIN / "results-v0.4.17-reattribution/attribution_table.tsv",
     )
     ap.add_argument("--on-arm", default="on", help="directory suffix of the ON arm: on | on3")
+    ap.add_argument(
+        "--base",
+        default=f"{PASS_SELF},{PASS_VERIFIED}",
+        help="self-consistent,VERIFIED passes of the 5,000 under the OFF arm's configuration, for the"
+        " projection (default: the v0.4.17 sweep; the v0.4.18 sweep is 4305,3883)",
+    )
     ap.add_argument("--out", type=Path)
     ap.add_argument(
         "--smoke",
@@ -135,6 +141,7 @@ def main():
             sys.exit("ABORT: " + msg)
         print(f"   !!! SMOKE MODE, CONTROL FAILED ({msg}) -- NOTHING BELOW IS A RESULT !!!")
 
+    base_self, base_verified = (int(x) for x in args.base.split(","))
     cohort = sorted(p.stem for p in args.cohort.glob("*.xyz"))
     if not cohort:
         sys.exit(f"ABORT: {args.cohort} is empty -- refusing an empty denominator")
@@ -233,13 +240,13 @@ def main():
             "self-consistent (byte_exact)",
             "self",
             lambda m, B, G: B[m]["bucket"] == "byte_exact",
-            PASS_SELF,
+            base_self,
         ),
         (
             "VERIFIED (ruler on the structure)",
             "verified",
             lambda m, B, G: _verified(m, B, G, T),
-            PASS_VERIFIED,
+            base_verified,
         ),
     ):
         off = {m: fn(m, Bf, Gf) for m in both}
