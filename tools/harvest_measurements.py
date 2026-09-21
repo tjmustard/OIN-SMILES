@@ -191,6 +191,8 @@ ALLOW = [
     # tools/v0418/freeze_stage_sweep.py into their OWN release (v0.4.18-sweep).
     "v0418_sweep_*",
     "v0418_arm2_*",
+    # v0.4.18 selection lane (OIN_ETA_RETARGET), staged by tools/v0418/freeze_stage_selection.py.
+    "v0418_sel_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -374,6 +376,41 @@ PROVENANCE = [
         " v0.4.17 sweep. The other inputs are frozen where they were made: g_verdict + parseback in"
         " v0.4.17-sweep/, e_selfconsistency_exact in v0.4.17/, the mirror ruler + twin clusters in"
         " v0.4.17-census/)",
+    ),
+    (
+        r"^v0418_sel_selection_sim\.(txt|json)$",
+        "tools/v0418/selection_sim.py   (OFFLINE BOUND, and it CAN express a loss: the L2 A/B left"
+        " three structures per eta molecule with KNOWN verdicts. An input-free 'every binding atom"
+        " the string DECLARES is inside the contact cutoff' choice between them = 668 -> 723 verified"
+        " (+57 / -2), oracle 740. Adding SURPLUS contacts as a criterion costs 20 losses)",
+    ),
+    (
+        r"^v0418_sel_(retarget_probe\.txt|probe5_classes\.json)$",
+        "tools/v0418/eta_path_probe.py --arms dg,retarget   (fresh-process SAMPLE: 63 oracle-headroom"
+        " molecules + 40 verified controls. Honest round trip 22 -> 52 (+31 / -1), controls 40/40;"
+        " lever OFF reproduces the v0.4.18 sweep on 103/103 structures. A SAMPLE, NOT A VERDICT)",
+    ),
+    (
+        r"^v0418_sel_eta_ab_report_retarget\.(txt|json)$",
+        "tools/v0418/run_selection_ab.sh -> post_eta_ab.sh retarget -> eta_ab_report.py --on-arm"
+        " retarget --base 4305,3883   (THE HARNESS A/B of OIN_ETA_RETARGET over all 1146 eta-bound"
+        " molecules, commit 2f0b68d5: self-consistent +49/-4, VERIFIED +43/-5 -> 87.00% / 78.42%"
+        " projected; excluding rows on the 300 s budget boundary +44/-4 and +40/-5. THE OFF ARM WAS"
+        " BUILT from the v0.4.18 sweep of record, not run, so the report's noise-floor line is"
+        " circular here. NO DEFAULT CHANGED: the lever ships OFF)",
+    ),
+    (
+        r"^v0418_sel_ab_(off|retarget)_(g_verdict\.jsonl|bucket_report_honest\.json)\.gz$",
+        "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py   (per arm: the"
+        " honest bucket and the neutral ruler's verdict for every one of the 1146; ab_off is the"
+        " v0.4.18 sweep's own rows. With v0.4.18-census/v0418_census_attribution_table.tsv.gz these"
+        " re-derive the headline: tools/v0418/freeze_stage_selection.py --verify <this dir>)",
+    ),
+    (
+        r"^v0418_sel_ab_rows\.tsv\.gz$|^v0418_sel_ab_commits\.tsv$",
+        "tools/v0418/freeze_stage_selection.py   (MADE at staging time: per molecule and arm the"
+        " sha256 of the generated structure -- the lever changed 158 of 1067 -- coordination.intact"
+        " and elapsed_s, plus the sweep of record's sha256; and where each arm came from)",
     ),
     (
         r"^v0418_sweep_(RUN\.md|run_config\.json)$",
