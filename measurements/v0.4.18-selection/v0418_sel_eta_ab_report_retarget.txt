@@ -1,0 +1,52 @@
+1. COMPLETENESS   cohort=1146   ON arm = ab_retarget
+   off launched from results-v0.4.18-sweep @ "commit_id": "2d2708db" -- the sweep of record's own rows, not a run
+   off reports=1146  bucketed=1146  ruler verdicts=1072  xtb_available=True  commit=2d2708db  tree=[]
+   on  launched from 2f0b68d5796b9f5f236e24d980574de27f6c3b80 feat(v0.4.18): OIN_ETA_RETARGET (default OFF) -- re-clean a
+   on  reports=1146  bucketed=1146  ruler verdicts=1074  xtb_available=True  commit=2f0b68d5  tree=['<checkout:oin-v0418>/src/oinsmiles/__init__.py']
+   scored in BOTH arms: 1146/1146
+
+2. INPUT CONTROL   smiles_1 differs OFF vs ON: 0   OFF vs sweep of record: 0   (both MUST be 0: the levers are generator-side)   encoded in one arm only: 0 (encode budget under load)
+   DEAD-LEVER CHECK   structure in both arms 1067, of which DIFFERENT 158  (0 = the levers never fired);  built only ON 7, only OFF 5
+
+3. NOISE FLOOR   OFF arm vs sweep of record: pass/fail flips 0/1146 (now pass 0, now fail 0);  structures byte-identical 1072/1072
+
+4. TRANSITIONS  OFF -> ON
+   self-consistent (byte_exact)
+      pass OFF=825  pass ON=870  of 1146
+      GAINS 49   LOSSES 4   NET +45
+      gains  by census fault: {'G_CONSTRUCTION/DETACHED': 24, 'NONE': 10, 'G_NOTHING/TIMEOUT': 4, 'E1_NOT_ENCODED/DIFFERENT/ARRANGEMENT': 2, 'G_HCOUNT': 2, 'E1_GRAPH/SPHERE_DIFF': 2, 'G_CONSTRUCTION/SPHERE_DIFF': 1, 'E2_P_OTHER/NO_STEREO': 1}
+      gains  by metal       : {'Ru': 13, 'Mo': 7, 'Rh': 6, 'Zr': 5, 'Ir': 5, 'Ti': 4, 'Fe': 3, 'V': 1, 'Ni': 1, 'Sc': 1, 'W': 1, 'Os': 1}
+      losses by census fault: {'G_CONSTRUCTION/SPHERE_DIFF': 3, 'NONE': 1}
+      losses by metal       : {'Ru': 2, 'Rh': 1, 'Ti': 1}
+      loss transitions      : {'byte_exact->key_equal': 3, 'byte_exact->structural': 1}
+      PROJECTION on n=5000: 86.10% -> 87.00%  (+0.90 pts; noise floor +/-0.00)
+   VERIFIED (ruler on the structure)
+      pass OFF=669  pass ON=707  of 1146
+      GAINS 43   LOSSES 5   NET +38
+      gains  by census fault: {'G_CONSTRUCTION/DETACHED': 21, 'NONE': 13, 'G_HCOUNT': 2, 'G_CONSTRUCTION/SPHERE_DIFF': 2, 'G_NOTHING/TIMEOUT': 2, 'E1_NOT_ENCODED/DIFFERENT/ARRANGEMENT': 1, 'E2_P_OTHER/NO_STEREO': 1, 'E1_NONCANONICAL/veto one-hand (C2)': 1}
+      gains  by metal       : {'Ru': 8, 'Ir': 7, 'Rh': 6, 'Mo': 5, 'Zr': 5, 'Ti': 3, 'Fe': 2, 'Y': 2, 'Pt': 1, 'V': 1, 'Ni': 1, 'Sc': 1}
+      losses by census fault: {'G_CONSTRUCTION/SPHERE_DIFF': 2, 'G_HCOUNT': 1, 'NONE': 1, 'E1_NOT_ENCODED/DIFFERENT/ARRANGEMENT': 1}
+      losses by metal       : {'Ru': 3, 'Pt': 1, 'Mo': 1}
+      loss transitions      : {'byte_exact->byte_exact': 3, 'byte_exact->key_equal': 2}
+      PROJECTION on n=5000: 77.66% -> 78.42%  (+0.76 pts; noise floor +/-0.00)
+
+   bucket transitions (off -> on):
+        23  structural -> byte_exact
+        21  key_equal -> byte_exact
+         8  structural -> key_equal
+         5  hard_fail -> byte_exact
+         5  structural -> hard_fail
+         3  byte_exact -> key_equal
+         2  structural -> facmer_divergent
+         1  byte_exact -> structural
+         1  hard_fail -> structural
+
+5. THE STRUCTURES   by census class (the v0.4.17 sweep's attribution)
+   class                 n | intact OFF  intact ON | eta infl OFF  eta infl ON | in band OFF  in band ON
+   VERIFIED_PASS       518 |        495        501 |       +0.060       +0.095 |       94.4%       96.4%
+   DETACHED            295 |        168        191 |       +0.279       +0.255 |       60.5%       68.7%
+   other_FAIL          197 |         89         96 |       +0.247       +0.255 |       72.2%       75.1%
+   other_false_PASS    136 |        126        128 |       +0.135       +0.136 |       85.1%       87.9%
+   all                1146 |        878        916   (unmatched ligands, counted not dropped: OFF 38, ON 35)
+
+6. RUNTIME  sum elapsed_s  OFF=11.63 h  ON=11.81 h   >30 s: OFF 238  ON 243   max: OFF 660 s  ON 698 s

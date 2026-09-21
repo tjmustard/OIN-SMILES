@@ -1,0 +1,30 @@
+{
+ "base_on": 668,
+ "deficit only            over on/on3": {
+  "gains": 45,
+  "losses": 1,
+  "verified": 712
+ },
+ "deficit only            over on/on3/off": {
+  "gains": 57,
+  "losses": 2,
+  "verified": 723
+ },
+ "deficit, then surplus   over on/on3": {
+  "gains": 46,
+  "losses": 14,
+  "verified": 700
+ },
+ "deficit, then surplus   over on/on3/off": {
+  "gains": 60,
+  "losses": 20,
+  "verified": 708
+ },
+ "headroom": {
+  "predicate PREFERS the verified arm": 56,
+  "predicate TIES (cannot tell)": 4,
+  "predicate prefers the WRONG arm": 8,
+  "unscored / no `on` structure": 4
+ },
+ "oracle": 740
+}

@@ -1,0 +1,18 @@
+DENOMINATOR 1146 eta-bound molecules, three arms each
+  verified per arm: {'on': 668, 'on3': 638, 'off': 518}
+  oracle (best arm per molecule): 740
+  scored 1146 / 1146  (unscored 0: no tags parsed or not single-metal)
+  CONTROL declared == the INPUT's own contacts on verified passes: 489/518 (94.4%)  -- the rest are BOUNDARY contacts / tag parsing
+
+1. DOES THE PREDICATE TRACK THE VERDICT?   per structure, all arms pooled
+   clean (0,0)   verified  1032   not verified   172   P(verified) = 85.7%
+   not clean     verified   792   not verified  1220   P(verified) = 39.4%
+
+2. SIMULATED SELECTORS   (ties -> on, the shipped default)     base: on = 668
+   deficit, then surplus   over on/on3/off: 708  (+40 vs on: +60 / -20)   left the default on 227 molecules {'on3': 171, 'off': 56}
+   deficit only            over on/on3/off: 723  (+55 vs on: +57 / -2)   left the default on 132 molecules {'on3': 98, 'off': 34}
+   deficit, then surplus   over on/on3    : 700  (+32 vs on: +46 / -14)   left the default on 179 molecules {'on3': 179}
+   deficit only            over on/on3    : 712  (+44 vs on: +45 / -1)   left the default on 102 molecules {'on3': 102}
+
+3. THE ORACLE'S HEADROOM   molecules NOT verified in `on` but verified in another arm
+   72 molecules: {'predicate PREFERS the verified arm': 56, 'unscored / no `on` structure': 4, 'predicate TIES (cannot tell)': 4, 'predicate prefers the WRONG arm': 8}

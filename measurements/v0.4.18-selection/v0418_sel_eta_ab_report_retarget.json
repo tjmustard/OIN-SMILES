@@ -1,0 +1,37 @@
+{
+ "built_only_off": 5,
+ "built_only_on": 7,
+ "elapsed_h": {
+  "off": 11.63,
+  "on": 11.81
+ },
+ "intact": {
+  "off": 878,
+  "on": 916
+ },
+ "n_cohort": 1146,
+ "n_structures_differ": 158,
+ "noise_flips": 0,
+ "off_vs_record_identical": [
+  1072,
+  1072
+ ],
+ "over_30s": {
+  "off": 238,
+  "on": 243
+ },
+ "self": {
+  "gains": 49,
+  "losses": 4,
+  "pass_off": 825,
+  "pass_on": 870,
+  "projection_pct": 87.0
+ },
+ "verified": {
+  "gains": 43,
+  "losses": 5,
+  "pass_off": 669,
+  "pass_on": 707,
+  "projection_pct": 78.42
+ }
+}
