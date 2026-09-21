@@ -1,0 +1,6 @@
+DENOMINATOR 428 rows in both full runs; built OK in both: 400
+  pre-lever run : arm `on`: f5f507ef
+  promoted run  : arm `on`: 2921aa67
+  eta     n=198   structure differs 138   field 3 (gated) differs 0   field 2 differs 0
+  non-eta n=202   structure differs   0   field 3 (gated) differs 0   field 2 differs 0
+  rows whose status class changed between the runs: 0

@@ -1,0 +1,12 @@
+
+=== v047: 100 golden rows, 100 fresh rows (0 ungated: [])
+    {'COMPARED': 100}
+    field 2: gate and encode-only audit agree on all 0 rows
+    control cohort: 0 owed + 0 killed -> cohort-v0.4.18-arm2-control-v047
+
+=== v049: 325 golden rows, 328 fresh rows (3 ungated: ['GOHWOQ_comp_0', 'ULODUU_comp_0', 'XIQKOY_comp_0'])
+    {'COMPARED': 272, 'DET': 5, 'KILLED_gate_says_MISMATCH_f2': 2, 'OBSERVE': 4, 'SHA1_ONLY': 42}
+    field 2: gate and encode-only audit agree on all 0 rows
+    KILLED EQEROI_comp_0          audit: SAME, golden f3=NO_STRUCTURE@300s  -> no re-freeze owed
+    KILLED MUKGUW_comp_0          audit: SAME, golden f3=NO_STRUCTURE@300s  -> no re-freeze owed
+    control cohort: 0 owed + 2 killed -> cohort-v0.4.18-arm2-control-v049

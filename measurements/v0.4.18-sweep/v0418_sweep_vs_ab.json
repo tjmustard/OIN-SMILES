@@ -1,0 +1,28 @@
+{
+ "eta": {
+  "bucket_same": 1142,
+  "n": 1146,
+  "struct_cmp": 1068,
+  "struct_same": 1068
+ },
+ "non-eta": {
+  "bucket_same": 3851,
+  "n": 3854,
+  "struct_cmp": 3713,
+  "struct_same": 3713
+ },
+ "over_30s": 515,
+ "self": {
+  "gains": 197,
+  "losses": 28,
+  "now": 4305,
+  "was": 4136
+ },
+ "smiles_1_moved": 0,
+ "verified": {
+  "gains": 191,
+  "losses": 38,
+  "now": 3883,
+  "was": 3730
+ }
+}

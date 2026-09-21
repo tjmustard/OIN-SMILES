@@ -1,0 +1,4 @@
+# golden	name	sha_in	sha_out	len_in	len_out	eta	xyz_sha(observation)	status   -- arm `off`: 2921aa67
+v049	EQEROI_comp_0	HARD_TIMEOUT@450s	HARD_TIMEOUT@450s	-	-	-		ERROR:HardTimeout:SIGKILL after 450s
+v049	MUKGUW_comp_0	HARD_TIMEOUT@450s	HARD_TIMEOUT@450s	-	-	-		ERROR:HardTimeout:SIGKILL after 450s
+#DONE 2

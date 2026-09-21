@@ -1,0 +1,20 @@
+DENOMINATOR 5000 = 1146 eta-bound + 3854 non-eta
+
+1. INPUT SIDE   smiles_1 differs from the v0.4.17 sweep: 0 (MUST be 0)   encoded in one sweep only: 0
+
+2. THE TWO CLAIMS THE PROJECTION STOOD ON
+   non-eta  n=3854  structure == v0.4.17 sweep: 3713/3713  (built in one only: 6)   bucket ==: 3851/3854
+   eta      n=1146  structure == A/B ON arm: 1068/1068  (built in one only: 5)   bucket ==: 1142/1146
+   eta structures still identical to the OLD sweep: 264  (all of them = dead levers)
+
+3. THE TWO NUMBERS   (VERIFIED with the string faults CARRIED from the census table;
+   two_numbers.txt re-derives them from this sweep's own parse-back -- they must agree)
+   self      4136 -> 4305 = 86.10%   predicted 4302 (86.04%)   off by +3
+             gains 197 (eta 195, non-eta 2)   losses 28 (eta 28, non-eta 0)
+   verified  3730 -> 3883 = 77.66%   predicted 3880 (77.60%)   off by +3
+             gains 191 (eta 189, non-eta 2)   losses 38 (eta 38, non-eta 0)
+
+4. BUCKETS   {'byte_exact': 4305, 'structural': 320, 'hard_fail': 228, 'key_equal': 129, 'encode_fail': 11, 'facmer_divergent': 7}
+   was       {'byte_exact': 4136, 'structural': 479, 'hard_fail': 236, 'key_equal': 122, 'facmer_divergent': 16, 'encode_fail': 11}
+
+5. RUNTIME  sum elapsed_s 33.18 h -> 31.17 h   >30 s 579 -> 515   max 698 -> 660 s
