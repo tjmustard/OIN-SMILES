@@ -95,6 +95,19 @@ EXPECTED = {
         },
         "none": 3730,
     },
+    # v0.4.18: OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promoted. The census has NOT been
+    # re-run on this sweep yet (its per-sweep instruments are owed first -- see the v0.4.18 handoff).
+    "results-v0.4.18-sweep": {
+        "buckets": {
+            "byte_exact": 4305,
+            "structural": 320,
+            "key_equal": 129,
+            "hard_fail": 228,
+            "facmer_divergent": 7,
+            "encode_fail": 11,
+        },
+        "none": 3883,
+    },
 }
 EXPECTED_BUCKETS = EXPECTED["results-v0.4.14-sweep"]["buckets"]
 PT_PER_MOL = 100.0 / 5000
