@@ -191,6 +191,12 @@ ALLOW = [
     # tools/v0418/freeze_stage_sweep.py into their OWN release (v0.4.18-sweep).
     "v0418_sweep_*",
     "v0418_arm2_*",
+    # v0.4.18 RELEASE: the release sweep (both promotions), its /refreeze-goldens run, and the
+    # census re-run on it (tools/v0418/freeze_stage_sweep.py --release; stage_reattribution.py
+    # --results results-v0.4.18-release-census --prefix v0418_rcensus_).
+    "v0418_rsweep_*",
+    "v0418_rarm2_*",
+    "v0418_rcensus_*",
     # v0.4.18 selection lane (OIN_ETA_RETARGET), staged by tools/v0418/freeze_stage_selection.py.
     "v0418_sel_*",
 ]
@@ -411,6 +417,85 @@ PROVENANCE = [
         "tools/v0418/freeze_stage_selection.py   (MADE at staging time: per molecule and arm the"
         " sha256 of the generated structure -- the lever changed 158 of 1067 -- coordination.intact"
         " and elapsed_s, plus the sweep of record's sha256; and where each arm came from)",
+    ),
+    (
+        r"^v0418_rsweep_(RUN\.md|run_config\.json)$",
+        "SWEEP_TAG=v0.4.18-release tools/v0418/launch_sweep.sh -> tools/run_sweep.sh"
+        " <cohort-v0.4.5-5k> <out> 6 300   (THE v0.4.18 RELEASE SWEEP -- both eta promotions,"
+        " OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING and OIN_ETA_RETARGET, as SHIPPED"
+        " DEFAULTS: the lever block of run_config.json is EMPTY. Commit cdb76eca, 6 shards 1-BASED,"
+        " --mol-timeout 300, BLAS=1. RUN.md is hand-written provenance)",
+    ),
+    (
+        r"^v0418_rsweep_(two_numbers\.txt|bucket_report_honest\.md)$",
+        "SWEEP_TAG=v0.4.18-release tools/v0418/post_sweep.sh -> roundtrip_bucket_report.py --score"
+        " honest ; tools/v0417/sweep_two_numbers.py --sweep <sweep>   (THE v0.4.18 HEADLINE, see"
+        " RUN.md for the two numbers. The '(record ...)' labels INSIDE two_numbers.txt are the"
+        " v0.4.14 record's)",
+    ),
+    (
+        r"^v0418_rsweep_vs_ab\.(txt|json)$",
+        "tools/v0418/sweep_vs_ab.py --record results-v0.4.18-sweep --ab-on"
+        " results-v0.4.18-eta-selection/ab_retarget --predicted 4305+45,3883+38   (CHECKS the two"
+        " claims the selection A/B's projection stood on: non-eta structures byte-identical to the"
+        " sweep it replaces, eta structures byte-identical to the A/B's retarget arm)",
+    ),
+    (
+        r"^v0418_rsweep_(g_verdict|parseback)\.jsonl\.gz$|^v0418_rsweep_bucket_report_honest\.json\.gz$",
+        "tools/census/g_vs_input.py --sweep <sweep> ; tools/census/string_sufficiency.py parseback"
+        " --sweep <sweep> ; roundtrip_bucket_report.py --score honest   (the neutral ruler on every"
+        " generated structure of the release sweep, its smiles_1 read back with no 3D, and the"
+        " per-molecule honest bucket: gunzip the three and sweep_two_numbers.two_numbers() returns"
+        " the headline from the frozen tree alone)",
+    ),
+    (
+        r"^v0418_rarm2_field2_audit_v04[79]\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_field2_audit.py --lever OIN_ETA_RETARGET --generator-side   (field 2 of"
+        " EVERY golden row, encode-only, fresh process per lever setting; for a generator-side lever"
+        " the dead-lever abort is INVERTED: any moved row would mean the lever reaches the encoder)",
+    ),
+    (
+        r"^v0418_rarm2_(diff_full_gate_vs_goldens\.txt|rows_on_full_gate\.tsv\.gz|rows_off_control\.tsv)$",
+        "tools/v0417/run_arm2_refreeze.sh on|off ; tools/v0417/arm2_refreeze.py diff|rows   (the FULL"
+        " ARM 2 gate, all 425 rows, shipped defaults, after the OIN_ETA_RETARGET promotion. The"
+        " fresh rows carry the new HONEST observation column (field 9): sha256 of an independent"
+        " XYZToSMILES().convert of the generated xyz, beside the gated field 3)",
+    ),
+    (
+        r"^v0418_rarm2_(lever_fired_but_unseen\.txt|golden_comment_block\.txt|honest_column\.txt)$",
+        "tools/v0418/arm2_lever_fired.py ; tools/v0418/arm2_honest_column.py   (did the lever fire"
+        " inside the gate -- structure sha vs the previous full run -- and did the gated field see"
+        " it; and what the honest column says across all 425 rows: how many rows the gate passes"
+        " that the harness's predicate would fail. The comment block is what was spliced into both"
+        " goldens)",
+    ),
+    (
+        r"^v0418_rcensus_(attribution_table\.tsv\.gz|attribution_summary\.json|attribution\.txt)$",
+        "tools/v0418/run_census_release.sh -> tools/census/attribution_table.py --sweep"
+        " <results-v0.4.18-release-sweep> + one path per instrument   (THE CENSUS RE-RUN ON THE"
+        " RELEASE SWEEP: 5000 rows, one fault each, UNATTRIBUTED 0; NONE must equal the VERIFIED"
+        " count sweep_two_numbers.py printed, or the tool aborts)",
+    ),
+    (
+        r"^v0418_rcensus_control_on_the_record_sweep\.txt$",
+        "tools/census/attribution_table.py --write-to <scratch>   (CONTROL, run first: the tool on the"
+        " v0.4.14 record sweep reproduces measurements/v0.4.17-census/attribution_table.tsv.gz"
+        " BYTE-FOR-BYTE, checked with cmp)",
+    ),
+    (
+        r"^v0418_rcensus_reattribution_diff\.(txt|json)$",
+        "tools/census/reattribution_diff.py --old <v0.4.17 re-attribution table> --new <this table>"
+        " --movers <structure differs from the v0.4.17 sweep>   (where each fault WENT across both"
+        " v0.4.18 promotions, split by mover; the non-mover change count is the noise floor of"
+        " attribution)",
+    ),
+    (
+        r"^v0418_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0418_rcensus_attach_class_audit\.json\.gz$",
+        "tools/census/string_sufficiency.py parseback --side gen | pflags --charge-probe ;"
+        " tools/attach_class_audit.py   (the three SWEEP-DEPENDENT instruments, derived on the"
+        " release sweep. C2 e_selfconsistency is REUSED from v0.4.17/ (the encoder is unchanged:"
+        " smiles_1 moved on 0 of 5000 in every sweep since); the mirror ruler + twin clusters from"
+        " v0.4.17-census/)",
     ),
     (
         r"^v0418_sweep_(RUN\.md|run_config\.json)$",

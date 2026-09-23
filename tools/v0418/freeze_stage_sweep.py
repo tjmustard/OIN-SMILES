@@ -10,6 +10,9 @@ through ``tools/freeze_sweep_extract.py --release v0.4.18-sweep``), logs, and th
 SCORED bucket report (the number is the HONEST one).
 
     <main>/.venv/bin/python tools/v0418/freeze_stage_sweep.py        # writes <sweep>/freeze/
+    <main>/.venv/bin/python tools/v0418/freeze_stage_sweep.py --release
+        # the RELEASE sweep (results-v0.4.18-release-sweep) + its /refreeze-goldens run
+        # (results-v0.4.18-release-arm2-refreeze), prefixes v0418_rsweep_ / v0418_rarm2_
 """
 
 from __future__ import annotations
@@ -21,11 +24,14 @@ import sys
 from pathlib import Path
 
 DATA = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
-SWEEP = DATA / "results-v0.4.18-sweep"
-ARM2 = DATA / "results-v0.4.18-arm2-refreeze"
+RELEASE = "--release" in sys.argv
+SWEEP = DATA / ("results-v0.4.18-release-sweep" if RELEASE else "results-v0.4.18-sweep")
+ARM2 = DATA / (
+    "results-v0.4.18-release-arm2-refreeze" if RELEASE else "results-v0.4.18-arm2-refreeze"
+)
 STAGE = SWEEP / "freeze"
 PER_FILE_CAP = 512 * 1024
-S, A = "v0418_sweep_", "v0418_arm2_"
+S, A = ("v0418_rsweep_", "v0418_rarm2_") if RELEASE else ("v0418_sweep_", "v0418_arm2_")
 
 _CHECKOUT = re.compile(r"/home/[^/\s\"']+/Documents/GitHub/([A-Za-z0-9._-]+)")
 _HOME = re.compile(r"/home/[^/\s\"']+/")
@@ -55,7 +61,7 @@ PLAN = [
     (ARM2 / "off_rows.tsv", A + "rows_off_control.tsv", False),
     (ARM2 / "lever_fired.txt", A + "lever_fired_but_unseen.txt", False),
     (ARM2 / "comment_block.txt", A + "golden_comment_block.txt", False),
-]
+] + ([(ARM2 / "honest_column.txt", A + "honest_column.txt", False)] if RELEASE else [])
 
 
 def scrub(text: str) -> str:
