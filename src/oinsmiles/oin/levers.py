@@ -334,6 +334,48 @@ import os
 #:     +/-0 if generation stays as deterministic as it was in the A/B), an ARM 1 check, and ARM 2
 #:     goldens re-frozen from a FULL gate run (/refreeze-goldens).
 #: See docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md; evidence measurements/v0.4.18-l2/.
+#:
+#: v0.4.18 PROMOTED OIN_ETA_RETARGET -- OWNER DELEGATION 2026-09-23 ("follow best practices to
+#: complete the v0.4.18 plan"; the recommendation to promote was on the table since 2026-09-20).
+#: GENERATOR-side, generator3d/__init__.py::_try_accept + clean_geometry.ff_clean.
+#:
+#: WHAT IT REPAIRS. The right eta target distance is PER-MOLECULE: the L2 A/B's two policies
+#: (target = scale x S, shipped; target = S, OIN_ETA_TARGET_UNSCALED) fix and break DIFFERENT
+#: molecules -- a per-molecule oracle over the three arms is +222 verified against +150 for the
+#: better single policy. And the FF scan never checked that a binding group REACHED its target: a
+#: stalled ring reads as converged. So ff_clean now counts, per DECLARED binding atom, whether it
+#: ended inside the encoder's contact cutoff (cleaner.last_arrival_deficit -- an observation, always
+#: computed), and with this lever on an eta conformer that failed to clean or left a donor out is
+#: cleaned ONCE MORE from the same embedding with the eta target at S; the one with more donors in
+#: is kept. One conformer per attempt, so the attempt/seed sequence is the shipped one; a conformer
+#: that arrived is never touched; a non-eta molecule never reaches it (the adapter passes
+#: ff_params["eta_retarget"] only for a string with an eta group).
+#:
+#: THE GATES THAT PROMOTED IT.
+#:   * offline bound (tools/v0418/selection_sim.py; three structures per molecule with KNOWN
+#:     verdicts, so it CAN express a loss): an input-free "every declared donor arrived" choice
+#:     between the two policies = +45 / -1 verified of 1,146. Adding SURPLUS contacts as a
+#:     criterion costs 20 losses -- boundary contacts are the modal state of a passing molecule.
+#:   * harness A/B, all 1,146 eta-bound molecules (commit 2f0b68d5), the OFF arm being the v0.4.18
+#:     sweep of record's own rows: smiles_1 moved on 0; 158 of 1,067 structures differ; every gain
+#:     and loss has a different structure in the two arms.
+#:         self-consistent  +49 / -4   86.10 -> 87.00% projected
+#:         VERIFIED         +43 / -5   77.66 -> 78.42% projected
+#:     Excluding rows on the 300 s budget boundary (a BUILT off arm cannot tell them from the
+#:     lever): +44 / -4 and +40 / -5 -- booked at +0.80 / +0.70 pts. Coordination intact
+#:     878 -> 916; runtime flat.
+#:
+#: WHAT IT COSTS, accepted rather than avoided.
+#:   * 4 / 5 passes lost (Ru 3, Pt 1, Mo 1); three of the verified losses still round-trip
+#:     byte-exact and fail only the ruler.
+#:   * ~30 molecules of the oracle's headroom remain where a per-atom arrival count ties or points
+#:     the wrong way. Not this lever's to reach.
+#:   * It changes what the generator builds for ~160 eta molecules, which VOIDS the carry-forward
+#:     licence of results-v0.4.18-sweep: the release sweep (results-v0.4.18-release-sweep, expected
+#:     87.00 / 78.42 up to budget-boundary rows), an ARM 1 check and ARM 2 goldens re-frozen from a
+#:     FULL run are owed. ARM 2 is BLIND to a generator-side promotion (its re-encode goes through
+#:     the generator's own bond graph -- L2 note 5e); v0.4.18 adds an honest observation column.
+#: See docs/agentic-notes/v0.4.18/SELECTION_ETA_RETARGET.md and measurements/v0.4.18-selection/.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -343,6 +385,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
         "OIN_ETA_COVALENT_TARGET",
+        "OIN_ETA_RETARGET",
         "OIN_EXACT_DONOR_FOLD",
         "OIN_FOLD_PARITY_VETO",
         "OIN_INDEP_SCORE",
@@ -838,20 +881,6 @@ _HELD_OFF = {
         "USELESS: it repairs 18 of the promoted pair's 39 verified losses, and a per-molecule "
         "choice between the two is +222 verified with no losses -- it is one half of the next "
         "lane's pool, not a default. Do not re-run it as one."
-    ),
-    "OIN_ETA_RETARGET": (
-        "v0.4.18 selection lane, EXPERIMENTAL -- under measurement. The right eta target is "
-        "PER-MOLECULE: the L2 A/B's two configurations (target = scale x S, shipped; target = S, "
-        "OIN_ETA_TARGET_UNSCALED) fix and break DIFFERENT molecules, +222 verified for a "
-        "per-molecule oracle against +150 for the better one. The FF scan never checks that a "
-        "binding group REACHED its target, so ff_clean now counts the declared binding atoms it "
-        "left outside the encoder's contact cutoff (an observation, always computed). With this "
-        "lever on, an eta conformer that failed to clean or left a donor out is cleaned ONCE MORE "
-        "from the same embedding with the eta target at S, and the one with more donors in is "
-        "kept -- one conformer per attempt, so the attempt/seed sequence is the shipped one and a "
-        "conformer that arrived is never touched. Offline bound (tools/v0418/selection_sim.py): "
-        "an input-free 'every declared donor arrived' choice between the two arms is +45 / -1 "
-        "verified of 1,146. Held off until a harness A/B reports both numbers with its losses."
     ),
 }
 

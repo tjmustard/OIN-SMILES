@@ -2347,7 +2347,7 @@ class MetalloGenAdapter:
                 "early_exit",
             ]
         }
-        # OIN_ETA_RETARGET (v0.4.18 selection lane, default OFF): only a complex that HAS an eta
+        # OIN_ETA_RETARGET (v0.4.18 selection lane, default ON): only a complex that HAS an eta
         # group is told about it, so a non-eta molecule is byte-identical by construction.
         if needs_winding and lever_enabled("OIN_ETA_RETARGET"):
             clean_ff_params["eta_retarget"] = True

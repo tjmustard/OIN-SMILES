@@ -365,7 +365,7 @@ def generate_3d_structures(
         )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
-    # OIN_ETA_RETARGET (v0.4.18 selection lane, default OFF). The ADAPTER decides and passes
+    # OIN_ETA_RETARGET (v0.4.18 selection lane, default ON). The ADAPTER decides and passes
     # ff_params["eta_retarget"]: it knows whether the complex has an eta group, and a non-eta
     # molecule must not reach this at all.
     eta_retarget = bool(ff_params.get("eta_retarget")) if ff_params else False

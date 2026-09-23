@@ -90,9 +90,12 @@ class TestArrivalDeficit(unittest.TestCase):
         # the spectator at 5 A is far outside the cutoff and must not count
         self.assertEqual(self._deficit(2.05), 0)
 
-    def test_the_retarget_lever_is_held_off(self):
-        self.assertNotIn("OIN_ETA_RETARGET", levers._DEFAULT_ON)
-        self.assertIn("OIN_ETA_RETARGET", levers._HELD_OFF)
+    def test_the_retarget_lever_is_promoted_and_zero_selects_the_single_target(self):
+        # owner delegation 2026-09-23; harness A/B +49/-4, +43/-5 of 1,146
+        self.assertIn("OIN_ETA_RETARGET", levers._DEFAULT_ON)
+        self.assertNotIn("OIN_ETA_RETARGET", levers._HELD_OFF)
+        with mock.patch.dict(os.environ, {"OIN_ETA_RETARGET": "0"}):
+            self.assertFalse(levers.lever_enabled("OIN_ETA_RETARGET"))
 
 
 def _build_ferrocene():
