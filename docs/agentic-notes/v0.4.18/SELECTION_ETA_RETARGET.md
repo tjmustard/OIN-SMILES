@@ -107,7 +107,18 @@ v0.4.18 sweep == L2's ON arm 1,068 / 1,068; this lane's lever-OFF probe == the v
 
 The offline bound said +45 / −1 for a choice between these two policies; the harness measured +43 / −5.
 
-## 6. What is on the table for the owner
+## 6. Promoted — owner delegation 2026-09-23
+
+The owner delegated the rest of the v0.4.18 plan ("follow best practices … use as much compute as
+needed"); the recommendation to promote had stood since 2026-09-20. `OIN_ETA_RETARGET` joined
+`_DEFAULT_ON` at `cdb76eca` with its evidence block. Suite 1,076 green; ARM 1 byte-identical with
+the lever on and at `"0"` (0 of 62 rows). The release sweep it owes is `results-v0.4.18-release-sweep`
+(expected 87.00 / 78.42 up to budget-boundary rows); `/refreeze-goldens` follows it, and ARM 2 now
+carries the honest observation column L2 §5e asked for — it will see this promotion where the gated
+field cannot.
+
+### What was on the table
+
 
 | option | self-consistent | VERIFIED | owes |
 |---|---|---|---|

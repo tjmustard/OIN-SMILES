@@ -15,6 +15,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > detached** — Fe–C 2.85 Å against a real 2.05 Å, honest round trip failing — and no test looked.
 
 ### Added
+- **`OIN_ETA_RETARGET` — default-ON (owner delegation 2026-09-23).** The right η target distance is
+  *per-molecule*: the two policies above fix and break different molecules (a per-molecule oracle
+  is +222 verified against +150). The FF scan never checked that a binding group *reached* its
+  target — a stalled ring reads as converged — so `ff_clean` now counts the declared binding atoms
+  it left outside the encoder's contact cutoff, and an η conformer that failed to clean or left a
+  donor out is cleaned once more from the same embedding with the target at the covalent sum; the
+  one with more donors in is kept. One conformer per attempt, so the shipped attempt / seed
+  sequence is untouched and so is any conformer whose donors arrived. Harness A/B over all 1,146
+  η-bound molecules: **+49 / −4 self-consistent, +43 / −5 VERIFIED** (+0.80 / +0.70 pts net of the
+  300 s budget boundary), runtime flat. `tools/v0418/selection_sim.py` bounded it offline first
+  (+45 / −1), on three structures per molecule with known verdicts.
 - **`OIN_ETA_COVALENT_TARGET` + `OIN_VDW_EXEMPT_BINDING` — default-ON (owner decision 2026-09-20).**
   Both in `generator3d/clean_geometry.py::ff_clean`; neither touches a string the encoder emits.
   *Target:* upstream multiplied an η group's target distance by 1.1 / 1.2 ("elongation of haptic
@@ -33,6 +44,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   defaults, detached at `"0"` — the defect stays reproducible.
 - `/refreeze-goldens` accepts several levers promoted together (comma-separated) and a
   **generator-side** lever (`arm2_field2_audit.py --generator-side` inverts the dead-lever abort).
+- **ARM 2's row ends with an honest observation column**: sha256 of an independent
+  `XYZToSMILES().convert` of the generated coordinates — the harness's own honest predicate — beside
+  the gated re-encode. Observation only until a full run freezes it; skipped, and says so, when it
+  would push a row over the gate's hard timeout.
 
 ### Changed
 - **What the generator builds moves for ~800 η molecules**, which voids the carry-forward licence: the
