@@ -2,7 +2,7 @@
 
 > **Harness A/B over all 1,146 η-bound molecules: self-consistent +49 / −4 → 86.10 → 87.00%;
 > VERIFIED +43 / −5 → 77.66 → 78.42%.** Excluding rows on the 300 s budget boundary: +44 / −4 and
-> +40 / −5. Runtime flat. The lever ships **OFF**; promotion is the owner's call.
+> +40 / −5. Runtime flat. **PROMOTED 2026-09-23 (owner delegation, §6); the release sweep follows.**
 
 Branch `research/v0418-eta-selection` (off the promotion tip of `research/v0418-eta-detached`),
 2026-09-20. Owner: *"Promote now and do the selection as the next lane."* Follows
