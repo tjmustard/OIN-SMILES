@@ -742,6 +742,20 @@ _HELD_OFF = {
         "the ON reader, 15 under the shipped reader). Promote it everywhere or nowhere, and "
         "re-sweep, /refreeze-goldens and re-run the census on promotion."
     ),
+    "OIN_CAP_IGNORES_METAL": (
+        "v0.4.19 perception lane (H4 of the serializer lane map), MEASURED and left off for the "
+        "owner. perception_core's per-atom valence cap counts a ligand atom's metal contact as a "
+        "bond and, when the atom is over its maximum valence, deletes the neighbour with the "
+        "largest excess d - r_i - r_j -- always a ligand bond, because the metal contact's excess "
+        "is the most negative (Pd-Se 2.38 A is -0.21, Se-C 1.94 A is -0.02). With the lever a "
+        "non-metal HEAVY atom's cap counts and cuts LIGAND bonds only (hydrogen keeps the shipped "
+        "rule: an H between a carbon and the metal must lose one bond, and there the excess rule "
+        "is right -- 8 of 296 probe rows died on H valence 2 without the exemption); the metal "
+        "keeps its own cap. "
+        "Blast radius: every metal-bound atom at its maximum valence (Se, Te, Si, 4-connected C/N, "
+        "B without the cage lever). Measured by parse-back over the whole cohort, the canonicality "
+        "audit and a live A/B on the moved strings; evidence in docs/agentic-notes/v0.4.19/."
+    ),
     "OIN_RC1_PROPAGATE": (
         "v0.4.19 serializer lane, MEASURED and left off for the owner. Applies the aligner's RC1 "
         "rank permutation to get_oin_string's fragment list, so a w-tag entry's rank names the "

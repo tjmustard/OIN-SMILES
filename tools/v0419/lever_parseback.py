@@ -16,6 +16,8 @@ Arms (fresh process per molecule and arm; levers WRITTEN, never unset):
     both       hfaith + rc1off
     rc1prop    OIN_RC1_PROPAGATE=1: the swap is kept and PROPAGATED to get_oin_string  (H2, the fix)
     fix2       hfaith + rc1prop -- the two levers together
+    cap        OIN_CAP_IGNORES_METAL=1: a ligand atom's valence cap ignores its metal contact  (H4)
+    fix3       hfaith + rc1prop + cap
 
 Per arm and population it prints: strings that CHANGED vs shipped (a canonicality lever must not
 move a verified pass), and the parse-back classes -- adapter graph ISO / adapter H SAME -- with the
@@ -50,6 +52,11 @@ ARMS = {
     "both": ({"OIN_H_FAITHFUL": "1"}, True),
     "rc1prop": ({"OIN_RC1_PROPAGATE": "1"}, False),
     "fix2": ({"OIN_H_FAITHFUL": "1", "OIN_RC1_PROPAGATE": "1"}, False),
+    "cap": ({"OIN_CAP_IGNORES_METAL": "1"}, False),
+    "fix3": (
+        {"OIN_H_FAITHFUL": "1", "OIN_RC1_PROPAGATE": "1", "OIN_CAP_IGNORES_METAL": "1"},
+        False,
+    ),
 }
 ISO = ("ISO", "ISO_MARGINAL", "ISO_CLASH")
 

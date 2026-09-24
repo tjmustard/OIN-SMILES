@@ -1826,9 +1826,9 @@ def boron_cage_vertices(atoms, AC):
     return cage
 
 
-def remove_weakest_bond(mol, atom_idx, AC, dMat, pt):
+def remove_weakest_bond(mol, atom_idx, AC, dMat, pt, candidates=None):
     extra_bond_lengths = []
-    bond_atoms = np.nonzero(AC[atom_idx, :])[0]
+    bond_atoms = np.nonzero(AC[atom_idx, :])[0] if candidates is None else np.asarray(candidates)
     # print(bond_atoms)
     a_i = mol.GetAtomWithIdx(atom_idx)
     # print(a_i.GetAtomicNum())
@@ -1945,10 +1945,35 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
     else:
         cap_order = range(num_atoms)
 
+    # v0.4.19 (OIN_CAP_IGNORES_METAL): a ligand atom's valence cap counts its LIGAND bonds only.
+    # Left alone, the cap counts the metal contact too, and remove_weakest_bond then deletes the
+    # neighbour with the largest excess d - r_i - r_j -- which is a ligand bond, never the metal
+    # contact, because a metal contact's excess is the most negative of the set (Pd-Se 2.38 A is
+    # -0.21 against covalent radii, Se-C 1.94 A is -0.02). A PhSe-CH2 is cut in two, a Si-C
+    # ring is opened, and the string describes a different ligand (census E1_GRAPH/LIGAND_DIFF;
+    # KICSUM, OBILAM). The metal keeps its own cap ([20]) over the same contacts.
+    cap_ignores_metal = _lever_enabled("OIN_CAP_IGNORES_METAL")
+    if cap_ignores_metal:
+        from ..core.constants import TRANSITION_METALS_NUM
+
+        metal_z = set(TRANSITION_METALS_NUM)
+        is_metal = np.array(
+            [mol.GetAtomWithIdx(k).GetAtomicNum() in metal_z for k in range(num_atoms)]
+        )
+
     for i in cap_order:
         if i in exempt:
             continue
         a_i = mol.GetAtomWithIdx(int(i))
+        # Hydrogen keeps the shipped rule: an H touching a carbon AND the metal must lose one of
+        # them (max valence 1), and the excess rule picks correctly there -- 8 of 296 probe rows
+        # died on 'Explicit valence for atom H, 2' when H was included, one of them a verified pass.
+        if cap_ignores_metal and not is_metal[i] and a_i.GetAtomicNum() > 1:
+            cands = [int(j) for j in np.nonzero(AC[i, :])[0] if not is_metal[j]]
+            while len(cands) > max(atomic_valence[a_i.GetAtomicNum()]):
+                AC = remove_weakest_bond(mol, int(i), AC, dMat, pt, candidates=cands)
+                cands = [int(j) for j in np.nonzero(AC[i, :])[0] if not is_metal[j]]
+            continue
         N_con = np.sum(AC[i, :])
         while N_con > max(atomic_valence[a_i.GetAtomicNum()]):
             # print("removing longest bond")
