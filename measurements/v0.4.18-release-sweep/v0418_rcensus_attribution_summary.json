@@ -1,0 +1,244 @@
+{
+ "n_rows": 5000,
+ "bucket": {
+  "byte_exact": 4347,
+  "key_equal": 119,
+  "hard_fail": 230,
+  "structural": 284,
+  "encode_fail": 11,
+  "facmer_divergent": 9
+ },
+ "outcome": {
+  "PASS": 4347,
+  "FAIL": 653
+ },
+ "fault": {
+  "NONE": 3920,
+  "G_CONSTRUCTION": 402,
+  "E1_GRAPH": 132,
+  "E1_HCOUNT": 84,
+  "E2_P_FRAGILE": 105,
+  "P_DETACHED": 18,
+  "G_NOTHING": 69,
+  "E2_P_OTHER": 71,
+  "P_E1_COVERAGE": 11,
+  "E1_NOT_ENCODED": 118,
+  "E1_NONINJECTIVE": 37,
+  "G_HANDEDNESS": 4,
+  "DATA_MULTI": 10,
+  "E1_NONCANONICAL": 11,
+  "G_DIASTEREOMER": 5,
+  "G_HCOUNT": 3
+ },
+ "fault_x_bucket": {
+  "NONE": {
+   "byte_exact": 3920
+  },
+  "G_CONSTRUCTION": {
+   "key_equal": 59,
+   "byte_exact": 205,
+   "hard_fail": 3,
+   "structural": 131,
+   "facmer_divergent": 4
+  },
+  "E1_GRAPH": {
+   "byte_exact": 61,
+   "hard_fail": 57,
+   "structural": 8,
+   "facmer_divergent": 2,
+   "key_equal": 4
+  },
+  "E1_HCOUNT": {
+   "hard_fail": 72,
+   "byte_exact": 7,
+   "key_equal": 1,
+   "structural": 4
+  },
+  "E2_P_FRAGILE": {
+   "structural": 85,
+   "key_equal": 19,
+   "hard_fail": 1
+  },
+  "P_DETACHED": {
+   "hard_fail": 18
+  },
+  "G_NOTHING": {
+   "hard_fail": 69
+  },
+  "E2_P_OTHER": {
+   "key_equal": 30,
+   "structural": 39,
+   "facmer_divergent": 2
+  },
+  "P_E1_COVERAGE": {
+   "encode_fail": 11
+  },
+  "E1_NOT_ENCODED": {
+   "byte_exact": 118
+  },
+  "E1_NONINJECTIVE": {
+   "byte_exact": 36,
+   "key_equal": 1
+  },
+  "G_HANDEDNESS": {
+   "structural": 3,
+   "key_equal": 1
+  },
+  "DATA_MULTI": {
+   "hard_fail": 10
+  },
+  "E1_NONCANONICAL": {
+   "structural": 7,
+   "facmer_divergent": 1,
+   "key_equal": 3
+  },
+  "G_DIASTEREOMER": {
+   "structural": 4,
+   "key_equal": 1
+  },
+  "G_HCOUNT": {
+   "structural": 3
+  }
+ },
+ "fail_partition": {
+  "G_CONSTRUCTION": 197,
+  "E1_HCOUNT": 77,
+  "E1_GRAPH": 71,
+  "E2_P_FRAGILE": 105,
+  "P_DETACHED": 18,
+  "G_NOTHING": 69,
+  "E2_P_OTHER": 71,
+  "P_E1_COVERAGE": 11,
+  "G_HANDEDNESS": 4,
+  "DATA_MULTI": 10,
+  "E1_NONCANONICAL": 11,
+  "G_DIASTEREOMER": 5,
+  "G_HCOUNT": 3,
+  "E1_NONINJECTIVE": 1
+ },
+ "fail_partition_pts": {
+  "G_CONSTRUCTION": 3.94,
+  "E1_HCOUNT": 1.54,
+  "E1_GRAPH": 1.42,
+  "E2_P_FRAGILE": 2.1,
+  "P_DETACHED": 0.36,
+  "G_NOTHING": 1.38,
+  "E2_P_OTHER": 1.42,
+  "P_E1_COVERAGE": 0.22,
+  "G_HANDEDNESS": 0.08,
+  "DATA_MULTI": 0.2,
+  "E1_NONCANONICAL": 0.22,
+  "G_DIASTEREOMER": 0.1,
+  "G_HCOUNT": 0.06,
+  "E1_NONINJECTIVE": 0.02
+ },
+ "fail_sub": {
+  "NONE": {},
+  "G_CONSTRUCTION": {
+   "DETACHED": 142,
+   "SPHERE_DIFF": 50,
+   "LIGAND_DIFF": 5
+  },
+  "E1_GRAPH": {
+   "SPHERE_DIFF": 32,
+   "LIGAND_DIFF": 39
+  },
+  "E1_HCOUNT": {
+   "h_diff=3": 13,
+   "h_diff=1": 40,
+   "h_diff=2": 10,
+   "h_diff=4": 6,
+   "h_diff=9": 1,
+   "h_diff=6": 2,
+   "h_diff=8": 1,
+   "h_diff=12": 1,
+   "h_diff=5": 2,
+   "h_diff=14": 1
+  },
+  "E2_P_FRAGILE": {
+   "key": 96,
+   "string": 9
+  },
+  "P_DETACHED": {
+   "components in=3 str=9": 3,
+   "components in=2 str=2": 2,
+   "components in=3 str=4": 2,
+   "components in=4 str=4": 3,
+   "components in=3 str=3": 1,
+   "components in=4 str=6": 1,
+   "components in=4 str=5": 1,
+   "components in=3 str=5": 2,
+   "components in=1 str=1": 1,
+   "components in=3 str=6": 2
+  },
+  "G_NOTHING": {
+   "NOCONF": 8,
+   "TIMEOUT": 61
+  },
+  "E2_P_OTHER": {
+   "NO_STEREO": 42,
+   "SAME": 29
+  },
+  "P_E1_COVERAGE": {
+   "TIMEOUT_OTHER": 11
+  },
+  "E1_NOT_ENCODED": {},
+  "E1_NONINJECTIVE": {
+   "MIRROR": 1
+  },
+  "G_HANDEDNESS": {
+   "MIRROR": 4
+  },
+  "DATA_MULTI": {
+   "components in=3 str=3": 7,
+   "components in=4 str=4": 2,
+   "components in=2 str=2": 1
+  },
+  "E1_NONCANONICAL": {
+   "veto one-hand (C2)": 11
+  },
+  "G_DIASTEREOMER": {
+   "CENTRES": 5
+  },
+  "G_HCOUNT": {
+   "": 3
+  }
+ },
+ "metric_false_pass": {
+  "G_CONSTRUCTION": 205,
+  "E1_GRAPH": 61,
+  "E1_NOT_ENCODED": 118,
+  "E1_NONINJECTIVE": 36,
+  "E1_HCOUNT": 7
+ },
+ "metric_false_pass_n": 427,
+ "fail_by_owner": {
+  "G": 278,
+  "E1": 160,
+  "E2": 176,
+  "P": 29,
+  "DATA": 10
+ },
+ "rule_fired": {
+  "7": 3920,
+  "4": 402,
+  "2": 244,
+  "6": 190,
+  "3": 69,
+  "1": 11,
+  "5": 164
+ },
+ "unattributed": 0,
+ "crosscheck": {
+  "G_CONSTRUCTION_n": 402,
+  "audit_DETACHED_all": 236,
+  "audit_DETACHED_among_fail": 166,
+  "G_CONSTRUCTION_and_DETACHED_fail": 130,
+  "slot_renumber_by_fault": {
+   "G_CONSTRUCTION": 1,
+   "E2_P_OTHER": 2,
+   "E1_NONCANONICAL": 2
+  }
+ },
+ "pts_per_molecule": 0.02
+}

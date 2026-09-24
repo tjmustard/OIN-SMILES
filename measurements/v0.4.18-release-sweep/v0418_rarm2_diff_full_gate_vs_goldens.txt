@@ -1,0 +1,10 @@
+
+=== v047: 100 golden rows, 100 fresh rows (0 ungated: [])
+    {'COMPARED': 100}
+    field 2: gate and encode-only audit agree on all 0 rows
+    control cohort: 0 owed + 0 killed -> cohort-v0.4.18r-arm2-control-v047
+
+=== v049: 325 golden rows, 328 fresh rows (3 ungated: ['GOHWOQ_comp_0', 'ULODUU_comp_0', 'XIQKOY_comp_0'])
+    {'COMPARED': 272, 'DET': 5, 'OBSERVE': 4, 'SHA1_ONLY': 44}
+    field 2: gate and encode-only audit agree on all 0 rows
+    control cohort: 0 owed + 0 killed -> cohort-v0.4.18r-arm2-control-v049

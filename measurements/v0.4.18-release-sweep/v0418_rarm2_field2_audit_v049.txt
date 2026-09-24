@@ -1,0 +1,9 @@
+gate_v049_arm2_golden.tsv: DENOMINATOR 325 rows   src=<checkout:oin-v0418>/src
+   321  SAME
+     0  MOVED_BY_LEVER   
+     0  STALE   
+     0  STALE_AND_MOVED   
+     0  HEALED   
+     4  SENTINEL   LUJJUX NOGWOX NOXREZ UROFUD
+     0  ENCODE_FAILED   
+  generator-side: field 2 moved on 0 rows, as it must; field 3 is the gate run's to say
