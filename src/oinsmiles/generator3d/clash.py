@@ -71,8 +71,16 @@ def vdw_clash_count(
     clash_cutoff=0.75,
     severe_cutoff=0.60,
     adj_factor=1.3,
+    exempt_pairs=None,
 ):
     """Count non-bonded, non-geminal atom pairs inside van-der-Waals contact.
+
+    ``exempt_pairs`` (v0.4.18, default ``None`` -> byte-identical): ``(i, j)`` index pairs that are
+    bonded BY CONSTRUCTION and must read as bonds whatever their distance. Bondedness is otherwise
+    perceived geometrically (``adj_factor * sum(R_cov)``), and for a small metal that threshold
+    lies INSIDE the clash threshold: Fe-C is a bond below 2.70 A and a clash below 2.81 A. An eta
+    carbon approaching the metal crosses that 0.11 A dead zone as a "clash" (Co 0.15, Ni 0.18,
+    Cu 0.07, Pt 0.06; none for Ru/Rh/Ir/Ti/Zr/Mo/W).
 
     ``positions`` is an ``(N, 3)`` array; ``atomic_numbers`` an ``(N,)`` sequence of Z,
     aligned index-for-index. Returns ``(clash_vdw, clash_severe, worst_overlap)`` where
@@ -92,6 +100,9 @@ def vdw_clash_count(
     rvdw = np.array([_rvdw(zi) for zi in z])
 
     adj = dist < adj_factor * (rcov[:, None] + rcov[None, :])
+    if exempt_pairs:
+        for i, j in exempt_pairs:
+            adj[i, j] = adj[j, i] = True
     overlap = dist / (rvdw[:, None] + rvdw[None, :])
 
     a = adj.astype(int)

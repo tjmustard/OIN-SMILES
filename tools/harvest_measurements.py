@@ -185,6 +185,12 @@ ALLOW = [
     # under ONE prefix. Its table cannot be called `attribution_table.tsv.gz`: PROVENANCE is keyed
     # on the filename alone and that name already says "the v0.4.14 sweep".
     "v0418_census_*",
+    # v0.4.18 L2 (eta construction), staged by tools/v0418/freeze_stage.py under ONE prefix.
+    "v0418_l2_*",
+    # v0.4.18 promotion: the sweep of record + the /refreeze-goldens run, staged by
+    # tools/v0418/freeze_stage_sweep.py into their OWN release (v0.4.18-sweep).
+    "v0418_sweep_*",
+    "v0418_arm2_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -368,6 +374,98 @@ PROVENANCE = [
         " v0.4.17 sweep. The other inputs are frozen where they were made: g_verdict + parseback in"
         " v0.4.17-sweep/, e_selfconsistency_exact in v0.4.17/, the mirror ruler + twin clusters in"
         " v0.4.17-census/)",
+    ),
+    (
+        r"^v0418_sweep_(RUN\.md|run_config\.json)$",
+        "tools/v0418/launch_sweep.sh -> tools/run_sweep.sh <cohort-v0.4.5-5k> <out> 6 300   (THE"
+        " v0.4.18 BASELINE SWEEP: commit 2d2708db, SHIPPED DEFAULTS -- the lever block of"
+        " run_config.json is EMPTY on purpose, that is the thing under test -- 6 shards 1-BASED,"
+        " --mol-timeout 300, BLAS=1. RUN.md is hand-written provenance)",
+    ),
+    (
+        r"^v0418_sweep_(two_numbers\.txt|bucket_report_honest\.md)$",
+        "tools/v0418/post_sweep.sh -> roundtrip_bucket_report.py --score honest ;"
+        " tools/v0417/sweep_two_numbers.py --sweep <sweep>   (THE v0.4.18 HEADLINE: self-consistent"
+        " 4305/5000 = 86.10%, VERIFIED 3883/5000 = 77.66%. The '(record ...)' labels INSIDE"
+        " two_numbers.txt are the v0.4.14 record's -- the previous baseline is 82.72 / 74.60)",
+    ),
+    (
+        r"^v0418_sweep_vs_ab\.(txt|json)$",
+        "tools/v0418/sweep_vs_ab.py   (CHECKS the two claims the A/B's projection stood on: 3713/3713"
+        " non-eta structures byte-identical to the v0.4.17 sweep, 1068/1068 eta structures"
+        " byte-identical to the A/B's ON arm, smiles_1 moved on 0 of 5000. Predicted 4302 / 3880,"
+        " measured 4305 / 3883: the +3 is seven rows that were hard_fail at the 300 s budget)",
+    ),
+    (
+        r"^v0418_sweep_(g_verdict|parseback)\.jsonl\.gz$|^v0418_sweep_bucket_report_honest\.json\.gz$",
+        "tools/census/g_vs_input.py --sweep <sweep> ; tools/census/string_sufficiency.py parseback"
+        " --sweep <sweep> ; roundtrip_bucket_report.py --score honest   (the neutral ruler on every"
+        " generated structure of the v0.4.18 sweep, its smiles_1 read back with no 3D, and the"
+        " per-molecule honest bucket: gunzip the three and sweep_two_numbers.two_numbers() returns"
+        " 5000 / 4305 / 3883 from the frozen tree alone)",
+    ),
+    (
+        r"^v0418_arm2_field2_audit_v04[79]\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_field2_audit.py --lever <the pair> --generator-side   (field 2 of EVERY"
+        " golden row, encode-only, fresh process per lever setting: 421 SAME + 4 sentinels, moved 0,"
+        " stale 0. For a generator-side lever the dead-lever abort is INVERTED: any moved row would"
+        " mean the lever reaches the encoder)",
+    ),
+    (
+        r"^v0418_arm2_(diff_full_gate_vs_goldens\.txt|rows_on_full_gate\.tsv\.gz|rows_off_control\.tsv)$",
+        "tools/v0417/run_arm2_refreeze.sh on|off ; tools/v0417/arm2_refreeze.py diff|rows   (the FULL"
+        " ARM 2 gate, all 425 rows, shipped defaults, commit 2921aa67: 100/100 + 272/272 compared"
+        " rows reproduce, 0 re-frozen. The off control is the two rows SIGKILLed at the hard timeout"
+        " -- killed with the levers at 0 too, so not the levers)",
+    ),
+    (
+        r"^v0418_arm2_(lever_fired_but_unseen\.txt|golden_comment_block\.txt)$",
+        "tools/v0418/arm2_lever_fired.py   (WHY THE ZERO IS A FINDING ABOUT THE GATE: against the"
+        " v0.4.17 full run on pre-lever code, 138 of 198 eta rows built a DIFFERENT structure and 0"
+        " of 202 non-eta rows did, yet the gated field 3 differs on 0 of 400 -- the runner re-encodes"
+        " through the generator's own bond graph. The comment block is what was spliced into both"
+        " goldens; 0 data rows changed, manifests unchanged)",
+    ),
+    (
+        r"^v0418_l2_eta_distance_(identity|audit)\.txt$|^v0418_l2_eta_distance_audit\.jsonl\.gz$",
+        "tools/v0418/eta_distance_audit.py [--identity]   (HOW FAR from the metal the generator puts"
+        " each ligand, no atom mapping: ligands matched by formula, k shortest M-X distances."
+        " Identity control 0.000 A. On the v0.4.17 sweep: eta groups +0.728 A in DETACHED, +0.170 A"
+        " in verified passes; sigma -0.313 A. The .jsonl.gz is the run's rows ROUNDED to 3 dp by"
+        " tools/v0418/freeze_stage.py to fit the per-file cap)",
+    ),
+    (
+        r"^v0418_l2_(eta_(path|target|exempt|scoped|rescoped|all3)_probe|noneta_identity_probe)\.txt$"
+        r"|^v0418_l2_probe[34]_classes\.json$",
+        "tools/v0418/eta_path_probe.py --names <file> --arms <...>   (fresh-process SAMPLES, honest"
+        " round trip: path = DG vs the rigid placer (ruled out); target/exempt = M1, M2 and both on"
+        " 39 detached + 36 verified controls (4 -> 26, controls 36/36); scoped/rescoped = the"
+        " exemption's scope; noneta = 25/25 non-eta structures byte-identical; all3 = the third"
+        " lever on the A/B's own 47 losses + 45 gains. SAMPLES, NOT VERDICTS: the 36 controls"
+        " could not see the 7.5% loss rate the harness A/B then measured)",
+    ),
+    (
+        r"^v0418_l2_eta_ab_report(_on3)?\.(txt|json)$",
+        "tools/v0418/run_eta_ab.sh [on3] -> post_eta_ab.sh [on3] -> eta_ab_report.py [--on-arm on3]"
+        "   (THE HARNESS A/B over all 1146 eta-bound molecules. M1+M2: self-consistent +195/-29,"
+        " VERIFIED +189/-39 -> 86.04% / 77.60% projected. All three levers (_on3): +203/-51,"
+        " +179/-59 -- DOMINATED. Noise floor ZERO: smiles_1 identical, OFF == the sweep of record"
+        " on 1063/1063 structures. NO DEFAULT CHANGED: both levers ship OFF)",
+    ),
+    (
+        r"^v0418_l2_ab_(off|on|on3)_(g_verdict\.jsonl|bucket_report_honest\.json)\.gz$",
+        "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py   (per arm:"
+        " the honest bucket and the neutral ruler's verdict on THAT ARM'S structure for every one"
+        " of the 1146. With v0.4.18-census/v0418_census_attribution_table.tsv.gz these re-derive"
+        " both headline pairs: tools/v0418/freeze_stage.py --verify <this dir>)",
+    ),
+    (
+        r"^v0418_l2_ab_rows\.tsv\.gz$|^v0418_l2_ab_commits\.tsv$",
+        "tools/v0418/freeze_stage.py   (MADE at staging time from 3438 structure files + 3438"
+        " harness reports too large to freeze: per molecule and arm the sha256 of the generated"
+        " structure (the dead-lever check: 798 / 875 differ from OFF), coordination.intact,"
+        " elapsed_s, and the sweep of record's sha256 (the noise floor); and the commit each arm"
+        " was launched from -- src/ is identical between them)",
     ),
     (
         r"^attribution_(table\.tsv\.gz|summary\.json)$",

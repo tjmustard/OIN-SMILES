@@ -6,6 +6,7 @@ from rdkit.Chem import AllChem
 from rdkit.Geometry import Point3D
 from scipy.spatial.distance import cdist
 
+from ..oin.levers import lever_enabled
 from . import clash
 from .bond_lengths import bond_length, sigma_table_applies
 from .embed import _apply_atom_chirality, _apply_double_bond_stereo
@@ -135,6 +136,7 @@ class TMCOptimizer:
         rd_mol_list = []
         tmp_positions = []
         scanning_indices = []
+        haptic_indices = []  # binding atoms of eta groups only (v0.4.18 L2)
         target_values = dict()
         binding_groups_infos = dict()
         ligand_binding_group_infos = dict()
@@ -241,7 +243,20 @@ class TMCOptimizer:
                         is_sigma,
                     )
                 ref_d = sum_d / len(info[0])
-                if len(info[0]) < 10:
+                if len(info[0]) > 1 and lever_enabled("OIN_ETA_COVALENT_TARGET"):
+                    # v0.4.18 L2 (default ON). The upstream "elongation of haptic
+                    # interaction" below aims an eta5 ring at 1.2 x the covalent-radius sum S.
+                    # MEASURED over 1,378 eta groups of the cohort, the real M-C(eta) distance is
+                    # 1.008 x S -- and the ENCODER calls an atom bonded inside S + 0.45 A, which is
+                    # ~1.20 x S. The generator aims the ring at the edge of the encoder's bonding
+                    # range (beyond it for every metal with S > 2.25 A). See
+                    # docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md.
+                    if lever_enabled("OIN_ETA_TARGET_UNSCALED") and scale:
+                        # the pool's global 0.8..1.2 diversity scale is already in sum_d; take
+                        # it back out for the eta face only, so the ring sits at S in every
+                        # conformer instead of at 0.8 S .. 1.2 S
+                        ref_d /= scale
+                elif len(info[0]) < 10:
                     ref_d *= self.scale_factor[
                         len(info[0])
                     ]  # Consider elongation of haptic interaction ...
@@ -251,6 +266,8 @@ class TMCOptimizer:
                 binding_groups_infos[tuple(binding_groups)] = len(atom_indices)
                 total_binding_groups.append(tuple(binding_groups))
                 scanning_indices += binding_groups
+                if not is_sigma:
+                    haptic_indices += binding_groups
             ligand_binding_group_infos[tuple(total_binding_groups)] = list(
                 range(cnt, cnt + len(atom_indices))
             )
@@ -522,11 +539,31 @@ class TMCOptimizer:
                             # -> round-trip regression (see clash.py). Disabled -> this is
                             # the pre-A3 ``ff_success = True; break`` (byte-identical).
                             if clash.VDW_ACCEPTANCE_ENABLED:
+                                # v0.4.18 L2 (default ON). The metal's own binding
+                                # atoms are bonded by construction; perceived by distance they
+                                # are a CLASH for every small metal while they cross the dead
+                                # zone between 0.75*sum(R_vdW) and 1.3*sum(R_cov) -- so a Cp ring
+                                # stepping toward Fe/Co/Ni is reverted on its first step and
+                                # stays where the dummy-atom embed left it (~2.87 A). Row 0 is
+                                # the metal; ligand atom i is row i + 1.
+                                # SCOPE, measured: exempting the eta atoms alone kept 20 of the 22
+                                # gains on the 75-molecule probe -- in six Fe/Co/Ni half-sandwiches
+                                # a sigma donor has to cross the zone too. So EVERY binding atom is
+                                # exempt, but only in a complex that HAS an eta group: a non-eta
+                                # molecule never reaches this line with a non-empty list and stays
+                                # byte-identical by construction.
+                                _exempt = (
+                                    [(0, i + 1) for i in scanning_indices]
+                                    if haptic_indices and lever_enabled("OIN_VDW_EXEMPT_BINDING")
+                                    else None
+                                )
                                 clash_new, _cs_new, _cw_new = clash.vdw_clash_count(
-                                    positions_with_metal, atomic_number_list
+                                    positions_with_metal, atomic_number_list, exempt_pairs=_exempt
                                 )
                                 clash_old, _cs_old, _cw_old = clash.vdw_clash_count(
-                                    np.vstack((metal_xyz, old_positions)), atomic_number_list
+                                    np.vstack((metal_xyz, old_positions)),
+                                    atomic_number_list,
+                                    exempt_pairs=_exempt,
                                 )
                                 if clash_new > clash_old:
                                     logger.debug(

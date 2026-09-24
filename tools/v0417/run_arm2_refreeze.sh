@@ -21,6 +21,7 @@
 #
 # REUSE AT THE NEXT PROMOTION (.claude/commands/refreeze-goldens.md) -- three variables, all optional:
 #   REFREEZE_LEVER   the lever being promoted; `off` sets it to 0        (default OIN_EXACT_DONOR_FOLD)
+#                    comma-separated when several were promoted TOGETHER: `off` zeroes them all
 #   REFREEZE_OUT     run directory, inside the dataset tree, never /tmp  (default: this lane's)
 #   REFREEZE_TAG     names the units and the control cohorts             (default v0.4.17)
 #
@@ -39,7 +40,8 @@ SHARDS=6
 
 case "$ARM" in
   on)  LEVER_ENV=(); C047="$DATA/cohort-v047-slow100"; C049="$DATA/cohort-v049-strata" ;;
-  off) LEVER_ENV=(-E "$LEVER=0")
+  off) LEVER_ENV=(); IFS=',' read -ra _LV <<< "$LEVER"   # v0.4.18: a promotion may be a PAIR
+       for l in "${_LV[@]}"; do LEVER_ENV+=(-E "$l=0"); done
        C047="$DATA/cohort-$TAG-arm2-control-v047"; C049="$DATA/cohort-$TAG-arm2-control-v049" ;;
   verify) LEVER_ENV=()
        C047="$DATA/cohort-$TAG-arm2-control-v047"; C049="$DATA/cohort-$TAG-arm2-control-v049" ;;

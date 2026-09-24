@@ -31,7 +31,9 @@ Record: `docs/agentic-notes/v0.4.17/ARM2_REFREEZE.md`. Evidence: `measurements/v
 ## Argument
 
 `$ARGUMENTS` is the lever being promoted (e.g. `OIN_EXACT_DONOR_FOLD`) and the release
-(e.g. `v0.4.18`). If either is missing, ask. If the change is not a lever (no `=0` spelling brings
+(e.g. `v0.4.18`). If either is missing, ask. **Several levers promoted TOGETHER are one
+comma-separated value** (`OIN_ETA_COVALENT_TARGET,OIN_VDW_EXEMPT_BINDING`): the `off` arm zeroes all
+of them, and a row is attributed to the pair, not to one of them. If the change is not a lever (no `=0` spelling brings
 the old behaviour back), say so and stop: the control in step 4 needs the **previous commit's**
 checkout as its `off` arm, and that is a judgement call for the owner, not a default.
 
@@ -75,6 +77,11 @@ mkdir -p $REFREEZE_OUT
         --out $REFREEZE_OUT/field2_audit_${g%%:*}.jsonl | tee $REFREEZE_OUT/field2_audit_${g%%:*}.txt
    done
    ```
+
+   **A GENERATOR-side lever** (it changes what is BUILT, never a string the encoder emits from the
+   input — v0.4.18's η pair) cannot move field 2, so add `--generator-side`: the abort inverts
+   (field 2 moving on ANY row means the lever reaches the encoder after all), and the proof that the
+   lever fired is the gate run's field 3 in step 3, not this audit.
 
    Read the classes. **`STALE` / `STALE_AND_MOVED` / `HEALED` mean the golden was wrong before you
    started** — a finding in its own right. The tool aborts if a worker imported a foreign

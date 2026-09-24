@@ -92,6 +92,30 @@ class TestClashHelperMatchesMetric(unittest.TestCase):
         self.assertGreater(metric, 0, "fixture is a known clashing structure")
 
 
+class TestExemptPairsDeadZone(unittest.TestCase):
+    """v0.4.18 L2: bondedness is perceived by distance, and for a small metal the bond threshold
+    (1.3 x sum R_cov) lies INSIDE the clash threshold (0.75 x sum R_vdW). A binding atom crossing
+    that zone reads as a clash, the FF scan reverts the step and an eta ring never reaches Fe.
+    Fails against pre-L2 code: ``exempt_pairs`` did not exist."""
+
+    Z = [26, 6]  # Fe, C
+
+    def _count(self, d, **kw):
+        return clash.vdw_clash_count(np.array([[0.0, 0.0, 0.0], [d, 0.0, 0.0]]), self.Z, **kw)[0]
+
+    def test_the_dead_zone_exists_for_iron(self):
+        self.assertEqual(self._count(2.60), 0, "inside the bond threshold: a bond")
+        self.assertEqual(self._count(2.76), 1, "between the two thresholds: a 'clash'")
+        self.assertEqual(self._count(2.90), 0, "outside the clash threshold: nothing")
+
+    def test_an_exempt_pair_is_a_bond_at_any_distance(self):
+        self.assertEqual(self._count(2.76, exempt_pairs=[(0, 1)]), 0)
+
+    def test_default_is_byte_identical(self):
+        self.assertEqual(self._count(2.76, exempt_pairs=None), self._count(2.76))
+        self.assertEqual(self._count(2.76, exempt_pairs=[]), self._count(2.76))
+
+
 class TestFinalizeVdwAcceptance(unittest.TestCase):
     """_finalize_positions accepts a clean conformer and rejects a topologically-valid
     but vdW-clashing one, scoring it into (-1, 0). The term is ON by default (promoted in
