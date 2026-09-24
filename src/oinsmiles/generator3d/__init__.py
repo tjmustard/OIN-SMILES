@@ -361,9 +361,14 @@ def generate_3d_structures(
             "embed_no_progress_attempts",
             "oin_direct",
             "greedy",
+            "eta_retarget",
         )
     }
     cleaner = clean_geometry.TMCOptimizer(**clean_ff_params)
+    # OIN_ETA_RETARGET (v0.4.18 selection lane, default ON). The ADAPTER decides and passes
+    # ff_params["eta_retarget"]: it knows whether the complex has an eta group, and a non-eta
+    # molecule must not reach this at all.
+    eta_retarget = bool(ff_params.get("eta_retarget")) if ff_params else False
     # option 3 is the A4 rigid-placement (kabsch) embed. It is OPT-IN so the default
     # pool stays byte-identical to pristine: unset -> [0,1,2] exactly as before;
     # use_kabsch -> add 3 to the pool; kabsch_only -> isolate 3 for a clean A/B.
@@ -475,11 +480,37 @@ def generate_3d_structures(
         """
         if positions is None:
             return None
+        # the second clean must start from the EMBEDDING, not from wherever the first one left it
+        raw_positions = None
+        if eta_retarget:
+            import numpy as np  # function-local, like the rest of this module
+
+            raw_positions = np.array(positions, dtype=float, copy=True)
         tmp_complex = metal_complex.copy()
         tmp_complex.set_position(positions)
 
         # cleaner.clean_geometry will print logs, could be silenced later
         success = cleaner.clean_geometry(tmp_complex, scale)
+        eta_policy = "scaled"
+
+        if eta_retarget and scale != 1.0:
+            # The eta target is scale x S, and the right one is PER-MOLECULE: the A/B's two
+            # configurations (target = scale x S, target = S) fixed and broke DIFFERENT molecules,
+            # +222 verified for a per-molecule oracle against +150 for the better of them. So when
+            # THIS embedding cleaned badly under the shipped target -- it failed outright, or it
+            # left a declared donor outside the encoder's contact cutoff -- clean the SAME
+            # embedding once more with the eta target at S, and keep whichever got more donors in.
+            # One conformer per attempt either way, so the attempt/seed sequence is the shipped one
+            # and a conformer that arrived is never touched.
+            deficit = cleaner.last_arrival_deficit if success else None
+            if deficit is None or deficit > 0:
+                alt_complex = metal_complex.copy()
+                alt_complex.set_position(raw_positions)
+                alt_ok = cleaner.clean_geometry(alt_complex, scale, eta_unscaled=True)
+                alt_deficit = cleaner.last_arrival_deficit if alt_ok else None
+                if alt_ok and (deficit is None or alt_deficit < deficit):
+                    tmp_complex, success, eta_policy = alt_complex, True, "unscaled"
+                    _telemetry.record("pool.eta_retarget_used")
 
         if success:
             position = tmp_complex.get_position()
@@ -492,6 +523,7 @@ def generate_3d_structures(
                 stereo_rejects.append(tmp_complex.get_molecule())
                 return None
             mol = tmp_complex.get_molecule()
+            mol._eta_policy = eta_policy  # provenance only; nothing selects on it
             successful_mols.append(mol)
             return mol
         return None

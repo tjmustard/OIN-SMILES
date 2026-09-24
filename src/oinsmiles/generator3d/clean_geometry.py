@@ -57,6 +57,25 @@ def print_rd_geometry(rd_mol, positions):
     logger.debug("")
 
 
+def _arrival_deficit(center_atom, ligands, binding_indices, metal_xyz, positions):
+    """How many declared binding atoms sit OUTSIDE the encoder's contact cutoff of the metal.
+
+    Index-based and input-free: the complex itself says which atoms bind. The cutoff is the one the
+    instruments use (``oin.coordination``: RDKit covalent radii + ``CONTACT_SLACK``), i.e. whether
+    an independent encode of these coordinates would see the atom as bonded at all.
+    """
+    from ..oin.coordination import _PT, CONTACT_SLACK
+
+    z = [atom.get_atomic_number() for lig in ligands for atom in lig.molecule.atom_list]
+    r_m = _PT.GetRcovalent(center_atom.get_atomic_number())
+    origin = np.asarray(metal_xyz, dtype=float)
+    lost = 0
+    for i in binding_indices:
+        d = float(np.linalg.norm(np.asarray(positions[i], dtype=float) - origin))
+        lost += d >= r_m + _PT.GetRcovalent(int(z[i])) + CONTACT_SLACK
+    return int(lost)
+
+
 class TMCOptimizer:
     """Tmc optimizer."""
 
@@ -99,15 +118,22 @@ class TMCOptimizer:
             "else": 1.6,
         }
 
-    def clean_geometry(self, metal_complex, scale=1.0):
-        """Clean geometry."""
+    def clean_geometry(self, metal_complex, scale=1.0, eta_unscaled=None):
+        """Clean geometry.
+
+        ``eta_unscaled`` (v0.4.18 selection lane): ``None`` reads ``OIN_ETA_TARGET_UNSCALED`` as
+        before; ``True`` / ``False`` override it for THIS conformer, so one pool can hold both eta
+        target policies. After a successful clean ``self.last_arrival_deficit`` is the number of
+        declared binding atoms the scan left OUTSIDE the encoder's contact cutoff (``None`` when
+        the clean failed) -- the scan itself never checks that a group reached its target.
+        """
         logger.debug("Embedded geometry ...")
         metal_complex.print_coordinate_list()
 
         logger.debug("FF cleaning ...")
         final_energy = 0.0
         try:
-            ff_success, final_energy = self.ff_clean(metal_complex, scale)
+            ff_success, final_energy = self.ff_clean(metal_complex, scale, eta_unscaled)
         except Exception as e:
             logger.debug(f"Internal failure for ff clean ... {e}")
             ff_success = False
@@ -124,8 +150,9 @@ class TMCOptimizer:
             metal_complex.print_coordinate_list()
             return False
 
-    def ff_clean(self, metal_complex, scale=1.0):
+    def ff_clean(self, metal_complex, scale=1.0, eta_unscaled=None):
         """Ff clean."""
+        self.last_arrival_deficit = None
         ligands = metal_complex.ligands
         atom_indices_for_each_ligand = metal_complex.get_atom_indices_for_each_ligand()
         center_atom = metal_complex.center_atom
@@ -251,7 +278,12 @@ class TMCOptimizer:
                     # ~1.20 x S. The generator aims the ring at the edge of the encoder's bonding
                     # range (beyond it for every metal with S > 2.25 A). See
                     # docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md.
-                    if lever_enabled("OIN_ETA_TARGET_UNSCALED") and scale:
+                    _unscaled = (
+                        lever_enabled("OIN_ETA_TARGET_UNSCALED")
+                        if eta_unscaled is None
+                        else eta_unscaled
+                    )
+                    if _unscaled and scale:
                         # the pool's global 0.8..1.2 diversity scale is already in sum_d; take
                         # it back out for the eta face only, so the ring sits at S in every
                         # conformer instead of at 0.8 S .. 1.2 S
@@ -595,6 +627,15 @@ class TMCOptimizer:
             final_positions[ligand_to_metal[i]] = [x, y, z]
         # Update ligand ...
         metal_complex.set_position(final_positions)
+        if final_success:
+            # v0.4.18 selection lane. The scan has NO post-check that a binding group reached its
+            # target: a stalled group reads as converged, a vdW-reverted step keeps ff_success. So
+            # count, per DECLARED binding atom, whether it ended inside the encoder's contact
+            # cutoff (covalent radii + 0.45 A, oin.coordination). An observation -- it changes
+            # nothing here; the pool fill reads it under OIN_ETA_RETARGET.
+            self.last_arrival_deficit = _arrival_deficit(
+                center_atom, ligands, scanning_indices, metal_xyz, tmp_positions
+            )
         final_energy = 0.0
         if final_success:
             try:

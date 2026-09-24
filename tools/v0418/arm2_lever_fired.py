@@ -9,11 +9,14 @@ carries ``xyz_sha`` (an observation column), and the v0.4.17 re-freeze left a fu
     structure sha differs between the two full runs   -> the levers changed what was BUILT
     field 3 differs between the two full runs         -> the gate SAW it
 
-    <main>/.venv/bin/python tools/v0418/arm2_lever_fired.py
+    <main>/.venv/bin/python tools/v0418/arm2_lever_fired.py [--now <dir>] [--before <dir>]
+        # defaults: the L2 promotion's full run against the v0.4.17 one; the release re-freeze
+        # passes --now results-v0.4.18-release-arm2-refreeze --before results-v0.4.18-arm2-refreeze
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -36,15 +39,20 @@ def _rows(path: Path):
 
 
 def main():
-    now, before = _rows(NOW), _rows(BEFORE)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--now", type=Path, default=NOW.parent)
+    ap.add_argument("--before", type=Path, default=BEFORE.parent)
+    args = ap.parse_args()
+    now_p, before_p = args.now / "on_rows.tsv", args.before / "on_rows.tsv"
+    now, before = _rows(now_p), _rows(before_p)
     if set(now) != set(before) or not now:
         sys.exit(f"ABORT: the two runs do not hold the same rows ({len(now)} vs {len(before)})")
     ok = [
         k for k in now if now[k][8] == "OK" and before[k][8] == "OK" and now[k][7] and before[k][7]
     ]
     print(f"DENOMINATOR {len(now)} rows in both full runs; built OK in both: {len(ok)}")
-    print(f"  pre-lever run : {BEFORE.read_text().splitlines()[0].split('--')[-1].strip()}")
-    print(f"  promoted run  : {NOW.read_text().splitlines()[0].split('--')[-1].strip()}")
+    print(f"  pre-lever run : {before_p.read_text().splitlines()[0].split('--')[-1].strip()}")
+    print(f"  promoted run  : {now_p.read_text().splitlines()[0].split('--')[-1].strip()}")
     for label, ks in (
         ("eta    ", [k for k in ok if now[k][6] == "eta"]),
         ("non-eta", [k for k in ok if now[k][6] != "eta"]),

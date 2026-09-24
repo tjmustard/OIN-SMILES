@@ -323,6 +323,26 @@ ZOGLIS_comp_0	d84ca28c0837bc3443fc9f2c8f342823ed1886738623c29b17d743ae7294d2dc	d
 ZOGXIF_comp_0	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	93	93	-	b30_60	byte->FAIL
 ZOYYUJ_comp_0	73e30efe6b7dbc1f31498950ebef86b0a7228d5065ebfac770da00d1a5b2bccf	c53daa573e0f4557ac53e0bf769ecbdf0022a168f4d7cf4eb7b6e3d3033a119e	86	83	-	b300_plus	FAIL->byte
 ZUGBUA_comp_0	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	117	117	eta	b60_300	byte->FAIL
+# v0.4.18 (release): FULL gate run for the OIN_ETA_RETARGET promotion (default-ON, owner delegation
+#   2026-09-23) -- 0 ROWS RE-FROZEN, and the run also measured what this gate is blind to.
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit 81d62dfa
+#   (research/v0418-eta-selection; src/ == cdb76eca, the promotion). All 12 shards PASS: 100 + 272
+#   compared rows reproduce (44 SHA1-only, 5 deterministic no-structure, 4 observe); EQEROI and
+#   MUKGUW produced no structure inside the budget this time instead of being SIGKILLed. Field 2 of
+#   every row was audited encode-only with --generator-side: 421 SAME + 4 sentinels, moved 0, stale 0.
+#   THE LEVER FIRED. Against the previous full run (commit 2921aa67, the eta pair alone): 41 of 198 eta
+#   rows built a DIFFERENT structure, 0 of 202 non-eta rows did; the gated field 3 differs on 0 of 400.
+#   THE HONEST COLUMN. Every fresh OK row now ends with sha256(XYZToSMILES().convert(<generated xyz>))
+#   -- the harness's honest predicate, independent of the generator's bond graph. Measured on this run
+#   (401 rows; 1 encode error): gated pass & honest pass 243, gated PASS & honest FAIL 134 (95 are
+#   `structural` in results-v0.4.18-release-sweep, 21 key_equal, 16 hard_fail, 2 facmer_divergent),
+#   gated fail & honest pass 3, both fail 20. Where the gate's structure is byte-identical to the
+#   release sweep's (370 of 400) the column agrees with the sweep's honest verdict on 370 of 370.
+#   So ARM 2 passes 134 of its 377 passing rows on the generator's own graph alone -- the same
+#   scored-vs-honest gap v0.4.8 measured on the whole cohort, on cohorts chosen for being hard.
+#   The column is an OBSERVATION: nothing compares it, the goldens do not carry it, the gate reads
+#   columns 1-3 only. Gating on it -- which would re-freeze ~134 rows as honest FAILS, or drop them --
+#   is an owner-level change to what ARM 2 means. Evidence: measurements/v0.4.18-release-sweep/.
 # v0.4.18: FULL gate run for the OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promotion
 #   (default-ON, owner decision 2026-09-20) -- 0 ROWS RE-FROZEN, AND THAT ZERO IS A FINDING ABOUT
 #   THIS GATE, not about the levers.

@@ -53,6 +53,51 @@ class TestRegistry(unittest.TestCase):
         self.assertIn("DOMINATED", levers._HELD_OFF["OIN_ETA_TARGET_UNSCALED"])
 
 
+class _Atom:
+    def __init__(self, z):
+        self._z = z
+
+    def get_atomic_number(self):
+        return self._z
+
+
+class _Ligand:
+    def __init__(self, zs):
+        self.molecule = type("M", (), {"atom_list": [_Atom(z) for z in zs]})()
+
+
+class TestArrivalDeficit(unittest.TestCase):
+    """v0.4.18 selection lane. The FF scan never checks that a binding group REACHED its target --
+    a stalled ring reads as converged -- so ``ff_clean`` counts the declared binding atoms it left
+    outside the encoder's contact cutoff (covalent radii + 0.45 A; Fe-C: 2.53 A)."""
+
+    def _deficit(self, fe_c):
+        from oinsmiles.generator3d.clean_geometry import _arrival_deficit
+
+        ring = [[fe_c, 0.1 * i, 0.0] for i in range(5)]
+        spectator = [[5.0, 0.0, 0.0]]  # a carbon that is NOT a declared binding atom
+        return _arrival_deficit(
+            _Atom(26), [_Ligand([6] * 6)], [0, 1, 2, 3, 4], [0.0, 0.0, 0.0], ring + spectator
+        )
+
+    def test_an_attached_ring_has_no_deficit(self):
+        self.assertEqual(self._deficit(2.05), 0)
+
+    def test_the_embed_distance_loses_all_five(self):
+        self.assertEqual(self._deficit(2.87), 5)
+
+    def test_only_declared_binding_atoms_are_counted(self):
+        # the spectator at 5 A is far outside the cutoff and must not count
+        self.assertEqual(self._deficit(2.05), 0)
+
+    def test_the_retarget_lever_is_promoted_and_zero_selects_the_single_target(self):
+        # owner delegation 2026-09-23; harness A/B +49/-4, +43/-5 of 1,146
+        self.assertIn("OIN_ETA_RETARGET", levers._DEFAULT_ON)
+        self.assertNotIn("OIN_ETA_RETARGET", levers._HELD_OFF)
+        with mock.patch.dict(os.environ, {"OIN_ETA_RETARGET": "0"}):
+            self.assertFalse(levers.lever_enabled("OIN_ETA_RETARGET"))
+
+
 def _build_ferrocene():
     """(mean Fe-C of the ten ring carbons, coordination intact, honest round trip)."""
     oin = XYZToSMILES().convert(FERROCENE)

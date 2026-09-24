@@ -182,8 +182,9 @@ def stage():
     print(f"staged {n + 3} files, {total / 1024:.0f} KB -> {STAGE}")
 
 
-def verify(frozen: Path):
+def verify(frozen: Path, expected=None, noise=(1063, 1063)):
     """Both headline pairs from the FROZEN files alone. No results directory is read."""
+    expected = EXPECTED if expected is None else expected
     census = frozen.parent / "v0.4.18-census" / "v0418_census_attribution_table.tsv.gz"
     T = {r["molecule"]: r for r in csv.DictReader(gzip.open(census, "rt"), delimiter="\t")}
 
@@ -210,7 +211,7 @@ def verify(frozen: Path):
 
     Bf, Gf = arm("off")
     ok = True
-    for a, want in EXPECTED.items():
+    for a, want in expected.items():
         Bn, Gn = arm(a)
         got = []
         for fn in (self_ok, ver_ok):
@@ -228,9 +229,10 @@ def verify(frozen: Path):
     cmp_ = [r for r in rows if r["sha256_record"] and r["sha256_off"]]
     same = sum(r["sha256_record"] == r["sha256_off"] for r in cmp_)
     print(
-        f"  noise floor: OFF == sweep of record on {same}/{len(cmp_)} structures (expected 1063/1063)"
+        f"  noise floor: OFF == sweep of record on {same}/{len(cmp_)} structures "
+        f"(expected {noise[0]}/{noise[1]})"
     )
-    ok &= (same, len(cmp_)) == (1063, 1063)
+    ok &= (same, len(cmp_)) == tuple(noise)
     if not ok:
         sys.exit("ABORT: the frozen tree does NOT reproduce the headline")
     print("  the frozen tree reproduces the headline")

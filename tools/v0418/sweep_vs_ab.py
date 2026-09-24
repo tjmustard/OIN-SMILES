@@ -4,9 +4,12 @@ Reads only. The A/B (``eta_ab_report.py``) projected 86.04% self-consistent / 77
 the 5,000 on two claims this script CHECKS rather than repeats:
 
   1. a NON-eta molecule cannot reach either lever, so it is unchanged BY CONSTRUCTION
-     -> every non-eta structure must be byte-identical to results-v0.4.17-sweep's, and
+     -> every non-eta structure must be byte-identical to the sweep this one replaces, and
   2. generation is deterministic at this load (the A/B's OFF arm == that sweep, 1,063/1,063)
      -> every eta structure must be byte-identical to the A/B's ON arm's.
+
+Parameterised for the release sweep (--sweep, --record, --ab-on, --predicted); the defaults are
+the L2 promotion's (results-v0.4.18-sweep against results-v0.4.17-sweep and ab_on).
 
 A broken promotion prints differently in each half: levers that never reached the shipped default
 leave the eta half identical to the OLD sweep instead of to ``ab_on`` (counted and printed); an
@@ -29,7 +32,12 @@ MAIN = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_datas
 ISO = ("ISO", "ISO_MARGINAL", "ISO_CLASH")
 STRING_FAULTS = ("P_E1_COVERAGE", "DATA_MULTI", "P_DETACHED", "E1_GRAPH", "E1_HCOUNT")
 BAD_STEREO = ("MIRROR", "MIRROR_PARTIAL", "DIFFERENT")
-PREDICTED = {"self": 4136 + 166, "verified": 3730 + 150}  # the A/B's projection
+PREDICTED = "4136+166,3730+150"  # the A/B's projection: base passes + net, self then verified
+
+
+def _sum(expr: str) -> int:
+    """'4305+45' -> 4350; no eval."""
+    return sum(int(t) for t in expr.replace("-", "+-").split("+") if t)
 
 
 def _jsonl(path):
@@ -61,8 +69,14 @@ def main():
     ap.add_argument(
         "--table", type=Path, default=MAIN / "results-v0.4.17-reattribution/attribution_table.tsv"
     )
+    ap.add_argument(
+        "--predicted",
+        default=PREDICTED,
+        help="'<self base>+<net>,<verified base>+<net>' -- what the A/B projected (default: L2's)",
+    )
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
+    predicted = dict(zip(("self", "verified"), (_sum(x) for x in args.predicted.split(","))))
 
     T = {r["molecule"]: r for r in csv.DictReader(open(args.table), delimiter="\t")}
     B, R, A = _buckets(args.sweep), _buckets(args.record), _buckets(args.ab_on)
@@ -89,8 +103,8 @@ def main():
     rep = {"smiles_1_moved": len(moved)}
     print("\n2. THE TWO CLAIMS THE PROJECTION STOOD ON")
     for name, ms, ref_dir, ref_B, label in (
-        ("non-eta", sorted(set(B) - eta), args.record, R, "v0.4.17 sweep"),
-        ("eta", sorted(eta), args.ab_on.parent / "ab_on", A, "A/B ON arm"),
+        ("non-eta", sorted(set(B) - eta), args.record, R, args.record.name),
+        ("eta", sorted(eta), args.ab_on, A, f"A/B {args.ab_on.name} arm"),
     ):
         cmp_ = [(m, struct(args.sweep, m), struct(ref_dir, m)) for m in ms]
         both = [(m, a, b) for m, a, b in cmp_ if a and b]
@@ -131,8 +145,8 @@ def main():
         l_ = [m for m in B if was[m] and not new[m]]
         n = sum(new.values())
         print(
-            f"   {key:9s} {sum(was.values())} -> {n} = {n / 50:.2f}%   predicted {PREDICTED[key]} "
-            f"({PREDICTED[key] / 50:.2f}%)   off by {n - PREDICTED[key]:+d}"
+            f"   {key:9s} {sum(was.values())} -> {n} = {n / 50:.2f}%   predicted {predicted[key]} "
+            f"({predicted[key] / 50:.2f}%)   off by {n - predicted[key]:+d}"
         )
         print(
             f"             gains {len(g)} (eta {sum(m in eta for m in g)}, non-eta "

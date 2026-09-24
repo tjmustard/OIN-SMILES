@@ -8,7 +8,25 @@ byte-exact, in two independent v0.4.5 runs).
 
 Prints ONE line to stdout:
 
-    name<TAB>sha256(smiles_1)<TAB>sha256(smiles_2)<TAB>len1<TAB>len2<TAB>eta<TAB>xyz_sha256<TAB>status
+    name<TAB>sha256(smiles_1)<TAB>sha256(smiles_2)<TAB>len1<TAB>len2<TAB>eta<TAB>xyz_sha256<TAB>status<TAB>honest
+
+THE GATED RE-ENCODE CANNOT SEE WHAT THE GENERATOR BUILDS (v0.4.18)
+===================================================================
+``smiles_2`` is ``get_oin_string(result.mol, coords)`` -- the generated coordinates serialised
+through the GENERATOR'S OWN bond graph, the scoring path the harness dropped in v0.4.8. Whether an
+eta ring sits 2.1 A or 2.9 A from its metal never enters it: the metal-ring bonds are read off
+``result.mol``. Measured at the v0.4.18 promotion of the eta construction levers: 138 of 198 eta
+rows built a DIFFERENT structure than under v0.4.17, and ``smiles_2`` moved on none of them, while
+the harness's honest score moved on +197 / -28 of 5,000. ARM 2 gates the encoder and the
+generator's graph + stereo; it passed every release that shipped ferrocene detached.
+
+So the row now ends with ``honest``: sha256 of ``XYZToSMILES().convert(<generated xyz>)`` -- an
+INDEPENDENT re-perception of the coordinates, the same predicate as the harness's honest score. It
+is an OBSERVATION column (nothing compares it; the gate reads columns 1-3 only) until a full run
+has frozen it into the goldens. Because it is one more full encode inside the gate's hard timeout,
+it is attempted only when the time already spent plus the input encode's own duration leaves a
+margin, and says so otherwise (``HONEST_NOT_ATTEMPTED@<s>``); an encode error is reported as
+``HONEST_ERROR:<Type>``. Sentinel rows (no structure / error) carry an empty column.
 
 THE GATE OBJECT IS THE STRING, NOT THE XYZ
 ===========================================
@@ -53,6 +71,7 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 import traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -81,6 +100,7 @@ def main():
         OIN3DGeneratorMetallogen as OIN3DGenerator,
     )
 
+    t_start = time.monotonic()
     try:
         oin1 = XYZToSMILES().convert(xyz_path)
     except Exception as e:
@@ -90,6 +110,7 @@ def main():
         )
         return
 
+    encode1_s = time.monotonic() - t_start
     eta = "eta" if HAPTIC.search(oin1) else "-"
     tmp_dir = tempfile.mkdtemp(prefix=f"gate_v047_{args.molecule}_")
     try:
@@ -137,9 +158,21 @@ def main():
         if oin2 is None:
             oin2 = XYZToSMILES().convert(gen_xyz_path)
 
+        # the honest observation column -- see the module docstring. The gate's hard timeout is
+        # 1.5 x --timeout and a SIGKILLed row scores as a smiles_1 MISMATCH, so an observation
+        # must never be what pushes a row over it.
+        spent = time.monotonic() - t_start
+        if spent + 1.5 * encode1_s < 1.35 * args.timeout:
+            try:
+                honest = sha(XYZToSMILES().convert(gen_xyz_path))
+            except Exception as e:
+                honest = f"HONEST_ERROR:{type(e).__name__}"
+        else:
+            honest = f"HONEST_NOT_ATTEMPTED@{spent:.0f}s"
+
         print(
             f"{args.molecule}\t{sha(oin1)}\t{sha(oin2)}\t{len(oin1)}\t{len(oin2)}\t{eta}\t"
-            f"{xyz_sha}\tOK",
+            f"{xyz_sha}\tOK\t{honest}",
             flush=True,
         )
     except Exception as e:

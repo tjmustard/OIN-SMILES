@@ -130,6 +130,15 @@ mkdir -p $REFREEZE_OUT
    final verify run stated plainly (it reads the changed rows; the untouched rows were read by the
    full run before the splice).
 
+## The honest column (v0.4.18)
+
+Every fresh `OK` row ends with `honest` = sha256 of `XYZToSMILES().convert(<generated xyz>)` — the
+harness's honest predicate, independent of the generator's bond graph. **It is an observation.**
+The gate compares columns 1–3 only; the goldens do not carry it yet. Read it after a full run:
+`honest == sha_in` is an honest round trip, `honest != sha_in` with `sha_out == sha_in` is a row the
+gate passes and the harness would fail. `HONEST_NOT_ATTEMPTED@…` means the row was already near the
+hard timeout. Freezing it into the goldens (and gating on it) is a separate, owner-level step.
+
 ## Things that will catch you
 
 - **`sys.path.insert` beats `PYTHONPATH`.** `gate_arm2_roundtrip_one.py` inserts its own `../src`,

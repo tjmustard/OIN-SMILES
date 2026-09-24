@@ -24,10 +24,13 @@ import sys
 from pathlib import Path
 
 DATA = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
-R = DATA / "results-v0.4.17-reattribution"
+# v0.4.18 release: the same layout under a different directory and prefix
+#   stage_reattribution.py --results results-v0.4.18-release-census --prefix v0418_rcensus_
+_a = sys.argv[1:]
+R = DATA / (_a[_a.index("--results") + 1] if "--results" in _a else "results-v0.4.17-reattribution")
 STAGE = R / "freeze"
 PER_FILE_CAP = 512 * 1024
-P = "v0418_census_"
+P = _a[_a.index("--prefix") + 1] if "--prefix" in _a else "v0418_census_"
 
 _CHECKOUT = re.compile(r"/home/[^/\s\"']+/Documents/GitHub/([A-Za-z0-9._-]+)")
 _HOME = re.compile(r"/home/[^/\s\"']+/")
