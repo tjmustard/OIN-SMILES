@@ -225,9 +225,27 @@ rows (`pop1d_report.txt`): `LIGAND_DIFF` 14/56, `HCOUNT` 3/84, `SPHERE_DIFF` 1/7
 `DATA_MULTI` rows now parse back ISO (a bridging Se/B ligand that was written slot-less). All
 three levers together: 15 + 15 + 59 = 89 of 216 E1 strings describe their input.
 
-Running: the whole-cohort audit under rule v2 (`cap` alone; `fix3` = all three), then re-score,
-changed sets, two live arms (fix3 needs its own: the `OIN_H_FAITHFUL` reader coupling), re-freeze.
-Rule v1's audit and re-score are kept as `*_capv1*` / `*_fix3v1*` in the results dir (not frozen).
+**Rule v2 on the whole cohort — REFUTED by the offline re-score.** The audit itself looked fine
+(no verified pass's string moved; fragile 502 → 495, NON-CANONICAL 120 → 119, NON-INJECTIVE
+163 → 161; 9 became fragile — a hard +0.10 Å edge is noise-sensitive by construction). But
+`honest_rescore.py` under v2 gave **195 self-consistent / 147 VERIFIED losses on rows whose input
+string is unchanged** — the *generated* structures re-encode differently. Mechanism (AC diff on
+the generated xyz): in a compressed generated structure two halides register a spurious
+Br···Br / I···I contact at ≈ +0.3 Å; the shipped cap removed it *because it counted the metal
+bond* (Br: M + Br = 2 > 1 → cut the longer). Exempting the short metal contact from the count
+left the halide at 1 ≤ 1 and the spurious contact survived: `[Br]{0}[Br]{1}`. The count was doing
+the coordination sphere's job for saturated ligand atoms.
+
+**Rule v3 (current):** the count is the shipped one — every neighbour, the metal included — and
+only the *victim* changes: a ligand bond with excess < +0.10 Å is never cut while a short metal
+contact exists; that contact is dative, leaves the count, and nothing is cut. Smoke: KICSUM and
+OBILAM repaired; the five verified passes and UMENEG byte-identical; 12/12 sampled v2 losses
+re-encode to `smiles_1` again. **Offline re-score under v3 (4,760 structures): at most 5 passing
+rows differ** (v2: 195), pending the audit's changed set to classify them.
+
+Running: the whole-cohort audit under rule v3 (`cap`, `fix3`), then changed sets, the fix3
+re-score, two live arms, re-freeze. v1 and v2 outputs are kept as `*capv1*` / `*capv2*` /
+`*fix3v1*` / `*fix3v2*` in the results dir (not frozen).
 
 ## 7. Not done / not this lane
 
