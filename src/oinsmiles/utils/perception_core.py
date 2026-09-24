@@ -1976,28 +1976,33 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
         # them (max valence 1), and the excess rule picks correctly there -- 8 of 296 probe rows
         # died on 'Explicit valence for atom H, 2' when H was included, one of them a verified pass.
         if cap_ignores_metal and not is_metal[i] and a_i.GetAtomicNum() > 1:
-            # Only a SHORT metal contact is exempt (a bond by the covalent radii: excess
-            # d - r_i - r_M below CAP_EXEMPT_EXCESS). A long one -- an agostic C-H...M, a
-            # C-F...M, a B-H...M at +0.2 to +0.4 A -- stays in the count and is cut as before:
-            # exempting those made a tBu methyl a donor and a 7th donor appear on Y in three
-            # verified passes. The repairs all sit at -0.30 to +0.07 A (Pd-Se -0.21, Ti-Si -0.10).
+            # The count stays the shipped one -- EVERY neighbour, the metal included -- because
+            # that count is what catches a spurious inter-ligand contact (two halides of a
+            # generated, compressed structure at +0.3 A: Br has M + Br = 2 > 1 and the longer,
+            # spurious one is cut). Exempting the metal contact from the count (rule v2) let
+            # 195 such contacts through on the release sweep's generated structures.
+            # What changes is only WHICH bond may be the victim: never a REAL bond by the radii
+            # (excess below CAP_EXEMPT_EXCESS) to make room for a real metal contact -- in that
+            # case the metal contact is dative, leaves the count, and nothing is cut.
             r_i = pt.GetRcovalent(a_i.GetAtomicNum())
 
-            def _cands():
-                out = []
-                for j in np.nonzero(AC[i, :])[0]:
-                    j = int(j)
-                    if is_metal[j]:
-                        r_j = pt.GetRcovalent(mol.GetAtomWithIdx(j).GetAtomicNum())
-                        if dMat[i, j] - r_i - r_j < CAP_EXEMPT_EXCESS:
-                            continue  # a real bond: dative, not counted, never the victim
-                    out.append(j)
-                return out
+            def _excess(j):
+                return dMat[i, j] - r_i - pt.GetRcovalent(mol.GetAtomWithIdx(int(j)).GetAtomicNum())
 
-            cands = _cands()
-            while len(cands) > max(atomic_valence[a_i.GetAtomicNum()]):
-                AC = remove_weakest_bond(mol, int(i), AC, dMat, pt, candidates=cands)
-                cands = _cands()
+            exempt_metal = set()
+            while True:
+                nbrs = [int(j) for j in np.nonzero(AC[i, :])[0] if int(j) not in exempt_metal]
+                if len(nbrs) <= max(atomic_valence[a_i.GetAtomicNum()]):
+                    break
+                victim = max(nbrs, key=_excess)
+                if not is_metal[victim] and _excess(victim) < CAP_EXEMPT_EXCESS:
+                    short_metal = [
+                        j for j in nbrs if is_metal[j] and _excess(j) < CAP_EXEMPT_EXCESS
+                    ]
+                    if short_metal:
+                        exempt_metal.update(short_metal)  # dative: uncounted, never the victim
+                        continue
+                AC = remove_weakest_bond(mol, int(i), AC, dMat, pt, candidates=nbrs)
             continue
         N_con = np.sum(AC[i, :])
         while N_con > max(atomic_valence[a_i.GetAtomicNum()]):
