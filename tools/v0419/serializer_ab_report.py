@@ -414,6 +414,33 @@ def cmd_ab(args, res, changed):
     )
     for m, a, b in mism[:10]:
         print(f"      MISMATCH {m}: table {a}  recomputed {b}")
+    # the same ON strings read by the SHIPPED reader (OIN_H_FAITHFUL gates the adapter too)
+    sr = on / "parseback_shippedreader.jsonl"
+    if sr.exists():
+        PB_on, PB_sr = _jsonl(on / "parseback.jsonl"), _jsonl(sr)
+        dep = [
+            m
+            for m in changed
+            if (PB_on.get(m) or {}).get("adapter_h_decoration")
+            != (PB_sr.get(m) or {}).get("adapter_h_decoration")
+        ]
+
+        def h_ok(P):
+            return sum(
+                1
+                for m in changed
+                if (P.get(m) or {}).get("adapter_graph") in ("ISO", "ISO_MARGINAL", "ISO_CLASH")
+                and (P.get(m) or {}).get("adapter_h_decoration") == "SAME"
+            )
+
+        print(
+            f"   READER COUPLING: ON strings parse back ISO&SAME on {h_ok(PB_on)} rows under the ON reader, {h_ok(PB_sr)} under the SHIPPED reader; the H verdict depends on the reader's lever on {len(dep)} rows"
+        )
+        res.setdefault("ab", {})["reader_coupling"] = {
+            "on_reader_iso_same": h_ok(PB_on),
+            "shipped_reader_iso_same": h_ok(PB_sr),
+            "reader_dependent": dep,
+        }
     # dead-lever check, the ENCODER way: smiles_1 must differ on every row of this cohort
     same_s1 = [m for m in changed if B_off[m].get("smiles_1") == B_on[m].get("smiles_1")]
     print(
@@ -468,6 +495,7 @@ def cmd_ab(args, res, changed):
             f"      {m}  {T[m]['metal']} eta={T[m]['eta']}  on-fault {F_on[m]['fault']}/{F_on[m]['sub']}  on-bucket {B_on[m]['bucket']}"
         )
     res["ab"] = {
+        **res.get("ab", {}),
         "n": len(changed),
         "control_mismatch": mism,
         "dead_lever_same_s1": same_s1,

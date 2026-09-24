@@ -199,6 +199,9 @@ ALLOW = [
     "v0418_rcensus_*",
     # v0.4.18 selection lane (OIN_ETA_RETARGET), staged by tools/v0418/freeze_stage_selection.py.
     "v0418_sel_*",
+    # v0.4.19 serializer lane (OIN_H_FAITHFUL + OIN_RC1_PROPAGATE, measured, NOT promoted), staged by
+    # tools/v0419/freeze_stage.py.
+    "v0419_ser_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -404,6 +407,55 @@ PROVENANCE = [
         " projected; excluding rows on the 300 s budget boundary +44/-4 and +40/-5. THE OFF ARM WAS"
         " BUILT from the v0.4.18 sweep of record, not run, so the report's noise-floor line is"
         " circular here. NO DEFAULT CHANGED: the lever ships OFF)",
+    ),
+    (
+        r"^v0419_ser_pop1b?_report\.txt$|^v0419_ser_pop1b?\.jsonl\.gz$",
+        "tools/v0419/lever_parseback.py --names <pop1_names> --classes <pop1_classes> --arms"
+        " shipped,hfaith,rc1off,both | shipped,rc1off,rc1prop,fix2   (THE PARSE-BACK PROBE: 296"
+        " molecules from the v0.4.18 release census -- E1_HCOUNT 84, E1_GRAPH/SPHERE_DIFF 76,"
+        " E1_GRAPH/LIGAND_DIFF 56, 80 verified controls -- encoded live in a fresh process per arm,"
+        " string parsed back at the adapter level with the census's ruler. Control: live shipped =="
+        " sweep smiles_1 296/296. OIN_H_FAITHFUL=1 repairs 56/84 E1_HCOUNT; OIN_RC1_PROPAGATE=1"
+        " repairs 14/76 SPHERE_DIFF, byte-identical to forcing RC1's fail-safe; controls 0 changed)",
+    ),
+    (
+        r"^v0419_ser_changed_set\.txt$|^v0419_ser_changed_single\.jsonl\.gz$",
+        "tools/v0419/serializer_ab_report.py changed --write-set ; tools/v0419/lever_parseback.py"
+        " --arms shipped,hfaith,rc1prop,fix2 over that set   (the COMPLETE changed-string set: base"
+        " under both levers != release-sweep smiles_1 on 80 of 5,000 -- H_FAITHFUL 64, RC1_PROPAGATE"
+        " 15, 1 encode-timeout row -- and 4,909 unchanged incl. every verified pass)",
+    ),
+    (
+        r"^v0419_ser_esc_fix2_summary\.txt$|^v0419_ser_e_selfconsistency_fix2\.jsonl\.gz$",
+        "OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 tools/census/e_selfconsistency.py --sweep"
+        " <results-v0.4.18-release-sweep> --cpu 8   (THE CANONICALITY AUDIT under both levers, all"
+        " 5,000 x 11 encodes, 13.85 CPU-h: determinism, rewrite, rotation, 3 renumberings, 3 noise,"
+        " mirror. Against the shipped run (measurements/v0.4.17-exactfold e_selfconsistency): every"
+        " column identical, mirror 2x2 unchanged, 0 became fragile)",
+    ),
+    (
+        r"^v0419_ser_rescore_fix2\.jsonl\.gz$",
+        "OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 tools/honest_rescore.py --results-dir"
+        " <results-v0.4.18-release-sweep> --workers 4 --timeout 300   (the OFFLINE re-score: every"
+        " stored generated structure re-encoded under the levers; joined with the lever base strings"
+        " for the 4,909 unchanged rows: 0 self-consistent losses, 5 false-pass gains, VERIFIED 3920"
+        " -> 3920)",
+    ),
+    (
+        r"^v0419_ser_serializer_ab_report\.(txt|json)$|^v0419_ser_ab_commits\.tsv$",
+        "tools/v0419/run_serializer_ab.sh <changed_set> -> post_serializer_ab.sh ->"
+        " serializer_ab_report.py all   (THE LIVE A/B over the 80 changed-string molecules, ON arm"
+        " commit d3adba15, OFF = the release sweep's own rows: self-consistent +29/-1, VERIFIED"
+        " +24/-0 with each arm's parse-back under its own reader; projection 86.94 -> 87.60% /"
+        " 78.40 -> 78.88%. READER COUPLING: the same ON strings verify on 15 rows under the SHIPPED"
+        " reader (OIN_H_FAITHFUL gates metallogen_adapter too). NO DEFAULT CHANGED)",
+    ),
+    (
+        r"^v0419_ser_ab_on_(bucket_report_honest\.json|g_verdict\.jsonl|parseback\.jsonl|parseback_shippedreader\.jsonl)\.gz$",
+        "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py ;"
+        " tools/census/string_sufficiency.py parseback under the ON levers | under the shipped"
+        " reader   (the ON arm's own instruments; the OFF arm's are the release sweep's, frozen in"
+        " measurements/v0.4.18-release-sweep)",
     ),
     (
         r"^v0418_sel_ab_(off|retarget)_(g_verdict\.jsonl|bucket_report_honest\.json)\.gz$",

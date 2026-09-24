@@ -27,12 +27,28 @@ for arm in off on; do
   [ "$r" = "$n" ] || { echo "ABORT: arm $arm has $r reports for a cohort of $n -- a shard died; re-run it with --continue UNDER THE SAME LEVERS"; exit 1; }
 done
 
+# OIN_H_FAITHFUL is a WRITER + READER lever (generation/metallogen_adapter.py preserves a bracketed
+# [C] only when it is on), so the parse-back ruler -- which IS the reader -- must run under each
+# arm's own configuration: the ON arm's strings read by the ON arm's reader, which is what a
+# promotion ships. The same strings read by the SHIPPED reader are kept beside it
+# (parseback_shippedreader.jsonl): that is what happens to a lever-written string in a build
+# without the lever, and the report prints both.
 cd "$HERE"
+lev() { case "$1" in on) echo "OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1";; off) echo "OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0";; esac; }
 for arm in off on; do
   d=$OUT/ab_$arm
   [ -f "$d/bucket_report_honest.json" ] || $PY tools/roundtrip_bucket_report.py --results-dir "$d" --score honest > "$d/bucket_report_honest.log" 2>&1
   [ -f "$d/g_verdict.jsonl" ] || $PY tools/census/g_vs_input.py --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 8 > "$d/g_verdict.log" 2>&1
-  [ -f "$d/parseback.jsonl" ] || $PY tools/census/string_sufficiency.py parseback --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 8 > "$d/parseback.log" 2>&1
-  [ -f "$d/parseback_gen.jsonl" ] || $PY tools/census/string_sufficiency.py parseback --side gen --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 8 > "$d/parseback_gen.log" 2>&1
+  if [ ! -f "$d/parseback.jsonl" ]; then
+    env $(lev "$arm") $PY tools/census/string_sufficiency.py parseback --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 8 > "$d/parseback.log" 2>&1
+  fi
+  if [ ! -f "$d/parseback_gen.jsonl" ]; then
+    env $(lev "$arm") $PY tools/census/string_sufficiency.py parseback --side gen --cohort "$COHORT" --sweep "$d" --out "$d" --cpu 8 > "$d/parseback_gen.log" 2>&1
+  fi
+  if [ "$arm" = on ] && [ ! -f "$d/parseback_shippedreader.jsonl" ]; then
+    mkdir -p "$d/.shippedreader"
+    env $(lev off) $PY tools/census/string_sufficiency.py parseback --cohort "$COHORT" --sweep "$d" --out "$d/.shippedreader" --cpu 8 > "$d/parseback_shippedreader.log" 2>&1
+    mv "$d/.shippedreader/parseback.jsonl" "$d/parseback_shippedreader.jsonl"
+  fi
 done
 $PY tools/v0419/serializer_ab_report.py all --ab "$OUT" --out "$LANE/serializer_ab_report.json" | tee "$LANE/serializer_ab_report.txt"

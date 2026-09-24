@@ -82,28 +82,122 @@ recommended fix, not the re-key it warns against. Pinned both ways on TULTAX in
 
 As predicted by the map: 0 of 56 move. A perception lane, not a serializer one.
 
-## 2. What is still owed before either lever is the owner's to promote
+## 2. The whole cohort: changed set, canonicality, offline re-score (`tools/v0419/serializer_ab_report.py`)
 
 Both are **canonicality levers** on the encoder, so the v0.4.11 rule applies — mirror-audit and
-renumbering-audit the whole cohort, never trust a subset — and because `smiles_1` moves, the
-sweep of record cannot be re-scored offline for the moved rows; they must be generated live.
+renumbering-audit the whole cohort, never a subset — and because `smiles_1` moves, the moved rows
+must be generated live while the rest can be re-scored offline (generation is byte-deterministic at
+this load, v0.4.18).
 
-1. ✅ running — `tools/census/e_selfconsistency.py` over all 5,000 under both levers
-   (`e_selfconsistency_fix2.jsonl`): base string ⇒ the COMPLETE changed-string set; determinism,
-   rotation, 3 renumberings, 3 noise, mirror ⇒ the canonicality audit against the shipped run
-   (`results-v0.4.17-exactfold/e_selfconsistency_exact.jsonl`, valid for v0.4.18 because
-   `smiles_1` moved on 0 rows there).
-2. Attribute each changed string to one lever (base-only encode under each single lever, changed
-   set only).
-3. Offline re-score of every UNCHANGED-string row: re-encode the sweep's generated xyz under the
-   levers; a pass whose re-encode now differs is a loss the levers would cause with no generation
-   (exact — generation is byte-deterministic at this load, v0.4.18).
-4. Live harness A/B on the changed set (shipped vs both levers), scored self-consistent AND
-   VERIFIED (`g_vs_input` + parse-back on the generated structure).
-5. Freeze; handoff; the owner decides. Sweep only if promoted.
+**2a. Changed-string set** — `tools/census/e_selfconsistency.py`, all 5,000, under both levers
+(`e_selfconsistency_fix2.jsonl`, 55,000 encodes, 13.85 CPU-h, 11 encode timeouts = the sweep's 11
+`P_E1_COVERAGE`): base differs from the release sweep's `smiles_1` on **80 molecules**:
+`E1_HCOUNT` FAIL 57 · `E1_GRAPH` FAIL 21 · `E1_GRAPH` false PASS 1 · `P_E1_COVERAGE` 1 (SUGQOA — a
+300 s encode timeout in the sweep that finished this time; not the levers). **4,909 unchanged**,
+which includes every verified pass. The levers touch the E1 population and nothing else; the two
+runs' base strings differ on exactly those 79 (the instrument fired where it should and nowhere
+else). One shipped string timed out in the lever run (UVIWIG, load; see §4).
 
-## 3. Not done / not this lane
+**2b. Canonicality audit** — lever run vs shipped run (`results-v0.4.17-exactfold/
+e_selfconsistency_exact.jsonl`, valid for v0.4.18: `smiles_1` moved on 0 rows), per transform:
+
+| transform | shipped byte-stable | lever byte-stable | became unstable | became stable |
+|---|---:|---:|---:|---:|
+| again (determinism) | 4,989 | 4,988 | 1 (UVIWIG timeout) | 0 |
+| rewrite / rotate | 4,989 | 4,989 | 0 | 0 |
+| renumber ×3 | 4,777 / 4,770 / 4,777 | same | 0 | 0 |
+| noise 0.02 Å ×3 | 4,868 / 4,870 / 4,870 | same | 0 | 0 |
+| mirror | 3,262 | 3,262 | 0 | 0 |
+
+Mirror 2×2 against the ruler unchanged: NON-CANONICAL 120 → 120, NON-INJECTIVE 163 → 163;
+E2-fragile 502 → 502 (0 became fragile, 0 became stable). **A null on every axis a canonicality
+lever could break.** The 44 changed-string molecules that are renumbering-fragile were fragile
+before (perception, `E2_P_FRAGILE`).
+
+**2c. Offline re-score of the 4,909 unchanged rows** — `tools/honest_rescore.py` under the levers
+(4,758 stored structures re-encoded; 147 no structure): self-consistent **pass→fail 0**,
+fail→pass 5; the census fault recomputed per row through `attribution_table.attribute()` (control:
+shipped inputs reproduce the table 4,920 / 4,920): **VERIFIED 3,920 → 3,920, 0 losses, 0
+gains.** The 5 self-consistent gains (DOCPAO, IFAPUD, MIBFEL, NEFNER, NOYTUS) are strings the
+levers do NOT repair whose generated structure now re-encodes to the same wrong string — false
+passes, the class the two-number rule exists for. 4 re-encode errors under the levers (AFIROW,
+HOBBUY, MUZZUC, RIPDEA) are `hard_fail` rows whose shipped honest re-encode also failed.
+
+## 3. The live A/B on the 80 (`tools/v0419/run_serializer_ab.sh` → `post_serializer_ab.sh`)
+
+ON arm = the harness, 6 shards, `--mol-timeout 300`, under both levers; OFF = the release sweep's
+own rows. Scored self-consistent AND VERIFIED, the latter by the census's own `attribute()` with
+each arm's bucket, ruler verdict, parse-back and self-consistency records (the string clause is
+recomputed per arm — the ON arm's string is the lever's). Controls: the recomputed OFF fault must
+equal the census table row for row; `smiles_1` must DIFFER on every row (the encoder inversion of
+the dead-lever check).
+
+### 3a. Result — 80 molecules, ON arm commit `d3adba15` (`serializer_ab_report.txt`)
+
+Controls: recomputed OFF fault == census table **80 / 80**; `smiles_1` identical across arms on
+**0** rows. Per-lever attribution of the 80 (single-lever encodes): **H_FAITHFUL 64 ·
+RC1_PROPAGATE 15 · neither 1** (SUGQOA, the timeout row) — the two levers are disjoint.
+
+| | OFF (sweep rows) | ON | transitions | net |
+|---|---:|---:|---|---:|
+| self-consistent (`byte_exact`, honest) | 1 | 29 | fail→pass 29, pass→fail 1 | **+28** |
+| VERIFIED (census fault `NONE`, each arm's own reader) | 0 | 24 | fail→pass 24 | **+24** |
+
+By lever: VERIFIED gains **H_FAITHFUL 20, RC1_PROPAGATE 4**; self-consistent gains 24 / 5, the
+one loss RC1's. That loss is **MOSLEL** — a byte-exact FALSE pass in the sweep (`E1_GRAPH`, the
+corrupted string round-tripped through the generator unchanged); with the corrected string the
+generator builds the η ring one carbon short in 7 s and the honest re-encode says so
+(`G_DIASTEREOMER`). A false pass became an honest fail; VERIFIED did not move.
+
+ON-arm fault of the 56 still failing VERIFIED: `E2_P_FRAGILE` 18 (the string now describes the
+input and is renumbering-fragile — it always was; the census's rule order surfaces it once E1
+clears), `G_NOTHING` 11, `G_CONSTRUCTION/DETACHED` 9, `E1_GRAPH` 8 (7 H rows whose sphere is a
+perception trim, 1 RC1), `E2_P_OTHER` 3, `E1_NONCANONICAL` 2, `SPHERE_DIFF` 2, `G_DIASTEREOMER`
+1, `LIGAND_DIFF` 1, `E1_HCOUNT` 1.
+
+### 3b. Runtime: a wrong string costs the generator its whole budget
+
+| lever rows | Σ `elapsed_s` OFF | ON | rows at the 300 s budget OFF → ON |
+|---|---:|---:|---:|
+| H_FAITHFUL (64) | 19,891 s | 5,417 s | **49 → 8** |
+| RC1_PROPAGATE (15) | 4,475 s | 1,538 s | **11 → 2** |
+
+The lane map's last "do not": the "compute floor" for these rows was a wrong molecule, not
+throughput. 24,666 → 7,254 s over the 80.
+
+### 3c. 🔴 `OIN_H_FAITHFUL` is a WRITER + READER lever
+
+`generation/metallogen_adapter.py` (the "authoritative" block, gated on
+`hydrogen_faithfulness_enabled()`) preserves a bracketed `[C]` only while the lever is on. The
+census's parse-back ruler IS that reader. The same 80 ON strings parse back ISO&SAME on **71 rows
+under the ON reader and 15 under the shipped reader**; the H verdict depends on the reader's lever
+on **56** rows. So the first post-processing pass (shipped reader, by accident) reported VERIFIED
++4, and the arm-consistent pass +24 — both are in `serializer_ab_report.txt`
+(`READER COUPLING`), and `parseback_shippedreader.jsonl` is frozen beside `parseback.jsonl`.
+For a promotion decision the ON reader is the one that ships; for the notation it means a string
+written with the lever and read by a build without it is a different molecule. Promote it
+everywhere or nowhere.
+
+## 4. Projection and what the owner decides
+
+| | v0.4.18 release sweep | with both levers (live 80 + offline 4,909, exact by determinism) |
+|---|---:|---:|
+| self-consistent | 4,347 = **86.94%** | 4,380 = **87.60%** (+28 live, +5 offline false passes) |
+| VERIFIED | 3,920 = **78.40%** | 3,944 = **78.88%** (+24, 0 losses anywhere) |
+
+Frozen `measurements/v0.4.19-serializer/` (16 files); `tools/v0419/freeze_stage.py --verify`
+re-derives every line above from the public tree alone. **Nothing promoted; no sweep run.** If
+the owner promotes either: full sweep, `/refreeze-goldens`, census `EXPECTED`, and — for
+`OIN_H_FAITHFUL` — the reader coupling in §3c stated in the CHANGELOG. `OIN_RC1_PROPAGATE` alone is
+a pure serializer fix (+4 VERIFIED, one false pass turned honest, 11 → 2 budget rows, nothing
+else moves) and has no coupling.
+
+
+## 5. Not done / not this lane
 
 - H3 (adapter `is_haptic` on macrocycles), H4 (valence cap), H5 (η trims in perception): reader
   and perception defects; each moves the census's verdict and must be re-attributed, not assumed.
 - No lever was promoted. No sweep was run.
+- UVIWIG: shipped string encodes in the sweep (300.1 s), timed out at 300 s in the lever run (which
+  shared the box with a 4-worker re-score); alone under the levers it encodes in 108.6 s. A slow
+  encoder on the budget boundary, not a lever effect. Its lever string was not measured.
