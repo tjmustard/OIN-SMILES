@@ -1,0 +1,3 @@
+arm	launched_from
+off	results-v0.4.18-release-sweep @ "commit_id": "cdb76eca" -- the sweep of record's own rows, not a run
+on	d3adba1581bc8dd2496e8009b9641af19c43f35f tools(v0.4.19): serializer A/B launcher, post-processing and report -- encoder-side scoring

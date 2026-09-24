@@ -1,0 +1,509 @@
+{
+ "changed": {
+  "n_changed": 80,
+  "n_unchanged": 4909,
+  "encode_failed": [
+   [
+    "BENVOG_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "GABSOT_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "KEMSUS_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "KESWUB_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "LUJJUX_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "NOGWOX_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "OMEYUA_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "UROFUD_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "UVIWIG_comp_0",
+    "TIMEOUT",
+    true
+   ],
+   [
+    "XAWSET_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "ZEHQOU_comp_0",
+    "TIMEOUT",
+    false
+   ]
+  ],
+  "molecules": [
+   "AKUMAV_comp_0",
+   "ALEMOT_comp_0",
+   "AMUKEZ_comp_0",
+   "BAXWUS_comp_0",
+   "BEWSUT_comp_0",
+   "BOLDOW_comp_0",
+   "CETFAJ_comp_0",
+   "CETYAC_comp_0",
+   "COGKEQ_comp_0",
+   "COJJAP_comp_0",
+   "COJJOD_comp_0",
+   "EBUBAH_comp_0",
+   "FIQPIG_comp_0",
+   "GACTAG_comp_0",
+   "HACDOG_comp_0",
+   "HICLAG_comp_0",
+   "HITHAW_comp_0",
+   "HOHTEF_comp_0",
+   "HOQFUP_comp_0",
+   "HOZZUT_comp_0",
+   "JEFHAE_comp_0",
+   "JIVRIP_comp_0",
+   "JIVVIT_comp_0",
+   "KECJUA_comp_0",
+   "KIKRUU_comp_0",
+   "KIKSAB_comp_0",
+   "KIVGIH_comp_0",
+   "LAMTAX_comp_0",
+   "LIMVEL_comp_0",
+   "MOSLEL_comp_0",
+   "NODKUP_comp_0",
+   "NODLAW_comp_0",
+   "NOEPOR_comp_0",
+   "NOXREZ_comp_0",
+   "ODUBAS_comp_0",
+   "OWEWAQ_comp_0",
+   "OZADAW_comp_0",
+   "PDTPOR_comp_0",
+   "PURROJ_comp_0",
+   "PUVWEK_comp_0",
+   "QIFHIY_comp_0",
+   "QIYYED_comp_0",
+   "QIYYON_comp_0",
+   "QOJKUW_comp_0",
+   "RATXOZ_comp_0",
+   "RIRYOJ_comp_0",
+   "ROMSER_comp_0",
+   "SEMPEF_comp_0",
+   "SEMPOP_comp_0",
+   "SEQVEP_comp_0",
+   "SICNIC_comp_0",
+   "SUGQOA_comp_0",
+   "SUMQAT_comp_0",
+   "SUNROK_comp_0",
+   "SUXJOM_comp_0",
+   "SUXJUS_comp_0",
+   "TEQHIG_comp_0",
+   "TEQHOM_comp_0",
+   "TIZLEU_comp_0",
+   "TOCZES_comp_0",
+   "TOXDIV_comp_0",
+   "TULTAX_comp_0",
+   "ULOQIX_comp_0",
+   "ULOQOD_comp_0",
+   "ULORAQ_comp_0",
+   "ULORIY_comp_0",
+   "UPABUK_comp_0",
+   "UQUXAG_comp_0",
+   "VIMTET_comp_0",
+   "WAMWUE_comp_0",
+   "XAJBIW_comp_0",
+   "XAKCAP_comp_0",
+   "XENNIO_comp_0",
+   "XOMKUG_comp_0",
+   "YARYOI_comp_0",
+   "YOLHOX_comp_0",
+   "ZENZAW_comp_1",
+   "ZIQLOD_comp_0",
+   "ZISKUJ_comp_0",
+   "ZOCYIC_comp_0"
+  ]
+ },
+ "audit": {
+  "per_transform": {
+   "again": {
+    "shipped": 4989,
+    "lever": 4988,
+    "worse": [
+     "SUGQOA_comp_0"
+    ],
+    "better": []
+   },
+   "rewrite": {
+    "shipped": 4989,
+    "lever": 4989,
+    "worse": [],
+    "better": []
+   },
+   "rot0": {
+    "shipped": 4989,
+    "lever": 4989,
+    "worse": [],
+    "better": []
+   },
+   "renum0": {
+    "shipped": 4777,
+    "lever": 4777,
+    "worse": [],
+    "better": []
+   },
+   "renum1": {
+    "shipped": 4770,
+    "lever": 4770,
+    "worse": [],
+    "better": []
+   },
+   "renum2": {
+    "shipped": 4777,
+    "lever": 4777,
+    "worse": [],
+    "better": []
+   },
+   "noise0": {
+    "shipped": 4868,
+    "lever": 4868,
+    "worse": [],
+    "better": []
+   },
+   "noise1": {
+    "shipped": 4870,
+    "lever": 4870,
+    "worse": [],
+    "better": []
+   },
+   "noise2": {
+    "shipped": 4870,
+    "lever": 4870,
+    "worse": [],
+    "better": []
+   },
+   "mirror": {
+    "shipped": 3262,
+    "lever": 3262,
+    "worse": [],
+    "better": []
+   }
+  },
+  "mirror_2x2": {
+   "shipped": {
+    "achiral/same": 3099,
+    "chiral/differs": 1607,
+    "achiral/differs": 120,
+    "chiral/same": 163
+   },
+   "lever": {
+    "achiral/same": 3099,
+    "chiral/differs": 1607,
+    "achiral/differs": 120,
+    "chiral/same": 163
+   }
+  },
+  "fragile": {
+   "shipped": 502,
+   "lever": 502,
+   "became_fragile": [],
+   "became_stable": []
+  }
+ },
+ "offline": {
+  "n": 4758,
+  "transitions": {
+   "pass->pass": 4346,
+   "fail->fail": 407,
+   "encode_error_under_lever": 4,
+   "no_structure": 147,
+   "fail->pass": 5
+  },
+  "losses": [],
+  "gains": [
+   "DOCPAO_comp_0",
+   "IFAPUD_comp_0",
+   "MIBFEL_comp_0",
+   "NEFNER_comp_0",
+   "NOYTUS_comp_0"
+  ],
+  "errors": [
+   [
+    "AFIROW_comp_0",
+    "OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)"
+   ],
+   [
+    "HOBBUY_comp_0",
+    "OINEncodeError: cannot kekulize molecule and found no quinoid ring to relax: Can't kekulize mol.  Unkekulized atoms: 9 10 11 12 19"
+   ],
+   [
+    "MUZZUC_comp_0",
+    "OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)"
+   ],
+   [
+    "RIPDEA_comp_0",
+    "ValueError: perception_tmc failed: Explicit valence for atom # 2 N, 5, is greater than permitted"
+   ]
+  ],
+  "verified_transitions": {
+   "pass->pass": 3920,
+   "fail->fail": 989
+  },
+  "verified_losses": [],
+  "verified_gains": [],
+  "control_mismatch": []
+ },
+ "ab": {
+  "reader_coupling": {
+   "on_reader_iso_same": 71,
+   "shipped_reader_iso_same": 15,
+   "reader_dependent": [
+    "SEMPOP_comp_0",
+    "VIMTET_comp_0",
+    "NOEPOR_comp_0",
+    "FIQPIG_comp_0",
+    "SUMQAT_comp_0",
+    "LIMVEL_comp_0",
+    "KIKSAB_comp_0",
+    "HACDOG_comp_0",
+    "TOXDIV_comp_0",
+    "BOLDOW_comp_0",
+    "NOXREZ_comp_0",
+    "SEMPEF_comp_0",
+    "HOZZUT_comp_0",
+    "UQUXAG_comp_0",
+    "ZISKUJ_comp_0",
+    "XAJBIW_comp_0",
+    "OZADAW_comp_0",
+    "QIFHIY_comp_0",
+    "HICLAG_comp_0",
+    "YOLHOX_comp_0",
+    "XENNIO_comp_0",
+    "ZIQLOD_comp_0",
+    "BEWSUT_comp_0",
+    "COGKEQ_comp_0",
+    "KECJUA_comp_0",
+    "KIKRUU_comp_0",
+    "WAMWUE_comp_0",
+    "JIVRIP_comp_0",
+    "QIYYED_comp_0",
+    "LAMTAX_comp_0",
+    "SUXJUS_comp_0",
+    "JIVVIT_comp_0",
+    "TOCZES_comp_0",
+    "SUNROK_comp_0",
+    "ODUBAS_comp_0",
+    "CETFAJ_comp_0",
+    "KIVGIH_comp_0",
+    "SUXJOM_comp_0",
+    "QIYYON_comp_0",
+    "YARYOI_comp_0",
+    "HITHAW_comp_0",
+    "COJJAP_comp_0",
+    "ZENZAW_comp_1",
+    "SICNIC_comp_0",
+    "CETYAC_comp_0",
+    "XOMKUG_comp_0",
+    "TIZLEU_comp_0",
+    "JEFHAE_comp_0",
+    "ZOCYIC_comp_0",
+    "PDTPOR_comp_0",
+    "COJJOD_comp_0",
+    "QOJKUW_comp_0",
+    "RIRYOJ_comp_0",
+    "AKUMAV_comp_0",
+    "UPABUK_comp_0",
+    "PUVWEK_comp_0"
+   ]
+  },
+  "n": 80,
+  "control_mismatch": [],
+  "dead_lever_same_s1": [],
+  "self": {
+   "off": 1,
+   "on": 29,
+   "transitions": {
+    "fail->fail": 50,
+    "fail->pass": 29,
+    "pass->fail": 1
+   }
+  },
+  "verified": {
+   "off": 0,
+   "on": 24,
+   "transitions": {
+    "fail->fail": 56,
+    "fail->pass": 24
+   }
+  },
+  "verified_losses": [],
+  "verified_gains": [
+   "VIMTET_comp_0",
+   "GACTAG_comp_0",
+   "BOLDOW_comp_0",
+   "PURROJ_comp_0",
+   "UQUXAG_comp_0",
+   "XAJBIW_comp_0",
+   "OZADAW_comp_0",
+   "QIFHIY_comp_0",
+   "ZIQLOD_comp_0",
+   "COGKEQ_comp_0",
+   "WAMWUE_comp_0",
+   "SUXJUS_comp_0",
+   "SUNROK_comp_0",
+   "RATXOZ_comp_0",
+   "CETFAJ_comp_0",
+   "KIVGIH_comp_0",
+   "SUXJOM_comp_0",
+   "HITHAW_comp_0",
+   "ZENZAW_comp_1",
+   "TULTAX_comp_0",
+   "ZOCYIC_comp_0",
+   "AKUMAV_comp_0",
+   "UPABUK_comp_0",
+   "PUVWEK_comp_0"
+  ],
+  "self_losses": [
+   "MOSLEL_comp_0"
+  ],
+  "self_gains": [
+   "VIMTET_comp_0",
+   "GACTAG_comp_0",
+   "BOLDOW_comp_0",
+   "PURROJ_comp_0",
+   "ALEMOT_comp_0",
+   "UQUXAG_comp_0",
+   "XAJBIW_comp_0",
+   "OZADAW_comp_0",
+   "QIFHIY_comp_0",
+   "YOLHOX_comp_0",
+   "ZIQLOD_comp_0",
+   "COGKEQ_comp_0",
+   "WAMWUE_comp_0",
+   "SUXJUS_comp_0",
+   "SUNROK_comp_0",
+   "RATXOZ_comp_0",
+   "CETFAJ_comp_0",
+   "KIVGIH_comp_0",
+   "SUXJOM_comp_0",
+   "HITHAW_comp_0",
+   "HOQFUP_comp_0",
+   "ZENZAW_comp_1",
+   "ROMSER_comp_0",
+   "TULTAX_comp_0",
+   "XAKCAP_comp_0",
+   "ZOCYIC_comp_0",
+   "AKUMAV_comp_0",
+   "UPABUK_comp_0",
+   "PUVWEK_comp_0"
+  ],
+  "on_fault": {
+   "SEMPOP_comp_0": "E2_P_FRAGILE",
+   "VIMTET_comp_0": "NONE",
+   "NOEPOR_comp_0": "E2_P_FRAGILE",
+   "FIQPIG_comp_0": "G_NOTHING",
+   "OWEWAQ_comp_0": "E1_NONCANONICAL",
+   "SUMQAT_comp_0": "G_CONSTRUCTION",
+   "LIMVEL_comp_0": "G_NOTHING",
+   "KIKSAB_comp_0": "E2_P_FRAGILE",
+   "GACTAG_comp_0": "NONE",
+   "HACDOG_comp_0": "E2_P_FRAGILE",
+   "TOXDIV_comp_0": "E2_P_FRAGILE",
+   "ULORAQ_comp_0": "G_CONSTRUCTION",
+   "BOLDOW_comp_0": "NONE",
+   "PURROJ_comp_0": "NONE",
+   "ALEMOT_comp_0": "E1_GRAPH",
+   "MOSLEL_comp_0": "G_DIASTEREOMER",
+   "SUGQOA_comp_0": "G_NOTHING",
+   "NOXREZ_comp_0": "G_NOTHING",
+   "SEMPEF_comp_0": "E2_P_FRAGILE",
+   "HOZZUT_comp_0": "G_CONSTRUCTION",
+   "TEQHIG_comp_0": "G_CONSTRUCTION",
+   "ULOQIX_comp_0": "E1_GRAPH",
+   "UQUXAG_comp_0": "NONE",
+   "ZISKUJ_comp_0": "E2_P_FRAGILE",
+   "XAJBIW_comp_0": "NONE",
+   "OZADAW_comp_0": "NONE",
+   "QIFHIY_comp_0": "NONE",
+   "HICLAG_comp_0": "G_NOTHING",
+   "YOLHOX_comp_0": "G_CONSTRUCTION",
+   "SEQVEP_comp_0": "G_CONSTRUCTION",
+   "ULORIY_comp_0": "G_CONSTRUCTION",
+   "XENNIO_comp_0": "G_CONSTRUCTION",
+   "ZIQLOD_comp_0": "NONE",
+   "BEWSUT_comp_0": "E2_P_OTHER",
+   "COGKEQ_comp_0": "NONE",
+   "KECJUA_comp_0": "E2_P_FRAGILE",
+   "KIKRUU_comp_0": "E2_P_FRAGILE",
+   "AMUKEZ_comp_0": "E1_GRAPH",
+   "WAMWUE_comp_0": "NONE",
+   "JIVRIP_comp_0": "E2_P_FRAGILE",
+   "QIYYED_comp_0": "E2_P_FRAGILE",
+   "LAMTAX_comp_0": "E2_P_FRAGILE",
+   "TEQHOM_comp_0": "E2_P_OTHER",
+   "SUXJUS_comp_0": "NONE",
+   "JIVVIT_comp_0": "G_NOTHING",
+   "TOCZES_comp_0": "G_NOTHING",
+   "NODKUP_comp_0": "G_NOTHING",
+   "SUNROK_comp_0": "NONE",
+   "RATXOZ_comp_0": "NONE",
+   "ODUBAS_comp_0": "G_CONSTRUCTION",
+   "CETFAJ_comp_0": "NONE",
+   "NODLAW_comp_0": "G_NOTHING",
+   "BAXWUS_comp_0": "E1_GRAPH",
+   "EBUBAH_comp_0": "E1_HCOUNT",
+   "KIVGIH_comp_0": "NONE",
+   "SUXJOM_comp_0": "NONE",
+   "QIYYON_comp_0": "E2_P_FRAGILE",
+   "YARYOI_comp_0": "G_CONSTRUCTION",
+   "HITHAW_comp_0": "NONE",
+   "COJJAP_comp_0": "E2_P_FRAGILE",
+   "HOQFUP_comp_0": "E1_GRAPH",
+   "ZENZAW_comp_1": "NONE",
+   "ROMSER_comp_0": "E1_GRAPH",
+   "SICNIC_comp_0": "E2_P_FRAGILE",
+   "ULOQOD_comp_0": "G_CONSTRUCTION",
+   "TULTAX_comp_0": "NONE",
+   "XAKCAP_comp_0": "E1_GRAPH",
+   "CETYAC_comp_0": "G_NOTHING",
+   "XOMKUG_comp_0": "G_NOTHING",
+   "TIZLEU_comp_0": "E2_P_FRAGILE",
+   "JEFHAE_comp_0": "G_CONSTRUCTION",
+   "ZOCYIC_comp_0": "NONE",
+   "PDTPOR_comp_0": "E2_P_FRAGILE",
+   "HOHTEF_comp_0": "E1_GRAPH",
+   "COJJOD_comp_0": "E2_P_FRAGILE",
+   "QOJKUW_comp_0": "E1_NONCANONICAL",
+   "RIRYOJ_comp_0": "E2_P_OTHER",
+   "AKUMAV_comp_0": "NONE",
+   "UPABUK_comp_0": "NONE",
+   "PUVWEK_comp_0": "NONE"
+  },
+  "runtime": {
+   "off": 24666.321000000004,
+   "on": 7254.423999999999
+  }
+ },
+ "projection": {
+  "self": 4380,
+  "verified": 3944
+ }
+}
