@@ -1826,6 +1826,13 @@ def boron_cage_vertices(atoms, AC):
     return cage
 
 
+#: OIN_CAP_IGNORES_METAL: a metal contact whose excess d - r_X - r_M is below this is a bond by
+#: the covalent radii and is exempt from the ligand atom's valence cap. Placed from the release
+#: census's moved rows: every repair had its metal contact at -0.30..+0.07 A, every regression at
+#: +0.10..+0.44 A (docs/agentic-notes/v0.4.19/SERIALIZER_LANE.md, the H4 section).
+CAP_EXEMPT_EXCESS = 0.10
+
+
 def remove_weakest_bond(mol, atom_idx, AC, dMat, pt, candidates=None):
     extra_bond_lengths = []
     bond_atoms = np.nonzero(AC[atom_idx, :])[0] if candidates is None else np.asarray(candidates)
@@ -1969,10 +1976,28 @@ def xyz2AC_obabel(atoms, xyz, tolerance=0.45):
         # them (max valence 1), and the excess rule picks correctly there -- 8 of 296 probe rows
         # died on 'Explicit valence for atom H, 2' when H was included, one of them a verified pass.
         if cap_ignores_metal and not is_metal[i] and a_i.GetAtomicNum() > 1:
-            cands = [int(j) for j in np.nonzero(AC[i, :])[0] if not is_metal[j]]
+            # Only a SHORT metal contact is exempt (a bond by the covalent radii: excess
+            # d - r_i - r_M below CAP_EXEMPT_EXCESS). A long one -- an agostic C-H...M, a
+            # C-F...M, a B-H...M at +0.2 to +0.4 A -- stays in the count and is cut as before:
+            # exempting those made a tBu methyl a donor and a 7th donor appear on Y in three
+            # verified passes. The repairs all sit at -0.30 to +0.07 A (Pd-Se -0.21, Ti-Si -0.10).
+            r_i = pt.GetRcovalent(a_i.GetAtomicNum())
+
+            def _cands():
+                out = []
+                for j in np.nonzero(AC[i, :])[0]:
+                    j = int(j)
+                    if is_metal[j]:
+                        r_j = pt.GetRcovalent(mol.GetAtomWithIdx(j).GetAtomicNum())
+                        if dMat[i, j] - r_i - r_j < CAP_EXEMPT_EXCESS:
+                            continue  # a real bond: dative, not counted, never the victim
+                    out.append(j)
+                return out
+
+            cands = _cands()
             while len(cands) > max(atomic_valence[a_i.GetAtomicNum()]):
                 AC = remove_weakest_bond(mol, int(i), AC, dMat, pt, candidates=cands)
-                cands = [int(j) for j in np.nonzero(AC[i, :])[0] if not is_metal[j]]
+                cands = _cands()
             continue
         N_con = np.sum(AC[i, :])
         while N_con > max(atomic_valence[a_i.GetAtomicNum()]):
