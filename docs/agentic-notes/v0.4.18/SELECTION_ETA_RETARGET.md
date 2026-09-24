@@ -146,15 +146,17 @@ the gated field moved on 0 — as at the first promotion.
 
 | 401 measured rows | honest pass | honest fail |
 |---|---:|---:|
-| gated pass | 243 | **134** |
+| gated pass | 243 | **135** |
 | gated fail | 3 | 20 |
 
 Validated: on the 370 rows whose gate structure is byte-identical to the release sweep's, the column
-agrees with the sweep's honest verdict **370 / 370**. The 134 are `structural` 95, `key_equal` 21,
-`hard_fail` 16, `facmer_divergent` 2 in that sweep. **ARM 2 passes 36% of its passing rows on the
+agrees with the sweep's honest verdict **370 / 370**. The 135 are `structural` 95, `key_equal` 21,
+`hard_fail` 16, `facmer_divergent` 2 in that sweep, plus ULODUU, a golden-only row outside the
+5,000-molecule cohort (the first draft of this table typed
+134 against its own 401-row denominator; the instrument's output says 135). **ARM 2 passes 36% of its passing rows on the
 generator's own bond graph alone** — the scored-vs-honest gap v0.4.8 measured on the whole cohort,
 on cohorts chosen for being hard. Still an observation (the gate reads columns 1–3; the goldens do not
-carry it); gating on it would re-freeze ~134 rows as honest fails or drop them — a change to what ARM 2
+carry it); gating on it would re-freeze ~135 rows as honest fails or drop them — a change to what ARM 2
 *means*, left to the owner with the evidence frozen.
 
 ## 8. Not done

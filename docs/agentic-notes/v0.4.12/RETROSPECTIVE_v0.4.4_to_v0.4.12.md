@@ -287,7 +287,7 @@ field is computed through the generator's own bond graph — the pre-v0.4.8 *sco
 whether a ring sits 2.1 Å or 2.9 Å from its metal never enters. **138 of 198 η rows built a
 different structure and the gated field moved on 0.** A construction regression passes ARM 2, and
 did, for every release that shipped ferrocene detached. The release added an honest observation
-column beside the gated one and left the decision — re-freeze ~134 passing rows as honest fails, or
+column beside the gated one and left the decision — re-freeze ~135 passing rows as honest fails, or
 change what the gate means — with the owner and the evidence. The general form: **a gate that
 scores an artifact by the artifact's own account of itself cannot see the class of defect where the
 account is wrong**, and this project has now met it in the harness (v0.4.8) and in its own
@@ -1506,12 +1506,12 @@ the corpus median rose was not measured. Goal B (`max(elapsed_s) < 30 s`) is **n
   gates the encoder and the generator's graph + stereo; **a construction regression passes it, and
   did for every release that shipped ferrocene detached.** The release adds an honest observation
   column (sha256 of an independent `XYZToSMILES().convert` of the generated coordinates) beside the
-  gated field: of 401 measured rows, **134 of the 377 the gate passes fail the harness's own honest
+  gated field: of 401 measured rows, **135 of the 378 the gate passes fail the harness's own honest
   predicate — 36%** — the scored-vs-honest gap v0.4.8 measured on the whole cohort, on cohorts
   chosen for being hard. Validated on the 370 rows whose gate structure is byte-identical to the
-  release sweep's: the column agrees with the sweep's honest verdict 370 / 370. ⚠ The frozen rows
-  re-derive that cell as **135 of 378**; the one-row difference from the lane doc and the golden
-  comment block is recorded here, not resolved. Gating on the column would re-freeze ~134 rows as
+  release sweep's: the column agrees with the sweep's honest verdict 370 / 370. (The lane doc and the
+  golden comment block first quoted 134 of 377 — a transcription error against the table's own
+  401-row denominator, corrected at the source on 2026-09-23.) Gating on the column would re-freeze ~135 rows as
   honest fails or drop them — a change to what ARM 2 *means*, left to the owner with the evidence
   frozen. 0 of 425 rows owed at either promotion.
 - **Found on the way, parked:** σ bonds in verified passes are a median **0.31 Å too short** — the
@@ -1625,9 +1625,8 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
     generation lane; **no accuracy figure in this document says anything about geometric
     fidelity beyond the contact cutoff.**
 16. **What ARM 2 should mean.** Its gated field cannot see a construction regression (138 of 198 η
-    rows changed, field moved on 0), and its new honest column says **134 of the 377 rows it
-    passes fail the harness's own predicate** (the frozen rows read 135 of 378 — a one-row
-    discrepancy also unresolved). Gating on the column re-freezes ~134 rows as honest fails or drops
+    rows changed, field moved on 0), and its new honest column says **135 of the 378 rows it
+    passes fail the harness's own predicate**. Gating on the column re-freezes ~135 rows as honest fails or drops
     them; not gating leaves the release gate blind to the class of defect v0.4.18 just repaired.
     Owner decision, evidence frozen. Also owner's: the gate scores a SIGKILLed row as a string
     mismatch (`EQEROI`, `MUKGUW`).

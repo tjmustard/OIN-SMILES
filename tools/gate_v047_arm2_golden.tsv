@@ -113,10 +113,10 @@ PIXGIP_comp_0	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	1
 #   `structural` in results-v0.4.18-release-sweep, 21 key_equal, 16 hard_fail, 2 facmer_divergent),
 #   gated fail & honest pass 3, both fail 20. Where the gate's structure is byte-identical to the
 #   release sweep's (370 of 400) the column agrees with the sweep's honest verdict on 370 of 370.
-#   So ARM 2 passes 134 of its 377 passing rows on the generator's own graph alone -- the same
+#   So ARM 2 passes 135 of its 378 passing rows on the generator's own graph alone -- the same
 #   scored-vs-honest gap v0.4.8 measured on the whole cohort, on cohorts chosen for being hard.
 #   The column is an OBSERVATION: nothing compares it, the goldens do not carry it, the gate reads
-#   columns 1-3 only. Gating on it -- which would re-freeze ~134 rows as honest FAILS, or drop them --
+#   columns 1-3 only. Gating on it -- which would re-freeze ~135 rows as honest FAILS, or drop them --
 #   is an owner-level change to what ARM 2 means. Evidence: measurements/v0.4.18-release-sweep/.
 # v0.4.18: FULL gate run for the OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promotion
 #   (default-ON, owner decision 2026-09-20) -- 0 ROWS RE-FROZEN, AND THAT ZERO IS A FINDING ABOUT
