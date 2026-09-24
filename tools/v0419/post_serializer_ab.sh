@@ -4,7 +4,7 @@
 # strings back (the ON arm's smiles_1 is the lever's -- the string clause of VERIFIED must be
 # recomputed per arm, unlike v0.4.18's generator-side A/B), then the report.
 #
-#   tools/v0419/post_serializer_ab.sh
+#   tools/v0419/post_serializer_ab.sh [fix2|cap|fix3]
 #
 # Refuses an incomplete arm: completeness is REPORT COUNT == cohort size.
 set -euo pipefail
@@ -13,9 +13,17 @@ HERE=$(cd "$(dirname "$0")/../.." && pwd)
 MAIN=/home/tjmustard/Documents/GitHub/OIN-SMILES
 DATA=$MAIN/tmCAT-tmPHOTO_xyz_dataset
 PY=$MAIN/.venv/bin/python
-COHORT=$DATA/cohort-v0.4.19-changed
 LANE=$DATA/results-v0.4.19-serializer
-OUT=${AB_OUT:-$LANE/ab}
+ARM=${1:-fix2}
+case "$ARM" in
+  fix2) ON_LEVERS="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1"; SUB=ab; ESC=e_selfconsistency_fix2.jsonl; RESCORE=rescore_fix2;;
+  cap)  ON_LEVERS="OIN_CAP_IGNORES_METAL=1"; SUB=ab_cap; ESC=e_selfconsistency_cap.jsonl; RESCORE=rescore_cap;;
+  fix3) ON_LEVERS="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 OIN_CAP_IGNORES_METAL=1"; SUB=ab_fix3; ESC=e_selfconsistency_fix3.jsonl; RESCORE=rescore_fix3;;
+  *) echo "unknown arm $ARM"; exit 1;;
+esac
+COHORT=$DATA/cohort-v0.4.19-changed-$ARM
+[ -d "$COHORT" ] || COHORT=$DATA/cohort-v0.4.19-changed   # the first (fix2) run's cohort dir
+OUT=${AB_OUT:-$LANE/$SUB}
 export PYTHONPATH=$HERE/src
 
 n=$(find "$COHORT" -name '*.xyz' | wc -l)
@@ -34,7 +42,7 @@ done
 # (parseback_shippedreader.jsonl): that is what happens to a lever-written string in a build
 # without the lever, and the report prints both.
 cd "$HERE"
-lev() { case "$1" in on) echo "OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1";; off) echo "OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0";; esac; }
+lev() { case "$1" in on) echo "$ON_LEVERS";; off) echo "OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0";; esac; }
 for arm in off on; do
   d=$OUT/ab_$arm
   [ -f "$d/bucket_report_honest.json" ] || $PY tools/roundtrip_bucket_report.py --results-dir "$d" --score honest > "$d/bucket_report_honest.log" 2>&1
@@ -51,4 +59,5 @@ for arm in off on; do
     mv "$d/.shippedreader/parseback.jsonl" "$d/parseback_shippedreader.jsonl"
   fi
 done
-$PY tools/v0419/serializer_ab_report.py all --ab "$OUT" --out "$LANE/serializer_ab_report.json" | tee "$LANE/serializer_ab_report.txt"
+sfx=""; [ "$ARM" = fix2 ] || sfx="_$ARM"
+$PY tools/v0419/serializer_ab_report.py all --ab "$OUT" --esc "$LANE/$ESC" --rescore "$LANE/$RESCORE" --single "$LANE/changed_single$sfx.jsonl" --out "$LANE/serializer_ab_report$sfx.json" | tee "$LANE/serializer_ab_report$sfx.txt"
