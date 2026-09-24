@@ -14,7 +14,8 @@
 # strings): ab_off is BUILT from symlinks to results-v0.4.18-release-sweep, not re-run -- which makes
 # a "noise floor" line circular here; the determinism evidence is the three numbers above.
 #
-#   tools/v0419/run_serializer_ab.sh <changed_set.txt>      # then: tools/v0419/post_serializer_ab.sh
+#   tools/v0419/run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]   # then: post_serializer_ab.sh [arm]
+#     fix2  OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1  (default; ab/)   cap  OIN_CAP_IGNORES_METAL=1 (ab_cap/)   fix3  all three (ab_fix3/)
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
@@ -23,10 +24,17 @@ DATA=$MAIN/tmCAT-tmPHOTO_xyz_dataset
 PY=$MAIN/.venv/bin/python
 SRC_COHORT=$DATA/cohort-v0.4.5-5k
 SWEEP=$DATA/results-v0.4.18-release-sweep
-COHORT=$DATA/cohort-v0.4.19-changed
-OUT=${AB_OUT:-$DATA/results-v0.4.19-serializer/ab}
-LIST=${1:?usage: run_serializer_ab.sh <changed_set.txt>}
-SHARDS=6
+LIST=${1:?usage: run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]}
+ARM=${2:-fix2}
+case "$ARM" in
+  fix2) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1"; SUB=ab;;
+  cap)  LEVERS="-E OIN_CAP_IGNORES_METAL=1"; SUB=ab_cap;;
+  fix3) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 -E OIN_CAP_IGNORES_METAL=1"; SUB=ab_fix3;;
+  *) echo "unknown arm $ARM"; exit 1;;
+esac
+OUT=${AB_OUT:-$DATA/results-v0.4.19-serializer/$SUB}
+COHORT=$DATA/cohort-v0.4.19-changed-$ARM
+SHARDS=${SHARDS:-6}
 
 [ -z "$(git -C "$HERE" status --porcelain)" ] || { echo "REFUSING: $HERE is dirty. The run is attributed to a commit; make it one."; exit 1; }
 if systemctl --user show-environment | grep -q '^OIN_'; then echo "REFUSING: the user manager exports an OIN_* variable"; exit 1; fi
@@ -64,10 +72,10 @@ fi
 mkdir -p "$OUT/ab_on"
 git -C "$HERE" log -1 --format='%H %s' > "$OUT/ab_on/AB_COMMIT"
 cmd="cd $HERE && for i in \$(seq 1 $SHARDS); do $PY tools/test_dataset_roundtrip.py --dataset-dir $COHORT --output-dir $OUT/ab_on --shard \$i:$SHARDS --mol-timeout 300 --no-summary > $OUT/ab_on/shard\$i.log 2>&1 & done; wait; echo \"#DONE \$(ls $OUT/ab_on/individual_reports | wc -l)\" > $OUT/ab_on/DONE"
-systemd-run --user --unit="oin-v0419-serab-on" \
-  --description="v0.4.19 serializer A/B, ON arm (OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1) over the changed-string set" \
+systemd-run --user --unit="oin-v0419-serab-$ARM" \
+  --description="v0.4.19 A/B, ON arm $ARM ($LEVERS) over its changed-string set" \
   -p OOMPolicy=continue -p MemoryMax=12G \
-  -E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 \
+  $LEVERS \
   -E PYTHONPATH="$HERE/src" -E PATH="$PATH" \
   -E OMP_NUM_THREADS=1 -E OPENBLAS_NUM_THREADS=1 -E MKL_NUM_THREADS=1 -E NUMEXPR_NUM_THREADS=1 \
   /bin/bash -c "$cmd"
