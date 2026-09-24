@@ -178,7 +178,7 @@ For a promotion decision the ON reader is the one that ships; for the notation i
 written with the lever and read by a build without it is a different molecule. Promote it
 everywhere or nowhere.
 
-## 4. Projection and what the owner decides
+## 4. Projection and what the owner decides (the two serializer levers)
 
 | | v0.4.18 release sweep | with both levers (live 80 + offline 4,909, exact by determinism) |
 |---|---:|---:|
@@ -193,7 +193,43 @@ a pure serializer fix (+4 VERIFIED, one false pass turned honest, 11 → 2 budge
 else moves) and has no coupling.
 
 
-## 5. Not done / not this lane
+## 6. H4 — `OIN_CAP_IGNORES_METAL`: perception's valence cap (started 2026-09-24, in flight)
+
+`perception_core`'s per-atom valence cap counts a ligand atom's metal contact as a bond; when the
+atom is over its maximum valence, `remove_weakest_bond` deletes the neighbour with the largest
+excess `d − r_i − r_j`. Whenever the metal contact is the *shorter* by the radii (Pd–Se 2.38 Å
+= −0.21, Se–C 1.94 Å = −0.02) the ligand bond goes: KICSUM's PhSe–CH₂ is split into two
+fragments, OBILAM's Si–C ring is opened (`E1_GRAPH/LIGAND_DIFF`; the map's H4).
+
+**Rule v1 — "a heavy non-metal atom's cap ignores its metal contact" — REFUTED on the cohort.**
+Probe (296 rows): `LIGAND_DIFF` 14/56, `SPHERE_DIFF` 7/76, `HCOUNT` 3/84 repaired, controls 80/80
+— after hydrogen was exempted (8 rows died on "Explicit valence for atom H, 2": an H between a
+carbon and the metal must lose one bond, and the excess rule is right there). But the whole-cohort
+audit (`e_selfconsistency_capv1.jsonl`) moved **74 strings including 5 verified passes** and made
+**11 molecules renumbering-fragile**. The AC diff over all 74 (`xyz2AC_obabel` under both rules)
+separates the two populations cleanly by the excess of the metal contact at the atom whose cap
+changed:
+
+| | metal-contact excess | examples |
+|---|---|---|
+| repairs (a ligand bond kept) | **−0.30 … +0.07 Å** (a few to +0.16) | Pd–Se −0.21, Ti–Si −0.10, η-ring C +0.05 |
+| regressions (a long contact kept) | **+0.10 … +0.44 Å** | JIXTES tBu *methyl* → Ni donor +0.37; GUSRAN C–F···Y 7th donor +0.34; IGOBOX B–H···Fe +0.20 |
+
+The old rule was right for long agostic / C–F / B–H contacts — they *are* the longest neighbour —
+and wrong only when the metal contact is a bond by the radii.
+
+**Rule v2 — exempt only a SHORT metal contact** (`CAP_EXEMPT_EXCESS = +0.10 Å`; a longer one
+counts and is cut as before; hydrogen unchanged). Probe over the 296 + the 25 other v1-moved
+rows (`pop1d_report.txt`): `LIGAND_DIFF` 14/56, `HCOUNT` 3/84, `SPHERE_DIFF` 1/76 (the six v1
+"repairs" there were long contacts), **the 5 verified passes byte-identical**, and 6 `P_DETACHED` /
+`DATA_MULTI` rows now parse back ISO (a bridging Se/B ligand that was written slot-less). All
+three levers together: 15 + 15 + 59 = 89 of 216 E1 strings describe their input.
+
+Running: the whole-cohort audit under rule v2 (`cap` alone; `fix3` = all three), then re-score,
+changed sets, two live arms (fix3 needs its own: the `OIN_H_FAITHFUL` reader coupling), re-freeze.
+Rule v1's audit and re-score are kept as `*_capv1*` / `*_fix3v1*` in the results dir (not frozen).
+
+## 7. Not done / not this lane
 
 - H3 (adapter `is_haptic` on macrocycles), H4 (valence cap), H5 (η trims in perception): reader
   and perception defects; each moves the census's verdict and must be re-attributed, not assumed.
