@@ -1,0 +1,22 @@
+DENOMINATOR 296 molecules x 3 arms   src=<checkout:oin-v0419>/src
+
+== CONTROL_NONE  n=80
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+   cap      string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+   fix3     string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+
+== E1_GRAPH_LIGAND  n=56
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'LIGAND_DIFF': 56}   H {None: 56}
+   cap      string changed vs shipped  38  errors  0  ISO&SAME  14 (+14/-0 vs shipped)   graph {'LIGAND_DIFF': 37, 'ISO': 14, 'SPHERE_DIFF': 4, 'ISO_MARGINAL': 1}   H {None: 41, 'SAME': 14, 'DIFF': 1}
+   fix3     string changed vs shipped  38  errors  0  ISO&SAME  15 (+15/-0 vs shipped)   graph {'LIGAND_DIFF': 37, 'ISO': 14, 'SPHERE_DIFF': 3, 'ISO_MARGINAL': 2}   H {None: 40, 'SAME': 15, 'DIFF': 1}
+
+== E1_GRAPH_SPHERE  n=76
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'SPHERE_DIFF': 76}   H {None: 76}
+   cap      string changed vs shipped   8  errors  0  ISO&SAME   7 (+7/-0 vs shipped)   graph {'SPHERE_DIFF': 69, 'ISO': 7}   H {None: 69, 'SAME': 7}
+   fix3     string changed vs shipped  28  errors  0  ISO&SAME  21 (+21/-0 vs shipped)   graph {'SPHERE_DIFF': 55, 'ISO': 20, 'ISO_MARGINAL': 1}   H {None: 55, 'SAME': 21}
+
+== E1_HCOUNT  n=84
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'ISO': 83, 'ISO_CLASH': 1}   H {'DIFF': 84}
+   cap      string changed vs shipped   3  errors  0  ISO&SAME   3 (+3/-0 vs shipped)   graph {'ISO': 83, 'ISO_MARGINAL': 1}   H {'DIFF': 81, 'SAME': 3}
+   fix3     string changed vs shipped  60  errors  0  ISO&SAME  59 (+59/-0 vs shipped)   graph {'ISO': 83, 'ISO_MARGINAL': 1}   H {'SAME': 59, 'DIFF': 25}
+#DONE

@@ -9,6 +9,7 @@
       E1_GRAPH           PASS    1
       P_E1_COVERAGE      FAIL    1
    changed, eta: {'non-eta': 54, 'eta': 26}
+   attribution (single-lever encodes): {'H_FAITHFUL only': 64, 'RC1_PROPAGATE only': 15, 'neither(!)': 1}
 
 == CANONICALITY AUDIT  5000 molecules, lever run vs shipped run (e_selfconsistency_exact.jsonl)
    transform   shipped byte-stable  lever byte-stable  became unstable  became stable
@@ -61,11 +62,11 @@
       G_CONSTRUCTION/DETACHED                 9
       E1_GRAPH                                8
       E2_P_OTHER                              3
-      E1_NONCANONICAL                         2
       G_CONSTRUCTION/SPHERE_DIFF              2
-      G_DIASTEREOMER                          1
+      E1_NONCANONICAL                         2
       G_CONSTRUCTION/LIGAND_DIFF              1
       E1_HCOUNT                               1
+      G_DIASTEREOMER                          1
    transitions by census fault of the row (VERIFIED):
       E1_HCOUNT          {'fail->fail': 37, 'fail->pass': 20}
       E1_GRAPH           {'fail->fail': 18, 'fail->pass': 4}

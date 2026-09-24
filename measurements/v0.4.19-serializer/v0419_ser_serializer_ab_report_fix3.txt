@@ -1,0 +1,96 @@
+== CHANGED-STRING SET  (e_selfconsistency_fix3.jsonl vs results-v0.4.18-release-sweep smiles_1)
+   unchanged 4880   changed 109   encode failed under the levers 11
+   🔴 1 molecules the shipped encoder encodes and the lever run does NOT:
+      UVIWIG_comp_0: TIMEOUT
+   no string in either (10): P_E1_COVERAGE, unchanged
+   changed, by census fault:
+      E1_HCOUNT          FAIL   57
+      E1_GRAPH           FAIL   30
+      E1_GRAPH           PASS   13
+      P_DETACHED         FAIL    6
+      E1_HCOUNT          PASS    1
+      P_E1_COVERAGE      FAIL    1
+      DATA_MULTI         FAIL    1
+   changed, eta: {'non-eta': 69, 'eta': 40}
+   attribution (single-lever encodes): {'H_FAITHFUL only': 64, 'neither(!)': 30, 'RC1_PROPAGATE only': 15}
+
+== CANONICALITY AUDIT  5000 molecules, lever run vs shipped run (e_selfconsistency_exact.jsonl)
+   transform   shipped byte-stable  lever byte-stable  became unstable  became stable
+   again                      4989               4988                1              0
+   rewrite                    4989               4989                0              0
+   rot0                       4989               4989                0              0
+   renum0                     4777               4776                1              0
+   renum1                     4770               4770                1              1
+   renum2                     4777               4776                1              0
+   noise0                     4868               4875                2              9
+   noise1                     4870               4876                1              7
+   noise2                     4870               4872                4              6
+   mirror                     3262               3260                3              1
+   mirror 2x2 (ruler chirality x string):   shipped  ->  lever
+      achiral  same       3099  ->    3098
+      achiral  differs     120  ->     121  NON-CANONICAL
+      chiral   differs    1607  ->    1608
+      chiral   same        163  ->     162  NON-INJECTIVE
+   E2-fragile (renumber/noise moves the string): shipped 502 -> lever 492   became fragile 2   became stable 12
+   🔴 became fragile under the levers: GIFVUN_comp_0(E1_GRAPH), LOJGEW_comp_0(P_DETACHED)
+
+== OFFLINE RE-SCORE of the UNCHANGED-string rows (rescore_fix3: generated xyz re-encoded under the levers)
+   CONTROL recomputed fault (shipped inputs) == census table: 4891 / 4891
+   rows re-encoded 4742;  self-consistent transitions {'pass->pass': 4328, 'fail->fail': 403, 'encode_error_under_lever': 4, 'no_structure': 134, 'fail->pass': 6, 'pass->fail': 5}
+   SELF-CONSISTENT losses (pass -> fail, structure held fixed): 5   gains: 6
+      LOSS FIQDAM_comp_0  fault=G_CONSTRUCTION  eta=0
+      LOSS MIYBAZ_comp_0  fault=G_CONSTRUCTION  eta=0
+      LOSS NEMGIW_comp_0  fault=G_CONSTRUCTION  eta=0
+      LOSS OGUYAQ_comp_0  fault=G_CONSTRUCTION  eta=0
+      LOSS OHUTIV_comp_0  fault=NONE  eta=0
+      GAIN DOCPAO_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=0
+      GAIN IFAPUD_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=1
+      GAIN IJAXIB_comp_0  fault=E2_P_OTHER/SAME  eta=0
+      GAIN MIBFEL_comp_0  fault=E1_HCOUNT/h_diff=2  eta=0
+      GAIN NOYTUS_comp_0  fault=E1_HCOUNT/h_diff=1  eta=0
+      GAIN YUDWAW_comp_0  fault=E2_P_OTHER/NO_STEREO  eta=0
+   VERIFIED transitions (fault recomputed with the lever's self-consistency columns) {'pass->pass': 3919, 'fail->fail': 958, 'fail->pass': 2, 'pass->fail': 1}
+   VERIFIED losses 1   gains 2
+      V-LOSS OHUTIV_comp_0  table=NONE -> G_HCOUNT
+      V-GAIN IJAXIB_comp_0  table=E2_P_OTHER -> NONE
+      V-GAIN YUDWAW_comp_0  table=E2_P_OTHER -> NONE
+   🔴 re-encode errors under the levers: 4 (a shipped structure the lever run cannot encode)
+      AFIROW_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      HOBBUY_comp_0: OINEncodeError: cannot kekulize molecule and found no quinoid ring to relax: Can't kekulize mol.  Unkekulized atoms: 9 10 11 12 19
+      MUZZUC_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      RIPDEA_comp_0: ValueError: perception_tmc failed: Explicit valence for atom # 2 N, 5, is greater than permitted
+
+== LIVE A/B over the changed-string set (109 molecules)
+   ab_off: results-v0.4.18-release-sweep @ "commit_id": "cdb76eca" -- the sweep of record's own rows, not a run
+   ab_on: ae9e02de4b539bd1415a5c41699369b661eac7e1 docs(v0.4.19): H4 -- rule v2 refuted by the offline re-scor
+   CONTROL recomputed OFF fault == census table: 109 / 109
+   READER COUPLING: ON strings parse back ISO&SAME on 93 rows under the ON reader, 37 under the SHIPPED reader; the H verdict depends on the reader's lever on 56 rows
+   DEAD-LEVER CHECK (encoder): smiles_1 identical across arms on 0 rows (must be 0)
+   runtime sum elapsed_s: off 26234 s   on 8198 s
+   SELF-CONSISTENT: off 14 -> on 44   {'fail->fail': 62, 'fail->pass': 33, 'pass->fail': 3, 'pass->pass': 11}   net +30
+   VERIFIED:        off 0 -> on 30   {'fail->fail': 79, 'fail->pass': 30}   net +30
+   ON-arm fault of the rows still failing VERIFIED, by fault:
+      E2_P_FRAGILE                           20
+      E1_GRAPH                               14
+      G_NOTHING                              12
+      G_CONSTRUCTION/DETACHED                11
+      E1_NONINJECTIVE                         5
+      G_CONSTRUCTION/SPHERE_DIFF              4
+      E1_NOT_ENCODED                          4
+      E2_P_OTHER                              3
+      E1_NONCANONICAL                         2
+      G_CONSTRUCTION/LIGAND_DIFF              1
+      E1_HCOUNT                               1
+      G_DIASTEREOMER                          1
+   transitions by census fault of the row (VERIFIED):
+      E1_HCOUNT          {'fail->pass': 20, 'fail->fail': 38}
+      E1_GRAPH           {'fail->fail': 35, 'fail->pass': 8}
+      P_DETACHED         {'fail->pass': 2, 'fail->fail': 4}
+      DATA_MULTI         {'fail->fail': 1}
+      P_E1_COVERAGE      {'fail->fail': 1}
+   VERIFIED losses (0):
+
+== PROJECTION onto the 5,000 (live arm + offline re-score; unchanged rows exact by determinism)
+   self-consistent 4347 -> 4378  (86.94% -> 87.56%)
+   VERIFIED        3920 -> 3951  (78.40% -> 79.02%)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-serializer/serializer_ab_report_fix3.json
