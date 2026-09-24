@@ -129,7 +129,35 @@ What is left of the oracle's +72 after this: ~30 molecules, where the deficit ti
 way — coordination judged per element count cannot see them. 🔴 And ARM 2 will not see this promotion
 either (`L2_ETA_DETACHED.md` §5e): its re-encode goes through the generator's own bond graph.
 
-## 7. Not done
+## 7. The release sweep, and what the honest column found
+
+**`results-v0.4.18-release-sweep` (shipped defaults, commit `cdb76eca`, 5,000 / 5,000, 6 h 29 min):
+4,347 / 3,920 = 86.94% self-consistent / 78.40% VERIFIED** — the A/B predicted 4,350 / 3,921. Every
+non-η structure is byte-identical to `results-v0.4.18-sweep` (3,713 / 3,713); every η structure is
+byte-identical to the A/B's retarget arm (1,070 / 1,070); `smiles_1` moved on 0. All eleven verdicts
+that differ from the projection are rows at the 300 s budget. Against the v0.4.17 sweep of record,
+v0.4.18 is **+4.22 / +3.80 pts**.
+
+`/refreeze-goldens`, full run: all 12 shards PASS, **0 of 425 rows owed**; audit 421 SAME + 4
+sentinels; the lever fired on 41 of 198 η rows (structure differs from the previous full run) and
+the gated field moved on 0 — as at the first promotion.
+
+**The honest column** (`tools/gate_arm2_roundtrip_one.py`, field 9; `tools/v0418/arm2_honest_column.py`):
+
+| 401 measured rows | honest pass | honest fail |
+|---|---:|---:|
+| gated pass | 243 | **134** |
+| gated fail | 3 | 20 |
+
+Validated: on the 370 rows whose gate structure is byte-identical to the release sweep's, the column
+agrees with the sweep's honest verdict **370 / 370**. The 134 are `structural` 95, `key_equal` 21,
+`hard_fail` 16, `facmer_divergent` 2 in that sweep. **ARM 2 passes 36% of its passing rows on the
+generator's own bond graph alone** — the scored-vs-honest gap v0.4.8 measured on the whole cohort,
+on cohorts chosen for being hard. Still an observation (the gate reads columns 1–3; the goldens do not
+carry it); gating on it would re-freeze ~134 rows as honest fails or drop them — a change to what ARM 2
+*means*, left to the owner with the evidence frozen.
+
+## 8. Not done
 
 - No two-policy *pool* (a third product dimension): the re-clean keeps one conformer per attempt, which
   is what made "shipped conformers are never touched" true by construction.
