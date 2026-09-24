@@ -103,8 +103,8 @@ def main():
     rep = {"smiles_1_moved": len(moved)}
     print("\n2. THE TWO CLAIMS THE PROJECTION STOOD ON")
     for name, ms, ref_dir, ref_B, label in (
-        ("non-eta", sorted(set(B) - eta), args.record, R, "v0.4.17 sweep"),
-        ("eta", sorted(eta), args.ab_on.parent / "ab_on", A, "A/B ON arm"),
+        ("non-eta", sorted(set(B) - eta), args.record, R, args.record.name),
+        ("eta", sorted(eta), args.ab_on, A, f"A/B {args.ab_on.name} arm"),
     ):
         cmp_ = [(m, struct(args.sweep, m), struct(ref_dir, m)) for m in ms]
         both = [(m, a, b) for m, a, b in cmp_ if a and b]
