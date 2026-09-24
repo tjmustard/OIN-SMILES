@@ -254,7 +254,38 @@ different H count, `NONE → G_HCOUNT`) / 13 gains (11 false passes, 2 real); **
 With all three levers (`fix3`): 109 strings move (80 + 31 − 2 overlap), same stability columns,
 same offline transitions.
 
-_(live arms over the 31 and the 109 running; results in §6a)_
+### 6a. Live A/B, rule v3 (`serializer_ab_report_cap.txt`, `serializer_ab_report_fix3.txt`)
+
+| arm | cohort | controls | self-consistent | VERIFIED | runtime Σ OFF → ON |
+|---|---:|---|---|---|---|
+| `cap` alone | 31 | fault 31/31; `smiles_1` differs 31/31; reader coupling none (22/22) | 13 → 16 (+5/−2, the −2 false passes turning honest) | **0 → 6 (+6/−0)** | 2,300 → 2,314 s |
+| all three (`fix3`) | 109 | 109/109; 109/109; H-reader coupling 93 vs 37 | 14 → 44 (+33/−3) | **0 → 30 (+30/−0)** | 26,234 → 8,198 s |
+
+VERIFIED gains by census fault, `fix3`: `E1_HCOUNT` 20, `E1_GRAPH` 8, `P_DETACHED` 2 — exactly the
+serializer lane's +24 plus the cap's +6: **the three levers are additive**. Still failing on the
+ON arm: `E2_P_FRAGILE` 20, `E1_GRAPH` 14, `G_NOTHING` 12, `DETACHED` 11, `E1_NONINJECTIVE` 5,
+`E1_NOT_ENCODED` 4, …
+
+### 6b. Projection (live arm + offline re-score, unchanged rows exact by determinism)
+
+| configuration | self-consistent | VERIFIED |
+|---|---:|---:|
+| v0.4.18 release sweep | 4,347 = 86.94% | 3,920 = 78.40% |
+| `OIN_H_FAITHFUL` + `OIN_RC1_PROPAGATE` (§4) | 4,380 = 87.60% | 3,944 = 78.88% |
+| `OIN_CAP_IGNORES_METAL` alone | 4,358 = 87.16% | 3,927 = 78.54% |
+| **all three** | **4,378 = 87.56%** | **3,951 = 79.02%** |
+
+(The all-three self-consistent number is below the pair's because the cap turns 4 + 2 false
+passes into honest fails and OHUTIV into a real loss; VERIFIED, the number to quote, is
+monotone.) Frozen `measurements/v0.4.19-serializer/` (42 files, `main` @ `c7b0be7d`);
+`tools/v0419/freeze_stage.py --verify` re-derives all 26 cells. **Nothing promoted; no sweep run.**
+
+**What the cap lever costs:** one verified pass (OHUTIV, `NONE → G_HCOUNT`: its generated
+structure's H count re-encodes differently under v3), two failing rows newly renumbering-fragile,
+and a hard +0.10 Å edge that 0.02 Å noise can cross (noise columns net +16 stable / −7). Against
++6 VERIFIED live, +2 offline. The owner's call; if promoted, sweep → `/refreeze-goldens` →
+census `EXPECTED` → CHANGELOG.
+
 
 ## 7. Not done / not this lane
 
