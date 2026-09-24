@@ -68,14 +68,35 @@ _LOCAL_PATH = re.compile(r"/home/[^/\"]+/Documents/GitHub/([^/\"]+)")
 
 ISO = ("ISO", "ISO_MARGINAL", "ISO_CLASH")
 STEREO_SAME = ("SAME", "NO_STEREO", "SAME_PARTIAL")
-EXPECTED_BUCKETS = {
-    "byte_exact": 3858,
-    "structural": 484,
-    "key_equal": 365,
-    "hard_fail": 266,
-    "facmer_divergent": 15,
-    "encode_fail": 12,
+#: What the bucket column must reproduce, PER SWEEP, and how many rows must come out ``NONE``.
+#: Neither number is computed here: the buckets are each sweep's frozen ``bucket_report_honest``
+#: and ``none`` is the VERIFIED count ``tools/v0417/sweep_two_numbers.py`` printed for that sweep
+#: from a six-line re-implementation of rules 1-5. Two tools, one answer, or the run aborts.
+EXPECTED = {
+    "results-v0.4.14-sweep": {
+        "buckets": {
+            "byte_exact": 3858,
+            "structural": 484,
+            "key_equal": 365,
+            "hard_fail": 266,
+            "facmer_divergent": 15,
+            "encode_fail": 12,
+        },
+        "none": 3462,
+    },
+    "results-v0.4.17-sweep": {
+        "buckets": {
+            "byte_exact": 4136,
+            "structural": 479,
+            "key_equal": 122,
+            "hard_fail": 236,
+            "facmer_divergent": 16,
+            "encode_fail": 11,
+        },
+        "none": 3730,
+    },
 }
+EXPECTED_BUCKETS = EXPECTED["results-v0.4.14-sweep"]["buckets"]
 PT_PER_MOL = 100.0 / 5000
 
 COLUMNS = [
@@ -90,8 +111,10 @@ COLUMNS = [
 
 
 def _jl(path):
+    # A missing instrument used to read as "no rows", and a join over no rows is a plausible table
+    # with one class quietly absent. Every input is required; say which one is not there.
     if not path.exists():
-        return []
+        sys.exit(f"ABORT: instrument file missing: {path}")
     return [json.loads(ln) for ln in path.read_text().splitlines() if not ln.startswith("#")]
 
 
@@ -225,16 +248,38 @@ def attribute(row, g1, gm, e2, pb, pg, pf, attach, cluster) -> dict:
 
 def build(args):
     """Join every instrument, attribute, verify, write."""
+    if args.sweep.name not in EXPECTED:
+        sys.exit(
+            f"ABORT: no EXPECTED entry for {args.sweep.name}. Add its frozen bucket counts and its "
+            "VERIFIED count -- from that sweep's own reports, never from this tool's output."
+        )
+    expect = EXPECTED[args.sweep.name]
+    src = {
+        "g_verdict": args.g_verdict or args.out / "g_verdict.jsonl",
+        "mirror": args.mirror or args.out / "g_verdict_control-mirror.jsonl",
+        "e2": args.e2 or args.out / "e_selfconsistency.jsonl",
+        "parseback": args.parseback or args.out / "parseback.jsonl",
+        "parseback_gen": args.parseback_gen or args.out / "parseback_gen.jsonl",
+        "pflags": args.pflags or args.out / "pflags.jsonl",
+        "attach": args.attach or args.sweep / "attach_class_audit.json",
+        "collisions": args.collisions or args.out / "collisions.json",
+    }
+    print(f"sweep: {args.sweep.name}")
+    for k, v in src.items():
+        shown = _LOCAL_PATH.sub(r"<checkout:\1>", str(v))  # this print is frozen: no home dir
+        print(f"  {k:14s} <- {shown}")
     rows = json.loads((args.sweep / "bucket_report_honest.json").read_text())
-    g1 = _by_mol(_jl(args.out / "g_verdict.jsonl"))
-    gm = _by_mol(_jl(args.out / "g_verdict_control-mirror.jsonl"))
-    e2 = _by_mol(_jl(args.out / "e_selfconsistency.jsonl"))
-    pb = _by_mol(_jl(args.out / "parseback.jsonl"))
-    pg = _by_mol(_jl(args.out / "parseback_gen.jsonl"))
-    pf = _by_mol(_jl(args.out / "pflags.jsonl"))
-    aca = json.loads((args.sweep / "attach_class_audit.json").read_text())
+    g1 = _by_mol(_jl(src["g_verdict"]))
+    gm = _by_mol(_jl(src["mirror"]))
+    e2 = _by_mol(_jl(src["e2"]))
+    pb = _by_mol(_jl(src["parseback"]))
+    pg = _by_mol(_jl(src["parseback_gen"]))
+    pf = _by_mol(_jl(src["pflags"]))
+    if not src["attach"].exists() or not src["collisions"].exists():
+        sys.exit(f"ABORT: instrument file missing: {src['attach']} or {src['collisions']}")
+    aca = json.loads(src["attach"].read_text())
     attach = {m: cls for t in aca["table"].values() for cls, ms in t.items() for m in ms}
-    col = json.loads((args.out / "collisions.json").read_text())
+    col = json.loads(src["collisions"].read_text())
     cluster = {m: c["cluster"] for c in col["clusters"] for m in c["members"]}
     print(
         f"inputs: rows={len(rows)} g1={len(g1)} mirror={len(gm)} e2={len(e2)} parseback={len(pb)} "
@@ -259,13 +304,20 @@ def build(args):
         "bucket column:",
         dict(bc),
         " reproduces bucket_report_honest:",
-        bc == Counter(EXPECTED_BUCKETS),
+        bc == Counter(expect["buckets"]),
     )
-    print("outcome:", dict(oc), " (expected PASS 3858 / FAIL 1142)")
-    assert n == 5000 and bc == Counter(EXPECTED_BUCKETS), (
+    n_pass = expect["buckets"]["byte_exact"]
+    print("outcome:", dict(oc), f" (expected PASS {n_pass} / FAIL {5000 - n_pass})")
+    assert n == 5000 and bc == Counter(expect["buckets"]), (
         "the join does not reproduce the bucket table"
     )
     fc = Counter(t["fault"] for t in table)
+    print(
+        f"NONE = {fc.get('NONE', 0)}   VERIFIED by sweep_two_numbers.py = {expect['none']}   "
+        f"{'AGREE' if fc.get('NONE', 0) == expect['none'] else 'DISAGREE'}"
+    )
+    if fc.get("NONE", 0) != expect["none"]:
+        sys.exit("ABORT: this table and sweep_two_numbers.py disagree about how many passes verify")
     print("fault classes:", dict(fc.most_common()))
     print("rule fired:", dict(sorted(Counter(t["rule"] for t in table).items())))
     print(
@@ -333,7 +385,9 @@ def build(args):
     )
 
     # ---- write -------------------------------------------------------------------------------
-    tsv = args.out / "attribution_table.tsv"
+    dest = args.write_to or args.out
+    dest.mkdir(parents=True, exist_ok=True)
+    tsv = dest / "attribution_table.tsv"
     with open(tsv, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNS, delimiter="\t")
         w.writeheader()
@@ -364,7 +418,7 @@ def build(args):
         },
         "pts_per_molecule": PT_PER_MOL,
     }
-    (args.out / "attribution_summary.json").write_text(json.dumps(summary, indent=1))
+    (dest / "attribution_summary.json").write_text(json.dumps(summary, indent=1))
     print(f"\nwrote {tsv} ({n} rows) and attribution_summary.json")
     if args.gz:
         with open(tsv, "rb") as fi, gzip.open(args.out / "attribution_table.tsv.gz", "wb") as fo:
@@ -393,6 +447,18 @@ def main():
     ap.add_argument("--sweep", type=Path, default=DEF_SWEEP)
     ap.add_argument("--out", type=Path, default=DEF_OUT)
     ap.add_argument("--gz", action="store_true", help="also write the gzipped freeze copies")
+    ap.add_argument("--write-to", type=Path, help="write the table here instead of into --out")
+    for flag, what in (
+        ("--g-verdict", "C1 ruler verdicts on THIS sweep's generated structures"),
+        ("--mirror", "C1 ruler on the mirrored INPUT (input-only: reusable across sweeps)"),
+        ("--e2", "C2 encoder self-consistency, under the encoder THIS sweep shipped"),
+        ("--parseback", "C3 parse-back of THIS sweep's smiles_1"),
+        ("--parseback-gen", "C3 parse-back of THIS sweep's smiles_2 / generated structures"),
+        ("--pflags", "C3 perception flags (reads THIS sweep's smiles_1)"),
+        ("--attach", "attach_class_audit.json of THIS sweep"),
+        ("--collisions", "natural-twin clusters (input-only: reusable across sweeps)"),
+    ):
+        ap.add_argument(flag, type=Path, help=f"{what} (default: the census layout)")
     args = ap.parse_args()
     for p in (args.sweep, args.out):
         if not p.exists():
