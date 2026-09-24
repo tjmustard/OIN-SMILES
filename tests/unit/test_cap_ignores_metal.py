@@ -39,7 +39,7 @@ class TestRegistry(unittest.TestCase):
     def test_held_off_with_a_reason(self):
         self.assertIn("OIN_CAP_IGNORES_METAL", _HELD_OFF)
         self.assertNotIn("OIN_CAP_IGNORES_METAL", _DEFAULT_ON)
-        self.assertIn("SHORT metal contact", _HELD_OFF["OIN_CAP_IGNORES_METAL"])
+        self.assertIn("never cuts a REAL bond", _HELD_OFF["OIN_CAP_IGNORES_METAL"])
         self.assertIn("Hydrogen keeps the shipped rule", _HELD_OFF["OIN_CAP_IGNORES_METAL"])
 
 
