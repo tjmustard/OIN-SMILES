@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.18] - 2026-09-23
+
 > ### 82.72% → **86.94%** self-consistent · 74.60% → **78.40%** VERIFIED — DETACHED was a distance.
 >
 > The census re-run on the v0.4.17 sweep filed 343 molecules / 6.86 pts under
