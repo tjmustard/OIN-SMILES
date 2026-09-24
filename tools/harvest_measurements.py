@@ -458,6 +458,43 @@ PROVENANCE = [
         " measurements/v0.4.18-release-sweep)",
     ),
     (
+        r"^v0419_ser_pop1c_report\.txt$|^v0419_ser_pop1c\.jsonl\.gz$",
+        "tools/v0419/lever_parseback.py --arms shipped,cap,fix3 over the same 296 rows   (the"
+        " parse-back probe for OIN_CAP_IGNORES_METAL, hydrogen exempt: LIGAND_DIFF 14/56,"
+        " SPHERE_DIFF 7/76, HCOUNT 3/84 repaired; with the two serializer levers 95 of 216 E1"
+        " strings describe their input; controls 80/80, 0 errors)",
+    ),
+    (
+        r"^v0419_ser_changed_set_(cap|fix3)\.txt$|^v0419_ser_changed_single_(cap|fix3)\.jsonl\.gz$",
+        "tools/v0419/serializer_ab_report.py changed --esc <arm esc> --write-set ;"
+        " lever_parseback.py --arms shipped,hfaith,rc1prop,cap over that set   (the changed-string"
+        " set of the named arm -- cap = OIN_CAP_IGNORES_METAL alone, fix3 = all three levers -- and"
+        " the per-lever attribution of each moved string)",
+    ),
+    (
+        r"^v0419_ser_esc_(cap|fix3)_summary\.txt$|^v0419_ser_e_selfconsistency_(cap|fix3)\.jsonl\.gz$",
+        "<arm levers> tools/census/e_selfconsistency.py --sweep <results-v0.4.18-release-sweep>"
+        " --cpu 6   (the canonicality audit under the named arm's levers, all 5,000 x 11 encodes)",
+    ),
+    (
+        r"^v0419_ser_rescore_(cap|fix3)\.jsonl\.gz$",
+        "<arm levers> tools/honest_rescore.py --results-dir <results-v0.4.18-release-sweep>"
+        " --timeout 300   (the offline re-score under the named arm's levers)",
+    ),
+    (
+        r"^v0419_ser_serializer_ab_report_(cap|fix3)\.(txt|json)$|^v0419_ser_ab_commits_(cap|fix3)\.tsv$",
+        "tools/v0419/run_serializer_ab.sh <changed_set> <arm> -> post_serializer_ab.sh <arm> ->"
+        " serializer_ab_report.py all   (the live A/B of the named arm over its changed-string set;"
+        " OFF = the release sweep's own rows; each arm's parse-back under its own reader. NO"
+        " DEFAULT CHANGED)",
+    ),
+    (
+        r"^v0419_ser_ab_(cap|fix3)_on_(bucket_report_honest\.json|g_verdict\.jsonl|parseback\.jsonl|parseback_shippedreader\.jsonl)\.gz$",
+        "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py ;"
+        " tools/census/string_sufficiency.py parseback under the arm's levers | under the shipped"
+        " reader   (the named arm's own instruments)",
+    ),
+    (
         r"^v0418_sel_ab_(off|retarget)_(g_verdict\.jsonl|bucket_report_honest\.json)\.gz$",
         "tools/roundtrip_bucket_report.py --score honest ; tools/census/g_vs_input.py   (per arm: the"
         " honest bucket and the neutral ruler's verdict for every one of the 1146; ab_off is the"
