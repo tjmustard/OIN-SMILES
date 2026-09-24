@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-> ### 82.72% → **86.10%** self-consistent · 74.60% → **77.66%** VERIFIED — DETACHED was a distance.
+> ### 82.72% → **86.94%** self-consistent · 74.60% → **78.40%** VERIFIED — DETACHED was a distance.
 >
 > The census re-run on the v0.4.17 sweep filed 343 molecules / 6.86 pts under
 > `G_CONSTRUCTION / DETACHED`, 86% of them η-bound. v0.4.15 had closed the *selection* door (0 of
@@ -13,6 +13,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 > hypothesis: the generator puts η carbons a median **+0.73 Å** too far from the metal in that class
 > (+0.17 Å even in verified passes; Fe +0.84, Co +0.78, Ni +0.71). **Ferrocene itself was being built
 > detached** — Fe–C 2.85 Å against a real 2.05 Å, honest round trip failing — and no test looked.
+>
+> Two promotions, each predicted by a harness A/B over all 1,146 η-bound molecules and each landed
+> by a full sweep to within the 300 s budget boundary: the η target + clash exemption (86.10 / 77.66)
+> and then the per-molecule retarget (**86.94 / 78.40**, `results-v0.4.18-release-sweep`). Every
+> non-η structure is byte-identical to v0.4.17's; no promotion touched the encoder.
 
 ### Added
 - **`OIN_ETA_RETARGET` — default-ON (owner delegation 2026-09-23).** The right η target distance is
@@ -51,17 +56,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - **What the generator builds moves for ~800 η molecules**, which voids the carry-forward licence: the
-  baseline of record is now **`results-v0.4.18-sweep`**. The harness A/B over all 1,146 η-bound
-  molecules (noise floor zero) predicted 86.04 / 77.60; the sweep landed on **86.10 / 77.66**, with
-  3,713 / 3,713 non-η structures byte-identical to the v0.4.17 sweep and 1,068 / 1,068 η structures
-  byte-identical to the A/B's ON arm. `structural` 479 → 320; molecules over 30 s 579 → 515.
+  baseline of record is now **`results-v0.4.18-release-sweep`** (`measurements/v0.4.18-release-sweep/`).
+  The first A/B (noise floor zero) predicted 86.04 / 77.60 and its sweep landed on 86.10 / 77.66; the
+  second predicted 87.00 / 78.42 and the release sweep landed on **86.94 / 78.40** — every verdict that
+  differs is a row at the 300 s budget. 3,713 / 3,713 non-η structures byte-identical to the v0.4.17
+  sweep; η structures byte-identical to each A/B's ON arm (1,068 / 1,068 and 1,070 / 1,070).
+  `structural` 479 → 284; `key_equal` 122 → 119; molecules over 30 s 579 → 521.
 - **39 verified passes are lost and accepted** (Ru 11, Zr 8, Ir 6, Rh 5): the pool's 0.8-scale
   conformer used to carry an η target of 0.8 × 1.2 = 0.96 × the covalent sum — right *by accident*.
   `OIN_ETA_TARGET_UNSCALED` (target = the covalent sum at every scale) was run as a full third arm
   and is **dominated** (+179 / −59 verified) — but the two configurations break *different*
   molecules: a per-molecule choice is +222 verified with no losses. That is the next lane.
-- Gate goldens. **ARM 1: 0 of 62** (encode-only; byte-identical with the levers on and at `"0"`).
-  **ARM 2: 0 of 425**, from a full run — see *Found*.
+- Gate goldens. **ARM 1: 0 of 62** at both promotions (encode-only; byte-identical with the levers
+  on and at `"0"`). **ARM 2: 0 of 425** at both promotions, each from a full run — see *Found*.
 
 ### Found
 - 🔴 **ARM 2 cannot see what the generator builds.** Its `smiles_2` is
