@@ -30,7 +30,7 @@ table { border-collapse: collapse; }
 </head>
 <body>
 <button id="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">◐</button>
-<title>OIN-SMILES v0.4.4 → v0.4.16 — accuracy &amp; speed retrospective</title>
+<title>OIN-SMILES v0.4.4 → v0.4.18 — accuracy &amp; speed retrospective</title>
 
 <style>
 /* ─── tokens ─────────────────────────────────────────────────────────── */
@@ -276,7 +276,7 @@ details.tv .tw { margin: 12px 0 2px; }
 
 /* state strip */
 .strip { display: grid; gap: 4px; }
-.strip-row { display: grid; grid-template-columns: 74px repeat(11, minmax(0,1fr)); gap: 4px; align-items: stretch; }
+.strip-row { display: grid; grid-template-columns: 74px repeat(15, minmax(0,1fr)); gap: 4px; align-items: stretch; }
 .strip-row .rl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-muted); align-self: center; }
 .cell {
   border-radius: 5px; padding: 11px 4px; text-align: center;
@@ -286,7 +286,7 @@ details.tv .tw { margin: 12px 0 2px; }
 .cell[data-s="gain"]   { background: color-mix(in srgb, var(--good) 18%, var(--surface)); border-color: color-mix(in srgb, var(--good) 45%, var(--rule)); color: var(--ink); }
 .cell[data-s="rebase"] { background: color-mix(in srgb, var(--warning) 22%, var(--surface)); border-color: color-mix(in srgb, var(--warning) 55%, var(--rule)); color: var(--ink); }
 .cell[data-s="cost"]   { background: color-mix(in srgb, var(--serious) 20%, var(--surface)); border-color: color-mix(in srgb, var(--serious) 50%, var(--rule)); color: var(--ink); }
-.strip-head { display: grid; grid-template-columns: 74px repeat(11, minmax(0,1fr)); gap: 4px; margin-bottom: 6px; }
+.strip-head { display: grid; grid-template-columns: 74px repeat(15, minmax(0,1fr)); gap: 4px; margin-bottom: 6px; }
 .strip-head span { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); text-align: center; letter-spacing: .02em; }
 .strip-head span:first-child { text-align: left; }
 
@@ -306,37 +306,43 @@ pre.prompt {
 
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.16</p>
-    <h1>Twelve releases, two questions, and two scoreboards that were lying.</h1>
+    <p class="eyebrow">OIN-SMILES · release retrospective · v0.4.4 → v0.4.18</p>
+    <h1>Fifteen releases, two questions, and three scoreboards that were lying.</h1>
     <p class="dek">
       Accuracy and speed across every point release since v0.4.4 — including the release where the
       headline number fell ten points on purpose, the release that built a fix worth eight points
-      and then refused to ship it, and the release that finally shipped the safe half of it and
-      cancelled its own 55 CPU-hour re-measurement as the wrong instrument.
+      and then refused to ship it, the release that found the "enantiomer" fixtures behind that
+      refusal were a coin, and the release that discovered ferrocene had been built with its rings
+      floating off the iron while every test stayed green.
     </p>
 
     <div class="verdicts">
       <div class="verdict">
         <span class="q">Is it more accurate?</span>
-        <span class="a">Yes — <em>77.16% (measured by a real sweep)</em> at v0.4.13, the first rise in the window.</span>
+        <span class="a">Yes — <em>86.94% self-consistent, 78.40% VERIFIED</em> at v0.4.18, from 77.16% / 69.24% at v0.4.14 on the same cohort.</span>
         <span class="why">
           Real gains landed in v0.4.4–v0.4.6; then the default path changed no answer for five
           releases while the figure <em>fell</em> from <strong>82.80% to 72.46%</strong> at v0.4.8 —
-          the measurement was corrected, not the software regressed. <strong>v0.4.13 shipped the
-          safe half of a fix that had been built, refuted and shelved two releases earlier</strong>,
-          once a veto existed that could prove the harmful half gone on two independent draws.
+          the measurement was corrected, not the software regressed. v0.4.13 moved it up first.
+          <strong>v0.4.17 (+5.56 / +5.36) and v0.4.18 (+4.22 / +3.80) account for the rest</strong>,
+          each predicted by an A/B over its complete affected population before a full sweep
+          confirmed it to within the 300 s budget boundary. The VERIFIED number is the one to quote:
+          a neutral ruler that never imports the encoder, and the first figure here a lever cannot
+          raise by teaching the re-encode to agree with a wrong structure.
         </span>
       </div>
       <div class="verdict">
         <span class="q">Is it faster?</span>
-        <span class="a">On the molecules that hit the fixed costs, <em>yes</em>. Corpus-wide, <em>unknown</em>.</span>
+        <span class="a">Yes, corpus-wide: <em>&gt; 30 s</em> went <em>994 → 678 → 579 → 521</em> across four sweeps.</span>
         <span class="why">
-          Three default-path optimisations landed. But no generator sweep has run since v0.4.6, so
-          the corpus figure is stale — and the largest measured single win
-          (<span class="mono">81.89 s → 10.87 s</span>) ships behind a lever that is
-          <strong>off</strong>. v0.4.13 declined to run a sweep on purpose: re-running a
-          <em>stochastic</em> generator to A/B an <em>encoder-side</em> change adds noise to the
-          number it is trying to read.
+          19.88% → <strong>10.42%</strong> of the cohort over 30 s; max 760 → 628 s; Σ elapsed
+          38.7 → 31.95 h from v0.4.14 on, where the sweeps are like-for-like. The first step nobody
+          claimed. The next two were measured: v0.4.17 stopped paying the parity veto's two extra
+          encodes <em>per conformer</em>, and v0.4.18's attached rings finish inside the budget more
+          often. ⚠ v0.4.18's median <em>rose</em> 3.32 → 3.53 s while its tail fell; not explained.
+          The largest single per-molecule win (<span class="mono">81.89 s → 10.87 s</span>) still
+          ships behind a lever that is <strong>off</strong>, and Goal B
+          (<span class="mono">max &lt; 30 s</span>) is not delivered.
         </span>
       </div>
     </div>
@@ -363,6 +369,8 @@ pre.prompt {
       <li><span class="rung" data-state="flat"></span><a href="#v0415">v0.4.15 <span class="tag">flat, both refuted</span></a></li>
       <li><span class="rung" data-state="flat"></span><a href="#v0416">v0.4.16 <span class="tag">flat, trade priced</span></a></li>
       <li><span class="rung" data-state="rebase"></span><a href="#sweep">the sweep <span class="tag">absolute, measured</span></a></li>
+      <li><span class="rung" data-state="gain"></span><a href="#v0417">v0.4.17 <span class="tag">gain, two numbers</span></a></li>
+      <li><span class="rung" data-state="gain"></span><a href="#v0418">v0.4.18 <span class="tag">gain, a distance</span></a></li>
     </ul>
     <div class="key">
       <span style="background:var(--good)"></span>accuracy gain<br>
@@ -406,6 +414,37 @@ pre.prompt {
         that makes slightly different choices each time would have added noise to the very number it
         was trying to read, and a cheaper check gave an exact answer.
       </p>
+      <p>
+        Then the project rebuilt all 5000 molecules from scratch and re-graded them — <strong>77 out
+        of 100</strong> — and spent three releases finding that the next points could not be reached
+        by choosing better among what the machine already builds.
+      </p>
+      <p>
+        The fourteenth release did something nobody had done: before choosing what to fix, it gave
+        <strong>every one of the 5000 molecules exactly one reason for failing</strong>, using rulers
+        that never ask the machine to grade itself. The biggest block turned out to be filed under
+        the wrong name — 252 molecules everyone thought the machine <em>could not build</em> were the
+        <em>text</em> being written two ways for the same shape. And the earlier "safety check"
+        against left/right mix-ups had been guarding a problem the text was creating for itself.
+        Fix the rule and the check has nothing to do. <strong>Score: 77 to 83</strong>, the biggest
+        single jump — and a stricter second score, where a rebuilt molecule must pass an independent
+        inspection: <strong>69 to 75</strong>.
+      </p>
+      <p>
+        The fifteenth took on the biggest thing the census <em>did</em> leave with the machine: about
+        340 molecules where a ring of carbons that should sit <em>on</em> the metal was built
+        floating just off it. A ruler showed <strong>every candidate was built 0.7 Å too far
+        out</strong> — two lines of borrowed code aimed the ring at the edge of the bonding range,
+        then stopped it stepping closer. Even ferrocene, the textbook example, was being built wrong,
+        and no test had looked. Fixing the two lines, then teaching the machine to notice when a
+        ring never arrived and try once more, took the score <strong>83 to 87 on the loose count and
+        75 to 78 on the strict one</strong>. It also found one of the project's own guard-rail tests
+        <strong>cannot see this whole class of defect</strong>: it grades the machine on its own bond
+        list, and 36% of the rows it passes fail the honest check. Left open on purpose, evidence
+        attached.
+      </p>
+      <p><strong>So: more accurate, yes — measured by rebuilding everything, and now graded twice.
+        And much harder to fool.</strong></p>
     </div>
   </section>
 
@@ -419,7 +458,13 @@ pre.prompt {
     <p style="margin-top:10px;">
       <span class="mono">byte_exact</span> — the share of molecules whose generated 3D structure
       re-encodes to a byte-identical OIN string — improved materially across v0.4.4, v0.4.5 and
-      v0.4.6, then stopped moving.
+      v0.4.6, stopped moving for five releases, moved first at v0.4.13, and then by larger steps at
+      v0.4.17 and v0.4.18. <strong>From v0.4.17 there are two numbers.</strong>
+      <em>Self-consistent</em> is <span class="mono">byte_exact</span> under the honest score —
+      <span class="mono">E(x) == E(G(E(x)))</span>. <em>VERIFIED</em> also requires that the
+      string parses back to the input's graph and that a neutral ruler, which never imports the
+      encoder, finds the generated structure graph-isomorphic to the input with no stereo element
+      mirrored or changed. Every figure before v0.4.17 is the first kind.
     </p>
 
     <div class="tw">
@@ -438,7 +483,13 @@ pre.prompt {
           <tr><td class="mono">v0.4.10</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>ARM 1 <strong>62/62</strong>, ARM 2 <strong>90/90</strong> byte-identical</td></tr>
           <tr><td class="mono">v0.4.11</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>+7.86 pts built, then refuted — <strong>221 of 393</strong> gains collapse enantiomers</td></tr>
           <tr><td class="mono">v0.4.12</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat</span></td><td>mirror audit <strong>19 → 0</strong>; surviving gain <strong>+3.42 pts</strong>, still off</td></tr>
-          <tr><td class="mono">v0.4.13</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td><span class="mono">byte_exact</span> <strong>77.16% (measured by a real sweep)</strong> — 171 molecules, <strong>0</strong> in a bad direction</td></tr>
+          <tr><td class="mono">v0.4.13</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain, corrected down</span></td><td>published <strong>72.46% → 75.88%</strong> (+3.42); measured end-to-end by v0.4.14 at <strong>~+2.42</strong> — ~150 real gains against ~30 losses its offline re-score could not see</td></tr>
+          <tr><td class="mono">v0.4.14</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain</span></td><td><strong>+1.42 pts</strong> measured end-to-end (78 gains, 7 losses, n = 182 of 182); also re-filed <strong>5.94 pts</strong> off the encoder ladder without moving a molecule</td></tr>
+          <tr><td class="mono">the sweep</td><td><span class="chip" data-state="rebase"><span class="dot"></span>Absolute</span></td><td><span class="mono">byte_exact</span> <strong>3858/5000 = 77.16%</strong> honest (86.88% scored) — the first real generator sweep since v0.4.6</td></tr>
+          <tr><td class="mono">v0.4.15</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat, both refuted</span></td><td>L1 <strong>0 gains of 289</strong>; L2 <strong>+48 available</strong> (+0.96 pts, 0 losses) but held at <strong>4.00×</strong> runtime</td></tr>
+          <tr><td class="mono">v0.4.16</td><td><span class="chip" data-state="flat"><span class="dot"></span>Flat, trade priced</span></td><td>bounding the search <strong>refuted as a rescue</strong> — 79% of the gain costs 89% of the penalty; the 187 "unexplained" are <strong>82% perception</strong></td></tr>
+          <tr><td class="mono">v0.4.17</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain, two numbers</span></td><td>self-consistent <strong>77.16% → 82.72%</strong>, VERIFIED <strong>69.24% → 74.60%</strong>; the lever isolated on its complete 504-molecule mover set <strong>+273 / +265</strong>, 3 / 4 losses; <span class="mono">slot_renumber</span> <strong>252 → 5</strong></td></tr>
+          <tr><td class="mono">v0.4.18</td><td><span class="chip" data-state="gain"><span class="dot"></span>Gain, a distance</span></td><td>self-consistent <strong>82.72% → 86.94%</strong>, VERIFIED <strong>74.60% → 78.40%</strong>; each of two steps predicted by an A/B over all 1,146 η-bound molecules at a noise floor of zero; <strong>39 + 5 verified passes lost and accepted</strong></td></tr>
         </tbody>
       </table>
     </div>
@@ -468,10 +519,34 @@ pre.prompt {
       opposite direction</strong>: v0.4.11 bounded the safe set from above at "at most ~172" by
       counting damage.
     </p>
+    <div class="callout warn">
+      <span class="lbl">v0.4.14 found the hole in that reasoning — and v0.4.17 found the coin under it</span>
+      The offline re-score that licensed both v0.4.13 and v0.4.14 <strong>could not express a
+      loss</strong>: it holds the generated structure fixed, so for a molecule that already
+      round-trips it can only print "still fine". Measured end-to-end, v0.4.13 is <strong>~+2.42,
+      not +3.42</strong> and v0.4.14 is <strong>+1.42, not +1.56</strong>.
+      <br><br>
+      Then v0.4.17 re-read the three "oracle-confirmed enantiomer" fixtures the veto was built on
+      and promoted against. Under the <em>shipped</em> encoder a renumbered <span class="mono">x</span>
+      already landed on its <strong>mirror's</strong> string <strong>8, 7 and 6 times in 12</strong>.
+      One renumbering per fixture had been drawn — <strong>a coin, tossed three times</strong>. The
+      "221 of 393 collapse enantiomers" and the "19 → 0" above were reading it. The fold was
+      over-folding — swapping symmetry <em>buckets</em> rather than ligand <em>automorphisms</em> —
+      the veto was patching the over-fold, and the fix needed neither.
+    </div>
+    <p style="margin-top:14px;">
+      <strong>v0.4.17 and v0.4.18 are the first releases measured the way that lesson demands.</strong>
+      Both ran a real harness A/B over the <em>complete</em> affected population — 504 movers
+      derived from coordinates, then all 1,146 η-bound molecules — with both arms generated, both
+      numbers reported, and a full sweep owed and paid at each promotion. The sweeps landed on the
+      predictions: <strong>82.72 against 82.62</strong>, <strong>86.10 against 86.04</strong>,
+      <strong>86.94 against 87.00</strong>, every residual a row at the 300 s budget.
+    </p>
 
     <h3 style="margin-top:34px;font-size:18px;">Speed</h3>
     <p style="margin-top:10px;">
-      Three real default-path wins since v0.4.4 — and still no current corpus-wide number.
+      Three real default-path wins through v0.4.14, then two measured corpus-wide — and every sweep
+      since v0.4.14 has run in one configuration, so the corpus figure is current.
     </p>
 
     <div class="tw">
@@ -482,33 +557,74 @@ pre.prompt {
           <tr><td class="mono">v0.4.5</td><td>removed a duplicate <strong>48–57 s</strong> re-encode per rejected conformer</td></tr>
           <tr><td class="mono">v0.4.6–v0.4.9</td><td>none on the default path — the two big candidates held OFF on measurement</td></tr>
           <tr><td class="mono">v0.4.10</td><td>deleted a discarded <code>.index()</code> scan — <strong>−32.9%</strong> / <strong>+0.3% (nil)</strong></td></tr>
-          <tr><td class="mono">v0.4.11–v0.4.13</td><td>none claimed. v0.4.13's promotion is <strong>generator-neutral by measurement</strong> — 9669 strings, 1019 moved, <strong>0 comparison keys changed</strong> — so acceptance returns bit-identical conformers and runtime cannot have moved</td></tr>
+          <tr><td class="mono">v0.4.11–v0.4.13</td><td>none claimed. v0.4.13's promotion was argued <strong>generator-neutral by measurement</strong> — 0 of 9669 keys moved. ⚠ v0.4.14 showed that bounds <em>acceptance</em>, not <em>embedding</em>: the generator consumes the <strong>string</strong>, so runtime <em>can</em> move. Never measured either way</td></tr>
+          <tr><td class="mono">v0.4.14</td><td>none claimed on the default path. On the 182 molecules its lever touches: <strong>+57.4% total CPU</strong>, <span class="mono">&gt; 30 s</span> 29 → 36 — a real cost on a small population</td></tr>
+          <tr><td class="mono">v0.4.15–v0.4.16</td><td>none on the default path — both v0.4.15 levers ship OFF; L2 measured <strong>4.00×</strong> on its 365 molecules, and v0.4.16 proved no bound on the search improves that trade</td></tr>
+          <tr><td class="mono">v0.4.17</td><td><strong>Real, corpus-wide, like-for-like with the v0.4.14 sweep.</strong> The parity veto's two extra encodes had been paid <em>per conformer</em>; the exact fold needs neither. Σ elapsed <strong>38.7 → 33.2 h</strong>, median <strong>4.01 → 3.32 s</strong>, <span class="mono">&gt; 30 s</span> <strong>678 → 579</strong>; 16 molecules that used to be killed at 300 s because the string asked for an unbuildable arrangement now finish in seconds</td></tr>
+          <tr><td class="mono">v0.4.18</td><td><strong>Real, small, reported both ways.</strong> Σ <strong>33.18 → 31.95 h</strong>, <span class="mono">&gt; 30 s</span> <strong>579 → 521</strong>, max 698 → 628 s. ⚠ Median <strong>3.32 → 3.53 s</strong> — the tail came down, the middle did not; not explained</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tw">
+      <table>
+        <caption class="u-sans" style="text-align:left;padding:12px 15px 0;font-size:12px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;">Corpus runtime, N = 5000, from the nested metrics.elapsed_s</caption>
+        <thead><tr><th></th><th class="num">v0.4.6 sweep</th><th class="num">v0.4.14 sweep</th><th class="num">v0.4.17 sweep</th><th class="num">v0.4.18 release sweep</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mono">&gt; 30 s</span></td><td class="num">994 (19.88%)</td><td class="num">678 (13.56%)</td><td class="num">579 (11.58%)</td><td class="num"><strong>521 (10.42%)</strong></td></tr>
+          <tr><td>median</td><td class="num">7.19 s</td><td class="num">4.01 s</td><td class="num">3.32 s</td><td class="num"><strong>3.53 s</strong></td></tr>
+          <tr><td>Σ elapsed</td><td class="num">—</td><td class="num">38.7 h</td><td class="num">33.18 h</td><td class="num"><strong>31.95 h</strong></td></tr>
+          <tr><td>max</td><td class="num">759.9 s</td><td class="num">728.8 s</td><td class="num">697.9 s</td><td class="num"><strong>628.5 s</strong></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="callout">
-      <span class="lbl">No longer stale — measured for this refresh</span>
+      <span class="lbl">No longer stale — and from v0.4.14 on, a series</span>
       The v0.4.6-era headline (<strong>994/5000 = 19.88% over 30 s, median 7.19 s</strong>) stood
-      unmeasured for eight releases. The sweep run for this refresh reads
-      <strong>678/5000 = 13.56%</strong> and a median of <strong>4.01 s</strong> — a 6.3-point
-      improvement <strong>no release claimed</strong>. Every per-release speed number remains a
-      per-molecule A/B, and every one of those is <strong>bimodal</strong>: the same change measures
-      −32.9% on one molecule and nothing on the next. ⚠ Not strictly like-for-like — the sweep capped
-      BLAS threads and the v0.4.6 run did not. Goal B (<code>max(elapsed_s) &lt; 30 s</code>) is
-      <strong>not delivered</strong>: max is 728.8 s.
+      unmeasured for eight releases. The v0.4.14 sweep read <strong>678/5000 = 13.56%</strong> — a
+      6.3-point improvement <strong>no release claimed</strong>. ⚠ That step crosses a
+      thread-configuration change (BLAS capped to 1 from v0.4.14) and its magnitude is approximate.
+      <strong>The three columns from v0.4.14 on are like-for-like</strong> — same cohort, seed,
+      6 shards, 300 s budget, BLAS = 1 — and the v0.4.17 and v0.4.18 rows were re-derived from the
+      frozen per-molecule extracts for this refresh. Every per-release speed number before v0.4.17
+      is a per-molecule A/B, and every one of those is <strong>bimodal</strong>: the same change
+      measures −32.9% on one molecule and nothing on the next. Goal B
+      (<code>max(elapsed_s) &lt; 30 s</code>) is <strong>not delivered</strong>: 521 molecules are over it.
     </div>
 
     <h3 style="margin-top:34px;font-size:18px;">What actually improved most</h3>
     <p style="margin-top:10px;">
       Neither number. What improved most is the project's ability to tell a real result from a fake
-      one. The unit suite went <strong>551 → 1050</strong>, and the instruments added in that window —
+      one. The unit suite went <strong>551 → 1076</strong>, and the instruments added in that window —
       the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
-      coordination-integrity check, the mirror audit — are what caught the 10.34-point inflation, a
-      59%-false-positive cohort, a dead gate arm, and an enantiomer collapse.
+      coordination-integrity check, the mirror audit, and from v0.4.17 the four-instrument census
+      and its neutral ruler — are what caught the 10.34-point inflation, a 59%-false-positive
+      cohort, a dead gate arm, an enantiomer collapse, and then the fact that the "enantiomer
+      collapse" had been measured on a coin.
       <strong>Five releases that moved no points each removed a way of being wrong</strong> — and
       v0.4.13 is the return on that, banking a fix that could only ship once an instrument existed
       that could see its damage.
+    </p>
+    <p>
+      <strong>v0.4.17 added the rule that makes a headline mean something: carry a second number the
+      lever cannot teach.</strong> <span class="mono">byte_exact</span> is self-agreement, and a
+      canonicality lever can raise it by making the second encode agree with whatever was built. The
+      census's VERIFIED predicate judges the <em>structure</em> with a ruler that never imports the
+      encoder; a lever that moves both together is doing what it claims. It also found that
+      <strong>a gate re-frozen from a predicted mover list had carried 15 wrong rows for four
+      releases</strong> — a mover list is a sample frame, not a verdict — hence
+      <span class="mono">/refreeze-goldens</span> from a full run, every promotion.
+    </p>
+    <p>
+      <strong>v0.4.18 then used that full run to find what the gate itself is blind to.</strong>
+      ARM 2's round-trip field is computed through the generator's own bond graph — the pre-v0.4.8
+      <em>scored</em> path — so whether a ring sits 2.1 Å or 2.9 Å from its metal never enters.
+      <strong>138 of 198 η rows built a different structure and the gated field moved on 0.</strong>
+      A construction regression passes ARM 2, and did, for every release that shipped ferrocene
+      detached. The general form: <strong>a gate that scores an artifact by the artifact's own
+      account of itself cannot see the class of defect where the account is wrong</strong> — met in
+      the harness at v0.4.8 and in the project's own regression gate at v0.4.18.
     </p>
   </section>
 
@@ -519,31 +635,33 @@ pre.prompt {
     <!-- FIG 1 -->
     <figure>
       <figcaption>
-        <span class="ftitle">Every corpus accuracy measurement since v0.4.4 — deliberately not joined up</span>
+        <span class="ftitle">Every corpus accuracy measurement since v0.4.4 — joined up only where that is honest</span>
         <span class="fsub">
-          These come from <strong>five</strong> different cohorts. They are <strong>not</strong> a time
-          series, and a line between any two of them would be an invention. The legitimate comparisons
-          are the linked groups: <strong>the same 5000 reports classified more than one way</strong>.
-          The two <em>sweeps</em> share a cohort and a seed but not a code version — closer than
-          anything else here, and still not a time series.
+          These come from <strong>five</strong> different cohorts. Nothing above the v0.4.14 sweep is
+          a time series, and a line between any two of those would be an invention. The legitimate
+          comparisons are the linked groups: <strong>the same 5000 reports classified more than one
+          way</strong>. From v0.4.14 on the sweeps of record share cohort, seed, shards, budget
+          <em>and</em> thread configuration, differing only in the code under test — the one run of
+          points here that may be read in order. From v0.4.17 each sweep carries a second, stricter
+          number: <strong>VERIFIED</strong>, a neutral ruler on the generated structure.
         </span>
       </figcaption>
       <div class="chartbox">
-        <svg viewBox="0 0 760 376" role="img" aria-label="Dot plot of byte_exact percentage for eight corpus measurements across five different cohorts. Two linked groups share a cohort of 5000 reports and are the only directly comparable values.">
+        <svg viewBox="0 0 760 524" role="img" aria-label="Dot plot of byte_exact percentage for twelve corpus measurements across five different cohorts. Linked groups share a cohort of 5000 reports and are the only directly comparable values; the v0.4.14, v0.4.17 and v0.4.18 sweeps are one configuration and may be read in order.">
           <!-- grid -->
           <g>
-            <line class="grid" x1="286" y1="26" x2="286" y2="320"></line>
-            <line class="grid" x1="386" y1="26" x2="386" y2="320"></line>
-            <line class="grid" x1="486" y1="26" x2="486" y2="320"></line>
-            <line class="grid" x1="586" y1="26" x2="586" y2="320"></line>
-            <line class="base" x1="186" y1="320" x2="686" y2="320"></line>
-            <text class="axlab" x="186" y="336">0%</text>
-            <text class="axlab" x="286" y="336" text-anchor="middle">20</text>
-            <text class="axlab" x="386" y="336" text-anchor="middle">40</text>
-            <text class="axlab" x="486" y="336" text-anchor="middle">60</text>
-            <text class="axlab" x="586" y="336" text-anchor="middle">80</text>
-            <text class="axlab" x="686" y="336" text-anchor="end">100</text>
-            <text class="axlab" x="436" y="356" text-anchor="middle">byte_exact (%)</text>
+            <line class="grid" x1="286" y1="26" x2="286" y2="468"></line>
+            <line class="grid" x1="386" y1="26" x2="386" y2="468"></line>
+            <line class="grid" x1="486" y1="26" x2="486" y2="468"></line>
+            <line class="grid" x1="586" y1="26" x2="586" y2="468"></line>
+            <line class="base" x1="186" y1="468" x2="686" y2="468"></line>
+            <text class="axlab" x="186" y="484">0%</text>
+            <text class="axlab" x="286" y="484" text-anchor="middle">20</text>
+            <text class="axlab" x="386" y="484" text-anchor="middle">40</text>
+            <text class="axlab" x="486" y="484" text-anchor="middle">60</text>
+            <text class="axlab" x="586" y="484" text-anchor="middle">80</text>
+            <text class="axlab" x="686" y="484" text-anchor="end">100</text>
+            <text class="axlab" x="436" y="504" text-anchor="middle">byte_exact (%) — self-consistent, or VERIFIED where marked</text>
           </g>
           <!-- rows -->
           <g class="hit"><title>v0.4.2 generation, re-classified with the v0.4.4 key — 6719 molecules — 81.19%</title>
@@ -602,6 +720,34 @@ pre.prompt {
             <circle class="bar" cx="571.8" cy="304" r="6" fill="var(--data)"></circle>
             <text class="val" x="584.8" y="308">77.16%</text>
           </g>
+          <g class="hit"><title>v0.4.17 sweep of record — shipped defaults with OIN_EXACT_DONOR_FOLD on — 4136 / 5000 = 82.72% self-consistent. Same cohort, seed and configuration as the v0.4.14 sweep; predicted 82.62% by an A/B over the lever's complete 504-molecule mover set.</title>
+            <text class="rowlab" x="176" y="344" text-anchor="end">v0.4.17 sweep — self-consistent</text>
+            <text class="rowsub" x="176" y="357" text-anchor="end">same configuration · N=5000</text>
+            <line x1="186" y1="344" x2="599.6" y2="344" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="599.6" cy="344" r="6" fill="var(--data)"></circle>
+            <text class="val" x="612.6" y="348">82.72%</text>
+          </g>
+          <g class="hit"><title>The same 5000 reports under the census's VERIFIED predicate — the string parses back to the input AND a neutral ruler finds the generated structure graph-isomorphic with no stereo element mirrored or changed — 3730 / 5000 = 74.60%. The 406 passes between the two numbers are accuracy the metric asserts, not accuracy the project has.</title>
+            <text class="rowlab" x="176" y="378" text-anchor="end">v0.4.17 sweep — VERIFIED</text>
+            <text class="rowsub" x="176" y="391" text-anchor="end">same 5000 reports</text>
+            <line x1="186" y1="378" x2="559.0" y2="378" stroke="var(--data-soft)" stroke-width="2"></line>
+            <path class="bar" d="M 559.0 371.5 l 6.5 6.5 l -6.5 6.5 l -6.5 -6.5 z" fill="var(--data)"></path>
+            <text class="val" x="572.0" y="382">74.60%</text>
+          </g>
+          <g class="hit"><title>THE CURRENT BASELINE. v0.4.18 release sweep — shipped defaults with both eta promotions on — 4347 / 5000 = 86.94% self-consistent. Predicted 87.00% by an A/B over all 1146 eta-bound molecules; every differing verdict is a row at the 300 s budget. Re-derived from the frozen measurements tree for this refresh.</title>
+            <text class="rowlab" x="176" y="418" text-anchor="end">v0.4.18 release sweep — self-consistent</text>
+            <text class="rowsub" x="176" y="431" text-anchor="end">same configuration · N=5000</text>
+            <line x1="186" y1="418" x2="620.7" y2="418" stroke="var(--data-soft)" stroke-width="2"></line>
+            <circle class="bar" cx="620.7" cy="418" r="6" fill="var(--data)"></circle>
+            <text class="val" x="633.7" y="422">86.94%</text>
+          </g>
+          <g class="hit"><title>The same 5000 reports, VERIFIED — 3920 / 5000 = 78.40%. The number to quote: a lever cannot raise it by teaching the re-encode to agree with a wrong structure. 427 passes sit between the two numbers.</title>
+            <text class="rowlab" x="176" y="452" text-anchor="end">v0.4.18 release sweep — VERIFIED</text>
+            <text class="rowsub" x="176" y="465" text-anchor="end">same 5000 reports</text>
+            <line x1="186" y1="452" x2="578.0" y2="452" stroke="var(--data-soft)" stroke-width="2"></line>
+            <path class="bar" d="M 578.0 445.5 l 6.5 6.5 l -6.5 6.5 l -6.5 -6.5 z" fill="var(--data)"></path>
+            <text class="val" x="591.0" y="456">78.40%</text>
+          </g>
           <!-- connectors: the only legitimate comparisons, each within one cohort -->
           <path d="M 600.0 170 L 600.0 183 L 556.3 183" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
           <path d="M 556.3 183 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
@@ -612,12 +758,20 @@ pre.prompt {
           <path d="M 620.4 278 L 620.4 291 L 579.8 291" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
           <path d="M 579.8 291 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
           <text class="rowsub" x="618" y="295" style="fill:var(--ink-2)">−9.72 pts · same 5000</text>
+          <path d="M 599.6 352 L 599.6 365 L 567.0 365" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
+          <path d="M 567.0 365 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
+          <text class="rowsub" x="612" y="369" style="fill:var(--ink-2)">−8.12 pts · same 5000 · the metric&#39;s assertion</text>
+          <path d="M 620.7 426 L 620.7 439 L 586.0 439" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"></path>
+          <path d="M 586.0 439 l 6 -3.5 l 0 7 z" fill="var(--ink-muted)"></path>
+          <text class="rowsub" x="633" y="443" style="fill:var(--ink-2)">−8.54 pts · same 5000</text>
           <!-- key -->
           <g transform="translate(186, 12)">
             <circle cx="5" cy="-4" r="5" fill="var(--data)"></circle>
             <text class="rowsub" x="16" y="0">honest / independent scoring</text>
             <circle cx="200" cy="-4" r="5" fill="var(--surface)" stroke="var(--data)" stroke-width="2.5"></circle>
             <text class="rowsub" x="211" y="0">scored via generator&#39;s own graph</text>
+            <path d="M 405 -9 l 5 5 l -5 5 l -5 -5 z" fill="var(--data)"></path>
+            <text class="rowsub" x="416" y="0">VERIFIED — neutral ruler on the structure</text>
           </g>
         </svg>
       </div>
@@ -634,6 +788,10 @@ pre.prompt {
             <tr><td>v0.4.13 re-score — honest</td><td>seed-42 (same reports)</td><td class="num">5000</td><td class="num">75.88% published / ~74.88% measured</td></tr>
             <tr><td>v0.4.14 sweep — scored</td><td>seed-42, NEW run</td><td class="num">5000</td><td class="num">86.88%</td></tr>
             <tr><td>v0.4.14 sweep — honest</td><td>seed-42, NEW run (same reports)</td><td class="num">5000</td><td class="num">77.16%</td></tr>
+            <tr><td>v0.4.17 sweep — self-consistent</td><td>seed-42, same configuration as v0.4.14</td><td class="num">5000</td><td class="num">82.72%</td></tr>
+            <tr><td>v0.4.17 sweep — VERIFIED</td><td>same reports, neutral ruler</td><td class="num">5000</td><td class="num">74.60%</td></tr>
+            <tr><td>v0.4.18 release sweep — self-consistent</td><td>seed-42, same configuration as v0.4.14</td><td class="num">5000</td><td class="num">86.94%</td></tr>
+            <tr><td>v0.4.18 release sweep — VERIFIED</td><td>same reports, neutral ruler</td><td class="num">5000</td><td class="num">78.40%</td></tr>
           </tbody>
         </table></div>
       </details>
@@ -646,15 +804,18 @@ pre.prompt {
         <span class="fsub">
           A lever that was built, measured, and shipped <em>off</em> changes nothing for a user.
           This strip shows only what actually moved on the default path — which is why five
-          consecutive releases read flat, and why v0.4.13 reading <em>gain</em> is the first
-          user-visible accuracy change since v0.4.6.
+          consecutive releases read flat, why v0.4.13 reading <em>gain</em> is the first
+          user-visible accuracy change since v0.4.6, and why v0.4.15 and v0.4.16 read flat despite
+          measuring more than most. v0.4.17 and v0.4.18 are the first corpus-wide speed gains a
+          release measured and owned.
         </span>
       </figcaption>
       <div class="chartbox" style="min-width:0">
-        <div class="strip" style="min-width:620px">
+        <div class="strip" style="min-width:820px">
           <div class="strip-head">
             <span></span><span>v0.4.4</span><span>v0.4.5</span><span>v0.4.6</span><span>v0.4.7</span>
             <span>v0.4.8</span><span>v0.4.9</span><span>v0.4.10</span><span>v0.4.11</span><span>v0.4.12</span><span>v0.4.13</span><span>v0.4.14</span>
+            <span>v0.4.15</span><span>v0.4.16</span><span>v0.4.17</span><span>v0.4.18</span>
           </div>
           <div class="strip-row">
             <span class="rl">Accuracy</span>
@@ -665,6 +826,10 @@ pre.prompt {
             <div class="cell" data-s="rebase">Re-base</div>
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="gain">Gain</div>
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
             <div class="cell" data-s="gain">Gain</div>
@@ -683,6 +848,10 @@ pre.prompt {
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
             <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell">Flat</div>
+            <div class="cell" data-s="gain">Gain</div>
+            <div class="cell" data-s="gain">Gain</div>
           </div>
         </div>
       </div>
@@ -698,70 +867,84 @@ pre.prompt {
     <!-- FIG 3 -->
     <figure>
       <figcaption>
-        <span class="ftitle">Where the remaining 22.84 points are — and who owns them</span>
+        <span class="ftitle">Where the remaining 13.06 points are — by measured fault, not by bucket name</span>
         <span class="fsub">
-          From the v0.4.14 baseline sweep (N=5000, honest scoring) — a real generator run, not a
-          re-score. <strong>Two of these six blocks are not what their names say.</strong>
-          v0.4.14 re-filed <strong>5.94 points</strong> from the encoder to the generator and to
-          perception without a single molecule changing bucket, leaving the encoder ladder about
-          <strong>1.28 points</strong> of reachable work.
+          From the census of record on the v0.4.18 release sweep (N=5000, honest scoring): every
+          molecule given exactly one fault by four instruments none of which routes through the
+          encoder to judge the generator or the reverse, <span class="mono">UNATTRIBUTED 0</span>,
+          noise floor of attribution <strong>zero</strong>. This supersedes the 22.84-point bucket
+          table carried through v0.4.16 — the census's first finding was that two of that table's
+          largest blocks were under the wrong owner. <strong>The three largest blocks are now
+          within a point of each other.</strong> The VERIFIED side adds 427 passes that carry a
+          fault: 21.60 points, in the table view.
         </span>
       </figcaption>
       <div class="chartbox">
-        <svg viewBox="0 0 760 250" role="img" aria-label="Horizontal bar chart of the six blocks making up the 22.84-point accuracy gap, largest first. structural is the largest at 9.68 points.">
-          <g class="hit"><title>structural — 484 molecules — 9.68 points. NOT one block and NOT one mechanism. DETACHED 301 (6.02): a return-path guard changed the returned structure 51 times across 289 molecules and improved it 0 times — construction. INTACT+BOUNDARY 172 (3.44): v0.4.16 measured these 82% PERCEPTION — the heavy-atom graph is already correct and bond orders/aromaticity/H differ; only 25 molecules are construction. NO_STRUCTURE 11 (0.22).</title>
-            <text class="rowlab" x="222" y="26" text-anchor="end">structural</text>
-            <text class="rowsub" x="222" y="39" text-anchor="end">n=484</text>
-            <rect class="bar" x="232" y="14" width="425.9" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="651.9" y="28" text-anchor="end" style="fill:var(--surface)">9.68</text>
+        <svg viewBox="0 0 760 186" role="img" aria-label="Horizontal bar chart of the five owners of the 13.06-point self-consistent gap on the v0.4.18 release sweep. Generator construction is the largest at 5.56 points, then perception 3.52, encoder 3.20, input perception 0.58 and data 0.20.">
+          <g class="hit"><title>G — the generator — 278 molecules — 5.56 points. G_CONSTRUCTION 197 (3.94): the generated graph differs from the input — DETACHED 142 (eta 103, non-eta 48), SPHERE_DIFF 50, LIGAND_DIFF 5. G_NOTHING 69 (1.38): timeouts 61, no conformer 8 — the compute floor. H count / diastereomer / handedness 12 (0.24). VERIFIED side: 483 molecules / 9.66 points, of which SPHERE_DIFF 183 may be the ruler's tolerance rather than the generator. Was 481 / 9.62 at v0.4.17: v0.4.18 cut it by 203 molecules.</title>
+            <text class="rowlab" x="222" y="26" text-anchor="end">G — construction</text>
+            <text class="rowsub" x="222" y="39" text-anchor="end">n=278 · was 481</text>
+            <rect class="bar" x="232" y="14" width="333.6" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="559.6" y="28" text-anchor="end" style="fill:var(--surface)">5.56</text>
           </g>
-          <g class="hit"><title>hard_fail — 266 molecules — 5.32 points. 262 of 266 produce no structure at all. Compute-bound.</title>
-            <text class="rowlab" x="222" y="60" text-anchor="end">hard_fail</text>
-            <text class="rowsub" x="222" y="73" text-anchor="end">n=266</text>
-            <rect class="bar" x="232" y="48" width="234.1" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="460.1" y="62" text-anchor="end" style="fill:var(--surface)">5.32</text>
+          <g class="hit"><title>E2 — perception on a correct structure — 176 molecules — 3.52 points. Filed only after the neutral ruler has passed the generated structure and its chirality. E2_P_FRAGILE 105 (2.10): the input's own string changes under renumbering or 0.02 Å noise — 92 non-eta, Ni 24 / Zn 22 — an encoder stability defect. E2_P_OTHER 71 (1.42): bond orders or labels differ. An encoder lane; the census of record recommends it for v0.4.19.</title>
+            <text class="rowlab" x="222" y="60" text-anchor="end">E2 — perception</text>
+            <text class="rowsub" x="222" y="73" text-anchor="end">n=176 · was 175</text>
+            <rect class="bar" x="232" y="48" width="211.2" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="437.2" y="62" text-anchor="end" style="fill:var(--surface)">3.52</text>
           </g>
-          <g class="hit"><title>slot_renumber — 252 molecules — 5.04 points. NOT one block: 201 of 252 are the generator building the ENANTIOMER, which the reflection-blind comparison key cannot see. v0.4.15 measured those as NOT reachable by acceptance — 1 of 201 — because the pool holds exactly one key-matching conformer and it is the mirror.</title>
-            <text class="rowlab" x="222" y="94" text-anchor="end">slot_renumber</text>
-            <text class="rowsub" x="222" y="107" text-anchor="end">n=252</text>
-            <rect class="bar" x="232" y="82" width="221.8" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="447.8" y="96" text-anchor="end" style="fill:var(--surface)">5.04</text>
+          <g class="hit"><title>E1 — the encoder — 160 molecules — 3.20 points. The serializer: E1_HCOUNT 77 (1.54) and E1_GRAPH 71 (1.42) — the string was wrong and the generator built what it said; 129 of these 148 sit in hard_fail. E1_NONCANONICAL 11 (0.22): one molecule, two strings — was 266 / 5.32 before v0.4.17's exact fold. E1_NONINJECTIVE 1. VERIFIED side: 382 / 7.64, including 118 E1_NOT_ENCODED (stereo the string does not carry) and 36 mirror pairs with one string.</title>
+            <text class="rowlab" x="222" y="94" text-anchor="end">E1 — encoder</text>
+            <text class="rowsub" x="222" y="107" text-anchor="end">n=160 · was 169</text>
+            <rect class="bar" x="232" y="82" width="192.0" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="418.0" y="96" text-anchor="end" style="fill:var(--surface)">3.20</text>
           </g>
-          <g class="hit"><title>rdkit_canonical — 113 molecules — 2.26 points. NOT canonicality — no string change reaches it, which is why v0.4.14 re-filed it off the ENCODER ladder. But v0.4.15 recovered 43 of 113 (38.1%) from the GENERATOR side — the highest rate of any block. Reachability is a property of a mechanism, not of a block.</title>
-            <text class="rowlab" x="222" y="128" text-anchor="end">rdkit_canonical</text>
-            <text class="rowsub" x="222" y="141" text-anchor="end">n=113</text>
-            <rect class="bar" x="232" y="116" width="99.4" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="325.4" y="130" text-anchor="end" style="fill:var(--surface)">2.26</text>
+          <g class="hit"><title>P — perception of the INPUT — 29 molecules — 0.58 points. P_DETACHED 18: a ligand bound by distance but written as a slot-less fragment. P_E1_COVERAGE 11: encode timeouts, no string at all.</title>
+            <text class="rowlab" x="222" y="128" text-anchor="end">P — input perception</text>
+            <text class="rowsub" x="222" y="141" text-anchor="end">n=29</text>
+            <rect class="bar" x="232" y="116" width="34.8" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="278.8" y="130">0.58</text>
           </g>
-          <g class="hit"><title>facmer_divergent — 15 molecules — 0.30 points. Wrong isomer: the donor arrangement differs. v0.4.16 CONFIRMED this at 100% — metal and ligand bodies agree and only the arrangement signature differs. The one block on this chart whose name was a measurement rather than a hypothesis.</title>
-            <text class="rowlab" x="222" y="162" text-anchor="end">facmer_divergent</text>
-            <text class="rowsub" x="222" y="175" text-anchor="end">n=15</text>
-            <rect class="bar" x="232" y="150" width="13.2" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="257.2" y="164">0.30</text>
-          </g>
-          <g class="hit"><title>encode_fail — 12 molecules — 0.24 points. The input itself does not encode.</title>
-            <text class="rowlab" x="222" y="196" text-anchor="end">encode_fail</text>
-            <text class="rowsub" x="222" y="209" text-anchor="end">n=12</text>
-            <rect class="bar" x="232" y="184" width="10.6" height="20" rx="4" fill="var(--data)"></rect>
-            <text class="val" x="254.6" y="198">0.24</text>
+          <g class="hit"><title>data — 10 molecules — 0.20 points. A second ion or molecule in the input file, unbound by distance.</title>
+            <text class="rowlab" x="222" y="162" text-anchor="end">data</text>
+            <text class="rowsub" x="222" y="175" text-anchor="end">n=10</text>
+            <rect class="bar" x="232" y="150" width="12.0" height="20" rx="4" fill="var(--data)"></rect>
+            <text class="val" x="256.0" y="164">0.20</text>
           </g>
         </svg>
       </div>
       <details class="tv">
-        <summary>Table view</summary>
+        <summary>Table view — both sides of the gap</summary>
         <div class="tw"><table>
-          <thead><tr><th>Block</th><th class="num">n</th><th class="num">points</th><th>owner</th></tr></thead>
+          <thead><tr><th>Owner</th><th>Fault</th><th class="num">v0.4.17</th><th class="num">v0.4.18</th><th class="num">FAIL pts</th><th class="num">VERIFIED pts</th><th>What it is</th></tr></thead>
           <tbody>
-            <tr><td>structural</td><td class="num">484</td><td class="num">9.68</td><td><strong>Three mechanisms.</strong> 301 DETACHED not selection-reachable (v0.4.15 L1 recovered 0 of 289); <strong>172 are 82% PERCEPTION</strong> (v0.4.16); 11 produce nothing</td></tr>
-            <tr><td>hard_fail</td><td class="num">266</td><td class="num">5.32</td><td>compute</td></tr>
-            <tr><td>slot_renumber</td><td class="num">252</td><td class="num">5.04</td><td><strong>201 enantiomers NOT reachable</strong> (1 of 201) — construction</td></tr>
-            <tr><td>rdkit_canonical</td><td class="num">113</td><td class="num">2.26</td><td>🟢 <strong>38.1% REACHABLE</strong> — 43 mol recovered by v0.4.15 L2</td></tr>
-            <tr><td>facmer_divergent</td><td class="num">15</td><td class="num">0.30</td><td>—</td></tr>
-            <tr><td>encode_fail</td><td class="num">12</td><td class="num">0.24</td><td>encoder — v0.4.18</td></tr>
-            <tr><td><strong>sum</strong></td><td class="num"><strong>1142</strong></td><td class="num"><strong>22.84</strong></td><td></td></tr>
+            <tr><td><strong>G</strong></td><td class="mono">G_CONSTRUCTION</td><td class="num">386</td><td class="num">197</td><td class="num">3.94</td><td class="num">8.04</td><td><span class="mono">DETACHED</span> 142 (η 103 / non-η 48), <span class="mono">SPHERE_DIFF</span> 50, <span class="mono">LIGAND_DIFF</span> 5; verified adds 205 false passes (133 <span class="mono">SPHERE_DIFF</span>)</td></tr>
+            <tr><td></td><td class="mono">G_NOTHING</td><td class="num">76</td><td class="num">69</td><td class="num">1.38</td><td class="num">1.38</td><td>timeouts 61, no conformer 8 — the compute floor</td></tr>
+            <tr><td></td><td class="mono">G_HCOUNT · G_DIASTEREOMER · G_HANDEDNESS</td><td class="num">19</td><td class="num">12</td><td class="num">0.24</td><td class="num">0.24</td><td>3 · 5 · 4 — the "201 enantiomers the generator cannot build" are the last figure</td></tr>
+            <tr><td><strong>E2</strong></td><td class="mono">E2_P_FRAGILE</td><td class="num">101</td><td class="num">105</td><td class="num">2.10</td><td class="num">2.10</td><td>string changes under renumbering / noise; 92 non-η, Ni 24 / Zn 22</td></tr>
+            <tr><td></td><td class="mono">E2_P_OTHER</td><td class="num">74</td><td class="num">71</td><td class="num">1.42</td><td class="num">1.42</td><td>bond orders / labels on a structure the ruler passes</td></tr>
+            <tr><td><strong>E1</strong></td><td class="mono">E1_HCOUNT + E1_GRAPH</td><td class="num">156</td><td class="num">148</td><td class="num">2.96</td><td class="num">4.32</td><td>the serializer — the string was wrong and the generator built it; 129 of 148 in <span class="mono">hard_fail</span></td></tr>
+            <tr><td></td><td class="mono">E1_NONCANONICAL + E1_NONINJECTIVE</td><td class="num">13</td><td class="num">12</td><td class="num">0.24</td><td class="num">0.96</td><td>one molecule, two strings (was 266 / 5.32); verified adds 36 mirror pairs with one string</td></tr>
+            <tr><td></td><td class="mono">E1_NOT_ENCODED</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">2.36</td><td>118 passes: stereo the string does not carry (Y1 P3 lives here)</td></tr>
+            <tr><td><strong>P</strong></td><td class="mono">P_DETACHED · P_E1_COVERAGE</td><td class="num">29</td><td class="num">29</td><td class="num">0.58</td><td class="num">0.58</td><td>18 · 11</td></tr>
+            <tr><td><strong>data</strong></td><td class="mono">DATA_MULTI</td><td class="num">10</td><td class="num">10</td><td class="num">0.20</td><td class="num">0.20</td><td>two molecules in one file</td></tr>
+            <tr class="total"><td>sum</td><td></td><td class="num">864</td><td class="num">653</td><td class="num">13.06</td><td class="num">21.60</td><td>by owner, verified: G 9.66 · E1 7.64 · E2 3.52 · P 0.58 · data 0.20</td></tr>
           </tbody>
         </table></div>
       </details>
+      <p class="footnote" style="margin-top:16px;">
+        <strong>What the old table got wrong, twice.</strong> Through v0.4.16 this figure said
+        <em>15.36 of 22.84 points (67%) require the generator to build something different</em>.
+        The census cut that in half twice: v0.4.17 re-filed 5.04 points of "enantiomers the
+        generator cannot build" onto the encoder (it was writing achiral molecules two ways), and
+        v0.4.18 found the construction block was a <em>distance</em> and closed 6.86 → 2.84 points
+        of it in one release. The ownership column had also been wrong at v0.4.14
+        (<span class="mono">rdkit_canonical</span>) and v0.4.15 (both lanes):
+        <strong>a block's name is a hypothesis, and reachability is a property of a mechanism.</strong>
+        The census exists so that the next lane is chosen from a measured fault rather than a bucket
+        — and its own rule is not to choose one smaller than ~0.3 points, the attribution noise it
+        measured (0.28) before the release sweep brought it to zero.
+      </p>
     </figure>
 
     <!-- FIG 4 -->
@@ -877,23 +1060,32 @@ pre.prompt {
   <!-- ─── how to read ──────────────────────────────────────────────── -->
   <section id="reading">
     <div class="sec-head"><span class="n">04</span><h2>How to read these numbers</h2></div>
-    <p class="lede">Three traps, all of which this project has already fallen into once and documented.</p>
+    <p class="lede">Four traps, all of which this project has already fallen into once and documented.</p>
 
     <div class="callout">
       <span class="lbl">Trap 1 — the bucket reports are not a time series</span>
       They come from five different cohorts: 6719 (v0.4.2 capstone), 3917 (v0.4.4 regression,
       deliberately adversarial), 936 (v0.4.5 re-baseline), 5000 (v0.4.6 seed-42 sweep) and 5000
-      (v0.4.14 baseline sweep). Every accuracy figure here carries its N and its cohort.
+      (the v0.4.14 baseline sweep, which the v0.4.17 and v0.4.18 sweeps re-use). Every accuracy
+      figure here carries its N and its cohort.
       <strong>Do not draw a line between two of them.</strong> <em>Two</em> comparisons are genuine
       like-for-like: scored-vs-honest at v0.4.8 and again at v0.4.14, each classifying
       <em>the same 5000 reports</em> two ways &mdash; <strong>10.34</strong> and
       <strong>9.72</strong> points. The v0.4.6 and v0.4.14 sweeps share a cohort and a seed but not
-      a code version or a thread configuration: closer than anything else here, still not a series.
+      a code version or a thread configuration: closer than anything before them, still not a series.
       <br><br>
-      ✅ <strong>Every figure in that list is now independently checkable, which it was not
-      before.</strong> All five cohorts are frozen as per-molecule extracts and each re-derives its
-      published headline exactly &mdash; 81.19 / 44.91 / 60.26 / 82.80 / 72.46 / 77.16, six for six
-      &mdash; and the <strong>sample definitions</strong> (seed, N, dedup priority, every molecule
+      ✅ <strong>From v0.4.14 on the sweeps of record <em>are</em> a series</strong>: one cohort,
+      one seed, 6 shards, a 300 s budget, BLAS threads = 1, and the only variable is the code under
+      test. 77.16 → 82.72 → 86.10 → 86.94 self-consistent (69.24 → 74.60 → 77.66 → 78.40 VERIFIED)
+      is the first line on this page that may legitimately be drawn &mdash; and each step was
+      predicted by an A/B on its affected population before the sweep confirmed it.
+      <br><br>
+      ✅ <strong>Every figure in that list is independently checkable.</strong> All five cohorts are
+      frozen as per-molecule extracts and each re-derives its published headline exactly &mdash;
+      81.19 / 44.91 / 60.26 / 82.80 / 72.46 / 77.16, six for six; the v0.4.18 release headline
+      re-derives from its frozen ruler verdicts, parse-back and honest bucket report alone
+      (5000 / 4347 / 3920, checked for this refresh), and every runtime row here re-derives from the
+      extracts. The <strong>sample definitions</strong> (seed, N, dedup priority, every molecule
       name) are frozen beside them. Untracked until v0.4.16.
     </div>
 
@@ -908,8 +1100,23 @@ pre.prompt {
 
     <div class="callout">
       <span class="lbl">Trap 3 — suite count is a rigour proxy, not accuracy</span>
-      551 → 1050 tests means the project can detect more kinds of wrongness. It does not mean the
-      notation got better.
+      551 → 1076 tests means the project can detect more kinds of wrongness. It does not mean the
+      notation got better. And a green suite is only as good as what it looks at:
+      <strong>1,067 of 1,067 tests passed while ferrocene was being built with its rings 0.8 Å off
+      the iron</strong>, because no test measured that distance.
+    </div>
+
+    <div class="callout">
+      <span class="lbl">Trap 4 — from v0.4.17 there are two numbers, and <span class="mono" style="text-transform:none;letter-spacing:0">byte_exact</span> is the weaker one</span>
+      <em>Self-consistent</em> (<span class="mono">byte_exact</span> under the honest score) is
+      self-agreement: <span class="mono">E(x) == E(G(E(x)))</span>. <em>VERIFIED</em> additionally
+      requires that the string parses back to the input's graph and that a neutral ruler &mdash; one
+      that never imports the encoder &mdash; finds the generated structure graph-isomorphic to the
+      input with no stereo element mirrored or changed. The gap between them (406 passes at v0.4.17,
+      427 at v0.4.18) is accuracy the metric <em>asserts</em>, not accuracy the project <em>has</em>.
+      A lever must move both, or it may be teaching the second encode to agree with a wrong
+      structure. Every figure on this page before v0.4.17 is self-consistent only; the 77.16%
+      baseline is 69.24% VERIFIED.
     </div>
   </section>
 
@@ -1833,6 +2040,261 @@ pre.prompt {
       </dl>
       <p class="suite">N = 5000 · 6 shards · <span class="mono">--mol-timeout 300</span> · shipped lever defaults</p>
     </article>
+
+    <article class="rel" id="v0417">
+      <div class="rel-head">
+        <span class="ver">v0.4.17</span><h3>The defect was the fold — and the release starts carrying two numbers</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Real gain</span>
+      </div>
+      <p class="strap">
+        Released as tag <code>v0.4.17</code> (2026-09-19). <strong>Promoted to default-ON:</strong>
+        <code>OIN_EXACT_DONOR_FOLD</code> (owner decision 2026-09-18) &mdash; the donor fold's candidate
+        set becomes rotations &times; the slot permutations induced by <em>real</em> ligand
+        automorphisms, and <code>fold_parity.resolve</code> returns it directly: no veto, no mirror
+        encode. <code>OIN_FOLD_PARITY_VETO</code> stays ON and becomes <strong>inert, not wrong</strong>
+        (<code>=0</code> brings the bucket fold and the veto back together). 12 levers default-ON,
+        17 held OFF. Also added: the four-instrument fault-attribution census,
+        <code>tools/v0417/</code>, and <code>/refreeze-goldens</code>.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real gain &mdash; the largest step in the window, and the first measured end-to-end
+          <em>before</em> it was promoted.</strong> The sweep of record, same configuration as v0.4.14's:
+          self-consistent <strong>3858 &rarr; 4136 = 82.72%</strong> (predicted 82.62), VERIFIED
+          <strong>3462 &rarr; 3730 = 74.60%</strong> (predicted 74.54). <em>Self-consistent</em> is what
+          every earlier card calls <span class="mono">byte_exact</span>; <em>VERIFIED</em> is new, and
+          the one to trust &mdash; a canonicality lever can raise the first by teaching the second
+          encode to agree with a wrong structure, and only the second says it did not. Both moved
+          together: <strong>+5.56 / +5.36 pts</strong>.
+          <br><br>
+          <strong>The lever, isolated.</strong> The real sweep harness over the lever's <em>complete</em>
+          mover set &mdash; 504 molecules, derived from coordinates; every other molecule gets the same
+          two strings in both arms and is unchanged by construction &mdash; OFF and ON arms run
+          <em>simultaneously</em>: self-consistent <strong>+273 (276 / 3)</strong>, VERIFIED
+          <strong>+265 (269 / 4)</strong>; dead-lever check 392; noise floor 3 / 504. The sweep
+          reproduced the ON arm's verdict on <strong>504 / 504</strong> movers and left 4,494 of 4,496
+          non-movers unchanged. <span class="mono">slot_renumber</span> <strong>252 &rarr; 5</strong>. All
+          four losses are generator-side label dependence &mdash; an equally valid, differently
+          <em>labelled</em> input and a worse structure &mdash; still open.
+        </dd>
+        <dt>The census</dt>
+        <dd>
+          <strong>It came first, and re-pointed the release before a line of it was written.</strong>
+          Every one of the 5,000 molecules of the v0.4.14 sweep given exactly one fault,
+          <span class="mono">UNATTRIBUTED 0</span>, by four instruments none of which routes through the
+          encoder to judge the generator or the reverse: <strong>22.84 pts = G 10.54 &middot; E1 8.54
+          &middot; E2 2.96 &middot; P 0.60 &middot; data 0.20</strong>. It moved
+          <span class="mono">slot_renumber</span> &mdash; 252 molecules / 5.04 pts, filed for three
+          releases as enantiomers the generator could not build &mdash; onto the <strong>encoder</strong>:
+          achiral by the ruler and <span class="mono">E(mirror x) &ne; E(x)</span>.
+          <span class="mono">G_HANDEDNESS</span> is <strong>9 molecules</strong>. The string is wrong for
+          <strong>59% of <span class="mono">hard_fail</span></strong>, so the "compute floor" was 2.08 pts,
+          not 5.32. And it confirmed v0.4.16's perception estimate by an independent path: 148 / 2.96
+          against 141 / 2.82.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>A real default-path win, unclaimed until measured.</strong> The veto's two extra
+          encodes were being paid <em>per conformer</em> &mdash; <span class="mono">accept_fn</span>
+          re-encodes every conformer in the pool. Over the 504 movers &Sigma; elapsed 6.19 &rarr; 2.93 h,
+          <span class="mono">&gt; 30 s</span> 110 &rarr; 58. Corpus-wide, like-for-like: &Sigma;
+          <strong>38.7 &rarr; 33.2 h</strong>, median <strong>4.01 &rarr; 3.32 s</strong>,
+          <span class="mono">&gt; 30 s</span> <strong>678 &rarr; 579</strong>, max 729 &rarr; 698 s.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>The handoff's own prescription &mdash; an achirality test for the parity veto.</strong>
+          The veto was not the defect. The bucket fold permutes each symmetry class of a fragment
+          <em>independently</em>; a ligand's C2 axis moves all of its classes at once, so a one-class
+          swap is not a symmetry of the ligand &mdash; it relabels the complex as a different
+          arrangement (the mirror image, for a cis-&alpha; tetradentate). That over-fold is why v0.4.11
+          collapsed enantiomers, why v0.4.12 built a veto, and why the veto fired on one hand of 568
+          achiral molecules. Folding over true automorphisms needs neither: 550 of the 568 pairs
+          unified, positive control 5,792 / 5,792, offline == live on 2,443 / 2,443, key-level drift
+          255 &rarr; 255 with membership changed on 0.
+          <br><br>
+          🔴 <strong>The three "oracle-confirmed enantiomer" fixtures the veto was built on and
+          promoted against were a coin.</strong> Under the <em>shipped</em> encoder a renumbered
+          <span class="mono">x</span> already landed on its <strong>mirror's</strong> string 8, 7 and 6
+          times in 12 for <span class="mono">BIWDIV</span>, <span class="mono">CIHVAT</span>,
+          <span class="mono">OJEKET</span>. One renumbering per fixture had been drawn. The oracle that
+          confirmed them chiral conflates conformation with configuration; the census ruler calls all
+          three achiral. This retires the evidence v0.4.13 was promoted on &mdash; v0.4.11's "221 of
+          393" and the veto's "19 &rarr; 0" were reading it. Replaced by a pinned refutation and an
+          exact-fold property test.
+          <br><br>
+          <strong>"v0.4.17 is construction"</strong> &mdash; every earlier card says so. The census made
+          it an encoder-canonicality release and sent the construction block to v0.4.18.
+          <strong>"<span class="mono">hard_fail</span> is the compute floor"</strong>: 65 shipped strings
+          described an arrangement the input is not &mdash; often one that cannot be built &mdash; and
+          16 of the 19 that used to time out now run (<span class="mono">ROLYIB</span> 300 s &rarr; 3 s).
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          <strong>17 of the 36 pairs the veto "protected" are unified &mdash; owner decision:
+          ACCEPT.</strong> Their strings differ only in which of two <em>automorphic</em> atoms carries
+          which integer; the chirality is real but lives where the string does not look (a metal-bound
+          N&ndash;H / C&ndash;H centre, the Y1 P3 blind spot), and 13 of the 17 already flipped under
+          renumbering. <strong>18 pairs the census called achiral stay split</strong>: chiral by how a
+          ligand wraps; the ruler matches donors by class and shares the bucket fold's blind spot
+          &mdash; <em>a ruler and the thing it measures can share a blind spot without sharing code</em>.
+          <br><br>
+          🔴 <strong>15 of 425 ARM 2 golden rows had been wrong since v0.4.13, and nothing said
+          so.</strong> Earlier re-freezes re-ran only <em>predicted</em> movers, and ARM 2 runs in full
+          only at a release. The full gate run re-froze <strong>51 of 425</strong> (40 moved by this
+          lever, 15 stale &mdash; 14 restored by <code>OIN_CANONICAL_DONOR_FOLD=0</code> alone); this
+          release's own mover list would have missed <strong>19 of the 51 (37%)</strong>.
+          <strong>A mover list is a sample frame, not a verdict</strong> &mdash; hence
+          <code>/refreeze-goldens</code>, from a full run, every promotion. ARM 2's predicate is also
+          <strong>circular</strong>: byte identity through the generator's own graph. "Field 3 is a
+          fresh stochastic generation", written into <span class="mono">levers.py</span> and this
+          page's v0.4.14 card, is <strong>false</strong> &mdash; generation is seeded, and the full gate
+          reproduced all 368 untouched rows. 9 of 1,059 tests broke at promotion; 7 were the coin.
+        </dd>
+      </dl>
+      <p class="suite">Suite: <strong>1064 OK</strong> &middot; full sweep <strong>run</strong>, 6 h 42 min, as the promotion's condition &middot; ARM 1: 2 of 62 rows re-frozen &middot; ARM 2: 51 of 425, from a full run</p>
+    </article>
+
+    <article class="rel" id="v0418">
+      <div class="rel-head">
+        <span class="ver">v0.4.18</span><h3>DETACHED was a distance</h3>
+        <span class="chip" data-state="gain"><span class="dot"></span>Real gain</span>
+      </div>
+      <p class="strap">
+        Released as tag <code>v0.4.18</code> (2026-09-23). <strong>Promoted to default-ON, generator-side,
+        in two steps:</strong> <code>OIN_ETA_COVALENT_TARGET</code> + <code>OIN_VDW_EXEMPT_BINDING</code>
+        together (owner decision 2026-09-20), then <code>OIN_ETA_RETARGET</code> (owner delegation
+        2026-09-23). None touches a string the encoder emits &mdash; <span class="mono">smiles_1</span>
+        moved on <strong>0 of 5,000</strong>. <strong>Added and held OFF, measured:</strong>
+        <code>OIN_ETA_TARGET_UNSCALED</code>. 15 levers default-ON, 18 held OFF.
+      </p>
+      <dl>
+        <dt>Accuracy</dt>
+        <dd>
+          <strong>Real gain &mdash; +4.22 self-consistent / +3.80 VERIFIED, both predicted before they
+          were swept.</strong> Against the v0.4.17 sweep: after the pair <strong>86.10% / 77.66%</strong>
+          (predicted 86.04 / 77.60), and the release sweep <strong>4347 = 86.94% / 3920 =
+          78.40%</strong> (predicted 87.00 / 78.42). Each promotion was predicted by a harness A/B over
+          <strong>all 1,146 &eta;-bound molecules</strong> &mdash; the ones that pass are in the cohort
+          because they are where a loss comes from &mdash; and each sweep landed to within the 300 s
+          budget boundary: 7 then 11 verdicts differed, <strong>every one a row at the 300 s
+          budget</strong>. The two claims each projection stood on were checked, not repeated:
+          <strong>3,713 / 3,713</strong> non-&eta; structures byte-identical to the previous sweep (a
+          non-&eta; molecule cannot reach any of the levers), and <strong>1,068 / 1,068</strong> then
+          <strong>1,070 / 1,070</strong> &eta; structures byte-identical to the A/B's ON arm. The pair's
+          OFF arm reproduced the v0.4.17 sweep byte-for-byte on 1,063 / 1,063 &mdash; <strong>a noise
+          floor of zero</strong>. ⚠ The retarget's A/B used the sweep's own rows as its OFF arm, so its
+          noise-floor line prints 0 by construction; its lever was shown to fire (158 of 1,067
+          structures differ).
+          <br><br>
+          Buckets on the release sweep: <span class="mono">structural</span> 479 &rarr; <strong>284</strong>,
+          <span class="mono">key_equal</span> 122 &rarr; 119, <span class="mono">hard_fail</span> 236 &rarr; 230.
+        </dd>
+        <dt>The ruler</dt>
+        <dd>
+          <strong>The census re-run came first &mdash; twice.</strong> On the v0.4.17 sweep, before a
+          lane was chosen: 17.28 / 25.40 pts, E1 fallen 8.54 &rarr; 3.38, the residual non-canonical
+          strings worth <strong>0.24 pts</strong> and demoted, and <strong><span class="mono">DETACHED</span>
+          343 molecules / 6.86 pts, 86% &eta;-bound</strong> &mdash; the largest block by a factor of 3.
+          v0.4.15 had closed the <em>selection</em> door on it (every conformer in the pool was
+          detached), so the first instrument was a ruler, not a hypothesis.
+          <br><br>
+          A mapping-free distance audit (control: the input against itself reads 0.000 &Aring;) found
+          the generator puts &eta; carbons a median <strong>+0.73 &Aring;</strong> too far from the metal
+          in the DETACHED class, +0.17 &Aring; even in verified passes; Fe +0.84, Co +0.78, Ni +0.71.
+          Two mechanisms, both in upstream's <span class="mono">ff_clean</span>: (1) an &eta; group's
+          target was multiplied by 1.1 / 1.2 ("elongation of haptic interaction") while real M&ndash;C(&eta;)
+          over 1,378 groups is 1.008 &times; the covalent sum and the encoder's contact cutoff is
+          ~1.20 &times; &mdash; the ring was aimed at the edge of the bonding range; (2) the FF scan's
+          vdW guard perceives bonds by distance, and for a small metal the bond threshold lies
+          <em>inside</em> the clash threshold (Fe&ndash;C 2.70 vs 2.81 &Aring;), so a ring stepping inward
+          registered five new "clashes", the step was reverted and the scan stopped at 2.87 &Aring;
+          whatever the target. <strong>Ferrocene itself was being built detached &mdash; Fe&ndash;C
+          2.85 &Aring; against a real 2.05 &Aring;, honest round trip failing &mdash; and no test
+          looked</strong>: 1,067 of 1,067 were green when the default flipped.
+        </dd>
+        <dt>The selector</dt>
+        <dd>
+          The pair's 39 verified losses (Ru 11 &middot; Zr 8 &middot; Ir 6 &middot; Rh 5 &mdash; metals
+          with no dead zone) had one mechanism: the pool sweeps a global scale 0.8 &hellip; 1.2, first
+          acceptable wins, and the 0.8 conformer used to carry an &eta; target of 0.8 &times; 1.2 =
+          0.96 S &mdash; right <em>by accident</em>. <code>OIN_ETA_TARGET_UNSCALED</code> (target = S at
+          every scale) was run as a full third arm and is <strong>dominated</strong> (+179 / &minus;59
+          verified against +189 / &minus;39) &mdash; but the two configurations break <em>different</em>
+          molecules, and a per-molecule oracle is <strong>+222 verified with no losses</strong>. The FF
+          scan had never checked that a binding group <em>reached</em> its target, so
+          <span class="mono">ff_clean</span> now counts the declared binding atoms it left outside the
+          contact cutoff, and an &eta; conformer that failed to clean or left a donor out is cleaned once
+          more from the same embedding with the target at S; the one with more donors in is kept. One
+          conformer per attempt, so the shipped seed sequence is untouched. An offline simulation that
+          <em>can</em> express a loss bounded it at +45 / &minus;1; the harness measured
+          <strong>+49 / &minus;4 self-consistent, +43 / &minus;5 VERIFIED</strong>, booked at the
+          budget-excluded row as <strong>+0.80 / +0.70 pts</strong>.
+        </dd>
+        <dt>Speed</dt>
+        <dd>
+          <strong>A default-path improvement, small, reported both ways.</strong> Like-for-like with
+          the v0.4.17 sweep: &Sigma; elapsed <strong>33.18 &rarr; 31.95 h</strong>,
+          <span class="mono">&gt; 30 s</span> <strong>579 &rarr; 521 (10.42%)</strong>,
+          <span class="mono">&gt; 300 s</span> 180 &rarr; 173, max 698 &rarr; 628 s. ⚠ The median moved
+          the other way, <strong>3.32 &rarr; 3.53 s</strong>; why was not measured. Goal B is not
+          delivered.
+        </dd>
+        <dt>Refuted</dt>
+        <dd>
+          <strong>The rigid placer as the fix.</strong> Where it places it is perfect
+          (<span class="mono">FEPZOQ</span> +0.02 &Aring; in 1 s), but it failed to build 5 of 18 and
+          <strong>broke 5 of 6 controls</strong>.
+          <strong><code>OIN_ETA_TARGET_UNSCALED</code> as a default</strong> &mdash; attaches more rings
+          (182 against 168 of 295) and breaks more passes; one half of the retarget's choice, not a
+          default. <strong>"Selection is exhausted" (v0.4.15) as a statement about the block</strong>
+          &mdash; it was a statement about the <em>pool</em>; with the targets fixed the pool can hold
+          attached conformers, and a selector then recovered +43 verified. <strong>Surplus contacts as
+          a selection criterion</strong> &mdash; 20 losses in simulation; boundary contacts are the modal
+          state of a <em>passing</em> molecule (v0.4.16).
+        </dd>
+        <dt>What it cost</dt>
+        <dd>
+          <strong>39, then 5, verified passes lost and accepted</strong> (the pair: Ru 11 &middot; Zr 8
+          &middot; Ir 6 &middot; Rh 5; the retarget: Ru 3 &middot; Pt 1 &middot; Mo 1). 18 of the 39 and
+          3 of the 5 still round-trip byte-exact and fail only the ruler &mdash; which is why the
+          selector must never be the round trip. The retarget brought 13 of the pair's losses back.
+          <br><br>
+          🔴 <strong>ARM 2 cannot see what the generator builds.</strong> Its round-trip field is
+          <span class="mono">get_oin_string(result.mol, coords)</span> &mdash; through the generator's
+          own bond graph, the pre-v0.4.8 <em>scored</em> path. In the full gate run <strong>138 of 198
+          &eta; rows built a different structure</strong> than under v0.4.17 and the gated field moved
+          on <strong>0</strong>; at the second promotion 41 of 198 and 0 again. A construction regression
+          passes it, and did for every release that shipped ferrocene detached. The release adds an
+          honest observation column (sha256 of an independent
+          <span class="mono">XYZToSMILES().convert</span> of the generated coordinates): of 401 measured
+          rows, <strong>135 of the 378 the gate passes fail the harness's own honest predicate &mdash;
+          36%</strong>. Validated 370 / 370 where the gate's structure is byte-identical to the release
+          sweep's. (The lane doc and golden comment block first quoted 134 of 377 &mdash; a transcription
+          error against the table's own 401-row denominator, corrected at the source.) Gating on the column would re-freeze ~135 rows as honest
+          fails &mdash; a change to what ARM 2 <em>means</em>, left to the owner with the evidence frozen.
+          0 of 425 rows owed at either promotion.
+          <br><br>
+          <strong>Found on the way, parked:</strong> &sigma; bonds in verified passes are a median
+          <strong>0.31 &Aring; too short</strong> &mdash; the pool's global 0.8 scale wins first.
+          Invisible to both accuracy numbers; visible to anything that reads geometry. Two full sweeps
+          (6 h 24 min + 6 h 29 min), four &eta;-cohort A/B arms, two full ARM 2 gate runs; the
+          carry-forward licence voided twice in one release, both debts paid.
+        </dd>
+        <dt>The census of record</dt>
+        <dd>
+          On the release sweep: FAIL 653 = <strong>13.06 pts</strong>, VERIFIED gap
+          <strong>21.60 pts</strong>, <span class="mono">UNATTRIBUTED 0</span>, and <strong>the noise
+          floor of attribution is zero</strong> &mdash; all 4,157 non-movers keep their fault. G 481
+          &rarr; 278; <span class="mono">DETACHED</span> 334 &rarr; 142; 177 movers went
+          <span class="mono">G_CONSTRUCTION &rarr; NONE</span> (verified, not merely passing), 18 the other
+          way. <strong>G construction 3.94 &middot; E2 perception 3.52 &middot; E1 serializer 2.96</strong>
+          &mdash; within a point of each other, for the first time.
+        </dd>
+      </dl>
+      <p class="suite">Suite: <strong>1076 OK</strong> &middot; two full sweeps <strong>run</strong> as the promotions' condition &middot; ARM 1: 0 of 62 at both &middot; ARM 2: 0 of 425 at both, each from a full run</p>
+    </article>
   </section>
 
   <!-- ─── unknowns ─────────────────────────────────────────────────── -->
@@ -1843,34 +2305,38 @@ pre.prompt {
       <table>
         <thead><tr><th>Gap</th><th>What it would take to close</th></tr></thead>
         <tbody>
-          <tr><td><strong>CLOSED — corpus speed.</strong> The sweep reads <span class="mono">678/5000 = 13.56%</span> over 30 s, median <span class="mono">4.01 s</span>. <strong>What is still unknown is attribution</strong>: no release claimed the win, so a 6.3-point improvement has no owner</td><td>Bisect v0.4.7&ndash;v0.4.14 for the cause; not attempted</td></tr>
-          <tr><td><strong>CLOSED — corpus accuracy: 77.16%, measured.</strong> And v0.4.13's argument that an offline re-score was exact is <strong>refuted</strong> — key-invariance bounds <em>acceptance</em>, not <em>embedding</em></td><td>Standing rule replacing it: any lever that relabels slots must be A/B&rsquo;d over the coordinate-derived affected population, never re-scored over frozen structures</td></tr>
+          <tr><td><strong>CLOSED — corpus speed.</strong> The release sweep reads <span class="mono">521/5000 = 10.42%</span> over 30 s. <strong>Still unknown: attribution of the first step</strong> — no release claimed the v0.4.6 → v0.4.14 win (994 → 678), so it has no owner. The two steps since are owned: v0.4.17 (678 → 579, the veto's per-conformer encodes) and v0.4.18 (579 → 521, attached rings)</td><td>Bisect v0.4.7&ndash;v0.4.14 for the cause; not attempted. ⚠ New: v0.4.18's corpus <strong>median rose</strong> 3.32 → 3.53 s while its tail fell &mdash; not measured</td></tr>
+          <tr><td><strong>CLOSED — corpus accuracy: 86.94% self-consistent / 78.40% VERIFIED, measured</strong> on the v0.4.18 release sweep, one configuration since v0.4.14. And v0.4.13's argument that an offline re-score was exact is <strong>refuted</strong> — key-invariance bounds <em>acceptance</em>, not <em>embedding</em></td><td>Standing rule replacing it: any lever that changes what the generator consumes or builds must be A/B&rsquo;d over the coordinate-derived affected population with both arms generated, never re-scored over frozen structures &mdash; and a promoted default owes a full sweep</td></tr>
           <tr><td>The <strong>CIP memo's promotion gate</strong> has not been run, so the largest measured single speed win stays off</td><td>Full 328-molecule cohort with the lever on, ~10 CPU-h sharded</td></tr>
-          <tr><td>The <strong>five bucket-report cohorts are still not comparable</strong>. The two sweeps share a cohort and seed but not a code version or thread configuration</td><td>Closer than anything before, still not a time series &mdash; accept it, or re-run v0.4.6's code</td></tr>
+          <tr><td>The <strong>five bucket-report cohorts are still not comparable</strong>, so there is no like-for-like line from v0.4.4. <strong>Partly CLOSED from v0.4.14 on:</strong> the v0.4.14, v0.4.17, v0.4.18 and v0.4.18-release sweeps are one configuration and differ only in the code</td><td>77.16 → 82.72 → 86.10 → 86.94 <em>is</em> a series. Nothing before v0.4.14 joins it</td></tr>
           <tr><td>The <strong>eta acceptance lever has no runtime claim at all</strong></td><td>Re-run its A/B on a quiet box</td></tr>
-          <tr><td><strong>Whether <span class="mono">OIN_ACCEPT_STRING_EXACT</span>&rsquo;s 4.00&times; cost can be bought down</strong> &mdash; it decides whether the only reachable 0.96 points get taken</td><td>The cost has a known mechanism (the lever declines to stop the pool). Plot recovered-molecules against a bounded extra search and take the knee. <strong>Nobody has run it.</strong></td></tr>
-          <tr><td><strong>Whether the generator can build the correct enantiomer at all.</strong> The pool holds one key-matching conformer and it is the mirror &mdash; but <span class="mono">TAYDUV_comp_0</span> is <strong>1 of 201</strong>, so the correct handedness is <em>rare, not categorically absent</em></td><td>Force the pool wide and measure the rate. The answer decides whether 4.02 points are a budget problem, a sampling problem, or a documented limitation</td></tr>
-          <tr><td><s>3.74 points have never been characterised</s> &mdash; <strong>CLOSED by v0.4.16.</strong> All 187 classified, 0 unaccounted: <strong>2.82 perception, 0.62 construction+stereo, 0.30 arrangement-only</strong>. Every point in the gap now has a measured mechanism attached &mdash; the first time that has been true</td><td><strong>What is still unknown is whose fault the perception is.</strong> A mis-assignment on a faithful geometry (fixable, up to 2.82 pts) and a correct assignment on a distorted one (construction, ~0 by that route) are indistinguishable in these strings. That split is v0.4.19&rsquo;s first deliverable</td></tr>
+          <tr><td><s>Whether <span class="mono">OIN_ACCEPT_STRING_EXACT</span>&rsquo;s 4.00&times; cost can be bought down</s> &mdash; <strong>CLOSED by v0.4.16: it cannot.</strong> Keeping 79% of the +48 costs 89% of the runtime penalty, because the <em>early</em> extra conformers are the expensive ones</td><td>The +0.96 points is still available, still costs ~1.8 points of the speed goal, and is a standing owner decision rather than an engineering question</td></tr>
+          <tr><td><s>Whether the generator can build the correct enantiomer at all</s> &mdash; <strong>CLOSED by the v0.4.17 census: the question was mis-sized by a factor of ~22.</strong> The 201 "enantiomers" were the encoder writing achiral molecules two ways; <span class="mono">G_HANDEDNESS</span> &mdash; the generator building the mirror of a molecule whose string <em>does</em> separate the hands &mdash; is <strong>9</strong> molecules at v0.4.14 and <strong>4</strong> on the release sweep</td><td>Forcing the pool wide was never run and no longer needs to be</td></tr>
+          <tr><td><s>3.74 points have never been characterised</s> &mdash; <strong>CLOSED by v0.4.16</strong>, and <s>whose fault the perception is</s> <strong>CLOSED by the census, by construction of its rule order</strong>: a molecule is filed <span class="mono">E2_P_*</span> only after the neutral ruler has passed its generated structure and chirality, so the perception block is perception <em>on a correct structure</em> by definition &mdash; <strong>176 / 3.52 pts</strong> on the release sweep (<span class="mono">E2_P_FRAGILE</span> 105: strings that change under renumbering or 0.02 Å noise, 92 non-η, Ni 24 / Zn 22)</td><td>An encoder lane; the census of record recommends it, or the serializer's η-rank swap, for v0.4.19</td></tr>
           <tr><td><strong>CLOSED — <span class="mono">PREFILTER_VETO</span> prevalence: 1.5% of vetoes, 4.5% of molecules.</strong> Its latency objection is <strong>refuted</strong> — measured faster. <strong>Still unknown: the recovery count</strong>, since the only one measured came from a stochastic A/B</td><td>A non-A/B count via <span class="mono">probe_accept_gap.py</span> over the 26 molecules where the prefilter actually vetoes</td></tr>
           <tr><td><strong>CLOSED &mdash; the 52 passing molecules that read &ldquo;ligands detached&rdquo;.</strong> The second explanation was right: <strong>51 of 52 hold every claimed coordination site</strong> under the guard&rsquo;s own predicate. They lose 1&ndash;3 <em>light or ambiguous</em> donors (H, Si, B, F), often with the actual count unchanged or higher</td><td><strong>Two different tests:</strong> the bucket asks &ldquo;did the donor set change&rdquo;, the guard asks &ldquo;did a site go empty&rdquo;. A bucket&rsquo;s verdict is not a guard&rsquo;s verdict</td></tr>
-          <tr><td>The <strong>MEDZUR class &mdash; now 111 molecules, attachment intact and re-perception still disagreeing</strong> &mdash; has no mechanism. Sized twice, understood no better</td><td>A mechanism, not another count</td></tr>
-          <tr><td><strong>The mechanism splits are one cohort behind the bucket table.</strong> Only <span class="mono">structural</span>'s detached split (301 of 484) is re-derived on the v0.4.14 sweep; the enantiomer count, the &eta;-set share and the resonance residue are all from the older corpus</td><td>Re-run those three audits on the new sweep</td></tr>
+          <tr><td><s>The MEDZUR class has no mechanism</s> &mdash; <strong>CLOSED by v0.4.16</strong> (82% perception, all 187 classified) and re-measured by the census as <span class="mono">E2_P_*</span> 148 / 2.96 by an independent path</td><td>See the perception row above</td></tr>
+          <tr><td><s>The mechanism splits are one cohort behind the bucket table</s> &mdash; <strong>CLOSED by the census of record:</strong> every fault is attributed on the release sweep itself, 5,000 / 5,000, <span class="mono">UNATTRIBUTED 0</span>, with a control that reproduces the frozen v0.4.14 table byte-for-byte and a non-mover change count of <strong>0</strong> as the noise floor</td><td>There is no longer an older corpus behind any figure in the gap chart</td></tr>
+          <tr><td><strong><span class="mono">SPHERE_DIFF</span> — 183 verified-gap molecules, 133 of them passes — is G or the ruler's tolerance, and nobody knows which.</strong> The ruler disagrees about the coordination sphere on a structure the round trip accepts; the C1 squeeze control puts the ruler's own floor at ~1.16%. The largest single block G owns on the VERIFIED side</td><td>Carried as "a question for the L2 lane" since the census; still open after v0.4.18</td></tr>
+          <tr><td><strong>The generator's label dependence has no lane.</strong> An equally valid, differently <em>labelled</em> input and a worse structure: 7 in 182 at v0.4.14, all four of v0.4.17's losses. Named in three releases, sized in two, owned by none</td><td>The CoordMap should not care which of two automorphic donors is called <span class="mono">{2}</span>. Every canonicality lever pays this until it is closed</td></tr>
+          <tr><td><strong>σ bonds in verified passes are a median 0.31 Å too short</strong> — the pool's global 0.8 scale wins first. Invisible to both accuracy numbers; visible to anything that reads geometry</td><td>Parked with the owner's generation lane. <strong>No accuracy figure on this page says anything about geometric fidelity beyond the contact cutoff</strong></td></tr>
+          <tr><td><strong>What ARM 2 should mean.</strong> Its gated field cannot see a construction regression (138 of 198 η rows changed, field moved on 0), and its new honest column says <strong>135 of the 378 rows it passes fail the harness's own predicate</strong></td><td>Gating on the column re-freezes ~135 rows as honest fails or drops them; not gating leaves the release gate blind to the class v0.4.18 just repaired. Owner decision, evidence frozen. Also the owner's: the gate scores a SIGKILLed row as a string mismatch</td></tr>
+          <tr><td><strong>The residual <span class="mono">DETACHED</span> is two populations and only one has a mechanism.</strong> η-bound 103 (Ru 37, Ti 12, Zr 11) — mostly the ~30 molecules of oracle headroom where a per-atom arrival count ties or points the wrong way; and <strong>non-η 48</strong> (Y 7, Pt 6, Ir 4, Pd 4, Zn 4), a σ-donor that never arrives, which no v0.4.18 lever touched</td><td>A different selector than the arrival count for the first; a ruler for the second</td></tr>
+          <tr><td><strong>Stereo the string does not carry: 154 passes / 3.08 verified pts</strong> (<span class="mono">E1_NOT_ENCODED</span> 118 + <span class="mono">E1_NONINJECTIVE</span> 36). Invisible to the self-consistent number by construction; the Y1 P3 blind spot lives here, and v0.4.17's accepted 17 unified pairs moved into it</td><td>Encode the metal-bound N–H / C–H centre. No release owns it</td></tr>
         </tbody>
       </table>
     </div>
     <p class="footnote">
-      <strong>The two goals are one goal.</strong> Of the 340 failures in the v0.4.6 sweep,
-      <strong>78.8% never test the notation</strong> — 240 are generator timeouts and 28 produced
-      nothing. The notation-attributable gap is <strong>57/5000 ≈ 1.1%</strong>: where the notation is
-      actually exercised, it is <strong>~98.9% correct</strong>. A per-molecule 30 s cap recovers
-      <strong>37.84 CPU-h</strong> and costs <strong>251 passes (5.02 points)</strong>; 93.1% of
-      honest passes already finish under 30 s.
+      <strong>The two goals are one goal — but less so than they were.</strong> On the v0.4.6 sweep
+      <strong>78.8% of failures never tested the notation</strong>; on the release sweep the
+      molecules that produce nothing are <strong>69 of 653 failures (10.6%)</strong>, and the census
+      showed the string was wrong for <strong>59% of <span class="mono">hard_fail</span></strong> at
+      v0.4.14 — the generator working on the wrong molecule, not a throughput problem. 521 molecules
+      are over 30 s and 4,347 pass, so at most <strong>~10.4%</strong> of the cohort is on the wrong
+      side of Goal B, against 19.88% at v0.4.6.
       <br><br>
-      ⚠ <strong>That decomposition is itself due a refresh.</strong> It is v0.4.6-era, and the
-      v0.4.14 sweep shows the failure mix has moved materially — <span class="mono">hard_fail</span>
-      319 → 266, <span class="mono">structural</span> 417 → 484,
-      <span class="mono">&gt; 30 s</span> 994 → 678. The <em>shape</em> of the argument holds; the
-      numbers inside it do not.
+      ⚠ The v0.4.6-era figures (37.84 CPU-h recoverable from a 30 s cap, 251 passes / 5.02 points at
+      risk) are retired; the equivalent numbers on the release sweep have not been derived.
     </p>
   </section>
 
@@ -1882,13 +2348,14 @@ pre.prompt {
       sources, appends one release section, updates the verdicts and the gap table, and republishes
       this page to the same URL.
     </p>
-    <pre class="prompt">/release-retrospective v0.4.13      # append one release (the common case)
+    <pre class="prompt">/release-retrospective v0.4.19      # append one release (the common case)
 /release-retrospective --full       # re-derive every figure from source</pre>
     <p class="footnote">
       It lives at <code>.claude/commands/release-retrospective.md</code>, and it carries the standing
       caveats with it — cohorts are not comparable, <span class="mono">elapsed_s</span> is nested and
-      a sum, the corpus speed figure is stale until a sweep says otherwise, and a lever measured but
-      shipped default-OFF changes nothing for a user.
+      a sum, the corpus speed figure is stale until a sweep says otherwise, a lever measured but
+      shipped default-OFF changes nothing for a user, and from v0.4.17 every accuracy figure is two
+      numbers.
     </p>
     <div class="tw">
       <table>
@@ -1915,14 +2382,26 @@ pre.prompt {
   <section id="sources">
     <div class="sec-head"><span class="n">08</span><h2>Sources</h2></div>
     <p class="lede" style="margin-bottom:18px;">
-      Every figure on this page traces to a committed artifact. No measurement was run to produce
-      this report.
+      Every figure on this page traces to a committed artifact. No sweep, benchmark or A/B was run to
+      produce this report; the v0.4.18 headline and the runtime rows were re-derived from the frozen
+      <span class="mono">measurements/</span> tree.
     </p>
     <div class="tw">
       <table>
         <thead><tr><th>What</th><th>Where</th></tr></thead>
         <tbody>
-          <tr><td>Per-release narrative and figures</td><td class="mono">CHANGELOG.md §§ [0.4.4]–[0.4.13]</td></tr>
+          <tr><td>Per-release narrative and figures</td><td class="mono">CHANGELOG.md §§ [0.4.4]–[0.4.18]</td></tr>
+          <tr><td><strong>v0.4.18 — the release sweep of record, its census, and the ARM 2 full run with the honest column</strong>; the honest headline re-derives from this directory alone</td><td class="mono">measurements/v0.4.18-release-sweep/ (28 files)</td></tr>
+          <tr><td>v0.4.18 — the first promotion's sweep (86.10 / 77.66) and its ARM 2 full run</td><td class="mono">measurements/v0.4.18-sweep/</td></tr>
+          <tr><td><strong>v0.4.18 — L2: the distance audit, every probe, all three η A/B arms</strong></td><td class="mono">measurements/v0.4.18-l2/ · docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md</td></tr>
+          <tr><td>v0.4.18 — the selection lane: the offline bound and the retarget arm</td><td class="mono">measurements/v0.4.18-selection/ · v0.4.18/SELECTION_ETA_RETARGET.md</td></tr>
+          <tr><td>v0.4.18 — the census re-run on the v0.4.17 sweep, before a lane was chosen</td><td class="mono">measurements/v0.4.18-census/ · v0.4.18/CENSUS_OF_THE_v0.4.17_SWEEP.md</td></tr>
+          <tr><td><strong>v0.4.18 — the census of record on the release sweep (13.06 / 21.60)</strong></td><td class="mono">v0.4.18/CENSUS_OF_THE_RELEASE_SWEEP.md</td></tr>
+          <tr><td><strong>v0.4.17 — the sweep of record (82.72 / 74.60), frozen</strong></td><td class="mono">measurements/v0.4.17-sweep/</td></tr>
+          <tr><td>v0.4.17 — the exact-fold lane: the offline audit, the generator A/B, the ARM 2 re-freeze rows and the stale-cause trace</td><td class="mono">measurements/v0.4.17/ (23 files) · v0.4.17/L1_EXACT_DONOR_FOLD.md, ARM2_REFREEZE.md</td></tr>
+          <tr><td><strong>v0.4.17 — the census: every molecule of the v0.4.14 sweep given one fault</strong></td><td class="mono">measurements/v0.4.17-census/ · v0.4.17/CENSUS.md, CENSUS_C{1,2,3}_*.md</td></tr>
+          <tr><td>v0.4.16 — the priced trade, the 187 characterised, the three instruments that lied first</td><td class="mono">v0.4.16/LANE-price-the-string-exact-trade.md, LANE-characterise-the-unmeasured.md, METHOD_*.md · measurements/v0.4.16/</td></tr>
+          <tr><td>v0.4.15 — the reachability map, six A/B arms, five frozen populations</td><td class="mono">v0.4.15/REACHABILITY_MAP_v0.4.15.md, LANE-*.md · measurements/v0.4.15/</td></tr>
           <tr><td><strong>v0.4.13's frozen numbers — tracked and public</strong></td><td class="mono">measurements/v0.4.13-honest/ (13 files)</td></tr>
           <tr><td><strong>The v0.4.14 baseline sweep — the absolute, plus the extract that re-derives it</strong></td><td class="mono">measurements/v0.4.14-sweep/ (6 files)</td></tr>
           <tr><td><strong>v0.4.14's frozen instruments</strong> — the full 182-molecule A/B, v0.4.13's corrected at-risk measurement, every sample's seed and membership</td><td class="mono">measurements/v0.4.14/ (18 files)</td></tr>
@@ -1955,7 +2434,7 @@ pre.prompt {
 <footer class="colophon">
   <div class="wrap">
     OIN-SMILES — lossless 3D XYZ ↔ 1D OIN-SMILES conversion for transition-metal complexes.
-    Retrospective covering v0.4.4 (2026-07-23) through v0.4.12 (in flight).
+    Retrospective covering v0.4.4 (2026-07-23) through v0.4.18 (2026-09-23).
     Built from committed evidence only; no sweep, benchmark or A/B was run to produce it.
   </div>
 </footer>
