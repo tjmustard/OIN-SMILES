@@ -243,9 +243,18 @@ OBILAM repaired; the five verified passes and UMENEG byte-identical; 12/12 sampl
 re-encode to `smiles_1` again. **Offline re-score under v3 (4,760 structures): at most 5 passing
 rows differ** (v2: 195), pending the audit's changed set to classify them.
 
-Running: the whole-cohort audit under rule v3 (`cap`, `fix3`), then changed sets, the fix3
-re-score, two live arms, re-freeze. v1 and v2 outputs are kept as `*capv1*` / `*capv2*` /
-`*fix3v1*` / `*fix3v2*` in the results dir (not frozen).
+**Rule v3 on the whole cohort (`e_selfconsistency_cap.jsonl`, `rescore_cap/`):** the string
+moves on **31** molecules — `E1_GRAPH` 22 (12 of them byte-exact false passes), `P_DETACHED` 6,
+`DATA_MULTI` 1, `E1_HCOUNT` 1, the timeout row — and on **no verified pass**. Canonicality: fragile
+502 → 492 (2 became fragile, both failing rows; 12 became stable), mirror 3 unstable / 1 stable
+(NON-CANONICAL 120 → 121, NON-INJECTIVE 163 → 162): a near-null, slightly positive. Offline
+re-score of the 4,958 unchanged rows: self-consistent **5 losses** (4 are `G_CONSTRUCTION` false
+passes turning honest; OHUTIV is a verified pass whose generated structure now re-encodes with a
+different H count, `NONE → G_HCOUNT`) / 13 gains (11 false passes, 2 real); **VERIFIED −1 / +2**.
+With all three levers (`fix3`): 109 strings move (80 + 31 − 2 overlap), same stability columns,
+same offline transitions.
+
+_(live arms over the 31 and the 109 running; results in §6a)_
 
 ## 7. Not done / not this lane
 
