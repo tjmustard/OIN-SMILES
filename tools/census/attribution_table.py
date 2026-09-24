@@ -108,6 +108,19 @@ EXPECTED = {
         },
         "none": 3883,
     },
+    # v0.4.18 RELEASE: + OIN_ETA_RETARGET. The census IS re-run on this one
+    # (tools/v0418/run_census_release.sh -> results-v0.4.18-release-census).
+    "results-v0.4.18-release-sweep": {
+        "buckets": {
+            "byte_exact": 4347,
+            "structural": 284,
+            "key_equal": 119,
+            "hard_fail": 230,
+            "facmer_divergent": 9,
+            "encode_fail": 11,
+        },
+        "none": 3920,
+    },
 }
 EXPECTED_BUCKETS = EXPECTED["results-v0.4.14-sweep"]["buckets"]
 PT_PER_MOL = 100.0 / 5000
