@@ -1896,6 +1896,19 @@ def get_oin_string(tmc_mol, xyz_coords):
     aligner = OINDiscreteAligner(0, fragments_data, metal_dn=metal_d_electron_count(tmc_mol))
     geometry_string_raw = aligner.generate_canonical_vectors()
 
+    # v0.4.19 (OIN_RC1_PROPAGATE): the aligner's RC1 step re-ranks same-mass eta fragments by
+    # content, but every w-tag entry still carries the ORIGINAL fragment's local indices. Read
+    # against the un-permuted list below, rank r names the wrong fragment whenever two different
+    # eta groups bind through the same element (Cp + allyl, indenyl + butyne): one ring gets the
+    # other's markers and the surplus indices are dropped at inline.py -- the string then has a
+    # different coordination sphere from its input (census E1_GRAPH/SPHERE_DIFF). Permuting the
+    # list to match makes rank r name the fragment the entry was computed on again.
+    if aligner.rc1_rank_map and lever_enabled("OIN_RC1_PROPAGATE"):
+        _permuted = list(fragments_data)
+        for _new_r, _old_r in aligner.rc1_rank_map.items():
+            _permuted[_new_r] = fragments_data[_old_r]
+        fragments_data = _permuted
+
     # geometry_string_raw looks like: "g:SPL|w:1.0:0;2.0:1"
     # We need to parse this to get Slot Assignments for re-sorting.
 

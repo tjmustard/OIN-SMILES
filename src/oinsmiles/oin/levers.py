@@ -739,6 +739,17 @@ _HELD_OFF = {
         "step is per-ATOM provenance, not another aggregate. Promote only with evidence that it "
         "moves a real population."
     ),
+    "OIN_RC1_PROPAGATE": (
+        "v0.4.19 serializer lane, MEASURED and left off for the owner. Applies the aligner's RC1 "
+        "rank permutation to get_oin_string's fragment list, so a w-tag entry's rank names the "
+        "fragment its local indices were computed on. Without it, two DIFFERENT eta groups bound "
+        "through the same element (Cp + allyl, indenyl + butyne) exchange markers and the string "
+        "has a different coordination sphere from its input -- the census's E1_GRAPH/SPHERE_DIFF "
+        "on multi-eta molecules and a share of the byte-exact FALSE passes (the generator builds "
+        "the corrupted string and the encoder re-reads it identically). Measure with the "
+        "parse-back ruler (tools/census/string_sufficiency.py) and the mirror/renumbering audit, "
+        "never with the round trip alone; evidence in docs/agentic-notes/v0.4.19/."
+    ),
     "OIN_RESCUE_STUCK_RING": (
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "
         "it between buckets rather than fixing it."
