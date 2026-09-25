@@ -11,7 +11,7 @@ With the lever a heavy non-metal atom's cap counts and cuts ligand bonds only.
 Hydrogen is exempt on purpose: an H between a carbon and the metal must lose one of the two
 (max valence 1), and the shipped excess rule is right there -- with H included, 8 of 296 probe
 rows died on "Explicit valence for atom H, 2", one of them a verified pass. UMENEG is the
-smallest of the eight. The lever is measured and held OFF; both arms are pinned.
+smallest of the eight. Promoted to default-ON in v0.4.19; both arms are pinned.
 """
 
 from __future__ import annotations
@@ -37,10 +37,10 @@ def _fragments(oin: str) -> list[str]:
 
 class TestRegistry(unittest.TestCase):
     def test_held_off_with_a_reason(self):
-        self.assertIn("OIN_CAP_IGNORES_METAL", _HELD_OFF)
-        self.assertNotIn("OIN_CAP_IGNORES_METAL", _DEFAULT_ON)
-        self.assertIn("never cuts a REAL bond", _HELD_OFF["OIN_CAP_IGNORES_METAL"])
-        self.assertIn("Hydrogen keeps the shipped rule", _HELD_OFF["OIN_CAP_IGNORES_METAL"])
+        # Promoted in v0.4.19 (owner, 2026-09-24, conditional on the candidate sweep landing on
+        # its prediction -- 87.78% / 79.12% against 87.56 / 79.02).
+        self.assertIn("OIN_CAP_IGNORES_METAL", _DEFAULT_ON)
+        self.assertNotIn("OIN_CAP_IGNORES_METAL", _HELD_OFF)
 
 
 class TestSelenoetherIsOneLigand(unittest.TestCase):

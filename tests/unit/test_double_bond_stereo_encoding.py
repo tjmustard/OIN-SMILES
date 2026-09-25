@@ -57,10 +57,15 @@ def _alkene_stereo(oin_string):
 
     for frag in oin_string.split("."):
         clean = re.sub(r"\{[^}]*\}", "", frag)
-        if "C=C" not in clean:
-            continue
+        # The synthetic ligand carries no hydrogens, so the v0.4.19 writer (OIN_H_FAITHFUL,
+        # default-ON) brackets every carbon: `[C]/[C]=[C]/[C]`. Look for the double bond in the
+        # parsed graph, not for the substring "C=C".
         m = Chem.MolFromSmiles(clean)
-        if m is None:
+        if m is None or not any(
+            b.GetBondType() == Chem.BondType.DOUBLE
+            and b.GetBeginAtom().GetAtomicNum() == b.GetEndAtom().GetAtomicNum() == 6
+            for b in m.GetBonds()
+        ):
             continue
         Chem.AssignStereochemistry(m, cleanIt=True, force=True)
         for b in m.GetBonds():

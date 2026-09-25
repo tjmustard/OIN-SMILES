@@ -9,7 +9,7 @@ The string then carries a different coordination sphere from the input (census E
 SPHERE_DIFF), and the generator builds it faithfully -- a byte-exact FALSE pass when it does.
 
 TULTAX_comp_0 (Ru, Cp + allyl + picolinate, 32 atoms) is the smallest of the 14 release-sweep
-strings the lever repairs. The lever is measured and held OFF; both arms are pinned here so a
+strings the lever repairs. Promoted to default-ON in v0.4.19; both arms are pinned here so a
 default flip has to change this file.
 """
 
@@ -50,9 +50,10 @@ def _eta_fragments(oin: str) -> list[tuple[str, int]]:
 
 class TestRegistry(unittest.TestCase):
     def test_held_off_with_a_reason(self):
-        self.assertIn("OIN_RC1_PROPAGATE", _HELD_OFF)
-        self.assertNotIn("OIN_RC1_PROPAGATE", _DEFAULT_ON)
-        self.assertIn("E1_GRAPH/SPHERE_DIFF", _HELD_OFF["OIN_RC1_PROPAGATE"])
+        # Promoted in v0.4.19 (owner, 2026-09-24: "on the condition the sweep lands on its
+        # prediction" -- it did: 87.78% / 79.12% against 87.56 / 79.02 predicted).
+        self.assertIn("OIN_RC1_PROPAGATE", _DEFAULT_ON)
+        self.assertNotIn("OIN_RC1_PROPAGATE", _HELD_OFF)
 
 
 class TestCpPlusAllyl(unittest.TestCase):

@@ -49,7 +49,8 @@ def buckets(sweep):
 def elapsed(d, m):
     p = d / "individual_reports" / f"{m}.json"
     try:
-        v = json.loads(p.read_text()).get("elapsed_s")
+        r = json.loads(p.read_text())
+        v = (r.get("metrics") or {}).get("elapsed_s", r.get("elapsed_s"))  # NESTED, and a SUM
         return float(v) if v is not None else None
     except Exception:  # noqa: BLE001
         return None
@@ -145,9 +146,11 @@ def main():
                     e is not None and e >= BUDGET_S for e in (e_c, e_o)
                 ) or "timeout" in why.get(m, "")
                 tally[(tag, "budget-boundary" if boundary else "NOT boundary")] += 1
+                o_bucket = (buckets(other_run(m)).get(m) or {}).get("bucket")
                 print(
                     f"   {tag:20s} {m:16s} {'changed-set' if m in changed else 'unchanged':11s} "
-                    f"cand {why.get(m, '?'):34s} elapsed cand {e_c!s:>8} / other {e_o!s:>8}"
+                    f"cand {why.get(m, '?'):32s} other bucket {o_bucket!s:14s} "
+                    f"elapsed cand {e_c!s:>8} / other {e_o!s:>8}"
                     f"{'   BOUNDARY' if boundary else '   *** not a boundary row'}"
                 )
                 out["rows"].append(
