@@ -147,10 +147,10 @@ run_arm1() {
         return 1
     fi
     n_done="$(echo "$done_line" | awk '{print $2}')"
-    # 61 -> 62 in v0.4.10 with the golden re-freeze; see gate_arm1_encode.py's
+    # 61 -> 62 in v0.4.10, 62 -> 65 in v0.4.19 with the golden re-freezes; see gate_arm1_encode.py's
     # EXPECTED_FIXTURE_COUNT for why the two counts are asserted independently.
-    if [ "$n_done" -ne 62 ]; then
-        echo "[gate/arm1] FAIL: #DONE $n_done, expected 62 -- short run, refusing to trust it" >&2
+    if [ "$n_done" -ne 65 ]; then
+        echo "[gate/arm1] FAIL: #DONE $n_done, expected 65 -- short run, refusing to trust it" >&2
         return 1
     fi
     echo "[gate/arm1] sentinel OK: #DONE $n_done" >&2

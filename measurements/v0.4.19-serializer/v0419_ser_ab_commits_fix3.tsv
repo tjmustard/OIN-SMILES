@@ -1,0 +1,3 @@
+arm	launched_from
+off	results-v0.4.18-release-sweep @ "commit_id": "cdb76eca" -- the sweep of record's own rows, not a run
+on	ae9e02de4b539bd1415a5c41699369b661eac7e1 docs(v0.4.19): H4 -- rule v2 refuted by the offline re-score (195 spurious halide contacts), rule v3 in flight

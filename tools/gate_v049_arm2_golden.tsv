@@ -1,6 +1,6 @@
 ABAZIO_comp_0	b1b345bf18efc32b0432d912a5b78a08e50bbe3e2a9d0f883e46d993589776c6	b1b345bf18efc32b0432d912a5b78a08e50bbe3e2a9d0f883e46d993589776c6	85	85	-	fast	byte->byte
 AHAQUX_comp_0	2da5d8513e16d22c7846f1ff2b1cc034a6e564ffdda31bdd9bc159fbb2ae61bf	2da5d8513e16d22c7846f1ff2b1cc034a6e564ffdda31bdd9bc159fbb2ae61bf	100	100	-	fast	byte->byte
-AKUMAV_comp_0	438e5ad4925a59d0af4d093d19c8e128833be47e1bf633ce4d6fa9afcdaf682d	438e5ad4925a59d0af4d093d19c8e128833be47e1bf633ce4d6fa9afcdaf682d	131	131	-	b300_plus	no_structure
+AKUMAV_comp_0	70df5cf7c61d5e814bfc7d9ceeda4e4d4115ba57c6f20b568185af3abc916f2e	70df5cf7c61d5e814bfc7d9ceeda4e4d4115ba57c6f20b568185af3abc916f2e	137	137	-	b300_plus	no_structure
 AMEWIY_comp_0	0c0d5f2e9f8eeeb95ab94bce75ee9f6885e8d211c96c51fb433735d4bd878e48	0c0d5f2e9f8eeeb95ab94bce75ee9f6885e8d211c96c51fb433735d4bd878e48	111	111	eta	b60_300	byte->byte
 BAVKAM_comp_1	df78a1567d03433c6eba9de226d45256f238bda6efac8cf957d3b0fcf0a2aa40	df78a1567d03433c6eba9de226d45256f238bda6efac8cf957d3b0fcf0a2aa40	127	127	-	fast	byte->byte
 BEDLII_comp_0	ab9cfac30dadcc84d3e83a2a22b15b90b249a6463b564cb4cb894a2c101d7bc1	NO_STRUCTURE@300s	193	-	-	b300_plus	no_structure
@@ -24,7 +24,7 @@ CEXBIS_comp_0	0b5a0f3452d145b59fab0ed1ea4cf42d7769da79ae084137ac6ed9ef8a5f0215	0
 CIGLAI_comp_0	e68644465bd613947aa640146146fa2199a9a958cf2f751af29e91a01fdd655c	e68644465bd613947aa640146146fa2199a9a958cf2f751af29e91a01fdd655c	106	106	-	b30_60	byte->byte
 CIMFUA_comp_0	feaa7d1d4c10ce54b6fa1743e3cda745e4784f2e27a67fafcb30d4359ff330a6	feaa7d1d4c10ce54b6fa1743e3cda745e4784f2e27a67fafcb30d4359ff330a6	75	75	-	fast	byte->byte
 CISDUF_comp_0	e6737a058ef268b2d7aa3607cefe0815d6d0c9f4076d89a07b9767ccc88d4e43	e6737a058ef268b2d7aa3607cefe0815d6d0c9f4076d89a07b9767ccc88d4e43	116	116	eta	b60_300	byte->byte
-COJJOD_comp_0	8b4ac09aa014e19f191c083f5fe5701b0d442f3c1a22b2bc418ce564628d9858	8b4ac09aa014e19f191c083f5fe5701b0d442f3c1a22b2bc418ce564628d9858	108	108	-	b300_plus	no_structure
+COJJOD_comp_0	d75306ae37a75e02773c08cba52f7c5703f8be9b6fe2c9c7d18f4424af064363	f1018b26789f4c599aa62806d89dfa8946f9e22fe6019d76bac6a0cdb5d5ef05	120	120	-	b300_plus	no_structure
 COTTAJ_comp_0	0fd8782743f9a241d83b9e2ae1aa03346e9007432623d91dcc82d6b6fae9105d	0fd8782743f9a241d83b9e2ae1aa03346e9007432623d91dcc82d6b6fae9105d	93	93	eta	fast	byte->key
 DEMSOG_comp_0	352edb51d66f198d1e80b2e74fef50c5a13dc107ffdfd8d13e39801b031dc9db	352edb51d66f198d1e80b2e74fef50c5a13dc107ffdfd8d13e39801b031dc9db	184	184	-	b60_300	byte->FAIL
 DEVFUG_comp_0	6e6f5c42410e5eeb27fa7cf9a4a776ce54b8c7c855e88525e9bf3fc1f21faf58	6e6f5c42410e5eeb27fa7cf9a4a776ce54b8c7c855e88525e9bf3fc1f21faf58	115	115	-	fast	key->key
@@ -63,7 +63,7 @@ GAMJAG_comp_0	1fa153db383f314bb8a58f50f3df728b5aa0a4fbd3f87c180630b453001a8321	1
 GAQWUR_comp_0	e06d9b3ec511cf3865e5279c0e3a0616b5379837a3ad31ff1ad82fa0b2430a0a	e06d9b3ec511cf3865e5279c0e3a0616b5379837a3ad31ff1ad82fa0b2430a0a	118	118	eta	fast	byte->byte
 GASRAV_comp_0	528e54f34ea763baee03952ac6e70ceaef3f792f36c16069f4b0fa5cd9cb64ad	528e54f34ea763baee03952ac6e70ceaef3f792f36c16069f4b0fa5cd9cb64ad	104	104	eta	fast	byte->byte
 GIFFUX_comp_0	5d45ffec12787f16ce19a4144836c720e364962f5459fd71ec1e018d740aa600	5d45ffec12787f16ce19a4144836c720e364962f5459fd71ec1e018d740aa600	75	75	-	b30_60	byte->byte
-GIFVUN_comp_0	5d79d5e4647719b4676fa8135c2b828099c1a56df2b1f390dd6870ef16c022e6	NO_STRUCTURE@300s	145	-	eta	b300_plus	no_structure
+GIFVUN_comp_0	ccfb7158137a26ce0f1987b0af4c8fd9b60d7a48a86588091a395d4d37d75665	NO_STRUCTURE@300s	150	-	eta	b300_plus	no_structure
 GIFXOJ_comp_0	1a8e9cf6ff55cbc12203c863c86d9fbee471355a57def0636452e057b5ec792c	1a8e9cf6ff55cbc12203c863c86d9fbee471355a57def0636452e057b5ec792c	149	149	eta	b30_60	byte->byte
 GIMKIY_comp_1	de5744e798f22d91dbb8d490397e388f43d4b6d6ebe7f75bcf4de39a6c7cb799	de5744e798f22d91dbb8d490397e388f43d4b6d6ebe7f75bcf4de39a6c7cb799	119	119	-	b30_60	key->key
 GORNUY_comp_0	56fe8f5e3c01fd3958abd222c9e7042b95a5e90c7c0900476935c9de339214f3	NO_STRUCTURE@300s	306	-	-	b300_plus	no_structure
@@ -81,8 +81,8 @@ HEQFIS_comp_0	78f65f7774c3841fd6eec6f95d4c67bc45d1481697328dcd1a3ad79ad8f6ba94	7
 HICZID_comp_0	3ecd44ba706d9188cf4cdc5b1fd05c879621ffe435b2d2cf4d06b24d5d8a2140	3ecd44ba706d9188cf4cdc5b1fd05c879621ffe435b2d2cf4d06b24d5d8a2140	96	96	-	fast	byte->byte
 HIKCAI_comp_0	bbc4db7c90c375b0599596dd3fd1d07b293bb4a31f73dfcf1374cd20df153dd5	bbc4db7c90c375b0599596dd3fd1d07b293bb4a31f73dfcf1374cd20df153dd5	118	118	-	b60_300	byte->FAIL
 HIKCIQ_comp_0	bbc4db7c90c375b0599596dd3fd1d07b293bb4a31f73dfcf1374cd20df153dd5	bbc4db7c90c375b0599596dd3fd1d07b293bb4a31f73dfcf1374cd20df153dd5	118	118	-	b60_300	byte->FAIL
-HIMFAM_comp_0	e095a203b7c4ba131864872421bca828683124f7c21b433d0784eb1c03cf770e	NO_STRUCTURE@300s	241	-	eta	b300_plus	no_structure
-HITHAW_comp_0	9f522c9b2a99bc89c58ac2599be33e2fb6856bec60236effa8254a8564ba8864	NO_STRUCTURE@300s	135	-	-	b300_plus	no_structure
+HIMFAM_comp_0	5f7d908c41354d1263a003e1d7a72a9ddcf80eaea07c7fc08246479f68d39262	NO_STRUCTURE@300s	251	-	eta	b300_plus	no_structure
+HITHAW_comp_0	da5d1a57fc4fce57e4ee9073625354e8d6bc2d091850c6bbf7a093ebf4493089	NO_STRUCTURE@300s	134	-	-	b300_plus	no_structure
 HOHTAB_comp_0	6fa89be0e348359cdddaf6343d5b71b128b7b04bdc4a0e3e5427bad9b74c5ae5	6fa89be0e348359cdddaf6343d5b71b128b7b04bdc4a0e3e5427bad9b74c5ae5	108	108	eta	b60_300	byte->FAIL
 HOSZUM_comp_0	0c9664fdaa0f53516212684497f70907458edd01270883ff4889969ac1afcaac	0c9664fdaa0f53516212684497f70907458edd01270883ff4889969ac1afcaac	82	82	-	fast	byte->byte
 HUDTUV_comp_0	0653261132a30f3390b58465ba7bb530f399da6d0f1509a6e4abf1aa4bbef9ca	0653261132a30f3390b58465ba7bb530f399da6d0f1509a6e4abf1aa4bbef9ca	127	127	eta	fast	byte->byte
@@ -108,19 +108,19 @@ JIMBAJ_comp_0	9b3ece734d15af6361c8832c9f694bb5005874256305db2a8fe9749dff55a457	9
 JINMID_comp_0	b39378429455d0b5292a16cd9b3de638c8b4a550507beee710ba5296eccaed5b	NO_STRUCTURE@300s	103	-	eta	b300_plus	no_structure
 JIRFEW_comp_0	60ef2fc29785b0bb9c591f9fdb6e294801714b5d967f6601dd490b274bb1d8ac	NO_STRUCTURE@300s	115	-	-	b300_plus	no_structure
 JIVFOK_comp_0	73ce1a683200ea3a33904cb7d2850e603ef38a2d22fc2b67b03f3e31e90d6895	73ce1a683200ea3a33904cb7d2850e603ef38a2d22fc2b67b03f3e31e90d6895	113	113	eta	b60_300	byte->FAIL
-JIVRIP_comp_0	a42d5427d74fd6d4e2f4bd5a3bc4d038b6c3fbdaa0b6db31290ddd36abddb7d5	a42d5427d74fd6d4e2f4bd5a3bc4d038b6c3fbdaa0b6db31290ddd36abddb7d5	123	123	-	b300_plus	no_structure
+JIVRIP_comp_0	8a17c796df9d86f12c1757b229329b35618e53b3a953149d3d9e65356d79b88d	8a17c796df9d86f12c1757b229329b35618e53b3a953149d3d9e65356d79b88d	125	125	-	b300_plus	no_structure
 JOFXOS_comp_0	bade3417306f2a17aadb9af3b8fa674b9e0c7ab6222e1cf10446744494efcca8	bade3417306f2a17aadb9af3b8fa674b9e0c7ab6222e1cf10446744494efcca8	74	74	eta	b30_60	byte->FAIL
 JOPFOM_comp_0	f738a1353df3076022b52cbf6c768b7ba262f62f1aca34ac5d6c4c52e4b3deca	f738a1353df3076022b52cbf6c768b7ba262f62f1aca34ac5d6c4c52e4b3deca	73	73	-	fast	byte->byte
 JUFVUB_comp_1	5780a65b740e6a21bcb4ceea55dea5b76d14b7b920f56dfc28bbc95589d69465	5780a65b740e6a21bcb4ceea55dea5b76d14b7b920f56dfc28bbc95589d69465	63	63	-	fast	byte->byte
 JUXPID_comp_0	0ddaaf2261fcaac9f9b02df3ef6b4bc427564af34e85a89d90eea257159bca85	0ddaaf2261fcaac9f9b02df3ef6b4bc427564af34e85a89d90eea257159bca85	106	106	eta	b60_300	byte->FAIL
 KANYIJ_comp_0	956efc48301207f5ae115891ccc57b058176980797f44b81dced4ae036abb30c	956efc48301207f5ae115891ccc57b058176980797f44b81dced4ae036abb30c	67	67	-	fast	byte->byte
 KAQDEL_comp_0	34a6237030f35ca858237645590afd8de9ecab1861967a38e4aaf7915b4adba2	NO_STRUCTURE@300s	145	-	eta	b300_plus	no_structure
-KECJUA_comp_0	56c5283e0d1da7be9d64388af3cc6777b3d326668254cdf58fb97d5c39ea579f	db3f03089519da199e40c6623b757063965c342321ac6b78809731d9d8c0fdfb	144	153	-	b300_plus	no_structure
+KECJUA_comp_0	8f7c6a6e04114a7c2f52e28e75164fa817cf1761311db63e6b7b0be47aca9691	bacda23aeb441797160f7c054afc6c61b6610b702b810987182181855100fd8d	168	177	-	b300_plus	no_structure
 KEHNOA_comp_0	2070e3b69520d55ab8c2f4f4162fb15a733e10d79962e3b0f73537b848b709ff	2070e3b69520d55ab8c2f4f4162fb15a733e10d79962e3b0f73537b848b709ff	89	89	-	b30_60	key->FAIL
 KEWYAM_comp_0	a8a0598d3d190f024db0990dcc4e4cb93cc708edd1af9b7931929a9dc37e426d	a8a0598d3d190f024db0990dcc4e4cb93cc708edd1af9b7931929a9dc37e426d	85	85	eta	b30_60	byte->FAIL
 KIHHUG_comp_0	fe1b964710ce14f257891106d86f669003e5dbd91e6bb4dd299be05c49723c74	5d89b34d4699566ef352450f336dc8cd514a3dd5412d9949a3ab030c7ec2395b	93	89	eta	b300_plus	fail->fail
 KIMFET_comp_0	c727a891fbc34463db22692214b7c3f3099f9d928a33e68fe62847b502898262	c727a891fbc34463db22692214b7c3f3099f9d928a33e68fe62847b502898262	79	79	eta	fast	byte->byte
-KIVGIH_comp_0	8cb0c0190de38909b2d14da9bafb371c94f9648758098c224e3326eb7eaa00f7	c7434331865a6bdabe9098058a0665bc04c0817e4140afee957c026e31d17f50	108	108	-	b300_plus	no_structure
+KIVGIH_comp_0	930d808590b3eedc1cd52972061595ad3f5fbc113cf2ef9e98de5f9c80404816	930d808590b3eedc1cd52972061595ad3f5fbc113cf2ef9e98de5f9c80404816	114	114	-	b300_plus	no_structure
 KIVZEX_comp_0	afe35f98686207bda24590583ea7bd133b03ddfc52ff67dac957bbd8927998ff	afe35f98686207bda24590583ea7bd133b03ddfc52ff67dac957bbd8927998ff	97	97	eta	fast	byte->byte
 KODHIU_comp_0	ccb92e32a025bd25ab464b6654eb2fdcb63f3758de9a0c238cd3663a77fb3248	NO_STRUCTURE@300s	132	-	-	b300_plus	no_structure
 KUCWUB_comp_0	4f1d1940b73c39d6860868779f204b9499f450003a7c918b0a593566c7ed6d80	4f1d1940b73c39d6860868779f204b9499f450003a7c918b0a593566c7ed6d80	88	88	-	b30_60	byte->FAIL
@@ -145,7 +145,7 @@ LORPUF_comp_0	111740fc59d9f9343b73d44dba5d595ec76c90f524e782f58d097a47284757d2	1
 LOWXAW_comp_0	15b2cf3b18e4fc5f6c1e127fbdce40ad37fc7fc026447be8ceaed190bfe453c7	15b2cf3b18e4fc5f6c1e127fbdce40ad37fc7fc026447be8ceaed190bfe453c7	96	96	eta	fast	byte->byte
 LUJJUX_comp_0	NO_ENCODE@300s	NO_ENCODE@300s	-	-	-	b300_plus	no_structure
 LUWLAS_comp_0	e35ecb9b1da3c9975e383e14046a9898f298762d53ab555437c20ecaae2e53e0	e35ecb9b1da3c9975e383e14046a9898f298762d53ab555437c20ecaae2e53e0	80	80	-	b30_60	byte->FAIL
-MAHTOE_comp_0	513c00ff9ac82aeef4bd0cfcc7193e0f0d3631d1bc187cc24e74992d4118512e	NO_STRUCTURE_DET	167	-	eta	fast	no_structure
+MAHTOE_comp_0	8afb012d6336332dbe2ad48b8b2afe4ac7a0092123be781b5457acbf8d947e44	8afb012d6336332dbe2ad48b8b2afe4ac7a0092123be781b5457acbf8d947e44	168	168	eta	fast	no_structure
 MAMPEW_comp_0	2f476db10520173978cefaf251cdad76fd4f48be1e1e67320da02f956ff8c732	2f476db10520173978cefaf251cdad76fd4f48be1e1e67320da02f956ff8c732	81	81	eta	b30_60	byte->FAIL
 MEWJON_comp_0	49dba8f428c5ced7b26491ca4453dbb26ac0f0de710363069fdd01c515faddf6	49dba8f428c5ced7b26491ca4453dbb26ac0f0de710363069fdd01c515faddf6	77	77	eta	b60_300	byte->key
 MEXWUH_comp_0	d431ee27f6647b32bfbc5260dd701f2365344996231f038400ed6b568f4294fd	d431ee27f6647b32bfbc5260dd701f2365344996231f038400ed6b568f4294fd	110	110	-	b30_60	byte->FAIL
@@ -157,7 +157,7 @@ MUGMIL_comp_0	326aff5fce155c7df9bd8b56929af307d0246f18f923d9adef71be64ee38b432	3
 MUJRIS_comp_0	0ea73fbf61936e2383830070fb3bab6dd5f58638e412eaa33a1ef3905cb7f661	946b3809c17e07e33f9bbf9037dd036692d9e271358f6b6fde7d7828c2f0be44	129	137	-	b60_300	key->FAIL
 MUKGUW_comp_0	f20ee4a5f9f52d26cfe75e0e7145c5e307a915aad1197b28b5f4deae6aa6ef1e	NO_STRUCTURE@300s	124	-	eta	b300_plus	no_structure
 MUTCIO_comp_0	1d3526d72480d88cfd467542640068a8d3bba01f9b5a94450a3cd8763d5bc9d1	1d3526d72480d88cfd467542640068a8d3bba01f9b5a94450a3cd8763d5bc9d1	106	106	eta	b60_300	byte->FAIL
-NAHNOB_comp_0	eed81029c4ad04e6f14fb48e0ec42cbb86a0d5240962c928980fe31bda0e68a2	NO_STRUCTURE@300s	102	-	-	b300_plus	no_structure
+NAHNOB_comp_0	a1531e51facd6f4282436b400e4c6a9df2e2e8801443005ccd46dd5fcd32dad9	NO_STRUCTURE@300s	95	-	-	b300_plus	no_structure
 NASZOY_comp_0	47d82e31b2df2e51ecdbf4c27339d4a1684de570747593fc6500467384520e97	NO_STRUCTURE_DET	162	-	-	fast	no_structure
 NEGVOL_comp_0	f4015d56e3ca1a0d754b9b667302401ffad2bc662a525683a460f38bdbb280bd	NO_STRUCTURE@300s	171	-	-	b300_plus	no_structure
 NEJVAB_comp_0	86e73e49cd83078e5f8efd6176af0cdf0ed1d8d00124222e920777db80dfcd6c	86e73e49cd83078e5f8efd6176af0cdf0ed1d8d00124222e920777db80dfcd6c	81	81	eta	b30_60	byte->byte
@@ -186,7 +186,7 @@ OSIBEZ_comp_0	8e75620eaf7616ac90adf5b1896f44d8715a7d60af55f23945d53f3c96cc585a	8
 OTIGIJ_comp_0	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	168	168	-	b60_300	byte->FAIL
 OTOLAL_comp_0	6721872c1ba6629e45f934f0e09750e70ae8c3133f37c5a0fa1057ded9616c2c	NO_STRUCTURE@300s	183	-	-	b300_plus	no_structure
 OWIBOM_comp_0	916c97675cf1d7cc66a169d8207e963f32f95b480c2c8cfb1d15198f1e235a49	916c97675cf1d7cc66a169d8207e963f32f95b480c2c8cfb1d15198f1e235a49	86	86	eta	b30_60	byte->key
-OZADAW_comp_0	f3f496fe2d7cb9301b31a45fec91b672e27d88cba86e6fab52da48865b1bd402	f3f496fe2d7cb9301b31a45fec91b672e27d88cba86e6fab52da48865b1bd402	132	132	-	b300_plus	no_structure
+OZADAW_comp_0	298802452f717a701ba145243144e8fb871351bd1228e2b7b2e41a7111be4365	298802452f717a701ba145243144e8fb871351bd1228e2b7b2e41a7111be4365	138	138	-	b300_plus	no_structure
 PABVIY_comp_0	3e0ba65eb22d0156b353756736c922f7a14af7ad1aebfff4f1bc02d000c6cf4e	3e0ba65eb22d0156b353756736c922f7a14af7ad1aebfff4f1bc02d000c6cf4e	109	109	eta	fast	byte->byte
 PAKWAB_comp_0	f8050eac2508285dc328ee60ae3a0da24e77078a0f4b6e8486ff80c773367802	f8050eac2508285dc328ee60ae3a0da24e77078a0f4b6e8486ff80c773367802	128	128	eta	b30_60	key->key
 PAXJUT_comp_0	6a952d906cacf2da198c3b89893e98a1e3bd02b96f2a7e4fa21d745a15f44a8d	NO_STRUCTURE@300s	162	-	eta	b300_plus	no_structure
@@ -199,10 +199,10 @@ POPRUH_comp_0	0a6c400e0d48f81a36dd02ae820c6d2ea621e7730eff67d00728da4d0ad6a0a8	0
 POWGAM_comp_0	624c242646ed3626cbc2849bb804ed23f86a8c50e4adf95cc5d7a8bc2a12504c	624c242646ed3626cbc2849bb804ed23f86a8c50e4adf95cc5d7a8bc2a12504c	120	120	eta	b60_300	byte->byte
 PUMLEP_comp_0	24e845d1ac1f2ec01f2ee20aca2e12bb7cb60e2bc3c046019177d9520ca03c91	NO_STRUCTURE@300s	242	-	-	b300_plus	no_structure
 PUNGEL_comp_0	7416ace8188e0fa61dd7612fd26fac0c6082c6e5e7baf78f745b4f8d904b6141	7416ace8188e0fa61dd7612fd26fac0c6082c6e5e7baf78f745b4f8d904b6141	133	133	eta	b30_60	byte->byte
-PURROJ_comp_0	406e661ece62028d2863d43ffc2ceb4903d0f22b5121f4a8d03a2e6e9da1ad36	NO_STRUCTURE@300s	107	-	eta	b300_plus	no_structure
-PUVWEK_comp_0	c2e69c6895b673abf537045163f8a9b4014a6c79a23d43a2521095c63b34d304	c2e69c6895b673abf537045163f8a9b4014a6c79a23d43a2521095c63b34d304	96	96	-	b300_plus	no_structure
+PURROJ_comp_0	93e89b463b82c96c9f5fba148c28e22a9e9f0f60658a208e540348ef63311fa7	NO_STRUCTURE@300s	106	-	eta	b300_plus	no_structure
+PUVWEK_comp_0	f393fb99a7944b9ff1cc8b2a2ef3cb590bbf5481ceea089ae80e721301d6efbe	f393fb99a7944b9ff1cc8b2a2ef3cb590bbf5481ceea089ae80e721301d6efbe	98	98	-	b300_plus	no_structure
 QAKLET_comp_0	306138544a78e6ae201cd53fe70c43703984f7aaccd620fdecd49a0b4c5785c0	306138544a78e6ae201cd53fe70c43703984f7aaccd620fdecd49a0b4c5785c0	117	117	-	b30_60	byte->byte
-QAMJAP_comp_0	8f1a1e8f7c057237aeabe1c805cbd97d1cf86eba284f980e3adaf5058a6b7264	NO_STRUCTURE@300s	168	-	eta	b300_plus	no_structure
+QAMJAP_comp_0	94e030efab8a2066cfd46cca2f3df85b0de49c0ce6e35be9be7438aee4ac8be8	NO_STRUCTURE@300s	169	-	eta	b300_plus	no_structure
 QASRUA_comp_0	d3ebbdbd0ce228d0ce8b04f5405fdfafc3793d914b2b185ded7b85bb2001453c	d3ebbdbd0ce228d0ce8b04f5405fdfafc3793d914b2b185ded7b85bb2001453c	87	87	eta	b60_300	byte->FAIL
 QIDHEQ_comp_0	57d874e6de3b528dbcc450b9904d067337924be921f9714377aafe6f3780efed	NO_STRUCTURE@300s	185	-	eta	b300_plus	no_structure
 QIWNIU_comp_0	b3cf8c92ce531304e40a533b18635a89830ab7baa341aa0190a9fe7a7872d012	d6a1863b793653a0ed2342afc6c4470d8b1df2cb485be57d98b449fce0730d8d	62	66	-	b300_plus	fail->fail
@@ -212,7 +212,7 @@ QUHKIO_comp_0	60d75082329ea48b08e2de9d78c24dd39b232726db5c7a4ed1b7c77f32a152c4	6
 QUJMUF_comp_0	010c1b3e21ff7ac004bb8f609b2e680fa9a90cb2a0244802122d08d4a9dd80bc	010c1b3e21ff7ac004bb8f609b2e680fa9a90cb2a0244802122d08d4a9dd80bc	112	112	eta	b30_60	byte->byte
 RAWJEG_comp_0	4673377e9e431ce704321aeaadeeb59edf6ce71033382e40fa1fffba7b143f6d	4673377e9e431ce704321aeaadeeb59edf6ce71033382e40fa1fffba7b143f6d	106	106	-	fast	byte->byte
 REVMEL_comp_0	e690b1205f224761fbc0932a5f141621ef5d14e31665d090fcb4884b45a75255	NO_STRUCTURE@300s	155	-	-	b300_plus	no_structure
-RIRYOJ_comp_0	1ff579d5c7e8ee9e40b36cb189e0645f9d08c3fc331a149bafb4f8b518470729	1ff579d5c7e8ee9e40b36cb189e0645f9d08c3fc331a149bafb4f8b518470729	94	94	eta	b300_plus	no_structure
+RIRYOJ_comp_0	6a60cc33c2ea637fc14082795f30c37668c111640c871cd825f84fda29b0da63	6a60cc33c2ea637fc14082795f30c37668c111640c871cd825f84fda29b0da63	102	102	eta	b300_plus	no_structure
 RIVNUG_comp_0	7b01499e58998499278cb7fb1492de3e8dd3c79bb4e326dc35802a986342a1a3	NO_STRUCTURE@300s	98	-	eta	b300_plus	no_structure
 RIWKEO_comp_0	f91e13150c6f54eba6b5dff354cef7f563ced8ead07f024ea5d1e93816f15ccb	NO_STRUCTURE@300s	181	-	eta	b300_plus	no_structure
 RIXVAX_comp_0	283ac188df943baaa9192722734eb5fee784885c2972f6c85b91c12a7238e13d	283ac188df943baaa9192722734eb5fee784885c2972f6c85b91c12a7238e13d	137	137	eta	b60_300	key->FAIL
@@ -223,20 +223,20 @@ RUSKOG_comp_0	54de204dca18b3885bce873500a740e2f6364124d70da9fa2f64db2c53ad7a7e	5
 RUYDUM_comp_0	3959aa03ffb32a35255dd85c3227b0db33c4e8e1980911ea0ee589c3bf9d0692	3959aa03ffb32a35255dd85c3227b0db33c4e8e1980911ea0ee589c3bf9d0692	121	121	eta	b60_300	byte->FAIL
 SADMOC_comp_0	40ee7e813b3401571d652f974db36ce66203d29c147f226ac88e1e084725c462	40ee7e813b3401571d652f974db36ce66203d29c147f226ac88e1e084725c462	87	87	eta	b60_300	byte->FAIL
 SAPPUU_comp_0	530fc7d89777f19c42b0f1f347e517fab825fa82352b5406aaf8ae21d57a0df1	530fc7d89777f19c42b0f1f347e517fab825fa82352b5406aaf8ae21d57a0df1	118	118	eta	fast	byte->byte
-SEMPOP_comp_0	04740a0c02cd9ab1bfca97a1ce8ab9bcdff6f1a12b2446d46293fe538e7bc2c7	04740a0c02cd9ab1bfca97a1ce8ab9bcdff6f1a12b2446d46293fe538e7bc2c7	159	159	-	b300_plus	no_structure
-SEMVUD_comp_0	e550065685b41c9b93ee6ec917c85335b31d7ad04af979327a60408408145869	NO_STRUCTURE@300s	156	-	eta	b300_plus	no_structure
+SEMPOP_comp_0	6641c0ca174e726cae3cf2a030ba60e5ee4ea54f3a816027aa790812dedca390	6641c0ca174e726cae3cf2a030ba60e5ee4ea54f3a816027aa790812dedca390	161	161	-	b300_plus	no_structure
+SEMVUD_comp_0	8972c393163a6c3a9765da0386c297c7427090f524cafba676675bc5527f866e	NO_STRUCTURE@300s	172	-	eta	b300_plus	no_structure
 SIGDIX_comp_0	8b63f96deee347ad9070a9b9508c1437d588f23697e71b4e6a84d024fb91861d	8b63f96deee347ad9070a9b9508c1437d588f23697e71b4e6a84d024fb91861d	123	123	-	fast	byte->byte
 SIMDEA_comp_0	aa55c5d736a873a0723a41cef57796bfff713b04a12babfae55762bb035be649	aa55c5d736a873a0723a41cef57796bfff713b04a12babfae55762bb035be649	149	149	eta	b30_60	byte->byte
 SITTIZ_comp_0	669b1f7cd1679c080b0c7fd7b275f1b833d61f8bc294af7613cad723c2174cdb	669b1f7cd1679c080b0c7fd7b275f1b833d61f8bc294af7613cad723c2174cdb	80	80	-	fast	byte->byte
 SOFCAS_comp_0	afffc8ac19a67354963d63392431ba5d6d51b3ee15614be68e35f8a2a598a6e9	afffc8ac19a67354963d63392431ba5d6d51b3ee15614be68e35f8a2a598a6e9	126	126	-	fast	byte->byte
 SOSPEW_comp_0	66a1dee283e3e152201b00c48942f02eb54fe2a71368b780b00993a6f07ecc7c	66a1dee283e3e152201b00c48942f02eb54fe2a71368b780b00993a6f07ecc7c	103	103	eta	b60_300	byte->FAIL
 SUDQEP_comp_0	1aacae3fb9d1e87c6e45d13221c47878a82f9c70476163a63264f2c3721af431	1aacae3fb9d1e87c6e45d13221c47878a82f9c70476163a63264f2c3721af431	97	97	-	fast	key->key
-SUNROK_comp_0	c213efdd45762d5f558d259d4483b35d4def8868129bb21885c3907f1dd51bf9	61278d43e38378361405ee2b529f98d3d1302ff8a07b3f80b873db6f024e762f	139	139	eta	b300_plus	no_structure
+SUNROK_comp_0	afcb489194cad94a308f35ab6a72fb5fd2a53a4c80ad479d0cfea7e8ea4ef9a3	afcb489194cad94a308f35ab6a72fb5fd2a53a4c80ad479d0cfea7e8ea4ef9a3	145	145	eta	b300_plus	no_structure
 SUSGOC_comp_0	ef945d05192bb9c9f316b076ed8ee777de1ab441993c97937153757327bdfb5a	NO_STRUCTURE@300s	145	-	eta	b300_plus	no_structure
 TAJCEP_comp_0	7ef036bf2e731842f5dbec93b8bfbc9717b0fccec4f64a3fd780f93a2654597f	7ef036bf2e731842f5dbec93b8bfbc9717b0fccec4f64a3fd780f93a2654597f	142	142	-	b30_60	byte->byte
 TENWOB_comp_0	c13c3887ab1852f615fc449dd6928801e166c2491d8c4ebfcb6ceca50557b2c2	c13c3887ab1852f615fc449dd6928801e166c2491d8c4ebfcb6ceca50557b2c2	80	80	eta	b30_60	byte->FAIL
-TEQHIG_comp_0	fa08693a0f477ec867264e532a0c6b813be597f9dcdde8d624cafdfdf0b01586	dfac9cfe4b7428c7a083079f523ee6e71f41d77484f8678c5ca2eb5710dd9801	102	89	eta	b60_300	key->FAIL
-TEQHOM_comp_0	a39b4f547870a89369146ecef3b990b0cc949c8e586bbb9eb711b77b066f273b	8198fdb14732bf3bb2466011203b424fd6b4ad2c12ecd9dfc5465ed4d9904696	94	81	eta	b300_plus	no_structure
+TEQHIG_comp_0	4d90850292562c34ec26945bcac8664f907bfb7b9be654981c2ecd17386c8abf	4d90850292562c34ec26945bcac8664f907bfb7b9be654981c2ecd17386c8abf	111	111	eta	b60_300	key->FAIL
+TEQHOM_comp_0	e997ac0600b54559b03f6ae6c6e6d7b3c8ea28763210202d55325c9bfec4185e	e997ac0600b54559b03f6ae6c6e6d7b3c8ea28763210202d55325c9bfec4185e	103	103	eta	b300_plus	no_structure
 TIFHAR_comp_0	372661e8291938d09823acfe7ff76f4c946eb037a68b33abcf8912964ef08292	372661e8291938d09823acfe7ff76f4c946eb037a68b33abcf8912964ef08292	171	171	eta	b60_300	key->key
 TOFWES_comp_0	c8d998394dc963c3419c2b0c2c08f1e192cced4d6813cb48e425bd4c7e123bc2	c8d998394dc963c3419c2b0c2c08f1e192cced4d6813cb48e425bd4c7e123bc2	91	91	-	b30_60	byte->FAIL
 TOGKOR_comp_0	1809fb8385df36257af98c46ced012d4f7291ae876dc11c4d13b0ae162468696	NO_STRUCTURE@300s	135	-	eta	b300_plus	no_structure
@@ -249,9 +249,9 @@ UKUMAP_comp_0	11e6e81fa633080560501893c87146797ae4f656db6d2e6051fded5afca3cf9c	1
 UKUMET_comp_0	527c172f860eba104ccda2d6e1ca47a39b25139c7242285e4f086ce2aee04aa5	527c172f860eba104ccda2d6e1ca47a39b25139c7242285e4f086ce2aee04aa5	108	108	eta	b60_300	byte->FAIL
 ULIDIE_comp_0	5b63c11abcdceef8ba1616bc07400c4814eff86f5e0aee779ae476570dc223f6	5b63c11abcdceef8ba1616bc07400c4814eff86f5e0aee779ae476570dc223f6	99	99	-	b30_60	key->FAIL
 ULOFEG_comp_0	135156b92c9c24a1ff603e2e34fff1a6deb1f91ffc9e134e7067acaa06e5a2ee	NO_STRUCTURE@300s	184	-	eta	b300_plus	no_structure
-ULOQIX_comp_0	a5135322ab5c74ae4a29aeee6856ef287650d647d41db41cff2419430a2c424b	a5135322ab5c74ae4a29aeee6856ef287650d647d41db41cff2419430a2c424b	80	80	eta	b60_300	byte->byte
-ULORAQ_comp_0	950408320c49164355abd1c20aca918756ee7b411ba5d3bff7cfe84a1ed4a76f	5565393cd4c83e8f9752a3663e7ed24bb5b8149cf7d729f14744ee02ba444b57	99	99	eta	b300_plus	no_structure
-ULORIY_comp_0	b37186b19b174e5122a0a68f83d13874ba35286d77b639c4a819f1ff229fbcf2	ed3dac655fcfa74e8f1b33873da51c0ac7aaa74bdd7376e62b89f4db285e7653	79	79	eta	b60_300	key->FAIL
+ULOQIX_comp_0	145d5f364309c979de1846ff8fc3a88817a7ea0682122149bcc90cecb757c876	145d5f364309c979de1846ff8fc3a88817a7ea0682122149bcc90cecb757c876	82	82	eta	b60_300	byte->byte
+ULORAQ_comp_0	01eca6925ac525c74f6d47d04f6cef2f43a5f1fd42ca350cb7d78ac667b3afb8	01eca6925ac525c74f6d47d04f6cef2f43a5f1fd42ca350cb7d78ac667b3afb8	96	96	eta	b300_plus	no_structure
+ULORIY_comp_0	41069e2247477fabe71e3e9a49779b8987a65bf642a02db8cf86110975c9699a	41069e2247477fabe71e3e9a49779b8987a65bf642a02db8cf86110975c9699a	92	92	eta	b60_300	key->FAIL
 ULOTEV_comp_0	32da6206a2280232f442d2a8a72ae12b4db8e10c6261bb7091ae8537d3a2aaff	32da6206a2280232f442d2a8a72ae12b4db8e10c6261bb7091ae8537d3a2aaff	106	106	eta	fast	key->byte
 UNEGEB_comp_0	40842d4f0798c454328545704f4943e21bae923b92efb99d3d9bdf6bad90190d	40842d4f0798c454328545704f4943e21bae923b92efb99d3d9bdf6bad90190d	100	100	-	fast	byte->byte
 UPUDUG_comp_0	19c851af8ee8c5b648898fdf8ee3ee89c81ba9c1c13b855adc4e640e16e903cf	19c851af8ee8c5b648898fdf8ee3ee89c81ba9c1c13b855adc4e640e16e903cf	99	99	-	fast	byte->byte
@@ -264,10 +264,10 @@ UXENIV_comp_0	96cd95ed6565f84c66a61296fce6027c7cc3072d25336ab8e1eebc2336935e74	9
 VAFMIA_comp_0	92c33894a9a353d16c520c48865a9276a9e56ca2fb29f5968298b62325a20eb1	92c33894a9a353d16c520c48865a9276a9e56ca2fb29f5968298b62325a20eb1	100	100	-	b60_300	byte->byte
 VAFPAU_comp_0	60d43cf24e7591520b2500a85065294aa894b4d17247b01fa36599d5bd8aa736	60d43cf24e7591520b2500a85065294aa894b4d17247b01fa36599d5bd8aa736	105	105	-	b30_60	byte->byte
 VAHMID_comp_0	77439a1e467e6d9ca11b8e649f78f6ba4d1d3ed164e7fa52e89a3f4d9530dffb	77439a1e467e6d9ca11b8e649f78f6ba4d1d3ed164e7fa52e89a3f4d9530dffb	100	100	eta	b30_60	byte->FAIL
-VEJXOZ_comp_0	6e4d79000691849d4587b055e50797e44662f8ca53c997b9159a839b22ca0e37	NO_STRUCTURE@300s	148	-	eta	b300_plus	no_structure
+VEJXOZ_comp_0	555999e87780cfe83e5b1dcca4ef2a44fad680d63593f7a9b5a1f9a089add243	NO_STRUCTURE@300s	163	-	eta	b300_plus	no_structure
 VEQFUT_comp_0	25226329757bdead03605fa39ea58c16b9a86b9a0a3618dc99f8529fcedc4943	25226329757bdead03605fa39ea58c16b9a86b9a0a3618dc99f8529fcedc4943	246	246	-	b60_300	byte->byte
 VIKPUC_comp_0	a77159707659a27ac8985db5f040ba3fe3d4276ec852649470ebbcd9daf4d359	a77159707659a27ac8985db5f040ba3fe3d4276ec852649470ebbcd9daf4d359	159	159	-	b60_300	byte->byte
-VIMTET_comp_0	6c00b593a691eaa6f68f874bf56e2551e7b2cc09a61950e23882cddc84035faf	7359569892a71bae8e48ffb57e62021912d05cdb50e40753f45d8ddee8dfbb02	99	99	-	b300_plus	no_structure
+VIMTET_comp_0	201e9fc713f8a7fbf64371c475d2cb559e798d2f3d192eabd396ce0f5d12853e	201e9fc713f8a7fbf64371c475d2cb559e798d2f3d192eabd396ce0f5d12853e	101	101	-	b300_plus	no_structure
 VIMVUL_comp_0	3b1fc349ead7512d6406c4528348fa5fb68f5a1dc009ae2b8b8a0b050ced68ee	3b1fc349ead7512d6406c4528348fa5fb68f5a1dc009ae2b8b8a0b050ced68ee	93	93	eta	b30_60	byte->FAIL
 VIMWAS_comp_0	f9ad833553b3b830e328c7678c409383547b9b5c516bda427eae6704d6903a9c	f9ad833553b3b830e328c7678c409383547b9b5c516bda427eae6704d6903a9c	107	107	eta	b60_300	byte->FAIL
 VIPMUF_comp_0	5e738f259c062d41c48b29daafaea3a4c28d109fb24a590fbe4a7d054e3cf5cb	5e738f259c062d41c48b29daafaea3a4c28d109fb24a590fbe4a7d054e3cf5cb	120	120	-	b30_60	byte->byte
@@ -317,12 +317,60 @@ ZELKUY_comp_0	3c4afaafb85dd8af8140fd4cb78b43184b523d887f8235adb00b3b0d9b2fcd9b	3
 ZIBJOM_comp_0	fcaae67ea76e6ad79411ba211ff5bf07785d72947ee58f8404d660872292f05b	ce99d8f99b99a70aa73add6e324f431dc51b59a8b6ac9190854ce5569e470403	86	86	-	b30_60	key->key
 ZIDZAP_comp_0	98d4504c0e40bec2425b159733802748d06a1fc022a9cf7862c2acd358099e9f	98d4504c0e40bec2425b159733802748d06a1fc022a9cf7862c2acd358099e9f	131	131	-	fast	key->byte
 ZILRIX_comp_0	fdd47a4fab49066d27c31f14c565071f3c42a758b1355230c7e01642d287e641	fdd47a4fab49066d27c31f14c565071f3c42a758b1355230c7e01642d287e641	140	140	-	b60_300	byte->byte
-ZIQLOD_comp_0	a3b584302c9197e8d82143ad252642672be6fc1a43aa4cb80e788d737289f370	a3b584302c9197e8d82143ad252642672be6fc1a43aa4cb80e788d737289f370	146	146	-	b300_plus	no_structure
+ZIQLOD_comp_0	b2e505fd73c79e57f4b23bf358139fbe0e57b89e30aa98b0d577712fce9793d9	b2e505fd73c79e57f4b23bf358139fbe0e57b89e30aa98b0d577712fce9793d9	152	152	-	b300_plus	no_structure
 ZODBUP_comp_0	9761f91c2709a819ca12bffc043611de548f7fcd79bf44431188e93e17813df0	NO_STRUCTURE@300s	119	-	eta	b300_plus	no_structure
 ZOGLIS_comp_0	d84ca28c0837bc3443fc9f2c8f342823ed1886738623c29b17d743ae7294d2dc	d84ca28c0837bc3443fc9f2c8f342823ed1886738623c29b17d743ae7294d2dc	101	101	-	fast	key->byte
 ZOGXIF_comp_0	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	1dfaa4089573e35de323f9fe1feba48c6bf6396fee2455c2acd19b2b35cc97be	93	93	-	b30_60	byte->FAIL
 ZOYYUJ_comp_0	73e30efe6b7dbc1f31498950ebef86b0a7228d5065ebfac770da00d1a5b2bccf	c53daa573e0f4557ac53e0bf769ecbdf0022a168f4d7cf4eb7b6e3d3033a119e	86	83	-	b300_plus	FAIL->byte
 ZUGBUA_comp_0	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	117	117	eta	b60_300	byte->FAIL
+# v0.4.19 (release): FULL gate run for the promotion of OIN_H_FAITHFUL + OIN_RC1_PROPAGATE +
+#   OIN_CAP_IGNORES_METAL together (default-ON; owner 2026-09-24, "on the condition the sweep lands
+#   on its prediction" -- results-v0.4.19-candidate-sweep 87.78% / 79.12% against 87.56 / 79.02).
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit bd845795
+#   (research/v0419-serializer; src/ == 0809c7a9, the promotion). v047: 100 of 100 compared rows
+#   reproduce, 0 re-frozen. v049: 255 compared rows reproduce (36 SHA1-only, 4 deterministic
+#   no-structure, 4 observe; GOHWOQ/ULODUU/XIQKOY ungated), 26 owed, EVERY one on field 2 -- the
+#   input string -- and exactly the 26 rows the encode-only audit (tools/v0417/arm2_field2_audit.py,
+#   295 SAME + 26 MOVED_BY_LEVER + 4 sentinels, 0 STALE) named. The CONTROL (the three levers at 0 on
+#   those 26) brings every old row back byte-for-byte: 26 LEVER, 0 STALE. The generated-structure
+#   field moved on no row the string did not.
+#   MAHTOE_comp_0 BY HAND (--accept-det): frozen NO_STRUCTURE_DET since v0.4.9 because its string
+#   left a B(C6F5)3 fragment with no binding atom (UncoordinatedFragmentError, deterministic). With
+#   OIN_CAP_IGNORES_METAL the fragment keeps its donor; the generator builds it and the gate passes
+#   it byte-exact. Re-frozen from the fresh row; fields 7+ preserved (its v0.4.9 class label
+#   `no_structure` in field 8 is now historical, kept so --band filtering is unchanged).
+#   ROUND TRIP ON THE 26 (golden -> fresh, gated): pass->pass 8, fail->pass 7, no-structure->pass 3,
+#   pass->fail 1, fail->fail 1, no-structure->no-structure 6. The honest column on the 26: 9 agree
+#   with sha_in, 11 do not, 6 none. Whole run: gated pass & honest pass 248, gated PASS & honest
+#   FAIL 120, gated fail & honest pass 3, both fail 14 (of 409 rows with a structure) -- ARM 2's
+#   predicate is CIRCULAR (byte identity through the generator's own graph, not accuracy), unchanged
+#   from v0.4.18's finding. Evidence: measurements/v0.4.19-arm2/.
+#   AKUMAV_comp_0	LEVER	field 2
+#   COJJOD_comp_0	LEVER	field 2
+#   GIFVUN_comp_0	LEVER	field 2
+#   HIMFAM_comp_0	LEVER	field 2
+#   HITHAW_comp_0	LEVER	field 2
+#   JIVRIP_comp_0	LEVER	field 2
+#   KECJUA_comp_0	LEVER	field 2
+#   KIVGIH_comp_0	LEVER	field 2
+#   MAHTOE_comp_0	LEVER(DET->structure, by hand)	field 2
+#   NAHNOB_comp_0	LEVER	field 2
+#   OZADAW_comp_0	LEVER	field 2
+#   PURROJ_comp_0	LEVER	field 2
+#   PUVWEK_comp_0	LEVER	field 2
+#   QAMJAP_comp_0	LEVER	field 2
+#   RIRYOJ_comp_0	LEVER	field 2
+#   SEMPOP_comp_0	LEVER	field 2
+#   SEMVUD_comp_0	LEVER	field 2
+#   SUNROK_comp_0	LEVER	field 2
+#   TEQHIG_comp_0	LEVER	field 2
+#   TEQHOM_comp_0	LEVER	field 2
+#   ULOQIX_comp_0	LEVER	field 2
+#   ULORAQ_comp_0	LEVER	field 2
+#   ULORIY_comp_0	LEVER	field 2
+#   VEJXOZ_comp_0	LEVER	field 2
+#   VIMTET_comp_0	LEVER	field 2
+#   ZIQLOD_comp_0	LEVER	field 2
 # v0.4.18 (release): FULL gate run for the OIN_ETA_RETARGET promotion (default-ON, owner delegation
 #   2026-09-23) -- 0 ROWS RE-FROZEN, and the run also measured what this gate is blind to.
 #   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit 81d62dfa
@@ -338,10 +386,10 @@ ZUGBUA_comp_0	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	9
 #   `structural` in results-v0.4.18-release-sweep, 21 key_equal, 16 hard_fail, 2 facmer_divergent),
 #   gated fail & honest pass 3, both fail 20. Where the gate's structure is byte-identical to the
 #   release sweep's (370 of 400) the column agrees with the sweep's honest verdict on 370 of 370.
-#   So ARM 2 passes 134 of its 377 passing rows on the generator's own graph alone -- the same
+#   So ARM 2 passes 135 of its 378 passing rows on the generator's own graph alone -- the same
 #   scored-vs-honest gap v0.4.8 measured on the whole cohort, on cohorts chosen for being hard.
 #   The column is an OBSERVATION: nothing compares it, the goldens do not carry it, the gate reads
-#   columns 1-3 only. Gating on it -- which would re-freeze ~134 rows as honest FAILS, or drop them --
+#   columns 1-3 only. Gating on it -- which would re-freeze ~135 rows as honest FAILS, or drop them --
 #   is an owner-level change to what ARM 2 means. Evidence: measurements/v0.4.18-release-sweep/.
 # v0.4.18: FULL gate run for the OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promotion
 #   (default-ON, owner decision 2026-09-20) -- 0 ROWS RE-FROZEN, AND THAT ZERO IS A FINDING ABOUT
@@ -465,5 +513,5 @@ ZUGBUA_comp_0	976aece918d5d004626564e4b3690169100accaf2c16c1a2ab42cd8667822e23	9
 #   these hashes as a round-trip verdict.
 #   See docs/agentic-notes/v0.4.14/GENERATOR_NEUTRALITY_HAS_A_HOLE_v0.4.14.md
 #   See docs/agentic-notes/v0.4.14/LANE-01-resonance-fold.md
-# MANIFEST_SHA256=be0c23987d4cb6bd0783bfb9d103ca30525f707152a60d6884a0ebe73088b619
+# MANIFEST_SHA256=7769a9f1cd8b2c1cffc793685aebf0c8b7ee57d9f5d581096864824f81ce1579
 #DONE 325

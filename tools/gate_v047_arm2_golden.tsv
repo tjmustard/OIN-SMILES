@@ -98,6 +98,28 @@ OROJUB_comp_0	94ad06720afe0c9d7822a12fa2b75794a67bc34b0818c0583971a5498bcd10af	9
 OTIGIJ_comp_0	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	87294dddac149b027909423b3a69cb96b25d306794cb971d01a84a2afae976a2	168	168	-
 OVUFUI_comp_0	790e6a7578265dc09c2458ac9320b244264150d69ee1f0781e0d3139f6a2ddcb	790e6a7578265dc09c2458ac9320b244264150d69ee1f0781e0d3139f6a2ddcb	130	130	eta
 PIXGIP_comp_0	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	126	126	eta
+# v0.4.19 (release): FULL gate run for the promotion of OIN_H_FAITHFUL + OIN_RC1_PROPAGATE +
+#   OIN_CAP_IGNORES_METAL together (default-ON; owner 2026-09-24, "on the condition the sweep lands
+#   on its prediction" -- results-v0.4.19-candidate-sweep 87.78% / 79.12% against 87.56 / 79.02).
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit bd845795
+#   (research/v0419-serializer; src/ == 0809c7a9, the promotion). v047: 100 of 100 compared rows
+#   reproduce, 0 re-frozen. v049: 255 compared rows reproduce (36 SHA1-only, 4 deterministic
+#   no-structure, 4 observe; GOHWOQ/ULODUU/XIQKOY ungated), 26 owed, EVERY one on field 2 -- the
+#   input string -- and exactly the 26 rows the encode-only audit (tools/v0417/arm2_field2_audit.py,
+#   295 SAME + 26 MOVED_BY_LEVER + 4 sentinels, 0 STALE) named. The CONTROL (the three levers at 0 on
+#   those 26) brings every old row back byte-for-byte: 26 LEVER, 0 STALE. The generated-structure
+#   field moved on no row the string did not.
+#   MAHTOE_comp_0 BY HAND (--accept-det): frozen NO_STRUCTURE_DET since v0.4.9 because its string
+#   left a B(C6F5)3 fragment with no binding atom (UncoordinatedFragmentError, deterministic). With
+#   OIN_CAP_IGNORES_METAL the fragment keeps its donor; the generator builds it and the gate passes
+#   it byte-exact. Re-frozen from the fresh row; fields 7+ preserved (its v0.4.9 class label
+#   `no_structure` in field 8 is now historical, kept so --band filtering is unchanged).
+#   ROUND TRIP ON THE 26 (golden -> fresh, gated): pass->pass 8, fail->pass 7, no-structure->pass 3,
+#   pass->fail 1, fail->fail 1, no-structure->no-structure 6. The honest column on the 26: 9 agree
+#   with sha_in, 11 do not, 6 none. Whole run: gated pass & honest pass 248, gated PASS & honest
+#   FAIL 120, gated fail & honest pass 3, both fail 14 (of 409 rows with a structure) -- ARM 2's
+#   predicate is CIRCULAR (byte identity through the generator's own graph, not accuracy), unchanged
+#   from v0.4.18's finding. Evidence: measurements/v0.4.19-arm2/.
 # v0.4.18 (release): FULL gate run for the OIN_ETA_RETARGET promotion (default-ON, owner delegation
 #   2026-09-23) -- 0 ROWS RE-FROZEN, and the run also measured what this gate is blind to.
 #   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit 81d62dfa
@@ -113,10 +135,10 @@ PIXGIP_comp_0	1fdfed53eb2ee1dbb54b7c7382850a0b36ebbec05335221aaa1ccddc3224bf60	1
 #   `structural` in results-v0.4.18-release-sweep, 21 key_equal, 16 hard_fail, 2 facmer_divergent),
 #   gated fail & honest pass 3, both fail 20. Where the gate's structure is byte-identical to the
 #   release sweep's (370 of 400) the column agrees with the sweep's honest verdict on 370 of 370.
-#   So ARM 2 passes 134 of its 377 passing rows on the generator's own graph alone -- the same
+#   So ARM 2 passes 135 of its 378 passing rows on the generator's own graph alone -- the same
 #   scored-vs-honest gap v0.4.8 measured on the whole cohort, on cohorts chosen for being hard.
 #   The column is an OBSERVATION: nothing compares it, the goldens do not carry it, the gate reads
-#   columns 1-3 only. Gating on it -- which would re-freeze ~134 rows as honest FAILS, or drop them --
+#   columns 1-3 only. Gating on it -- which would re-freeze ~135 rows as honest FAILS, or drop them --
 #   is an owner-level change to what ARM 2 means. Evidence: measurements/v0.4.18-release-sweep/.
 # v0.4.18: FULL gate run for the OIN_ETA_COVALENT_TARGET + OIN_VDW_EXEMPT_BINDING promotion
 #   (default-ON, owner decision 2026-09-20) -- 0 ROWS RE-FROZEN, AND THAT ZERO IS A FINDING ABOUT

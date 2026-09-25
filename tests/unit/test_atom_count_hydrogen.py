@@ -184,7 +184,7 @@ class TestHFaithfulSmiles(unittest.TestCase):
         return sum(1 if a.GetAtomicNum() == 1 else a.GetTotalNumHs() for a in mol.GetAtoms())
 
     def test_lever_off_is_byte_identical_to_moltosmiles(self):
-        os.environ.pop("OIN_H_FAITHFUL", None)
+        os.environ["OIN_H_FAITHFUL"] = "0"  # promoted in v0.4.19: "0" is the old writer
         for smiles, _n in self.DRIFTING:
             with self.subTest(fragment=smiles):
                 mol = self._intent_mol(smiles)

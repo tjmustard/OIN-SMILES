@@ -1,0 +1,26 @@
+DENOMINATOR 296 molecules x 4 arms   src=<checkout:oin-v0419>/src
+
+== CONTROL_NONE  n=80
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+   rc1off   string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+   rc1prop  string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+   fix2     string changed vs shipped   0  errors  0  ISO&SAME  80 (+0/-0 vs shipped)   graph {'ISO': 77, 'ISO_MARGINAL': 3}   H {'SAME': 80}
+
+== E1_GRAPH_LIGAND  n=56
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'LIGAND_DIFF': 56}   H {None: 56}
+   rc1off   string changed vs shipped   1  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'LIGAND_DIFF': 56}   H {None: 56}
+   rc1prop  string changed vs shipped   1  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'LIGAND_DIFF': 56}   H {None: 56}
+   fix2     string changed vs shipped   2  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'LIGAND_DIFF': 56}   H {None: 56}
+
+== E1_GRAPH_SPHERE  n=76
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'SPHERE_DIFF': 76}   H {None: 76}
+   rc1off   string changed vs shipped  14  errors  0  ISO&SAME  14 (+14/-0 vs shipped)   graph {'SPHERE_DIFF': 62, 'ISO': 13, 'ISO_MARGINAL': 1}   H {None: 62, 'SAME': 14}
+   rc1prop  string changed vs shipped  14  errors  0  ISO&SAME  14 (+14/-0 vs shipped)   graph {'SPHERE_DIFF': 62, 'ISO': 13, 'ISO_MARGINAL': 1}   H {None: 62, 'SAME': 14}
+   fix2     string changed vs shipped  20  errors  0  ISO&SAME  14 (+14/-0 vs shipped)   graph {'SPHERE_DIFF': 62, 'ISO': 13, 'ISO_MARGINAL': 1}   H {None: 62, 'SAME': 14}
+
+== E1_HCOUNT  n=84
+   shipped  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'ISO': 83, 'ISO_CLASH': 1}   H {'DIFF': 84}
+   rc1off   string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'ISO': 83, 'ISO_CLASH': 1}   H {'DIFF': 84}
+   rc1prop  string changed vs shipped   0  errors  0  ISO&SAME   0 (+0/-0 vs shipped)   graph {'ISO': 83, 'ISO_CLASH': 1}   H {'DIFF': 84}
+   fix2     string changed vs shipped  57  errors  0  ISO&SAME  56 (+56/-0 vs shipped)   graph {'ISO': 83, 'ISO_CLASH': 1}   H {'SAME': 56, 'DIFF': 28}
+#DONE

@@ -1,0 +1,412 @@
+{
+ "changed": {
+  "n_changed": 31,
+  "n_unchanged": 4958,
+  "encode_failed": [
+   [
+    "BENVOG_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "GABSOT_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "KEMSUS_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "KESWUB_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "LUJJUX_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "NOGWOX_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "OMEYUA_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "UROFUD_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "UVIWIG_comp_0",
+    "TIMEOUT",
+    true
+   ],
+   [
+    "XAWSET_comp_0",
+    "TIMEOUT",
+    false
+   ],
+   [
+    "ZEHQOU_comp_0",
+    "TIMEOUT",
+    false
+   ]
+  ],
+  "molecules": [
+   "EPULIM_comp_0",
+   "EPULUY_comp_0",
+   "GIFVUN_comp_0",
+   "HIMFAM_comp_0",
+   "ILELOA_comp_0",
+   "IXAHIZ_comp_0",
+   "JUWSOJ_comp_0",
+   "KICSIA_comp_1",
+   "KICSUM_comp_0",
+   "LOJGEW_comp_0",
+   "MAHTOE_comp_0",
+   "MITYUL_comp_0",
+   "MITZAS_comp_0",
+   "NAHNOB_comp_0",
+   "NEFNER_comp_0",
+   "NOPNUD_comp_0",
+   "OBIKUF_comp_0",
+   "OBILAM_comp_0",
+   "OKAPEX_comp_0",
+   "QAMJAP_comp_0",
+   "ROHFEB_comp_0",
+   "ROMSER_comp_0",
+   "SEMVUD_comp_0",
+   "SUGQOA_comp_0",
+   "TOQPEV_comp_0",
+   "TOTREB_comp_0",
+   "TUVCIX_comp_0",
+   "VEJXOZ_comp_0",
+   "VINVUL_comp_0",
+   "XUFHOW_comp_0",
+   "ZOLXOP_comp_0"
+  ]
+ },
+ "audit": {
+  "per_transform": {
+   "again": {
+    "shipped": 4989,
+    "lever": 4989,
+    "worse": [],
+    "better": []
+   },
+   "rewrite": {
+    "shipped": 4989,
+    "lever": 4989,
+    "worse": [],
+    "better": []
+   },
+   "rot0": {
+    "shipped": 4989,
+    "lever": 4989,
+    "worse": [],
+    "better": []
+   },
+   "renum0": {
+    "shipped": 4777,
+    "lever": 4776,
+    "worse": [
+     "VEJXOZ_comp_0"
+    ],
+    "better": []
+   },
+   "renum1": {
+    "shipped": 4770,
+    "lever": 4770,
+    "worse": [
+     "SEMVUD_comp_0"
+    ],
+    "better": [
+     "IXAHIZ_comp_0"
+    ]
+   },
+   "renum2": {
+    "shipped": 4777,
+    "lever": 4776,
+    "worse": [
+     "VEJXOZ_comp_0"
+    ],
+    "better": []
+   },
+   "noise0": {
+    "shipped": 4868,
+    "lever": 4875,
+    "worse": [
+     "JUWSOJ_comp_0",
+     "QAMJAP_comp_0"
+    ],
+    "better": [
+     "EPULUY_comp_0",
+     "KICSUM_comp_0",
+     "LASSOQ_comp_0",
+     "NAHNOB_comp_0",
+     "OHOZAN_comp_0",
+     "SEMVUD_comp_0",
+     "TUVCIX_comp_0",
+     "VINVUL_comp_0",
+     "XUFHOW_comp_0"
+    ]
+   },
+   "noise1": {
+    "shipped": 4870,
+    "lever": 4876,
+    "worse": [
+     "GIFVUN_comp_0"
+    ],
+    "better": [
+     "EPULIM_comp_0",
+     "JUWSOJ_comp_0",
+     "LASSOQ_comp_0",
+     "TOTREB_comp_0",
+     "TUVCIX_comp_0",
+     "XUFHOW_comp_0",
+     "ZOLXOP_comp_0"
+    ]
+   },
+   "noise2": {
+    "shipped": 4870,
+    "lever": 4872,
+    "worse": [
+     "GIFVUN_comp_0",
+     "LOJGEW_comp_0",
+     "NAHNOB_comp_0",
+     "QAMJAP_comp_0"
+    ],
+    "better": [
+     "MITZAS_comp_0",
+     "OHOZAN_comp_0",
+     "SOJCAX_comp_0",
+     "TUVCIX_comp_0",
+     "VINVUL_comp_0",
+     "WEWREW_comp_0"
+    ]
+   },
+   "mirror": {
+    "shipped": 3262,
+    "lever": 3260,
+    "worse": [
+     "ILELOA_comp_0",
+     "MAHTOE_comp_0",
+     "OKAPEX_comp_0"
+    ],
+    "better": [
+     "JUWSOJ_comp_0"
+    ]
+   }
+  },
+  "mirror_2x2": {
+   "shipped": {
+    "achiral/same": 3099,
+    "chiral/differs": 1607,
+    "achiral/differs": 120,
+    "chiral/same": 163
+   },
+   "lever": {
+    "achiral/same": 3098,
+    "chiral/differs": 1608,
+    "achiral/differs": 121,
+    "chiral/same": 162
+   }
+  },
+  "fragile": {
+   "shipped": 502,
+   "lever": 492,
+   "became_fragile": [
+    "GIFVUN_comp_0",
+    "LOJGEW_comp_0"
+   ],
+   "became_stable": [
+    "EPULIM_comp_0",
+    "EPULUY_comp_0",
+    "IXAHIZ_comp_0",
+    "KICSUM_comp_0",
+    "LASSOQ_comp_0",
+    "MITZAS_comp_0",
+    "OHOZAN_comp_0",
+    "TOTREB_comp_0",
+    "TUVCIX_comp_0",
+    "VINVUL_comp_0",
+    "XUFHOW_comp_0",
+    "ZOLXOP_comp_0"
+   ]
+  }
+ },
+ "offline": {
+  "n": 4768,
+  "transitions": {
+   "pass->pass": 4329,
+   "fail->fail": 421,
+   "encode_error_under_lever": 5,
+   "no_structure": 185,
+   "fail->pass": 13,
+   "pass->fail": 5
+  },
+  "losses": [
+   "FIQDAM_comp_0",
+   "MIYBAZ_comp_0",
+   "NEMGIW_comp_0",
+   "OGUYAQ_comp_0",
+   "OHUTIV_comp_0"
+  ],
+  "gains": [
+   "ALEMOT_comp_0",
+   "DOCPAO_comp_0",
+   "HOQFUP_comp_0",
+   "IFAPUD_comp_0",
+   "IJAXIB_comp_0",
+   "MIBFEL_comp_0",
+   "NOYTUS_comp_0",
+   "TOXDIV_comp_0",
+   "UPABUK_comp_0",
+   "UQUXAG_comp_0",
+   "WAMWUE_comp_0",
+   "XAKCAP_comp_0",
+   "YUDWAW_comp_0"
+  ],
+  "errors": [
+   [
+    "AFIROW_comp_0",
+    "OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)"
+   ],
+   [
+    "HOBBUY_comp_0",
+    "OINEncodeError: cannot kekulize molecule and found no quinoid ring to relax: Can't kekulize mol.  Unkekulized atoms: 9 10 11 12 19"
+   ],
+   [
+    "MUZZUC_comp_0",
+    "OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)"
+   ],
+   [
+    "ODUBAS_comp_0",
+    "OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [24, 25, 26, 27, 28, 29]; the perceived bond orders are unusable (Can't kekulize mol.  Unkekulized atoms: 18 19 20 21 36)"
+   ],
+   [
+    "RIPDEA_comp_0",
+    "ValueError: perception_tmc failed: Explicit valence for atom # 2 N, 5, is greater than permitted"
+   ]
+  ],
+  "verified_transitions": {
+   "pass->pass": 3919,
+   "fail->fail": 1036,
+   "fail->pass": 2,
+   "pass->fail": 1
+  },
+  "verified_losses": [
+   [
+    "OHUTIV_comp_0",
+    "G_HCOUNT"
+   ]
+  ],
+  "verified_gains": [
+   [
+    "IJAXIB_comp_0",
+    "E2_P_OTHER"
+   ],
+   [
+    "YUDWAW_comp_0",
+    "E2_P_OTHER"
+   ]
+  ],
+  "control_mismatch": []
+ },
+ "ab": {
+  "reader_coupling": {
+   "on_reader_iso_same": 22,
+   "shipped_reader_iso_same": 22,
+   "reader_dependent": []
+  },
+  "n": 31,
+  "control_mismatch": [],
+  "dead_lever_same_s1": [],
+  "self": {
+   "off": 13,
+   "on": 16,
+   "transitions": {
+    "fail->pass": 5,
+    "fail->fail": 13,
+    "pass->pass": 11,
+    "pass->fail": 2
+   }
+  },
+  "verified": {
+   "off": 0,
+   "on": 6,
+   "transitions": {
+    "fail->fail": 25,
+    "fail->pass": 6
+   }
+  },
+  "verified_losses": [],
+  "verified_gains": [
+   "ZOLXOP_comp_0",
+   "OBILAM_comp_0",
+   "XUFHOW_comp_0",
+   "OBIKUF_comp_0",
+   "MITZAS_comp_0",
+   "KICSIA_comp_1"
+  ],
+  "self_losses": [
+   "JUWSOJ_comp_0",
+   "MITYUL_comp_0"
+  ],
+  "self_gains": [
+   "NEFNER_comp_0",
+   "ZOLXOP_comp_0",
+   "OBILAM_comp_0",
+   "IXAHIZ_comp_0",
+   "MITZAS_comp_0"
+  ],
+  "on_fault": {
+   "NEFNER_comp_0": "G_CONSTRUCTION",
+   "ZOLXOP_comp_0": "NONE",
+   "LOJGEW_comp_0": "G_CONSTRUCTION",
+   "OKAPEX_comp_0": "E1_GRAPH",
+   "TOQPEV_comp_0": "E1_NONINJECTIVE",
+   "VEJXOZ_comp_0": "E1_GRAPH",
+   "JUWSOJ_comp_0": "G_NOTHING",
+   "TUVCIX_comp_0": "G_NOTHING",
+   "TOTREB_comp_0": "E1_NONINJECTIVE",
+   "SEMVUD_comp_0": "E1_GRAPH",
+   "ROHFEB_comp_0": "E1_NOT_ENCODED",
+   "ILELOA_comp_0": "P_DETACHED",
+   "NOPNUD_comp_0": "E1_NOT_ENCODED",
+   "OBILAM_comp_0": "NONE",
+   "XUFHOW_comp_0": "NONE",
+   "ROMSER_comp_0": "E1_GRAPH",
+   "VINVUL_comp_0": "E1_NOT_ENCODED",
+   "IXAHIZ_comp_0": "E1_NONINJECTIVE",
+   "MAHTOE_comp_0": "G_CONSTRUCTION",
+   "OBIKUF_comp_0": "NONE",
+   "EPULIM_comp_0": "E1_NONINJECTIVE",
+   "MITZAS_comp_0": "NONE",
+   "GIFVUN_comp_0": "E1_GRAPH",
+   "MITYUL_comp_0": "G_CONSTRUCTION",
+   "NAHNOB_comp_0": "E1_GRAPH",
+   "QAMJAP_comp_0": "E1_GRAPH",
+   "KICSUM_comp_0": "E1_NONINJECTIVE",
+   "KICSIA_comp_1": "NONE",
+   "SUGQOA_comp_0": "G_NOTHING",
+   "HIMFAM_comp_0": "E1_GRAPH",
+   "EPULUY_comp_0": "E1_NOT_ENCODED"
+  },
+  "runtime": {
+   "off": 2299.768,
+   "on": 2313.8840000000005
+  }
+ },
+ "projection": {
+  "self": 4358,
+  "verified": 3927
+ }
+}

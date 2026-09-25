@@ -1,0 +1,110 @@
+{
+ "changed_movers": 107,
+ "changed_non_movers": 13,
+ "fail_by_owner_new": {
+  "DATA": 9,
+  "E1": 86,
+  "E2": 193,
+  "G": 299,
+  "P": 24
+ },
+ "fail_by_owner_old": {
+  "DATA": 10,
+  "E1": 160,
+  "E2": 176,
+  "G": 278,
+  "P": 29
+ },
+ "fail_new": {
+  "DATA_MULTI": 9,
+  "E1_GRAPH": 52,
+  "E1_HCOUNT": 21,
+  "E1_NONCANONICAL": 13,
+  "E2_P_FRAGILE": 124,
+  "E2_P_OTHER": 69,
+  "G_CONSTRUCTION": 209,
+  "G_DIASTEREOMER": 6,
+  "G_HANDEDNESS": 4,
+  "G_HCOUNT": 3,
+  "G_NOTHING": 77,
+  "P_DETACHED": 13,
+  "P_E1_COVERAGE": 11
+ },
+ "fail_old": {
+  "DATA_MULTI": 10,
+  "E1_GRAPH": 71,
+  "E1_HCOUNT": 77,
+  "E1_NONCANONICAL": 11,
+  "E1_NONINJECTIVE": 1,
+  "E2_P_FRAGILE": 105,
+  "E2_P_OTHER": 71,
+  "G_CONSTRUCTION": 197,
+  "G_DIASTEREOMER": 5,
+  "G_HANDEDNESS": 4,
+  "G_HCOUNT": 3,
+  "G_NOTHING": 69,
+  "P_DETACHED": 18,
+  "P_E1_COVERAGE": 11
+ },
+ "false_pass_new": {
+  "E1_GRAPH": 51,
+  "E1_HCOUNT": 6,
+  "E1_NONINJECTIVE": 41,
+  "E1_NOT_ENCODED": 125,
+  "G_CONSTRUCTION": 210
+ },
+ "false_pass_old": {
+  "E1_GRAPH": 61,
+  "E1_HCOUNT": 7,
+  "E1_NONINJECTIVE": 36,
+  "E1_NOT_ENCODED": 118,
+  "G_CONSTRUCTION": 205
+ },
+ "n": 5000,
+ "n_movers": 132,
+ "transitions_movers": {
+  "E1_GRAPH -> E1_NONCANONICAL": 1,
+  "E1_GRAPH -> E1_NONINJECTIVE": 4,
+  "E1_GRAPH -> E1_NOT_ENCODED": 4,
+  "E1_GRAPH -> E2_P_OTHER": 1,
+  "E1_GRAPH -> G_CONSTRUCTION": 7,
+  "E1_GRAPH -> G_DIASTEREOMER": 1,
+  "E1_GRAPH -> NONE": 8,
+  "E1_HCOUNT -> E1_NONCANONICAL": 1,
+  "E1_HCOUNT -> E2_P_FRAGILE": 20,
+  "E1_HCOUNT -> E2_P_OTHER": 2,
+  "E1_HCOUNT -> G_CONSTRUCTION": 7,
+  "E1_HCOUNT -> G_NOTHING": 1,
+  "E1_HCOUNT -> NONE": 20,
+  "E1_NONINJECTIVE -> E2_P_FRAGILE": 1,
+  "E2_P_FRAGILE -> G_CONSTRUCTION": 1,
+  "E2_P_FRAGILE -> G_NOTHING": 1,
+  "E2_P_OTHER -> E1_NOT_ENCODED": 1,
+  "E2_P_OTHER -> G_CONSTRUCTION": 1,
+  "E2_P_OTHER -> NONE": 2,
+  "G_CONSTRUCTION -> NONE": 6,
+  "G_NOTHING -> E1_NOT_ENCODED": 1,
+  "G_NOTHING -> NONE": 4,
+  "NONE -> E1_NOT_ENCODED": 1,
+  "NONE -> G_CONSTRUCTION": 5,
+  "NONE -> G_NOTHING": 1,
+  "P_DETACHED -> E1_NONINJECTIVE": 1,
+  "P_DETACHED -> G_CONSTRUCTION": 2,
+  "P_DETACHED -> NONE": 2
+ },
+ "transitions_non_movers": {
+  "DATA_MULTI -> G_NOTHING": 1,
+  "E1_GRAPH -> G_NOTHING": 3,
+  "E1_HCOUNT -> G_NOTHING": 6,
+  "E2_P_OTHER -> NONE": 1,
+  "G_NOTHING -> P_E1_COVERAGE": 1,
+  "P_E1_COVERAGE -> G_NOTHING": 1
+ },
+ "verified_gap_by_owner_new": {
+  "DATA": 9,
+  "E1": 309,
+  "E2": 193,
+  "G": 509,
+  "P": 24
+ }
+}

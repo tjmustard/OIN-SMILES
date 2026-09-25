@@ -202,6 +202,13 @@ ALLOW = [
     # v0.4.19 serializer lane (OIN_H_FAITHFUL + OIN_RC1_PROPAGATE, measured, NOT promoted), staged by
     # tools/v0419/freeze_stage.py.
     "v0419_ser_*",
+    # v0.4.19 RELEASE: the candidate sweep (= the release sweep, the three serializer levers ON),
+    # its post-processing under the levers and the /refreeze-goldens run
+    # (tools/v0419/freeze_stage_release.py, release v0.4.19-release-sweep), and the census on it
+    # (stage_reattribution.py --results results-v0.4.19-release-census --prefix v0419_rcensus_).
+    "v0419_rsweep_*",
+    "v0419_rarm2_*",
+    "v0419_rcensus_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -860,6 +867,92 @@ PROVENANCE = [
     (r"^FROZEN\.md$|^SOURCE$", "hand-written provenance record for a frozen sweep"),
     (r"^triage_hard_fails\.md$", "tools/triage_hard_fails.py"),
     (r"^CASE_REGISTRY\.md$|^.*TREND\.tsv$", "tools/rebuild_summary.py / milestone_report.py"),
+    # --- v0.4.19 RELEASE ------------------------------------------------------------------------
+    (
+        r"^v0419_rsweep_run_config\.json$",
+        "tools/v0419/launch_candidate_sweep.sh -> tools/run_sweep.sh <cohort-v0.4.5-5k> <out> 6 300"
+        "   (THE v0.4.19 RELEASE SWEEP: the full 5,000 with OIN_H_FAITHFUL + OIN_RC1_PROPAGATE +"
+        " OIN_CAP_IGNORES_METAL ON via the unit's environment -- the lever block of run_config.json"
+        " is EXACTLY those three -- at commit 1f61681c, promoted to default-ON at 0809c7a9 (a"
+        " byte-identical read). 6 shards 1-BASED, --mol-timeout 300, BLAS=1. Launched twice: the"
+        " first run was aborted at 528/5000 because src/ was edited in its worktree)",
+    ),
+    (
+        r"^v0419_rsweep_(two_numbers\.txt|bucket_report_honest\.md)$",
+        "SWEEP_TAG=v0.4.19-candidate tools/v0419/post_candidate_sweep.sh -> roundtrip_bucket_report.py"
+        " --score honest ; tools/v0417/sweep_two_numbers.py --sweep <sweep>   (THE v0.4.19 HEADLINE:"
+        " 4,389 / 5,000 = 87.78% self-consistent, 3,956 / 5,000 = 79.12% VERIFIED; predicted 4,378 /"
+        " 3,951. The '(record ...)' labels INSIDE two_numbers.txt are the v0.4.14 record's)",
+    ),
+    (
+        r"^v0419_rsweep_vs_projection\.(txt|json)$|^v0419_rsweep_unchanged_string_movers\.json$",
+        "tools/v0419/candidate_vs_projection.py --sweep <sweep>   (the sweep against the projection"
+        " ROW BY ROW: 40 differences, 5 on the 300 s boundary, every one an unchanged-string row --"
+        " OIN_CAP_IGNORES_METAL reaches the GENERATOR through its re-encode of candidate conformers:"
+        " 44 of 4,891 unchanged-string rows built a different structure, listed in"
+        " unchanged_string_movers.json with both runs' honest buckets)",
+    ),
+    (
+        r"^v0419_rsweep_(g_verdict|parseback|parseback_gen)\.jsonl\.gz$|^v0419_rsweep_bucket_report_honest\.json\.gz$",
+        "OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 OIN_CAP_IGNORES_METAL=1 tools/census/string_sufficiency.py"
+        " parseback [--side gen] --sweep <sweep> ; tools/census/g_vs_input.py --sweep <sweep> ;"
+        " roundtrip_bucket_report.py --score honest   (the neutral ruler on every generated structure,"
+        " the strings read back UNDER THE LEVERS -- the parse-back reader is what OIN_H_FAITHFUL"
+        " gates -- and the per-molecule honest bucket: gunzip the three and"
+        " sweep_two_numbers.two_numbers() returns the headline from the frozen tree alone)",
+    ),
+    (
+        r"^v0419_rsweep_parseback_shippedreader\.jsonl\.gz$",
+        "OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0 tools/census/string_sufficiency.py"
+        " parseback --sweep <sweep>   (the SAME strings read by the pre-promotion reader: what a"
+        " build without OIN_H_FAITHFUL makes of a string written with it -- the writer + reader"
+        " coupling, kept beside the promoted reader's verdict, never hidden)",
+    ),
+    (
+        r"^v0419_rarm2_arm1_(on|off_control)\.tsv$",
+        "tools/gate_arm1_encode.py --expect-n 65, shipped defaults / the three levers at 0   (ARM 1"
+        " at 65 fixtures: the control reproduces the v0.4.17 golden on all 62 rows; the promotion"
+        " moves 5, each attributed by one lever at a time in the golden's header)",
+    ),
+    (
+        r"^v0419_rarm2_field2_audit_v04[79]\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_field2_audit.py --lever OIN_H_FAITHFUL,OIN_RC1_PROPAGATE,OIN_CAP_IGNORES_METAL"
+        " --golden tools/gate_v04{7,9}_arm2_golden.tsv --cohort-dir <cohort>   (/refreeze-goldens"
+        " step 1, encode-only, every row: v047 100 SAME; v049 295 SAME + 26 MOVED_BY_LEVER + 4"
+        " sentinels, 0 STALE. v047's '0 fired' abort is genuine: none of its 100 molecules is in"
+        " the 109-row changed-string set)",
+    ),
+    (
+        r"^v0419_rarm2_(diff_full_gate_vs_goldens\.txt|splice_dry_run\.txt|rows_on_full_gate\.tsv\.gz|rows_off_control\.tsv|rows_verify_real_gate\.tsv|golden_comment_block\.txt)$",
+        "REFREEZE_LEVER=OIN_H_FAITHFUL,OIN_RC1_PROPAGATE,OIN_CAP_IGNORES_METAL REFREEZE_TAG=v0.4.19"
+        " tools/v0417/run_arm2_refreeze.sh on|off|verify ; tools/v0417/arm2_refreeze.py diff|splice"
+        " --accept-det MAHTOE_comp_0|rows   (the FULL gate, shipped defaults, 6 shards: v047 100/100"
+        " reproduce; v049 owes 26 rows, all field 2, exactly the audit's; the control brings every"
+        " one back -> 26 LEVER, 0 STALE; MAHTOE (NO_STRUCTURE_DET, now built and gated) decided by"
+        " hand; the real gate reads the re-frozen goldens)",
+    ),
+    (
+        r"^v0419_rcensus_(attribution_table\.tsv\.gz|attribution_summary\.json|attribution\.txt)$",
+        "tools/v0419/run_census_release.sh -> tools/census/attribution_table.py --sweep"
+        " <results-v0.4.19-candidate-sweep> + one path per instrument   (THE CENSUS ON THE v0.4.19"
+        " RELEASE SWEEP; C2 = the lane's fix3 canonicality audit, since the encoder changed)",
+    ),
+    (
+        r"^v0419_rcensus_control_on_the_record_sweep\.txt$",
+        "tools/census/attribution_table.py --write-to <control>   (the parameterised tool must"
+        " reproduce the frozen v0.4.17 census table byte-for-byte before this release's is believed)",
+    ),
+    (
+        r"^v0419_rcensus_reattribution_diff\.(txt|json)$|^v0419_rcensus_movers_vs_v0418\.txt$",
+        "tools/census/reattribution_diff.py --old <v0.4.18 release census> --new <this> --movers"
+        " movers_vs_v0418.txt   (fault transitions against the v0.4.18 release census, split by"
+        " whether the generated STRUCTURE differs from the v0.4.18 release sweep's)",
+    ),
+    (
+        r"^v0419_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0419_rcensus_attach_class_audit\.json\.gz$",
+        "tools/census/string_sufficiency.py parseback --side gen / pflags --charge-probe ;"
+        " tools/attach_class_audit.py   (the per-sweep instruments the attribution reads)",
+    ),
 ]
 
 

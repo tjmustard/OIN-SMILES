@@ -1,0 +1,57 @@
+DENOMINATOR 5000 molecules   movers 132   non-movers 4868
+
+1. FAIL partition    old 653 = 13.06 pts    new 611 = 12.22 pts
+   fault                old    pts     new    pts    delta
+   G_CONSTRUCTION       197   3.94     209   4.18      +12
+   E2_P_FRAGILE         105   2.10     124   2.48      +19
+   G_NOTHING             69   1.38      77   1.54       +8
+   E2_P_OTHER            71   1.42      69   1.38       -2
+   E1_GRAPH              71   1.42      52   1.04      -19
+   E1_HCOUNT             77   1.54      21   0.42      -56
+   E1_NONCANONICAL       11   0.22      13   0.26       +2
+   P_DETACHED            18   0.36      13   0.26       -5
+   P_E1_COVERAGE         11   0.22      11   0.22       +0
+   DATA_MULTI            10   0.20       9   0.18       -1
+   G_DIASTEREOMER         5   0.10       6   0.12       +1
+   G_HANDEDNESS           4   0.08       4   0.08       +0
+   G_HCOUNT               3   0.06       3   0.06       +0
+   E1_NONINJECTIVE        1   0.02       0   0.00       -1
+   by owner:  G 278->299 (5.98 pts)   E2 176->193 (3.86 pts)   E1 160->86 (1.72 pts)   P 29->24 (0.48 pts)   DATA 10->9 (0.18 pts)
+
+2. passes that carry a fault (metric false passes)   old 427   new 433
+   G_CONSTRUCTION       205     210       +5
+   E1_NOT_ENCODED       118     125       +7
+   E1_GRAPH              61      51      -10
+   E1_NONINJECTIVE       36      41       +5
+   E1_HCOUNT              7       6       -1
+   old: self-consistent 4347 = 86.94%   VERIFIED 3920 = 78.40%   gap to 100: 13.06 / 21.60
+   new: self-consistent 4389 = 87.78%   VERIFIED 3956 = 79.12%   gap to 100: 12.22 / 20.88
+   NEW verified gap by owner (FAIL + false pass): G 509 (10.18)   E1 309 (6.18)   E2 193 (3.86)   P 24 (0.48)   DATA 9 (0.18)
+
+3. transitions old fault -> new fault
+   MOVERS: 132 molecules, 25 keep their fault, 107 change (81.1%)
+        20  E1_HCOUNT          -> NONE
+        20  E1_HCOUNT          -> E2_P_FRAGILE
+         8  E1_GRAPH           -> NONE
+         7  E1_HCOUNT          -> G_CONSTRUCTION
+         7  E1_GRAPH           -> G_CONSTRUCTION
+         6  G_CONSTRUCTION     -> NONE
+         5  NONE               -> G_CONSTRUCTION
+         4  E1_GRAPH           -> E1_NONINJECTIVE
+         4  E1_GRAPH           -> E1_NOT_ENCODED
+         4  G_NOTHING          -> NONE
+         2  E1_HCOUNT          -> E2_P_OTHER
+         2  E2_P_OTHER         -> NONE
+         2  P_DETACHED         -> G_CONSTRUCTION
+         2  P_DETACHED         -> NONE
+      outcome: PASS->FAIL 6   FAIL->PASS 47
+   NON-MOVERS: 4868 molecules, 4855 keep their fault, 13 change (0.3%)
+         6  E1_HCOUNT          -> G_NOTHING
+         3  E1_GRAPH           -> G_NOTHING
+         1  P_E1_COVERAGE      -> G_NOTHING
+         1  DATA_MULTI         -> G_NOTHING
+         1  G_NOTHING          -> P_E1_COVERAGE
+         1  E2_P_OTHER         -> NONE
+      outcome: PASS->FAIL 0   FAIL->PASS 1
+
+wrote reattribution_diff.json

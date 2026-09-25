@@ -1,0 +1,49 @@
+candidate sweep results-v0.4.19-candidate-sweep: n=5000
+  self-consistent  projected 4378  measured 4389  (87.78%)
+  VERIFIED         projected 3951  measured 3956  (79.12%)
+
+== self-consistent: projected-not-measured 5   measured-not-projected 16
+   LOST vs projection   DOCPAO_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   50.318 / other   54.366   *** not a boundary row
+   LOST vs projection   IFAPUD_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   48.088 / other   46.052   *** not a boundary row
+   LOST vs projection   MIBFEL_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   25.776 / other    18.37   *** not a boundary row
+   LOST vs projection   NOYTUS_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand    22.11 / other   17.318   *** not a boundary row
+   LOST vs projection   PUMLEP_comp_0    unchanged   cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.492 / other  285.096   BOUNDARY
+   GAINED vs projection DAGNIL_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   82.716 / other  223.826   *** not a boundary row
+   GAINED vs projection DIDROZ_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    2.153 / other   83.628   *** not a boundary row
+   GAINED vs projection EVUHUZ_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    2.347 / other   51.576   *** not a boundary row
+   GAINED vs projection FIQDAM_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    4.355 / other    1.898   *** not a boundary row
+   GAINED vs projection HUDTUV_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand     2.53 / other   300.09   BOUNDARY
+   GAINED vs projection LASSOQ_comp_0    unchanged   cand structure: graph differs         other bucket structural     elapsed cand   21.113 / other   42.794   *** not a boundary row
+   GAINED vs projection LUSBEI_comp_0    unchanged   cand structure: graph differs         other bucket structural     elapsed cand     8.09 / other   83.685   *** not a boundary row
+   GAINED vs projection MIYBAZ_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    8.775 / other    5.385   *** not a boundary row
+   GAINED vs projection MUYTEH_comp_0    unchanged   cand structure: stereo DIFFERENT      other bucket structural     elapsed cand    2.323 / other    8.301   *** not a boundary row
+   GAINED vs projection NEMGIW_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    2.904 / other    1.179   *** not a boundary row
+   GAINED vs projection QEWJOS_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  334.761 / other  343.774   BOUNDARY
+   GAINED vs projection UXOCAN_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    6.013 / other    3.937   *** not a boundary row
+   GAINED vs projection VUXTOZ_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  197.032 / other  300.149   BOUNDARY
+   GAINED vs projection YOBTAL_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    3.639 / other   19.166   *** not a boundary row
+   GAINED vs projection YOQMAT_comp_0    unchanged   cand structure: stereo DIFFERENT      other bucket hard_fail      elapsed cand  263.008 / other  300.369   BOUNDARY
+   GAINED vs projection YOSYEM_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  375.215 / other  619.387   BOUNDARY
+    {('LOST vs projection', 'NOT boundary'): 4, ('LOST vs projection', 'budget-boundary'): 1, ('GAINED vs projection', 'NOT boundary'): 11, ('GAINED vs projection', 'budget-boundary'): 5}
+
+== VERIFIED: projected-not-measured 7   measured-not-projected 12
+   LOST vs projection   IJAXIB_comp_0    unchanged   cand structure: graph differs         other bucket structural     elapsed cand   24.951 / other   26.198   *** not a boundary row
+   LOST vs projection   JUXXEF_comp_0    unchanged   cand structure: graph differs         other bucket byte_exact     elapsed cand     3.52 / other    5.413   *** not a boundary row
+   LOST vs projection   PAFFEI_comp_0    unchanged   cand structure: stereo DIFFERENT      other bucket byte_exact     elapsed cand    2.109 / other     3.39   *** not a boundary row
+   LOST vs projection   PUMLEP_comp_0    unchanged   cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.492 / other  285.096   BOUNDARY
+   LOST vs projection   SIGYAL_comp_0    unchanged   cand structure: graph differs         other bucket byte_exact     elapsed cand   10.054 / other   12.857   *** not a boundary row
+   LOST vs projection   TANROQ_comp_0    unchanged   cand structure: graph differs         other bucket byte_exact     elapsed cand    8.977 / other   10.228   *** not a boundary row
+   LOST vs projection   WENDID_comp_0    unchanged   cand structure: graph differs         other bucket byte_exact     elapsed cand    1.695 / other   13.249   *** not a boundary row
+   GAINED vs projection DAGNIL_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   82.716 / other  223.826   *** not a boundary row
+   GAINED vs projection DIDROZ_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    2.153 / other   83.628   *** not a boundary row
+   GAINED vs projection EVUHUZ_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    2.347 / other   51.576   *** not a boundary row
+   GAINED vs projection FIQDAM_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    4.355 / other    1.898   *** not a boundary row
+   GAINED vs projection HUDTUV_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand     2.53 / other   300.09   BOUNDARY
+   GAINED vs projection MIYBAZ_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    8.775 / other    5.385   *** not a boundary row
+   GAINED vs projection NEMGIW_comp_0    unchanged   cand NONE                             other bucket byte_exact     elapsed cand    2.904 / other    1.179   *** not a boundary row
+   GAINED vs projection QEWJOS_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  334.761 / other  343.774   BOUNDARY
+   GAINED vs projection UXOCAN_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    6.013 / other    3.937   *** not a boundary row
+   GAINED vs projection VUXTOZ_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  197.032 / other  300.149   BOUNDARY
+   GAINED vs projection YOBTAL_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    3.639 / other   19.166   *** not a boundary row
+   GAINED vs projection YOSYEM_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  375.215 / other  619.387   BOUNDARY
+    {('LOST vs projection', 'NOT boundary'): 6, ('LOST vs projection', 'budget-boundary'): 1, ('GAINED vs projection', 'NOT boundary'): 8, ('GAINED vs projection', 'budget-boundary'): 4}

@@ -1,0 +1,23 @@
+oinsmiles from: <checkout:oin-v0419>/src/oinsmiles/__init__.py
+levers in env : {'OIN_H_FAITHFUL': '1', 'OIN_RC1_PROPAGATE': '1'}
+cohort=5000  probing=5000  encodes=55000
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-serializer/e_selfconsistency_fix2.jsonl  n=5000  7380s wall
+
+DENOMINATOR n=5000  base encoded=4989  base failed=11
+base failures: {'TIMEOUT': 11}
+INSTRUMENT assertion failures=0  MISSING tags=0  (both must be 0)
+CPU-h=13.85
+
+| transform | k | byte-stable | key-stable | not byte-stable: worst relations |
+|---|---|---|---|---|
+| again (determinism) | 1 | 4988/4989 (99.98%) | 4988/4989 (99.98%) | {'TIMEOUT': 1} |
+| rewrite (writer control) | 1 | 4989/4989 (100.00%) | 4989/4989 (100.00%) | {} |
+| rotate | 1 | 4989/4989 (100.00%) | 4989/4989 (100.00%) | {} |
+| renumber | 3 | 4701/4989 (94.23%) | 4734/4989 (94.89%) | {'structural': 249, 'key_equal/rdkit_canonical': 38, 'key_equal/slot_renumber': 9, 'facmer_divergent': 5, 'encode_fail': 3, 'TIMEOUT': 1} |
+| noise sigma=0.02 | 3 | 4755/4989 (95.31%) | 4758/4989 (95.37%) | {'structural': 220, 'facmer_divergent': 13, 'key_equal/rdkit_canonical': 3, 'TIMEOUT': 1} |
+| mirror (ALL molecules) | 1 | 3262/4989 (65.38%) | 3863/4989 (77.43%) | {'structural': 603, 'key_equal/slot_renumber': 588, 'facmer_divergent': 523, 'key_equal/rdkit_canonical': 13} |
+
+base == v0.4.14 sweep smiles_1: 4909/4988  (differences = code drift OR cross-process nondeterminism)
+
+(no g_verdict_control-mirror.jsonl; run g_vs_input.py --control mirror for the 2x2)
+#DONE
