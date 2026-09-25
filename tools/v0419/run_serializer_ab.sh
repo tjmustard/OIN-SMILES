@@ -25,6 +25,7 @@ DATA=$MAIN/tmCAT-tmPHOTO_xyz_dataset
 PY=$MAIN/.venv/bin/python
 SRC_COHORT=$DATA/cohort-v0.4.5-5k
 SWEEP=$DATA/results-v0.4.18-release-sweep
+case "${2:-fix2}" in e2*) SWEEP=$DATA/results-v0.4.19-candidate-sweep;; esac   # the E2 lane's OFF arm is the v0.4.19 sweep of record
 LIST=${1:?usage: run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]}
 ARM=${2:-fix2}
 case "$ARM" in
@@ -68,7 +69,7 @@ if [ ! -f "$off/DONE" ]; then
     ln -s "$SWEEP/individual_reports/$m.json" "$off/individual_reports/$m.json"
     for s in "$SWEEP/structures/$m"[_.]*; do [ -e "$s" ] && ln -s "$s" "$off/structures/$(basename "$s")"; done
   done
-  echo "results-v0.4.18-release-sweep @ $(grep -o '"commit_id": "[^"]*"' "$SWEEP/run_config.json") -- the sweep of record's own rows, not a run" > "$off/AB_COMMIT"
+  echo "$(basename "$SWEEP") @ $(grep -o '"commit_id": "[^"]*"' "$SWEEP/run_config.json") -- the sweep of record's own rows, not a run" > "$off/AB_COMMIT"
   echo "#DONE $n" > "$off/DONE"
   echo "ab_off: $n molecules linked from $SWEEP"
 fi

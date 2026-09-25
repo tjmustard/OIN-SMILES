@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -44,12 +45,35 @@ sys.path.insert(0, str(HERE.parents[1] / "census"))
 from attribution_table import attribute  # noqa: E402
 
 MAIN = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
-SWEEP = MAIN / "results-v0.4.18-release-sweep"
-CENSUS = MAIN / "results-v0.4.18-release-census"
-LANE = MAIN / "results-v0.4.19-serializer"
-SHIPPED_ESC = MAIN / "results-v0.4.17-exactfold" / "e_selfconsistency_exact.jsonl"
+# The BASELINE a lane measures against: the sweep of record, its census, the C2 audit that census
+# used, and the two headline counts. OIN_AB_BASELINE=v0.4.19 (the E2 lane) moves all of them one
+# release on; the default is the serializer lane's (v0.4.18). Read at import: every command below
+# derives its sets from these.
+_BASELINES = {
+    "v0.4.18": (
+        "results-v0.4.18-release-sweep",
+        "results-v0.4.18-release-census",
+        "results-v0.4.19-serializer",
+        "results-v0.4.17-exactfold/e_selfconsistency_exact.jsonl",
+        4347,
+        3920,
+    ),
+    "v0.4.19": (
+        "results-v0.4.19-candidate-sweep",
+        "results-v0.4.19-release-census",
+        "results-v0.4.19-e2",
+        "results-v0.4.19-serializer/e_selfconsistency_fix3.jsonl",
+        4389,
+        3956,
+    ),
+}
+_B = _BASELINES[os.environ.get("OIN_AB_BASELINE", "v0.4.18")]
+SWEEP = MAIN / _B[0]
+CENSUS = MAIN / _B[1]
+LANE = MAIN / _B[2]
+SHIPPED_ESC = MAIN / _B[3]
 RULER_MIRROR = MAIN / "results-v0.4.17-exactfold" / "g_verdict_control-mirror.jsonl"
-N_COHORT, PASS_SELF, PASS_VERIFIED = 5000, 4347, 3920
+N_COHORT, PASS_SELF, PASS_VERIFIED = 5000, _B[4], _B[5]
 TRANSFORMS = (
     "again",
     "rewrite",

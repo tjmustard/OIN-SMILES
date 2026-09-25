@@ -64,4 +64,5 @@ for arm in off on; do
   fi
 done
 sfx=""; [ "$ARM" = fix2 ] || sfx="_$ARM"
+case "$ARM" in e2*) export OIN_AB_BASELINE=v0.4.19;; esac
 $PY tools/v0419/serializer_ab_report.py all --ab "$OUT" --esc "$LANE/$ESC" --rescore "$LANE/$RESCORE" --single "$LANE/changed_single$sfx.jsonl" --out "$LANE/serializer_ab_report$sfx.json" | tee "$LANE/serializer_ab_report$sfx.txt"
