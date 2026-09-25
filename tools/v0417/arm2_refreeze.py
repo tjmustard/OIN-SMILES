@@ -173,6 +173,9 @@ def cmd_diff(_args):
 
 
 def cmd_splice(args):
+    accept_det = (
+        {x for x in args.accept_det.split(",") if x} if getattr(args, "accept_det", "") else set()
+    )
     report = []
     for tag, (gpath, _cohort) in GOLDENS.items():
         G, ON, OFF, A = (
@@ -198,15 +201,20 @@ def cmd_splice(args):
             # inside the budget today is a fact about the box. Keep the sentinel; compare, and
             # splice, field 2 alone. (7 of v049's field-2 movers are such rows.)
             budget_row = g[2].startswith("NO_STRUCTURE@")
-            if g[2] == "NO_STRUCTURE_DET":
+            if g[2] == "NO_STRUCTURE_DET" and m not in accept_det:
                 sys.exit(
-                    f"ABORT: {m} was frozen as a DETERMINISTIC no-structure. Decide it by hand."
+                    f"ABORT: {m} was frozen as a DETERMINISTIC no-structure. Decide it by hand"
+                    " (--accept-det NAME records the decision in the golden)."
                 )
             if not on[1] or (not on[2] and not budget_row):
                 sys.exit(f"ABORT: {m} has no fresh sha_out ({on[-1][:80]}). Decide it by hand.")
             off_ok = gate_verdict(g, off)[0] != "MISMATCH"
             moved = on[1] != off[1] if budget_row else (on[1], on[2]) != (off[1], off[2])
             reason = "LEVER" if off_ok else ("STALE+LEVER" if moved else "STALE")
+            if g[2] == "NO_STRUCTURE_DET":
+                # v0.4.19, by hand: a deterministic no-structure that the lever turned into a
+                # built, gated structure. Reason carries the decision so the golden says so.
+                reason += "(DET->structure, by hand)"
             if off_ok and not moved:
                 sys.exit(
                     f"ABORT: {m}: `off` reproduces the golden AND equals `on`, yet `on` "
@@ -310,6 +318,12 @@ def main():
     sp = sub.add_parser("splice")
     sp.add_argument("--write", action="store_true")
     sp.add_argument("--comment-file", help="the '# v0.4.17: ...' block to put at the top")
+    sp.add_argument(
+        "--accept-det",
+        default="",
+        help="comma-separated rows frozen as NO_STRUCTURE_DET that a person has decided to"
+        " re-freeze from the fresh `on` row (the reason records the decision)",
+    )
     args = ap.parse_args()
     OUT = args.out_dir or OUT
     COHORT_TAG = args.cohort_tag or COHORT_TAG
