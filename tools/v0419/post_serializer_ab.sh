@@ -46,6 +46,10 @@ done
 # without the lever, and the report prints both.
 cd "$HERE"
 ALL_OFF="OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0 OIN_N_VALENCE_2=0 OIN_CANONICAL_RESONANCE=0 OIN_CANONICAL_CHARGES=0"
+# The E2 arms stand on v0.4.19, where the three serializer levers ARE the shipped defaults: "off"
+# there means only the E2 levers at 0 -- writing the promoted three to 0 would read the OFF arm's
+# strings with the PRE-v0.4.19 reader and call the baseline something it is not.
+case "$ARM" in e2*) ALL_OFF="OIN_N_VALENCE_2=0 OIN_CANONICAL_RESONANCE=0 OIN_CANONICAL_CHARGES=0";; esac
 lev() { case "$1" in on) echo "$ON_LEVERS";; off) echo "$ALL_OFF";; esac; }
 for arm in off on; do
   d=$OUT/ab_$arm
