@@ -912,6 +912,8 @@ AC2BO_STATS = {
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
     "over_cap_found_valid": 0,  # ... of which were over-cap
     "over_cap_exhausted": 0,  # over-cap calls that fell through and returned best_BO
+    "n_valence_2_second_pass": 0,  # OIN_N_VALENCE_2: nothing validated, re-walked with N(-)
+    "n_valence_2_second_pass_found": 0,  # ...and the re-walk validated a candidate
     "over_cap_best_bo_improved": 0,  # best_BO reassignments on the over-cap branch
     "matching_calls": 0,  # nx.max_weight_matching invocations
 }
@@ -923,13 +925,19 @@ def reset_ac2bo_stats():
         AC2BO_STATS[key] = 0
 
 
-def possible_valences(AC_valence, atoms, allow_carbenes=True):
+def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
     """The per-atom candidate valence lists whose Cartesian product ``AC2BO`` searches.
 
     Extracted verbatim from ``AC2BO`` so the size of that product can be computed
     without running the search -- ``tools/valsearch_scan.py`` uses this to find the
     over-cap ligand population for free. ``AC2BO`` calls it, so the two cannot drift.
+
+    ``n_valence_2`` is the ``OIN_N_VALENCE_2`` switch: ``None`` reads the lever (the tools'
+    and tests' view of "what would the search try"), ``False``/``True`` is what
+    ``_AC2BO_core`` passes for its first and second pass respectively.
     """
+    if n_valence_2 is None:
+        n_valence_2 = _lever_enabled("OIN_N_VALENCE_2")
     valences_list_of_lists = []
     for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
         # valence can't be smaller than number of neighbourgs
@@ -949,9 +957,15 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True):
         # returns best_BO -- which is the AC itself, all single bonds -- and the string
         # then depends on whether the resonance enumeration can neutralise the zwitterion
         # set_atomic_charges' running-total walk happened to produce (census
-        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles). Appended LAST so a molecule the search
-        # already solves keeps its first valid candidate.
-        if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
+        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles).
+        # A SECOND PASS, never the first: "appended last" was measured on the whole cohort
+        # (results-v0.4.19-e2, 2026-09-25) and moved 343 strings -- 167 of them VERIFIED
+        # passes -- and made 44 rows noise-fragile, because every pyridine / imine nitrogen
+        # has AC-valence 2 and the sub-cap walk is sorted by a heuristic, not by list
+        # position, so an N(-) zwitterion could outrank the neutral form the shipped search
+        # finds. ``_AC2BO_core`` therefore searches the shipped lists first and only when
+        # NO candidate validates (the ``best_BO`` guess would ship) searches again with 2.
+        if atomicNum == 7 and valence <= 2 and n_valence_2:
             possible_valence.append(2)
 
         if not possible_valence:
@@ -1331,7 +1345,7 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     anything unexpected.
     """
     try:
-        combo = 1
+        combo = combo_n2 = 1
         for atomicNum, valence in zip(atoms, list(AC.sum(axis=1))):
             possible = [x for x in atomic_valence[atomicNum] if x >= valence]
             if atomicNum == 6 and valence == 1 and 2 in possible:
@@ -1342,12 +1356,16 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
                 possible.append(3)
             if atomicNum == 16 and valence == 1:
                 possible = [1, 2]
-            if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
-                possible.append(2)
             if not possible:
                 return True
             combo *= len(possible)
-            if combo > _VALENCE_COMBO_CAP:
+            # the OIN_N_VALENCE_2 second pass enlarges the product; either pass over the cap
+            # is an order-sensitive answer
+            if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
+                combo_n2 *= len(possible) + 1
+            else:
+                combo_n2 *= len(possible)
+            if combo > _VALENCE_COMBO_CAP or combo_n2 > _VALENCE_COMBO_CAP:
                 return True
         return False
     except Exception:
@@ -1465,8 +1483,57 @@ def _AC2BO_core(
     # counter are orthogonal to the extraction, and the extracted function carries the same
     # logic the inline block had.
     AC_valence = list(AC.sum(axis=1))
-    valences_list_of_lists = possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes)
 
+    # OIN_N_VALENCE_2 is a FALLBACK: the shipped lists are searched first and the walk
+    # below is re-entered with the N(-) option only when nothing validated -- the case
+    # where ``best_BO`` (for a porphyrin dianion, the AC itself) would otherwise ship.
+    # A molecule the shipped search solves is byte-identical with the lever on.
+    BO, ave, found = _AC2BO_walk(
+        AC,
+        AC_valence,
+        atoms,
+        charge,
+        possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=False),
+        allow_charged_fragments,
+        use_graph,
+        allow_carbenes,
+    )
+    if (
+        not found
+        and _lever_enabled("OIN_N_VALENCE_2")
+        and any(num == 7 and val <= 2 for num, val in zip(atoms, AC_valence))
+    ):
+        AC2BO_STATS["n_valence_2_second_pass"] += 1
+        BO2, ave2, found2 = _AC2BO_walk(
+            AC,
+            AC_valence,
+            atoms,
+            charge,
+            possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=True),
+            allow_charged_fragments,
+            use_graph,
+            allow_carbenes,
+        )
+        if found2:
+            AC2BO_STATS["n_valence_2_second_pass_found"] += 1
+            return BO2, ave2
+    return BO, ave
+
+
+def _AC2BO_walk(
+    AC,
+    AC_valence,
+    atoms,
+    charge,
+    valences_list_of_lists,
+    allow_charged_fragments,
+    use_graph,
+    allow_carbenes,
+):
+    """One walk of the candidate valence product: ``(BO, atomic_valence_electrons, found)``
+    where ``found`` says a candidate VALIDATED (``BO_is_OK``) -- otherwise ``BO`` is the
+    ``best_BO`` guess. Split out of ``_AC2BO_core`` for the ``OIN_N_VALENCE_2`` second pass;
+    the body is the historical loop, unchanged."""
     # convert [[4],[2,1]] to [[4,2],[4,1]]
     best_BO = AC.copy()
 
@@ -1559,7 +1626,7 @@ def _AC2BO_core(
             AC2BO_STATS["found_valid"] += 1
             if over_cap:
                 AC2BO_STATS["over_cap_found_valid"] += 1
-            return AC, atomic_valence_electrons
+            return AC, atomic_valence_electrons, True
 
         UA_pairs_list = get_UA_pairs(UA, AC, DU_from_AC, use_graph=use_graph)
         for UA_pairs in UA_pairs_list:
@@ -1579,7 +1646,7 @@ def _AC2BO_core(
                 AC2BO_STATS["found_valid"] += 1
                 if over_cap:
                     AC2BO_STATS["over_cap_found_valid"] += 1
-                return BO, atomic_valence_electrons
+                return BO, atomic_valence_electrons, True
             # `charge_is_OK` was computed eagerly above this branch, then consumed only
             # here -- behind two cheaper predicates that already short-circuit, and even
             # when `status` had already returned. Evaluating it in place is a pure
@@ -1608,7 +1675,7 @@ def _AC2BO_core(
 
     if over_cap:
         AC2BO_STATS["over_cap_exhausted"] += 1
-    return best_BO, atomic_valence_electrons
+    return best_BO, atomic_valence_electrons, False
 
 
 def AC2mol(

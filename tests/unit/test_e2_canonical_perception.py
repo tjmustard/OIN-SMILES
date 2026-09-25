@@ -93,8 +93,10 @@ class TestShippedDefect(unittest.TestCase):
         with mock.patch.dict(os.environ, OFF):
             self.assertEqual(pc.possible_valences([2], [7]), [[3, 4]])
         with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
-            self.assertEqual(pc.possible_valences([2], [7]), [[3, 4, 2]])  # appended LAST
+            self.assertEqual(pc.possible_valences([2], [7]), [[3, 4, 2]])  # the second pass's list
             self.assertEqual(pc.possible_valences([3], [7]), [[3, 4]])  # three-coordinate: no
+            # the first pass never sees it, whatever the lever says
+            self.assertEqual(pc.possible_valences([2], [7], n_valence_2=False), [[3, 4]])
 
 
 class TestLeversTogether(unittest.TestCase):
@@ -120,6 +122,41 @@ class TestLeversTogether(unittest.TestCase):
         self.assertNotIn("[CH]", base)
         self.assertNotIn("[CH]", moved)  # a real dianion from both numberings ...
         self.assertNotEqual(base, moved)  # ... but a different Kekule form: the supplier leak
+
+
+class TestNValence2IsASecondPass(unittest.TestCase):
+    """The first cut appended 2 to every two-coordinate nitrogen's list and let the ONE walk
+    pick. Measured on the whole cohort (results-v0.4.19-e2, 2026-09-25) that moved 343
+    strings -- 167 of them VERIFIED passes -- and made 44 rows noise-fragile: every pyridine
+    and imine nitrogen has AC-valence 2, and the sub-cap walk is heuristic-sorted, so an N(-)
+    zwitterion could outrank the neutral form the shipped search finds. The lever is a
+    FALLBACK: the shipped lists are walked first; only a walk that validates nothing (the
+    porphyrin dianion, where ``best_BO`` = the AC would ship) is re-walked with the option."""
+
+    PPY = os.path.join(os.path.dirname(__file__), "..", "fixtures", "fac-Ir(ppy)3.xyz")
+
+    def _reset(self):
+        pc.AC2BO_STATS["n_valence_2_second_pass"] = 0
+        pc.AC2BO_STATS["n_valence_2_second_pass_found"] = 0
+
+    def test_pyridine_donors_are_byte_identical_and_never_take_the_second_pass(self):
+        with mock.patch.dict(os.environ, OFF):
+            off = XYZToSMILES().convert(self.PPY)
+        self._reset()
+        with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
+            on = XYZToSMILES().convert(self.PPY)
+        self.assertEqual(off, on)
+        self.assertEqual(pc.AC2BO_STATS["n_valence_2_second_pass"], 0)
+        self.assertIn("n{", on)  # three pyridine donors, AC-valence 2 each: the population at risk
+
+    def test_porphyrin_dianion_takes_the_second_pass(self):
+        self._reset()
+        with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
+            on = XYZToSMILES().convert(XIVMEX)
+        self.assertGreater(pc.AC2BO_STATS["n_valence_2_second_pass"], 0)
+        self.assertGreater(pc.AC2BO_STATS["n_valence_2_second_pass_found"], 0)
+        self.assertNotIn("[CH]", on)
+        self.assertEqual(on.count("n{"), 4, on)
 
 
 class TestCanonicalResonanceFrame(unittest.TestCase):
