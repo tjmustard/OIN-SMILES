@@ -1689,6 +1689,13 @@ def get_oin_string(tmc_mol, xyz_coords):
                 new_bond = mw.GetBondBetweenAtoms(old_to_new[u], old_to_new[v])
                 if new_bond is not None:
                     a0, a1 = old_to_new[stereo_atoms[0]], old_to_new[stereo_atoms[1]]
+                    # The rebuild above adds every bond from its lower parent index, so
+                    # the new bond can run the other way from the parent's (a re-parsed
+                    # ligand -- OIN_CANONICAL_RESONANCE -- creates bonds in SMILES order).
+                    # SetStereoAtoms wants the first reference on the BEGIN atom; orient
+                    # the pair to the new bond. Same two references, same relation.
+                    if mw.GetBondBetweenAtoms(new_bond.GetBeginAtomIdx(), a0) is None:
+                        a0, a1 = a1, a0
                     new_bond.SetStereoAtoms(a0, a1)
                     new_bond.SetStereo(bond.GetStereo())
 

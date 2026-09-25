@@ -119,11 +119,31 @@ coordinate-sensitive threshold (an orbital crossing −10 eV), and with noise it
 the search solves as the quinoid at candidate 1. Not addressed here (the census says 100/105
 break under RENUMBERING; noise is the minority axis).
 
-## 3. Measurement (in progress)
+## 3. Measurement
 
-- **105 fragile rows × 11 columns under N2 + RES** (`results-v0.4.19-e2/esc105_e2b.jsonl`, unit
-  `oin-v0419-e2-esc-e2b`, `--cpu 2` so the concurrent candidate sweep's load is barely touched).
-  Question: how many of the 105 stop being fragile, and how many base strings move.
+### 3a. The 105 fragile rows × 11 columns under N2 + RES, first pass — an instrument bug
+
+`results-v0.4.19-e2/esc105_e2b_v1_noconformer.jsonl` (unit `oin-v0419-e2-esc-e2b`, `--cpu 2` so the
+concurrent candidate sweep's load is barely touched; `tools/v0419/e2_fragility_report.py`):
+
+```
+molecules 105  arm encoded 84  shipped encoded 105
+fragile (shipped, arm): fixed 68   broken 0   still 16   (21 not encoded)
+  renum  fixed 72  broken 0  still 7        noise  fixed 1  broken 0  still 11
+base string moved vs sweep smiles_1: 56 of 84
+arm encode errors: 'Cannot normalize a zero length vector' 20, 'bgnIdx not connected' 1
+```
+
+The 21 failures were the lever's own bug: the re-parsed canonical ligand has **no conformer**, the
+supplier's forms are copies of what it is given, and `CIPAssigner.assign_all` reads 3D from the
+ligand — every atom at the origin. Fixed by carrying the conformer across in the new order
+(`bd4c73a3`, pinned by `test_frame_carries_the_conformer`); ALITEU encodes. Of the 84 that did
+encode: **68 stable, 0 newly fragile, renumbering fixed on 72 of 79** — the mechanism holds on the
+class, not just on XIVMEX. The 11 still noise-fragile are the Hückel-threshold axis (§2e).
+
+### 3b. Second pass (in progress)
+
+`esc105_e2b.jsonl` (unit `oin-v0419-e2-esc-e2b2`, same arm, conformer fix).
 - Then, after the candidate sweep releases the machine: the whole-cohort audit (5,000 × 11) under
   the chosen arm, the changed-string set, the offline re-score of the unchanged rows, the live
   A/B over the changed set with parse-back — the serializer lane's pipeline
