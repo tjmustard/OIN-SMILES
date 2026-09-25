@@ -121,6 +121,19 @@ EXPECTED = {
         },
         "none": 3920,
     },
+    # v0.4.19: the candidate sweep IS the release sweep -- the three serializer levers ON via the
+    # unit's environment at 1f61681c, promoted to default-ON at 0809c7a9 (byte-identical reads).
+    "results-v0.4.19-candidate-sweep": {
+        "buckets": {
+            "byte_exact": 4389,
+            "structural": 311,
+            "key_equal": 121,
+            "hard_fail": 162,
+            "facmer_divergent": 6,
+            "encode_fail": 11,
+        },
+        "none": 3956,
+    },
 }
 EXPECTED_BUCKETS = EXPECTED["results-v0.4.14-sweep"]["buckets"]
 PT_PER_MOL = 100.0 / 5000
