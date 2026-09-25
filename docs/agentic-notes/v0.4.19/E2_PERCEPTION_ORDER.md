@@ -141,9 +141,46 @@ ligand — every atom at the origin. Fixed by carrying the conformer across in t
 encode: **68 stable, 0 newly fragile, renumbering fixed on 72 of 79** — the mechanism holds on the
 class, not just on XIVMEX. The 11 still noise-fragile are the Hückel-threshold axis (§2e).
 
-### 3b. Second pass (in progress)
+### 3b. Second pass — the conformer fix (`bd4c73a3`)
 
-`esc105_e2b.jsonl` (unit `oin-v0419-e2-esc-e2b2`, same arm, conformer fix).
+`esc105_e2b.jsonl` (unit `oin-v0419-e2-esc-e2b2`, same arm):
+
+```
+molecules 105  arm encoded 103  shipped encoded 105
+fragile (shipped, arm): fixed 85   broken 0   still 18   (2 not encoded)
+  renum  fixed 91  broken 0  still 7        noise  fixed 1  broken 0  still 13
+base string moved vs sweep smiles_1: 69 of 103
+arm encode errors: 'Pre-condition Violation: bgnIdx not connected to begin atom of bond' 2
+```
+
+The 2 (FIHGOV, KADYAS) raised in `get_oin_string`'s E/Z pass: the fragment rebuild adds every
+bond from its lower parent index, and a re-parsed ligand's bonds can run the other way, so
+`SetStereoAtoms` was handed its first reference on the END atom. Fixed by orienting the reference
+pair to the rebuilt bond (`581f871d`; same two references, same relation; a raise-site-only
+change, so the other 103 rows are untouched). Both encode, E/Z markers intact — and KADYAS's
+pyrrole-diamide ligand comes out as an aromatic pyrrole with two N⁻ donors instead of the shipped
+quinoid.
+
+### 3c. The 105, final: N2 + RES fixes renumbering fragility on 94 of 100 rows, 0 new fragility
+
+Pass 2's rows + FIHGOV, KADYAS, YAJYEO re-run at `581f871d` (YAJYEO's `renum1` had raised the same
+precondition on pass 2), merged as `esc105_e2b_final.jsonl`:
+
+```
+molecules 105  arm encoded 105  shipped encoded 105
+fragile (shipped, arm): fixed 88   broken 0   still 17
+  renum  fixed 94  broken 0  still 6        noise  fixed 1  broken 0  still 13
+KEY-fragile: fixed 82  broken 0  still 14
+base string moved vs sweep smiles_1: 71 of 105
+```
+
+What is left (17): **13 noise-only** (the Hückel charge threshold, §2e — a coordinate axis, not an
+ordering one), **6 renumbering** (FATCEJ, IGOBAH, LEYTIT, QANFOD, YUVXUJ, ZATNOZ; two `slot_renumber`,
+two `rdkit_canonical` — string-level, not key-level). Those six are the next bisection targets.
+
+**71 of 105 base strings move.** That is the point, not a cost: the shipped strings of this class
+were lottery tickets (§2a), and the census's `E2` rule fires before `E1`, so what these 71 become
+under the parse-back ruler is the whole-cohort question (§3d), not this subset's.
 - Then, after the candidate sweep releases the machine: the whole-cohort audit (5,000 × 11) under
   the chosen arm, the changed-string set, the offline re-score of the unchanged rows, the live
   A/B over the changed set with parse-back — the serializer lane's pipeline
