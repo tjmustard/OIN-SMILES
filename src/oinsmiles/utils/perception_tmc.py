@@ -371,6 +371,52 @@ def _enumerate_resonance_inline(lig_mol):
     return [res_mols[i] for i in range(len(res_mols)) if res_mols[i] is not None]
 
 
+def _canonical_resonance_frame(lig_mol):
+    """``(relabelled copy, inverse order)`` for OIN_CANONICAL_RESONANCE, or ``(lig_mol, None)``.
+
+    ``ResonanceMolSupplier`` is not exhaustive on a large conjugated system and the subset
+    it does return depends on the atom numbering: on XIVMEX's porphyrin dianion (the same
+    ``AC2mol`` output, canonical SMILES identical) it yields 167 forms from the file's
+    order and 131 from a random renumbering, 82 vs 94 distinct, with 16 + 28 forms in one
+    set only. ``lig_checks`` then sorts what it was given and keeps the first, so the
+    perceived form -- and the string -- moves with the numbering even after the bond
+    orders and charges are canonical. Enumerating on the canonically relabelled molecule
+    (``_smilesAtomOutputOrder`` of its own canonical SMILES, the invariant RDKit actually
+    guarantees) makes the supplier see the same labelled graph up to automorphism from
+    every numbering, so the candidate set is the same set; each form is renumbered back
+    before anything reads an index (``coordinating_atoms``, ``__origIdx``).
+    """
+    try:
+        m = Chem.Mol(lig_mol)
+        smi = Chem.MolToSmiles(m)
+        raw = m.GetProp("_smilesAtomOutputOrder")
+        order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
+        n = lig_mol.GetNumAtoms()
+        if sorted(order) != list(range(n)):
+            return lig_mol, None
+        # Re-parse rather than RenumberAtoms: the supplier also walks the BONDS by index,
+        # and RenumberAtoms keeps the bonds in their original insertion order. A parse of
+        # the canonical string creates atoms AND bonds in string order, so two numberings
+        # of one molecule hand the supplier the same labelled graph, bond indices included.
+        params = Chem.SmilesParserParams()
+        params.removeHs = False
+        canon = Chem.MolFromSmiles(smi, params)
+        if canon is None or canon.GetNumAtoms() != n:
+            return lig_mol, None
+        for new_pos, old_idx in enumerate(order):
+            if (
+                canon.GetAtomWithIdx(new_pos).GetAtomicNum()
+                != lig_mol.GetAtomWithIdx(old_idx).GetAtomicNum()
+            ):
+                return lig_mol, None
+        inverse = [0] * n
+        for new_pos, old_idx in enumerate(order):
+            inverse[old_idx] = new_pos
+        return canon, inverse
+    except Exception:
+        return lig_mol, None
+
+
 def _resonance_candidates_isolated(lig_mol, cpu_budget=None):
     """Enumerate resonance forms in a forked child bounded by a CPU-time budget.
 
@@ -454,16 +500,24 @@ def lig_checks(lig_mol, coordinating_atoms):
     # restarting -- the xyz2mol_none_crash bucket. Both paths index instead of iterating and
     # drop any None, then fall back to the un-resonated ligand so a supplier that yields
     # nothing usable degrades instead of crashing.)
-    if _resonance_needs_isolation(lig_mol):
-        status, forms = _resonance_candidates_isolated(lig_mol)
+    # OIN_CANONICAL_RESONANCE (v0.4.19, held off): hand the supplier the canonically
+    # relabelled ligand so its (non-exhaustive, order-dependent) enumeration returns the
+    # same set from every numbering; forms come back in the caller's numbering.
+    enum_mol, back = lig_mol, None
+    if lever_enabled("OIN_CANONICAL_RESONANCE"):
+        enum_mol, back = _canonical_resonance_frame(lig_mol)
+    if _resonance_needs_isolation(enum_mol):
+        status, forms = _resonance_candidates_isolated(enum_mol)
         if status == "timeout":
-            candidates = [lig_mol]
+            candidates, back = [lig_mol], None
         elif status == "ok":
-            candidates = forms or [lig_mol]
+            candidates = forms or [enum_mol]
         else:  # child failed for a non-timeout reason -> inline is byte-identical here
-            candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
+            candidates = _enumerate_resonance_inline(enum_mol) or [enum_mol]
     else:
-        candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
+        candidates = _enumerate_resonance_inline(enum_mol) or [enum_mol]
+    if back is not None:
+        candidates = [Chem.RenumberAtoms(c, back) for c in candidates]
 
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []

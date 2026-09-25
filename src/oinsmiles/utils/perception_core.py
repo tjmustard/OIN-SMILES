@@ -477,6 +477,7 @@ def BO2mol(
     mol_charge,
     allow_charged_fragments=True,
     use_atom_maps=True,
+    order=None,
 ):
     """Based on code written by Paolo Toscani.
 
@@ -492,6 +493,9 @@ def BO2mol(
 
     optional:
         allow_charged_fragments - bool - allow charged fragments
+        order - the atom indices in the order the charge walk visits them (default:
+                input order); AC2mol passes AC2BO's canonical labelling under
+                OIN_CANONICAL_CHARGES
 
     Returns:
         mol - updated rdkit molecule with bond connectivity
@@ -533,6 +537,7 @@ def BO2mol(
             BO_matrix,
             mol_charge,
             use_atom_maps=use_atom_maps,
+            order=order,
         )
     else:
         mol = set_atomic_radicals(
@@ -556,10 +561,19 @@ def set_atomic_charges(
     BO_matrix,
     mol_charge,
     use_atom_maps=True,
+    order=None,
 ):
-    """"""
+    """Formal charges from the bond-order valences, one atom at a time.
+
+    The carbon corrections below read the RUNNING total ``q``, so the result depends on
+    the order the atoms are visited in. ``order`` (a permutation of the indices) sets
+    that order; the default is the input order, which is what ``charge_is_OK`` also
+    walked before ``OIN_CANONICAL_PERCEPTION`` moved it to the canonical labelling.
+    """
     q = 0
-    for i, atom in enumerate(atoms):
+    for i in range(len(atoms)) if order is None else order:
+        i = int(i)
+        atom = atoms[i]
         a = mol.GetAtomWithIdx(i)
         if use_atom_maps:
             a.SetAtomMapNum(i + 1)
@@ -928,6 +942,17 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True):
             possible_valence.append(3)
         if atomicNum == 16 and valence == 1:
             possible_valence = [1, 2]
+        # OIN_N_VALENCE_2 (v0.4.19, held off): a two-coordinate nitrogen may be an N(-)
+        # (pyrrolide, amide, the porphyrin dianion's two bare pyrrole nitrogens).
+        # atomic_valence[7] is [3, 4], so the search has no way to write one: for a
+        # porphyrin dianion at charge -2 every one of the 16 candidates fails and AC2BO
+        # returns best_BO -- which is the AC itself, all single bonds -- and the string
+        # then depends on whether the resonance enumeration can neutralise the zwitterion
+        # set_atomic_charges' running-total walk happened to produce (census
+        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles). Appended LAST so a molecule the search
+        # already solves keeps its first valid candidate.
+        if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
+            possible_valence.append(2)
 
         if not possible_valence:
             logger.debug(
@@ -1277,6 +1302,25 @@ def _canonical_atom_permutation(AC, atoms):
         return None
 
 
+def _canonical_perception_perm(AC, atoms, allow_carbenes=True):
+    """The labelling ``AC2BO`` perceives in, or ``None`` when it takes the un-permuted path.
+
+    One place for the decision, because two walks have to agree on it. ``AC2BO`` runs
+    ``charge_is_OK`` -- whose carbon corrections read a RUNNING total, so they depend on
+    the walk order -- in this labelling, and ``BO2mol``'s ``set_atomic_charges`` repeats
+    the same ladder to place the charges. When the second walk runs in input order (as it
+    did before ``OIN_CANONICAL_CHARGES``) a bond-order graph that is renumbering-invariant
+    is charged in a renumbering-DEPENDENT pattern: the same ``BO`` gives two different
+    zwitterions, one of which the resonance enumeration can neutralise and the other not.
+    """
+    if _SUPPRESS_CANONICAL_PERCEPTION or not _lever_enabled("OIN_CANONICAL_PERCEPTION"):
+        return None
+    perm = _canonical_atom_permutation(AC, atoms)
+    if perm is None or _valence_search_is_truncated(AC, atoms, allow_carbenes):
+        return None
+    return perm
+
+
 def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     """Whether ``_AC2BO_core`` will cap its valence walk, making its answer order-sensitive.
 
@@ -1298,6 +1342,8 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
                 possible.append(3)
             if atomicNum == 16 and valence == 1:
                 possible = [1, 2]
+            if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
+                possible.append(2)
             if not possible:
                 return True
             combo *= len(possible)
@@ -1371,11 +1417,8 @@ def AC2BO(
         use_graph=use_graph,
         allow_carbenes=allow_carbenes,
     )
-    if _SUPPRESS_CANONICAL_PERCEPTION or not _lever_enabled("OIN_CANONICAL_PERCEPTION"):
-        return plain()
-
-    perm = _canonical_atom_permutation(AC, atoms)
-    if perm is None or _valence_search_is_truncated(AC, atoms, allow_carbenes):
+    perm = _canonical_perception_perm(AC, atoms, allow_carbenes)
+    if perm is None:
         return plain()
 
     idx = np.asarray(perm)
@@ -1590,6 +1633,16 @@ def AC2mol(
         allow_carbenes=allow_carbenes,
     )
     # add BO connectivity and charge info to mol object
+    #
+    # OIN_CANONICAL_CHARGES (v0.4.19, held off): place the charges in the labelling the
+    # bond orders were decided in. charge_is_OK accepted this BO by walking the CANONICAL
+    # order; set_atomic_charges walks the input order by default, and its carbon
+    # corrections read a running total, so on a zwitterionic BO the two walks charge
+    # different carbons -- and which carbons depends on the file's atom numbering. Same
+    # helper, same decision: whenever AC2BO took the un-permuted path this is None too.
+    order = None
+    if _lever_enabled("OIN_CANONICAL_CHARGES"):
+        order = _canonical_perception_perm(AC, atoms, allow_carbenes)
     mol = BO2mol(
         mol,
         BO,
@@ -1598,6 +1651,7 @@ def AC2mol(
         charge,
         allow_charged_fragments=allow_charged_fragments,
         use_atom_maps=use_atom_maps,
+        order=order,
     )
 
     # print(Chem.GetFormalCharge(mol), charge)

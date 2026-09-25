@@ -779,6 +779,47 @@ _HELD_OFF = {
         "11 -> 2 rows on the 300 s budget. The owner's call; re-sweep, /refreeze-goldens and "
         "re-run the census on promotion."
     ),
+    "OIN_N_VALENCE_2": (
+        "v0.4.19 E2 lane, MEASURED and left off for the owner. Lets the valence search give a "
+        "two-coordinate nitrogen valence 2 (an N(-): pyrrolide, amide, the two bare nitrogens "
+        "of a porphyrin dianion), appended after 3 and 4 so a ligand the search already solves "
+        "keeps its first valid candidate. Without it atomic_valence[7] = [3, 4] and no candidate "
+        "can carry the charge: on XIVMEX (Zn ditolyl-porphyrin) all 16 assignments at -2 fail, "
+        "AC2BO returns best_BO = the AC itself with ZERO double bonds, set_atomic_charges turns "
+        "that into a 33-carbon zwitterion by its running-total rule, and the emitted string is "
+        "whichever form RDKit's resonance enumeration reaches from that zwitterion -- the "
+        "correct aromatic dianion from the file's numbering, [CH][CH] radicals from three "
+        "random renumberings. The census's E2_P_FRAGILE class is Ni 24 / Zn 22 N-macrocycles. "
+        "Held OFF until measured; see docs/agentic-notes/v0.4.19/E2_N_VALENCE.md."
+    ),
+    "OIN_CANONICAL_RESONANCE": (
+        "v0.4.19 E2 lane, MEASURED and left off for the owner. Runs lig_checks' resonance "
+        "enumeration on the canonically relabelled ligand and renumbers each form back. "
+        "ResonanceMolSupplier is not exhaustive on a large conjugated system and the subset it "
+        "returns depends on the atom numbering: XIVMEX's porphyrin dianion (identical AC2mol "
+        "output) gives 167 forms from the file's order and 131 from a random renumbering, 82 vs "
+        "94 distinct, 16 + 28 in one set only -- and lig_checks keeps the first of a sorted list, "
+        "so the perceived Kekule form moves with the numbering after the bond orders and charges "
+        "are already canonical. Third of three order leaks found by bisecting one E2_P_FRAGILE "
+        "molecule stage by stage (OIN_N_VALENCE_2, OIN_CANONICAL_CHARGES are the other two). "
+        "Held OFF until measured; see docs/agentic-notes/v0.4.19/E2_N_VALENCE.md."
+    ),
+    "OIN_CANONICAL_CHARGES": (
+        "v0.4.19 E2 lane, MEASURED and left off for the owner. Places BO2mol's formal charges "
+        "by walking the atoms in the SAME canonical labelling AC2BO decided the bond orders in. "
+        "OIN_CANONICAL_PERCEPTION made the bond-order graph renumbering-invariant, but "
+        "set_atomic_charges kept walking the INPUT order, and its carbon corrections read a "
+        "running total (a trivalent carbon becomes [C+] instead of [C-] whenever the total so far "
+        "is below the target) -- so the same BO is charged in a numbering-dependent pattern. "
+        "Bisected on XIVMEX (a Zn ditolyl-porphyrin, census E2_P_FRAGILE): identical BO graph "
+        "under both numberings, different zwitterion, and only one of the two is a zwitterion "
+        "the resonance enumeration can neutralise; the other ships as [CH][CH] radicals. With "
+        "the lever the charge walk reproduces charge_is_OK's own sequence, so the charges are "
+        "the automorphic image under renumbering and AC2mol's formal-charge check agrees with "
+        "the acceptance that admitted the BO. Off whenever AC2BO took the un-permuted path "
+        "(same helper, same decision). Held OFF until measured on the whole cohort; see "
+        "docs/agentic-notes/v0.4.19/E2_CANONICAL_CHARGES.md."
+    ),
     "OIN_RESCUE_STUCK_RING": (
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "
         "it between buckets rather than fixing it."

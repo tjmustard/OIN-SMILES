@@ -4,7 +4,7 @@
 # strings back (the ON arm's smiles_1 is the lever's -- the string clause of VERIFIED must be
 # recomputed per arm, unlike v0.4.18's generator-side A/B), then the report.
 #
-#   tools/v0419/post_serializer_ab.sh [fix2|cap|fix3]
+#   tools/v0419/post_serializer_ab.sh [fix2|cap|fix3|e2b|e2c]     (e2* arms live in results-v0.4.19-e2/)
 #
 # Refuses an incomplete arm: completeness is REPORT COUNT == cohort size.
 set -euo pipefail
@@ -19,8 +19,11 @@ case "$ARM" in
   fix2) ON_LEVERS="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1"; SUB=ab; ESC=e_selfconsistency_fix2.jsonl; RESCORE=rescore_fix2;;
   cap)  ON_LEVERS="OIN_CAP_IGNORES_METAL=1"; SUB=ab_cap; ESC=e_selfconsistency_cap.jsonl; RESCORE=rescore_cap;;
   fix3) ON_LEVERS="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 OIN_CAP_IGNORES_METAL=1"; SUB=ab_fix3; ESC=e_selfconsistency_fix3.jsonl; RESCORE=rescore_fix3;;
+  e2b)  ON_LEVERS="OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1"; SUB=ab_e2b; ESC=e_selfconsistency_e2b.jsonl; RESCORE=rescore_e2b;;
+  e2c)  ON_LEVERS="OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1 OIN_CANONICAL_CHARGES=1"; SUB=ab_e2c; ESC=e_selfconsistency_e2c.jsonl; RESCORE=rescore_e2c;;
   *) echo "unknown arm $ARM"; exit 1;;
 esac
+case "$ARM" in e2*) LANE=$DATA/results-v0.4.19-e2;; esac
 COHORT=$DATA/cohort-v0.4.19-changed-$ARM
 [ -d "$COHORT" ] || COHORT=$DATA/cohort-v0.4.19-changed   # the first (fix2) run's cohort dir
 OUT=${AB_OUT:-$LANE/$SUB}
@@ -42,7 +45,8 @@ done
 # (parseback_shippedreader.jsonl): that is what happens to a lever-written string in a build
 # without the lever, and the report prints both.
 cd "$HERE"
-lev() { case "$1" in on) echo "$ON_LEVERS";; off) echo "OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0";; esac; }
+ALL_OFF="OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0 OIN_N_VALENCE_2=0 OIN_CANONICAL_RESONANCE=0 OIN_CANONICAL_CHARGES=0"
+lev() { case "$1" in on) echo "$ON_LEVERS";; off) echo "$ALL_OFF";; esac; }
 for arm in off on; do
   d=$OUT/ab_$arm
   [ -f "$d/bucket_report_honest.json" ] || $PY tools/roundtrip_bucket_report.py --results-dir "$d" --score honest > "$d/bucket_report_honest.log" 2>&1

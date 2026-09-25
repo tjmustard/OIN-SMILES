@@ -14,8 +14,9 @@
 # strings): ab_off is BUILT from symlinks to results-v0.4.18-release-sweep, not re-run -- which makes
 # a "noise floor" line circular here; the determinism evidence is the three numbers above.
 #
-#   tools/v0419/run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]   # then: post_serializer_ab.sh [arm]
+#   tools/v0419/run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3|e2b|e2c]   # then: post_serializer_ab.sh [arm]
 #     fix2  OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1  (default; ab/)   cap  OIN_CAP_IGNORES_METAL=1 (ab_cap/)   fix3  all three (ab_fix3/)
+#     e2b   OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1 (ab_e2b/; E2 lane, results-v0.4.19-e2/)   e2c  e2b + OIN_CANONICAL_CHARGES=1
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
@@ -30,9 +31,12 @@ case "$ARM" in
   fix2) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1"; SUB=ab;;
   cap)  LEVERS="-E OIN_CAP_IGNORES_METAL=1"; SUB=ab_cap;;
   fix3) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 -E OIN_CAP_IGNORES_METAL=1"; SUB=ab_fix3;;
+  e2b)  LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1"; SUB=ab_e2b;;
+  e2c)  LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1 -E OIN_CANONICAL_CHARGES=1"; SUB=ab_e2c;;
   *) echo "unknown arm $ARM"; exit 1;;
 esac
-OUT=${AB_OUT:-$DATA/results-v0.4.19-serializer/$SUB}
+LANE=$DATA/results-v0.4.19-serializer; case "$ARM" in e2*) LANE=$DATA/results-v0.4.19-e2;; esac
+OUT=${AB_OUT:-$LANE/$SUB}
 COHORT=$DATA/cohort-v0.4.19-changed-$ARM
 SHARDS=${SHARDS:-6}
 
