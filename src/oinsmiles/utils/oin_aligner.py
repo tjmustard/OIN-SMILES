@@ -810,9 +810,16 @@ class OINDiscreteAligner:
         self.metal_idx = metal_idx
         self.ligands = ligands
         self.metal_dn = metal_dn
+        # RC1's rank permutation, {new_rank: original_rank}, non-identity entries only.
+        # `rank` indexes `ligands`; after the swap an item's rank no longer names the
+        # fragment whose atoms `local_idx`/`constituent_indices` belong to, and the caller
+        # that maps the w-tag back onto its fragment list must apply this permutation
+        # (OIN_RC1_PROPAGATE in perception_tmc.get_oin_string). Empty when RC1 did not fire.
+        self.rc1_rank_map = {}
 
     def generate_canonical_vectors(self):
         """Reduce hapticity and assign binding atoms to canonical slot vectors."""
+        self.rc1_rank_map = {}
         # 1. Haptic Reduction
         virtual_atoms = self._reduce_hapticity()
 
@@ -1370,6 +1377,8 @@ class OINDiscreteAligner:
             )
 
             for new_rank, (item, _sig) in zip(sorted(ranks), candidates):
+                if item["rank"] != new_rank:
+                    self.rc1_rank_map[new_rank] = item["rank"]
                 item["rank"] = new_rank
 
         best_final_map.sort(key=lambda x: (x["rank"], x["local_idx"]))

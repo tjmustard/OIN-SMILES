@@ -376,6 +376,47 @@ import os
 #:     FULL run are owed. ARM 2 is BLIND to a generator-side promotion (its re-encode goes through
 #:     the generator's own bond graph -- L2 note 5e); v0.4.18 adds an honest observation column.
 #: See docs/agentic-notes/v0.4.18/SELECTION_ETA_RETARGET.md and measurements/v0.4.18-selection/.
+#:
+#: v0.4.19 PROMOTED OIN_H_FAITHFUL + OIN_RC1_PROPAGATE + OIN_CAP_IGNORES_METAL -- OWNER, 2026-09-24:
+#: "I approve the promotion on the condition the sweep lands on its prediction." The candidate
+#: sweep (results-v0.4.19-candidate-sweep, the full 5,000 with the three ON via the unit's
+#: environment, commit 1f61681c, same harness/budget as the release sweep) measured
+#:         self-consistent  4,389 / 5,000 = 87.78%   (predicted 4,378 = 87.56%; v0.4.18: 86.94%)
+#:         VERIFIED         3,956 / 5,000 = 79.12%   (predicted 3,951 = 79.02%; v0.4.18: 78.40%)
+#: ENCODER-side, all three: the string is what changes.
+#:   * OIN_H_FAITHFUL (utils/perception_tmc.py + oin/hydrogen.py; READER in
+#:     generation/metallogen_adapter.py): a 0-H anion carbon is written [C], never bare C, so the
+#:     string re-reads with the input's hydrogen count. Held off since v0.4.6 by the WRONG RULER
+#:     (a round trip on a population of generator timeouts); the parse-back ruler repaired 56 of
+#:     84 E1_HCOUNT strings. WRITER + READER: the adapter keeps a bracketed [C] only while it is on
+#:     -- a string written by this build and read by an older one carries a phantom H (71 of the
+#:     moved rows verify under this reader, 15 under the old). Promoted everywhere at once.
+#:   * OIN_RC1_PROPAGATE (utils/oin_aligner.py rc1_rank_map -> perception_tmc.get_oin_string):
+#:     the aligner's same-first-atom eta rank swap now reaches the writer, so a Cp and an allyl
+#:     stop exchanging markers (14 of 76 SPHERE_DIFF strings repaired; byte-identical to RC1's own
+#:     fail-safe).
+#:   * OIN_CAP_IGNORES_METAL (utils/perception_core.xyz2AC_obabel, CAP_EXEMPT_EXCESS = 0.10 A):
+#:     the per-atom valence cap keeps its count but never cuts a REAL ligand bond to make room for
+#:     a short metal contact (rule v3; v1 and v2 refuted on the whole cohort -- see the lane note).
+#:     Hydrogen keeps the old rule.
+#: THE GATES THAT PROMOTED THEM (docs/agentic-notes/v0.4.19/SERIALIZER_LANE.md, frozen in
+#: measurements/v0.4.19-serializer/): parse-back on every moved string; the canonicality audit
+#: 5,000 x 11 per arm (stability near-null); the offline re-score of every unchanged row; a live
+#: harness A/B over each arm's changed-string set with the release sweep's own rows as the OFF
+#: arm (fix2 +24 VERIFIED / 0 losses; cap +6 / 0 live); additive -> 4,378 / 3,951 projected.
+#: WHAT THE SWEEP FOUND THAT THE PROJECTION DID NOT (tools/v0419/candidate_vs_projection.py):
+#:   * OIN_CAP_IGNORES_METAL REACHES THE GENERATOR -- 44 of 4,891 unchanged-string rows built a
+#:     different structure (the generator re-encodes candidate conformers; a perception lever
+#:     changes which one it keeps). Net +14 / -3 self-consistent, and among 21 byte-exact rows that
+#:     changed structure 5 verified passes became false passes (JUXXEF, PAFFEI, SIGYAL, TANROQ,
+#:     WENDID -- byte-exact, ruler graph/stereo differs) against 8 the other way. "Unchanged string
+#:     => unchanged generation" is FALSE for a perception lever; the next offline re-score must not
+#:     assume it.
+#:   * 4 of the projection's 6 offline self-consistent "gains" were FALSE passes the harness's
+#:     atom-count gate rightly rejects (DOCPAO, IFAPUD, MIBFEL, NOYTUS: hard_fail in both sweeps).
+#:   * 5 of the 40 row-level differences sit on the 300 s budget boundary.
+#: Owed and done at this promotion: ARM 1, /refreeze-goldens from a FULL run, the census on the
+#: candidate sweep (its EXPECTED entry), CHANGELOG stating the reader coupling, the freeze.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -384,11 +425,14 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_CAP_IGNORES_METAL",
         "OIN_ETA_COVALENT_TARGET",
         "OIN_ETA_RETARGET",
         "OIN_EXACT_DONOR_FOLD",
         "OIN_FOLD_PARITY_VETO",
+        "OIN_H_FAITHFUL",
         "OIN_INDEP_SCORE",
+        "OIN_RC1_PROPAGATE",
         "OIN_RESONANCE_DONOR_FOLD",
         "OIN_STABLE_METAL_AC",
         "OIN_STABLE_STEREO",
@@ -723,21 +767,6 @@ _HELD_OFF = {
         "COUPLED WITH OIN_ACCEPT_STRING_EXACT, the way OIN_CANONICAL_DONOR_FOLD and "
         "OIN_FOLD_PARITY_VETO are coupled: promoting the lever WITHOUT the bound reinstates the "
         "full 4.00x. Promote both or neither."
-    ),
-    "OIN_H_FAITHFUL": (
-        "The OIN_CANONICAL_BODY interaction that blocked this in v0.4.5 is FIXED: both of "
-        "canonical_body_emit's MolToSmiles writes now go through h_faithful_smiles, so the "
-        "canonical body no longer discards the repair. It stays off for a DIFFERENT and better "
-        "reason -- promoting it buys NOTHING measurable. A/B over the 45-molecule `Atom count "
-        "mismatch` population: match 8 / mismatch 37 with the lever off, and match 8 / mismatch "
-        "37 with it on. Identical. That class is not a write/read-fidelity defect; the divergence "
-        "sits between the perceived parent and the emitted string (perceived_H == input_H in "
-        "36/45) and is heterogeneous -- 28/45 at dH +1..+3, 4 at dH 0 where hydrogen is not the "
-        "issue, and three large losses (-14, -16, -36) with no shared explanation. Two aggregate "
-        "hypotheses have already been refuted (see "
-        "docs/agentic-notes/v0.4.6/V046_HFAITHFUL_FINDINGS.md); the next "
-        "step is per-ATOM provenance, not another aggregate. Promote only with evidence that it "
-        "moves a real population."
     ),
     "OIN_RESCUE_STUCK_RING": (
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "

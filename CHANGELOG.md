@@ -5,6 +5,74 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.19] - 2026-09-25
+
+> ### 86.94% → **87.78%** self-consistent · 78.40% → **79.12%** VERIFIED — the string, this time.
+>
+> Every promotion since v0.4.17 was generator-side. This one is the encoder: three levers the
+> serializer lane measured under the delegation and the owner approved "on the condition the sweep
+> lands on its prediction". The candidate sweep — the full 5,000 through the release harness with
+> the three ON via the unit's environment (`results-v0.4.19-candidate-sweep`, commit `1f61681c`) —
+> predicted **4,378 / 3,951** and measured **4,389 / 3,956**. The excess is explained, not noise:
+> `OIN_CAP_IGNORES_METAL` reaches the *generator* (it re-encodes candidate conformers), so 44 of
+> 4,891 unchanged-string rows built a different structure — net positive, but five verified passes
+> became false passes on the way (JUXXEF, PAFFEI, SIGYAL, TANROQ, WENDID) against twelve gained.
+> "Unchanged string ⇒ unchanged generation" is false for a perception lever; the next offline
+> re-score must not assume it.
+
+### Added
+- **`OIN_H_FAITHFUL` — default-ON.** A 0-H anion carbon is written `[C]`, never bare `C`, so the
+  string re-reads with the input's hydrogen count. Held off since v0.4.6 by the *wrong ruler* — a
+  round trip on a population of generator timeouts said it bought nothing; the census's parse-back
+  ruler (the string read with no 3D) repaired 56 of 84 `E1_HCOUNT` strings. **It is a writer + reader
+  lever**: `generation/metallogen_adapter.py` keeps a bracketed `[C]` only while it is on, so a
+  string written by this build and read by an older one carries a phantom H (71 of the moved rows
+  verify under this reader, 15 under the old). Promoted everywhere at once; `"0"` restores both.
+- **`OIN_RC1_PROPAGATE` — default-ON.** The aligner's RC1 re-ranks "same-mass" η fragments — same
+  *first binding atom*, so a Cp and an allyl qualify — and `get_oin_string` read each marker's rank
+  against the un-permuted fragment list: the Cp got the allyl's three markers, the allyl three of the
+  Cp's five. The permutation now reaches the writer (`OINDiscreteAligner.rc1_rank_map`); 14 of 76
+  `SPHERE_DIFF` strings repaired, byte-identical to forcing RC1's own fail-safe.
+- **`OIN_CAP_IGNORES_METAL` — default-ON (rule v3).** `perception_core`'s per-atom valence cap keeps
+  counting every neighbour, the metal included, but a heavy non-metal atom never cuts a *real*
+  ligand bond (excess `d − rᵢ − rⱼ` below `CAP_EXEMPT_EXCESS = 0.10 Å`) to make room for a short metal
+  contact — that contact becomes dative. Two earlier cuts were refuted on the whole cohort: ignoring
+  every metal contact made a tBu methyl a Ni donor (agostic/C–F/B–H contacts the old rule rightly
+  cut), and exempting a short contact from the *count* let 195 spurious inter-halide contacts of
+  compressed generated structures survive. Hydrogen keeps the old rule.
+- The lane's instruments (`tools/v0419/`): parse-back per lever arm (`lever_parseback.py`), the
+  whole-cohort report (`serializer_ab_report.py` — changed set, canonicality audit, offline
+  re-score, live A/B, reader coupling), the changed-set harness A/B (`run_serializer_ab.sh` /
+  `post_serializer_ab.sh`, each arm's parse-back under its own reader), the candidate-sweep launcher
+  and its post-processing, and `candidate_vs_projection.py` — the sweep against the projection row
+  by row, boundary rows named.
+
+### Changed
+- **Strings move.** 109 of 5,000 input strings differ from v0.4.18's (H 64, RC1 15, cap 31, overlap):
+  every one a census `E1_*` row, no verified pass. Any consumer holding v0.4.18 strings for those
+  molecules re-encodes.
+- **ARM 1 re-frozen at 65 fixtures** (three added by the lane): the control with the three levers
+  at `"0"` reproduces the v0.4.17 golden on all 62 rows; the promotion moves 5, each attributed by one
+  lever at a time in the golden's header. **ARM 2 goldens re-frozen from a full run**: v047 100/100
+  reproduce; v049 owes 26 of 325 rows, every one the input string and exactly the encode-only
+  audit's 26 (0 stale); the control brings all 26 back — 26 `LEVER`. MAHTOE, frozen as a
+  deterministic no-structure since v0.4.9 (its string left a B(C₆F₅)₃ fragment with no donor), now
+  keeps its donor, builds and gates byte-exact; re-frozen by hand (`splice --accept-det`). The
+  real gate reads the new goldens: PASS.
+- **Baseline of record: `results-v0.4.19-candidate-sweep`** (frozen `measurements/v0.4.19-release-sweep/`).
+  **Census of record re-run on it** (`measurements/v0.4.19-release-census/`): FAIL 611 = 12.22 pts
+  (was 653 = 13.06), VERIFIED gap 20.88 (was 21.60). By owner: G 278 → 299, E2 176 → 193, **E1 160 →
+  86** (`E1_HCOUNT` 77 → 21, `E1_GRAPH` 71 → 52), P 29 → 24. `E2_P_FRAGILE` 105 → 124 — the E2 lane's
+  target, measured against this encoder.
+
+### Measured, not promoted (E2 lane, branch `research/v0419-e2`)
+- Bisecting one `E2_P_FRAGILE` molecule stage by stage found three order leaks: **nitrogen has no
+  valence 2** in the valence search (a porphyrin dianion fails every candidate and `AC2BO` returns
+  the AC itself), the charge walk runs in input order, and `ResonanceMolSupplier` returns a
+  numbering-dependent subset. `OIN_N_VALENCE_2` + `OIN_CANONICAL_RESONANCE` make 88 of the 105
+  fragile rows stable (renumbering fixed on 94 of 100, 0 newly fragile); whole-cohort measurement
+  pending. All three levers held OFF.
+
 ## [0.4.18] - 2026-09-23
 
 > ### 82.72% → **86.94%** self-consistent · 74.60% → **78.40%** VERIFIED — DETACHED was a distance.

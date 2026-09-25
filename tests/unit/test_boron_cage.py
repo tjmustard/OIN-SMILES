@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from rdkit import Chem, RDLogger
 
@@ -233,7 +234,11 @@ class TestSilentCorruptionOfAPassingMolecule(_LeverMixin):
 
     def test_lever_off_deletes_half_the_cage_and_invents_a_double_bond(self):
         self.set_lever(False)
-        bb, spurious = self._cage_bond_count(VEJXOZ)
+        # The documented corruption was measured under the pre-v0.4.19 valence cap; with
+        # OIN_CAP_IGNORES_METAL (default-ON since v0.4.19) the cap spares different bonds and
+        # the cage is cut to 4, not 6. Pin the cap the numbers were measured with.
+        with mock.patch.dict(os.environ, {"OIN_CAP_IGNORES_METAL": "0"}):
+            bb, spurious = self._cage_bond_count(VEJXOZ)
         self.assertEqual(bb, 6)  # geometry has 12
         self.assertGreaterEqual(spurious, 1)  # a C=B double bond in a carborane
 
