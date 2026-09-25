@@ -186,7 +186,7 @@ def cmd_changed(args, res):
     }
     if args.write_set:
         args.write_set.write_text(
-            "# v0.4.19 changed-string set: base under OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 != release-sweep smiles_1\n"
+            f"# v0.4.19 changed-string set: base under {args.set_label} != {SWEEP.name} smiles_1\n"
             + "\n".join(changed)
             + "\n"
         )
@@ -549,6 +549,11 @@ def main():
     ap.add_argument("--rescore", type=Path, default=LANE / "rescore_fix2")
     ap.add_argument("--ab", type=Path, default=LANE / "ab")
     ap.add_argument("--write-set", type=Path, default=None)
+    ap.add_argument(
+        "--set-label",
+        default="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1",
+        help="the lever configuration named in --write-set's header line (the run's, not the lane's)",
+    )
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
     res = {}
