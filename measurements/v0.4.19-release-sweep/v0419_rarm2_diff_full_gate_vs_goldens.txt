@@ -1,0 +1,36 @@
+
+=== v047: 100 golden rows, 100 fresh rows (0 ungated: [])
+    {'COMPARED': 100}
+    field 2: gate and encode-only audit agree on all 0 rows
+    control cohort: 0 owed + 0 killed -> cohort-v0.4.19-arm2-control-v047
+
+=== v049: 325 golden rows, 328 fresh rows (3 ungated: ['GOHWOQ_comp_0', 'ULODUU_comp_0', 'XIQKOY_comp_0'])
+    {'COMPARED': 255, 'DET': 4, 'MISMATCH_f2': 26, 'OBSERVE': 4, 'SHA1_ONLY': 36}
+    field 2: gate and encode-only audit agree on all 26 rows
+    owed  AKUMAV_comp_0          field 2   fresh status: 70df5cf7c61d5e814bfc7d9ceeda4e4d4115ba57c6f20b568185af3abc916f2e
+    owed  COJJOD_comp_0          field 2   fresh status: 5ce51b9ad550bd9d35a87157ad8f50a5f84e2d9fb56a9a2dc9c3eca7bf4de63f
+    owed  GIFVUN_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  HIMFAM_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  HITHAW_comp_0          field 2   fresh status: da5d1a57fc4fce57e4ee9073625354e8d6bc2d091850c6bbf7a093ebf4493089
+    owed  JIVRIP_comp_0          field 2   fresh status: 5a26921a06f5d1ee75499aa8cb9beed7bb2e32ddd45307ea2987f24ca8b9b31f
+    owed  KECJUA_comp_0          field 2   fresh status: 2cd2ab3355fed5698e3a57f33272424124230739d997710db0881e80c2989452
+    owed  KIVGIH_comp_0          field 2   fresh status: 930d808590b3eedc1cd52972061595ad3f5fbc113cf2ef9e98de5f9c80404816
+    owed  MAHTOE_comp_0          field 2   fresh status: 8d8d06639c6d2717be6f6405a0b84a9d527777bbb63596d03959b02253bfe66a
+    owed  NAHNOB_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  OZADAW_comp_0          field 2   fresh status: 298802452f717a701ba145243144e8fb871351bd1228e2b7b2e41a7111be4365
+    owed  PURROJ_comp_0          field 2   fresh status: 93e89b463b82c96c9f5fba148c28e22a9e9f0f60658a208e540348ef63311fa7
+    owed  PUVWEK_comp_0          field 2   fresh status: f393fb99a7944b9ff1cc8b2a2ef3cb590bbf5481ceea089ae80e721301d6efbe
+    owed  QAMJAP_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  RIRYOJ_comp_0          field 2   fresh status: 60d38febd0d86c5eebbc75f3d76cfb8b8842f6da0e4a9b3aa7f86eb67b658286
+    owed  SEMPOP_comp_0          field 2   fresh status: b24cc1ff294103f82cf46a2e409d4255c2649fa7123f11ae47f3a259865f4d5b
+    owed  SEMVUD_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  SUNROK_comp_0          field 2   fresh status: afcb489194cad94a308f35ab6a72fb5fd2a53a4c80ad479d0cfea7e8ea4ef9a3
+    owed  TEQHIG_comp_0          field 2   fresh status: 51a3c86ba43be52b6326fee43e26a0c3cda4b89aed6b3118037e6ed900978579
+    owed  TEQHOM_comp_0          field 2   fresh status: e3db9904cea283970149bd5a624719ca0d32a453d9527733b6d3c1f4a38c6d6f
+    owed  ULOQIX_comp_0          field 2   fresh status: 737784444829a143736f0c74ef035ca8f4f7560c104ba3d0c37535f21f85bef2
+    owed  ULORAQ_comp_0          field 2   fresh status: fe5237cfeedb84ee49b91bfc5102b101554913bf25fecd859086180d15a5aeb6
+    owed  ULORIY_comp_0          field 2   fresh status: b186cb5c4608231a1952917ce5ff38b90806f5e251a887345bac9e833fcf0b3e
+    owed  VEJXOZ_comp_0          field 2   fresh status: ERROR:ValueError:MetalloGen failed to generate any conformers via OIN-
+    owed  VIMTET_comp_0          field 2   fresh status: 201e9fc713f8a7fbf64371c475d2cb559e798d2f3d192eabd396ce0f5d12853e
+    owed  ZIQLOD_comp_0          field 2   fresh status: b2e505fd73c79e57f4b23bf358139fbe0e57b89e30aa98b0d577712fce9793d9
+    control cohort: 26 owed + 0 killed -> cohort-v0.4.19-arm2-control-v049

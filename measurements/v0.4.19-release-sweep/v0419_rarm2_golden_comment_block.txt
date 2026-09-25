@@ -1,0 +1,22 @@
+# v0.4.19 (release): FULL gate run for the promotion of OIN_H_FAITHFUL + OIN_RC1_PROPAGATE +
+#   OIN_CAP_IGNORES_METAL together (default-ON; owner 2026-09-24, "on the condition the sweep lands
+#   on its prediction" -- results-v0.4.19-candidate-sweep 87.78% / 79.12% against 87.56 / 79.02).
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit bd845795
+#   (research/v0419-serializer; src/ == 0809c7a9, the promotion). v047: 100 of 100 compared rows
+#   reproduce, 0 re-frozen. v049: 255 compared rows reproduce (36 SHA1-only, 4 deterministic
+#   no-structure, 4 observe; GOHWOQ/ULODUU/XIQKOY ungated), 26 owed, EVERY one on field 2 -- the
+#   input string -- and exactly the 26 rows the encode-only audit (tools/v0417/arm2_field2_audit.py,
+#   295 SAME + 26 MOVED_BY_LEVER + 4 sentinels, 0 STALE) named. The CONTROL (the three levers at 0 on
+#   those 26) brings every old row back byte-for-byte: 26 LEVER, 0 STALE. The generated-structure
+#   field moved on no row the string did not.
+#   MAHTOE_comp_0 BY HAND (--accept-det): frozen NO_STRUCTURE_DET since v0.4.9 because its string
+#   left a B(C6F5)3 fragment with no binding atom (UncoordinatedFragmentError, deterministic). With
+#   OIN_CAP_IGNORES_METAL the fragment keeps its donor; the generator builds it and the gate passes
+#   it byte-exact. Re-frozen from the fresh row; fields 7+ preserved (its v0.4.9 class label
+#   `no_structure` in field 8 is now historical, kept so --band filtering is unchanged).
+#   ROUND TRIP ON THE 26 (golden -> fresh, gated): pass->pass 8, fail->pass 7, no-structure->pass 3,
+#   pass->fail 1, fail->fail 1, no-structure->no-structure 6. The honest column on the 26: 9 agree
+#   with sha_in, 11 do not, 6 none. Whole run: gated pass & honest pass 248, gated PASS & honest
+#   FAIL 120, gated fail & honest pass 3, both fail 14 (of 409 rows with a structure) -- ARM 2's
+#   predicate is CIRCULAR (byte identity through the generator's own graph, not accuracy), unchanged
+#   from v0.4.18's finding. Evidence: measurements/v0.4.19-arm2/.

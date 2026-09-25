@@ -1,0 +1,412 @@
+{
+ "projected": {
+  "self": 4378,
+  "verified": 3951
+ },
+ "measured": {
+  "self": 4389,
+  "verified": 3956
+ },
+ "rows": [
+  {
+   "axis": "self-consistent",
+   "tag": "LOST vs projection",
+   "molecule": "DOCPAO_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 50.318,
+   "elapsed_other": 54.366,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "LOST vs projection",
+   "molecule": "IFAPUD_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 48.088,
+   "elapsed_other": 46.052,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "LOST vs projection",
+   "molecule": "MIBFEL_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 25.776,
+   "elapsed_other": 18.37,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "LOST vs projection",
+   "molecule": "NOYTUS_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 22.11,
+   "elapsed_other": 17.318,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "LOST vs projection",
+   "molecule": "PUMLEP_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 300.492,
+   "elapsed_other": 285.096,
+   "boundary": true
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "DAGNIL_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 82.716,
+   "elapsed_other": 223.826,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "DIDROZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.153,
+   "elapsed_other": 83.628,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "EVUHUZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.347,
+   "elapsed_other": 51.576,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "FIQDAM_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 4.355,
+   "elapsed_other": 1.898,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "HUDTUV_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.53,
+   "elapsed_other": 300.09,
+   "boundary": true
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "LASSOQ_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 21.113,
+   "elapsed_other": 42.794,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "LUSBEI_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 8.09,
+   "elapsed_other": 83.685,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "MIYBAZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 8.775,
+   "elapsed_other": 5.385,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "MUYTEH_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: stereo DIFFERENT",
+   "elapsed_candidate": 2.323,
+   "elapsed_other": 8.301,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "NEMGIW_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.904,
+   "elapsed_other": 1.179,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "QEWJOS_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 334.761,
+   "elapsed_other": 343.774,
+   "boundary": true
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "UXOCAN_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 6.013,
+   "elapsed_other": 3.937,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "VUXTOZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 197.032,
+   "elapsed_other": 300.149,
+   "boundary": true
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "YOBTAL_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 3.639,
+   "elapsed_other": 19.166,
+   "boundary": false
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "YOQMAT_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: stereo DIFFERENT",
+   "elapsed_candidate": 263.008,
+   "elapsed_other": 300.369,
+   "boundary": true
+  },
+  {
+   "axis": "self-consistent",
+   "tag": "GAINED vs projection",
+   "molecule": "YOSYEM_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 375.215,
+   "elapsed_other": 619.387,
+   "boundary": true
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "IJAXIB_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 24.951,
+   "elapsed_other": 26.198,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "JUXXEF_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 3.52,
+   "elapsed_other": 5.413,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "PAFFEI_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: stereo DIFFERENT",
+   "elapsed_candidate": 2.109,
+   "elapsed_other": 3.39,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "PUMLEP_comp_0",
+   "changed_set": false,
+   "candidate_why": "bucket hard_fail",
+   "elapsed_candidate": 300.492,
+   "elapsed_other": 285.096,
+   "boundary": true
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "SIGYAL_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 10.054,
+   "elapsed_other": 12.857,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "TANROQ_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 8.977,
+   "elapsed_other": 10.228,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "LOST vs projection",
+   "molecule": "WENDID_comp_0",
+   "changed_set": false,
+   "candidate_why": "structure: graph differs",
+   "elapsed_candidate": 1.695,
+   "elapsed_other": 13.249,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "DAGNIL_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 82.716,
+   "elapsed_other": 223.826,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "DIDROZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.153,
+   "elapsed_other": 83.628,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "EVUHUZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.347,
+   "elapsed_other": 51.576,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "FIQDAM_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 4.355,
+   "elapsed_other": 1.898,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "HUDTUV_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.53,
+   "elapsed_other": 300.09,
+   "boundary": true
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "MIYBAZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 8.775,
+   "elapsed_other": 5.385,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "NEMGIW_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 2.904,
+   "elapsed_other": 1.179,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "QEWJOS_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 334.761,
+   "elapsed_other": 343.774,
+   "boundary": true
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "UXOCAN_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 6.013,
+   "elapsed_other": 3.937,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "VUXTOZ_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 197.032,
+   "elapsed_other": 300.149,
+   "boundary": true
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "YOBTAL_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 3.639,
+   "elapsed_other": 19.166,
+   "boundary": false
+  },
+  {
+   "axis": "VERIFIED",
+   "tag": "GAINED vs projection",
+   "molecule": "YOSYEM_comp_0",
+   "changed_set": false,
+   "candidate_why": "NONE",
+   "elapsed_candidate": 375.215,
+   "elapsed_other": 619.387,
+   "boundary": true
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+sweep: results-v0.4.14-sweep
+  g_verdict      <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/g_verdict.jsonl
+  mirror         <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/g_verdict_control-mirror.jsonl
+  e2             <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/e_selfconsistency.jsonl
+  parseback      <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/parseback.jsonl
+  parseback_gen  <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/parseback_gen.jsonl
+  pflags         <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/pflags.jsonl
+  attach         <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.14-sweep/attach_class_audit.json
+  collisions     <- <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-census/collisions.json
+inputs: rows=5000 g1=4748 mirror=5000 e2=5000 parseback=5000 parseback_gen=4748 pflags=5000 attach=5000 clustered=110
+
+DENOMINATOR rows=5000
+bucket column: {'byte_exact': 3858, 'key_equal': 365, 'facmer_divergent': 15, 'structural': 484, 'hard_fail': 266, 'encode_fail': 12}  reproduces bucket_report_honest: True
+outcome: {'PASS': 3858, 'FAIL': 1142}  (expected PASS 3858 / FAIL 1142)
+NONE = 3462   VERIFIED by sweep_two_numbers.py = 3462   AGREE
+fault classes: {'NONE': 3462, 'G_CONSTRUCTION': 597, 'E1_NONCANONICAL': 266, 'E1_GRAPH': 132, 'E1_NOT_ENCODED': 106, 'G_NOTHING': 104, 'E1_HCOUNT': 84, 'E2_P_FRAGILE': 81, 'E2_P_OTHER': 67, 'E1_NONINJECTIVE': 34, 'P_DETACHED': 18, 'P_E1_COVERAGE': 12, 'G_DIASTEREOMER': 11, 'DATA_MULTI': 10, 'G_HANDEDNESS': 9, 'G_HCOUNT': 7}
+rule fired: {1: 12, 2: 244, 3: 104, 4: 597, 5: 160, 6: 421, 7: 3462}
+UNATTRIBUTED: 0  UNDECIDED-stereo rows: 0
+
+rule 4 (G_CONSTRUCTION) n=597  ∩ audit DETACHED (all buckets 419) = 326
+  DETACHED among FAIL = 367; of those G_CONSTRUCTION=317, other faults={'E2_P_OTHER': 20, 'E1_GRAPH': 15, 'E1_NONCANONICAL': 5, 'G_HCOUNT': 3, 'E1_HCOUNT': 3, 'E2_P_FRAGILE': 2}
+slot_renumber n=252 by fault: {'E1_NONCANONICAL': 227, 'G_CONSTRUCTION': 8, 'E2_P_FRAGILE': 4, 'G_DIASTEREOMER': 4, 'E2_P_OTHER': 3, 'G_HANDEDNESS': 3, 'E1_GRAPH': 2, 'E1_HCOUNT': 1}
+
+fault x bucket (n, pts)
+  fault                n    pts  byte_exact  structural   key_equal   hard_fail  facmer_div  encode_fai
+  NONE              3462  69.24        3462           0           0           0           0           0
+  G_CONSTRUCTION     597  11.94         201         313          67           3          13           0
+  E1_NONCANONICAL    266   5.32           0          30         235           0           1           0
+  E1_GRAPH           132   2.64          52          14           7          59           0           0
+  E1_NOT_ENCODED     106   2.12         106           0           0           0           0           0
+  G_NOTHING          104   2.08           0           0           0         104           0           0
+  E1_HCOUNT           84   1.68           4           8           1          71           0           0
+  E2_P_FRAGILE        81   1.62           0          65          15           1           0           0
+  E2_P_OTHER          67   1.34           0          36          30           0           1           0
+  E1_NONINJECTIVE     34   0.68          33           0           1           0           0           0
+  P_DETACHED          18   0.36           0           0           0          18           0           0
+  P_E1_COVERAGE       12   0.24           0           0           0           0           0          12
+  G_DIASTEREOMER      11   0.22           0           7           4           0           0           0
+  DATA_MULTI          10   0.20           0           0           0          10           0           0
+  G_HANDEDNESS         9   0.18           0           4           5           0           0           0
+  G_HCOUNT             7   0.14           0           7           0           0           0           0
+
+FAIL partition (n=1142, 22.84 pts):
+  G_CONSTRUCTION     396   7.92   [('DETACHED', 331), ('SPHERE_DIFF', 60), ('LIGAND_DIFF', 5)]
+  E1_NONCANONICAL    266   5.32   [('veto one-hand (C2)', 266)]
+  G_NOTHING          104   2.08   [('TIMEOUT', 95), ('NOCONF', 9)]
+  E2_P_FRAGILE        81   1.62   [('key', 73), ('string', 8)]
+  E1_HCOUNT           80   1.60   [('h_diff=1', 42), ('h_diff=3', 13), ('h_diff=2', 11), ('h_diff=4', 6)]
+  E1_GRAPH            80   1.60   [('LIGAND_DIFF', 41), ('SPHERE_DIFF', 39)]
+  E2_P_OTHER          67   1.34   [('NO_STEREO', 37), ('SAME', 30)]
+  P_DETACHED          18   0.36   [('components in=3 str=9', 3), ('components in=4 str=4', 3), ('components in=2 str=2', 2), ('components in=3 str=4', 2)]
+  P_E1_COVERAGE       12   0.24   [('TIMEOUT_OTHER', 12)]
+  G_DIASTEREOMER      11   0.22   [('CENTRES', 8), ('ARRANGEMENT', 3)]
+  DATA_MULTI          10   0.20   [('components in=3 str=3', 7), ('components in=4 str=4', 2), ('components in=2 str=2', 1)]
+  G_HANDEDNESS         9   0.18   [('MIRROR', 9)]
+  G_HCOUNT             7   0.14   [('', 7)]
+  E1_NONINJECTIVE      1   0.02   [('MIRROR', 1)]
+
+METRIC FALSE PASS (PASS with a fault): 396 = 10.3% of passes
+  G_CONSTRUCTION     201
+  E1_NOT_ENCODED     106
+  E1_GRAPH            52
+  E1_NONINJECTIVE     33
+  E1_HCOUNT            4
+
+FAIL by owner prefix: {'G': (527, 10.54), 'E1': (427, 8.54), 'E2': (148, 2.96), 'P': (30, 0.6), 'DATA': (10, 0.2)}
+
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-release-census/control/attribution_table.tsv (5000 rows) and attribution_summary.json

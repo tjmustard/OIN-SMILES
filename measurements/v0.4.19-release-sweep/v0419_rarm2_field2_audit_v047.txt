@@ -1,0 +1,9 @@
+gate_v047_arm2_golden.tsv: DENOMINATOR 100 rows   src=<checkout:oin-v0419>/src
+   100  SAME
+     0  MOVED_BY_LEVER   
+     0  STALE   
+     0  STALE_AND_MOVED   
+     0  HEALED   
+     0  SENTINEL   
+     0  ENCODE_FAILED   
+ABORT: the lever fired on 0 rows -- a dead lever and a clean audit print the same

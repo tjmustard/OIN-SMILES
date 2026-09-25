@@ -1,0 +1,32 @@
+
+=== v047: 0 of 100 rows re-frozen   {}
+
+=== v049: 26 of 325 rows re-frozen   {'LEVER': 25, 'LEVER(DET->structure, by hand)': 1}
+    AKUMAV_comp_0          LEVER        first gated field that moved: 2
+    COJJOD_comp_0          LEVER        first gated field that moved: 2
+    GIFVUN_comp_0          LEVER        first gated field that moved: 2
+    HIMFAM_comp_0          LEVER        first gated field that moved: 2
+    HITHAW_comp_0          LEVER        first gated field that moved: 2
+    JIVRIP_comp_0          LEVER        first gated field that moved: 2
+    KECJUA_comp_0          LEVER        first gated field that moved: 2
+    KIVGIH_comp_0          LEVER        first gated field that moved: 2
+    MAHTOE_comp_0          LEVER(DET->structure, by hand) first gated field that moved: 2
+    NAHNOB_comp_0          LEVER        first gated field that moved: 2
+    OZADAW_comp_0          LEVER        first gated field that moved: 2
+    PURROJ_comp_0          LEVER        first gated field that moved: 2
+    PUVWEK_comp_0          LEVER        first gated field that moved: 2
+    QAMJAP_comp_0          LEVER        first gated field that moved: 2
+    RIRYOJ_comp_0          LEVER        first gated field that moved: 2
+    SEMPOP_comp_0          LEVER        first gated field that moved: 2
+    SEMVUD_comp_0          LEVER        first gated field that moved: 2
+    SUNROK_comp_0          LEVER        first gated field that moved: 2
+    TEQHIG_comp_0          LEVER        first gated field that moved: 2
+    TEQHOM_comp_0          LEVER        first gated field that moved: 2
+    ULOQIX_comp_0          LEVER        first gated field that moved: 2
+    ULORAQ_comp_0          LEVER        first gated field that moved: 2
+    ULORIY_comp_0          LEVER        first gated field that moved: 2
+    VEJXOZ_comp_0          LEVER        first gated field that moved: 2
+    VIMTET_comp_0          LEVER        first gated field that moved: 2
+    ZIQLOD_comp_0          LEVER        first gated field that moved: 2
+
+(dry run -- pass --write to rewrite the goldens)
