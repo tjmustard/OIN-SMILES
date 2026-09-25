@@ -133,6 +133,20 @@ class TestCanonicalResonanceFrame(unittest.TestCase):
             self.assertEqual(a.GetAtomicNum(), b.GetAtomicNum())
             self.assertEqual(a.GetDegree(), b.GetDegree())
 
+    def test_frame_carries_the_conformer(self):
+        # The first version re-parsed without coordinates: 21 of 105 encodes died in the CIP
+        # assigner on a zero-length vector. The forms must come back with the input's 3D.
+        from rdkit.Chem import AllChem
+
+        lig = Chem.AddHs(Chem.MolFromSmiles("c1cc[n-]c1"))
+        AllChem.EmbedMolecule(lig, randomSeed=7)
+        canon, back = pt._canonical_resonance_frame(lig)
+        self.assertEqual(canon.GetNumConformers(), 1)
+        restored = Chem.RenumberAtoms(canon, back)
+        c0, c1 = lig.GetConformer(), restored.GetConformer()
+        for i in range(lig.GetNumAtoms()):
+            self.assertTrue(np.allclose(list(c0.GetAtomPosition(i)), list(c1.GetAtomPosition(i))))
+
     def test_charge_walk_order_reproduces_the_acceptance(self):
         # A BO accepted by charge_is_OK in canonical order is charged to exactly `charge`
         # when set_atomic_charges walks the same order (AC2mol's formal-charge check).

@@ -27,7 +27,7 @@ def load(path):
     out = {}
     with open(path) as fh:
         for line in fh:
-            if line.strip():
+            if line.strip() and line.startswith("{"):  # skip the #DONE trailer
                 r = json.loads(line)
                 out[r["molecule"]] = r
     return out

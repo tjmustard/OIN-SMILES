@@ -409,6 +409,17 @@ def _canonical_resonance_frame(lig_mol):
                 != lig_mol.GetAtomWithIdx(old_idx).GetAtomicNum()
             ):
                 return lig_mol, None
+        # The parse has no coordinates; the forms are copies of what the supplier is given
+        # and the CIP assigner reads them from 3D, so carry the conformer across in the
+        # new order (the first version did not: 21 of 105 encodes died in assign_all on a
+        # zero-length vector, every ligand atom sitting at the origin).
+        if lig_mol.GetNumConformers():
+            src = lig_mol.GetConformer()
+            conf = Chem.Conformer(n)
+            conf.Set3D(src.Is3D())
+            for new_pos, old_idx in enumerate(order):
+                conf.SetAtomPosition(new_pos, src.GetAtomPosition(old_idx))
+            canon.AddConformer(conf, assignId=True)
         inverse = [0] * n
         for new_pos, old_idx in enumerate(order):
             inverse[old_idx] = new_pos
