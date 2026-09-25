@@ -60,6 +60,7 @@ ARMS = {
     ),
     # E2 lane (results-v0.4.19-e2/): perception-order levers
     "n2": ({"OIN_N_VALENCE_2": "1"}, False),
+    "res": ({"OIN_CANONICAL_RESONANCE": "1"}, False),
     "e2b": ({"OIN_N_VALENCE_2": "1", "OIN_CANONICAL_RESONANCE": "1"}, False),
     "e2c": (
         {

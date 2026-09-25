@@ -163,21 +163,19 @@ def cmd_changed(args, res):
             if ln.startswith("{"):
                 r = json.loads(ln)
                 by[r["molecule"]][r["arm"]] = r.get("oin")
+        # which single-lever arm(s) move the string off the shipped encode: the arm names are
+        # lever_parseback.py's (hfaith/rc1prop for the serializer lane, n2/res for E2); an arm that
+        # was not run for a molecule is not counted, and "none(!)" means only the combination moves it
         attr = Counter()
         for m in changed:
             a = by.get(m, {})
-            h = a.get("hfaith") is not None and a.get("hfaith") != a.get("shipped")
-            p = a.get("rc1prop") is not None and a.get("rc1prop") != a.get("shipped")
-            attr[
-                "H_FAITHFUL only"
-                if h and not p
-                else "RC1_PROPAGATE only"
-                if p and not h
-                else "both"
-                if h and p
-                else "neither(!)"
-            ] += 1
-        print("   attribution (single-lever encodes):", dict(attr))
+            moved = [
+                arm
+                for arm, oin in a.items()
+                if arm != "shipped" and oin is not None and oin != a.get("shipped")
+            ]
+            attr[",".join(moved) if moved else "none(!)"] += 1
+        print("   attribution (single-lever encodes, arms that move the string):", dict(attr))
     res["changed"] = {
         "n_changed": len(changed),
         "n_unchanged": same,
