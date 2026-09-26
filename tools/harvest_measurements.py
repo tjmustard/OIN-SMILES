@@ -212,6 +212,9 @@ ALLOW = [
     # v0.4.19 E2 lane (OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE, perception order; measured, NOT
     # promoted), staged by tools/v0419/freeze_stage_e2.py, release v0.4.19-e2.
     "v0419_e2_*",
+    # ... and its CANDIDATE sweep (v0.4.19 defaults + the two E2 levers), staged by
+    # tools/v0419/freeze_stage_e2_sweep.py, release v0.4.19-e2-candidate-sweep.
+    "v0419_e2sweep_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -1020,6 +1023,25 @@ PROVENANCE = [
         " (OFF = the v0.4.19 release sweep's own rows)   (e2f: live self +69/-7, VERIFIED +66/-7,"
         " offline +17/-2 and +11/-1, projection 89.32% / 80.50%; res: +23/-3, +20/-3, +18/-1,"
         " +12/-0, 88.52% / 79.70%. NO DEFAULT CHANGED: both levers ship OFF)",
+    ),
+    (
+        r"^v0419_e2sweep_run_config\.json$",
+        "SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS='-E OIN_N_VALENCE_2=1 -E"
+        " OIN_CANONICAL_RESONANCE=1' tools/v0419/launch_candidate_sweep.sh   (the full 5,000,"
+        " 6 shards, --mol-timeout 300; the levers block must be exactly the two)",
+    ),
+    (
+        r"^v0419_e2sweep_(two_numbers\.txt|bucket_report_honest\.md|bucket_report_honest\.json\.gz"
+        r"|g_verdict\.jsonl\.gz|parseback\.jsonl\.gz|parseback_gen\.jsonl\.gz"
+        r"|parseback_shippedreader\.jsonl\.gz)$",
+        "SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS=... SWEEP_SHIPPED=... SWEEP_PROJECTION=e2f"
+        " tools/v0419/post_candidate_sweep.sh   (honest buckets, the neutral ruler, parse-back"
+        " under the levers and under the shipped reader; tools/v0417/sweep_two_numbers.py)",
+    ),
+    (
+        r"^v0419_e2sweep_vs_projection\.(txt|json)$|^v0419_e2sweep_unchanged_string_movers\.json$",
+        "tools/v0419/candidate_vs_projection.py --projection e2f   (every row where the sweep and"
+        " the e2f projection disagree, with elapsed_s in both runs; the generator-reach table)",
     ),
 ]
 
