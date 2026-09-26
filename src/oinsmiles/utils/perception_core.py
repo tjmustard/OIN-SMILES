@@ -912,8 +912,9 @@ AC2BO_STATS = {
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
     "over_cap_found_valid": 0,  # ... of which were over-cap
     "over_cap_exhausted": 0,  # over-cap calls that fell through and returned best_BO
-    "n_valence_2_second_pass": 0,  # OIN_N_VALENCE_2: nothing validated, re-walked with N(-)
-    "n_valence_2_second_pass_found": 0,  # ...and the re-walk validated a candidate
+    "n_valence_2_pass_calls": 0,  # OIN_N_VALENCE_2: walks run inside n_valence_2_pass()
+    "n_valence_2_ladders": 0,  # OIN_N_VALENCE_2: ligands whose shipped ladder ended on a guess
+    "n_valence_2_ladders_accepted": 0,  # ...and the N(-) ladder returned a validated structure
     "over_cap_best_bo_improved": 0,  # best_BO reassignments on the over-cap branch
     "matching_calls": 0,  # nx.max_weight_matching invocations
 }
@@ -932,12 +933,12 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
     without running the search -- ``tools/valsearch_scan.py`` uses this to find the
     over-cap ligand population for free. ``AC2BO`` calls it, so the two cannot drift.
 
-    ``n_valence_2`` is the ``OIN_N_VALENCE_2`` switch: ``None`` reads the lever (the tools'
-    and tests' view of "what would the search try"), ``False``/``True`` is what
-    ``_AC2BO_core`` passes for its first and second pass respectively.
+    ``n_valence_2`` is the ``OIN_N_VALENCE_2`` option: ``None`` reads the pass flag
+    (``n_valence_2_pass()``), which is what the search itself does; the tools pass it
+    explicitly to size either pass's product.
     """
     if n_valence_2 is None:
-        n_valence_2 = _lever_enabled("OIN_N_VALENCE_2")
+        n_valence_2 = _N_VALENCE_2_PASS
     valences_list_of_lists = []
     for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
         # valence can't be smaller than number of neighbourgs
@@ -957,14 +958,9 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
         # returns best_BO -- which is the AC itself, all single bonds -- and the string
         # then depends on whether the resonance enumeration can neutralise the zwitterion
         # set_atomic_charges' running-total walk happened to produce (census
-        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles).
-        # A SECOND PASS, never the first: "appended last" was measured on the whole cohort
-        # (results-v0.4.19-e2, 2026-09-25) and moved 343 strings -- 167 of them VERIFIED
-        # passes -- and made 44 rows noise-fragile, because every pyridine / imine nitrogen
-        # has AC-valence 2 and the sub-cap walk is sorted by a heuristic, not by list
-        # position, so an N(-) zwitterion could outrank the neutral form the shipped search
-        # finds. ``_AC2BO_core`` therefore searches the shipped lists first and only when
-        # NO candidate validates (the ``best_BO`` guess would ship) searches again with 2.
+        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles). Present only inside
+        # ``n_valence_2_pass()`` -- see ``_N_VALENCE_2_PASS`` for why it is a ladder-level
+        # fallback and not an option every walk sees.
         if atomicNum == 7 and valence <= 2 and n_valence_2:
             possible_valence.append(2)
 
@@ -1257,6 +1253,46 @@ def _ordered_valences(valences_list_of_lists, atoms):
 _SUPPRESS_CANONICAL_PERCEPTION = False
 
 
+#: OIN_N_VALENCE_2 (v0.4.19, held off). True only inside ``n_valence_2_pass()``: the ligand
+#: charge/carbene ladder (``perception_tmc.get_lig_mol``) runs the SHIPPED valence lists first
+#: and re-runs inside this block only when what it got back was built from a bond-order GUESS
+#: (``AC2BO`` exhausted its walk and returned ``best_BO``). Measured on the whole cohort,
+#: 2026-09-25 (results-v0.4.19-e2): giving every two-coordinate nitrogen the N(-) option
+#: unconditionally moved 343 strings, 167 of them VERIFIED passes (a neutral terpyridine
+#: re-perceived as a quinoid anion, a diimine as an ene-diamide) and broke 44 rows on noise,
+#: and making it a second pass INSIDE ``AC2BO`` changed nothing (251 of the 443 movers still
+#: moved) -- because the ladder itself is a chain of fallbacks over charges, and an extra
+#: legal valence lets a WRONG Huckel charge validate first. Only a ladder that finished on a
+#: guess has nothing to lose.
+_N_VALENCE_2_PASS = False
+#: mol property ``AC2mol`` stamps on every ligand it builds: ``True`` when the bond orders are
+#: ``best_BO`` -- no candidate validated -- rather than a Lewis structure that passed
+#: ``BO_is_OK``. ``lig_checks`` copies it onto each resonance form.
+BO_GUESS_PROP = "_oin_bo_guess"
+
+
+@contextlib.contextmanager
+def n_valence_2_pass():
+    """Let the valence search write an N(-) for a two-coordinate nitrogen inside this block."""
+    global _N_VALENCE_2_PASS
+    previous = _N_VALENCE_2_PASS
+    _N_VALENCE_2_PASS = True
+    try:
+        yield
+    finally:
+        _N_VALENCE_2_PASS = previous
+
+
+def is_bo_guess(mol):
+    """Whether ``mol`` (or the ligand it is a resonance form of) was built from ``best_BO``."""
+    try:
+        return bool(
+            mol is not None and mol.HasProp(BO_GUESS_PROP) and mol.GetBoolProp(BO_GUESS_PROP)
+        )
+    except Exception:
+        return False
+
+
 @contextlib.contextmanager
 def suppress_canonical_perception():
     """Force input-order perception inside this block, whatever the env lever says."""
@@ -1345,7 +1381,7 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     anything unexpected.
     """
     try:
-        combo = combo_n2 = 1
+        combo = 1
         for atomicNum, valence in zip(atoms, list(AC.sum(axis=1))):
             possible = [x for x in atomic_valence[atomicNum] if x >= valence]
             if atomicNum == 6 and valence == 1 and 2 in possible:
@@ -1356,16 +1392,12 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
                 possible.append(3)
             if atomicNum == 16 and valence == 1:
                 possible = [1, 2]
+            if atomicNum == 7 and valence <= 2 and _N_VALENCE_2_PASS:
+                possible.append(2)
             if not possible:
                 return True
             combo *= len(possible)
-            # the OIN_N_VALENCE_2 second pass enlarges the product; either pass over the cap
-            # is an order-sensitive answer
-            if atomicNum == 7 and valence <= 2 and _lever_enabled("OIN_N_VALENCE_2"):
-                combo_n2 *= len(possible) + 1
-            else:
-                combo_n2 *= len(possible)
-            if combo > _VALENCE_COMBO_CAP or combo_n2 > _VALENCE_COMBO_CAP:
+            if combo > _VALENCE_COMBO_CAP:
                 return True
         return False
     except Exception:
@@ -1379,6 +1411,7 @@ def AC2BO(
     allow_charged_fragments=True,
     use_graph=True,
     allow_carbenes=True,
+    return_found=False,
 ):
     """Bond orders from atomic connectivity, optionally made renumbering-invariant.
 
@@ -1427,20 +1460,27 @@ def AC2BO(
     Any failure falls through to the un-permuted path, so behaviour is unchanged whenever
     the canonical order cannot be computed.
     """
-    plain = lambda: _AC2BO_core(  # noqa: E731
-        AC,
-        atoms,
-        charge,
-        allow_charged_fragments=allow_charged_fragments,
-        use_graph=use_graph,
-        allow_carbenes=allow_carbenes,
-    )
+
+    # ``return_found`` adds a third element: whether a candidate VALIDATED (``BO_is_OK``)
+    # rather than ``best_BO`` being handed back as a guess. ``AC2mol`` stamps it on the mol.
+    def _out(BO, ave, found):
+        return (BO, ave, found) if return_found else (BO, ave)
+
     perm = _canonical_perception_perm(AC, atoms, allow_carbenes)
     if perm is None:
-        return plain()
+        return _out(
+            *_AC2BO_core(
+                AC,
+                atoms,
+                charge,
+                allow_charged_fragments=allow_charged_fragments,
+                use_graph=use_graph,
+                allow_carbenes=allow_carbenes,
+            )
+        )
 
     idx = np.asarray(perm)
-    BO_c, atomic_valence_electrons_out = _AC2BO_core(
+    BO_c, atomic_valence_electrons_out, found = _AC2BO_core(
         AC[np.ix_(idx, idx)],
         [atoms[i] for i in perm],
         charge,
@@ -1452,7 +1492,7 @@ def AC2BO(
     # no un-permuting; only the BO matrix does.
     BO = np.zeros_like(BO_c)
     BO[np.ix_(idx, idx)] = BO_c
-    return BO, atomic_valence_electrons_out
+    return _out(BO, atomic_valence_electrons_out, found)
 
 
 def _AC2BO_core(
@@ -1483,57 +1523,11 @@ def _AC2BO_core(
     # counter are orthogonal to the extraction, and the extracted function carries the same
     # logic the inline block had.
     AC_valence = list(AC.sum(axis=1))
+    # inside n_valence_2_pass() the two-coordinate nitrogens carry the N(-) option
+    valences_list_of_lists = possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes)
+    if _N_VALENCE_2_PASS:
+        AC2BO_STATS["n_valence_2_pass_calls"] += 1
 
-    # OIN_N_VALENCE_2 is a FALLBACK: the shipped lists are searched first and the walk
-    # below is re-entered with the N(-) option only when nothing validated -- the case
-    # where ``best_BO`` (for a porphyrin dianion, the AC itself) would otherwise ship.
-    # A molecule the shipped search solves is byte-identical with the lever on.
-    BO, ave, found = _AC2BO_walk(
-        AC,
-        AC_valence,
-        atoms,
-        charge,
-        possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=False),
-        allow_charged_fragments,
-        use_graph,
-        allow_carbenes,
-    )
-    if (
-        not found
-        and _lever_enabled("OIN_N_VALENCE_2")
-        and any(num == 7 and val <= 2 for num, val in zip(atoms, AC_valence))
-    ):
-        AC2BO_STATS["n_valence_2_second_pass"] += 1
-        BO2, ave2, found2 = _AC2BO_walk(
-            AC,
-            AC_valence,
-            atoms,
-            charge,
-            possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=True),
-            allow_charged_fragments,
-            use_graph,
-            allow_carbenes,
-        )
-        if found2:
-            AC2BO_STATS["n_valence_2_second_pass_found"] += 1
-            return BO2, ave2
-    return BO, ave
-
-
-def _AC2BO_walk(
-    AC,
-    AC_valence,
-    atoms,
-    charge,
-    valences_list_of_lists,
-    allow_charged_fragments,
-    use_graph,
-    allow_carbenes,
-):
-    """One walk of the candidate valence product: ``(BO, atomic_valence_electrons, found)``
-    where ``found`` says a candidate VALIDATED (``BO_is_OK``) -- otherwise ``BO`` is the
-    ``best_BO`` guess. Split out of ``_AC2BO_core`` for the ``OIN_N_VALENCE_2`` second pass;
-    the body is the historical loop, unchanged."""
     # convert [[4],[2,1]] to [[4,2],[4,1]]
     best_BO = AC.copy()
 
@@ -1691,13 +1685,14 @@ def AC2mol(
     """"""
 
     # convert AC matrix to bond order (BO) matrix
-    BO, atomic_valence_electrons = AC2BO(
+    BO, atomic_valence_electrons, found = AC2BO(
         AC,
         atoms,
         charge,
         allow_charged_fragments=allow_charged_fragments,
         use_graph=use_graph,
         allow_carbenes=allow_carbenes,
+        return_found=True,
     )
     # add BO connectivity and charge info to mol object
     #
@@ -1725,6 +1720,8 @@ def AC2mol(
     # If charge is not correct don't return mol
     if Chem.GetFormalCharge(mol) != charge:
         return None
+    # a guess is a guess whatever set_atomic_charges made of it; the ladder reads this
+    mol.SetBoolProp(BO_GUESS_PROP, not found)
 
     # BO2mol returns an arbitrary resonance form. Let's make the rest
 

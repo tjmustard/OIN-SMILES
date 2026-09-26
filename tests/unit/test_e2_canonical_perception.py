@@ -93,10 +93,12 @@ class TestShippedDefect(unittest.TestCase):
         with mock.patch.dict(os.environ, OFF):
             self.assertEqual(pc.possible_valences([2], [7]), [[3, 4]])
         with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
-            self.assertEqual(pc.possible_valences([2], [7]), [[3, 4, 2]])  # the second pass's list
-            self.assertEqual(pc.possible_valences([3], [7]), [[3, 4]])  # three-coordinate: no
-            # the first pass never sees it, whatever the lever says
-            self.assertEqual(pc.possible_valences([2], [7], n_valence_2=False), [[3, 4]])
+            # the lever alone changes nothing the search sees ...
+            self.assertEqual(pc.possible_valences([2], [7]), [[3, 4]])
+            with pc.n_valence_2_pass():  # ... only the ladder's fallback pass does
+                self.assertEqual(pc.possible_valences([2], [7]), [[3, 4, 2]])
+                self.assertEqual(pc.possible_valences([3], [7]), [[3, 4]])  # three-coordinate: no
+            self.assertEqual(pc.possible_valences([2], [7], n_valence_2=True), [[3, 4, 2]])
 
 
 class TestLeversTogether(unittest.TestCase):
@@ -124,39 +126,63 @@ class TestLeversTogether(unittest.TestCase):
         self.assertNotEqual(base, moved)  # ... but a different Kekule form: the supplier leak
 
 
-class TestNValence2IsASecondPass(unittest.TestCase):
+class TestNValence2IsALadderFallback(unittest.TestCase):
     """The first cut appended 2 to every two-coordinate nitrogen's list and let the ONE walk
     pick. Measured on the whole cohort (results-v0.4.19-e2, 2026-09-25) that moved 343
     strings -- 167 of them VERIFIED passes -- and made 44 rows noise-fragile: every pyridine
-    and imine nitrogen has AC-valence 2, and the sub-cap walk is heuristic-sorted, so an N(-)
-    zwitterion could outrank the neutral form the shipped search finds. The lever is a
-    FALLBACK: the shipped lists are walked first; only a walk that validates nothing (the
-    porphyrin dianion, where ``best_BO`` = the AC would ship) is re-walked with the option."""
+    and imine nitrogen has AC-valence 2, so a neutral terpyridine re-perceived as a quinoid
+    anion and a diimine as an ene-diamide. A second pass INSIDE ``AC2BO`` changed nothing
+    (251 of 443 movers still moved): the charge ladder is itself a chain of fallbacks, and an
+    extra legal valence lets a wrong Huckel charge validate first. So the lever is a LADDER
+    fallback: the shipped ladder runs first; only a result built from a bond-order GUESS
+    (the porphyrin dianion, where ``best_BO`` = the AC would ship) is re-perceived with the
+    option, and the re-run wins only if it validated."""
 
     PPY = os.path.join(os.path.dirname(__file__), "..", "fixtures", "fac-Ir(ppy)3.xyz")
 
     def _reset(self):
-        pc.AC2BO_STATS["n_valence_2_second_pass"] = 0
-        pc.AC2BO_STATS["n_valence_2_second_pass_found"] = 0
+        pc.AC2BO_STATS["n_valence_2_ladders"] = 0
+        pc.AC2BO_STATS["n_valence_2_ladders_accepted"] = 0
 
-    def test_pyridine_donors_are_byte_identical_and_never_take_the_second_pass(self):
+    def test_pyridine_donors_are_byte_identical_and_never_take_the_fallback(self):
         with mock.patch.dict(os.environ, OFF):
             off = XYZToSMILES().convert(self.PPY)
         self._reset()
         with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
             on = XYZToSMILES().convert(self.PPY)
         self.assertEqual(off, on)
-        self.assertEqual(pc.AC2BO_STATS["n_valence_2_second_pass"], 0)
+        self.assertEqual(pc.AC2BO_STATS["n_valence_2_ladders"], 0)
         self.assertIn("n{", on)  # three pyridine donors, AC-valence 2 each: the population at risk
 
-    def test_porphyrin_dianion_takes_the_second_pass(self):
+    def test_porphyrin_dianion_takes_the_fallback(self):
         self._reset()
         with mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "1"}):
             on = XYZToSMILES().convert(XIVMEX)
-        self.assertGreater(pc.AC2BO_STATS["n_valence_2_second_pass"], 0)
-        self.assertGreater(pc.AC2BO_STATS["n_valence_2_second_pass_found"], 0)
+        self.assertGreater(pc.AC2BO_STATS["n_valence_2_ladders"], 0)
+        self.assertGreater(pc.AC2BO_STATS["n_valence_2_ladders_accepted"], 0)
         self.assertNotIn("[CH]", on)
         self.assertEqual(on.count("n{"), 4, on)
+
+    def test_a_guess_is_stamped_and_survives_resonance_enumeration(self):
+        # ethyne: C#C validates at charge 0 -> not a guess. A lone two-coordinate N with two
+        # carbons at charge 0 (C-N-C, no H, shipped lists) cannot: every candidate fails and
+        # best_BO ships -- and the stamp says so.
+        from rdkit import Chem
+
+        ok = Chem.MolFromSmiles("C#C")
+        AC = Chem.GetAdjacencyMatrix(ok)
+        m = pc.AC2mol(Chem.RWMol(ok), AC, [6, 6], 0, use_atom_maps=False)
+        self.assertFalse(pc.is_bo_guess(m))
+        bad = Chem.MolFromSmiles("CNC")
+        AC = Chem.GetAdjacencyMatrix(bad)
+        m = pc.AC2mol(Chem.RWMol(bad), AC, [6, 7, 6], 0, use_atom_maps=False)
+        if m is not None:
+            self.assertTrue(pc.is_bo_guess(m))
+        # the ladder's own check: the flag rides on the resonance forms
+        with mock.patch.dict(os.environ, OFF):
+            forms = pt.lig_checks(m, []) if m is not None else []
+        for form, *_ in forms:
+            self.assertTrue(pc.is_bo_guess(form))
 
 
 class TestCanonicalResonanceFrame(unittest.TestCase):

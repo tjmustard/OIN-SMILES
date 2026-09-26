@@ -199,7 +199,9 @@ class TestLazyOrderedValences(unittest.TestCase):
             raise AssertionError("sub-cap AC2BO materialised the full product")
 
         with mock.patch.object(xl, "_ordered_valences", boom):
-            BO, _ = xl._AC2BO_core(AC, atoms, 0, allow_charged_fragments=True, use_graph=True)
+            BO, _, _found = xl._AC2BO_core(
+                AC, atoms, 0, allow_charged_fragments=True, use_graph=True
+            )
         self.assertEqual(BO.shape, AC.shape)
 
 

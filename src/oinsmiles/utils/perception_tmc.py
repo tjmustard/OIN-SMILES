@@ -28,9 +28,13 @@ from .aromaticity import (  # noqa: F401
 )
 from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
 from .perception_core import (
+    AC2BO_STATS,
+    BO_GUESS_PROP,
     AC2mol,
     boron_cage_vertices,
     chiral_stereo_check,
+    is_bo_guess,
+    n_valence_2_pass,
     read_xyz_file,
     suppress_canonical_perception,
     xyz2AC_obabel,
@@ -529,6 +533,10 @@ def lig_checks(lig_mol, coordinating_atoms):
         candidates = _enumerate_resonance_inline(enum_mol) or [enum_mol]
     if back is not None:
         candidates = [Chem.RenumberAtoms(c, back) for c in candidates]
+    # a resonance form of a guess is still a guess (ResonanceMolSupplier drops mol props)
+    if is_bo_guess(lig_mol):
+        for c in candidates:
+            c.SetBoolProp(BO_GUESS_PROP, True)
 
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []
@@ -763,9 +771,32 @@ def get_lig_mol(mol, charge, coordinating_atoms):
         if cage is not None:
             return cage, 0
 
-    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    res, final_charge = _run_ladder(mol, AC, atoms, charge, coordinating_atoms)
+    # OIN_N_VALENCE_2 (v0.4.19, held off): a ladder that ended on a bond-order GUESS (no
+    # candidate validated at any charge it tried -- for a porphyrin dianion best_BO is the AC
+    # itself and the string is a resonance-enumeration lottery) is run again with the N(-)
+    # option for two-coordinate nitrogens, and the re-run wins only if it validated. A
+    # ladder that already found a Lewis structure is left byte-identical: see
+    # perception_core._N_VALENCE_2_PASS for the cohort measurement behind that rule.
+    if (
+        lever_enabled("OIN_N_VALENCE_2")
+        and (res is None or is_bo_guess(res))
+        and any(z == 7 and AC[i].sum() <= 2 for i, z in enumerate(atoms))
+    ):
+        AC2BO_STATS["n_valence_2_ladders"] += 1
+        with n_valence_2_pass():
+            res2, charge2 = _run_ladder(mol, AC, atoms, charge, coordinating_atoms)
+        if res2 is not None and not is_bo_guess(res2):
+            AC2BO_STATS["n_valence_2_ladders_accepted"] += 1
+            return res2, charge2
+    return res, final_charge
+
+
+def _run_ladder(mol, AC, atoms, charge, coordinating_atoms):
+    """The shipped charge/carbene ladder followed by the wide-charge rescue: one perception."""
+    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     # A None here means the ladder never reached a perceivable charge. For a large
     # saturated polyamine/phosphine cage the extended-Huckel proposal can be off by
     # several electrons (e.g. -4/-5/-6 for a ligand whose real charge is 0), and the
