@@ -1,0 +1,18 @@
+== CHANGED-STRING SET  (e_selfconsistency_e2f.jsonl vs results-v0.4.19-candidate-sweep smiles_1)
+   unchanged 4852   changed 136   encode failed under the levers 12
+   🔴 1 molecules the shipped encoder encodes and the lever run does NOT:
+      SUGQOA_comp_0: TIMEOUT
+   no string in either (11): P_E1_COVERAGE, unchanged
+   changed, by census fault:
+      E2_P_FRAGILE       FAIL   68
+      NONE               PASS   36
+      G_NOTHING          FAIL   11
+      G_CONSTRUCTION     FAIL   11
+      E1_NONCANONICAL    FAIL    4
+      G_CONSTRUCTION     PASS    3
+      E2_P_OTHER         FAIL    2
+      E1_GRAPH           FAIL    1
+   changed, eta: {'non-eta': 118, 'eta': 18}
+   attribution (single-lever encodes, arms that move the string): {'n2,e2b': 69, 'res,e2b': 39, 'e2b': 10, 'n2,res,e2b': 10, 'none(!)': 8}
+   wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/changed_set_e2f.txt (136 molecules)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/changed_e2f.json

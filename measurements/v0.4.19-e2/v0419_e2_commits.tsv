@@ -1,0 +1,15 @@
+run	commit
+cohort_e2b	3a0651418c2cff30282a25121744e2bef5ebc57b merge: v0.4.19 (the serializer levers default-ON) into the E2 lane
+cohort_e2f	7dfaba985eb09d77ed0f69c48fa68ebfb32e63ec
+cohort_res	7dfaba985eb09d77ed0f69c48fa68ebfb32e63ec
+dirty	1f61681c623cb453e58cd9f5f1a2e6cb17381260 tools(v0.4.19): candidate-sweep launcher -- the three measured levers ON, otherwise the release launcher verbatim
+f6d425ecb7f569c77251235a240d9baa  -
+e2b	bd4c73a3e61443b70516fadb110c7f245d7dfa46 perception(v0.4.19 E2): the canonical resonance frame carries the conformer -- 21/105 encodes died on a zero-length vector without it
+e2b_pass3	581f871dc98c3d029c2323d9c5145670acb179ca
+e2d_movers	14825a5feeb45f3f35911ae790bc40379c9a1022
+e2e_movers_single	2a6a4b6a54f83e3fd385edb1669c1a4b066555ac
+e2f_movers_single	7dfaba985eb09d77ed0f69c48fa68ebfb32e63ec
+ab_e2f_off	results-v0.4.19-candidate-sweep @ "commit_id": "1f61681c" -- the sweep of record's own rows, not a run
+ab_e2f_on	7a86b80b823c30c3e074e1b588c7b3af487dfce8 tools(v0.4.19 E2): usage line names the e2f and res arms
+ab_res_off	results-v0.4.19-candidate-sweep @ "commit_id": "1f61681c" -- the sweep of record's own rows, not a run
+ab_res_on	7a86b80b823c30c3e074e1b588c7b3af487dfce8 tools(v0.4.19 E2): usage line names the e2f and res arms

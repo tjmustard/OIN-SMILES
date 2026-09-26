@@ -1,0 +1,118 @@
+== CHANGED-STRING SET  (e_selfconsistency_e2f.jsonl vs results-v0.4.19-candidate-sweep smiles_1)
+   unchanged 4852   changed 136   encode failed under the levers 12
+   🔴 1 molecules the shipped encoder encodes and the lever run does NOT:
+      SUGQOA_comp_0: TIMEOUT
+   no string in either (11): P_E1_COVERAGE, unchanged
+   changed, by census fault:
+      E2_P_FRAGILE       FAIL   68
+      NONE               PASS   36
+      G_NOTHING          FAIL   11
+      G_CONSTRUCTION     FAIL   11
+      E1_NONCANONICAL    FAIL    4
+      G_CONSTRUCTION     PASS    3
+      E2_P_OTHER         FAIL    2
+      E1_GRAPH           FAIL    1
+   changed, eta: {'non-eta': 118, 'eta': 18}
+
+== CANONICALITY AUDIT  5000 molecules, lever run vs shipped run (e_selfconsistency_fix3.jsonl)
+   transform   shipped byte-stable  lever byte-stable  became unstable  became stable
+   again                      4988               4988                0              0
+   rewrite                    4989               4988                1              0
+   rot0                       4989               4988                1              0
+   renum0                     4776               4865               10             99
+   renum1                     4770               4872                8            110
+   renum2                     4776               4867                8             99
+   noise0                     4875               4875                1              1
+   noise1                     4876               4874                2              0
+   noise2                     4872               4872                1              1
+   mirror                     3260               3261                1              2
+   mirror 2x2 (ruler chirality x string):   shipped  ->  lever
+      achiral  same       3098  ->    3099
+      achiral  differs     121  ->     119  NON-CANONICAL
+      chiral   differs    1608  ->    1608
+      chiral   same        162  ->     162  NON-INJECTIVE
+   E2-fragile (renumber/noise moves the string): shipped 492 -> lever 377   became fragile 5   became stable 120
+   🔴 became fragile under the levers: ELIYAB_comp_0(NONE), HOSXUJ_comp_0(NONE), IZORIZ_comp_0(NONE), SIGSOS_comp_0(NONE), VOQPOJ_comp_0(NONE)
+
+== OFFLINE RE-SCORE of the UNCHANGED-string rows (rescore_e2f: generated xyz re-encoded under the levers)
+   CONTROL recomputed fault (shipped inputs) == census table: 4864 / 4864
+   rows re-encoded 4710;  self-consistent transitions {'pass->pass': 4348, 'fail->fail': 343, 'encode_error_under_lever': 3, 'no_structure': 139, 'fail->pass': 17, 'pass->fail': 2}
+   SELF-CONSISTENT losses (pass -> fail, structure held fixed): 2   gains: 17
+      LOSS CUBKOZ_comp_0  fault=E1_NOT_ENCODED  eta=0
+      LOSS SIGSOS_comp_0  fault=NONE  eta=0
+      GAIN BEWSUT_comp_0  fault=E2_P_OTHER/NO_STEREO  eta=1
+      GAIN BODPAM_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN BOPZOX_comp_0  fault=G_CONSTRUCTION/SPHERE_DIFF  eta=0
+      GAIN DAPCIH_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN DOCPAO_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=0
+      GAIN FOJJUM_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN GACCAQ_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN IFAPUD_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=1
+      GAIN IWEGAU_comp_0  fault=E2_P_OTHER/SAME  eta=0
+      GAIN LUMDON_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN MIBFEL_comp_0  fault=E1_HCOUNT/h_diff=2  eta=0
+      GAIN NOYTUS_comp_0  fault=E1_HCOUNT/h_diff=1  eta=0
+      GAIN POVQOH_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN ROCWAK_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN TAHFUE_comp_0  fault=E2_P_FRAGILE/string  eta=0
+      GAIN TICNUP_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=0
+      GAIN UWULEE_comp_0  fault=E2_P_FRAGILE/key  eta=0
+   VERIFIED transitions (fault recomputed with the lever's self-consistency columns) {'pass->pass': 3919, 'fail->fail': 921, 'fail->pass': 11, 'pass->fail': 1}
+   VERIFIED losses 1   gains 11
+      V-LOSS SIGSOS_comp_0  table=NONE -> E2_P_FRAGILE
+      V-GAIN BEWSUT_comp_0  table=E2_P_OTHER -> NONE
+      V-GAIN BODPAM_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN DAPCIH_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN FOJJUM_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN GACCAQ_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN IWEGAU_comp_0  table=E2_P_OTHER -> NONE
+      V-GAIN LUMDON_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN POVQOH_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN ROCWAK_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN TAHFUE_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN UWULEE_comp_0  table=E2_P_FRAGILE -> NONE
+   🔴 re-encode errors under the levers: 3 (a shipped structure the lever run cannot encode)
+      AFIROW_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      MUZZUC_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      RIPDEA_comp_0: ValueError: perception_tmc failed: Explicit valence for atom # 2 N, 5, is greater than permitted
+
+== LIVE A/B over the changed-string set (136 molecules)
+   ab_off: results-v0.4.19-candidate-sweep @ "commit_id": "1f61681c" -- the sweep of record's own rows, not a r
+   ab_on: 7a86b80b823c30c3e074e1b588c7b3af487dfce8 tools(v0.4.19 E2): usage line names the e2f and res arms
+   CONTROL recomputed OFF fault == census table: 136 / 136
+   READER COUPLING: ON strings parse back ISO&SAME on 132 rows under the ON reader, 132 under the SHIPPED reader; the H verdict depends on the reader's lever on 0 rows
+   DEAD-LEVER CHECK (encoder): smiles_1 identical across arms on 1 rows (must be 0)
+   runtime sum elapsed_s: off 9517 s   on 8619 s
+   SELF-CONSISTENT: off 39 -> on 101   {'fail->pass': 69, 'pass->pass': 32, 'pass->fail': 7, 'fail->fail': 28}   net +62
+   VERIFIED:        off 36 -> on 95   {'fail->pass': 66, 'fail->fail': 34, 'pass->pass': 29, 'pass->fail': 7}   net +59
+   ON-arm fault of the rows still failing VERIFIED, by fault:
+      E2_P_FRAGILE                           10
+      G_NOTHING                               9
+      G_CONSTRUCTION/SPHERE_DIFF              7
+      G_CONSTRUCTION/DETACHED                 4
+      E1_NONCANONICAL                         3
+      E2_P_OTHER                              3
+      E1_HCOUNT                               3
+      E1_GRAPH                                1
+      E1_NOT_ENCODED                          1
+   transitions by census fault of the row (VERIFIED):
+      E2_P_FRAGILE       {'fail->pass': 55, 'fail->fail': 13}
+      NONE               {'pass->pass': 29, 'pass->fail': 7}
+      G_CONSTRUCTION     {'fail->fail': 9, 'fail->pass': 5}
+      G_NOTHING          {'fail->fail': 10, 'fail->pass': 1}
+      E1_NONCANONICAL    {'fail->pass': 3, 'fail->fail': 1}
+      E2_P_OTHER         {'fail->pass': 2}
+      E1_GRAPH           {'fail->fail': 1}
+   VERIFIED losses (7):
+      QAKLET_comp_0  Ni eta=0  on-fault E1_NONCANONICAL/veto one-hand (C2)  on-bucket structural
+      IZORIZ_comp_0  Re eta=0  on-fault E2_P_FRAGILE/key  on-bucket structural
+      AYOVUH_comp_0  Ru eta=1  on-fault G_CONSTRUCTION/DETACHED  on-bucket structural
+      RAXJEH_comp_0  Zn eta=0  on-fault G_NOTHING/TIMEOUT  on-bucket hard_fail
+      ELIYAB_comp_0  Pt eta=0  on-fault E2_P_FRAGILE/string  on-bucket key_equal
+      VOQPOJ_comp_0  Os eta=0  on-fault E2_P_FRAGILE/key  on-bucket structural
+      HOSXUJ_comp_0  Zn eta=0  on-fault E2_P_FRAGILE/string  on-bucket key_equal
+
+== PROJECTION onto the 5,000 (live arm + offline re-score; unchanged rows exact by determinism)
+   self-consistent 4389 -> 4466  (87.78% -> 89.32%)
+   VERIFIED        3956 -> 4025  (79.12% -> 80.50%)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/serializer_ab_report_e2f.json

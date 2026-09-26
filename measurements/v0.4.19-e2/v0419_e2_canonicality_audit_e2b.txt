@@ -1,0 +1,21 @@
+
+== CANONICALITY AUDIT  5000 molecules, lever run vs shipped run (e_selfconsistency_fix3.jsonl)
+   transform   shipped byte-stable  lever byte-stable  became unstable  became stable
+   again                      4988               4994                2              8
+   rewrite                    4989               4994                2              7
+   rot0                       4989               4994                2              7
+   renum0                     4776               4943               14            181
+   renum1                     4770               4944               15            189
+   renum2                     4776               4945               10            179
+   noise0                     4875               4855               27              7
+   noise1                     4876               4862               23              9
+   noise2                     4872               4868               14             10
+   mirror                     3260               3269                2             11
+   mirror 2x2 (ruler chirality x string):   shipped  ->  lever
+      achiral  same       3098  ->    3107
+      achiral  differs     121  ->     118  NON-CANONICAL
+      chiral   differs    1608  ->    1607
+      chiral   same        162  ->     162  NON-INJECTIVE
+   E2-fragile (renumber/noise moves the string): shipped 492 -> lever 329   became fragile 53   became stable 216
+   🔴 became fragile under the levers: ABUYAX_comp_0(NONE), AQICUZ_comp_0(G_CONSTRUCTION), BAYCAI_comp_0(NONE), BOTHAV_comp_4(NONE), BUJLUP_comp_0(NONE), BUJNAX_comp_0(NONE), BUJNEB_comp_0(NONE), CASFUA_comp_0(NONE), CEFZAR_comp_0(NONE), CEVMOI_comp_0(NONE), DAMWOG_comp_0(NONE), DAQWEA_comp_0(NONE), DOKROM_comp_0(E2_P_OTHER), DOLWEG_comp_0(NONE), FOSNEI_comp_0(NONE), GUKZOD_comp_0(NONE), HAVQEC_comp_0(NONE), HILDEM_comp_0(NONE), HIXQIP_comp_0(G_CONSTRUCTION), HUTCOQ_comp_0(G_NOTHING), ICUCAN_comp_0(E1_NOT_ENCODED), IZORIZ_comp_0(NONE), JOHTAE_comp_0(NONE), KAMFAI_comp_2(NONE), KARRED_comp_0(NONE)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/canonicality_audit_e2b.json

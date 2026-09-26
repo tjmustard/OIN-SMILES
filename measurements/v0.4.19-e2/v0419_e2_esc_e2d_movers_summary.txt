@@ -1,0 +1,19 @@
+oinsmiles from: <checkout:oin-v0419-e2>/src/oinsmiles/__init__.py
+levers in env : {'OIN_CANONICAL_RESONANCE': '1', 'OIN_N_VALENCE_2': '1'}
+cohort=5000  probing=443  encodes=4873
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/e_selfconsistency_e2d_movers.jsonl  n=443  13020s wall
+DENOMINATOR n=443  base encoded=441  base failed=2
+base failures: {'TIMEOUT': 2}
+INSTRUMENT assertion failures=0  MISSING tags=0  (both must be 0)
+CPU-h=12.81
+| transform | k | byte-stable | key-stable | not byte-stable: worst relations |
+|---|---|---|---|---|
+| again (determinism) | 1 | 441/441 (100.00%) | 441/441 (100.00%) | {} |
+| rewrite (writer control) | 1 | 441/441 (100.00%) | 441/441 (100.00%) | {} |
+| rotate | 1 | 441/441 (100.00%) | 441/441 (100.00%) | {} |
+| renumber | 3 | 416/441 (94.33%) | 419/441 (95.01%) | {'structural': 21, 'key_equal/rdkit_canonical': 3, 'encode_fail': 1, 'key_equal/slot_renumber': 1} |
+| noise sigma=0.02 | 3 | 389/441 (88.21%) | 389/441 (88.21%) | {'structural': 51, 'TIMEOUT': 1, 'facmer_divergent': 1} |
+| mirror (ALL molecules) | 1 | 265/441 (60.09%) | 358/441 (81.18%) | {'key_equal/slot_renumber': 93, 'facmer_divergent': 46, 'structural': 37} |
+base == v0.4.14 sweep smiles_1: 185/436  (differences = code drift OR cross-process nondeterminism)
+(no g_verdict_control-mirror.jsonl; run g_vs_input.py --control mirror for the 2x2)
+#DONE

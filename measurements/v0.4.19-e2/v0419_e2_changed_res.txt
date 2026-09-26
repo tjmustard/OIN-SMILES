@@ -1,0 +1,16 @@
+== CHANGED-STRING SET  (e_selfconsistency_res.jsonl vs results-v0.4.19-candidate-sweep smiles_1)
+   unchanged 4933   changed 56   encode failed under the levers 11
+   no string in either (11): P_E1_COVERAGE, unchanged
+   changed, by census fault:
+      E2_P_FRAGILE       FAIL   28
+      NONE               PASS   13
+      G_CONSTRUCTION     FAIL    5
+      G_NOTHING          FAIL    4
+      E2_P_OTHER         FAIL    2
+      G_CONSTRUCTION     PASS    2
+      E1_GRAPH           FAIL    1
+      E1_NONCANONICAL    FAIL    1
+   changed, eta: {'eta': 15, 'non-eta': 41}
+   attribution (single-lever encodes, arms that move the string): {'res,e2b': 39, 'res': 2, 'n2,res,e2b': 10, 'none(!)': 3, 'e2b': 1, 'n2,res': 1}
+   wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/changed_set_res.txt (56 molecules)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/changed_res.json

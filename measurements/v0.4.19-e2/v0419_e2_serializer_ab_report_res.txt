@@ -1,0 +1,109 @@
+== CHANGED-STRING SET  (e_selfconsistency_res.jsonl vs results-v0.4.19-candidate-sweep smiles_1)
+   unchanged 4933   changed 56   encode failed under the levers 11
+   no string in either (11): P_E1_COVERAGE, unchanged
+   changed, by census fault:
+      E2_P_FRAGILE       FAIL   28
+      NONE               PASS   13
+      G_CONSTRUCTION     FAIL    5
+      G_NOTHING          FAIL    4
+      E2_P_OTHER         FAIL    2
+      G_CONSTRUCTION     PASS    2
+      E1_GRAPH           FAIL    1
+      E1_NONCANONICAL    FAIL    1
+   changed, eta: {'eta': 15, 'non-eta': 41}
+
+== CANONICALITY AUDIT  5000 molecules, lever run vs shipped run (e_selfconsistency_fix3.jsonl)
+   transform   shipped byte-stable  lever byte-stable  became unstable  became stable
+   again                      4988               4989                0              1
+   rewrite                    4989               4989                0              0
+   rot0                       4989               4989                0              0
+   renum0                     4776               4820                6             50
+   renum1                     4770               4822                3             55
+   renum2                     4776               4819                4             47
+   noise0                     4875               4875                0              0
+   noise1                     4876               4876                0              0
+   noise2                     4872               4873                0              1
+   mirror                     3260               3261                0              1
+   mirror 2x2 (ruler chirality x string):   shipped  ->  lever
+      achiral  same       3098  ->    3099
+      achiral  differs     121  ->     120  NON-CANONICAL
+      chiral   differs    1608  ->    1608
+      chiral   same        162  ->     162  NON-INJECTIVE
+   E2-fragile (renumber/noise moves the string): shipped 492 -> lever 412   became fragile 1   became stable 81
+   🔴 became fragile under the levers: ELIYAB_comp_0(NONE)
+
+== OFFLINE RE-SCORE of the UNCHANGED-string rows (rescore_res: generated xyz re-encoded under the levers)
+   CONTROL recomputed fault (shipped inputs) == census table: 4944 / 4944
+   rows re-encoded 4783;  self-consistent transitions {'pass->pass': 4373, 'fail->fail': 391, 'encode_error_under_lever': 3, 'no_structure': 147, 'fail->pass': 18, 'pass->fail': 1}
+   SELF-CONSISTENT losses (pass -> fail, structure held fixed): 1   gains: 18
+      LOSS CUBKOZ_comp_0  fault=E1_NOT_ENCODED  eta=0
+      GAIN BEWSUT_comp_0  fault=E2_P_OTHER/NO_STEREO  eta=1
+      GAIN BODPAM_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN BOPZOX_comp_0  fault=G_CONSTRUCTION/SPHERE_DIFF  eta=0
+      GAIN DAPCIH_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN DOCPAO_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=0
+      GAIN FIHGOV_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN GACCAQ_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN IFAPUD_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=1
+      GAIN IWEGAU_comp_0  fault=E2_P_OTHER/SAME  eta=0
+      GAIN MIBFEL_comp_0  fault=E1_HCOUNT/h_diff=2  eta=0
+      GAIN NOYTUS_comp_0  fault=E1_HCOUNT/h_diff=1  eta=0
+      GAIN POVQOH_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN ROCWAK_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN TAHFUE_comp_0  fault=E2_P_FRAGILE/string  eta=0
+      GAIN TICNUP_comp_0  fault=E1_GRAPH/SPHERE_DIFF  eta=0
+      GAIN VAMDUJ_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN XIVMEX_comp_0  fault=E2_P_FRAGILE/key  eta=0
+      GAIN ZITLUJ_comp_0  fault=E2_P_FRAGILE/key  eta=0
+   VERIFIED transitions (fault recomputed with the lever's self-consistency columns) {'pass->pass': 3943, 'fail->fail': 978, 'fail->pass': 12}
+   VERIFIED losses 0   gains 12
+      V-GAIN BEWSUT_comp_0  table=E2_P_OTHER -> NONE
+      V-GAIN BODPAM_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN DAPCIH_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN FIHGOV_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN GACCAQ_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN IWEGAU_comp_0  table=E2_P_OTHER -> NONE
+      V-GAIN POVQOH_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN ROCWAK_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN TAHFUE_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN VAMDUJ_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN XIVMEX_comp_0  table=E2_P_FRAGILE -> NONE
+      V-GAIN ZITLUJ_comp_0  table=E2_P_FRAGILE -> NONE
+   🔴 re-encode errors under the levers: 3 (a shipped structure the lever run cannot encode)
+      AFIROW_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      MUZZUC_comp_0: OINEncodeError: molecule is still invalid after de-aromatizing the quinoid ring(s) at atoms [5, 6, 7, 8, 11, 12, 24, 25, 26, 27, 30, 31]; the perceived bond orders are unusable (Explicit valence for atom # 24 C, 5, is greater than permitted)
+      RIPDEA_comp_0: ValueError: perception_tmc failed: Explicit valence for atom # 2 N, 5, is greater than permitted
+
+== LIVE A/B over the changed-string set (56 molecules)
+   ab_off: results-v0.4.19-candidate-sweep @ "commit_id": "1f61681c" -- the sweep of record's own rows, not a r
+   ab_on: 7a86b80b823c30c3e074e1b588c7b3af487dfce8 tools(v0.4.19 E2): usage line names the e2f and res arms
+   CONTROL recomputed OFF fault == census table: 56 / 56
+   READER COUPLING: ON strings parse back ISO&SAME on 55 rows under the ON reader, 55 under the SHIPPED reader; the H verdict depends on the reader's lever on 0 rows
+   DEAD-LEVER CHECK (encoder): smiles_1 identical across arms on 1 rows (must be 0)
+   runtime sum elapsed_s: off 3311 s   on 2731 s
+   SELF-CONSISTENT: off 15 -> on 35   {'fail->fail': 18, 'fail->pass': 23, 'pass->pass': 12, 'pass->fail': 3}   net +20
+   VERIFIED:        off 13 -> on 30   {'fail->fail': 23, 'fail->pass': 20, 'pass->pass': 10, 'pass->fail': 3}   net +17
+   ON-arm fault of the rows still failing VERIFIED, by fault:
+      E2_P_FRAGILE                           12
+      G_CONSTRUCTION/SPHERE_DIFF              6
+      G_NOTHING                               4
+      G_CONSTRUCTION/DETACHED                 2
+      E1_GRAPH                                1
+      E1_NOT_ENCODED                          1
+   transitions by census fault of the row (VERIFIED):
+      E2_P_FRAGILE       {'fail->fail': 13, 'fail->pass': 15}
+      NONE               {'pass->pass': 10, 'pass->fail': 3}
+      G_CONSTRUCTION     {'fail->fail': 5, 'fail->pass': 2}
+      G_NOTHING          {'fail->fail': 4}
+      E2_P_OTHER         {'fail->pass': 2}
+      E1_GRAPH           {'fail->fail': 1}
+      E1_NONCANONICAL    {'fail->pass': 1}
+   VERIFIED losses (3):
+      ELIYAB_comp_0  Pt eta=0  on-fault E2_P_FRAGILE/string  on-bucket key_equal
+      RAXJEH_comp_0  Zn eta=0  on-fault G_NOTHING/TIMEOUT  on-bucket hard_fail
+      AYOVUH_comp_0  Ru eta=1  on-fault G_CONSTRUCTION/DETACHED  on-bucket structural
+
+== PROJECTION onto the 5,000 (live arm + offline re-score; unchanged rows exact by determinism)
+   self-consistent 4389 -> 4426  (87.78% -> 88.52%)
+   VERIFIED        3956 -> 3985  (79.12% -> 79.70%)
+wrote <checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/results-v0.4.19-e2/serializer_ab_report_res.json

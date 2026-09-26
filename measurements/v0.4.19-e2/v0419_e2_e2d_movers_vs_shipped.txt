@@ -1,0 +1,125 @@
+molecules 443  arm encoded 441  shipped encoded 436
+fragile (shipped, arm): {(False, True): 41, (False, False): 157, (True, False): 207, (True, True): 31, (None, None): 2, (None, False): 5}
+  fixed  : 207   broken: 41   still : 31
+KEY-fragile (shipped, arm): {(False, True): 39, (False, False): 175, (True, False): 192, (True, True): 30, (None, None): 2, (None, False): 5}
+  renum  fixed 210  broken 7  still 18
+  noise  fixed 2  broken 36  still 16
+base string moved vs sweep smiles_1: 251 of 441
+arm encode errors: {'TIMEOUT': 2}
+
+still fragile under the arm (molecule: columns not byte_exact):
+  ABUYAX_comp_0    {'noise0': 'structural'}
+  AQICUZ_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  BAYCAI_comp_0    {'noise1': 'structural'}
+  BOTHAV_comp_4    {'noise0': 'structural'}
+  BUJLUP_comp_0    {'noise1': 'structural', 'noise2': 'structural'}
+  BUJNAX_comp_0    {'noise0': 'structural'}
+  BUJNEB_comp_0    {'noise0': 'structural'}
+  CASFUA_comp_0    {'noise1': 'structural'}
+  CEVMOI_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  COJJIX_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  DAMWOG_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  DAQWEA_comp_0    {'renum1': 'key_equal/rdkit_canonical', 'renum2': 'key_equal/rdkit_canonical'}
+  DITREG_comp_0    {'noise0': 'structural'}
+  DOLWEG_comp_0    {'noise0': 'structural'}
+  FATCEJ_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  FOSNEI_comp_0    {'noise0': 'structural'}
+  GUKZOD_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  HAVQEC_comp_0    {'noise1': 'structural'}
+  HILDEM_comp_0    {'noise0': 'structural'}
+  HIXQIP_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  HUTCOQ_comp_0    {'noise1': 'structural', 'noise2': 'structural'}
+  IJOSOP_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  IZORIZ_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  JUWSOJ_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  KAMFAI_comp_2    {'noise1': 'structural'}
+  KARRED_comp_0    {'noise0': 'structural'}
+  KASFIW_comp_0    {'noise1': 'structural'}
+  KIDJAJ_comp_0    {'noise2': 'structural'}
+  KINDAM_comp_0    {'renum0': 'structural'}
+  LARQED_comp_0    {'renum2': 'structural'}
+  LOFMOJ_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  LOLROW_comp_0    {'renum2': 'structural'}
+  MAZWOZ_comp_0    {'noise0': 'structural'}
+  MEYKOT_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  MURTUP_comp_0    {'renum0': 'structural', 'renum2': 'structural'}
+  NEXTIT_comp_0    {'renum0': 'structural', 'renum2': 'structural'}
+  NIXFAE_comp_0    {'renum1': 'structural', 'renum2': 'structural', 'noise2': 'structural'}
+  NIXFIM_comp_0    {'renum0': 'structural', 'renum1': 'structural'}
+  NOLXAQ_comp_0    {'noise1': 'structural'}
+  NOYTUS_comp_0    {'renum1': 'encode_fail', 'noise1': 'structural'}
+  OBABAX_comp_0    {'renum0': 'key_equal/rdkit_canonical', 'renum1': 'key_equal/slot_renumber', 'renum2': 'key_equal/rdkit_canonical'}
+  OFEQIC_comp_0    {'noise0': 'structural'}
+  OPUPAR_comp_0    {'noise0': 'structural'}
+  OWEJIL_comp_0    {'noise1': 'structural'}
+  PAYSUE_comp_0    {'noise1': 'structural'}
+  PEKXAF_comp_0    {'noise1': 'structural', 'noise2': 'structural'}
+  QEBPES_comp_0    {'noise1': 'TIMEOUT'}
+  QEYYEZ_comp_0    {'noise1': 'structural'}
+  QIYYON_comp_0    {'noise0': 'structural'}
+  QONNAK_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  RISLIR_comp_0    {'noise1': 'structural'}
+  RUKWOL_comp_0    {'noise0': 'structural', 'noise1': 'facmer_divergent'}
+  SICLOH_comp_0    {'renum1': 'structural', 'renum2': 'structural', 'noise2': 'structural'}
+  SIGSOS_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  SOWNUQ_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural', 'noise1': 'structural'}
+  SUGQOA_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  TEDCOX_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  VIQQAN_comp_0    {'renum2': 'structural'}
+  VOQPOJ_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  VUNJIZ_comp_0    {'noise0': 'structural'}
+  WEBVIL_comp_0    {'renum0': 'key_equal/rdkit_canonical'}
+  WIWVEG_comp_0    {'noise2': 'structural'}
+  WOYPAD_comp_0    {'noise1': 'structural'}
+  XAVXUP_comp_0    {'noise0': 'structural'}
+  XEZSUS_comp_0    {'noise0': 'structural'}
+  XEZTED_comp_0    {'noise1': 'structural'}
+  XIVMEX_comp_0    {'noise1': 'structural'}
+  XUWGOL_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural', 'noise1': 'structural'}
+  YAKGOI_comp_0    {'noise0': 'structural'}
+  YAPVES_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  YEHHUP_comp_0    {'noise0': 'structural'}
+  ZESBOQ_comp_0    {'noise2': 'structural'}
+
+newly fragile under the arm:
+  ABUYAX_comp_0
+  AQICUZ_comp_0
+  BAYCAI_comp_0
+  BOTHAV_comp_4
+  BUJLUP_comp_0
+  BUJNAX_comp_0
+  BUJNEB_comp_0
+  CASFUA_comp_0
+  CEVMOI_comp_0
+  DAMWOG_comp_0
+  DAQWEA_comp_0
+  DOLWEG_comp_0
+  FOSNEI_comp_0
+  GUKZOD_comp_0
+  HAVQEC_comp_0
+  HILDEM_comp_0
+  HIXQIP_comp_0
+  HUTCOQ_comp_0
+  IZORIZ_comp_0
+  KAMFAI_comp_2
+  KARRED_comp_0
+  KASFIW_comp_0
+  KIDJAJ_comp_0
+  MAZWOZ_comp_0
+  MEYKOT_comp_0
+  NOLXAQ_comp_0
+  OFEQIC_comp_0
+  OWEJIL_comp_0
+  PAYSUE_comp_0
+  PEKXAF_comp_0
+  RISLIR_comp_0
+  SIGSOS_comp_0
+  SUGQOA_comp_0
+  TEDCOX_comp_0
+  VOQPOJ_comp_0
+  VUNJIZ_comp_0
+  WEBVIL_comp_0
+  WOYPAD_comp_0
+  XEZSUS_comp_0
+  XEZTED_comp_0
+  ZESBOQ_comp_0

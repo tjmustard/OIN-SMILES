@@ -1,0 +1,7 @@
+DENOMINATOR 354 molecules x 4 arms   src=<checkout:oin-v0419-e2>/src
+== CHANGED  n=343
+   shipped  string changed vs shipped   0  errors  7  ISO&SAME 324 (+0/-0 vs shipped)   graph {'ISO': 325, 'SPHERE_DIFF': 8, '?': 7, 'ISO_CLASH': 2}   H {'SAME': 324, None: 9, '?': 7}
+   n2       string changed vs shipped 292  errors  0  ISO&SAME 327 (+8/-5 vs shipped)   graph {'ISO': 332, 'SPHERE_DIFF': 8, 'ISO_CLASH': 2, 'LIGAND_DIFF': 1}   H {'SAME': 327, None: 9, 'DIFF': 7}
+   res      string changed vs shipped  44  errors  7  ISO&SAME 324 (+0/-0 vs shipped)   graph {'ISO': 325, 'SPHERE_DIFF': 8, '?': 7, 'ISO_CLASH': 2}   H {'SAME': 324, None: 9, '?': 7}
+   e2b      string changed vs shipped 336  errors  0  ISO&SAME 327 (+8/-5 vs shipped)   graph {'ISO': 332, 'SPHERE_DIFF': 8, 'ISO_CLASH': 2, 'LIGAND_DIFF': 1}   H {'SAME': 327, None: 9, 'DIFF': 7}
+#DONE

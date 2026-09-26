@@ -1,0 +1,6 @@
+DENOMINATOR 443 molecules x 3 arms   src=<checkout:oin-v0419-e2>/src
+== MOVERS  n=443
+   shipped  string changed vs shipped   0  errors  7  ISO&SAME 422 (+0/-0 vs shipped)   graph {'ISO': 420, 'SPHERE_DIFF': 10, '?': 7, 'ISO_MARGINAL': 3}   H {'SAME': 422, None: 11, '?': 7}
+   n2       string changed vs shipped 134  errors  9  ISO&SAME 417 (+0/-5 vs shipped)   graph {'ISO': 418, 'SPHERE_DIFF': 10, '?': 9, 'ISO_MARGINAL': 3}   H {'SAME': 417, None: 11, '?': 9}
+   e2b      string changed vs shipped 177  errors  8  ISO&SAME 418 (+0/-4 vs shipped)   graph {'ISO': 419, 'SPHERE_DIFF': 10, '?': 8, 'ISO_MARGINAL': 3}   H {'SAME': 418, None: 11, '?': 8}
+#DONE

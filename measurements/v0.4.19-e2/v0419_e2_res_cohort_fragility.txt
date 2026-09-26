@@ -1,0 +1,121 @@
+molecules 5000  arm encoded 4989  shipped encoded 4989
+fragile (shipped, arm): {(False, False): 4496, (True, True): 411, (True, False): 81, (None, None): 11, (False, True): 1}
+  fixed  : 81   broken: 1   still : 411
+KEY-fragile (shipped, arm): {(False, False): 4530, (True, True): 391, (True, False): 68, (None, None): 11}
+  renum  fixed 81  broken 1  still 208
+  noise  fixed 1  broken 0  still 224
+base string moved vs sweep smiles_1: 56 of 4989
+arm encode errors: {'TIMEOUT': 11}
+
+still fragile under the arm (molecule: columns not byte_exact):
+  ADABIT_comp_0    {'noise2': 'structural'}
+  AFIROW_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  ALITEU_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  ALITUM_comp_0    {'noise2': 'structural'}
+  APAGOO_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  AROTAE_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  AZAPUO_comp_0    {'noise1': 'structural'}
+  BEDLII_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  BEKHIK_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  BEKLUA_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  BICZUK_comp_0    {'noise1': 'structural'}
+  BIDBAT_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  BIDBEX_comp_0    {'noise2': 'structural'}
+  BIWPOP_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  BODBOM_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  BOLDOW_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  BOMTAB_comp_0    {'noise2': 'structural'}
+  BUCDEJ_comp_0    {'noise1': 'structural'}
+  BUNNEF_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  CAGDUM_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  CAJZOD_comp_0    {'noise0': 'structural'}
+  CAKBEW_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  CAMLAF_comp_0    {'noise1': 'structural'}
+  CASCIK_comp_0    {'noise0': 'structural'}
+  CEGBAU_comp_0    {'noise0': 'structural'}
+  CEJLEJ_comp_0    {'renum2': 'key_equal/rdkit_canonical'}
+  CEMTIZ_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  CEQWAY_comp_0    {'noise2': 'structural'}
+  CEQWUS_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  CETYAC_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural', 'noise2': 'structural'}
+  CIFPOY_comp_0    {'noise2': 'structural'}
+  CIGNIS_comp_0    {'noise0': 'structural'}
+  CIMMOB_comp_0    {'noise2': 'structural'}
+  CIRHIX_comp_0    {'noise2': 'structural'}
+  CITGAO_comp_0    {'noise2': 'structural'}
+  CIXPEG_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  COJBAF_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  COJJAP_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  COJJIX_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  COJJOD_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  DAMLOU_comp_0    {'noise2': 'structural'}
+  DEGSUD_comp_0    {'renum0': 'key_equal/rdkit_canonical', 'renum2': 'key_equal/rdkit_canonical'}
+  DEMSOG_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  DIGCON_comp_0    {'noise0': 'structural'}
+  DIRFIW_comp_0    {'renum0': 'structural', 'renum1': 'structural'}
+  DITREG_comp_0    {'noise0': 'structural'}
+  DIYWAM_comp_0    {'renum0': 'structural'}
+  DIZPEK_comp_0    {'noise0': 'facmer_divergent', 'noise1': 'facmer_divergent'}
+  DOCPAO_comp_0    {'noise1': 'structural', 'noise2': 'structural'}
+  DOGQEX_comp_0    {'renum0': 'structural', 'renum1': 'structural'}
+  DUJLAX_comp_0    {'noise0': 'structural'}
+  EBAGAS_comp_0    {'noise2': 'structural'}
+  EBUBAH_comp_0    {'renum0': 'structural', 'renum2': 'structural'}
+  ECIGAZ_comp_0    {'noise2': 'structural'}
+  EKETUJ_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  ELIYAB_comp_0    {'renum0': 'key_equal/rdkit_canonical', 'renum1': 'key_equal/rdkit_canonical', 'renum2': 'key_equal/rdkit_canonical'}
+  EQODAQ_comp_0    {'noise0': 'structural'}
+  ERATIA_comp_0    {'renum0': 'structural', 'renum1': 'structural'}
+  FAGZUL_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  FARFAI_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  FATCEJ_comp_0    {'renum1': 'structural', 'renum2': 'structural'}
+  FEKKAJ_comp_0    {'renum2': 'structural'}
+  FIDNUE_comp_0    {'noise1': 'structural'}
+  FIHGOV_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  FIHNOC_comp_0    {'noise1': 'structural'}
+  FILVON_comp_0    {'noise1': 'structural'}
+  FIQPIG_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  FOJJUM_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  FOJWOR_comp_0    {'renum0': 'structural'}
+  FOSPIO_comp_0    {'noise1': 'structural'}
+  FULBIZ_comp_0    {'noise2': 'structural'}
+  FUMPAF_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  FUXMAN_comp_0    {'noise0': 'structural'}
+  FUZSOK_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  GABLAZ_comp_0    {'noise1': 'structural'}
+  GAKSET_comp_0    {'noise1': 'structural'}
+  GAMFOS_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  GASRAV_comp_0    {'noise0': 'structural', 'noise2': 'structural'}
+  GASREZ_comp_0    {'noise2': 'structural'}
+  GENZIK_comp_0    {'renum0': 'structural'}
+  GIFVUN_comp_0    {'noise1': 'structural', 'noise2': 'structural'}
+  GORNUY_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  GOTHUU_comp_0    {'noise2': 'structural'}
+  GURJUA_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  HACDOG_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMGAD_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMGEH_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMJEK_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMJOU_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMKAH_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HAMKOV_comp_0    {'renum0': 'key_equal/rdkit_canonical', 'renum1': 'structural', 'renum2': 'structural'}
+  HAPCUY_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  HATGAN_comp_0    {'noise1': 'facmer_divergent'}
+  HEDKAF_comp_0    {'noise0': 'structural'}
+  HEFQAM_comp_0    {'noise2': 'structural'}
+  HEHJOW_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  HEJKEM_comp_0    {'noise1': 'structural'}
+  HEWDAO_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'key_equal/rdkit_canonical'}
+  HICLAG_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HIDMAL_comp_0    {'noise0': 'structural'}
+  HIMFAM_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  HIMQOL_comp_0    {'renum0': 'structural', 'renum2': 'structural', 'noise0': 'structural', 'noise1': 'structural'}
+  HITHAW_comp_0    {'renum2': 'structural'}
+  HOBBUY_comp_0    {'renum0': 'encode_fail', 'renum1': 'structural', 'renum2': 'encode_fail'}
+  HOBPAS_comp_0    {'noise1': 'structural'}
+  HOHKOF_comp_0    {'renum0': 'key_equal/rdkit_canonical', 'renum2': 'structural'}
+  HOHTEF_comp_0    {'noise0': 'structural', 'noise1': 'structural'}
+  HOZZUT_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HUHNAA_comp_0    {'noise0': 'structural', 'noise1': 'structural', 'noise2': 'structural'}
+  HUNLUX_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
+  HURPUH_comp_0    {'renum0': 'structural', 'renum1': 'structural', 'renum2': 'structural'}
