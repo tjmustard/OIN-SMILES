@@ -4,7 +4,7 @@
 # strings back (the ON arm's smiles_1 is the lever's -- the string clause of VERIFIED must be
 # recomputed per arm, unlike v0.4.18's generator-side A/B), then the report.
 #
-#   tools/v0419/post_serializer_ab.sh [fix2|cap|fix3|e2b|e2c]     (e2* arms live in results-v0.4.19-e2/)
+#   tools/v0419/post_serializer_ab.sh [fix2|cap|fix3|e2b|e2c|e2f|res]     (e2* and res arms live in results-v0.4.19-e2/)
 #
 # Refuses an incomplete arm: completeness is REPORT COUNT == cohort size.
 set -euo pipefail
