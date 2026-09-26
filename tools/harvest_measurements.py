@@ -209,6 +209,9 @@ ALLOW = [
     "v0419_rsweep_*",
     "v0419_rarm2_*",
     "v0419_rcensus_*",
+    # v0.4.19 E2 lane (OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE, perception order; measured, NOT
+    # promoted), staged by tools/v0419/freeze_stage_e2.py, release v0.4.19-e2.
+    "v0419_e2_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -952,6 +955,71 @@ PROVENANCE = [
         r"^v0419_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0419_rcensus_attach_class_audit\.json\.gz$",
         "tools/census/string_sufficiency.py parseback --side gen / pflags --charge-probe ;"
         " tools/attach_class_audit.py   (the per-sweep instruments the attribution reads)",
+    ),
+    # --- v0.4.19 E2 lane (branch research/v0419-e2; every run records its commit in commits.tsv)
+    (
+        r"^v0419_e2_(fragile105\.txt|esc105_e2b_final\.jsonl\.gz|e2b_final_fragility\.jsonl\.gz)$",
+        "tools/census/e_selfconsistency.py --only <the 105 census E2_P_FRAGILE rows> under"
+        " OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1 (cut 1) -> tools/v0419/e2_fragility_report.py"
+        " --names fragile105.txt   (88 stable, renumbering fixed 94/100, 0 newly fragile)",
+    ),
+    (
+        r"^v0419_e2_n2_valence_scan\.json\.gz$",
+        "an ad hoc scan during the XIVMEX bisection (scratchpad script, not committed): per molecule,"
+        " ligands carrying a two-coordinate nitrogen and the AC2BO valence-product size with and"
+        " without the valence-2 option",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_e2b\.jsonl\.gz|esc_e2b_summary\.txt|canonicality_audit_e2b\.(txt|json)"
+        r"|e2b_cohort_fragility\.txt|changed_set_e2b\.txt|became_fragile_e2b\.txt|movers_e2b\.txt)$",
+        "CUT 1 (valence 2 appended for every two-coordinate N, + RES) on the whole cohort:"
+        " tools/census/e_selfconsistency.py --sweep results-v0.4.19-candidate-sweep --cpu 8 ->"
+        " OIN_AB_BASELINE=v0.4.19 tools/v0419/serializer_ab_report.py audit/changed ;"
+        " tools/v0419/e2_fragility_report.py vs the fix3 run   (343 strings moved, 167 VERIFIED"
+        " passes; fragile fixed 215 / broken 53, noise +5/-44 -- REFUTED)",
+    ),
+    (
+        r"^v0419_e2_changed_single_e2b(\.jsonl\.gz|_summary\.txt)$",
+        "tools/v0419/lever_parseback.py --names changed_set_e2b.txt --arms shipped,n2,res,e2b"
+        "   (single-lever attribution of cut 1's 343: N2 alone 292, RES alone 44)",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_e2d_movers\.jsonl\.gz|esc_e2d_movers_summary\.txt"
+        r"|e2d_movers_vs_(shipped|e2b)\.txt)$",
+        "CUT 2 (a second pass inside AC2BO, 14825a5f) on the 443 movers: e_selfconsistency.py --only"
+        " <movers_e2b.txt> -> e2_fragility_report.py vs fix3 and vs cut 1   (251 still moved --"
+        " REFUTED)",
+    ),
+    (
+        r"^v0419_e2_movers_single_e2e(\.jsonl\.gz|_summary\.txt)$",
+        "CUT 3 (a ladder-level fallback on a bond-order guess, 2a6a4b6a): lever_parseback.py --names"
+        " movers_e2b.txt --arms shipped,n2,e2b   (177 of 443 moved, 59 verified passes -- REFUTED)",
+    ),
+    (
+        r"^v0419_e2_(movers_single_e2f(\.jsonl\.gz|_summary\.txt)|n2_scoped_movers\.json)$",
+        "CUT 4 (the option scoped to pyrrolide nitrogens, 7dfaba98): lever_parseback.py --names"
+        " movers_e2b.txt --arms shipped,n2,res,e2b   (N2 moves 84, 66 already fragile)",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_(e2f|res)\.jsonl\.gz|esc_(e2f|res)_summary\.txt"
+        r"|(e2f|res)_cohort_fragility\.txt|changed_(e2f|res)\.txt|changed_set_(e2f|res)\.txt)$",
+        "the whole cohort at 7dfaba98 under cut 4 + RES (e2f) and under RES alone (res):"
+        " e_selfconsistency.py --cpu 8 -> e2_fragility_report.py vs fix3 ; serializer_ab_report.py"
+        " changed   (e2f: 136 moved, fragile fixed 120 / broken 5; res: 56 moved, 81 / 1)",
+    ),
+    (
+        r"^v0419_e2_rescore_(e2f|res)\.jsonl\.gz$",
+        "tools/honest_rescore.py --results-dir results-v0.4.19-candidate-sweep under each arm's"
+        " levers   (the offline column: unchanged-string rows, structure held fixed -- BLIND to"
+        " generator reach, which a perception lever has)",
+    ),
+    (
+        r"^v0419_e2_(serializer_ab_report_(e2f|res)\.(txt|json)|ab_(e2f|res)_on_(bucket_report_honest\.json"
+        r"|g_verdict\.jsonl|parseback\.jsonl|parseback_shippedreader\.jsonl)\.gz|commits\.tsv)$",
+        "tools/v0419/run_serializer_ab.sh <changed_set> e2f|res -> post_serializer_ab.sh e2f|res"
+        " (OFF = the v0.4.19 release sweep's own rows)   (e2f: live self +69/-7, VERIFIED +66/-7,"
+        " offline +17/-2 and +11/-1, projection 89.32% / 80.50%; res: +23/-3, +20/-3, +18/-1,"
+        " +12/-0, 88.52% / 79.70%. NO DEFAULT CHANGED: both levers ship OFF)",
     ),
 ]
 
