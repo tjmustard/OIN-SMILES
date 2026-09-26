@@ -198,8 +198,26 @@ class TestStuckRingRescuePermissive(unittest.TestCase):
     @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
     def test_default_off_still_fails(self):
         # Lever unset -> byte-identical to pre-fix behaviour: ASISAX still can't encode.
-        with self.assertRaises(ValueError):
+        # Pinned to OIN_N_VALENCE_2=0, the configuration this encode_fail was measured in:
+        # from v0.4.20 the default encodes ASISAX (test_v0420_default_encodes_asisax).
+        with (
+            mock.patch.dict(os.environ, {"OIN_N_VALENCE_2": "0"}),
+            self.assertRaises(ValueError),
+        ):
             XYZToSMILES().convert(self.FIXTURE)
+
+    @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
+    def test_v0420_default_encodes_asisax(self):
+        """OIN_N_VALENCE_2 (default-ON since v0.4.20) reaches ASISAX without this lever.
+
+        Its ligand ladder ends on a bond-order guess at every charge; the pyrrolide fallback
+        (two-coordinate N, two carbon neighbours, a five-ring) validates a structure, so the
+        encode that used to exhaust the sweep now returns -- deterministically. Renumbering
+        stability of that string is not measured here (ASISAX is not in the 5,000 cohort).
+        """
+        oin = XYZToSMILES().convert(self.FIXTURE)
+        self.assertIn("[Ni", oin)
+        self.assertEqual(oin, XYZToSMILES().convert(self.FIXTURE))
 
     @unittest.skipUnless(os.path.exists(FIXTURE), "fixture missing")
     def test_lever_on_recovers_asisax(self):

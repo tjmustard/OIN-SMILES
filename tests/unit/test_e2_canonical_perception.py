@@ -71,13 +71,15 @@ def _renumbered_copy(tmpdir, tag="renum0"):
 
 
 class TestRegistry(unittest.TestCase):
-    def test_all_three_held_off_with_the_mechanism(self):
-        for k in LEVERS:
-            self.assertIn(k, _HELD_OFF)
-            self.assertNotIn(k, _DEFAULT_ON)
-        self.assertIn("atomic_valence[7] = [3, 4]", _HELD_OFF["OIN_N_VALENCE_2"])
+    def test_two_promoted_in_v0420_and_the_charge_walk_still_held_off(self):
+        # v0.4.20 (owner, 2026-09-26): the E2 candidate sweep landed on its prediction
+        for k in ("OIN_N_VALENCE_2", "OIN_CANONICAL_RESONANCE"):
+            self.assertIn(k, _DEFAULT_ON)
+            self.assertNotIn(k, _HELD_OFF)
+        # never measured on the cohort: stays held off, with its mechanism
+        self.assertIn("OIN_CANONICAL_CHARGES", _HELD_OFF)
+        self.assertNotIn("OIN_CANONICAL_CHARGES", _DEFAULT_ON)
         self.assertIn("running total", _HELD_OFF["OIN_CANONICAL_CHARGES"])
-        self.assertIn("ResonanceMolSupplier", _HELD_OFF["OIN_CANONICAL_RESONANCE"])
 
 
 class TestShippedDefect(unittest.TestCase):

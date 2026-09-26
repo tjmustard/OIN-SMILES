@@ -132,12 +132,23 @@ class _LeverBase(unittest.TestCase):
     A correct fix must preserve the tag WITHOUT perturbing the ranking: keep the donor bracketed
     through the sanitize, or re-derive parity from the parent geometry once the write order is
     fixed. See ``oin/canonical_body.py::_reparse_once`` and ``oin/levers.py::_HELD_OFF``.
+
+    ⚠ v0.4.20: ALSO pins ``OIN_CANONICAL_RESONANCE`` OFF (default-ON since v0.4.20). With it,
+    RIFGUJ's mirror is the tag swap PLUS a ``{2}``/``{3}`` swap of its two symmetry-equivalent
+    amine slots -- the slot drift ``TestMultiCentreDescriptor`` already names (Lane 2), now
+    reached through reflection because the resonance forms keep the canonical frame's bond
+    order. Measured: ``=0`` restores both whole-string reflection assertions; ``OIN_N_VALENCE_2``
+    is not involved. The SHIPPED configuration (this lever off) is not affected: the cohort's
+    mirror 2x2 under the two v0.4.20 levers is NON-CANONICAL 121 -> 119, NON-INJECTIVE 162 -> 162.
+    Promoting ``OIN_EMIT_LOCKED_DONOR`` now needs this interaction resolved too.
     """
 
     def setUp(self):
         self._prev = os.environ.get(ENV_LEVER)
         self.addCleanup(self._restore)
-        body = mock.patch.dict(os.environ, {"OIN_CANONICAL_BODY": "0"})
+        body = mock.patch.dict(
+            os.environ, {"OIN_CANONICAL_BODY": "0", "OIN_CANONICAL_RESONANCE": "0"}
+        )
         body.start()
         self.addCleanup(body.stop)
 
