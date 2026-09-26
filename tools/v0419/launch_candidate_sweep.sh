@@ -16,7 +16,12 @@
 # only intended difference.
 #
 #   tools/v0419/launch_candidate_sweep.sh     # -> results-v0.4.19-candidate-sweep, unit oin-v0419-candidate-sweep
-#   then: SWEEP_TAG=v0.4.19-candidate tools/v0418/post_sweep.sh
+#   then: SWEEP_TAG=v0.4.19-candidate tools/v0419/post_candidate_sweep.sh
+#
+# The E2 lane's candidate (v0.4.19 defaults + the two perception levers; projection =
+# results-v0.4.19-e2/serializer_ab_report_e2f.json, 4,466 / 4,025 = 89.32% / 80.50%):
+#   SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1" \
+#       tools/v0419/launch_candidate_sweep.sh
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
@@ -25,10 +30,10 @@ COHORT=$DATA/cohort-v0.4.5-5k
 TAG=${SWEEP_TAG:-v0.4.19-candidate}
 OUT=$DATA/results-$TAG-sweep
 UNIT=oin-${TAG//./}-sweep
-LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 -E OIN_CAP_IGNORES_METAL=1"
+LEVERS=${SWEEP_LEVERS:-"-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 -E OIN_CAP_IGNORES_METAL=1"}
 
 [ -z "$(git -C "$HERE" status --porcelain)" ] || { echo "ABORT: $HERE is dirty -- the reports would stamp a commit that is not the code that ran"; exit 1; }
-if systemctl --user show-environment | grep -q '^OIN_'; then echo "ABORT: the user manager exports an OIN_* variable; the unit would see more than the three"; exit 1; fi
+if systemctl --user show-environment | grep -q '^OIN_'; then echo "ABORT: the user manager exports an OIN_* variable; the unit would see more than $LEVERS"; exit 1; fi
 [ "$(find "$COHORT" -xtype l | wc -l)" = 0 ] || { echo "ABORT: dangling cohort symlinks -- restore the dataset first"; exit 1; }
 [ "$(find "$COHORT" -name '*.xyz' | wc -l)" = 5000 ] || { echo "ABORT: cohort is not 5000 molecules"; exit 1; }
 [ ! -e "$OUT/individual_reports" ] || { echo "ABORT: $OUT already has reports -- a second launch would mix two runs"; exit 1; }
@@ -36,10 +41,10 @@ if systemctl --user list-units --no-legend 'oin-*' | grep -q .; then echo "ABORT
 
 mkdir -p "$OUT"
 systemd-run --user --unit="$UNIT" \
-  --description="$TAG full sweep, the three v0.4.19 levers ON ($LEVERS)" \
+  --description="$TAG full sweep, levers ON ($LEVERS)" \
   -p OOMPolicy=continue -p MemoryMax=14G --working-directory="$HERE" \
   -E PATH="$PATH" -E HOME="$HOME" \
   $LEVERS \
   -E OMP_NUM_THREADS=1 -E OPENBLAS_NUM_THREADS=1 -E MKL_NUM_THREADS=1 -E NUMEXPR_NUM_THREADS=1 \
   /bin/bash -c "tools/run_sweep.sh $COHORT $OUT 6 300 > $OUT/launch.log 2>&1; echo \"#DONE \$(ls $OUT/individual_reports | wc -l)\" > $OUT/DONE"
-echo "launched $UNIT from $(git -C "$HERE" rev-parse --short HEAD). Finished when $OUT/DONE exists; then SWEEP_TAG=$TAG tools/v0418/post_sweep.sh"
+echo "launched $UNIT from $(git -C "$HERE" rev-parse --short HEAD). Finished when $OUT/DONE exists; then SWEEP_TAG=$TAG tools/v0419/post_candidate_sweep.sh (same SWEEP_* variables)"

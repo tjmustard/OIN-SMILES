@@ -16,6 +16,7 @@ condition is "lands on its prediction", and the only rows allowed to differ are 
 300 s budget can flip on load.
 
     <main>/.venv/bin/python tools/v0419/candidate_vs_projection.py --sweep <results-v0.4.19-candidate-sweep>
+    ... --sweep <results-v0.4.19-e2-candidate-sweep> --projection e2f     # the E2 lane, on v0.4.19
 """
 
 from __future__ import annotations
@@ -31,11 +32,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "v0417"))
 from sweep_two_numbers import BAD_STEREO, ISO, _jsonl, _string_fault  # noqa: E402
 
 MAIN = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
-RECORD = MAIN / "results-v0.4.18-release-sweep"
-CENSUS = MAIN / "results-v0.4.18-release-census"
-LANE = MAIN / "results-v0.4.19-serializer"
-REPORT = LANE / "serializer_ab_report_fix3.json"
-AB_ON = LANE / "ab_fix3" / "ab_on"
+# projection -> (sweep of record, its census, the lane's report, the lane's live ON arm)
+PROJECTIONS = {
+    "fix3": (
+        "results-v0.4.18-release-sweep",
+        "results-v0.4.18-release-census",
+        "results-v0.4.19-serializer/serializer_ab_report_fix3.json",
+        "results-v0.4.19-serializer/ab_fix3/ab_on",
+    ),
+    "e2f": (
+        "results-v0.4.19-candidate-sweep",
+        "results-v0.4.19-release-census",
+        "results-v0.4.19-e2/serializer_ab_report_e2f.json",
+        "results-v0.4.19-e2/ab_e2f/ab_on",
+    ),
+}
+RECORD = CENSUS = REPORT = AB_ON = None  # set by main() from --projection
 BUDGET_S = 280.0  # a row that spent this long in either run is on the 300 s boundary
 
 
@@ -111,8 +123,12 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--sweep", type=Path, required=True)
+    ap.add_argument("--projection", choices=sorted(PROJECTIONS), default="fix3")
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
+    global RECORD, CENSUS, REPORT, AB_ON
+    RECORD, CENSUS, REPORT, AB_ON = (MAIN / p for p in PROJECTIONS[args.projection])
+    print(f"projection {args.projection}: record {RECORD.name}, report {REPORT.relative_to(MAIN)}")
 
     p_self, p_ver, changed = projected()
     m_self, m_ver, why, B = measured(args.sweep)

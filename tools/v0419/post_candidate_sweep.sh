@@ -5,6 +5,10 @@
 # predicted it, row by row.
 #
 #   SWEEP_TAG=v0.4.19-candidate tools/v0419/post_candidate_sweep.sh
+#   SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS="OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1" \
+#     SWEEP_SHIPPED="OIN_N_VALENCE_2=0 OIN_CANONICAL_RESONANCE=0" SWEEP_PROJECTION=e2f \
+#     tools/v0419/post_candidate_sweep.sh
+#   (the E2 lane stands ON v0.4.19: its "shipped reader" leaves the promoted three at their default)
 #
 # Differences from tools/v0418/post_sweep.sh, each on purpose:
 #   * run_config.json's "levers" block must be EXACTLY the three (post_sweep.sh requires it empty);
@@ -24,17 +28,20 @@ PY=$MAIN/.venv/bin/python
 COHORT=$DATA/cohort-v0.4.5-5k
 TAG=${SWEEP_TAG:-v0.4.19-candidate}
 OUT=$DATA/results-$TAG-sweep
-LEVERS="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 OIN_CAP_IGNORES_METAL=1"
-SHIPPED="OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0"
+LEVERS=${SWEEP_LEVERS:-"OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 OIN_CAP_IGNORES_METAL=1"}
+SHIPPED=${SWEEP_SHIPPED:-"OIN_H_FAITHFUL=0 OIN_RC1_PROPAGATE=0 OIN_CAP_IGNORES_METAL=0"}
+PROJECTION=${SWEEP_PROJECTION:-fix3}
 export PYTHONPATH=$HERE/src
 
 [ -f "$OUT/DONE" ] || { echo "ABORT: $OUT/DONE missing -- still running?"; exit 1; }
 r=$(find "$OUT/individual_reports" -name '*.json' | wc -l)
 [ "$r" = 5000 ] || { echo "ABORT: $r reports, expected 5000 -- a shard died"; exit 1; }
-for k in OIN_H_FAITHFUL OIN_RC1_PROPAGATE OIN_CAP_IGNORES_METAL; do
+nlev=0
+for kv in $LEVERS; do
+  k=${kv%%=*}; nlev=$((nlev + 1))
   grep -q "\"$k\": \"1\"" "$OUT/run_config.json" || { echo "ABORT: run_config.json does not record $k=1"; exit 1; }
 done
-[ "$(grep -c '"OIN_' "$OUT/run_config.json")" = 3 ] || { echo "ABORT: run_config.json records a lever beyond the three"; exit 1; }
+[ "$(grep -c '"OIN_' "$OUT/run_config.json")" = "$nlev" ] || { echo "ABORT: run_config.json records a lever beyond $LEVERS"; exit 1; }
 
 cd "$HERE"
 $PY tools/v0417/sweep_two_numbers.py --control
@@ -48,5 +55,5 @@ if [ ! -f "$OUT/parseback_shippedreader.jsonl" ]; then
   mv "$OUT/.shippedreader/parseback.jsonl" "$OUT/parseback_shippedreader.jsonl"
 fi
 $PY tools/v0417/sweep_two_numbers.py --sweep "$OUT" | tee "$OUT/two_numbers.txt"
-$PY tools/v0419/candidate_vs_projection.py --sweep "$OUT" --out "$OUT/candidate_vs_projection.json" | tee "$OUT/candidate_vs_projection.txt"
+$PY tools/v0419/candidate_vs_projection.py --sweep "$OUT" --projection "$PROJECTION" --out "$OUT/candidate_vs_projection.json" | tee "$OUT/candidate_vs_projection.txt"
 echo "#DONE post" > "$OUT/POST_DONE"
