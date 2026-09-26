@@ -1,0 +1,32 @@
+projection e2f: record results-v0.4.19-candidate-sweep, report results-v0.4.19-e2/serializer_ab_report_e2f.json
+candidate sweep results-v0.4.19-e2-candidate-sweep: n=5000
+  self-consistent  projected 4466  measured 4467  (89.34%)
+  VERIFIED         projected 4025  measured 4030  (80.60%)
+
+== self-consistent: projected-not-measured 6   measured-not-projected 7
+   LOST vs projection   DOCPAO_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   42.712 / other   50.318   *** not a boundary row
+   LOST vs projection   HOHKOF_comp_0    unchanged   cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.174 / other  115.554   BOUNDARY
+   LOST vs projection   IFAPUD_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   38.987 / other   48.088   *** not a boundary row
+   LOST vs projection   MIBFEL_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   22.444 / other   25.776   *** not a boundary row
+   LOST vs projection   NOYTUS_comp_0    unchanged   cand bucket hard_fail                 other bucket hard_fail      elapsed cand   18.435 / other    22.11   *** not a boundary row
+   LOST vs projection   VAMDUJ_comp_0    changed-set cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.184 / other  237.353   BOUNDARY
+   GAINED vs projection OCUKAA_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   29.055 / other   71.913   *** not a boundary row
+   GAINED vs projection PUMLEP_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  261.597 / other  300.492   BOUNDARY
+   GAINED vs projection RULWEB_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    1.704 / other   11.445   *** not a boundary row
+   GAINED vs projection SABDAB_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand  241.332 / other  130.249   *** not a boundary row
+   GAINED vs projection XENNIO_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   17.876 / other   22.906   *** not a boundary row
+   GAINED vs projection XEPCAX_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    1.382 / other    4.538   *** not a boundary row
+   GAINED vs projection ZOGXIF_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    6.292 / other    17.46   *** not a boundary row
+    {('LOST vs projection', 'NOT boundary'): 4, ('LOST vs projection', 'budget-boundary'): 2, ('GAINED vs projection', 'NOT boundary'): 6, ('GAINED vs projection', 'budget-boundary'): 1}
+
+== VERIFIED: projected-not-measured 2   measured-not-projected 7
+   LOST vs projection   HOHKOF_comp_0    unchanged   cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.174 / other  115.554   BOUNDARY
+   LOST vs projection   VAMDUJ_comp_0    changed-set cand bucket hard_fail                 other bucket byte_exact     elapsed cand  300.184 / other  237.353   BOUNDARY
+   GAINED vs projection OCUKAA_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   29.055 / other   71.913   *** not a boundary row
+   GAINED vs projection PUMLEP_comp_0    unchanged   cand NONE                             other bucket hard_fail      elapsed cand  261.597 / other  300.492   BOUNDARY
+   GAINED vs projection RULWEB_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    1.704 / other   11.445   *** not a boundary row
+   GAINED vs projection SABDAB_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand  241.332 / other  130.249   *** not a boundary row
+   GAINED vs projection XENNIO_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand   17.876 / other   22.906   *** not a boundary row
+   GAINED vs projection XEPCAX_comp_0    unchanged   cand NONE                             other bucket key_equal      elapsed cand    1.382 / other    4.538   *** not a boundary row
+   GAINED vs projection ZOGXIF_comp_0    unchanged   cand NONE                             other bucket structural     elapsed cand    6.292 / other    17.46   *** not a boundary row
+    {('LOST vs projection', 'budget-boundary'): 2, ('GAINED vs projection', 'NOT boundary'): 6, ('GAINED vs projection', 'budget-boundary'): 1}

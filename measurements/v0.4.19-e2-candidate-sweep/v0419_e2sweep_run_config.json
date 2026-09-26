@@ -1,0 +1,12 @@
+{
+  "launched_at": "2026-09-26T08:08:51-07:00",
+  "commit_id": "86d9b0a4",
+  "cohort_dir": "<checkout:OIN-SMILES>/tmCAT-tmPHOTO_xyz_dataset/cohort-v0.4.5-5k",
+  "molecules": 5000,
+  "shards": 6,
+  "mol_timeout_s": 300,
+  "levers": {
+    "OIN_CANONICAL_RESONANCE": "1",
+    "OIN_N_VALENCE_2": "1"
+  }
+}

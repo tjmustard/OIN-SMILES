@@ -1,0 +1,306 @@
+{
+ "record": "results-v0.4.19-candidate-sweep",
+ "candidate": "results-v0.4.19-e2-candidate-sweep",
+ "unchanged_string": 4853,
+ "built_in_both": 4706,
+ "built_in_neither": 132,
+ "identical": 4684,
+ "movers": [
+  {
+   "molecule": "ALITEU_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "key_equal",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "BEDLII_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "structural",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "BEWSUT_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "BODPAM_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "BOPZOX_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "CUBKOZ_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "byte_exact",
+   "bucket_candidate": "structural",
+   "self": "pass->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "DAPCIH_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "DEGSUD_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "key_equal",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "DOGQEX_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "key_equal",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "DOKROM_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "structural",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "ECIGAZ_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "structural",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "ERATIA_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "structural",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "FOJJUM_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "GACCAQ_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "HOHKOF_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "byte_exact",
+   "bucket_candidate": "hard_fail",
+   "self": "pass->fail",
+   "verified": "pass->fail"
+  },
+  {
+   "molecule": "HUTMEO_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "key_equal",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "IWEGAU_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "KADYAS_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "structural",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "LAMTAX_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "structural",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "LIRFOJ_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "key_equal",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "MAZKII_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "structural",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "OCUKAA_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "PIJWEK_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "structural",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "PUMLEP_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "RAXJEH_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "byte_exact",
+   "bucket_candidate": "hard_fail",
+   "self": "pass->fail",
+   "verified": "pass->fail"
+  },
+  {
+   "molecule": "ROCWAK_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "RULWEB_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "SABDAB_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "TICNUP_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "TOQXUU_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "structural",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "UROGAK_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "key_equal",
+   "bucket_candidate": "hard_fail",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "VASJOP_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "byte_exact",
+   "bucket_candidate": "byte_exact",
+   "self": "pass->pass",
+   "verified": "pass->pass"
+  },
+  {
+   "molecule": "VISVEA_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "byte_exact",
+   "bucket_candidate": "byte_exact",
+   "self": "pass->pass",
+   "verified": "pass->pass"
+  },
+  {
+   "molecule": "WOLRIA_comp_0",
+   "kind": "built_one_side",
+   "bucket_record": "hard_fail",
+   "bucket_candidate": "facmer_divergent",
+   "self": "fail->fail",
+   "verified": "fail->fail"
+  },
+  {
+   "molecule": "XENNIO_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "XEPCAX_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "key_equal",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  },
+  {
+   "molecule": "ZOGXIF_comp_0",
+   "kind": "different_structure",
+   "bucket_record": "structural",
+   "bucket_candidate": "byte_exact",
+   "self": "fail->pass",
+   "verified": "fail->pass"
+  }
+ ]
+}
