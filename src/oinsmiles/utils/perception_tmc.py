@@ -35,6 +35,7 @@ from .perception_core import (
     chiral_stereo_check,
     is_bo_guess,
     n_valence_2_pass,
+    pyrrolide_nitrogens,
     read_xyz_file,
     suppress_canonical_perception,
     xyz2AC_obabel,
@@ -777,13 +778,13 @@ def get_lig_mol(mol, charge, coordinating_atoms):
     # OIN_N_VALENCE_2 (v0.4.19, held off): a ladder that ended on a bond-order GUESS (no
     # candidate validated at any charge it tried -- for a porphyrin dianion best_BO is the AC
     # itself and the string is a resonance-enumeration lottery) is run again with the N(-)
-    # option for two-coordinate nitrogens, and the re-run wins only if it validated. A
-    # ladder that already found a Lewis structure is left byte-identical: see
-    # perception_core._N_VALENCE_2_PASS for the cohort measurement behind that rule.
+    # option for its PYRROLIDE nitrogens, and the re-run wins only if it validated. A ladder
+    # that already found a Lewis structure is left byte-identical: see
+    # perception_core._N_VALENCE_2_PASS for the cohort measurements behind both rules.
     if (
         lever_enabled("OIN_N_VALENCE_2")
         and (res is None or is_bo_guess(res))
-        and any(z == 7 and AC[i].sum() <= 2 for i, z in enumerate(atoms))
+        and pyrrolide_nitrogens(AC, atoms)
     ):
         AC2BO_STATS["n_valence_2_ladders"] += 1
         with n_valence_2_pass():

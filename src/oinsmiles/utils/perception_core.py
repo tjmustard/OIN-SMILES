@@ -934,11 +934,13 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
     over-cap ligand population for free. ``AC2BO`` calls it, so the two cannot drift.
 
     ``n_valence_2`` is the ``OIN_N_VALENCE_2`` option: ``None`` reads the pass flag
-    (``n_valence_2_pass()``), which is what the search itself does; the tools pass it
-    explicitly to size either pass's product.
+    (``n_valence_2_pass()``); ``True`` gives EVERY two-coordinate nitrogen the option (the
+    tools' worst-case product size); a collection of atom indices (what ``_AC2BO_core`` passes:
+    ``pyrrolide_nitrogens``) gives it to those nitrogens only.
     """
     if n_valence_2 is None:
         n_valence_2 = _N_VALENCE_2_PASS
+    eligible = None if isinstance(n_valence_2, bool) else set(n_valence_2)
     valences_list_of_lists = []
     for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
         # valence can't be smaller than number of neighbourgs
@@ -961,7 +963,7 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
         # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles). Present only inside
         # ``n_valence_2_pass()`` -- see ``_N_VALENCE_2_PASS`` for why it is a ladder-level
         # fallback and not an option every walk sees.
-        if atomicNum == 7 and valence <= 2 and n_valence_2:
+        if atomicNum == 7 and valence <= 2 and (n_valence_2 if eligible is None else i in eligible):
             possible_valence.append(2)
 
         if not possible_valence:
@@ -1263,7 +1265,11 @@ _SUPPRESS_CANONICAL_PERCEPTION = False
 #: and making it a second pass INSIDE ``AC2BO`` changed nothing (251 of the 443 movers still
 #: moved) -- because the ladder itself is a chain of fallbacks over charges, and an extra
 #: legal valence lets a WRONG Huckel charge validate first. Only a ladder that finished on a
-#: guess has nothing to lose.
+#: guess has nothing to lose -- and even then only PYRROLIDE nitrogens get the option
+#: (``pyrrolide_nitrogens``): the ladder-level fallback with every two-coordinate N still
+#: moved 177 of the 443 movers (59 verified passes), because a guess can be RIGHT (the
+#: terpyridine's guess at Huckel's -1 put the charge on a donor and stayed aromatic) while the
+#: validated N(-) structure at the same wrong charge is a quinoid.
 _N_VALENCE_2_PASS = False
 #: mol property ``AC2mol`` stamps on every ligand it builds: ``True`` when the bond orders are
 #: ``best_BO`` -- no candidate validated -- rather than a Lewis structure that passed
@@ -1281,6 +1287,37 @@ def n_valence_2_pass():
         yield
     finally:
         _N_VALENCE_2_PASS = previous
+
+
+def pyrrolide_nitrogens(AC, atoms):
+    """Indices of the nitrogens the ``OIN_N_VALENCE_2`` pass may write as N(-): exactly two
+    heavy neighbours, both carbon, no hydrogen (AC valence 2 -- the ligand graph carries its
+    hydrogens as atoms), closing a FIVE-membered ring through them. That is the pyrrolide /
+    porphyrinate / imidazolide / indolide class -- the census's Ni/Zn N-macrocycles -- and
+    excludes pyridine (six-ring), pyrazolate/triazolate (an N neighbour), imine and amide
+    nitrogens, on which the option was measured to re-perceive correct ligands at a wrong
+    Huckel charge. Reads only ``(AC, atoms)`` so it is numbering-invariant."""
+    AC = np.asarray(AC)
+    nbrs = [set(np.nonzero(AC[i])[0].tolist()) for i in range(len(atoms))]
+    out = []
+    for i, z in enumerate(atoms):
+        if z != 7 or len(nbrs[i]) != 2:
+            continue
+        a, b = sorted(nbrs[i])
+        if atoms[a] != 6 or atoms[b] != 6:
+            continue
+        # a five-ring i-a-x-y-b: x adjacent to a, y adjacent to b, x-y bonded, all distinct
+        found = False
+        for x in nbrs[a] - {i, b}:
+            for y in nbrs[b] - {i, a, x}:
+                if AC[x, y]:
+                    found = True
+                    break
+            if found:
+                break
+        if found:
+            out.append(i)
+    return out
 
 
 def is_bo_guess(mol):
@@ -1382,7 +1419,8 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     """
     try:
         combo = 1
-        for atomicNum, valence in zip(atoms, list(AC.sum(axis=1))):
+        n2 = set(pyrrolide_nitrogens(AC, atoms)) if _N_VALENCE_2_PASS else set()
+        for i, (atomicNum, valence) in enumerate(zip(atoms, list(AC.sum(axis=1)))):
             possible = [x for x in atomic_valence[atomicNum] if x >= valence]
             if atomicNum == 6 and valence == 1 and 2 in possible:
                 possible.remove(2)
@@ -1392,7 +1430,7 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
                 possible.append(3)
             if atomicNum == 16 and valence == 1:
                 possible = [1, 2]
-            if atomicNum == 7 and valence <= 2 and _N_VALENCE_2_PASS:
+            if atomicNum == 7 and valence <= 2 and _N_VALENCE_2_PASS and i in n2:
                 possible.append(2)
             if not possible:
                 return True
@@ -1523,8 +1561,11 @@ def _AC2BO_core(
     # counter are orthogonal to the extraction, and the extracted function carries the same
     # logic the inline block had.
     AC_valence = list(AC.sum(axis=1))
-    # inside n_valence_2_pass() the two-coordinate nitrogens carry the N(-) option
-    valences_list_of_lists = possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes)
+    # inside n_valence_2_pass() the PYRROLIDE nitrogens carry the N(-) option
+    n2 = pyrrolide_nitrogens(AC, atoms) if _N_VALENCE_2_PASS else False
+    valences_list_of_lists = possible_valences(
+        AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=n2
+    )
     if _N_VALENCE_2_PASS:
         AC2BO_STATS["n_valence_2_pass_calls"] += 1
 

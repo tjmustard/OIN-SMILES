@@ -99,6 +99,8 @@ class TestShippedDefect(unittest.TestCase):
                 self.assertEqual(pc.possible_valences([2], [7]), [[3, 4, 2]])
                 self.assertEqual(pc.possible_valences([3], [7]), [[3, 4]])  # three-coordinate: no
             self.assertEqual(pc.possible_valences([2], [7], n_valence_2=True), [[3, 4, 2]])
+            self.assertEqual(pc.possible_valences([2], [7], n_valence_2=[0]), [[3, 4, 2]])
+            self.assertEqual(pc.possible_valences([2], [7], n_valence_2=[]), [[3, 4]])
 
 
 class TestLeversTogether(unittest.TestCase):
@@ -162,6 +164,29 @@ class TestNValence2IsALadderFallback(unittest.TestCase):
         self.assertGreater(pc.AC2BO_STATS["n_valence_2_ladders_accepted"], 0)
         self.assertNotIn("[CH]", on)
         self.assertEqual(on.count("n{"), 4, on)
+
+    def test_the_option_is_scoped_to_pyrrolide_nitrogens(self):
+        from rdkit import Chem
+
+        def n2(smiles):
+            m = Chem.AddHs(Chem.MolFromSmiles(smiles))
+            AC = Chem.GetAdjacencyMatrix(m)
+            atoms = [a.GetAtomicNum() for a in m.GetAtoms()]
+            return [i for i in pc.pyrrolide_nitrogens(AC, atoms)], [
+                a.GetIdx() for a in m.GetAtoms() if a.GetAtomicNum() == 7
+            ]
+
+        self.assertEqual(n2("c1cc[n-]c1"), ([3], [3]))  # pyrrolide
+        self.assertEqual(n2("c1ncc[n-]1"), ([1, 4], [1, 4]))  # imidazolide: both (symmetric anion)
+        self.assertEqual(n2("c1cc[nH]c1")[0], [])  # pyrrole N-H has three neighbours
+        self.assertEqual(n2("c1ccncc1")[0], [])  # pyridine: six-ring
+        self.assertEqual(n2("c1cn[n-]c1")[0], [])  # pyrazolate: an N neighbour
+        self.assertEqual(n2("CN=CC")[0], [])  # imine: no ring
+        self.assertEqual(n2("CC(=O)[N-]C")[0], [])  # amide
+        # the porphyrin dianion's two bare nitrogens are the target class
+        # (a metal-free porphine dianion: the two N-H nitrogens and the two bare ones)
+        idx, all_n = n2("c1cc2cc3ccc(cc4ccc(cc5ccc(cc1n2)[n-]5)[n-]4)n3")
+        self.assertEqual(len(idx), 4, (idx, all_n))  # in the anion all four are pyrrolide-type
 
     def test_a_guess_is_stamped_and_survives_resonance_enumeration(self):
         # ethyne: C#C validates at charge 0 -> not a guess. A lone two-coordinate N with two
