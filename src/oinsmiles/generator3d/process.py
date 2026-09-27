@@ -923,15 +923,24 @@ def get_molecule_info_from_sdf(sdf_directory):
         if element in gv.metal:
             metal_index = i
     for i in range(n_bonds):
-        line = lines[4 + n_atoms + i].split()
+        record = lines[4 + n_atoms + i]
+        line = record.split()
+        # A malformed record raises rather than being skipped: dropping a bond would hand back a
+        # silently wrong adjacency matrix.
+        malformed = ValueError(f"malformed SDF bond record {i + 1}: {record.rstrip()!r}")
+        if len(line) < 2 or not line[0].isdigit():
+            raise malformed
         s, e = line[0], line[1]
-        s_ = int(s.strip())
+        s_ = int(s)
         if s_ > n_atoms:
+            # V2000 fixed-width fields run together once both indices reach 100.
             tmp = s
             s = tmp[:3].strip()
             e = tmp[3:].strip()
-        if not s.isdigit() or not e.isdigit():
-            logger.debug("WRONG SDF; Error occurs during parsing bond block ...")
+        if not (s.isdigit() and e.isdigit()):
+            raise malformed
+        if not (1 <= int(s) <= n_atoms and 1 <= int(e) <= n_atoms):
+            raise malformed
         s = int(s) - 1
         e = int(e) - 1
         adj_matrix[s][e] = 1
