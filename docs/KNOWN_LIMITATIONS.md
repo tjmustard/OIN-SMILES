@@ -77,7 +77,10 @@ drop from 492 to 377 (120 became stable, 5 became unstable).
   Whether it finishes, and so which string it gets, depends on CPU contention: CPU time on a
   hyperthreaded core is not independent of load.
 - **Cost.** The fallback re-runs the whole ligand charge ladder on about 50 macrocycles
-  (+20% encode CPU over the resonance lever alone on the cohort).
+  (+20% encode CPU over the resonance lever alone on the cohort). The generator pays it too,
+  because it re-encodes every candidate conformer and the fallback changes which one matches
+  first. `DOKROM` (a Ni porphyrin whose string does not change) takes 617 s instead of 80 s. It
+  still passes, but past the 300 s sweep budget and the 450 s ARM 2 limit.
 
 ---
 

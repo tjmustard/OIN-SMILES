@@ -5,6 +5,99 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.20] - 2026-09-26
+
+> ### 87.78% → **89.34%** self-consistent · 79.12% → **80.60%** VERIFIED — the dianion nitrogen.
+>
+> v0.4.19's census filed 124 molecules under `E2_P_FRAGILE`: strings that move when the input's
+> atoms are renumbered or its coordinates perturbed, led by Ni and Zn N-macrocycles. Bisecting one
+> of them (XIVMEX, a Zn porphyrin) stage by stage showed the order was not the first defect. The
+> bond-order search had no N⁻, so a porphyrin dianion had no legal assignment and fell back to a
+> guess. The charge walk and `ResonanceMolSupplier` (which returns a numbering-dependent subset of
+> forms) then turned the guess into whatever the file's atom order reached first. Three wider
+> cuts of the fix were refuted on the whole cohort before this one. The owner approved the
+> promotion after the candidate sweep landed on its projection: the full 5,000 through the release
+> harness with both levers ON (`results-v0.4.19-e2-candidate-sweep`), **4,466 / 4,025 projected,
+> 4,467 / 4,030 measured.**
+
+### Added
+- **`OIN_N_VALENCE_2` — default-ON.** A **pyrrolide** nitrogen (two carbon neighbours, no H, in a
+  five-membered ring) may be written N⁻. This only happens when the shipped charge ladder ended
+  on a bond-order *guess* (`AC2BO`'s `best_BO`, now stamped `BO_GUESS_PROP`), and the re-run
+  (`perception_core.n_valence_2_pass`) wins only if it validates. Three wider cuts were refuted
+  first:
+  - allowing N⁻ on every two-coordinate N moved 343 strings, 167 of them VERIFIED passes;
+  - a fallback pass inside `AC2BO` still moved 251 strings. The charge ladder is itself a
+    fallback chain, and the extra valence let a wrong Hückel charge validate first (a
+    terpyridine became a quinoid anion);
+  - a fallback after the ladder for every two-coordinate N still moved 177. A guess can be
+    right where a validated N⁻ structure at the wrong charge is a quinoid.
+- **`OIN_CANONICAL_RESONANCE` — default-ON.** `lig_checks` enumerates resonance forms on the
+  canonically relabelled ligand, so every numbering gets the same subset. `Chem.RenumberAtoms` is
+  not enough, because the supplier also walks bonds by index. The ligand is re-parsed from its
+  canonical SMILES and each form is mapped back.
+- The lane's instruments:
+  - the `e2*` arms of the serializer A/B scripts (`tools/v0419/`);
+  - `generator_reach.py`, which counts rows whose string is unchanged but whose generated
+    structure moved (the offline re-score cannot see them);
+  - `candidate_vs_projection.py --projection`;
+  - `freeze_stage_e2{,_sweep}.py`;
+  - `tests/unit/test_e2_canonical_perception.py`, with XIVMEX as its fixture.
+
+### Changed
+- **Strings move on 136 of 5,000 molecules** relative to v0.4.19. Ni/Zn N-macrocycles are now
+  perceived as validated dianions, and resonance forms are chosen from a numbering-independent
+  set. The canonicality audit (5,000 molecules × 11 transforms): strings that a renumbering or a
+  coordinate perturbation moves drop from 492 to 377 (120 became stable, 5 became unstable). A
+  consumer holding v0.4.19 strings for those molecules must re-encode them.
+- **The generator moves too.** Both levers are perception levers, and the generator re-encodes its
+  candidate conformers. 37 rows whose string did not change reached a different outcome:
+  net +13 self-consistent / +12 VERIFIED, with no new false pass on the VERIFIED axis.
+- **`ASISAX` now encodes.** It was an `encode_fail` because every charge in its ladder failed;
+  the pyrrolide fallback validates a structure.
+- **ARM 1 re-frozen at 66 fixtures** (XIVMEX added). With both levers at `"0"`, the control run
+  reproduces the v0.4.19 golden on all 65 of its rows. The promotion moves 5 rows, each attributed
+  in the golden's header by setting one lever at a time to `"0"`: `OIN_N_VALENCE_2` alone on 3, the
+  resonance lever alone on 1, and the two jointly on 1.
+- **ARM 2 goldens re-frozen from a full run.** The promotion changes the input string on 30 of
+  the 425 rows: v047 9 of 100, v049 21 of 325. These are exactly the 30 that the encode-only
+  audit named, with 0 stale rows. With both levers at `"0"`, the control run reproduces every old
+  row. Six of the 30 now share one input string on purpose: HAMGAD, HAMGEH, HAMJOU, HAMKOV,
+  JIVRIP and SEMPOP are six crystal structures of zinc tetraphenylporphyrin. v0.4.19 gave them
+  five different radical and quinoid strings, depending on the file; v0.4.20 gives all six the
+  aromatic dianion. **DOKROM** (a Ni porphyrin) is SIGKILLed at the gate's 450 s limit under the
+  new defaults. Its string does not move. Timed alone: 80 s with both levers at `"0"`, 81 s with
+  the resonance lever on alone, 617 s with `OIN_N_VALENCE_2` on. It still passes, from a
+  different conformer. The golden keeps its row by a recorded decision
+  (`arm2_refreeze.py splice --accept-killed`). Until the gate runner writes `sha_in` before it
+  generates, or N2's generator cost is cut, every full ARM 2 run reads DOKROM as a mismatch.
+- **Baseline of record: `results-v0.4.19-e2-candidate-sweep`** (frozen
+  `measurements/v0.4.19-e2-candidate-sweep/`). **The census of record was re-run on it**
+  (`measurements/v0.4.20-release-census/`):
+  - FAIL 533 = 10.66 pts (was 611 = 12.22); VERIFIED gap 19.40 (was 20.88).
+  - The census counts 4,030 molecules with no fault, the same as the sweep's VERIFIED count.
+  - **`E2_P_FRAGILE` 124 → 53**; 57 of those molecules now have no fault at all.
+  - FAIL by owner: G 299 → 292, E2 193 → 121, E1 86 → 86, P 24 → 25.
+  - 144 molecules built a different structure than in the v0.4.19 release sweep: 81 went from
+    FAIL to PASS and 8 from PASS to FAIL.
+- **Session notes go under `spec/` (owner decision, 2026-09-26).** Narratives go in
+  `spec/process/`, next steps in `spec/handoffs/<release>/`, and both are gitignored. The tracked
+  record is `measurements/<release>/` and this file. `docs/agentic-notes/` keeps the notes written
+  before this decision and takes nothing new (`AGENTS.md`, `.agents/rules/docs-layout.md`).
+
+### Costs, recorded with the gain
+- The fallback re-runs the whole ligand charge ladder on about 50 macrocycles: +20% encode CPU
+  over the resonance lever alone. `HOHKOF`, whose string did not change, became a 300 s timeout.
+  Timeouts: 107 → 107.
+- **`RAXJEH`'s string depends on CPU load.** The canonical-frame enumeration is bigger than the
+  input frame's on large porphyrins, and `RAXJEH` now needs the full 120 CPU-second budget of the
+  forked resonance enumeration. CPU time on a hyperthreaded core is not independent of load
+  (`docs/KNOWN_LIMITATIONS.md`).
+
+### Still held off
+- `OIN_CANONICAL_CHARGES` (the charge walk in canonical order), because it was never measured on
+  the cohort. Alone, it makes XIVMEX stable but wrong (quinoid).
+
 ## [0.4.19] - 2026-09-25
 
 > ### 86.94% → **87.78%** self-consistent · 78.40% → **79.12%** VERIFIED — the string, this time.
