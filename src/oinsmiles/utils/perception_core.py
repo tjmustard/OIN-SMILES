@@ -477,6 +477,7 @@ def BO2mol(
     mol_charge,
     allow_charged_fragments=True,
     use_atom_maps=True,
+    order=None,
 ):
     """Based on code written by Paolo Toscani.
 
@@ -492,6 +493,9 @@ def BO2mol(
 
     optional:
         allow_charged_fragments - bool - allow charged fragments
+        order - the atom indices in the order the charge walk visits them (default:
+                input order); AC2mol passes AC2BO's canonical labelling under
+                OIN_CANONICAL_CHARGES
 
     Returns:
         mol - updated rdkit molecule with bond connectivity
@@ -533,6 +537,7 @@ def BO2mol(
             BO_matrix,
             mol_charge,
             use_atom_maps=use_atom_maps,
+            order=order,
         )
     else:
         mol = set_atomic_radicals(
@@ -556,10 +561,19 @@ def set_atomic_charges(
     BO_matrix,
     mol_charge,
     use_atom_maps=True,
+    order=None,
 ):
-    """"""
+    """Formal charges from the bond-order valences, one atom at a time.
+
+    The carbon corrections below read the RUNNING total ``q``, so the result depends on
+    the order the atoms are visited in. ``order`` (a permutation of the indices) sets
+    that order; the default is the input order, which is what ``charge_is_OK`` also
+    walked before ``OIN_CANONICAL_PERCEPTION`` moved it to the canonical labelling.
+    """
     q = 0
-    for i, atom in enumerate(atoms):
+    for i in range(len(atoms)) if order is None else order:
+        i = int(i)
+        atom = atoms[i]
         a = mol.GetAtomWithIdx(i)
         if use_atom_maps:
             a.SetAtomMapNum(i + 1)
@@ -898,6 +912,9 @@ AC2BO_STATS = {
     "found_valid": 0,  # AC2BO calls that early-returned a valid Lewis structure
     "over_cap_found_valid": 0,  # ... of which were over-cap
     "over_cap_exhausted": 0,  # over-cap calls that fell through and returned best_BO
+    "n_valence_2_pass_calls": 0,  # OIN_N_VALENCE_2: walks run inside n_valence_2_pass()
+    "n_valence_2_ladders": 0,  # OIN_N_VALENCE_2: ligands whose shipped ladder ended on a guess
+    "n_valence_2_ladders_accepted": 0,  # ...and the N(-) ladder returned a validated structure
     "over_cap_best_bo_improved": 0,  # best_BO reassignments on the over-cap branch
     "matching_calls": 0,  # nx.max_weight_matching invocations
 }
@@ -909,13 +926,21 @@ def reset_ac2bo_stats():
         AC2BO_STATS[key] = 0
 
 
-def possible_valences(AC_valence, atoms, allow_carbenes=True):
+def possible_valences(AC_valence, atoms, allow_carbenes=True, n_valence_2=None):
     """The per-atom candidate valence lists whose Cartesian product ``AC2BO`` searches.
 
     Extracted verbatim from ``AC2BO`` so the size of that product can be computed
     without running the search -- ``tools/valsearch_scan.py`` uses this to find the
     over-cap ligand population for free. ``AC2BO`` calls it, so the two cannot drift.
+
+    ``n_valence_2`` is the ``OIN_N_VALENCE_2`` option: ``None`` reads the pass flag
+    (``n_valence_2_pass()``); ``True`` gives EVERY two-coordinate nitrogen the option (the
+    tools' worst-case product size); a collection of atom indices (what ``_AC2BO_core`` passes:
+    ``pyrrolide_nitrogens``) gives it to those nitrogens only.
     """
+    if n_valence_2 is None:
+        n_valence_2 = _N_VALENCE_2_PASS
+    eligible = None if isinstance(n_valence_2, bool) else set(n_valence_2)
     valences_list_of_lists = []
     for i, (atomicNum, valence) in enumerate(zip(atoms, AC_valence)):
         # valence can't be smaller than number of neighbourgs
@@ -928,6 +953,18 @@ def possible_valences(AC_valence, atoms, allow_carbenes=True):
             possible_valence.append(3)
         if atomicNum == 16 and valence == 1:
             possible_valence = [1, 2]
+        # OIN_N_VALENCE_2 (v0.4.19, held off): a two-coordinate nitrogen may be an N(-)
+        # (pyrrolide, amide, the porphyrin dianion's two bare pyrrole nitrogens).
+        # atomic_valence[7] is [3, 4], so the search has no way to write one: for a
+        # porphyrin dianion at charge -2 every one of the 16 candidates fails and AC2BO
+        # returns best_BO -- which is the AC itself, all single bonds -- and the string
+        # then depends on whether the resonance enumeration can neutralise the zwitterion
+        # set_atomic_charges' running-total walk happened to produce (census
+        # E2_P_FRAGILE, Ni 24 / Zn 22 macrocycles). Present only inside
+        # ``n_valence_2_pass()`` -- see ``_N_VALENCE_2_PASS`` for why it is a ladder-level
+        # fallback and not an option every walk sees.
+        if atomicNum == 7 and valence <= 2 and (n_valence_2 if eligible is None else i in eligible):
+            possible_valence.append(2)
 
         if not possible_valence:
             logger.debug(
@@ -1218,6 +1255,81 @@ def _ordered_valences(valences_list_of_lists, atoms):
 _SUPPRESS_CANONICAL_PERCEPTION = False
 
 
+#: OIN_N_VALENCE_2 (v0.4.19, held off). True only inside ``n_valence_2_pass()``: the ligand
+#: charge/carbene ladder (``perception_tmc.get_lig_mol``) runs the SHIPPED valence lists first
+#: and re-runs inside this block only when what it got back was built from a bond-order GUESS
+#: (``AC2BO`` exhausted its walk and returned ``best_BO``). Measured on the whole cohort,
+#: 2026-09-25 (results-v0.4.19-e2): giving every two-coordinate nitrogen the N(-) option
+#: unconditionally moved 343 strings, 167 of them VERIFIED passes (a neutral terpyridine
+#: re-perceived as a quinoid anion, a diimine as an ene-diamide) and broke 44 rows on noise,
+#: and making it a second pass INSIDE ``AC2BO`` changed nothing (251 of the 443 movers still
+#: moved) -- because the ladder itself is a chain of fallbacks over charges, and an extra
+#: legal valence lets a WRONG Huckel charge validate first. Only a ladder that finished on a
+#: guess has nothing to lose -- and even then only PYRROLIDE nitrogens get the option
+#: (``pyrrolide_nitrogens``): the ladder-level fallback with every two-coordinate N still
+#: moved 177 of the 443 movers (59 verified passes), because a guess can be RIGHT (the
+#: terpyridine's guess at Huckel's -1 put the charge on a donor and stayed aromatic) while the
+#: validated N(-) structure at the same wrong charge is a quinoid.
+_N_VALENCE_2_PASS = False
+#: mol property ``AC2mol`` stamps on every ligand it builds: ``True`` when the bond orders are
+#: ``best_BO`` -- no candidate validated -- rather than a Lewis structure that passed
+#: ``BO_is_OK``. ``lig_checks`` copies it onto each resonance form.
+BO_GUESS_PROP = "_oin_bo_guess"
+
+
+@contextlib.contextmanager
+def n_valence_2_pass():
+    """Let the valence search write an N(-) for a two-coordinate nitrogen inside this block."""
+    global _N_VALENCE_2_PASS
+    previous = _N_VALENCE_2_PASS
+    _N_VALENCE_2_PASS = True
+    try:
+        yield
+    finally:
+        _N_VALENCE_2_PASS = previous
+
+
+def pyrrolide_nitrogens(AC, atoms):
+    """Indices of the nitrogens the ``OIN_N_VALENCE_2`` pass may write as N(-): exactly two
+    heavy neighbours, both carbon, no hydrogen (AC valence 2 -- the ligand graph carries its
+    hydrogens as atoms), closing a FIVE-membered ring through them. That is the pyrrolide /
+    porphyrinate / imidazolide / indolide class -- the census's Ni/Zn N-macrocycles -- and
+    excludes pyridine (six-ring), pyrazolate/triazolate (an N neighbour), imine and amide
+    nitrogens, on which the option was measured to re-perceive correct ligands at a wrong
+    Huckel charge. Reads only ``(AC, atoms)`` so it is numbering-invariant."""
+    AC = np.asarray(AC)
+    nbrs = [set(np.nonzero(AC[i])[0].tolist()) for i in range(len(atoms))]
+    out = []
+    for i, z in enumerate(atoms):
+        if z != 7 or len(nbrs[i]) != 2:
+            continue
+        a, b = sorted(nbrs[i])
+        if atoms[a] != 6 or atoms[b] != 6:
+            continue
+        # a five-ring i-a-x-y-b: x adjacent to a, y adjacent to b, x-y bonded, all distinct
+        found = False
+        for x in nbrs[a] - {i, b}:
+            for y in nbrs[b] - {i, a, x}:
+                if AC[x, y]:
+                    found = True
+                    break
+            if found:
+                break
+        if found:
+            out.append(i)
+    return out
+
+
+def is_bo_guess(mol):
+    """Whether ``mol`` (or the ligand it is a resonance form of) was built from ``best_BO``."""
+    try:
+        return bool(
+            mol is not None and mol.HasProp(BO_GUESS_PROP) and mol.GetBoolProp(BO_GUESS_PROP)
+        )
+    except Exception:
+        return False
+
+
 @contextlib.contextmanager
 def suppress_canonical_perception():
     """Force input-order perception inside this block, whatever the env lever says."""
@@ -1277,6 +1389,25 @@ def _canonical_atom_permutation(AC, atoms):
         return None
 
 
+def _canonical_perception_perm(AC, atoms, allow_carbenes=True):
+    """The labelling ``AC2BO`` perceives in, or ``None`` when it takes the un-permuted path.
+
+    One place for the decision, because two walks have to agree on it. ``AC2BO`` runs
+    ``charge_is_OK`` -- whose carbon corrections read a RUNNING total, so they depend on
+    the walk order -- in this labelling, and ``BO2mol``'s ``set_atomic_charges`` repeats
+    the same ladder to place the charges. When the second walk runs in input order (as it
+    did before ``OIN_CANONICAL_CHARGES``) a bond-order graph that is renumbering-invariant
+    is charged in a renumbering-DEPENDENT pattern: the same ``BO`` gives two different
+    zwitterions, one of which the resonance enumeration can neutralise and the other not.
+    """
+    if _SUPPRESS_CANONICAL_PERCEPTION or not _lever_enabled("OIN_CANONICAL_PERCEPTION"):
+        return None
+    perm = _canonical_atom_permutation(AC, atoms)
+    if perm is None or _valence_search_is_truncated(AC, atoms, allow_carbenes):
+        return None
+    return perm
+
+
 def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     """Whether ``_AC2BO_core`` will cap its valence walk, making its answer order-sensitive.
 
@@ -1288,7 +1419,8 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
     """
     try:
         combo = 1
-        for atomicNum, valence in zip(atoms, list(AC.sum(axis=1))):
+        n2 = set(pyrrolide_nitrogens(AC, atoms)) if _N_VALENCE_2_PASS else set()
+        for i, (atomicNum, valence) in enumerate(zip(atoms, list(AC.sum(axis=1)))):
             possible = [x for x in atomic_valence[atomicNum] if x >= valence]
             if atomicNum == 6 and valence == 1 and 2 in possible:
                 possible.remove(2)
@@ -1298,6 +1430,8 @@ def _valence_search_is_truncated(AC, atoms, allow_carbenes=True):
                 possible.append(3)
             if atomicNum == 16 and valence == 1:
                 possible = [1, 2]
+            if atomicNum == 7 and valence <= 2 and _N_VALENCE_2_PASS and i in n2:
+                possible.append(2)
             if not possible:
                 return True
             combo *= len(possible)
@@ -1315,6 +1449,7 @@ def AC2BO(
     allow_charged_fragments=True,
     use_graph=True,
     allow_carbenes=True,
+    return_found=False,
 ):
     """Bond orders from atomic connectivity, optionally made renumbering-invariant.
 
@@ -1363,23 +1498,27 @@ def AC2BO(
     Any failure falls through to the un-permuted path, so behaviour is unchanged whenever
     the canonical order cannot be computed.
     """
-    plain = lambda: _AC2BO_core(  # noqa: E731
-        AC,
-        atoms,
-        charge,
-        allow_charged_fragments=allow_charged_fragments,
-        use_graph=use_graph,
-        allow_carbenes=allow_carbenes,
-    )
-    if _SUPPRESS_CANONICAL_PERCEPTION or not _lever_enabled("OIN_CANONICAL_PERCEPTION"):
-        return plain()
 
-    perm = _canonical_atom_permutation(AC, atoms)
-    if perm is None or _valence_search_is_truncated(AC, atoms, allow_carbenes):
-        return plain()
+    # ``return_found`` adds a third element: whether a candidate VALIDATED (``BO_is_OK``)
+    # rather than ``best_BO`` being handed back as a guess. ``AC2mol`` stamps it on the mol.
+    def _out(BO, ave, found):
+        return (BO, ave, found) if return_found else (BO, ave)
+
+    perm = _canonical_perception_perm(AC, atoms, allow_carbenes)
+    if perm is None:
+        return _out(
+            *_AC2BO_core(
+                AC,
+                atoms,
+                charge,
+                allow_charged_fragments=allow_charged_fragments,
+                use_graph=use_graph,
+                allow_carbenes=allow_carbenes,
+            )
+        )
 
     idx = np.asarray(perm)
-    BO_c, atomic_valence_electrons_out = _AC2BO_core(
+    BO_c, atomic_valence_electrons_out, found = _AC2BO_core(
         AC[np.ix_(idx, idx)],
         [atoms[i] for i in perm],
         charge,
@@ -1391,7 +1530,7 @@ def AC2BO(
     # no un-permuting; only the BO matrix does.
     BO = np.zeros_like(BO_c)
     BO[np.ix_(idx, idx)] = BO_c
-    return BO, atomic_valence_electrons_out
+    return _out(BO, atomic_valence_electrons_out, found)
 
 
 def _AC2BO_core(
@@ -1422,7 +1561,13 @@ def _AC2BO_core(
     # counter are orthogonal to the extraction, and the extracted function carries the same
     # logic the inline block had.
     AC_valence = list(AC.sum(axis=1))
-    valences_list_of_lists = possible_valences(AC_valence, atoms, allow_carbenes=allow_carbenes)
+    # inside n_valence_2_pass() the PYRROLIDE nitrogens carry the N(-) option
+    n2 = pyrrolide_nitrogens(AC, atoms) if _N_VALENCE_2_PASS else False
+    valences_list_of_lists = possible_valences(
+        AC_valence, atoms, allow_carbenes=allow_carbenes, n_valence_2=n2
+    )
+    if _N_VALENCE_2_PASS:
+        AC2BO_STATS["n_valence_2_pass_calls"] += 1
 
     # convert [[4],[2,1]] to [[4,2],[4,1]]
     best_BO = AC.copy()
@@ -1516,7 +1661,7 @@ def _AC2BO_core(
             AC2BO_STATS["found_valid"] += 1
             if over_cap:
                 AC2BO_STATS["over_cap_found_valid"] += 1
-            return AC, atomic_valence_electrons
+            return AC, atomic_valence_electrons, True
 
         UA_pairs_list = get_UA_pairs(UA, AC, DU_from_AC, use_graph=use_graph)
         for UA_pairs in UA_pairs_list:
@@ -1536,7 +1681,7 @@ def _AC2BO_core(
                 AC2BO_STATS["found_valid"] += 1
                 if over_cap:
                     AC2BO_STATS["over_cap_found_valid"] += 1
-                return BO, atomic_valence_electrons
+                return BO, atomic_valence_electrons, True
             # `charge_is_OK` was computed eagerly above this branch, then consumed only
             # here -- behind two cheaper predicates that already short-circuit, and even
             # when `status` had already returned. Evaluating it in place is a pure
@@ -1565,7 +1710,7 @@ def _AC2BO_core(
 
     if over_cap:
         AC2BO_STATS["over_cap_exhausted"] += 1
-    return best_BO, atomic_valence_electrons
+    return best_BO, atomic_valence_electrons, False
 
 
 def AC2mol(
@@ -1581,15 +1726,26 @@ def AC2mol(
     """"""
 
     # convert AC matrix to bond order (BO) matrix
-    BO, atomic_valence_electrons = AC2BO(
+    BO, atomic_valence_electrons, found = AC2BO(
         AC,
         atoms,
         charge,
         allow_charged_fragments=allow_charged_fragments,
         use_graph=use_graph,
         allow_carbenes=allow_carbenes,
+        return_found=True,
     )
     # add BO connectivity and charge info to mol object
+    #
+    # OIN_CANONICAL_CHARGES (v0.4.19, held off): place the charges in the labelling the
+    # bond orders were decided in. charge_is_OK accepted this BO by walking the CANONICAL
+    # order; set_atomic_charges walks the input order by default, and its carbon
+    # corrections read a running total, so on a zwitterionic BO the two walks charge
+    # different carbons -- and which carbons depends on the file's atom numbering. Same
+    # helper, same decision: whenever AC2BO took the un-permuted path this is None too.
+    order = None
+    if _lever_enabled("OIN_CANONICAL_CHARGES"):
+        order = _canonical_perception_perm(AC, atoms, allow_carbenes)
     mol = BO2mol(
         mol,
         BO,
@@ -1598,12 +1754,15 @@ def AC2mol(
         charge,
         allow_charged_fragments=allow_charged_fragments,
         use_atom_maps=use_atom_maps,
+        order=order,
     )
 
     # print(Chem.GetFormalCharge(mol), charge)
     # If charge is not correct don't return mol
     if Chem.GetFormalCharge(mol) != charge:
         return None
+    # a guess is a guess whatever set_atomic_charges made of it; the ladder reads this
+    mol.SetBoolProp(BO_GUESS_PROP, not found)
 
     # BO2mol returns an arbitrary resonance form. Let's make the rest
 

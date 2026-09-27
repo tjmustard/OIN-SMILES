@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -44,12 +45,35 @@ sys.path.insert(0, str(HERE.parents[1] / "census"))
 from attribution_table import attribute  # noqa: E402
 
 MAIN = Path("/home/tjmustard/Documents/GitHub/OIN-SMILES/tmCAT-tmPHOTO_xyz_dataset")
-SWEEP = MAIN / "results-v0.4.18-release-sweep"
-CENSUS = MAIN / "results-v0.4.18-release-census"
-LANE = MAIN / "results-v0.4.19-serializer"
-SHIPPED_ESC = MAIN / "results-v0.4.17-exactfold" / "e_selfconsistency_exact.jsonl"
+# The BASELINE a lane measures against: the sweep of record, its census, the C2 audit that census
+# used, and the two headline counts. OIN_AB_BASELINE=v0.4.19 (the E2 lane) moves all of them one
+# release on; the default is the serializer lane's (v0.4.18). Read at import: every command below
+# derives its sets from these.
+_BASELINES = {
+    "v0.4.18": (
+        "results-v0.4.18-release-sweep",
+        "results-v0.4.18-release-census",
+        "results-v0.4.19-serializer",
+        "results-v0.4.17-exactfold/e_selfconsistency_exact.jsonl",
+        4347,
+        3920,
+    ),
+    "v0.4.19": (
+        "results-v0.4.19-candidate-sweep",
+        "results-v0.4.19-release-census",
+        "results-v0.4.19-e2",
+        "results-v0.4.19-serializer/e_selfconsistency_fix3.jsonl",
+        4389,
+        3956,
+    ),
+}
+_B = _BASELINES[os.environ.get("OIN_AB_BASELINE", "v0.4.18")]
+SWEEP = MAIN / _B[0]
+CENSUS = MAIN / _B[1]
+LANE = MAIN / _B[2]
+SHIPPED_ESC = MAIN / _B[3]
 RULER_MIRROR = MAIN / "results-v0.4.17-exactfold" / "g_verdict_control-mirror.jsonl"
-N_COHORT, PASS_SELF, PASS_VERIFIED = 5000, 4347, 3920
+N_COHORT, PASS_SELF, PASS_VERIFIED = 5000, _B[4], _B[5]
 TRANSFORMS = (
     "again",
     "rewrite",
@@ -139,21 +163,19 @@ def cmd_changed(args, res):
             if ln.startswith("{"):
                 r = json.loads(ln)
                 by[r["molecule"]][r["arm"]] = r.get("oin")
+        # which single-lever arm(s) move the string off the shipped encode: the arm names are
+        # lever_parseback.py's (hfaith/rc1prop for the serializer lane, n2/res for E2); an arm that
+        # was not run for a molecule is not counted, and "none(!)" means only the combination moves it
         attr = Counter()
         for m in changed:
             a = by.get(m, {})
-            h = a.get("hfaith") is not None and a.get("hfaith") != a.get("shipped")
-            p = a.get("rc1prop") is not None and a.get("rc1prop") != a.get("shipped")
-            attr[
-                "H_FAITHFUL only"
-                if h and not p
-                else "RC1_PROPAGATE only"
-                if p and not h
-                else "both"
-                if h and p
-                else "neither(!)"
-            ] += 1
-        print("   attribution (single-lever encodes):", dict(attr))
+            moved = [
+                arm
+                for arm, oin in a.items()
+                if arm != "shipped" and oin is not None and oin != a.get("shipped")
+            ]
+            attr[",".join(moved) if moved else "none(!)"] += 1
+        print("   attribution (single-lever encodes, arms that move the string):", dict(attr))
     res["changed"] = {
         "n_changed": len(changed),
         "n_unchanged": same,
@@ -162,7 +184,7 @@ def cmd_changed(args, res):
     }
     if args.write_set:
         args.write_set.write_text(
-            "# v0.4.19 changed-string set: base under OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1 != release-sweep smiles_1\n"
+            f"# v0.4.19 changed-string set: base under {args.set_label} != {SWEEP.name} smiles_1\n"
             + "\n".join(changed)
             + "\n"
         )
@@ -525,6 +547,11 @@ def main():
     ap.add_argument("--rescore", type=Path, default=LANE / "rescore_fix2")
     ap.add_argument("--ab", type=Path, default=LANE / "ab")
     ap.add_argument("--write-set", type=Path, default=None)
+    ap.add_argument(
+        "--set-label",
+        default="OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1",
+        help="the lever configuration named in --write-set's header line (the run's, not the lane's)",
+    )
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
     res = {}

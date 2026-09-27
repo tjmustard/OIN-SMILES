@@ -28,13 +28,20 @@ It uses the Hypergraph Coding Agent Framework (HACF) as its development toolchai
 `docs/` is split by audience, and **the root is closed to new files**:
 - **Product documentation** — `docs/` root. Four files only: `README.md`, `OPTIMIZERS.md`,
   `GENERATION_PIPELINE.md`, `KNOWN_LIMITATIONS.md`. Adding a fifth needs maintainer sign-off.
-- **Agentic coding notes** — `docs/agentic-notes/<release>/`. Everything a session produces:
-  measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots.
+- **Agentic coding notes** — under `spec/` (owner decision, 2026-09-26). Everything a session
+  produces: measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots.
+  - `spec/process/process_<date>_<slug>.md` — the session narrative (what `/hyper-process-document`
+    writes): what was measured, tried and refuted, in order.
+  - `spec/handoffs/<release>/` — next steps for the following session (`NEXT.md`).
+  - Both are **gitignored**: notes stay on the machine that wrote them. The tracked, public record
+    of a session is its frozen data (`measurements/<release>/`), the `CHANGELOG`, and the
+    evidence blocks in `src/oinsmiles/oin/levers.py`.
+  - `docs/agentic-notes/<release>/` holds the notes written before that decision. It stays as the
+    historical evidence trail; **add nothing new there.**
 
 **The test:** if it records what a session *measured, tried, or refuted*, it is a note. If it
 tells someone *how the shipped software behaves*, it is a product doc. `<release>` is the release
-the work is **for** — targeting v0.4.7 means creating `docs/agentic-notes/v0.4.7/`, not reusing
-the newest folder that already exists.
+the work is **for**.
 
 - **Frozen measurement data** — `measurements/<release>/`. The numbers a *later release diffs*:
   frozen baselines, gate/audit tallies, transition matrices. Written by
@@ -82,4 +89,4 @@ Review `.agents/rules/git-workflow.md` for strict rules regarding protected path
 ## Self-Learning
 - If test discovery fails, verify the `__init__.py` files exist in test directories.
 - If import errors occur during `uv run`, ensure `uv sync` has been run to update the virtual environment.
-- Document any specific chemical edge cases (e.g., hapticity handling) in `docs/KNOWN_LIMITATIONS.md` — that is the product doc for reproducible failure modes. The *investigation* behind one goes in `docs/agentic-notes/<release>/`.
+- Document any specific chemical edge cases (e.g., hapticity handling) in `docs/KNOWN_LIMITATIONS.md` — that is the product doc for reproducible failure modes. The *investigation* behind one goes in `spec/process/` (see **Documentation Layout**).

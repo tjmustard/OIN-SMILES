@@ -45,6 +45,43 @@ That framing is now moot for the round trip:
   sp2/sp3 saturation pattern -- a geometry/perception issue (R2), not notation.
 - **Donor-H atom count (2):** `BEJSUH`, `TIDJIZ` gain/lose H at a donor (S1 domain).
 
+### Fixed in v0.4.20: a metalloporphyrin's string depended on the file's atom order
+
+Renumbering the atoms of a Ni/Zn porphyrin's XYZ file could change its OIN string. The cause
+was upstream of any ordering: the bond-order search allowed nitrogen valences 3 and 4 only, so
+a porphyrin **dianion** (two N⁻) had no legal assignment. The search then fell back to a
+bond-order *guess* — the connectivity with no double bonds — and the charge walk and
+`ResonanceMolSupplier` (which returns a numbering-dependent subset of forms) turned that guess
+into whichever structure the file's order reached first.
+
+Two default-ON levers fix it (`OIN_N_VALENCE_2`, `OIN_CANONICAL_RESONANCE`; `"0"` restores the
+old behaviour):
+
+- a **pyrrolide** nitrogen (two carbon neighbours, no H, in a five-membered ring) may be written
+  N⁻, but only when the shipped charge ladder ended on a guess, and the re-run wins only if it
+  validates. The scope is narrow on purpose: allowing N⁻ on every two-coordinate nitrogen moved
+  343 strings on the 5,000-molecule cohort, 167 of them verified passes;
+- the resonance forms are enumerated on the canonically relabelled ligand, so every numbering
+  gets the same subset.
+
+On the 5,000-molecule cohort, the strings that a renumbering or a coordinate perturbation moves
+drop from 492 to 377 (120 became stable, 5 became unstable).
+
+**Residuals.**
+- **Coordinate noise.** The extended-Hückel charge proposal compares orbital energies with a
+  fixed −10 eV threshold, so a small coordinate perturbation can still change a macrocycle's
+  proposed charge. Not addressed.
+- **RAXJEH: the string depends on CPU load.** On a large porphyrin the canonical-frame
+  enumeration is bigger than the input frame's, and `RAXJEH` needs the full 120 CPU-second
+  budget of the forked resonance enumeration (`utils/perception_tmc._RESONANCE_CPU_BUDGET_S`).
+  Whether it finishes, and so which string it gets, depends on CPU contention: CPU time on a
+  hyperthreaded core is not independent of load.
+- **Cost.** The fallback re-runs the whole ligand charge ladder on about 50 macrocycles
+  (+20% encode CPU over the resonance lever alone on the cohort). The generator pays it too,
+  because it re-encodes every candidate conformer and the fallback changes which one matches
+  first. `DOKROM` (a Ni porphyrin whose string does not change) takes 617 s instead of 80 s. It
+  still passes, but past the 300 s sweep budget and the 450 s ARM 2 limit.
+
 ---
 
 ## Ylide and radical ligands -- bond orders round-trip; residuals are downstream
@@ -336,6 +373,16 @@ it stands today, so a later reader is not misled:
   **byte-identically** (`smiles_1 == smiles_2`) yet the generated 3D carries +3 H, and the
   fragment contains no nitrogen at all. Those belong to S1's generator-fixable / eta H-count
   work, not to the nitride/ammine notation limit.
+
+### A string written since v0.4.19 can read with a phantom H under an older reader
+
+`OIN_H_FAITHFUL` (default-ON since v0.4.19) writes a 0-H anionic carbon as bracketed `[C]`,
+so the string re-reads with the input's hydrogen count. The reader half lives in the
+generator (`generation/metallogen_adapter.py` keeps a bracketed `[C]` only while the lever is
+on), so **the writer and reader must agree**. Under a v0.4.18 or older reader, a string
+written by v0.4.19 or later gains a phantom H on that carbon. Of the rows the v0.4.19
+serializer lane moved, 71 verify under the new reader and 15 under the old one.
+Setting `OIN_H_FAITHFUL=0` switches off both halves at once.
 
 ---
 

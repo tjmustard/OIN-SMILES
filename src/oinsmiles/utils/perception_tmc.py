@@ -28,9 +28,14 @@ from .aromaticity import (  # noqa: F401
 )
 from .oin_aligner import OINDiscreteAligner, OINSanitizer, metal_d_electron_count
 from .perception_core import (
+    AC2BO_STATS,
+    BO_GUESS_PROP,
     AC2mol,
     boron_cage_vertices,
     chiral_stereo_check,
+    is_bo_guess,
+    n_valence_2_pass,
+    pyrrolide_nitrogens,
     read_xyz_file,
     suppress_canonical_perception,
     xyz2AC_obabel,
@@ -371,6 +376,63 @@ def _enumerate_resonance_inline(lig_mol):
     return [res_mols[i] for i in range(len(res_mols)) if res_mols[i] is not None]
 
 
+def _canonical_resonance_frame(lig_mol):
+    """``(relabelled copy, inverse order)`` for OIN_CANONICAL_RESONANCE, or ``(lig_mol, None)``.
+
+    ``ResonanceMolSupplier`` is not exhaustive on a large conjugated system and the subset
+    it does return depends on the atom numbering: on XIVMEX's porphyrin dianion (the same
+    ``AC2mol`` output, canonical SMILES identical) it yields 167 forms from the file's
+    order and 131 from a random renumbering, 82 vs 94 distinct, with 16 + 28 forms in one
+    set only. ``lig_checks`` then sorts what it was given and keeps the first, so the
+    perceived form -- and the string -- moves with the numbering even after the bond
+    orders and charges are canonical. Enumerating on the canonically relabelled molecule
+    (``_smilesAtomOutputOrder`` of its own canonical SMILES, the invariant RDKit actually
+    guarantees) makes the supplier see the same labelled graph up to automorphism from
+    every numbering, so the candidate set is the same set; each form is renumbered back
+    before anything reads an index (``coordinating_atoms``, ``__origIdx``).
+    """
+    try:
+        m = Chem.Mol(lig_mol)
+        smi = Chem.MolToSmiles(m)
+        raw = m.GetProp("_smilesAtomOutputOrder")
+        order = [int(x) for x in raw.strip("[]").rstrip(",").split(",") if x != ""]
+        n = lig_mol.GetNumAtoms()
+        if sorted(order) != list(range(n)):
+            return lig_mol, None
+        # Re-parse rather than RenumberAtoms: the supplier also walks the BONDS by index,
+        # and RenumberAtoms keeps the bonds in their original insertion order. A parse of
+        # the canonical string creates atoms AND bonds in string order, so two numberings
+        # of one molecule hand the supplier the same labelled graph, bond indices included.
+        params = Chem.SmilesParserParams()
+        params.removeHs = False
+        canon = Chem.MolFromSmiles(smi, params)
+        if canon is None or canon.GetNumAtoms() != n:
+            return lig_mol, None
+        for new_pos, old_idx in enumerate(order):
+            if (
+                canon.GetAtomWithIdx(new_pos).GetAtomicNum()
+                != lig_mol.GetAtomWithIdx(old_idx).GetAtomicNum()
+            ):
+                return lig_mol, None
+        # The parse has no coordinates; the forms are copies of what the supplier is given
+        # and the CIP assigner reads them from 3D, so carry the conformer across in the
+        # new order (the first version did not: 21 of 105 encodes died in assign_all on a
+        # zero-length vector, every ligand atom sitting at the origin).
+        if lig_mol.GetNumConformers():
+            src = lig_mol.GetConformer()
+            conf = Chem.Conformer(n)
+            conf.Set3D(src.Is3D())
+            for new_pos, old_idx in enumerate(order):
+                conf.SetAtomPosition(new_pos, src.GetAtomPosition(old_idx))
+            canon.AddConformer(conf, assignId=True)
+        inverse = [0] * n
+        for new_pos, old_idx in enumerate(order):
+            inverse[old_idx] = new_pos
+        return canon, inverse
+    except Exception:
+        return lig_mol, None
+
+
 def _resonance_candidates_isolated(lig_mol, cpu_budget=None):
     """Enumerate resonance forms in a forked child bounded by a CPU-time budget.
 
@@ -454,16 +516,28 @@ def lig_checks(lig_mol, coordinating_atoms):
     # restarting -- the xyz2mol_none_crash bucket. Both paths index instead of iterating and
     # drop any None, then fall back to the un-resonated ligand so a supplier that yields
     # nothing usable degrades instead of crashing.)
-    if _resonance_needs_isolation(lig_mol):
-        status, forms = _resonance_candidates_isolated(lig_mol)
+    # OIN_CANONICAL_RESONANCE (v0.4.19, held off): hand the supplier the canonically
+    # relabelled ligand so its (non-exhaustive, order-dependent) enumeration returns the
+    # same set from every numbering; forms come back in the caller's numbering.
+    enum_mol, back = lig_mol, None
+    if lever_enabled("OIN_CANONICAL_RESONANCE"):
+        enum_mol, back = _canonical_resonance_frame(lig_mol)
+    if _resonance_needs_isolation(enum_mol):
+        status, forms = _resonance_candidates_isolated(enum_mol)
         if status == "timeout":
-            candidates = [lig_mol]
+            candidates, back = [lig_mol], None
         elif status == "ok":
-            candidates = forms or [lig_mol]
+            candidates = forms or [enum_mol]
         else:  # child failed for a non-timeout reason -> inline is byte-identical here
-            candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
+            candidates = _enumerate_resonance_inline(enum_mol) or [enum_mol]
     else:
-        candidates = _enumerate_resonance_inline(lig_mol) or [lig_mol]
+        candidates = _enumerate_resonance_inline(enum_mol) or [enum_mol]
+    if back is not None:
+        candidates = [Chem.RenumberAtoms(c, back) for c in candidates]
+    # a resonance form of a guess is still a guess (ResonanceMolSupplier drops mol props)
+    if is_bo_guess(lig_mol):
+        for c in candidates:
+            c.SetBoolProp(BO_GUESS_PROP, True)
 
     # Check for neighbouring coordinating atoms:
     possible_lig_mols = []
@@ -698,9 +772,32 @@ def get_lig_mol(mol, charge, coordinating_atoms):
         if cage is not None:
             return cage, 0
 
-    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     atoms = [a.GetAtomicNum() for a in mol.GetAtoms()]
     AC = Chem.rdmolops.GetAdjacencyMatrix(mol)
+    res, final_charge = _run_ladder(mol, AC, atoms, charge, coordinating_atoms)
+    # OIN_N_VALENCE_2 (v0.4.19, held off): a ladder that ended on a bond-order GUESS (no
+    # candidate validated at any charge it tried -- for a porphyrin dianion best_BO is the AC
+    # itself and the string is a resonance-enumeration lottery) is run again with the N(-)
+    # option for its PYRROLIDE nitrogens, and the re-run wins only if it validated. A ladder
+    # that already found a Lewis structure is left byte-identical: see
+    # perception_core._N_VALENCE_2_PASS for the cohort measurements behind both rules.
+    if (
+        lever_enabled("OIN_N_VALENCE_2")
+        and (res is None or is_bo_guess(res))
+        and pyrrolide_nitrogens(AC, atoms)
+    ):
+        AC2BO_STATS["n_valence_2_ladders"] += 1
+        with n_valence_2_pass():
+            res2, charge2 = _run_ladder(mol, AC, atoms, charge, coordinating_atoms)
+        if res2 is not None and not is_bo_guess(res2):
+            AC2BO_STATS["n_valence_2_ladders_accepted"] += 1
+            return res2, charge2
+    return res, final_charge
+
+
+def _run_ladder(mol, AC, atoms, charge, coordinating_atoms):
+    """The shipped charge/carbene ladder followed by the wide-charge rescue: one perception."""
+    lig_mol, final_charge = _select_lig_mol(mol, charge, coordinating_atoms)
     # A None here means the ladder never reached a perceivable charge. For a large
     # saturated polyamine/phosphine cage the extended-Huckel proposal can be off by
     # several electrons (e.g. -4/-5/-6 for a ligand whose real charge is 0), and the
@@ -1624,6 +1721,13 @@ def get_oin_string(tmc_mol, xyz_coords):
                 new_bond = mw.GetBondBetweenAtoms(old_to_new[u], old_to_new[v])
                 if new_bond is not None:
                     a0, a1 = old_to_new[stereo_atoms[0]], old_to_new[stereo_atoms[1]]
+                    # The rebuild above adds every bond from its lower parent index, so
+                    # the new bond can run the other way from the parent's (a re-parsed
+                    # ligand -- OIN_CANONICAL_RESONANCE -- creates bonds in SMILES order).
+                    # SetStereoAtoms wants the first reference on the BEGIN atom; orient
+                    # the pair to the new bond. Same two references, same relation.
+                    if mw.GetBondBetweenAtoms(new_bond.GetBeginAtomIdx(), a0) is None:
+                        a0, a1 = a1, a0
                     new_bond.SetStereoAtoms(a0, a1)
                     new_bond.SetStereo(bond.GetStereo())
 

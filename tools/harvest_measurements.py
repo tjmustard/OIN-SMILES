@@ -209,6 +209,18 @@ ALLOW = [
     "v0419_rsweep_*",
     "v0419_rarm2_*",
     "v0419_rcensus_*",
+    # v0.4.19 E2 lane (OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE, perception order; measured, NOT
+    # promoted), staged by tools/v0419/freeze_stage_e2.py, release v0.4.19-e2.
+    "v0419_e2_*",
+    # ... and its CANDIDATE sweep (v0.4.19 defaults + the two E2 levers), staged by
+    # tools/v0419/freeze_stage_e2_sweep.py, release v0.4.19-e2-candidate-sweep.
+    "v0419_e2sweep_*",
+    # v0.4.20 RELEASE (the E2 levers promoted; the release sweep is the E2 candidate sweep, frozen
+    # above): ARM 1 at 66 + the /refreeze-goldens run (tools/v0420/freeze_stage_gates.py, release
+    # v0.4.20-release-gates), and the census on the sweep (stage_reattribution.py --results
+    # results-v0.4.20-release-census --prefix v0420_rcensus_, release v0.4.20-release-census).
+    "v0420_rarm2_*",
+    "v0420_rcensus_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -950,6 +962,142 @@ PROVENANCE = [
     ),
     (
         r"^v0419_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0419_rcensus_attach_class_audit\.json\.gz$",
+        "tools/census/string_sufficiency.py parseback --side gen / pflags --charge-probe ;"
+        " tools/attach_class_audit.py   (the per-sweep instruments the attribution reads)",
+    ),
+    # --- v0.4.19 E2 lane (branch research/v0419-e2; every run records its commit in commits.tsv)
+    (
+        r"^v0419_e2_(fragile105\.txt|esc105_e2b_final\.jsonl\.gz|e2b_final_fragility\.jsonl\.gz)$",
+        "tools/census/e_selfconsistency.py --only <the 105 census E2_P_FRAGILE rows> under"
+        " OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1 (cut 1) -> tools/v0419/e2_fragility_report.py"
+        " --names fragile105.txt   (88 stable, renumbering fixed 94/100, 0 newly fragile)",
+    ),
+    (
+        r"^v0419_e2_n2_valence_scan\.json\.gz$",
+        "an ad hoc scan during the XIVMEX bisection (scratchpad script, not committed): per molecule,"
+        " ligands carrying a two-coordinate nitrogen and the AC2BO valence-product size with and"
+        " without the valence-2 option",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_e2b\.jsonl\.gz|esc_e2b_summary\.txt|canonicality_audit_e2b\.(txt|json)"
+        r"|e2b_cohort_fragility\.txt|changed_set_e2b\.txt|became_fragile_e2b\.txt|movers_e2b\.txt)$",
+        "CUT 1 (valence 2 appended for every two-coordinate N, + RES) on the whole cohort:"
+        " tools/census/e_selfconsistency.py --sweep results-v0.4.19-candidate-sweep --cpu 8 ->"
+        " OIN_AB_BASELINE=v0.4.19 tools/v0419/serializer_ab_report.py audit/changed ;"
+        " tools/v0419/e2_fragility_report.py vs the fix3 run   (343 strings moved, 167 VERIFIED"
+        " passes; fragile fixed 215 / broken 53, noise +5/-44 -- REFUTED)",
+    ),
+    (
+        r"^v0419_e2_changed_single_e2b(\.jsonl\.gz|_summary\.txt)$",
+        "tools/v0419/lever_parseback.py --names changed_set_e2b.txt --arms shipped,n2,res,e2b"
+        "   (single-lever attribution of cut 1's 343: N2 alone 292, RES alone 44)",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_e2d_movers\.jsonl\.gz|esc_e2d_movers_summary\.txt"
+        r"|e2d_movers_vs_(shipped|e2b)\.txt)$",
+        "CUT 2 (a second pass inside AC2BO, 14825a5f) on the 443 movers: e_selfconsistency.py --only"
+        " <movers_e2b.txt> -> e2_fragility_report.py vs fix3 and vs cut 1   (251 still moved --"
+        " REFUTED)",
+    ),
+    (
+        r"^v0419_e2_movers_single_e2e(\.jsonl\.gz|_summary\.txt)$",
+        "CUT 3 (a ladder-level fallback on a bond-order guess, 2a6a4b6a): lever_parseback.py --names"
+        " movers_e2b.txt --arms shipped,n2,e2b   (177 of 443 moved, 59 verified passes -- REFUTED)",
+    ),
+    (
+        r"^v0419_e2_(movers_single_e2f(\.jsonl\.gz|_summary\.txt)|n2_scoped_movers\.json)$",
+        "CUT 4 (the option scoped to pyrrolide nitrogens, 7dfaba98): lever_parseback.py --names"
+        " movers_e2b.txt --arms shipped,n2,res,e2b   (N2 moves 84, 66 already fragile)",
+    ),
+    (
+        r"^v0419_e2_(e_selfconsistency_(e2f|res)\.jsonl\.gz|esc_(e2f|res)_summary\.txt"
+        r"|(e2f|res)_cohort_fragility\.txt|changed_(e2f|res)\.txt|changed_set_(e2f|res)\.txt)$",
+        "the whole cohort at 7dfaba98 under cut 4 + RES (e2f) and under RES alone (res):"
+        " e_selfconsistency.py --cpu 8 -> e2_fragility_report.py vs fix3 ; serializer_ab_report.py"
+        " changed   (e2f: 136 moved, fragile fixed 120 / broken 5; res: 56 moved, 81 / 1)",
+    ),
+    (
+        r"^v0419_e2_rescore_(e2f|res)\.jsonl\.gz$",
+        "tools/honest_rescore.py --results-dir results-v0.4.19-candidate-sweep under each arm's"
+        " levers   (the offline column: unchanged-string rows, structure held fixed -- BLIND to"
+        " generator reach, which a perception lever has)",
+    ),
+    (
+        r"^v0419_e2_(serializer_ab_report_(e2f|res)\.(txt|json)|ab_(e2f|res)_on_(bucket_report_honest\.json"
+        r"|g_verdict\.jsonl|parseback\.jsonl|parseback_shippedreader\.jsonl)\.gz|commits\.tsv)$",
+        "tools/v0419/run_serializer_ab.sh <changed_set> e2f|res -> post_serializer_ab.sh e2f|res"
+        " (OFF = the v0.4.19 release sweep's own rows)   (e2f: live self +69/-7, VERIFIED +66/-7,"
+        " offline +17/-2 and +11/-1, projection 89.32% / 80.50%; res: +23/-3, +20/-3, +18/-1,"
+        " +12/-0, 88.52% / 79.70%. NO DEFAULT CHANGED: both levers ship OFF)",
+    ),
+    (
+        r"^v0419_e2sweep_run_config\.json$",
+        "SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS='-E OIN_N_VALENCE_2=1 -E"
+        " OIN_CANONICAL_RESONANCE=1' tools/v0419/launch_candidate_sweep.sh   (the full 5,000,"
+        " 6 shards, --mol-timeout 300; the levers block must be exactly the two)",
+    ),
+    (
+        r"^v0419_e2sweep_(two_numbers\.txt|bucket_report_honest\.md|bucket_report_honest\.json\.gz"
+        r"|g_verdict\.jsonl\.gz|parseback\.jsonl\.gz|parseback_gen\.jsonl\.gz"
+        r"|parseback_shippedreader\.jsonl\.gz)$",
+        "SWEEP_TAG=v0.4.19-e2-candidate SWEEP_LEVERS=... SWEEP_SHIPPED=... SWEEP_PROJECTION=e2f"
+        " tools/v0419/post_candidate_sweep.sh   (honest buckets, the neutral ruler, parse-back"
+        " under the levers and under the shipped reader; tools/v0417/sweep_two_numbers.py)",
+    ),
+    (
+        r"^v0419_e2sweep_vs_projection\.(txt|json)$|^v0419_e2sweep_unchanged_string_movers\.json$",
+        "tools/v0419/candidate_vs_projection.py --projection e2f   (every row where the sweep and"
+        " the e2f projection disagree, with elapsed_s in both runs; the generator-reach table)",
+    ),
+    # --- v0.4.20 release: the gates (branch research/v0419-e2, promotion 60288c14)
+    (
+        r"^v0420_rarm2_arm1_(on|off_control|n_valence_2_off|canonical_resonance_off)\.tsv$",
+        "tools/gate_arm1_encode.py --expect-n 66, shipped defaults / both levers at 0 / one lever at"
+        " 0 at a time   (ARM 1 at 66 fixtures, XIVMEX added: the control reproduces the v0.4.19"
+        " golden on all 65; 5 rows move -- N2 alone ASISAX, XIVMEX, YESKOZ; RES alone"
+        " ticat3_generated_broken; jointly BEGLUU)",
+    ),
+    (
+        r"^v0420_rarm2_field2_audit_v04[79]\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_field2_audit.py --lever OIN_N_VALENCE_2,OIN_CANONICAL_RESONANCE --golden"
+        " tools/gate_v04{7,9}_arm2_golden.tsv --cohort-dir <cohort>   (/refreeze-goldens step 1,"
+        " encode-only, every row: v047 91 SAME + 9 MOVED_BY_LEVER; v049 300 SAME + 21 MOVED_BY_LEVER"
+        " + 4 sentinels; 0 STALE)",
+    ),
+    (
+        r"^v0420_rarm2_(diff_full_gate_vs_goldens\.txt|splice_dry_run\.txt|rows_on_full_gate\.tsv\.gz|rows_off_control\.tsv|rows_verify_real_gate\.tsv|golden_comment_block\.txt)$",
+        "REFREEZE_LEVER=OIN_N_VALENCE_2,OIN_CANONICAL_RESONANCE REFREEZE_TAG=v0.4.20"
+        " tools/v0417/run_arm2_refreeze.sh on|off|verify ; tools/v0417/arm2_refreeze.py diff|splice"
+        " --accept-killed DOKROM_comp_0|rows   (the FULL gate, shipped defaults, 6 shards: 30 rows"
+        " owed, all field 2, exactly the audit's; the control brings every one back -> 30 LEVER,"
+        " 0 STALE; DOKROM SIGKILLed with the levers on only, kept by hand; the real gate reads the"
+        " re-frozen goldens)",
+    ),
+    (
+        r"^v0420_rarm2_dokrom_solo_(on|off|n2off|resoff)\.tsv$",
+        "tools/gate_v047.sh arm2 --cohort-dir <DOKROM alone> --hard-timeout 2400, shipped defaults /"
+        " both levers at 0 / one at 0   (the one row killed at 450 s with the levers on only, timed"
+        " alone to tell a budget from a hang)",
+    ),
+    (
+        r"^v0420_rcensus_(attribution_table\.tsv\.gz|attribution_summary\.json|attribution\.txt)$",
+        "tools/v0420/run_census_release.sh -> tools/census/attribution_table.py --sweep"
+        " <results-v0.4.19-e2-candidate-sweep> + one path per instrument   (THE CENSUS ON THE v0.4.20"
+        " RELEASE SWEEP; C2 = the E2 lane's e2f canonicality audit, the same two levers)",
+    ),
+    (
+        r"^v0420_rcensus_control_on_the_record_sweep\.txt$",
+        "tools/census/attribution_table.py --write-to <control>   (the parameterised tool must"
+        " reproduce the frozen v0.4.17 census table byte-for-byte before this release's is believed)",
+    ),
+    (
+        r"^v0420_rcensus_reattribution_diff\.(txt|json)$|^v0420_rcensus_movers_vs_v0419\.txt$",
+        "tools/census/reattribution_diff.py --old <v0.4.19 release census> --new <this> --movers"
+        " movers_vs_v0419.txt   (fault transitions against the v0.4.19 release census, split by"
+        " whether the generated STRUCTURE differs from the v0.4.19 release sweep's)",
+    ),
+    (
+        r"^v0420_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0420_rcensus_attach_class_audit\.json\.gz$",
         "tools/census/string_sufficiency.py parseback --side gen / pflags --charge-probe ;"
         " tools/attach_class_audit.py   (the per-sweep instruments the attribution reads)",
     ),

@@ -8,10 +8,10 @@ artifacts. **The root is closed; a `pre-commit` guard enforces it.**
 
 | | Product documentation | Agentic coding notes |
 | :--- | :--- | :--- |
-| **Location** | `docs/` root | `docs/agentic-notes/<release>/` |
+| **Location** | `docs/` root | `spec/process/` + `spec/handoffs/<release>/` (gitignored) |
 | **Audience** | Users and contributors | The next agent session |
 | **Answers** | "How does the shipped software behave?" | "What did we measure, try, and refute?" |
-| **Lifetime** | Maintained; kept true | Frozen at its commit; never restated |
+| **Lifetime** | Maintained; kept true | Local to the machine; never restated |
 | **Adding one** | Needs maintainer sign-off | Just write it in the right folder |
 
 **The test:** if it records what a session *measured, tried, or refuted*, it is a note. If
@@ -25,32 +25,33 @@ That is the whole list. It is duplicated in `tools/check_docs_layout.sh`, which 
 `pre-commit` hook runs. Adding a fifth means editing that script **in the same commit,
 with a reason** — and it means you have convinced the maintainer, not just yourself.
 
-## Writing a note
+## Writing a note (owner decision, 2026-09-26)
 
 ```
-docs/agentic-notes/v0.4.7/MY_MEASUREMENT.md
+spec/process/process_2026MMDD_<slug>.md     # the session narrative (/hyper-process-document)
+spec/handoffs/v0.4.NN/NEXT.md               # next steps for the following session
 ```
 
-- `<release>` is the release the work is **for**, not the one that was current when you
-  started. Targeting v0.4.7? Create `v0.4.7/`. Do **not** park it in `v0.4.6/` because
-  that folder happens to exist.
-- Raw JSON/CSV backing a report goes beside the report, or in `<release>/data/` if bulky.
-  **But data a LATER RELEASE will diff — frozen baselines, gate tallies, transition matrices —
-  goes in `measurements/<release>/` instead**, written by `tools/harvest_measurements.py`. The
-  split is by audience, same as everything else here: a note's data is read *with the note*; a
-  measurement is read *against the next release*. See `measurements/README.md`.
-- A research program that genuinely spans releases gets its own topic folder at the
-  `agentic-notes/` level — `injectivity/` is the precedent. Use this sparingly; per-release
-  is the default.
-- Add a row to `docs/agentic-notes/README.md` when you create a new folder.
+- Both directories are **gitignored** and `pre-commit`-blocked: a note stays on the machine that
+  wrote it. That is deliberate. Anything a later release or another machine needs goes in the
+  tracked record instead:
+  - **data a LATER RELEASE will diff** — frozen baselines, gate tallies, transition matrices —
+    in `measurements/<release>/`, written by `tools/harvest_measurements.py` (see
+    `measurements/README.md`);
+  - **the decision and its evidence** — in `CHANGELOG.md` and, for a lever, its evidence block
+    in `src/oinsmiles/oin/levers.py`;
+  - **shipped behaviour** — in a product doc.
+- `<release>` is the release the work is **for**, not the one that was current when you started.
+- `docs/agentic-notes/` holds the notes written before 2026-09-26 and stays as the historical
+  evidence trail (with its `README.md` index). **Add nothing new there.**
 
 **Name the commit your numbers were measured at.** A figure without a commit is an order
 of magnitude, not a measurement.
 
 ## Things that are not notes and not docs
 
-- `spec/process/`, `spec/handoffs/`, `scratchpad/` — gitignored and `pre-commit`-blocked.
-  See `.agents/rules/git-workflow.md`.
+- `scratchpad/` — gitignored and `pre-commit`-blocked. (`spec/process/` and `spec/handoffs/`
+  are too, but they ARE the notes home now — see above.) See `.agents/rules/git-workflow.md`.
 - `docs/social_media/` — gitignored; owned by the `social-post` skill.
 - Sweep output — never under `docs/`, never under `/tmp`. It goes in the dataset
   directory as `results-*/`.
@@ -67,12 +68,11 @@ the evidence trail. Cross-link the note from the product doc if the derivation m
 ❌ COMMIT BLOCKED — new file at the docs/ root: docs/FOO.md
 ```
 
-You wrote a session note to the root. Move it:
+You wrote a session note to the root. Move it to the notes home:
 
 ```bash
 git restore --staged docs/FOO.md
-mkdir -p docs/agentic-notes/v0.4.7
-git mv docs/FOO.md docs/agentic-notes/v0.4.7/   # or plain mv if never committed
+mv docs/FOO.md spec/process/process_2026MMDD_foo.md   # gitignored: it leaves the commit
 ```
 
 Do **not** reach for `--no-verify` — it is banned for routine commits and skips the

@@ -18,6 +18,7 @@ Arms (fresh process per molecule and arm; levers WRITTEN, never unset):
     fix2       hfaith + rc1prop -- the two levers together
     cap        OIN_CAP_IGNORES_METAL=1: a ligand atom's valence cap ignores its metal contact  (H4)
     fix3       hfaith + rc1prop + cap
+    n2 / e2b / e2c   E2 lane: OIN_N_VALENCE_2 / + OIN_CANONICAL_RESONANCE / + OIN_CANONICAL_CHARGES
 
 Per arm and population it prints: strings that CHANGED vs shipped (a canonicality lever must not
 move a verified pass), and the parse-back classes -- adapter graph ISO / adapter H SAME -- with the
@@ -55,6 +56,18 @@ ARMS = {
     "cap": ({"OIN_CAP_IGNORES_METAL": "1"}, False),
     "fix3": (
         {"OIN_H_FAITHFUL": "1", "OIN_RC1_PROPAGATE": "1", "OIN_CAP_IGNORES_METAL": "1"},
+        False,
+    ),
+    # E2 lane (results-v0.4.19-e2/): perception-order levers
+    "n2": ({"OIN_N_VALENCE_2": "1"}, False),
+    "res": ({"OIN_CANONICAL_RESONANCE": "1"}, False),
+    "e2b": ({"OIN_N_VALENCE_2": "1", "OIN_CANONICAL_RESONANCE": "1"}, False),
+    "e2c": (
+        {
+            "OIN_N_VALENCE_2": "1",
+            "OIN_CANONICAL_RESONANCE": "1",
+            "OIN_CANONICAL_CHARGES": "1",
+        },
         False,
     ),
 }

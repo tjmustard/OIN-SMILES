@@ -48,6 +48,9 @@ PLAN = [
     (R / "pflags.jsonl", P + "pflags.jsonl.gz", True),
     (R / "attach_class_audit.json", P + "attach_class_audit.json.gz", True),
 ]
+# the release launchers also write the structure-movers list the diff was split by
+# (movers_vs_v0418.txt at v0.4.19, movers_vs_v0419.txt at v0.4.20); v0.4.19 staged it by hand
+PLAN += [(m, P + m.name, False) for m in sorted(R.glob("movers_vs_*.txt"))]
 
 
 def scrub(text: str) -> str:

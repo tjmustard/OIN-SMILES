@@ -24,7 +24,10 @@ field 3 is ``NO_STRUCTURE@Ns`` the sentinel is KEPT and only ``sha_in``/``len_in
 row gates field 2 alone, and whether this box assembles a structure inside the budget today is a
 fact about the box. A fresh row with no ``sha_out`` where the golden had one, and any
 ``NO_STRUCTURE_DET`` row, is NOT spliced by this tool -- budget or defect is a judgement, and it
-aborts so that a person makes it.
+aborts so that a person makes it. So does a row SIGKILLed with the lever on but not off: the lever
+is involved. If its string did not move (the audit says SAME) and `off` reproduces the golden, it is
+the lever's COST, and ``--accept-killed NAME`` keeps the golden row and writes the decision into it
+(v0.4.20: DOKROM, 80 s -> 617 s under OIN_N_VALENCE_2).
 
 ``# MANIFEST_SHA256`` is recomputed: ARM 2 never verifies it, so a stale one goes unseen.
 
@@ -173,6 +176,11 @@ def cmd_diff(_args):
 
 
 def cmd_splice(args):
+    accept_killed = (
+        {x for x in args.accept_killed.split(",") if x}
+        if getattr(args, "accept_killed", "")
+        else set()
+    )
     accept_det = (
         {x for x in args.accept_det.split(",") if x} if getattr(args, "accept_det", "") else set()
     )
@@ -225,12 +233,27 @@ def cmd_splice(args):
             new.append(
                 [m, on[1], g[2], on[3], g[4], g[5]] + g[6:] if budget_row else on[:6] + g[6:]
             )
+        on_only = []
         for m in killed:
             if not OFF[m][1].startswith("HARD_TIMEOUT@"):
-                sys.exit(
-                    f"ABORT: {m} was killed in `on` but NOT in `off` -- the lever is involved."
-                )
-        report.append((tag, gpath, G, new, reasons, killed, OFF))
+                # v0.4.20: DOKROM. Killed with the lever on only -- the lever IS involved, but
+                # through the budget: the encode-only audit says the string did not move, and the
+                # control reproduces the golden. A person decides (--accept-killed); the golden
+                # keeps its row, because it is still what the code produces when it finishes.
+                g = next(r for r in G if r[0] == m)
+                if m not in accept_killed:
+                    sys.exit(
+                        f"ABORT: {m} was killed in `on` but NOT in `off` -- the lever is involved."
+                        " If it is the lever's COST (a budget, not a string), decide it by hand:"
+                        " --accept-killed NAME."
+                    )
+                if gate_verdict(g, OFF[m])[0] == "MISMATCH":
+                    sys.exit(
+                        f"ABORT: {m}: --accept-killed, but `off` does not reproduce the golden"
+                    )
+                on_only.append(m)
+        killed = [m for m in killed if m not in on_only]
+        report.append((tag, gpath, G, new, reasons, killed, OFF, on_only))
         print(
             f"\n=== {tag}: {len(reasons)} of {len(G)} rows re-frozen   "
             f"{dict(Counter(r for r, _f, _h in reasons.values()))}"
@@ -239,11 +262,16 @@ def cmd_splice(args):
             print(f"    {m:22s} {reason:12s} first gated field that moved: {field}")
         for m in killed:
             print(f"    {m:22s} KILLED in BOTH arms -- not re-frozen, and not the lever")
+        for m in on_only:
+            print(
+                f"    {m:22s} KILLED with the lever ON only (--accept-killed: its budget cost)"
+                " -- not re-frozen; `off` reproduces the golden"
+            )
 
     if not args.write:
         print("\n(dry run -- pass --write to rewrite the goldens)")
         return
-    for tag, gpath, _G, new, reasons, killed, _OFF in report:
+    for tag, gpath, _G, new, reasons, killed, _OFF, on_only in report:
         old_comments = [
             ln
             for ln in gpath.read_text().splitlines()
@@ -260,6 +288,13 @@ def cmd_splice(args):
             " seeing smiles_1; encode-only, field 2 is unchanged. A loaded box FAILS here."
             for m in killed
         ]
+        block += [
+            f"#   {m}\tNOT RE-FROZEN (by hand, --accept-killed)\tSIGKILLed at --hard-timeout with"
+            " the lever ON only: the lever's cost, not its string. Encode-only, field 2 is"
+            " unchanged; with the lever at 0 the gate reproduces this row. Every full run reads"
+            " it as a field-2 MISMATCH until the runner writes sha_in before it generates."
+            for m in on_only
+        ]
         data = ["\t".join(r) for r in new]
         manifest = "\n".join(data)
         digest = hashlib.sha256(manifest.encode()).hexdigest()
@@ -270,7 +305,7 @@ def cmd_splice(args):
         gpath.write_text(text + f"\n#DONE {len(data)}\n")
         print(f"wrote {gpath.name}: {len(data)} rows, MANIFEST_SHA256={digest}")
     rows = []
-    for tag, _p, G, new, reasons, _k, OFF in report:
+    for tag, _p, G, new, reasons, _k, OFF, _on_only in report:
         old_by, new_by = {g[0]: g for g in G}, {r[0]: r for r in new}
         for m, (reason, field, _h) in sorted(reasons.items()):
             before = [old_by[m][1], old_by[m][2], OFF[m][1], OFF[m][2]]
@@ -318,6 +353,13 @@ def main():
     sp = sub.add_parser("splice")
     sp.add_argument("--write", action="store_true")
     sp.add_argument("--comment-file", help="the '# v0.4.17: ...' block to put at the top")
+    sp.add_argument(
+        "--accept-killed",
+        default="",
+        help="comma-separated rows SIGKILLed with the lever on but not off, that a person has"
+        " decided are the lever's budget cost (field 2 unchanged, `off` reproduces the golden):"
+        " kept as they are, and the decision is written into the golden",
+    )
     sp.add_argument(
         "--accept-det",
         default="",

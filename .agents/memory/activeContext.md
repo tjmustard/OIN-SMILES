@@ -4,6 +4,30 @@
 ## Purpose
 Captures the current state of OIN-SMILES development. Updated after significant task completions. Read first to understand where to pick up.
 
+## Current State (as of 2026-09-26)
+
+**Release lineage runs through v0.4.20 (local `main`, unpushed).** `CHANGELOG.md` is the
+authoritative per-version record; the dated blocks below are history.
+
+- **The metric changed at v0.4.8.** Every accuracy figure before it scored the generator's own
+  bond graph and is over-stated (82.80% was 72.46%). Since then each release reports two numbers
+  on the same seed-42 5,000-molecule cohort (`cohort-v0.4.5-5k`, 300 s budget): **self-consistent**
+  (honest `byte_exact`: re-encoding the generated XYZ gives the input string) and **VERIFIED**
+  (census fault `NONE`: string parse-back clean + independent structure ruler agrees).
+- **v0.4.20 (2026-09-26): 89.34% / 80.60%** (v0.4.19: 87.78% / 79.12%). `OIN_N_VALENCE_2` +
+  `OIN_CANONICAL_RESONANCE` default-ON — porphyrin dianions no longer depend on the input's atom
+  order. Baseline of record: `results-v0.4.19-e2-candidate-sweep`
+  (`measurements/v0.4.19-e2-candidate-sweep/`).
+- **Promotion discipline** (every default change): a candidate sweep that lands on its offline
+  projection, ARM 1 re-frozen, ARM 2 goldens re-frozen from a FULL run (`/refreeze-goldens`), the
+  census re-run on the sweep, `/freeze-measurements`. Perception levers reach the generator, so an
+  offline re-score cannot stand in for the sweep.
+- **Where things go (owner, 2026-09-26):** session narratives `spec/process/`, next steps
+  `spec/handoffs/<release>/NEXT.md` (both gitignored); tracked record `measurements/<release>/` +
+  `CHANGELOG.md` + the lever evidence blocks in `src/oinsmiles/oin/levers.py`.
+- **Open:** `OIN_CANONICAL_CHARGES` held off (never measured on the cohort); `OIN_ACCEPT_STRING_EXACT`
+  (+0.96 at 4.00× runtime) awaits an owner decision; faster 3D generation is a parked owner lane.
+
 ## Current State (as of 2026-07-24)
 
 **Release lineage now runs through v0.4.4 (local, unpushed).** See `CHANGELOG.md` for authoritative

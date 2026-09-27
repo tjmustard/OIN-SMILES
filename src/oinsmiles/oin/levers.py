@@ -417,6 +417,41 @@ import os
 #:   * 5 of the 40 row-level differences sit on the 300 s budget boundary.
 #: Owed and done at this promotion: ARM 1, /refreeze-goldens from a FULL run, the census on the
 #: candidate sweep (its EXPECTED entry), CHANGELOG stating the reader coupling, the freeze.
+#:
+#: v0.4.20 PROMOTED OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE -- OWNER, 2026-09-26 ("Yes -- promote
+#: E2, release v0.4.20"), after the E2 candidate sweep landed on its prediction. The sweep
+#: (results-v0.4.19-e2-candidate-sweep, the full 5,000 with the two ON via the unit's environment,
+#: commit 86d9b0a4, same harness/budget as the release sweep) measured
+#:         self-consistent  4,467 / 5,000 = 89.34%   (projected 4,466 = 89.32%; v0.4.19: 87.78%)
+#:         VERIFIED         4,030 / 5,000 = 80.60%   (projected 4,025 = 80.50%; v0.4.19: 79.12%)
+#: PERCEPTION-side, both: the string moves on 136 molecules, and the generator's re-encode of its
+#: candidate conformers moves too (generator reach, measured: 37 unchanged-string rows changed
+#: outcome, net +13 self-consistent / +12 VERIFIED, no new false pass on the VERIFIED axis).
+#:   * OIN_N_VALENCE_2 (utils/perception_core.pyrrolide_nitrogens + n_valence_2_pass;
+#:     utils/perception_tmc.get_lig_mol): a PYRROLIDE nitrogen (two carbon neighbours, no H, a
+#:     five-ring) may be written N(-) -- but only when the shipped charge ladder ended on a
+#:     bond-order GUESS (AC2BO's best_BO, stamped BO_GUESS_PROP), and the re-run wins only if it
+#:     validated. Three wider cuts were refuted on the whole cohort first (every two-coordinate N:
+#:     343 strings moved, 167 of them VERIFIED passes; a second pass inside AC2BO; a ladder
+#:     fallback for every two-coordinate N) -- the charge ladder is itself a fallback chain, and an
+#:     extra legal valence lets a wrong Huckel charge validate before the right one is tried.
+#:   * OIN_CANONICAL_RESONANCE (utils/perception_tmc._canonical_resonance_frame): lig_checks'
+#:     resonance enumeration runs on the canonically relabelled ligand, so the non-exhaustive
+#:     ResonanceMolSupplier returns the same subset from every numbering.
+#: THE GATES (measurements/v0.4.19-e2/; docs/agentic-notes/v0.4.19/E2_PERCEPTION_ORDER.md):
+#: the canonicality audit 5,000 x 11 (fragile fixed 120 / broken 5; renumbering +121/-5, noise
+#: +2/-1); the offline re-score (+17/-2, +11/-1); a live harness A/B over the 136 changed strings
+#: with the v0.4.19 sweep's own rows as OFF (+69/-7 self-consistent, +66/-7 VERIFIED); projection
+#: 4,466 / 4,025; the candidate sweep (measurements/v0.4.19-e2-candidate-sweep/).
+#: COSTS, recorded with the gain:
+#:   * The fallback re-runs the whole ligand ladder on ~50 macrocycles (+20% encode CPU over RES
+#:     alone on the cohort); HOHKOF (same string) became a 300 s timeout. Timeouts 107 -> 107.
+#:   * The canonical-frame enumeration is bigger than the input frame's on big porphyrins, and
+#:     RAXJEH now needs the whole of the forked enumeration's 120 CPU-s budget
+#:     (utils/perception_tmc._RESONANCE_CPU_BUDGET_S): whether it completes -- and so which
+#:     string RAXJEH gets -- depends on CPU contention. A CPU-time budget is not
+#:     load-independent under SMT.
+#: OIN_CANONICAL_CHARGES stays held off: never measured on the cohort.
 _DEFAULT_ON = frozenset(
     {
         "OIN_BORON_CAGE",
@@ -425,6 +460,7 @@ _DEFAULT_ON = frozenset(
         "OIN_CANONICAL_PERCEPTION",
         "OIN_CANONICAL_SLOTS",
         "OIN_CANONICAL_ETA_WINDING",
+        "OIN_CANONICAL_RESONANCE",
         "OIN_CAP_IGNORES_METAL",
         "OIN_ETA_COVALENT_TARGET",
         "OIN_ETA_RETARGET",
@@ -432,6 +468,7 @@ _DEFAULT_ON = frozenset(
         "OIN_FOLD_PARITY_VETO",
         "OIN_H_FAITHFUL",
         "OIN_INDEP_SCORE",
+        "OIN_N_VALENCE_2",
         "OIN_RC1_PROPAGATE",
         "OIN_RESONANCE_DONOR_FOLD",
         "OIN_STABLE_METAL_AC",
@@ -493,7 +530,9 @@ _HELD_OFF = {
         "today (YESKOZ's axes are non-stereogenic, so its token is empty either way; BINAP is "
         "unaffected at 1 hindered / 1 emitting), but axial.py's safety argument covers only the "
         "GENERATOR reading FEWER aromatic atoms, not the encoder reading more. Re-measure both "
-        "cohorts with perception ON before promoting."
+        "cohorts with perception ON before promoting. v0.4.20: OIN_N_VALENCE_2 (default-ON) "
+        "moves YESKOZ's hindrance count as well (a validated porphyrin dianion reads 2 hindered "
+        "axes under both perceptions; still no token) -- re-measure under v0.4.20 perception."
     ),
     "OIN_EMIT_METAL_CONFIG": (
         "Y1 P1 metal-centred Delta/Lambda helicity, as a trailing |mc:+|/|mc:-| sidecar. The "
@@ -525,7 +564,11 @@ _HELD_OFF = {
         "A correct fix must preserve the tag WITHOUT perturbing the ranking -- keep the donor "
         "bracketed through the sanitize, or re-derive parity from the parent geometry once the "
         "write order is fixed. Guarded by "
-        "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric."
+        "test_locked_donor.py::TestRifgujRingCarbonsArePseudoAsymmetric. v0.4.20: also "
+        "incompatible with OIN_CANONICAL_RESONANCE (default-ON) on RIFGUJ -- the mirror becomes "
+        "the tag swap plus a {2}/{3} swap of the two symmetry-equivalent amine slots, because the "
+        "resonance forms keep the canonical frame's bond order. The tests pin both off; "
+        "promoting this lever needs that interaction resolved as well."
     ),
     "OIN_ACCEPT_SCORED": (
         "makes pool acceptance use the predicate the SCORE uses -- "
@@ -768,9 +811,30 @@ _HELD_OFF = {
         "OIN_FOLD_PARITY_VETO are coupled: promoting the lever WITHOUT the bound reinstates the "
         "full 4.00x. Promote both or neither."
     ),
+    "OIN_CANONICAL_CHARGES": (
+        "v0.4.19 E2 lane, MEASURED and left off for the owner. Places BO2mol's formal charges "
+        "by walking the atoms in the SAME canonical labelling AC2BO decided the bond orders in. "
+        "OIN_CANONICAL_PERCEPTION made the bond-order graph renumbering-invariant, but "
+        "set_atomic_charges kept walking the INPUT order, and its carbon corrections read a "
+        "running total (a trivalent carbon becomes [C+] instead of [C-] whenever the total so far "
+        "is below the target) -- so the same BO is charged in a numbering-dependent pattern. "
+        "Bisected on XIVMEX (a Zn ditolyl-porphyrin, census E2_P_FRAGILE): identical BO graph "
+        "under both numberings, different zwitterion, and only one of the two is a zwitterion "
+        "the resonance enumeration can neutralise; the other ships as [CH][CH] radicals. With "
+        "the lever the charge walk reproduces charge_is_OK's own sequence, so the charges are "
+        "the automorphic image under renumbering and AC2mol's formal-charge check agrees with "
+        "the acceptance that admitted the BO. Off whenever AC2BO took the un-permuted path "
+        "(same helper, same decision). Held OFF until measured on the whole cohort -- still "
+        "unmeasured at v0.4.20, where its two siblings OIN_N_VALENCE_2 and "
+        "OIN_CANONICAL_RESONANCE were promoted without it; see "
+        "docs/agentic-notes/v0.4.19/E2_PERCEPTION_ORDER.md."
+    ),
     "OIN_RESCUE_STUCK_RING": (
         "its one molecule (ASISAX) encodes but is not renumbering-stable, so promoting moves "
-        "it between buckets rather than fixing it."
+        "it between buckets rather than fixing it. v0.4.20: ASISAX now encodes under the shipped "
+        "defaults without this lever -- OIN_N_VALENCE_2's pyrrolide fallback validates a "
+        "structure where every charge used to fail -- so the lever has no known molecule left "
+        "(test_encoder_robustness.TestStuckRingRescuePermissive)."
     ),
     "OIN_BORON_GEN_FASTFAIL": (
         "detects a COORDINATED deltahedral boron-cage ligand fragment (the same B-B-B triangle "

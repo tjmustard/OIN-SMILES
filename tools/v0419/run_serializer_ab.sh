@@ -14,8 +14,10 @@
 # strings): ab_off is BUILT from symlinks to results-v0.4.18-release-sweep, not re-run -- which makes
 # a "noise floor" line circular here; the determinism evidence is the three numbers above.
 #
-#   tools/v0419/run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]   # then: post_serializer_ab.sh [arm]
+#   tools/v0419/run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3|e2b|e2c]   # then: post_serializer_ab.sh [arm]
 #     fix2  OIN_H_FAITHFUL=1 OIN_RC1_PROPAGATE=1  (default; ab/)   cap  OIN_CAP_IGNORES_METAL=1 (ab_cap/)   fix3  all three (ab_fix3/)
+#     e2b   OIN_N_VALENCE_2=1 OIN_CANONICAL_RESONANCE=1 (ab_e2b/; E2 lane, results-v0.4.19-e2/)   e2c  e2b + OIN_CANONICAL_CHARGES=1
+#     e2f   the same two levers with N2 scoped to pyrrolide nitrogens in the ladder fallback (7dfaba98)   res  OIN_CANONICAL_RESONANCE=1 alone
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
@@ -24,15 +26,21 @@ DATA=$MAIN/tmCAT-tmPHOTO_xyz_dataset
 PY=$MAIN/.venv/bin/python
 SRC_COHORT=$DATA/cohort-v0.4.5-5k
 SWEEP=$DATA/results-v0.4.18-release-sweep
+case "${2:-fix2}" in e2*|res) SWEEP=$DATA/results-v0.4.19-candidate-sweep;; esac   # the E2 lane's OFF arm is the v0.4.19 sweep of record
 LIST=${1:?usage: run_serializer_ab.sh <changed_set.txt> [fix2|cap|fix3]}
 ARM=${2:-fix2}
 case "$ARM" in
   fix2) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1"; SUB=ab;;
   cap)  LEVERS="-E OIN_CAP_IGNORES_METAL=1"; SUB=ab_cap;;
   fix3) LEVERS="-E OIN_H_FAITHFUL=1 -E OIN_RC1_PROPAGATE=1 -E OIN_CAP_IGNORES_METAL=1"; SUB=ab_fix3;;
+  e2b)  LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1"; SUB=ab_e2b;;
+  e2c)  LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1 -E OIN_CANONICAL_CHARGES=1"; SUB=ab_e2c;;
+  e2f)  LEVERS="-E OIN_N_VALENCE_2=1 -E OIN_CANONICAL_RESONANCE=1"; SUB=ab_e2f;;   # N2 scoped to pyrrolide N in the ladder fallback (7dfaba98) + RES
+  res)  LEVERS="-E OIN_CANONICAL_RESONANCE=1"; SUB=ab_res;;
   *) echo "unknown arm $ARM"; exit 1;;
 esac
-OUT=${AB_OUT:-$DATA/results-v0.4.19-serializer/$SUB}
+LANE=$DATA/results-v0.4.19-serializer; case "$ARM" in e2*|res) LANE=$DATA/results-v0.4.19-e2;; esac
+OUT=${AB_OUT:-$LANE/$SUB}
 COHORT=$DATA/cohort-v0.4.19-changed-$ARM
 SHARDS=${SHARDS:-6}
 
@@ -64,7 +72,7 @@ if [ ! -f "$off/DONE" ]; then
     ln -s "$SWEEP/individual_reports/$m.json" "$off/individual_reports/$m.json"
     for s in "$SWEEP/structures/$m"[_.]*; do [ -e "$s" ] && ln -s "$s" "$off/structures/$(basename "$s")"; done
   done
-  echo "results-v0.4.18-release-sweep @ $(grep -o '"commit_id": "[^"]*"' "$SWEEP/run_config.json") -- the sweep of record's own rows, not a run" > "$off/AB_COMMIT"
+  echo "$(basename "$SWEEP") @ $(grep -o '"commit_id": "[^"]*"' "$SWEEP/run_config.json") -- the sweep of record's own rows, not a run" > "$off/AB_COMMIT"
   echo "#DONE $n" > "$off/DONE"
   echo "ab_off: $n molecules linked from $SWEEP"
 fi

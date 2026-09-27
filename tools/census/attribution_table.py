@@ -134,6 +134,18 @@ EXPECTED = {
         },
         "none": 3956,
     },
+    # v0.4.20: the E2 candidate sweep = the release sweep (OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE)
+    "results-v0.4.19-e2-candidate-sweep": {
+        "buckets": {
+            "byte_exact": 4467,
+            "structural": 231,
+            "key_equal": 119,
+            "hard_fail": 163,
+            "facmer_divergent": 8,
+            "encode_fail": 12,
+        },
+        "none": 4030,
+    },
 }
 EXPECTED_BUCKETS = EXPECTED["results-v0.4.14-sweep"]["buckets"]
 PT_PER_MOL = 100.0 / 5000

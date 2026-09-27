@@ -233,9 +233,19 @@ class TestStableStereoIsCorrect(unittest.TestCase):
         configuration, not merely an unstable one. If this ever starts returning
         R,R the defect is gone from the default path and this whole lever can be
         promoted and this test deleted.
+
+        v0.4.20: pinned to ``OIN_CANONICAL_RESONANCE=0``, the configuration the defect was
+        measured in. With it (default-ON since v0.4.20) the lever-off path reads R,S: the
+        resonance forms come back renumbered to the caller's atom order but keep the canonical
+        frame's BOND order, and the unpatched parity reads neighbours in bond order -- one
+        more way the lever-off path is order-dependent, which is what OIN_STABLE_STEREO fixes.
+        The shipped path (``test_lever_on_emits_the_true_configuration``) is R,R either way.
         """
         for name in _RR_FIXTURES:
-            with self.subTest(fixture=name):
+            with (
+                self.subTest(fixture=name),
+                mock.patch.dict(os.environ, {"OIN_CANONICAL_RESONANCE": "0"}),
+            ):
                 self.assertEqual(_cip_labels(_encode(_fixture(name), stable=False)), ["S", "S"])
 
     def test_mirror_image_inverts_every_tag(self):

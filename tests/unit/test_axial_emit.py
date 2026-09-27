@@ -368,16 +368,31 @@ class TestPorphyrinMesoAxesAreNotPerAxisStereogenic(unittest.TestCase):
         numbers with perception ON first -- ``axial.py``'s safety argument covers the generator
         reading FEWER atoms aromatic, not the encoder reading more. Recorded in
         ``levers.py::_HELD_OFF``.
+
+        v0.4.20: ``OIN_N_VALENCE_2`` (default-ON) changes the count too. YESKOZ's ligand ladder
+        used to end on a bond-order guess; the lever's pyrrolide fallback now perceives a
+        validated dianion, and the hindrance count is 2 under BOTH perceptions (measured in
+        fresh processes). The token is empty and neither axis stereogenic in all four
+        configurations -- asserted below. The Y2 re-measurement owed before ``OIN_EMIT_AXIAL``
+        is promoted is now owed under v0.4.20 perception.
         """
         from unittest import mock
 
         from oinsmiles.oin.axial import axial_token, detect_axial_axes
         from tools.injectivity.config_oracle import load_mol
 
-        for perception, expected_hindered in (("0", 2), ("1", 1)):
+        for n2, perception, expected_hindered in (
+            ("0", "0", 2),
+            ("0", "1", 1),
+            ("1", "0", 2),
+            ("1", "1", 2),
+        ):
             with (
-                self.subTest(OIN_CANONICAL_PERCEPTION=perception),
-                mock.patch.dict(os.environ, {"OIN_CANONICAL_PERCEPTION": perception}),
+                self.subTest(OIN_N_VALENCE_2=n2, OIN_CANONICAL_PERCEPTION=perception),
+                mock.patch.dict(
+                    os.environ,
+                    {"OIN_N_VALENCE_2": n2, "OIN_CANONICAL_PERCEPTION": perception},
+                ),
             ):
                 mol = load_mol(str(FIX / "YESKOZ.xyz"))
                 axes = detect_axial_axes(mol)
