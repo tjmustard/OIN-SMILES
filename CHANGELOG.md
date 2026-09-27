@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+Five fixes reported and contributed by @vandan-revanur (issues #10–#14, PRs #15–#19). Nothing in
+`src/` calls the four `generator3d` paths, and the encoder never writes `^`, so no default and no
+sweep number moves.
+- `Ligand.print_coordinate_list()` raised `AttributeError` on every call (#10).
+- `Ligand.__str__()` returned `None`, so `str(lig)` raised `TypeError` (#11).
+- `MetalComplex.get_embedding()` and `construct_metal_complex()` called a bare `exit()`, which a
+  caller's `except Exception` cannot catch. They now raise `RuntimeError` (#12). The other bare
+  exits in `generator3d/` (`process.add_atoms` / `add_bonds`, `chem.get_c_eig_list`) are unchanged.
+- `get_molecule_info_from_sdf()` crashed on a malformed bond record right after logging a warning
+  about it (#13). The record now raises `ValueError` naming the line. The PR skipped the record
+  instead, but a skipped bond returns a silently wrong adjacency matrix. A non-numeric start index
+  and an index outside `1..n_atoms` get the same error.
+- `normalize_oin_for_comparison()` kept the legacy `{n^}` winding marker, so it normalized
+  differently from its synonym `{n>}`. It is now folded to `>` (#14).
+
 ## [0.4.20] - 2026-09-26
 
 > ### 87.78% → **89.34%** self-consistent · 79.12% → **80.60%** VERIFIED — the dianion nitrogen.

@@ -116,6 +116,11 @@ _AXIAL_TOKEN_RE = re.compile(r"\s*\|ax:[+\-]*\|")
 #: always folded metal stereo, so no round-trip measurement could ever have revealed the collapse.
 _METAL_CONFIG_TOKEN_RE = re.compile(r"\s*\|mc:[+\-]\|")
 
+#: The legacy ``^`` winding marker, a synonym for ``>`` (``oin/inline.py``). Folded in the
+#: normalized string, not only in ``_parse_vertex_colors``, so ``{n^}`` and ``{n>}`` compare
+#: equal wherever normalized strings are compared directly (``OIN_ACCEPT_STRING_EXACT``).
+_CARET_WINDING_RE = re.compile(r"\{(\d+)\^")
+
 
 def normalize_oin_for_comparison(oin_string: str) -> str:
     """Normalize an OIN string for round-trip comparison.
@@ -131,7 +136,8 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     3. Normalize water notation: [OH2] and O are chemically equivalent as bound
        water ligands. The XYZ→OIN pipeline may write O while generated structures
        re-analyzed after H addition write [OH2].
-    4. Winding direction markers ({n>} / {n<}) are KEPT and compared verbatim.
+    4. Winding direction markers ({n>} / {n<}) are KEPT and compared verbatim;
+       the legacy synonym ``{n^}`` is folded to ``{n>}`` first.
        (Historically they were stripped, on the assumption that an eta ligand's
        ring rotation/face could not be reproduced from the OIN alone.) The
        encoder now emits a winding marker per eta ring -- per haptic slot, using
@@ -160,12 +166,8 @@ def normalize_oin_for_comparison(oin_string: str) -> str:
     s = _METAL_STEREO_RE.sub(r"[\1_\2]", s)
     # Normalize [OH2] → O (bound water notation equivalence)
     s = s.replace("[OH2]", "O")
-    # Fold legacy '^' winding marker → '>' so that {n^} and {n>} compare equal.
-    # oin/inline.py documents '^' as a synonym for '>' on parse; _parse_vertex_colors
-    # also folds it, but leaving it here ensures the *string* form is canonical too,
-    # which matters for any consumer that compares normalized strings directly
-    # (e.g. the OIN_ACCEPT_STRING_EXACT lever).
-    s = re.sub(r"\{(\d+)\^", r"{\1>", s)
+    # Fold the legacy '^' winding marker to '>' (see _CARET_WINDING_RE).
+    s = _CARET_WINDING_RE.sub(r"{\1>", s)
     # Winding markers ({n>} / {n<}) are intentionally NOT stripped -- they carry
     # eta-ligand stereochemistry that the round trip must verify (see docstring).
     # Collapse multiple consecutive dots and strip trailing dots
