@@ -1,14 +1,11 @@
-"""Tests for Bug 4 fix: SDF bond-parsing no longer crashes after a warning.
+"""get_molecule_info_from_sdf() rejects a malformed bond record with a clear ValueError.
 
-Before the fix, get_molecule_info_from_sdf() called logger.debug() for a
-malformed bond record but then unconditionally called int(s) - 1 on the next
-line, crashing with ValueError on the same invalid token.
-
-After the fix, the malformed bond record is skipped with `continue` so the
-rest of the file parses successfully.
+Before the fix, a non-numeric end index logged a debug warning and then crashed on
+int() of the same token, and a non-numeric start index crashed on int() before the
+check was reached. A malformed record now raises ValueError naming the record, rather
+than being skipped: a dropped bond would return a silently wrong adjacency matrix.
 """
 
-import logging
 import os
 import tempfile
 import unittest
@@ -24,64 +21,49 @@ def _write_sdf(content: str) -> str:
     return f.name
 
 
-# Minimal valid SDF: 2 atoms, 1 good bond + 1 bad bond.
-_SDF_ONE_BAD_BOND = (
-    "test\n  test\n\n"
-    "  2  2  0  0  0  0  0  0  0  0999 V2000\n"
-    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-    "    1.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-    "  1  2  1  0  0  0\n"  # valid
-    "  1  X  1  0  0  0\n"  # malformed — non-numeric end atom
-    "M  END\n$$$$\n"
-)
-
-# SDF with only a bad bond (1 atom, 1 malformed bond).
-_SDF_ONLY_BAD_BOND = (
-    "test\n  test\n\n"
-    "  1  1  0  0  0  0  0  0  0  0999 V2000\n"
-    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-    "  1  X  1  0  0  0\n"
-    "M  END\n$$$$\n"
-)
+def _sdf(n_atoms: int, bond_lines: list) -> str:
+    """A V2000 SDF of *n_atoms* carbons on a line, with the given bond-block lines."""
+    atoms = "".join(
+        f"{1.5 * k:10.4f}    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        for k in range(n_atoms)
+    )
+    counts = f"{n_atoms:3d}{len(bond_lines):3d}  0  0  0  0  0  0  0  0999 V2000\n"
+    return "test\n  test\n\n" + counts + atoms + "".join(bond_lines) + "M  END\n$$$$\n"
 
 
-class TestSdfBondParsingSkipsBadRecord(unittest.TestCase):
-    def setUp(self):
-        logging.getLogger("oinsmiles.generator3d.process").setLevel(logging.DEBUG)
-
-    def test_no_value_error_on_malformed_bond(self):
-        """A malformed bond record must not raise ValueError."""
-        path = _write_sdf(_SDF_ONLY_BAD_BOND)
+class TestSdfBondParsing(unittest.TestCase):
+    def _parse(self, content):
+        path = _write_sdf(content)
         try:
-            # Pre-fix: ValueError: invalid literal for int() with base 10: 'X'
-            try:
-                get_molecule_info_from_sdf(path)
-            except ValueError as e:
-                self.fail(f"get_molecule_info_from_sdf() raised ValueError: {e}")
+            return get_molecule_info_from_sdf(path)
         finally:
             os.unlink(path)
 
-    def test_valid_bond_still_recorded(self):
-        """After skipping the bad record the valid bond must still be in adj_matrix."""
-        path = _write_sdf(_SDF_ONE_BAD_BOND)
-        try:
-            _, _, adj_matrix, _, _ = get_molecule_info_from_sdf(path)
-            # atoms 0 and 1 are bonded by the valid record
-            self.assertEqual(adj_matrix[0][1], 1)
-            self.assertEqual(adj_matrix[1][0], 1)
-        finally:
-            os.unlink(path)
+    def test_well_formed_bond_is_recorded(self):
+        _, _, adj_matrix, _, _ = self._parse(_sdf(2, ["  1  2  1  0  0  0\n"]))
+        self.assertEqual(adj_matrix[0][1], 1)
+        self.assertEqual(adj_matrix[1][0], 1)
 
-    def test_warning_logged_for_bad_bond(self):
-        """The library must still log a warning for the skipped record."""
-        path = _write_sdf(_SDF_ONLY_BAD_BOND)
-        try:
-            with self.assertLogs("oinsmiles.generator3d.process", level=logging.DEBUG) as cm:
-                get_molecule_info_from_sdf(path)
-            combined = " ".join(cm.output)
-            self.assertIn("WRONG SDF", combined)
-        finally:
-            os.unlink(path)
+    def test_bad_end_index_raises(self):
+        content = _sdf(2, ["  1  2  1  0  0  0\n", "  1  X  1  0  0  0\n"])
+        with self.assertRaisesRegex(ValueError, "malformed SDF bond record 2"):
+            self._parse(content)
+
+    def test_bad_start_index_raises_the_same_clear_error(self):
+        # Previously int(s.strip()) crashed here with "invalid literal for int()".
+        with self.assertRaisesRegex(ValueError, "malformed SDF bond record 1"):
+            self._parse(_sdf(2, ["  X  2  1  0  0  0\n"]))
+
+    def test_out_of_range_index_raises(self):
+        # Index 0 used to become -1 and silently bond to the last atom.
+        with self.assertRaisesRegex(ValueError, "malformed SDF bond record 1"):
+            self._parse(_sdf(2, ["  0  2  1  0  0  0\n"]))
+
+    def test_run_together_indices_past_99_still_parse(self):
+        # V2000 fields are 3 wide, so atoms 100 and 101 are written "100101".
+        _, _, adj_matrix, _, _ = self._parse(_sdf(101, ["100101  1  0  0  0\n"]))
+        self.assertEqual(adj_matrix[99][100], 1)
+        self.assertEqual(adj_matrix[100][99], 1)
 
 
 if __name__ == "__main__":
