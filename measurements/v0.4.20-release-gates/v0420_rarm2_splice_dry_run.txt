@@ -1,0 +1,37 @@
+
+=== v047: 9 of 100 rows re-frozen   {'LEVER': 9}
+    GIMWAA_comp_0          LEVER        first gated field that moved: 2
+    HAMGAD_comp_0          LEVER        first gated field that moved: 2
+    HAMGEH_comp_0          LEVER        first gated field that moved: 2
+    IJOSOP_comp_0          LEVER        first gated field that moved: 2
+    KUJGEC_comp_0          LEVER        first gated field that moved: 2
+    LARQED_comp_0          LEVER        first gated field that moved: 2
+    MIQWEO_comp_0          LEVER        first gated field that moved: 2
+    OROJUB_comp_0          LEVER        first gated field that moved: 2
+    OTIGIJ_comp_0          LEVER        first gated field that moved: 2
+    DOKROM_comp_0          KILLED with the lever ON only (--accept-killed: its budget cost) -- not re-frozen; `off` reproduces the golden
+
+=== v049: 21 of 325 rows re-frozen   {'LEVER': 21}
+    HACYEQ_comp_0          LEVER        first gated field that moved: 2
+    HAMJOU_comp_0          LEVER        first gated field that moved: 2
+    HAMKOV_comp_0          LEVER        first gated field that moved: 2
+    HUPFIJ_comp_0          LEVER        first gated field that moved: 2
+    IJOSOP_comp_0          LEVER        first gated field that moved: 2
+    JIMBAJ_comp_0          LEVER        first gated field that moved: 2
+    JIVRIP_comp_0          LEVER        first gated field that moved: 2
+    KECJUA_comp_0          LEVER        first gated field that moved: 2
+    LARQED_comp_0          LEVER        first gated field that moved: 2
+    LUWLAS_comp_0          LEVER        first gated field that moved: 2
+    MUJRIS_comp_0          LEVER        first gated field that moved: 2
+    NIYJUA_comp_0          LEVER        first gated field that moved: 2
+    OMOBIC_comp_0          LEVER        first gated field that moved: 2
+    OTIGIJ_comp_0          LEVER        first gated field that moved: 2
+    PODZEO_comp_0          LEVER        first gated field that moved: 2
+    PUVWEK_comp_0          LEVER        first gated field that moved: 2
+    QAKLET_comp_0          LEVER        first gated field that moved: 2
+    REVMEL_comp_0          LEVER        first gated field that moved: 2
+    SEMPOP_comp_0          LEVER        first gated field that moved: 2
+    ULIDIE_comp_0          LEVER        first gated field that moved: 2
+    YAKGOI_comp_0          LEVER        first gated field that moved: 2
+
+(dry run -- pass --write to rewrite the goldens)

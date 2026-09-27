@@ -1,0 +1,100 @@
+{
+ "changed_movers": 106,
+ "changed_non_movers": 12,
+ "fail_by_owner_new": {
+  "DATA": 9,
+  "E1": 86,
+  "E2": 121,
+  "G": 292,
+  "P": 25
+ },
+ "fail_by_owner_old": {
+  "DATA": 9,
+  "E1": 86,
+  "E2": 193,
+  "G": 299,
+  "P": 24
+ },
+ "fail_new": {
+  "DATA_MULTI": 9,
+  "E1_GRAPH": 50,
+  "E1_HCOUNT": 24,
+  "E1_NONCANONICAL": 12,
+  "E2_P_FRAGILE": 53,
+  "E2_P_OTHER": 68,
+  "G_CONSTRUCTION": 202,
+  "G_DIASTEREOMER": 7,
+  "G_HANDEDNESS": 4,
+  "G_HCOUNT": 3,
+  "G_NOTHING": 76,
+  "P_DETACHED": 13,
+  "P_E1_COVERAGE": 12
+ },
+ "fail_old": {
+  "DATA_MULTI": 9,
+  "E1_GRAPH": 52,
+  "E1_HCOUNT": 21,
+  "E1_NONCANONICAL": 13,
+  "E2_P_FRAGILE": 124,
+  "E2_P_OTHER": 69,
+  "G_CONSTRUCTION": 209,
+  "G_DIASTEREOMER": 6,
+  "G_HANDEDNESS": 4,
+  "G_HCOUNT": 3,
+  "G_NOTHING": 77,
+  "P_DETACHED": 13,
+  "P_E1_COVERAGE": 11
+ },
+ "false_pass_new": {
+  "E1_GRAPH": 53,
+  "E1_HCOUNT": 6,
+  "E1_NONINJECTIVE": 41,
+  "E1_NOT_ENCODED": 125,
+  "G_CONSTRUCTION": 212
+ },
+ "false_pass_old": {
+  "E1_GRAPH": 51,
+  "E1_HCOUNT": 6,
+  "E1_NONINJECTIVE": 41,
+  "E1_NOT_ENCODED": 125,
+  "G_CONSTRUCTION": 210
+ },
+ "n": 5000,
+ "n_movers": 144,
+ "transitions_movers": {
+  "E1_NONCANONICAL -> NONE": 3,
+  "E1_NOT_ENCODED -> G_DIASTEREOMER": 1,
+  "E2_P_FRAGILE -> E1_HCOUNT": 1,
+  "E2_P_FRAGILE -> E1_NOT_ENCODED": 1,
+  "E2_P_FRAGILE -> E2_P_OTHER": 3,
+  "E2_P_FRAGILE -> G_CONSTRUCTION": 1,
+  "E2_P_FRAGILE -> G_NOTHING": 7,
+  "E2_P_FRAGILE -> NONE": 57,
+  "E2_P_OTHER -> G_NOTHING": 1,
+  "E2_P_OTHER -> NONE": 4,
+  "G_CONSTRUCTION -> E1_HCOUNT": 1,
+  "G_CONSTRUCTION -> NONE": 10,
+  "G_NOTHING -> E1_NONCANONICAL": 1,
+  "G_NOTHING -> E2_P_FRAGILE": 2,
+  "G_NOTHING -> G_CONSTRUCTION": 4,
+  "G_NOTHING -> NONE": 2,
+  "NONE -> E1_NONCANONICAL": 1,
+  "NONE -> E2_P_FRAGILE": 3,
+  "NONE -> G_CONSTRUCTION": 1,
+  "NONE -> G_NOTHING": 2
+ },
+ "transitions_non_movers": {
+  "E2_P_FRAGILE -> E2_P_OTHER": 1,
+  "E2_P_FRAGILE -> NONE": 7,
+  "G_NOTHING -> E1_HCOUNT": 1,
+  "G_NOTHING -> P_E1_COVERAGE": 1,
+  "NONE -> E2_P_FRAGILE": 2
+ },
+ "verified_gap_by_owner_new": {
+  "DATA": 9,
+  "E1": 311,
+  "E2": 121,
+  "G": 504,
+  "P": 25
+ }
+}

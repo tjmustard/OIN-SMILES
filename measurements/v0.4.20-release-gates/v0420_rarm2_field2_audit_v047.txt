@@ -1,0 +1,8 @@
+gate_v047_arm2_golden.tsv: DENOMINATOR 100 rows   src=<checkout:oin-v0419-e2>/src
+    91  SAME
+     9  MOVED_BY_LEVER   GIMWAA HAMGAD HAMGEH IJOSOP KUJGEC LARQED MIQWEO OROJUB OTIGIJ
+     0  STALE   
+     0  STALE_AND_MOVED   
+     0  HEALED   
+     0  SENTINEL   
+     0  ENCODE_FAILED   

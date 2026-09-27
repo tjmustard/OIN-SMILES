@@ -1,0 +1,32 @@
+# v0.4.20 (release): FULL gate run for the promotion of OIN_N_VALENCE_2 + OIN_CANONICAL_RESONANCE
+#   together (default-ON; owner 2026-09-26, "Yes -- promote E2, release v0.4.20", after
+#   results-v0.4.19-e2-candidate-sweep measured 89.34% / 80.60% against 89.32 / 80.50 projected).
+#   HOW. Every row of both ARM 2 goldens, shipped defaults (no OIN_* set), 6 shards, commit b520dd9c
+#   (research/v0419-e2; src/ == 60288c14, the promotion), run from a detached worktree. v047: 90 of
+#   100 reproduce, 9 owed, 1 SIGKILLed (DOKROM, below). v049: 256 compared rows reproduce (40
+#   SHA1-only, 4 deterministic no-structure, 4 observe; GOHWOQ/ULODUU/XIQKOY ungated), 21 owed.
+#   EVERY owed row moved on field 2 -- the input string -- and they are exactly the 9 + 21 the
+#   encode-only audit (tools/v0417/arm2_field2_audit.py: v047 91 SAME + 9 MOVED_BY_LEVER; v049 300
+#   SAME + 21 MOVED_BY_LEVER + 4 sentinels; 0 STALE in both) named. The CONTROL (both levers at 0 on
+#   those 30) brings every old row back byte-for-byte: 30 LEVER, 0 STALE.
+#   SIX OF THE 30 NOW SHARE ONE sha_in, ON PURPOSE: HAMGAD, HAMGEH, HAMJOU, HAMKOV, JIVRIP and SEMPOP
+#   are six crystal structures of ONE compound, zinc tetraphenylporphyrin (C44H28N4Zn). Under
+#   v0.4.19 the six gave FIVE different strings depending on the file (lengths 105..161, radical
+#   and quinoid forms); under v0.4.20 all six encode to the aromatic dianion (length 105) and build
+#   the same structure. That collision is the canonicality fix, not an injectivity loss.
+#   ROUND TRIP ON THE 30 (golden -> fresh, gated | honest on the fresh structure): pass->pass 12
+#   (8 honest pass), pass->fail 9 (6 honest pass -- the ZnTPP rows among them), fail->fail 5
+#   (4 honest pass), no-structure->pass 1, no-structure->fail 3 (3 honest pass). Honest passes
+#   21 of the 30; the gated predicate passes 13. Whole run (403 rows with a structure): gated pass
+#   & honest pass 269, gated PASS & honest FAIL 107, gated fail & honest pass 16, both fail 11
+#   (v0.4.19: 248 / 120 / 3 / 14) -- ARM 2's predicate is CIRCULAR (byte identity through the
+#   generator's own graph, not accuracy), unchanged from v0.4.18's finding.
+#   DOKROM_comp_0 BY HAND (--accept-killed): a Ni porphyrin (Br6 C44 H21 N5 Ni O2) SIGKILLed at 450 s
+#   with the levers ON only; with both at 0 it reproduces its golden. Its string does NOT move
+#   (audit SAME); the cost is in the GENERATOR, which re-encodes every candidate conformer. Timed
+#   ALONE with a 2400 s kill: both levers at 0 80 s, RES alone 81 s, N2 alone 617 s, both 617 s --
+#   OIN_N_VALENCE_2 is the whole cost. Under N2 it still PASSES on fields 1-3, from a DIFFERENT
+#   conformer (xyz 942e67e4 vs 32af7c16): the fallback changes which candidate re-encodes to the
+#   target first, and the walk runs further into the pool. One of the candidate sweep's 11 new
+#   300 s timeouts. Kept as it is -- still what the code produces when it finishes.
+#   Evidence: measurements/v0.4.20-release-gates/.

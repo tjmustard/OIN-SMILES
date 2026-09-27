@@ -1,0 +1,41 @@
+
+=== v047: 100 golden rows, 100 fresh rows (0 ungated: [])
+    {'COMPARED': 90, 'KILLED_gate_says_MISMATCH_f2': 1, 'MISMATCH_f2': 9}
+    field 2: gate and encode-only audit agree on all 9 rows
+    KILLED DOKROM_comp_0          audit: SAME, golden f3=b7d500c241fb895375ec149b7636d1764492518cd578812008c0d3a7826c949e  -> no re-freeze owed
+    owed  GIMWAA_comp_0          field 2   fresh status: b0aef8cbf47c14fbe52fcdc10b86da19a931349adcc03e966c1918454df9d74f
+    owed  HAMGAD_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  HAMGEH_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  IJOSOP_comp_0          field 2   fresh status: 0113dfa6e44b8f364fc6717bf47b296c9cee852612deecbd54a2e95a6b2b6c33
+    owed  KUJGEC_comp_0          field 2   fresh status: 92d38c204858b86dc949fe10fa2320a6e3aa9462de215efe253b585e70119304
+    owed  LARQED_comp_0          field 2   fresh status: 32850d536fa98e22a5c7c29afd0faa1af010a7c5dcf46e772a4351a1bcb1ee71
+    owed  MIQWEO_comp_0          field 2   fresh status: 0e5f30c54ba4becd099bebd09295e806ae6a9dec76b25d0761b15fd20eecd782
+    owed  OROJUB_comp_0          field 2   fresh status: 606c8a3021f1b9e1866bd01adff714c0b2ad9b2c850758d0f534ffaf9ee9f5e3
+    owed  OTIGIJ_comp_0          field 2   fresh status: 08626507cfc8a7626013f429fbf018e990a3d4d6d66e2d2ffd1d27e6648f67bf
+    control cohort: 9 owed + 1 killed -> cohort-v0.4.20-arm2-control-v047
+
+=== v049: 325 golden rows, 328 fresh rows (3 ungated: ['GOHWOQ_comp_0', 'ULODUU_comp_0', 'XIQKOY_comp_0'])
+    {'COMPARED': 256, 'DET': 4, 'MISMATCH_f2': 21, 'OBSERVE': 4, 'SHA1_ONLY': 40}
+    field 2: gate and encode-only audit agree on all 21 rows
+    owed  HACYEQ_comp_0          field 2   fresh status: e2fb5bdda0a881b0636b2c9e83a47b737a87ad5662fa0012890d9980c21b8a84
+    owed  HAMJOU_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  HAMKOV_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  HUPFIJ_comp_0          field 2   fresh status: b744c1ee28eb9a0b04bac052bcbba90e111d67df8b05ea0b34b39f9f3bf4526d
+    owed  IJOSOP_comp_0          field 2   fresh status: 0113dfa6e44b8f364fc6717bf47b296c9cee852612deecbd54a2e95a6b2b6c33
+    owed  JIMBAJ_comp_0          field 2   fresh status: 009b6d246f3b830ecbb6fb8bf753867b71a0ce8970565df3a0a70cd9a607406b
+    owed  JIVRIP_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  KECJUA_comp_0          field 2   fresh status: 2cd2ab3355fed5698e3a57f33272424124230739d997710db0881e80c2989452
+    owed  LARQED_comp_0          field 2   fresh status: 32850d536fa98e22a5c7c29afd0faa1af010a7c5dcf46e772a4351a1bcb1ee71
+    owed  LUWLAS_comp_0          field 2   fresh status: ea02613df4a62554ed0c952e88ac72ee7f1a32826354c7fc182994695955153f
+    owed  MUJRIS_comp_0          field 2   fresh status: 415d8dbbc008681862e517e5fe29dc2ddf30030ac86a0450e7445018b3264ab0
+    owed  NIYJUA_comp_0          field 2   fresh status: 7bbcd45132c1b635fc970ce4183489e022cc07932d3a5b28f957a49647ec31f3
+    owed  OMOBIC_comp_0          field 2   fresh status: fed81cd08881f69f5e0dd2b1f2cc7a457995ff994ffc81965f413086d947d2b5
+    owed  OTIGIJ_comp_0          field 2   fresh status: 08626507cfc8a7626013f429fbf018e990a3d4d6d66e2d2ffd1d27e6648f67bf
+    owed  PODZEO_comp_0          field 2   fresh status: 73b1e8086a1588ab0469eaf6078a4ce06598617618201b7c5139adf2a570020b
+    owed  PUVWEK_comp_0          field 2   fresh status: 69b4d1fe4cfe3520e16a7530aea991913e6055d36d36aaa1bc7688356bb4529c
+    owed  QAKLET_comp_0          field 2   fresh status: 306138544a78e6ae201cd53fe70c43703984f7aaccd620fdecd49a0b4c5785c0
+    owed  REVMEL_comp_0          field 2   fresh status: 6598ffaf5f8956922a843ce58cf8cd43be62fb76d053e2750de83391bfe3924f
+    owed  SEMPOP_comp_0          field 2   fresh status: 55aa20930c25f094d974575015fc4e0ef04de5ee830f8f1d8f5a5fa56a6778a1
+    owed  ULIDIE_comp_0          field 2   fresh status: 605ba21cfe33ed2b83d8523a94df79e4d73b94617b686136c518452c8a30125e
+    owed  YAKGOI_comp_0          field 2   fresh status: 8a04e5d6d5ce9819ecdd33be7c5400f9da4eaf4594ee575dbd6f4d9bd7a3af00
+    control cohort: 21 owed + 0 killed -> cohort-v0.4.20-arm2-control-v049
