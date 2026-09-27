@@ -2,7 +2,7 @@
 #   default-ON together (owner, 2026-09-26, after results-v0.4.19-e2-candidate-sweep measured 89.34% / 80.60%
 #   against 89.32 / 80.50 projected).
 #   CONTROL: with both at 0 this tree reproduces the v0.4.19 golden byte-identically on the 65
-#   (MANIFEST 168dd2e3...; the 66-row control manifest is {off_manifest[:8]}...), so every changed row is the levers.
+#   (MANIFEST 168dd2e3...; the 66-row control manifest is d00bf00d...), so every changed row is the levers.
 #   5 of 66 rows move, each attributed by setting ONE lever to 0 at a time:
 #     ASISAX_comp_0            OIN_N_VALENCE_2       (was ERROR: every ladder charge failed; the pyrrolide fallback
 #                                                    validates a structure -- an encode_fail FIXED)
