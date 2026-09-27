@@ -209,5 +209,5 @@ class Ligand:
         return new_ligand
 
     def __str__(self):
-        """Return ``str(self)``."""
-        pass
+        """Return a human-readable representation of this Ligand."""
+        return f"Ligand(denticity={self.get_denticity()}, binding_infos={self.binding_infos})"
