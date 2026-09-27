@@ -2,14 +2,16 @@
 
 <!-- artifact-url: https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e -->
 
-**Scope:** v0.4.4 (2026-07-23) through v0.4.18 (2026-09-23). Fifteen releases.
-**Baseline commit:** `main` @ tag `v0.4.18`, `pyproject` 0.4.18.
+**Scope:** v0.4.4 (2026-07-23) through v0.4.20 (2026-09-26). Seventeen releases.
+**Baseline commit:** `main` @ tag `v0.4.20`, `pyproject` 0.4.20.
 ⚠ `main` moves under this project — re-read the tip before trusting any SHA here.
 **Method:** committed evidence, **plus one 5000-molecule generator sweep run for the v0.4.16
-refresh** — the first since v0.4.6, and the reason several figures below moved. v0.4.17 and
-v0.4.18 each ran their own sweeps of record as a condition of promoting a default; this refresh
-reads them, re-derives the v0.4.18 headline and every runtime row from the frozen
-`measurements/` tree, and runs nothing.
+refresh** — the first since v0.4.6, and the reason several figures below moved. v0.4.17 through
+v0.4.20 each ran their own sweeps of record as a condition of promoting a default; this refresh
+reads them and re-derives the v0.4.19 and v0.4.20 headlines from the frozen `measurements/`
+tree. The v0.4.19 and v0.4.20 runtime rows are computed from those sweeps' per-molecule reports,
+which are not frozen as an extract. The one thing it ran is the unit suite at the `v0.4.19` tag,
+for that release's count.
 **Refresh it with:** `/release-retrospective <version>` — see [Appendix A](#appendix-a--how-to-update-this).
 **Published page:** <https://claude.ai/code/artifact/9f3a0c17-8f85-4ee6-922b-df599a51978e> · GitHub Pages source on the `gh-pages` branch.
 
@@ -110,6 +112,27 @@ release also found that one of the project's own guard-rail tests **cannot see t
 defect** — it grades the machine on its own bond list — and 36% of the rows it passes fail the
 honest check. That is left open, on purpose, with the evidence attached.
 
+The sixteenth release fixed the *text* again, in three small places: a carbon written so the
+reader would add a hydrogen that was not there, two rings that swapped their labels, and a rule
+that snapped a real ligand bond to make room for the metal. One of those fixes had been sitting
+switched off for thirteen releases, because the test that judged it had been run mostly on
+molecules the machine could not build in time. A better ruler, one that reads the text back
+without building anything, showed it fixed 56 of 84. **Score: 87 to 88, and 78 to 79 on the strict
+count** — and the full run came in slightly *above* its forecast, for a reason the forecast could
+not see: the machine re-reads its own candidate molecules while it builds, so changing how it
+reads changed what it built for 44 molecules whose text had not changed at all.
+
+The seventeenth went after the molecules whose text changes when you merely renumber the atoms in
+the file, mostly nickel and zinc porphyrins. It took one of them apart step by step and found the
+reading rules had **no way to write a nitrogen carrying a negative charge**. A porphyrin needs two
+of those, so the machine fell back on a guess, and the guess came out differently depending on
+which atom the file listed first. The "correct" text it had been producing for that molecule was a
+lottery ticket that happened to win. Three bigger versions of the fix broke more than they
+repaired and were thrown out; the narrow one took the score **88 to 89, and 79 to 81 on the strict
+count**, and six crystal structures of the same zinc porphyrin, which used to get five different
+texts, now get one. It also made one molecule take ten minutes instead of eighty seconds, and that
+is written down next to the gain.
+
 So: **more accurate than v0.4.4, yes. More accurate than v0.4.6 — yes, measured by rebuilding
 everything, and now graded twice: once by the machine's own re-reading and once by an independent
 ruler. And much harder to fool.**
@@ -124,8 +147,9 @@ Two separate questions, two separate answers.
 
 `byte_exact` — the share of molecules whose generated 3D structure re-encodes to a byte-identical
 OIN string — improved materially across v0.4.4, v0.4.5 and v0.4.6, stopped moving for five
-releases, **moved up for the first time at v0.4.13**, and moved twice more, by larger steps, at
-v0.4.17 and v0.4.18. **From v0.4.17 the project carries two numbers**: *self-consistent* is
+releases, **moved up for the first time at v0.4.13**, moved twice more, by larger steps, at
+v0.4.17 and v0.4.18, and twice more by smaller ones at v0.4.19 and v0.4.20 — both in the encoder, v0.4.19 in how
+it writes the string and v0.4.20 in how it reads the molecule. **From v0.4.17 the project carries two numbers**: *self-consistent* is
 `byte_exact` under the honest score (`E(x) == E(G(E(x)))`); *VERIFIED* is a pass whose string
 also parses back to the input's graph *and* whose generated structure a neutral ruler finds
 graph-isomorphic to the input with no stereo element mirrored or changed. Every figure before
@@ -149,6 +173,8 @@ v0.4.17 in this document is the first kind.
 | **v0.4.16** | **Zero, by design — the release prices a decision rather than moving a number** | bounding the search is **refuted as a rescue**: keeping 79% of the +48 costs **89%** of the runtime penalty. Separately, the 187 "unexplained" molecules are **82% perception, not construction** |
 | **v0.4.17** | **Real gain — `OIN_EXACT_DONOR_FOLD` promoted; the largest step in the window, and the first measured end-to-end *before* promotion** | sweep: self-consistent **77.16% → 82.72%**, VERIFIED **69.24% → 74.60%**. The lever isolated on its complete 504-molecule mover set: **+273 / +265**, 3 / 4 losses. `slot_renumber` **252 → 5**. The census that preceded it moved 5.04 pts from "the generator cannot build it" to "the encoder writes it two ways" |
 | **v0.4.18** | **Real gain — three generator-side levers promoted in two steps** | release sweep: self-consistent **82.72% → 86.94%**, VERIFIED **74.60% → 78.40%**. Each step predicted by an A/B over all **1,146 η-bound** molecules at a **noise floor of zero** and landed to within the 300 s budget boundary. `DETACHED` was a **distance** (+0.73 Å). **39 + 5 verified passes lost and accepted** |
+| **v0.4.19** | **Real gain — three encoder levers promoted together, the first encoder promotion since v0.4.17** | release sweep: self-consistent **86.94% → 87.78%**, VERIFIED **78.40% → 79.12%** (4389 / 3956 of 5000; projected 4378 / 3951). `E1` **160 → 86** molecules. The excess over the projection is **generator reach**: 44 unchanged-string rows built a different structure, and 5 verified passes became false passes on the way |
+| **v0.4.20** | **Real gain — two perception levers promoted together** | release sweep: self-consistent **87.78% → 89.34%**, VERIFIED **79.12% → 80.60%** (4467 / 4030; projected 4466 / 4025). `E2_P_FRAGILE` **124 → 53**. Three wider cuts refuted on the whole cohort first; the obvious one moved **167 verified passes** |
 
 The v0.4.8 drop is the one that needs explaining, and it is not a regression. The harness had been
 scoring a round trip with `get_oin_string(gen_result.mol, coords)` — the *generator's own bond
@@ -193,11 +219,27 @@ under the shipped encoder. **One renumbering per fixture had been drawn. A coin,
 times.** v0.4.11's "221 of 393 collapse enantiomers" and v0.4.12's "19 → 0" were reading it. The
 fold was over-folding, the veto was patching the over-fold, and the fix needed neither.
 
+**v0.4.19 and v0.4.20 kept the method and found where it still leaks.** Both promoted encoder
+levers whose effect on the string is exact and cheap to measure: a changed-string set over all
+5,000, a canonicality audit of 5,000 × 11 transforms, a live harness A/B over the changed set, and
+an offline re-score for every row whose string did not move. v0.4.19's sweep then landed
+*above* its projection (87.78 against 87.56), and the row-by-row comparison found why: the
+generator re-encodes its candidate conformers to decide which one to keep, so a lever that
+changes *perception* changes what the generator builds, even for a molecule whose input string is
+byte-identical. **44 of 4,891 unchanged-string rows built a different structure**, and five
+verified passes became false passes on the way. The offline re-score holds the structure fixed and
+cannot see that — v0.4.14's lesson, arriving from the encoder side. v0.4.20 built the instrument
+that counts it (`generator_reach.py`) and read it off its own sweep: 37 unchanged-string rows
+changed outcome, net +13 / +12, no new false pass on the VERIFIED axis. That sweep landed within
+one self-consistent row and five VERIFIED rows of its projection (89.34 against 89.32, 80.60
+against 80.50).
+
 ### Speed
 
-Three real default-path wins since v0.4.4 through v0.4.14, then two more that were measured
-corpus-wide and like-for-like — **and the corpus figure is current: every sweep since v0.4.14 has
-run in one configuration.**
+Three real default-path wins since v0.4.4 through v0.4.14, then three more that were measured
+corpus-wide and attributed — **and the corpus figure is current: every sweep since v0.4.14 has
+run in one configuration.** ⚠ One of them did not run alone: the v0.4.19 sweep shared the machine
+with another job, so the step from it to v0.4.20 is confounded and nobody claims it.
 
 | release | default-path speed change |
 |---|---|
@@ -211,16 +253,21 @@ run in one configuration.**
 | **v0.4.16** | **None, and none available — that is the release's result.** The full curve over all 365: bound 3 holds `> 30 s` to **52** but keeps only 19 of 48; bound 12 keeps 38 and costs `> 30 s` **104**. The frontier is close to linear, so a limit moves *along* v0.4.15's trade instead of improving it |
 | **v0.4.17** | **Real, corpus-wide, and like-for-like with the v0.4.14 sweep.** The parity veto's two extra encodes had been paid *per conformer* — `accept_fn` re-encodes every conformer in the pool — and the exact fold needs neither. Σ `elapsed_s` **38.7 → 33.2 h**, median **4.01 → 3.32 s**, `> 30 s` **678 → 579**. Over the lever's own 504 movers: Σ 6.19 → 2.93 h, `> 30 s` 110 → 58, and 16 molecules that used to be killed at 300 s because the string asked for an unbuildable arrangement now finish in seconds |
 | **v0.4.18** | **Real, small, and reported both ways.** Σ **33.18 → 31.95 h**, `> 30 s` **579 → 521**, `> 300 s` 180 → 173, max 698 → 628 s. ⚠ The median moved the other way, **3.32 → 3.53 s**: the tail came down, the middle did not. On the η cohort the pair's A/B read Σ 14.03 → 11.77 h and the retarget's read flat (11.63 → 11.81 h); why the corpus median rose was not measured |
+| **v0.4.19** | **Real, attributed to the levers' own rows.** A wrong string had been costing the generator its whole budget on a molecule it could never match: over the 109 changed-string rows the live A/B read Σ **26,234 → 8,198 s** (−5.0 h). Corpus-wide Σ **31.95 → 27.19 h**, `> 300 s` **173 → 121**, `> 30 s` 521 → 506, median flat (3.53 → 3.55 s). ⚠ This sweep shared the machine with another job; the direction is the levers', the magnitude approximate |
+| **v0.4.20** | **None claimed.** Corpus-wide the numbers improved (`> 30 s` 506 → 460, Σ 27.19 → 25.17 h, median 3.55 → 2.96 s), but ⚠ **the comparison is confounded**: the v0.4.19 sweep shared the machine and the v0.4.20 sweep ran alone. What is attributable is a **cost**: the fallback re-runs the ligand charge ladder on ~50 macrocycles (**+20% encode CPU** over the resonance lever alone), `DOKROM` 80 → 617 s, `HOHKOF` became a 300 s timeout. Timeouts 107 → 107 |
 
 **The headline speed figure is no longer stale.** The v0.4.6-era `994/5000 = 19.88% over 30 s,
 median 7.19 s` stood unmeasured for eight releases. The sweeps of record since read:
 
-| corpus runtime, N = 5000, from the **nested** `metrics.elapsed_s` | v0.4.6 sweep | v0.4.14 sweep | v0.4.17 sweep | **v0.4.18 release sweep** |
-|---|---:|---:|---:|---:|
-| `> 30 s` | 994 (19.88%) | 678 (13.56%) | 579 (11.58%) | **521 (10.42%)** |
-| median | 7.19 s | 4.01 s | 3.32 s | **3.53 s** |
-| Σ `elapsed_s` | — | 38.7 h | 33.18 h | **31.95 h** |
-| max | 759.9 s | 728.8 s | 697.9 s | **628.5 s** |
+| corpus runtime, N = 5000, from the **nested** `metrics.elapsed_s` | v0.4.6 sweep | v0.4.14 sweep | v0.4.17 sweep | v0.4.18 release sweep | v0.4.19 release sweep ⚠ | **v0.4.20 release sweep** |
+|---|---:|---:|---:|---:|---:|---:|
+| `> 30 s` | 994 (19.88%) | 678 (13.56%) | 579 (11.58%) | 521 (10.42%) | 506 (10.12%) | **460 (9.20%)** |
+| median | 7.19 s | 4.01 s | 3.32 s | 3.53 s | 3.55 s | **2.96 s** |
+| Σ `elapsed_s` | — | 38.7 h | 33.18 h | 31.95 h | 27.19 h | **25.17 h** |
+| max | 759.9 s | 728.8 s | 697.9 s | 628.5 s | 599.2 s | **606.1 s** |
+
+⚠ The v0.4.19 column was measured while another job shared the machine; the v0.4.20 column ran
+alone. Read the v0.4.19 → v0.4.20 step as confounded, not as a speedup.
 
 **The −6.3 points from v0.4.6 to v0.4.14 nobody claimed.** No release in that window asserted a
 corpus speed win; three landed per-molecule optimisations and the rest measured none. ⚠ **That
@@ -228,14 +275,17 @@ step is not strictly like-for-like:** the v0.4.14 run capped BLAS threads to 1
 (`OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS=1`) and the v0.4.6 run did not — a deliberate choice,
 because `OIN3DGenerator(timeout=)` is *advisory* and CPU starvation shrinks the embed pool, which
 would have biased **accuracy**. Treat that direction as solid and the magnitude as approximate.
-**The three columns from v0.4.14 on *are* like-for-like** — same cohort, seed, 6 shards, 300 s
-budget, BLAS = 1 — and the v0.4.17 and v0.4.18 rows were re-derived from the frozen per-molecule
-extracts for this refresh. Goal B (`max(elapsed_s) < 30 s`) is still **not delivered**.
+**The columns from v0.4.14 on *are* like-for-like in configuration** — same cohort, seed,
+6 shards, 300 s budget, BLAS = 1 — but not all in machine load: the v0.4.19 sweep shared the box
+with another job. The v0.4.17 and v0.4.18 rows were re-derived from the frozen per-molecule
+extracts; the v0.4.19 and v0.4.20 rows were computed for this refresh from the sweeps'
+per-molecule reports, by the same method, which reproduces the v0.4.18 column exactly. Goal B
+(`max(elapsed_s) < 30 s`) is still **not delivered** — 460 molecules are over it.
 
 ### What actually improved most
 
 Neither number. What improved most is the project's ability to tell a real result from a fake one.
-Between v0.4.4 and v0.4.18 the unit suite went **551 → 1076**, and the instruments added in that
+Between v0.4.4 and v0.4.20 the unit suite went **551 → 1097**, and the instruments added in that
 window — the honest re-score, the corpus encoder-identity gate, the two-arm byte-identity gate, the
 coordination-integrity check, the mirror audit, and from v0.4.17 the four-instrument census and its
 neutral ruler — are what caught the 10.34-point inflation, the 59%-false-positive cohort, the dead
@@ -293,19 +343,37 @@ scores an artifact by the artifact's own account of itself cannot see the class 
 account is wrong**, and this project has now met it in the harness (v0.4.8) and in its own
 regression gate (v0.4.18).
 
+**v0.4.19 showed that the ruler you judge a lever with decides whether it ships.**
+`OIN_H_FAITHFUL` was built at v0.4.6 and held off for thirteen releases on a round-trip A/B that
+"moved nothing" — over a population that was mostly generator timeouts, where a repaired string
+still goes nowhere. The census's parse-back ruler reads the string back to a graph with no 3D at
+all, which for an encoder change is exact (no generator, no seed, no budget), and it repaired
+**56 of 84**. A lever can be refuted by an instrument that could not have seen it work.
+
+**v0.4.20 is the case for bisecting one molecule before measuring a thousand.** Three read-only
+hypotheses about the fragile class had been refuted before the lane began. Running *one* of its
+molecules through twelve stages of perception, with a numbering-invariant summary printed at
+each, showed that the ordering was not the first defect: the bond-order search had no N⁻, so a
+porphyrin dianion had no legal answer, and the "correct" shipped string was a guess that happened
+to land. Then the whole cohort refuted the three obvious ways of fixing it, one after
+another, before the narrow one shipped. **One molecule finds the mechanism; only the cohort tells
+you what the fix breaks.**
+
 ---
 
 ## The two questions, answered directly
 
 > ### Is it more accurate?
 >
-> **Yes — 86.94% self-consistent and 78.40% VERIFIED at v0.4.18, measured by a full sweep at the
-> shipped defaults, up from 77.16% / 69.24% at v0.4.14 on the same cohort in the same
-> configuration.** Two releases account for all of it: v0.4.17 (+5.56 / +5.36, the encoder's donor
-> fold) and v0.4.18 (+4.22 / +3.80, the generator's η target). Each was predicted by an A/B over
-> its complete affected population before the sweep, and each sweep landed on the prediction to
-> within the 300 s budget boundary. The VERIFIED number is the one to quote: it is the first in this
-> document that a lever cannot raise by teaching the re-encode to agree with a wrong structure.
+> **Yes — 89.34% self-consistent and 80.60% VERIFIED at v0.4.20 (4467 / 4030 of 5000), measured
+> by a full sweep at the shipped defaults, up from 77.16% / 69.24% at v0.4.14 on the same cohort in
+> the same configuration.** Four releases account for all of it: v0.4.17 (+5.56 / +5.36, the
+> encoder's donor fold), v0.4.18 (+4.22 / +3.80, the generator's η target), v0.4.19 (+0.84 / +0.72,
+> three string repairs) and v0.4.20 (+1.56 / +1.48, the dianion nitrogen). Each was projected
+> before its sweep from an A/B over its affected population, and each sweep landed on the
+> projection or explained, row by row, why not. The VERIFIED number is the one to quote: it is the
+> first in this document that a lever cannot raise by teaching the re-encode to agree with a wrong
+> structure.
 >
 > The long answer is the interesting one. From v0.4.6 to v0.4.12 the default path did not change a
 > single answer, and the reported figure *fell* from 82.80% to 72.46% at v0.4.8 because the
@@ -360,24 +428,39 @@ regression gate (v0.4.18).
 > first step inward on Fe, Co and Ni. Ferrocene itself was built at Fe–C 2.85 Å against a real
 > 2.05 Å. Two promotions — the target + exemption pair, then a per-molecule retarget for the rings
 > the pair left stalled — and the release sweep reads **86.94% / 78.40%**, +4.22 / +3.80 over
-> v0.4.17, with 39 + 5 verified passes lost and accepted. **The gap is now 13.06 pts
-> self-consistent and 21.60 VERIFIED, every molecule attributed, and the three largest blocks —
-> construction 3.94, perception 3.52, serializer 2.96 — are within a point of each other.**
+> v0.4.17, with 39 + 5 verified passes lost and accepted. At v0.4.18 the gap was 13.06 pts
+> self-consistent and 21.60 VERIFIED, and the three largest blocks — construction 3.94, perception
+> 3.52, serializer 2.96 — were within a point of each other.
+>
+> **v0.4.19 and v0.4.20 took the two encoder blocks.** v0.4.19 repaired the string in three
+> places — a 0-H carbon written so the reader adds a hydrogen, an η rank swap that never reached
+> the writer, a valence cap that cut a real ligand bond to make room for the metal — and `E1`
+> fell **160 → 86** (+0.84 / +0.72, and a lesson: a perception lever reaches the generator, so an
+> unchanged string no longer implies an unchanged structure). v0.4.20 bisected one fragile
+> porphyrin and found the bond-order search had no N⁻, so the fragile block's Ni and Zn
+> macrocycles had been perceived by guesswork; `E2_P_FRAGILE` fell **124 → 53** (+1.56 / +1.48).
+> **The gap is now 10.66 pts self-consistent and 19.40 VERIFIED, every molecule attributed — and
+> construction is again the largest block by a margin: 4.04 pts against perception 2.42.**
 
 > ### Is it faster?
 >
-> **Yes, corpus-wide, and since v0.4.14 the sweeps are like-for-like — but v0.4.15 found where the
-> next accuracy point would cost speed.** `> 30 s` went **994 → 678 → 579 → 521** across the
-> v0.4.6, v0.4.14, v0.4.17 and v0.4.18 sweeps (19.88% → **10.42%**), Σ `elapsed_s` 38.7 → 33.18
-> → 31.95 h from v0.4.14 on, and max 759.9 → 628.5 s. The first step nobody claimed: three
-> default-path optimisations landed (v0.4.4, v0.4.5, v0.4.10) and every release to v0.4.14
-> measured none. The next two were measured: v0.4.17 stopped paying the parity veto's two extra
-> encodes per conformer (median 4.01 → 3.32 s), and v0.4.18's attached rings finish inside the
-> budget more often (`> 300 s` 180 → 173). ⚠ v0.4.18's median rose 3.32 → 3.53 s while its tail
-> fell; the cause was not measured. ⚠ The v0.4.6 → v0.4.14 step crosses a thread-configuration
+> **Yes, corpus-wide, and since v0.4.14 the sweeps share one configuration — but v0.4.15 found
+> where the next accuracy point would cost speed, and v0.4.20 paid a per-molecule price for its
+> accuracy.** `> 30 s` went **994 → 678 → 579 → 521 → 506 → 460** across the v0.4.6, v0.4.14,
+> v0.4.17, v0.4.18, v0.4.19 and v0.4.20 sweeps (19.88% → **9.20%**), Σ `elapsed_s` 38.7 → 33.18
+> → 31.95 → 27.19 → 25.17 h from v0.4.14 on, and max 759.9 → 606.1 s. The first step nobody
+> claimed: three default-path optimisations landed (v0.4.4, v0.4.5, v0.4.10) and every release to
+> v0.4.14 measured none. The next three were measured and owned: v0.4.17 stopped paying the parity
+> veto's two extra encodes per conformer (median 4.01 → 3.32 s), v0.4.18's attached rings finish
+> inside the budget more often (`> 300 s` 180 → 173), and v0.4.19's repaired strings stopped
+> sending the generator after molecules it could never match (`> 300 s` 173 → 121; −5.0 h on the
+> levers' own 109 rows). ⚠ **The last step is claimed by nobody**: the v0.4.19 sweep shared the
+> machine with another job and the v0.4.20 sweep ran alone, so 506 → 460 and the median's 3.55 →
+> 2.96 s are confounded. What v0.4.20 did measure is a cost — +20% encode CPU on ~50 macrocycles,
+> and one Ni porphyrin 80 → 617 s. ⚠ The v0.4.6 → v0.4.14 step crosses a thread-configuration
 > change and its magnitude is approximate. The largest single per-molecule win (`VAFMIA_comp_0`,
 > 81.89 s → 10.87 s) still sits behind a lever that ships **off**. Goal B (`max(elapsed_s) < 30 s`)
-> is **not delivered** — 521 molecules are over it.
+> is **not delivered** — 460 molecules are over it.
 >
 > **v0.4.15 made the trade explicit for the first time.** Its Lane 2 recovers +0.96 accuracy points
 > and costs **4.00×** runtime on the molecules it touches — `> 30 s` 30 → 122 there, ~678 → ~770
@@ -401,26 +484,32 @@ Four traps, all of which this project has already fallen into once and documente
 
 1. **The bucket reports are not a time series.** They are drawn from five different cohorts —
    6719 (v0.4.2 capstone), 3917 (v0.4.4 regression), 936 (v0.4.5 rebaseline), 5000 (v0.4.6 seed-42
-   sweep), and 5000 (the **v0.4.14 baseline sweep**, which the v0.4.17, v0.4.18 and v0.4.18
-   *release* sweeps re-use). Every accuracy figure below carries its N and its cohort. **Do not
-   draw a line between two of them.**
+   sweep), and 5000 (the **v0.4.14 baseline sweep**, which the v0.4.17, v0.4.18, v0.4.18
+   *release*, v0.4.19 and v0.4.20 sweeps re-use). Every accuracy figure below carries its N and
+   its cohort. **Do not draw a line between two of them.**
    Two comparisons *are* genuine like-for-like: scored-vs-honest at v0.4.8 and again at v0.4.14,
    each classifying *the same 5000 reports* two ways (**10.34** and **9.72** points respectively).
    ⚠ The v0.4.6 and v0.4.14 sweeps share a cohort and a seed but **not** a code version or a thread
    configuration — closer than anything before them, and still not a series.
    ✅ **From v0.4.14 on the sweeps of record *are* a series**: one cohort, one seed, 6 shards,
    `--mol-timeout 300`, BLAS threads = 1, and the only variable is the code under test. 77.16 →
-   82.72 → 86.10 → 86.94 self-consistent (69.24 → 74.60 → 77.66 → 78.40 VERIFIED) is the first
-   line in this document that may legitimately be drawn — and each step was independently
-   predicted by an A/B on its affected population before the sweep confirmed it.
+   82.72 → 86.10 → 86.94 → 87.78 → 89.34 self-consistent (69.24 → 74.60 → 77.66 → 78.40 → 79.12 →
+   80.60 VERIFIED) is the first line in this document that may legitimately be drawn — and each
+   step was independently projected by an A/B on its affected population before the sweep
+   confirmed it. ⚠ One exception in load, not configuration: the v0.4.19 sweep shared the machine
+   with another job. The generator's timeout is advisory, so load can move accuracy too; its
+   row-by-row comparison against the projection put 5 of its 40 differences on the 300 s budget
+   boundary and the rest on generator reach.
 
    ✅ **Every figure in that list is now independently checkable, which it was not before.** All
    five cohorts are frozen as per-molecule extracts in `measurements/`, and each re-derives its
    published headline exactly through the real classifier rather than a re-implementation —
    81.19 / 44.91 / 60.26 / 82.80 / 72.46 / 77.16, six for six. The v0.4.18 release headline
    re-derives from its frozen ruler verdicts, parse-back and honest bucket report alone
-   (5000 / 4347 / 3920, checked for this refresh), and the v0.4.17 and v0.4.18 runtime rows
-   re-derive from their extracts. **The sample definitions are frozen too**
+   (5000 / 4347 / 3920), and the v0.4.17 and v0.4.18 runtime rows re-derive from their extracts.
+   The v0.4.19 and v0.4.20 headlines re-derive the same way (5000 / 4389 / 3956 and
+   5000 / 4467 / 4030, checked for this refresh); ⚠ their runtime rows do **not** — no
+   per-molecule extract was frozen for either sweep. **The sample definitions are frozen too**
    (`measurements/cohorts/`): seed, N, the dedup priority, and every molecule name. Until
    v0.4.16 those manifests were untracked, so the corpus under every headline this project has
    published lived one `rm -rf` from being unreproducible — while the *lane* populations had been
@@ -433,7 +522,7 @@ Four traps, all of which this project has already fallen into once and documente
    the 5k sweep finish within **0.2 s** of their cap. The harness enforces to ε ≈ 0.2 s.
    *(`v0.4.9/ELAPSED_S_IS_A_SUM_v0.4.9.md`)*
 
-3. **Suite count is a rigour proxy, not an accuracy metric.** 551 → 1076 tests means the project
+3. **Suite count is a rigour proxy, not an accuracy metric.** 551 → 1097 tests means the project
    can detect more kinds of wrongness. It does not mean the notation got better. And a green suite
    is only as good as what it looks at: **1,067 of 1,067 tests passed while ferrocene was being
    built with its rings 0.8 Å off the iron**, because no test measured that distance.
@@ -443,7 +532,8 @@ Four traps, all of which this project has already fallen into once and documente
    additionally requires that the string parses back to the input's graph and that a neutral ruler
    — one that never imports the encoder — finds the generated structure graph-isomorphic to the
    input with no stereo element mirrored or changed. The gap between them (406 passes at v0.4.17,
-   427 at v0.4.18) is accuracy the metric *asserts*, not accuracy the project *has*. A lever must
+   427 at v0.4.18, 433 at v0.4.19, 437 at v0.4.20) is accuracy the metric *asserts*, not accuracy
+   the project *has*. A lever must
    move both, or it may be teaching the second encode to agree with a wrong structure. Every figure
    in this document before v0.4.17 is self-consistent only; the 77.16% baseline is 69.24% VERIFIED.
 
@@ -1532,6 +1622,235 @@ Suite: **1076 OK**.
 
 ---
 
+### v0.4.19 — the string, this time
+
+**Status: RELEASED, tag `v0.4.19` (2026-09-25), `pyproject` 0.4.19.**
+
+**What shipped.** **PROMOTED to default-ON, encoder-side, together — the first encoder promotion
+since v0.4.17:** `OIN_H_FAITHFUL`, `OIN_RC1_PROPAGATE` and `OIN_CAP_IGNORES_METAL` (owner,
+2026-09-24: approved "on the condition the sweep lands on its prediction"). All three change the
+string: **109 of 5,000 input strings differ from v0.4.18's** (H 64, RC1 15, cap 31, with overlap),
+every one a census `E1_*` row and none a verified pass.
+- `OIN_H_FAITHFUL` — a 0-H anion carbon is written `[C]`, never bare `C`, so the string re-reads
+  with the input's hydrogen count. **A writer + reader lever**: the generator's adapter keeps a
+  bracketed `[C]` only while it is on, so a string written by v0.4.19 and read by v0.4.18 or
+  earlier carries a phantom H (of the moved rows, 71 verify under the new reader, 15 under the
+  old). Promoted on both sides at once; `"0"` restores both.
+- `OIN_RC1_PROPAGATE` — the aligner re-ranks "same-mass" η fragments, and same-mass means the same
+  *first binding atom*, so a Cp and an allyl qualify; the writer read each marker's rank against
+  the un-permuted list, so the Cp got the allyl's three markers and the allyl three of the Cp's
+  five. The permutation now reaches the writer.
+- `OIN_CAP_IGNORES_METAL` (rule v3) — perception's per-atom valence cap still counts every
+  neighbour, the metal included, but never cuts a *real* ligand bond (excess below 0.10 Å) to make
+  room for a short metal contact; that contact becomes dative. Hydrogen keeps the old rule.
+
+**18 levers default-ON, 17 held OFF.** The E2 lane's three perception levers were measured on a
+branch during this release and were **not** in the `v0.4.19` tag: for a v0.4.19 user they change
+nothing (two of them ship in v0.4.20). Also added: `tools/v0419/` — parse-back per lever arm, the
+whole-cohort report, the changed-set harness A/B, and `candidate_vs_projection.py`, which compares
+a sweep with its projection row by row.
+
+**Accuracy: REAL GAIN — +0.84 self-consistent / +0.72 VERIFIED, and the sweep landed *above* its
+projection for a reason the projection could not see.**
+
+| N = 5000, shipped defaults | v0.4.18 release sweep | projected | **v0.4.19 release sweep** |
+|---|---:|---:|---:|
+| self-consistent | 4347 = 86.94% | 4378 = 87.56% | **4389 = 87.78%** |
+| VERIFIED | 3920 = 78.40% | 3951 = 79.02% | **3956 = 79.12%** |
+| passes the metric cannot verify | 427 | | 433 |
+| `structural` · `key_equal` · `hard_fail` | 284 · 119 · 230 | | 311 · 121 · 162 |
+
+The sweep is `results-v0.4.19-candidate-sweep`: the full 5,000 through the release harness with
+the three levers on, same budget and configuration as the sweeps before it, promoted to the
+release sweep by a byte-identical default flip.
+
+**The ruler decided the lever, not the round trip.** `OIN_H_FAITHFUL` had been held off since
+v0.4.6 because a round-trip A/B "moved nothing": 55 of the 72 `E1_HCOUNT` rows of that era were
+`hard_fail` timeouts, so a repaired string still went nowhere through the generator. The census's
+parse-back ruler reads the string back to a graph with no 3D — exact for an encoder change: no
+generator, no seed, no budget — and it repaired **56 of 84** `E1_HCOUNT` strings, with 80
+verified-pass controls unmoved. `OIN_RC1_PROPAGATE` repaired 14 of 76 `SPHERE_DIFF` strings,
+byte-identical on all 296 probed rows to forcing RC1's own fail-safe. The live harness A/B over
+each arm's changed-string set, with the release sweep's own rows as OFF: the two serializer levers
+**+24 VERIFIED, 0 losses** over 80 rows; the cap **+6, 0 losses** over 31; all three **+30 / −0**
+over 109 — exactly additive. The whole-cohort canonicality audit (5,000 × 11 transforms per arm)
+was a near-null on every axis a canonicality lever could break.
+
+**What the sweep found that the projection did not.** Row by row: 40 differences, 5 on the 300 s
+budget boundary, **every one on a row whose string did not change**. The generator re-encodes
+candidate conformers to decide which one to keep, so a lever that changes perception changes what
+it keeps: **44 of 4,891 unchanged-string rows built a different structure**. Net positive — but on
+the VERIFIED axis the sweep beat the projection on 12 rows and missed it on 7, and five of those
+seven (`JUXXEF`, `PAFFEI`, `SIGYAL`, `TANROQ`, `WENDID`) are verified passes that became byte-exact
+false passes, the ruler's graph or stereo now differing. Four of the projection's offline
+self-consistent "gains" were false passes the harness's atom-count gate rightly rejects.
+**"Unchanged string ⇒ unchanged generation" is false for a perception lever** — v0.4.14's lesson
+(an offline re-score cannot express a loss), met again from the encoder side.
+
+**Speed: a real default-path gain, attributed.** A wrong string had been costing the generator its
+whole budget on a molecule it could never match. Over the 109 changed-string rows the live A/B
+read Σ `elapsed_s` **26,234 → 8,198 s** (in the 80-row serializer arm, rows at the 300 s budget
+49 → 8 and 11 → 2). Corpus-wide against the v0.4.18 release sweep: Σ **31.95 → 27.19 h**,
+`> 300 s` **173 → 121**, `> 30 s` 521 → 506 (10.12%), max 628.5 → 599.2 s, median 3.53 → 3.55 s.
+⚠ This sweep shared the machine with another job, so the step is not strictly like-for-like; the
+levers' own A/B accounts for ~5.0 of the 4.76 h, so the direction is theirs and the magnitude
+approximate.
+
+**Refuted.**
+- 🔴 **"`OIN_H_FAITHFUL` buys nothing"** (v0.4.6). The instrument could not have seen it work: a
+  round trip over generator timeouts. Held off for thirteen releases on it.
+- 🔴 **Cap rule v1 — "a heavy non-metal atom's cap ignores its metal contact".** On the whole cohort
+  it moved 74 strings, including 5 verified passes, and made 11 molecules renumbering-fragile. The
+  old rule was right for long agostic, C–F and B–H contacts (a tBu *methyl* became a Ni donor) and
+  wrong only when the metal contact is a bond by the radii.
+- 🔴 **Cap rule v2 — exempt only a short metal contact from the count.** Its audit looked clean; the
+  offline re-score found **195 self-consistent / 147 VERIFIED losses on rows whose input string had
+  not changed**. In a compressed generated structure two halides register a spurious Br···Br
+  contact, and the shipped cap had removed it *because* it counted the metal bond — the count was
+  doing the coordination sphere's job. Rule v3 keeps the count and changes only the victim.
+- **The E2 lane, measured and not promoted at this tag.** Bisecting one `E2_P_FRAGILE` molecule
+  found nitrogen has no valence 2 in the bond-order search, the charge walk runs in input order,
+  and `ResonanceMolSupplier` returns a numbering-dependent subset; its levers made 88 of the 105
+  fragile rows stable, whole-cohort measurement pending. All three held OFF — no user effect. See
+  v0.4.20.
+
+**What it cost.**
+- **The reader coupling** (above): a v0.4.19 string for these molecules, read by an older build, is
+  a different molecule. 109 strings move; a consumer holding v0.4.18 strings for them re-encodes.
+- **Five verified passes became false passes** through generator reach, and the cap's projection
+  booked one verified loss outright (`OHUTIV`, `NONE → G_HCOUNT`); its hard 0.10 Å edge is one
+  0.02 Å noise can cross.
+- **Gates.** ARM 1 re-frozen at 65 fixtures (three added by the lane); with the three levers at
+  `"0"` the control reproduces the v0.4.17 golden on all 62 rows, and the 5 rows the promotion
+  moves are each attributed by one lever at a time. ARM 2 from a full run: v047 100 / 100
+  reproduce; v049 owes **26 of 325** rows, every one on the input string and exactly the
+  encode-only audit's 26; the lever-off control brings all 26 back — **26 LEVER, 0 STALE**.
+  `MAHTOE`, frozen as a deterministic no-structure since v0.4.9 because its string left a
+  B(C₆F₅)₃ fragment with no donor, now keeps its donor, builds and gates byte-exact; re-frozen by
+  hand. ARM 2's honest column on the full run: **120 of the 368 rows the gate passes fail the
+  honest predicate** (v0.4.18: 135 of 378).
+
+**The census of record, on the release sweep.** FAIL 611 = **12.22 pts** (was 653 = 13.06) ·
+VERIFIED gap **20.88 pts** (was 21.60), `UNATTRIBUTED 0`, census `NONE` 3,956 = the sweep's
+VERIFIED. **E1 160 → 86** (`E1_HCOUNT` 77 → 21, `E1_GRAPH` 71 → 52); G 278 → 299, E2 176 → 193,
+P 29 → 24. `E2_P_FRAGILE` 105 → 124: 20 former `E1_HCOUNT` rows whose string now describes the
+input, and is renumbering-fragile as it always was — the census's rule order surfaces them once E1
+clears. That block was the next lane's target.
+
+Suite: **1084 OK** (measured at the `v0.4.19` tag for this refresh).
+
+---
+
+### v0.4.20 — the dianion nitrogen
+
+**Status: RELEASED, tag `v0.4.20` (2026-09-26), `pyproject` 0.4.20.**
+
+**What shipped.** **PROMOTED to default-ON, perception-side, together:** `OIN_N_VALENCE_2` and
+`OIN_CANONICAL_RESONANCE` (owner, 2026-09-26, after the candidate sweep landed on its projection).
+- `OIN_N_VALENCE_2` — a **pyrrolide** nitrogen (two carbon neighbours, no H, in a five-membered
+  ring) may be written N⁻, but only when the shipped charge ladder ended on a bond-order *guess*,
+  and the re-run wins only if it validates.
+- `OIN_CANONICAL_RESONANCE` — resonance forms are enumerated on the canonically relabelled ligand,
+  so every atom numbering gets the same subset. Renumbering the atoms was not enough, because the
+  supplier also walks bonds by index; the ligand is re-parsed from its canonical SMILES and each
+  form mapped back.
+
+**Added and held OFF:** `OIN_CANONICAL_CHARGES` (the charge walk in canonical order). It was never
+measured on the cohort, and on its own it makes the lane's fixture stable but wrong (a quinoid).
+**It changes nothing for a user.** **20 levers default-ON, 18 held OFF.** Also added:
+`generator_reach.py` (rows whose string is unchanged but whose structure moved) and
+`tests/unit/test_e2_canonical_perception.py`, with `XIVMEX` as its fixture. From this release on,
+session notes are no longer added to the tracked docs tree (owner decision, 2026-09-26): the
+tracked record is `CHANGELOG.md`, the evidence block in `levers.py`, and `measurements/`.
+
+**Accuracy: REAL GAIN — +1.56 self-consistent / +1.48 VERIFIED, on the projection.**
+
+| N = 5000, shipped defaults | v0.4.19 release sweep | projected | **v0.4.20 release sweep** |
+|---|---:|---:|---:|
+| self-consistent | 4389 = 87.78% | 4466 = 89.32% | **4467 = 89.34%** |
+| VERIFIED | 3956 = 79.12% | 4025 = 80.50% | **4030 = 80.60%** |
+| passes the metric cannot verify | 433 | | 437 |
+| `structural` · `key_equal` · `hard_fail` | 311 · 121 · 162 | | 231 · 119 · 163 |
+
+The sweep is `results-v0.4.19-e2-candidate-sweep` (frozen as
+`measurements/v0.4.19-e2-candidate-sweep/`): the full 5,000 with both levers on, same harness and
+budget. The projection added a live harness A/B over the **136 changed strings**, with the v0.4.19
+sweep's own rows as OFF (**+69 / −7 self-consistent, +66 / −7 VERIFIED**), to an offline re-score
+of the unchanged rows (+17 / −2, +11 / −1). Row by row against it: VERIFIED 7 gained, 2 lost —
+both on the 300 s budget boundary. **Generator reach, counted this time:** 37 unchanged-string rows
+changed outcome, net +13 self-consistent / +12 VERIFIED, and no new false pass on the VERIFIED axis.
+
+**Found by bisecting one molecule.** v0.4.19's census filed 124 molecules under `E2_P_FRAGILE` —
+strings that move when the input's atoms are renumbered or its coordinates perturbed — led by Ni
+and Zn N-macrocycles. The lane took one, `XIVMEX` (a Zn porphyrin), through twelve stages of
+perception under several numberings, printing at each stage a value that cannot depend on the
+numbering unless the stage does. **The ordering was not the first defect.** The bond-order search
+had no N⁻ — a two-coordinate nitrogen could be an imine or an ammonium, never a pyrrolide — so a
+porphyrin dianion had no legal assignment at charge −2 and the search returned its fallback: the
+connectivity itself, with zero double bonds. The charge walk, which runs in input order, and
+`ResonanceMolSupplier`, which returns a numbering-dependent subset of forms, then turned that
+guess into whatever the file's atom order reached first: from the file's own numbering the
+enumeration reached the neutral aromatic dianion, and from one renumbering it returned a single
+form, the charged guess itself. **The shipped "correct" string for XIVMEX had been a lottery
+ticket** — three renumberings gave three different strings, all with radicals.
+
+**Speed: nothing claimed.** Against the v0.4.19 sweep: `> 30 s` 506 → 460 (9.20%), Σ 27.19 →
+25.17 h, median 3.55 → 2.96 s, `> 300 s` 121 → 116, max 599.2 → 606.1 s; hard-kill timeouts
+107 → 107. ⚠ **Confounded**: the v0.4.19 sweep shared the machine with another job and this one
+ran alone, so none of that is a speedup the release can own. What is attributable is per-molecule,
+and a cost (below). Goal B is not delivered.
+
+**Refuted — three wider cuts, each on the whole cohort, before the narrow one shipped.**
+- 🔴 **N⁻ allowed on every two-coordinate nitrogen** — the obvious fix. It moved **343 strings, 167
+  of them VERIFIED passes**.
+- 🔴 **A fallback pass inside the bond-order search.** Still moved 251 strings. The charge ladder is
+  itself a fallback chain, and the extra valence let a wrong Hückel charge validate before the
+  right one was tried — a terpyridine became a quinoid anion.
+- 🔴 **A fallback after the ladder for every two-coordinate nitrogen.** Still moved 177. A guess can
+  be right where a validated N⁻ structure at the wrong charge is a quinoid; hence the pyrrolide
+  scope.
+- 🔴 **Renumbering the ligand's atoms as the resonance fix** — the supplier also walks bonds by index.
+- **`OIN_CANONICAL_CHARGES` alone** makes the fixture reproducibly wrong: a stability lever, not a
+  chemistry lever. Held off.
+
+**What it cost, recorded with the gain.**
+- **136 strings move** relative to v0.4.19; a consumer holding v0.4.19 strings for those molecules
+  re-encodes. The canonicality audit (5,000 × 11 transforms): strings that a renumbering or a
+  coordinate perturbation moves **492 → 377** — 120 became stable, 5 became unstable.
+- The fallback re-runs the whole ligand charge ladder on ~50 macrocycles: **+20% encode CPU** over
+  the resonance lever alone. `HOHKOF`, whose string did not change, became a 300 s timeout.
+- 🔴 **`DOKROM`** (a Ni porphyrin; string unchanged) is SIGKILLed at ARM 2's 450 s limit. Timed
+  alone: both levers off 80 s, the resonance lever alone 81 s, `OIN_N_VALENCE_2` alone **617 s**,
+  both 617 s. It still passes, from a different conformer: the generator re-encodes every candidate
+  conformer, and the fallback changes which one matches first. Kept in the golden by a recorded
+  decision — **a known red row in every full ARM 2 run** until the gate writes the input string's
+  hash before it generates, or the fallback's generator cost is cut.
+- 🔴 **`RAXJEH`'s string depends on CPU load.** On a large porphyrin the canonical-frame enumeration
+  is bigger than the input frame's, and RAXJEH needs the whole 120 CPU-s budget of the forked
+  resonance enumeration; whether it finishes, and so which string it gets, depends on contention.
+  CPU time on a hyperthreaded core is not independent of load.
+- **Gates.** ARM 1 re-frozen at 66 (`XIVMEX` added); with both levers at `"0"` the control
+  reproduces the v0.4.19 golden on all 65, and the 5 rows the promotion moves are each attributed
+  by setting one lever at a time to `"0"`. ARM 2 from a full run: **30 of 425** rows owed, all on
+  the input string, exactly the encode-only audit's 30; the lever-off control brings every old row
+  back — **30 LEVER, 0 STALE**. **Six of the 30 now share one input string, on purpose**: `HAMGAD`,
+  `HAMGEH`, `HAMJOU`, `HAMKOV`, `JIVRIP` and `SEMPOP` are six crystal structures of zinc
+  tetraphenylporphyrin (C₄₄H₂₈N₄Zn). v0.4.19 gave them five different radical and quinoid strings,
+  depending on the file; v0.4.20 gives all six the aromatic dianion. That collision is the
+  canonicality fix, not an injectivity loss. ARM 2's honest column: **107 of the 376 rows the gate
+  passes fail the honest predicate** (v0.4.19: 120 of 368).
+
+**The census of record, on the release sweep.** FAIL 533 = **10.66 pts** (was 611 = 12.22) ·
+VERIFIED gap **19.40 pts** (was 20.88), `UNATTRIBUTED 0`, census `NONE` 4,030 = the sweep's
+VERIFIED. **`E2_P_FRAGILE` 124 → 53**, 57 of those molecules now with no fault at all. By owner,
+FAIL: G 299 → 292, **E2 193 → 121**, E1 86 → 86, P 24 → 25, data 9. 144 molecules built a
+different structure than in the v0.4.19 sweep: 81 went FAIL → PASS and 8 PASS → FAIL. Metric
+false passes 433 → 437 (9.8% of passes).
+
+Suite: **1097 OK**.
+
+---
+
 ## What is not known
 
 Stated explicitly, because the gaps are as decision-relevant as the numbers.
@@ -1540,9 +1859,12 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    **678/5000 = 13.56%**, median **4.01 s**, max **728.8 s**. ⚠ Not strictly like-for-like — BLAS
    threads capped to 1 here, not in the v0.4.6 run. **What is still unknown is attribution of
    the first step:** no release claimed the v0.4.6 → v0.4.14 win, so a −6.3-point improvement has
-   no owner, and bisecting it across v0.4.7–v0.4.14 has not been attempted. The two steps since
-   are owned: v0.4.17 (678 → 579, the veto's per-conformer encodes) and v0.4.18 (579 → 521,
-   attached rings).
+   no owner, and bisecting it across v0.4.7–v0.4.14 has not been attempted. The three steps
+   after it are owned: v0.4.17 (678 → 579, the veto's per-conformer encodes), v0.4.18 (579 → 521,
+   attached rings) and v0.4.19 (521 → 506 and `> 300 s` 173 → 121, strings that stopped sending
+   the generator after a molecule it could not match). **The v0.4.20 step (506 → 460) has no
+   owner either**, and cannot get one from these two sweeps: the v0.4.19 sweep shared the machine
+   with another job and the v0.4.20 sweep ran alone.
 2. ~~**Corpus accuracy rests on the v0.4.6 generator run.**~~ **CLOSED: 77.16%, measured.** And
    v0.4.13's argument that the re-score was exact is **refuted** — key-invariance bounds
    *acceptance*, not *embedding*, because the generator consumes the OIN string. The re-score chain
@@ -1555,9 +1877,9 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
 4. **The five bucket-report cohorts are still not comparable**, so there is no honest like-for-like
    accuracy line from v0.4.4 to today. The v0.4.6 and v0.4.14 sweeps share a cohort and seed but not
    a code version or a thread configuration — closer than anything before, still not a time series.
-   **Partly CLOSED from v0.4.14 on:** the v0.4.14, v0.4.17, v0.4.18 and v0.4.18-release sweeps
-   are one configuration and differ only in the code, so 77.16 → 82.72 → 86.10 → 86.94 *is* a
-   series. Nothing before v0.4.14 joins it.
+   **Partly CLOSED from v0.4.14 on:** the v0.4.14, v0.4.17, v0.4.18, v0.4.18-release, v0.4.19
+   and v0.4.20 sweeps are one configuration and differ only in the code, so 77.16 → 82.72 →
+   86.10 → 86.94 → 87.78 → 89.34 *is* a series. Nothing before v0.4.14 joins it.
 5. **`OIN_ETA_ACCEPT_EXIT` has no runtime claim at all** — its A/B was stopped, not banked.
 6. ~~**`PREFILTER_VETO`'s corpus prevalence is n = 1.**~~ **CLOSED by v0.4.14: 4/261 vetoes = 1.5%,
    2/44 molecules = 4.5%** (stratified sample, seed 7, 5 `INSTRUMENT_DEAD` excluded). AROHIA is an
@@ -1584,17 +1906,22 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
    perception *on a correct structure* by definition — 148 / 2.96 pts at v0.4.14, **176 / 3.52 on
    the v0.4.18 release sweep** (`E2_P_FRAGILE` 105: strings that change under renumbering or
    0.02 Å noise, 92 of them non-η, Ni 24 / Zn 22; `E2_P_OTHER` 71). It is an encoder lane, and the
-   census of record recommends it, or the serializer's η-rank swap, for v0.4.19.
+   census of record recommends it, or the serializer's η-rank swap, for v0.4.19. **Both were
+   taken**: v0.4.19 the serializer, v0.4.20 the fragility. On the v0.4.20 release sweep E2 is
+   **121 / 2.42 pts** (`E2_P_FRAGILE` 53, `E2_P_OTHER` 68).
 9. ~~**The mechanism splits are one cohort behind the bucket table.**~~ **CLOSED by the census of
    record:** every fault is attributed on the release sweep itself, 5,000 / 5,000, `UNATTRIBUTED 0`,
    with a control that reproduces the frozen v0.4.14 table byte-for-byte and a non-mover change
-   count of **0** as the noise floor. There is no longer an older corpus behind any figure in the
-   gap table.
+   count of **0** as the noise floor (v0.4.18). The v0.4.19 and v0.4.20 censuses were each re-run
+   on their own release sweep, `UNATTRIBUTED 0` both times. There is no longer an older corpus
+   behind any figure in the gap table.
 10. **Why runtime improved from v0.4.6 to v0.4.14 is unexplained.** Median more than halved with
     no release claiming it. Candidates include v0.4.10's default-ON deletion finally being seen at
     corpus scale and the thread caps, but nothing separates them. The v0.4.17 and v0.4.18 steps
-    are explained (item 1). ⚠ **New:** v0.4.18's corpus median *rose* 3.32 → 3.53 s while its
-    tail fell (`> 30 s` 579 → 521); not measured.
+    are explained (item 1). ⚠ v0.4.18's corpus median *rose* 3.32 → 3.53 s while its tail fell
+    (`> 30 s` 579 → 521); not measured. v0.4.19's stayed at 3.55 s. ⚠ **New:** v0.4.20's read
+    2.96 s, but against a sweep that shared the machine — whether v0.4.20 moved the corpus runtime
+    at all, in either direction, is unknown. Its measured per-molecule effects are costs.
 11. ~~**Whether `OIN_ACCEPT_STRING_EXACT`'s 4.00× cost can be bought down is unmeasured.**~~
     **CLOSED by v0.4.16: it cannot.** The knee experiment was run over all 365 molecules and there
     is no favourable bound — keeping 79% of the +48 costs **89%** of the runtime penalty, because
@@ -1610,11 +1937,12 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
     encoder writing achiral molecules two ways; `G_HANDEDNESS` — the generator building the mirror
     of a molecule whose string *does* separate the hands — is **9 molecules** at v0.4.14 and **4**
     on the release sweep. Forcing the pool wide was never run and no longer needs to be.
-13. **`SPHERE_DIFF` — 183 verified-gap molecules, 133 of them passes — is G or the ruler's
-    tolerance, and nobody knows which.** The ruler disagrees about the coordination sphere on a
-    structure the round trip accepts; the C1 squeeze control puts the ruler's own floor at ~1.16%.
-    It is the largest single block G owns on the VERIFIED side and has been carried as "a question
-    for the L2 lane" since the census. Still open after v0.4.18.
+13. **`SPHERE_DIFF` — 193 verified-gap molecules on the v0.4.20 release sweep, 141 of them passes
+    (183 / 133 at v0.4.18) — is G or the ruler's tolerance, and nobody knows which.** The ruler
+    disagrees about the coordination sphere on a structure the round trip accepts; the C1 squeeze
+    control puts the ruler's own floor at ~1.16%. It is the largest single block G owns on the
+    VERIFIED side and has been carried as "a question for the L2 lane" since the census. Still
+    open after v0.4.20.
 14. **The generator's label dependence has no lane.** An equally valid, differently *labelled*
     input string and a worse structure: 7 in 182 at v0.4.14, all four of v0.4.17's losses. Every
     canonicality lever pays it until the CoordMap stops caring which of two automorphic donors is
@@ -1629,76 +1957,97 @@ Stated explicitly, because the gaps are as decision-relevant as the numbers.
     passes fail the harness's own predicate**. Gating on the column re-freezes ~135 rows as honest fails or drops
     them; not gating leaves the release gate blind to the class of defect v0.4.18 just repaired.
     Owner decision, evidence frozen. Also owner's: the gate scores a SIGKILLed row as a string
-    mismatch (`EQEROI`, `MUKGUW`).
+    mismatch (`EQEROI`, `MUKGUW`). The column has been read at every full run since: **120 of 368**
+    gated passes fail it at v0.4.19, **107 of 376** at v0.4.20. And from v0.4.20 the SIGKILL
+    problem has a permanent member: `DOKROM` passes, but only after 617 s against the gate's
+    450 s limit, so every full run reads it as a mismatch.
 17. **The residual `DETACHED` is two populations and only one has a mechanism.** η-bound 103
     (Ru 37, Ti 12, Zr 11) — mostly the ~30 molecules of oracle headroom where a per-atom arrival
     count ties or points the wrong way, plus rings the retarget did not reach; and **non-η 48**
     (Y 7, Pt 6, Ir 4, Pd 4, Zn 4), a σ-donor that never arrives, which no v0.4.18 lever touched
-    and no ruler has yet measured.
+    and no ruler has yet measured. On the v0.4.20 release sweep the FAIL side reads **144
+    (η 108 / non-η 36)**; neither v0.4.19 nor v0.4.20 was aimed at it.
 18. **Stereo the string does not carry: 154 passes / 3.08 verified pts** (`E1_NOT_ENCODED` 118 +
     `E1_NONINJECTIVE` 36 on the release sweep). Invisible to the self-consistent number by
     construction; the Y1 P3 blind spot (a metal-bound N–H / C–H centre with its tag cleared) lives
     here, and v0.4.17's accepted 17 unified pairs moved into it. The repair is to encode the
-    centre; no release owns it.
+    centre; no release owns it. On the v0.4.20 release sweep it is **166 passes / 3.32 pts**
+    (125 + 41) — larger, partly because repaired strings expose stereo they never carried: 8
+    molecules moved in from `E1_GRAPH` when v0.4.19 fixed their strings.
+19. **What is left of `E2_P_FRAGILE` has no mechanism: 53 molecules / 1.06 pts.** Two leads are
+    recorded, neither measured under the shipped cut: the extended-Hückel charge proposal compares
+    orbital energies with a fixed −10 eV threshold, so a 0.02 Å perturbation can still change a
+    macrocycle's proposed charge (a coordinate axis, not an ordering one, and not addressed); and
+    the E2 lane named six renumbering-fragile molecules as its next bisection targets.
+    `OIN_CANONICAL_CHARGES`, which puts the charge walk in canonical order, is built and held off:
+    **never measured on the cohort**, so it changes nothing for a user.
+20. **Strings that depend on load.** `RAXJEH`'s string depends on whether a forked enumeration
+    finishes inside its 120 CPU-s budget, and CPU time on a hyperthreaded core is not independent
+    of load. It is the one molecule named; how many others sit near that budget has not been
+    reported.
 
 ---
 
-## Where the remaining 13.06 / 21.60 points are
+## Where the remaining 10.66 / 19.40 points are
 
-**From the census of record on the v0.4.18 release sweep**
-(`measurements/v0.4.18-release-sweep/v0418_rcensus_*`, `docs/agentic-notes/v0.4.18/CENSUS_OF_THE_RELEASE_SWEEP.md`),
+**From the census of record on the v0.4.20 release sweep**
+(`measurements/v0.4.20-release-census/`; the v0.4.19 column from `measurements/v0.4.19-release-census/`),
 N = 5000, honest scoring, every molecule given exactly one fault by four instruments none of which
-routes through the encoder to judge the generator or the reverse, `UNATTRIBUTED 0`. Supersedes the
-22.84-point bucket table this section carried from v0.4.14 through v0.4.16 — that table partitioned
-by *bucket name*, this one by *measured fault*, and the census's first finding was that two of the
-old table's largest blocks were under the wrong owner.
+routes through the encoder to judge the generator or the reverse, `UNATTRIBUTED 0`, and the
+census's fault-free count (4,030) equal to the sweep's VERIFIED count. Supersedes the 22.84-point
+bucket table this section carried from v0.4.14 through v0.4.16 — that table partitioned by *bucket
+name*, this one by *measured fault*, and the census's first finding was that two of the old
+table's largest blocks were under the wrong owner.
 
-**The FAIL side — 653 molecules = 13.06 pts** (v0.4.17: 864 / 17.28):
+**The FAIL side — 533 molecules = 10.66 pts** (v0.4.18: 653 / 13.06; v0.4.19: 611 / 12.22):
 
-| owner | fault | v0.4.17 | **v0.4.18** | pts | what it is |
-|---|---|---:|---:|---:|---|
-| **G** generator | `G_CONSTRUCTION` | 386 | **197** | **3.94** | generated graph ≠ input: **`DETACHED` 142** (η 103 / non-η 48), `SPHERE_DIFF` 50, `LIGAND_DIFF` 5 |
-| | `G_NOTHING` | 76 | 69 | 1.38 | no structure: `TIMEOUT` 61, `NOCONF` 8 — the compute floor |
-| | `G_HCOUNT` · `G_DIASTEREOMER` · `G_HANDEDNESS` | 19 | 12 | 0.24 | 3 · 5 · 4 |
-| | **G total** | **481** | **278** | **5.56** | |
-| **E2** perception | `E2_P_FRAGILE` | 101 | 105 | 2.10 | the input's own string changes under renumbering / 0.02 Å noise; 92 non-η, Ni 24 / Zn 22 |
-| | `E2_P_OTHER` | 74 | 71 | 1.42 | bond orders / labels on a structure the ruler passes |
-| | **E2 total** | **175** | **176** | **3.52** | |
-| **E1** encoder | `E1_HCOUNT` | 79 | 77 | 1.54 | the string's H count ≠ the input's; 72 of 84 sit in `hard_fail` |
-| | `E1_GRAPH` | 77 | 71 | 1.42 | the string's graph ≠ the input's: `LIGAND_DIFF` 39, `SPHERE_DIFF` 32 |
-| | `E1_NONCANONICAL` | 12 | 11 | 0.22 | one molecule, two strings — was 266 / 5.32 before v0.4.17 |
-| | `E1_NONINJECTIVE` | 1 | 1 | 0.02 | |
-| | **E1 total** | **169** | **160** | **3.20** | |
-| **P** perception on the input | `P_DETACHED` 18 · `P_E1_COVERAGE` 11 | 29 | 29 | 0.58 | |
-| **data** | `DATA_MULTI` | 10 | 10 | 0.20 | two molecules in one file |
-| | **sum** | **864** | **653** | **13.06** ✓ | |
+| owner | fault | v0.4.18 | v0.4.19 | **v0.4.20** | pts | what it is |
+|---|---|---:|---:|---:|---:|---|
+| **G** generator | `G_CONSTRUCTION` | 197 | 209 | **202** | **4.04** | generated graph ≠ input: **`DETACHED` 144** (η 108 / non-η 36), `SPHERE_DIFF` 52, `LIGAND_DIFF` 6 |
+| | `G_NOTHING` | 69 | 77 | 76 | 1.52 | no structure: `TIMEOUT` 65, `NOCONF` 11 — the compute floor |
+| | `G_HCOUNT` · `G_DIASTEREOMER` · `G_HANDEDNESS` | 12 | 13 | 14 | 0.28 | 3 · 7 · 4 |
+| | **G total** | **278** | **299** | **292** | **5.84** | |
+| **E2** perception | `E2_P_FRAGILE` | 105 | 124 | **53** | 1.06 | the input's own string changes under renumbering / 0.02 Å noise; v0.4.20's target — 57 of its 124 now carry no fault |
+| | `E2_P_OTHER` | 71 | 69 | 68 | 1.36 | bond orders / labels on a structure the ruler passes |
+| | **E2 total** | **176** | **193** | **121** | **2.42** | |
+| **E1** encoder | `E1_HCOUNT` | 77 | 21 | 24 | 0.48 | the string's H count ≠ the input's — `OIN_H_FAITHFUL`'s target at v0.4.19 (77 → 21) |
+| | `E1_GRAPH` | 71 | 52 | 50 | 1.00 | the string's graph ≠ the input's: `LIGAND_DIFF` 35, `SPHERE_DIFF` 15 |
+| | `E1_NONCANONICAL` | 11 | 13 | 12 | 0.24 | one molecule, two strings — was 266 / 5.32 before v0.4.17 |
+| | `E1_NONINJECTIVE` | 1 | 0 | 0 | 0.00 | |
+| | **E1 total** | **160** | **86** | **86** | **1.72** | |
+| **P** perception on the input | `P_DETACHED` · `P_E1_COVERAGE` | 29 | 24 | 25 | 0.50 | 13 · 12 at v0.4.20 |
+| **data** | `DATA_MULTI` | 10 | 9 | 9 | 0.18 | two molecules in one file |
+| | **sum** | **653** | **611** | **533** | **10.66** ✓ | |
 
-**The VERIFIED side adds 427 passes that carry a fault** (v0.4.17: 406) — 1,080 molecules =
-**21.60 pts**: `G_CONSTRUCTION` 205 (`SPHERE_DIFF` 133, `LIGAND_DIFF` 63, `DETACHED` 9),
-`E1_NOT_ENCODED` 118, `E1_GRAPH` 61, `E1_NONINJECTIVE` 36, `E1_HCOUNT` 7. **By owner, verified:
-G 483 / 9.66 · E1 382 / 7.64 · E2 176 / 3.52 · P 29 / 0.58 · data 10 / 0.20.**
+**The VERIFIED side adds 437 passes that carry a fault** (v0.4.18: 427; v0.4.19: 433) — 970
+molecules = **19.40 pts**: `G_CONSTRUCTION` 212 (`SPHERE_DIFF` 141, `LIGAND_DIFF` 60, `DETACHED`
+11), `E1_NOT_ENCODED` 125, `E1_GRAPH` 53, `E1_NONINJECTIVE` 41, `E1_HCOUNT` 6. **By owner,
+verified: G 504 / 10.08 · E1 311 / 6.22 · E2 121 / 2.42 · P 25 / 0.50 · data 9 / 0.18.**
 
 **The totals that matter:**
 
 | | FAIL pts | VERIFIED pts | |
 |---|---:|---:|---|
-| **construction** — the generator builds the wrong graph | 3.94 | 9.66 (with `G_NOTHING` and the rest of G) | `DETACHED` 142 is two populations (item 17); `SPHERE_DIFF` 183 verified may be the ruler's tolerance (item 13) |
-| **perception** — a correct structure re-read differently | 3.52 | 3.52 | encoder lane; `E2_P_FRAGILE` is an encoder *stability* defect — one molecule, two hashes |
-| **serializer** — the string was wrong and the generator built it | 2.96 | 4.32 | `E1_HCOUNT` + `E1_GRAPH`; 129 of the 148 sit in `hard_fail`. Mapped: three defects, one in string-writing code |
-| **stereo the string does not carry** | — | 3.08 | `E1_NOT_ENCODED` 118 + `E1_NONINJECTIVE` 36; Y1 P3 |
-| **produce nothing** — the compute floor, with encode timeouts | 1.60 | 1.60 | `G_NOTHING` 69 + `P_E1_COVERAGE` 11 = 80 molecules, the ceiling of an always-works fallback |
-| canonicality residue | 0.22 | 0.22 | the residual of v0.4.17's 102; a canonicality defect, not an accuracy lane |
-| other generator (H count, diastereomer, handedness) + non-injective | 0.26 | 0.26 | `G_HANDEDNESS` is **4** |
-| data + input perception | 0.56 | 0.56 | |
-| **sum** | **13.06** ✓ | | VERIFIED rows overlap the FAIL rows and do not sum |
+| **construction** — the generator builds the wrong graph | 4.04 | 10.08 (with `G_NOTHING` and the rest of G) | `DETACHED` 144 is two populations (item 17); `SPHERE_DIFF` 193 verified may be the ruler's tolerance (item 13) |
+| **perception** — a correct structure re-read differently | 2.42 | 2.42 | encoder lane; the `E2_P_FRAGILE` 53 v0.4.20 left has no mechanism yet (item 19) |
+| **produce nothing** — the compute floor, with encode timeouts | 1.76 | 1.76 | `G_NOTHING` 76 + `P_E1_COVERAGE` 12 = 88 molecules, the ceiling of an always-works fallback |
+| **serializer** — the string was wrong and the generator built it | 1.48 | 2.66 | `E1_HCOUNT` + `E1_GRAPH`; 61 of the 74 sit in `hard_fail`. Was 2.96 / 4.32 before v0.4.19 |
+| **stereo the string does not carry** | — | 3.32 | `E1_NOT_ENCODED` 125 + `E1_NONINJECTIVE` 41; Y1 P3 (item 18) |
+| canonicality residue | 0.24 | 0.24 | the residual of v0.4.17's 102; a canonicality defect, not an accuracy lane |
+| other generator (H count, diastereomer, handedness) + non-injective | 0.28 | 0.28 | `G_HANDEDNESS` is **4** |
+| data + input perception | 0.44 | 0.44 | |
+| **sum** | **10.66** ✓ | | VERIFIED rows overlap the FAIL rows and do not sum |
 
-⚪ **The three largest blocks are within a point of each other** — construction 3.94, perception
-3.52, serializer 2.96 — which has not been true before. Through v0.4.16 this document said **"15.36
-of 22.84 points (67%) require the generator to BUILD something different"**; that sentence was
-the most consequential number here, and the census cut it in half twice. First by re-filing 5.04
-pts of "enantiomers the generator cannot build" onto the encoder (v0.4.17), then by finding the
-construction block was a distance and closing 6.86 → 2.84 pts of it in one release (v0.4.18). What
-G still owns on the FAIL side is **5.56 pts**, and 1.38 of that produces nothing at all.
+⚪ **Construction is the largest block again, by a margin.** At v0.4.18 the three largest FAIL
+blocks were within a point of each other — construction 3.94, perception 3.52, serializer 2.96.
+Two encoder releases later the serializer is 1.48 and perception 2.42, while construction, which
+neither release aimed at, is **4.04 — 1.7 × the next block**; on the VERIFIED side G owns 10.08 of
+the 19.40 points. Through v0.4.16 this document said **"15.36 of 22.84 points (67%) require the
+generator to BUILD something different"**; that sentence was the most consequential number here,
+and the census cut it in half twice. First by re-filing 5.04 pts of "enantiomers the generator
+cannot build" onto the encoder (v0.4.17), then by finding the construction block was a distance
+and closing 6.86 → 2.84 pts of it in one release (v0.4.18). What G owns on the FAIL side is now
+**5.84 pts**, and 1.52 of that produces nothing at all.
 
 🔴 **The old table's two largest blocks were under the wrong owner, and the ownership column had
 been wrong in both directions before.** `slot_renumber` 252 / 5.04 was filed as construction for
@@ -1708,25 +2057,29 @@ which is a construction defect, not a limit. This document has now recorded the 
 v0.4.14 (`rdkit_canonical`), v0.4.15 (both lanes), v0.4.17 (`slot_renumber`) and v0.4.18
 (`DETACHED`): **a block's name is a hypothesis, and reachability is a property of a mechanism.** The
 census exists so that the next lane is chosen from a measured fault rather than from a bucket.
+v0.4.20 met the same lesson inside one block: `E2_P_FRAGILE` was named for an *ordering* defect,
+and its first cause was a missing valence.
 
-**The ladder, as the census of record leaves it.** Both v0.4.18 promotions moved what the
-generator builds, so the v0.4.17 table was stale for 843 molecules and was re-run on the release
-sweep before a lane was chosen; the noise floor of that attribution is **zero** (4,157 / 4,157
-non-movers keep their fault). The recommendation to the owner for **v0.4.19** is an *encoder* lane
-— E2 perception fragility (105 / 2.10, non-η, Ni/Zn) or the serializer's η-rank swap
-(`spec/handoffs/v0.4.19/SERIALIZER_LANE_MAP.md`) — because neither needs a generator sweep to
-measure; the residual `DETACHED` needs a different selector than the arrival count and is smaller
-per molecule of effort now. The rule from the v0.4.17 re-attribution stands: **do not choose a
-lane smaller than ~0.3 pts from this table**, the size of the attribution noise it measured
-(0.28 pts) before the release sweep brought it to zero.
+**The ladder, as the census of record leaves it.** v0.4.18's census recommended an encoder lane
+for v0.4.19 — the serializer, or E2 perception fragility — and both were taken, one per release.
+Each release changed what the generator builds for some rows whose string did not move, so each
+census was re-run on its own release sweep before anything was read from it (132 movers at
+v0.4.19, 144 at v0.4.20). **No lane for the next release is recorded in a tracked source.** The
+table says where the points are: construction 4.04 FAIL / 10.08 VERIFIED, the compute floor 1.76,
+perception 2.42 (1.06 of it the residual fragility), and 3.32 VERIFIED points of stereo the string
+does not carry. The rule from the v0.4.17 re-attribution stands: **do not choose a lane smaller
+than ~0.3 pts from this table**, the size of the attribution noise it measured (0.28 pts) before
+the v0.4.18 release sweep brought it to zero.
 
 **The other structural fact, refreshed.** The two goals are one goal, but less so than they were.
-On the v0.4.6 sweep 78.8% of failures never tested the notation; on the release sweep the
-molecules that produce nothing are **69 of 653 failures (10.6%)**, and the census showed the
-string was wrong for **59% of `hard_fail`** at v0.4.14 — the generator working on the wrong
-molecule, not a throughput problem. A 30 s cap would still cost passes: 521 molecules are over it
-and 4,347 pass, so at most **~10.4%** of the cohort is on the wrong side of Goal B, against 19.88%
-at v0.4.6. The v0.4.6-era figures (37.84 CPU-h recoverable, 251 passes / 5.02 pts at risk) are
+On the v0.4.6 sweep 78.8% of failures never tested the notation; on the v0.4.20 release sweep the
+molecules that produce nothing are **76 of 533 failures (14.3%)** — a larger share than at v0.4.18
+(69 of 653, 10.6%), because the failures that *did* test the notation are the ones being fixed.
+The census showed the string was wrong for **59% of `hard_fail`** at v0.4.14 — the generator
+working on the wrong molecule, not a throughput problem — and when v0.4.19 repaired strings,
+`> 300 s` fell 173 → 121. A 30 s cap would still cost passes: 460 molecules are over it and
+4,467 pass, so at most **~9.2%** of the cohort is on the wrong side of Goal B, against 19.88% at
+v0.4.6. The v0.4.6-era figures (37.84 CPU-h recoverable, 251 passes / 5.02 pts at risk) are
 retired; the equivalent numbers on the release sweep have not been derived.
 
 ---
@@ -1735,7 +2088,15 @@ retired; the equivalent numbers on the release sweep have not been derived.
 
 | what | where |
 |---|---|
-| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.18] |
+| Per-release narrative and figures | `CHANGELOG.md` §§ [0.4.4]–[0.4.20] |
+| **v0.4.20 — the release sweep of record (89.34 / 80.60), frozen** | **`measurements/v0.4.19-e2-candidate-sweep/`** (the candidate sweep *is* the release sweep: honest bucket report, ruler verdicts and parse-back that re-derive 4467 / 4030, and the row-by-row comparison with the projection) |
+| **v0.4.20 — the census of record on the release sweep (10.66 / 19.40)** | **`measurements/v0.4.20-release-census/`** (attribution table, reattribution diff against v0.4.19, control on the v0.4.14 record) · CHANGELOG `[0.4.20]` |
+| **v0.4.20 — the release gates: ARM 1 at 66, ARM 2 from a full run, DOKROM timed alone** | **`measurements/v0.4.20-release-gates/`** |
+| **v0.4.20 — what ships and why** (the evidence block above `_DEFAULT_ON`: the three refuted cuts, the gates, the costs) | `src/oinsmiles/oin/levers.py` · `docs/KNOWN_LIMITATIONS.md` |
+| **v0.4.20's lane, measured during v0.4.19 — the bisection, all four cuts, the canonicality audits, the live A/B** | **`measurements/v0.4.19-e2/`** · `docs/agentic-notes/v0.4.19/E2_PERCEPTION_ORDER.md` |
+| **v0.4.19 — the release sweep of record (87.78 / 79.12), the ARM 1 / ARM 2 re-freeze, and the sweep against its projection** | **`measurements/v0.4.19-release-sweep/`** |
+| **v0.4.19 — the census of record on the release sweep (12.22 / 20.88)** | **`measurements/v0.4.19-release-census/`** |
+| **v0.4.19 — the serializer lane: parse-back per lever, all three cap rules, the changed-set A/Bs** | **`measurements/v0.4.19-serializer/`** · `docs/agentic-notes/v0.4.19/SERIALIZER_LANE.md` |
 | **v0.4.18 — the release sweep of record, its census, and the ARM 2 full run with the honest column** | **`measurements/v0.4.18-release-sweep/`** (28 files: `v0418_rsweep_RUN.md`, the honest bucket report + ruler verdicts + parse-back that re-derive 4347 / 3920, `sweep_vs_ab`, the census table and its byte-for-byte control on the v0.4.14 record, the reattribution diff, and every ARM 2 row with field 9) |
 | **v0.4.18 — the first promotion's sweep (86.10 / 77.66) and its ARM 2 full run** | **`measurements/v0.4.18-sweep/`** |
 | **v0.4.18 — L2: the distance audit, every probe, and all three η A/B arms** | **`measurements/v0.4.18-l2/`** (`v0418_l2_eta_distance_audit`, `eta_ab_report{,_on3}`, per-molecule rows of off / on / on3) · `docs/agentic-notes/v0.4.18/L2_ETA_DETACHED.md` |
@@ -1749,7 +2110,7 @@ retired; the equivalent numbers on the release sweep have not been derived.
 | **v0.4.16 — the 187 characterised, with a read example per class** | **`docs/agentic-notes/v0.4.16/LANE-characterise-the-unmeasured.md`** |
 | **v0.4.16 — the two method results, and the three instruments that lied first** | **`docs/agentic-notes/v0.4.16/METHOD_one_run_beats_a_parameter_sweep_v0.4.16.md`** |
 | **v0.4.16's frozen evidence** | **`measurements/v0.4.16/`** (12 files: the per-molecule `min_bound` ordinals behind the curve, the 48/48 live confirmation with each row's provenance, the classification with every class's membership, and every population's list) |
-| **Every sweep in this document, per molecule** | **`measurements/*/sweep_extract_*.jsonl.gz`** — ten sweeps, **66,769 molecules in 3.1 MB**. The seven through v0.4.14 each verified to re-derive their published headline exactly; the three since (v0.4.17, v0.4.18, v0.4.18-release) re-derive every runtime row in this document (checked for this refresh), and the two v0.4.18 headlines re-derive from the frozen ruler verdicts + parse-back + honest bucket report beside them (v0.4.17's honest bucket report is frozen as a table, not JSON, so its 4136 / 3730 is read from its `two_numbers.txt`, not re-derived). Covers all five cohorts in the figure above plus v0.4.0 (25,197) and v0.4.8-honest. ⚠ No geometries: a mirror audit, clash re-score or distance audit still needs the original directory |
+| **Every sweep in this document through v0.4.18, per molecule** (⚠ none frozen for the v0.4.19 or v0.4.20 sweeps; their runtime rows here come from the sweeps' per-molecule reports) | **`measurements/*/sweep_extract_*.jsonl.gz`** — ten sweeps, **66,769 molecules in 3.1 MB**. The seven through v0.4.14 each verified to re-derive their published headline exactly; the three since (v0.4.17, v0.4.18, v0.4.18-release) re-derive every runtime row in this document (checked for this refresh), and the two v0.4.18 headlines re-derive from the frozen ruler verdicts + parse-back + honest bucket report beside them (v0.4.17's honest bucket report is frozen as a table, not JSON, so its 4136 / 3730 is read from its `two_numbers.txt`, not re-derived). Covers all five cohorts in the figure above plus v0.4.0 (25,197) and v0.4.8-honest. ⚠ No geometries: a mirror audit, clash re-score or distance audit still needs the original directory |
 | **The sample definitions** | **`measurements/cohorts/`** — seed, N, dedup priority and every molecule name for all four cohorts. Untracked until v0.4.16, and 1033 basenames exist in both dataset subdirs, so the dedup priority is load-bearing: a cohort rebuilt with a different one is a different cohort that looks identical |
 | **The measured reachability map — the partition this document's gap table is built on** | **`docs/agentic-notes/v0.4.15/REACHABILITY_MAP_v0.4.15.md`** |
 | **v0.4.15's six A/B arms + the five frozen populations** | **`measurements/v0.4.15/`** (13 files: every arm's per-molecule verdict and every population's membership, so each rate is reproducible) |
