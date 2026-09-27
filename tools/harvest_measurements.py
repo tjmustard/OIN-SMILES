@@ -215,6 +215,12 @@ ALLOW = [
     # ... and its CANDIDATE sweep (v0.4.19 defaults + the two E2 levers), staged by
     # tools/v0419/freeze_stage_e2_sweep.py, release v0.4.19-e2-candidate-sweep.
     "v0419_e2sweep_*",
+    # v0.4.20 RELEASE (the E2 levers promoted; the release sweep is the E2 candidate sweep, frozen
+    # above): ARM 1 at 66 + the /refreeze-goldens run (tools/v0420/freeze_stage_gates.py, release
+    # v0.4.20-release-gates), and the census on the sweep (stage_reattribution.py --results
+    # results-v0.4.20-release-census --prefix v0420_rcensus_, release v0.4.20-release-census).
+    "v0420_rarm2_*",
+    "v0420_rcensus_*",
 ]
 
 #: Directories that are raw inputs or bulk per-molecule output. Never harvested.
@@ -1042,6 +1048,58 @@ PROVENANCE = [
         r"^v0419_e2sweep_vs_projection\.(txt|json)$|^v0419_e2sweep_unchanged_string_movers\.json$",
         "tools/v0419/candidate_vs_projection.py --projection e2f   (every row where the sweep and"
         " the e2f projection disagree, with elapsed_s in both runs; the generator-reach table)",
+    ),
+    # --- v0.4.20 release: the gates (branch research/v0419-e2, promotion 60288c14)
+    (
+        r"^v0420_rarm2_arm1_(on|off_control|n_valence_2_off|canonical_resonance_off)\.tsv$",
+        "tools/gate_arm1_encode.py --expect-n 66, shipped defaults / both levers at 0 / one lever at"
+        " 0 at a time   (ARM 1 at 66 fixtures, XIVMEX added: the control reproduces the v0.4.19"
+        " golden on all 65; 5 rows move -- N2 alone ASISAX, XIVMEX, YESKOZ; RES alone"
+        " ticat3_generated_broken; jointly BEGLUU)",
+    ),
+    (
+        r"^v0420_rarm2_field2_audit_v04[79]\.(jsonl\.gz|txt)$",
+        "tools/v0417/arm2_field2_audit.py --lever OIN_N_VALENCE_2,OIN_CANONICAL_RESONANCE --golden"
+        " tools/gate_v04{7,9}_arm2_golden.tsv --cohort-dir <cohort>   (/refreeze-goldens step 1,"
+        " encode-only, every row: v047 91 SAME + 9 MOVED_BY_LEVER; v049 300 SAME + 21 MOVED_BY_LEVER"
+        " + 4 sentinels; 0 STALE)",
+    ),
+    (
+        r"^v0420_rarm2_(diff_full_gate_vs_goldens\.txt|splice_dry_run\.txt|rows_on_full_gate\.tsv\.gz|rows_off_control\.tsv|rows_verify_real_gate\.tsv|golden_comment_block\.txt)$",
+        "REFREEZE_LEVER=OIN_N_VALENCE_2,OIN_CANONICAL_RESONANCE REFREEZE_TAG=v0.4.20"
+        " tools/v0417/run_arm2_refreeze.sh on|off|verify ; tools/v0417/arm2_refreeze.py diff|splice"
+        " --accept-killed DOKROM_comp_0|rows   (the FULL gate, shipped defaults, 6 shards: 30 rows"
+        " owed, all field 2, exactly the audit's; the control brings every one back -> 30 LEVER,"
+        " 0 STALE; DOKROM SIGKILLed with the levers on only, kept by hand; the real gate reads the"
+        " re-frozen goldens)",
+    ),
+    (
+        r"^v0420_rarm2_dokrom_solo_(on|off|n2off|resoff)\.tsv$",
+        "tools/gate_v047.sh arm2 --cohort-dir <DOKROM alone> --hard-timeout 2400, shipped defaults /"
+        " both levers at 0 / one at 0   (the one row killed at 450 s with the levers on only, timed"
+        " alone to tell a budget from a hang)",
+    ),
+    (
+        r"^v0420_rcensus_(attribution_table\.tsv\.gz|attribution_summary\.json|attribution\.txt)$",
+        "tools/v0420/run_census_release.sh -> tools/census/attribution_table.py --sweep"
+        " <results-v0.4.19-e2-candidate-sweep> + one path per instrument   (THE CENSUS ON THE v0.4.20"
+        " RELEASE SWEEP; C2 = the E2 lane's e2f canonicality audit, the same two levers)",
+    ),
+    (
+        r"^v0420_rcensus_control_on_the_record_sweep\.txt$",
+        "tools/census/attribution_table.py --write-to <control>   (the parameterised tool must"
+        " reproduce the frozen v0.4.17 census table byte-for-byte before this release's is believed)",
+    ),
+    (
+        r"^v0420_rcensus_reattribution_diff\.(txt|json)$|^v0420_rcensus_movers_vs_v0419\.txt$",
+        "tools/census/reattribution_diff.py --old <v0.4.19 release census> --new <this> --movers"
+        " movers_vs_v0419.txt   (fault transitions against the v0.4.19 release census, split by"
+        " whether the generated STRUCTURE differs from the v0.4.19 release sweep's)",
+    ),
+    (
+        r"^v0420_rcensus_(parseback_gen|pflags)\.jsonl\.gz$|^v0420_rcensus_attach_class_audit\.json\.gz$",
+        "tools/census/string_sufficiency.py parseback --side gen / pflags --charge-probe ;"
+        " tools/attach_class_audit.py   (the per-sweep instruments the attribution reads)",
     ),
 ]
 

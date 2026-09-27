@@ -148,6 +148,10 @@ hard timeout. Freezing it into the goldens (and gating on it) is a separate, own
   on and off. `diff` files them as `KILLED`, settles field 2 from the audit, and re-freezes nothing;
   they go in the control anyway — **if `off` is NOT killed too, the lever is involved**, and
   `splice` aborts. (Open with the owner: have the runner flush `sha_in` before it generates.)
+  If that row's string did not move (audit `SAME`) and `off` reproduces the golden, the lever
+  costs time, not a string: time it ALONE with a long `--hard-timeout`, lever on / off / each lever
+  at 0, to tell a budget from a hang, then `splice --accept-killed NAME` keeps the golden row and
+  records the decision. v0.4.20's DOKROM: 80 s → 617 s under `OIN_N_VALENCE_2`, still a pass.
 - **Never splice whole rows.** Fields 1–6 come from the fresh run; **fields 7+ are preserved** —
   field 7 of a v0.4.9 golden is the band `--band` filters on, and a fresh row carries `xyz_sha`
   there. A `NO_STRUCTURE@300s` sentinel is **kept** and only `sha_in`/`len_in` move: whether this

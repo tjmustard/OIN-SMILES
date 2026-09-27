@@ -46,6 +46,9 @@ fsr.PLAN = [
     (ARM2 / "verify_rows.tsv", A + "rows_verify_real_gate.tsv", False),
     (ARM2 / "comment_block.txt", A + "golden_comment_block.txt", False),
 ]
+# DOKROM, the one row killed with the levers on only, timed alone (budget or hang)
+for arm in ("on", "off", "n2off", "resoff"):
+    fsr.PLAN.append((ARM2 / "dokrom_alone" / f"{arm}.tsv", A + f"dokrom_solo_{arm}.tsv", False))
 # optional: the stale-cause run exists only if step 1 found stale rows
 _STALE = ARM2 / "stale_cause.jsonl"
 if _STALE.exists():
