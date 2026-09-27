@@ -69,7 +69,9 @@ HAPTIC = re.compile(r"\{\d+[<>]\}")
 # Keep this count hardcoded rather than derived from the golden's row count: the two are
 # asserted INDEPENDENTLY on purpose, and a fixture added without a matching golden row
 # is exactly the drift this is here to catch.
-EXPECTED_FIXTURE_COUNT = 65  # 62 -> 65 in v0.4.19: TULTAX, KICSUM, UMENEG (the serializer lane)
+EXPECTED_FIXTURE_COUNT = (
+    66  # 62 -> 65 in v0.4.19 (TULTAX, KICSUM, UMENEG); 66 in v0.4.20 (XIVMEX, the E2 lane)
+)
 
 
 def main():
