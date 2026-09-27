@@ -47,10 +47,13 @@ When writing experimental code or testing tools, always checkout a branch prefix
 
 ### Where Session Notes Go
 Measurement reports, lane write-ups, A/B results, refuted hypotheses, status snapshots — anything
-recording what *this session* measured, tried, or refuted — go in
-`docs/agentic-notes/<release>/`, where `<release>` is the release the work is **for**. The `docs/`
-root is closed: it holds four product docs and nothing else, and a `pre-commit` guard enforces it.
-Full rule in `AGENTS.md` → **Documentation Layout** and `.agents/rules/docs-layout.md`.
+recording what *this session* measured, tried, or refuted — go under `spec/` (owner decision,
+2026-09-26): the narrative in `spec/process/process_<date>_<slug>.md`, next steps in
+`spec/handoffs/<release>/NEXT.md`. Both are gitignored, so they stay local; the tracked record is
+`measurements/<release>/` + `CHANGELOG.md`. `docs/agentic-notes/` keeps the older notes — add
+nothing new there. The `docs/` root is closed: it holds four product docs and nothing else, and a
+`pre-commit` guard enforces it. Full rule in `AGENTS.md` → **Documentation Layout** and
+`.agents/rules/docs-layout.md`.
 
 ### Context Window Management
 When a skill instructs you to "open a new context window": **complete the current agent turn**,

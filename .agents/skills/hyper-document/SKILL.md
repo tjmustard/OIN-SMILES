@@ -138,7 +138,7 @@ file lands on *before* writing it.
 | What you are writing | Where it goes |
 | :--- | :--- |
 | How the shipped software behaves | one of the four product docs at the `docs/` root |
-| What this session measured, tried, or refuted | `docs/agentic-notes/<release>/` |
+| What this session measured, tried, or refuted | `spec/process/` (narrative) or `spec/handoffs/<release>/` (next steps) — gitignored; see `.agents/rules/docs-layout.md` |
 
 **Product docs — the complete allowlist:** `README.md`, `OPTIMIZERS.md`,
 `GENERATION_PIPELINE.md`, `KNOWN_LIMITATIONS.md`. Update these in place. **Do not create a
@@ -146,10 +146,9 @@ fifth file at the `docs/` root** — a `pre-commit` guard (`tools/check_docs_lay
 rejects it, and adding one needs maintainer sign-off.
 
 **Notes:** measurement reports, sweep results, A/B outcomes, per-lane write-ups, refuted
-hypotheses, status snapshots. `<release>` is the release the work is **for**, not the one
-that was current when you started — create `docs/agentic-notes/v0.4.7/` rather than
-reusing the newest existing folder. Add a row to `docs/agentic-notes/README.md` whenever
-you create a new folder.
+hypotheses, status snapshots. Since 2026-09-26 (owner decision) they go under `spec/`, which
+is gitignored; `docs/agentic-notes/` keeps the older notes and takes nothing new. The tracked
+record of a session is `measurements/<release>/` + `CHANGELOG.md`.
 
 **A note never graduates by being moved.** When a finding becomes something a user needs,
 write it into the product doc in the user's language and leave the note in place as the
