@@ -661,16 +661,15 @@ def _donor_automorphism_permutations(frags: list[str], vcolor: dict, cap: int = 
         by_atoms = {frozenset(atoms): slot for slot, atoms in slot_atoms.items()}
         perms: dict[tuple, dict] = {}
         for match in matches:
-            mapping: dict | None = {}
+            mapping: dict = {}
             for slot, atoms in slot_atoms.items():
                 target = by_atoms.get(frozenset(order[match[pos[i]]] for i in atoms))
                 # Same vertex colour, for the reason `_donor_swap_permutations` gives: the
                 # exchange must stay inside the colored-vertex signature's kernel.
                 if target is None or vcolor.get(target) != vcolor.get(slot):
-                    mapping = None
                     break
                 mapping[slot] = target
-            if mapping is not None:
+            else:
                 perms[tuple(sorted(mapping.items()))] = mapping
         if len(perms) > 1:
             per_frag.append([perms[k] for k in sorted(perms)])
@@ -685,8 +684,8 @@ def _donor_automorphism_permutations(frags: list[str], vcolor: dict, cap: int = 
     out = []
     for combo in product(*per_frag):
         mapping = {}
-        for m in combo:
-            mapping.update(m)
+        for part in combo:
+            mapping.update(part)
         out.append(mapping)
     return out
 
@@ -771,6 +770,7 @@ def canonical_slot_relabeling(oin_string: str) -> tuple[dict[int, int], str]:
     # v0.4.17: ``OIN_EXACT_DONOR_FOLD`` swaps the bucket-wise generator for the one that returns
     # only true fragment automorphisms. It refines the fold, so it is read only when the fold is
     # on; with it off this expression is unchanged.
+    donor_perms: list[dict]
     if not lever_enabled("OIN_CANONICAL_DONOR_FOLD"):
         donor_perms = [{}]
     elif lever_enabled("OIN_EXACT_DONOR_FOLD"):

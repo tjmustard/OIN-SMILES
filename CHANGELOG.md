@@ -21,6 +21,21 @@ sweep number moves.
 - `normalize_oin_for_comparison()` kept the legacy `{n^}` winding marker, so it normalized
   differently from its synonym `{n>}`. It is now folded to `>` (#14).
 
+Red CI on `main` since PuLP 4.0 (tests) and numpy 2.5 (mypy). No default and no sweep number moves.
+- **`pulp` is capped `<4`.** PuLP 4.0.0 (2026-09-25, Python ≥3.12 only) removed `LpVariable.dicts`
+  and the bundled CBC solver, both of which the vendored `generator3d` charge/bond-order ILP uses.
+  On Python 3.12, a fresh install of v0.4.20 therefore could not generate even cisplatin or
+  ferrocene ("MetalloGen failed to generate any conformers"). The unit suite showed 13 failures and
+  48 errors. Python 3.10 and 3.11 cannot resolve PuLP 4 and were unaffected. Every v0.4.x measurement ran on PuLP 3.3.2. Porting to 4.0 changes the
+  solver, so it will be a measured lane of its own.
+- **The mypy CI job runs on Python 3.10**, matching `[tool.mypy] python_version`. On 3.12, numpy
+  resolves to 2.5, whose stubs use PEP 695 `type` statements. mypy rejects those when targeting 3.10
+  and then stops, so the job had failed before it reached first-party code since at least 2026-09-19.
+- Once mypy reached first-party code again, it found four type errors in `oin/canonical_slots.py`
+  (v0.4.17's `_donor_automorphism_permutations` and `canonical_slot_relabeling`). The fixes are
+  typing-only. Over the 5,324 distinct strings of the v0.4.19 E2 release sweep, both functions
+  return byte-identical output before and after.
+
 ## [0.4.20] - 2026-09-26
 
 > ### 87.78% → **89.34%** self-consistent · 79.12% → **80.60%** VERIFIED — the dianion nitrogen.
