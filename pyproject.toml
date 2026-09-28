@@ -34,7 +34,9 @@ dependencies = [
     "numba>=0.62.1",
     "numpy>=2.2.6",
     "openbabel-wheel>=3.1.1.22",
-    "pulp>=3.3.2",
+    # <4: PuLP 4.0 removed LpVariable.dicts and the bundled CBC solver that the vendored
+    # generator3d charge/bond-order ILP calls; every v0.4.x measurement ran on 3.3.2's CBC.
+    "pulp>=3.3.2,<4",
     "python-dotenv>=1.2.2",
     "rdkit==2025.9.3",
     "scipy>=1.15.3",
