@@ -43,6 +43,27 @@ def resolve_xtb_binary():
     return None
 
 
+def resolve_mace_model_path(env_var, dotenv_path=None):
+    """Return the MACE weights path that ``env_var`` names, or ``None`` if it is unset.
+
+    The process environment wins. Otherwise only ``env_var`` is read from a ``.env`` file
+    (``tools/install_mace_weights.sh`` writes one at the repo root), found by python-dotenv's
+    ``find_dotenv``. The file is never loaded into ``os.environ``: that is where
+    the ``OIN_*`` levers that change keys are read, so a stray ``.env`` must not set them.
+    """
+    value = os.environ.get(env_var)
+    if value:
+        return value
+    try:
+        from dotenv import dotenv_values, find_dotenv
+    except ImportError:
+        return None
+    path = dotenv_path if dotenv_path is not None else find_dotenv()
+    if not path:
+        return None
+    return dotenv_values(path).get(env_var) or None
+
+
 class ASEOptimizer:
     """A unified wrapper for ASE-compatible calculators (xTB, MLIPs) to perform.
 
@@ -227,19 +248,12 @@ class ASEOptimizer:
 
             import torch
 
-            try:
-                from dotenv import load_dotenv
-
-                load_dotenv()
-            except ImportError:
-                pass
-
             env_var = (
                 "MACE_OMOL25_MODEL_PATH"
                 if self.method == "mace-omol25"
                 else "MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH"
             )
-            model_path = os.environ.get(env_var)
+            model_path = resolve_mace_model_path(env_var)
 
             if not model_path or not os.path.exists(model_path):
                 raise ValueError(

@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Security
+The opt-in `mace` extra only; the default install and every key are unchanged.
+- **`torch` 2.3.1 → 2.7.1** in the `mace` extra. 2.3.1 is affected by CVE-2025-32434
+  (GHSA-53q9-r3pm-6pq6, `torch.load` remote code execution, fixed in 2.6.0). 2.7.1 is the newest
+  CUDA-11.8 build, which keeps Pascal GPUs on the GPU. OSV still lists lower-impact advisories
+  against 2.7.1, among them CVE-2026-24747 (fixed in 2.10.0, which has no CUDA-11.8 build).
+  MACE loads the whole pickled model, so the integrity check below is the main guard.
+- **`tools/install_mace_weights.sh` verifies the weights.** It checks the download, and an
+  already-present file, against the SHA-256 that GitHub publishes for the release asset, and
+  refuses a mismatch.
+- **The MACE path no longer calls `load_dotenv()`.** It copied every line of a `.env` into
+  `os.environ`, where the `OIN_*` levers that change keys are read, so a stray `.env` could
+  change keys for the rest of the process. The optimizer now reads only its own weights-path
+  variable from `.env` (`resolve_mace_model_path`), and a unit test guards it.
+
 ### Fixed
 Five fixes reported and contributed by @vandan-revanur (issues #10–#14, PRs #15–#19). Nothing in
 `src/` calls the four `generator3d` paths, and the encoder never writes `^`, so no default and no

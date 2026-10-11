@@ -19,6 +19,10 @@ MODEL_NAME="MACE-omol-0-extra-large-1024.model"
 URL="https://github.com/ACEsuit/mace-foundations/releases/download/mace_omol_0/${MODEL_NAME}"
 ENV_VAR="MACE_OMOL_0_EXTRA_LARGE_MODEL_PATH"
 MIN_BYTES=$((100 * 1024 * 1024)) # sanity floor: real checkpoint is ~400 MB
+# SHA-256 that GitHub publishes for this release asset (the `digest` field of
+# `gh api repos/ACEsuit/mace-foundations/releases/tags/mace_omol_0`). MACE loads the whole
+# pickled model, so a tampered file could run code: the checksum is the guard.
+EXPECTED_SHA256="9b64b4fd5153ca578c694abc57806d8111050de6ff652e695c9b525bc4d36469"
 
 # Resolve the repo root (this script lives in <repo>/tools/).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,10 +36,26 @@ file_size() { # portable stat
     wc -c <"$1" | tr -d ' '
 }
 
+file_sha256() { # sha256sum (Linux) or shasum (macOS); fails closed if neither exists
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | cut -d' ' -f1
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | cut -d' ' -f1
+    else
+        echo "Error: neither sha256sum nor shasum is available to verify the weights." >&2
+        exit 1
+    fi
+}
+
 mkdir -p "$MODEL_DIR"
 
 if [ -f "$MODEL_PATH" ] && [ "$(file_size "$MODEL_PATH")" -ge "$MIN_BYTES" ]; then
-    echo "✓ $MODEL_NAME already present ($(($(file_size "$MODEL_PATH") / 1024 / 1024)) MB) — skipping download."
+    if [ "$(file_sha256 "$MODEL_PATH")" != "$EXPECTED_SHA256" ]; then
+        echo "Error: $MODEL_PATH does not match the release's SHA-256." >&2
+        echo "Delete it and re-run this script." >&2
+        exit 1
+    fi
+    echo "✓ $MODEL_NAME already present and verified ($(($(file_size "$MODEL_PATH") / 1024 / 1024)) MB) — skipping download."
 else
     echo "Downloading $MODEL_NAME (~400 MB) from ACEsuit/mace-foundations ..."
     TMP="$(mktemp)"
@@ -56,11 +76,18 @@ else
         rm -f "$TMP"
         exit 1
     fi
+    if [ "$(file_sha256 "$TMP")" != "$EXPECTED_SHA256" ]; then
+        echo "Error: the downloaded file does not match the release's SHA-256; not installing it." >&2
+        echo "Check: $URL" >&2
+        rm -f "$TMP"
+        exit 1
+    fi
     mv "$TMP" "$MODEL_PATH"
-    echo "✓ Saved to $MODEL_PATH"
+    echo "✓ Saved to $MODEL_PATH (SHA-256 verified)"
 fi
 
-# Register the path in .env (read automatically via python-dotenv at runtime).
+# Register the path in .env. At runtime the optimizer reads only this variable from .env
+# (python-dotenv); nothing else in the file is loaded into the process environment.
 touch "$ENV_FILE"
 if grep -q "^${ENV_VAR}=" "$ENV_FILE" 2>/dev/null; then
     # Replace the existing line in place (portable sed).
