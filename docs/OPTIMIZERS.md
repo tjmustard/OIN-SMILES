@@ -38,7 +38,8 @@ no `mace-torch`).
 
 ## Opt-in: MACE (machine-learning interatomic potential)
 
-MACE gives the most accurate geometries but pulls a pinned CUDA-11.8 `torch`.
+MACE gives the most accurate geometries but pulls a pinned CUDA-11.8 `torch` (2.7.1, the newest
+CUDA-11.8 build; it keeps Pascal GPUs such as the GTX 10 series on the GPU).
 
 ```bash
 uv sync --extra mace                 # installs mace-torch + torch
@@ -56,7 +57,10 @@ uv run --extra mace oin-smiles oin2xyz "<OIN string>" --optimizer mace-omol-0-ex
 
 MACE weights are **not** bundled (they are large binaries, git-ignored under
 `models/mace/`). The optimizer locates them via environment variables, which the
-installer writes into a repo-root `.env` (auto-loaded via `python-dotenv`):
+installer writes into a repo-root `.env`. The optimizer reads only its own variable from that
+file (via `python-dotenv`); nothing else in `.env` is loaded into the process environment,
+so a `.env` cannot set the `OIN_*` levers. The installer verifies the download against the
+SHA-256 that GitHub publishes for the release asset and refuses a mismatch:
 
 | `optimizer` | Environment variable |
 | :--- | :--- |
