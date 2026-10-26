@@ -103,27 +103,33 @@ class ExampleRunner:
     def add_example(self, example: Example):
         self.examples.append(example)
 
-    def run(self, output_dir: Optional[str] = None) -> None:
+    def run(self, output_dir: Optional[str] = None) -> List[str]:
+        """Run every example; return the names of the critical examples that failed."""
         print(f"Running {len(self.examples)} Real Life Examples...")
         reporter = VerificationReporter("XYZ <-> OIN Verification Report")
+        failed_critical: List[str] = []
 
         for i, example in enumerate(self.examples, 1):
             print(f"\n--- Example {i}: {example.name} ---")
             print(f"Description: {example.description}")
 
             if example.oin_string:
-                self._run_oin_to_xyz(example, i, reporter)
+                ok = self._run_oin_to_xyz(example, i, reporter)
             elif example.xyz_content:
-                self._run_xyz_to_smiles(example, i, reporter)
+                ok = self._run_xyz_to_smiles(example, i, reporter)
             else:
                 print(f"Example {i} skipped: No input data provided.")
                 reporter.log_failure(example.name, "No input data provided")
+                ok = False
+            if not ok and example.is_critical:
+                failed_critical.append(example.name)
 
         reporter.print_summary()
         if output_dir:
             json_path = os.path.join(output_dir, "summary_integration.json")
             reporter.write_summary_json(json_path)
             print(f"JSON summary written to: {json_path}")
+        return failed_critical
 
     def _run_oin_to_xyz(self, example: Example, index: int, reporter: VerificationReporter) -> bool:
         print("Type: OIN -> XYZ")
@@ -271,8 +277,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="CisPlatin (XYZ -> OIN-SMILES)",
             xyz_content=cisplatin_xyz,
             description="Cisplatin with NH3 ligands (neutral OIN representation).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.[Cl]{1}.N{2}.N{3}",
+            expected_smiles="[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].N{0}.N{1}.[Cl]{2}.[Cl]{3}",
             expected_ligands=["[Cl]", "N"],
         )
         examples.append(cisplatin_xyz_ex)
@@ -289,8 +295,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TransPlatin (XYZ -> OIN-SMILES)",
             xyz_content=transplatin_xyz,
             description="Transplatin with NH3 ligands (neutral OIN representation).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.N{1}.[Cl]{2}.N{3}",
+            expected_smiles="[Pt_SPL].N{0}.[Cl]{1}.N{2}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].N{0}.[Cl]{1}.N{2}.[Cl]{3}",
             expected_ligands=["[Cl]", "N"],
         )
         examples.append(transplatin_xyz_ex)
@@ -360,8 +366,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="fac-Ir(ppy)3 (XYZ -> OIN-SMILES)",
             xyz_content=fac_ir_xyz,
             description="fac-Ir(ppy)3 with corrected OIN.",
-            expected_smiles="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
-            expected_oin_string="[Ir_OCT].c{0}1ccccc1-c1ccccn{3}1.c{5}1ccccc1-c1ccccn{1}1.c{2}1ccccc1-c1ccccn{4}1",
+            expected_smiles="[Ir_OCT].c{0}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{1}1.c{4}1ccccc1-c1ccccn{3}1",
+            expected_oin_string="[Ir_OCT].c{0}1ccccc1-c1ccccn{5}1.c{2}1ccccc1-c1ccccn{1}1.c{4}1ccccc1-c1ccccn{3}1",
         )
         examples.append(fac_ir_ex)
     except FileNotFoundError:
@@ -394,8 +400,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="PtMeNH3ClBr-Cis (XYZ -> OIN-SMILES)",
             xyz_content=pt_cis_xyz,
             description="Square Planar Pt complex with 4 different ligands (Cis-arrangement).",
-            expected_smiles="[Pt_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}",
-            expected_oin_string="[Pt_SPL].[Br]{0}.[Cl]{1}.N{2}.[CH3]{3}",
+            expected_smiles="[Pt_SPL].N{0}.[CH3]{1}.[Br]{2}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].N{0}.[CH3]{1}.[Br]{2}.[Cl]{3}",
         )
         examples.append(pt_cis_ex)
     except FileNotFoundError:
@@ -411,8 +417,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="PtMeNH3ClBr-Trans (XYZ -> OIN-SMILES)",
             xyz_content=pt_trans_xyz,
             description="Mixed ligand Platinum complex.",
-            expected_smiles="[Pt_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}",
-            expected_oin_string="[Pt_SPL].[Br]{0}.N{1}.[Cl]{2}.[CH3]{3}",
+            expected_smiles="[Pt_SPL].N{0}.[Br]{1}.[CH3]{2}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].N{0}.[Br]{1}.[CH3]{2}.[Cl]{3}",
         )
         examples.append(pt_trans_ex)
     except FileNotFoundError:
@@ -462,8 +468,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="FeH2(CO)4 (XYZ -> OIN-SMILES)",
             xyz_content=feh2co4_xyz,
             description="Iron dihydride tetracarbonyl.",
-            expected_smiles="[Fe_OCT].[H]{0}.[H]{1}.C{2}#O.C{3}#O.C{4}#O.C{5}#O",
-            expected_oin_string="[Fe_OCT].[H]{0}.[H]{1}.C{2}#O.C{3}#O.C{4}#O.C{5}#O",
+            expected_smiles="[Fe_OCT].C{0}#O.C{1}#O.C{2}#O.C{3}#O.[H]{4}.[H]{5}",
+            expected_oin_string="[Fe_OCT].C{0}#O.C{1}#O.C{2}#O.C{3}#O.[H]{4}.[H]{5}",
         )
         examples.append(feh2co4_ex)
     except FileNotFoundError:
@@ -530,8 +536,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCp2Me2 (XYZ -> OIN-SMILES)",
             xyz_content=ticp2me2_xyz,
             description="Titanocene dimethyl.",
-            expected_smiles="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].[cH]{0>}1[cH]{0}[cH]{0}[cH]{0}[cH]{0}1.[cH]{1>}1[cH]{1}[cH]{1}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].[CH3]{0}.[CH3]{1}.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
+            expected_oin_string="[Ti_TET].[CH3]{0}.[CH3]{1}.[cH]{2>}1[cH]{2}[cH]{2}[cH]{2}[cH]{2}1.[cH]{3>}1[cH]{3}[cH]{3}[cH]{3}[cH]{3}1",
             fixed_orientation=True,
         )
         examples.append(ticp2me2_ex)
@@ -549,8 +555,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="VOacac2 (XYZ -> OIN-SMILES)",
             xyz_content=voacac2_xyz,
             description="Vanadyl acetylacetonate.",
-            expected_smiles="[V_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}",
-            expected_oin_string="[V_SPY].O{0}.CC(=O{1})C=C(C)O{4}.CC(=O{2})C=C(C)O{3}",
+            expected_smiles="[V_SPY].O{0}.CC(=O{1})C=C(C)O{3}.CC(=O{2})C=C(C)O{4}",
+            expected_oin_string="[V_SPY].O{0}.CC(=O{1})C=C(C)O{3}.CC(=O{2})C=C(C)O{4}",
         )
         examples.append(voacac2_ex)
     except FileNotFoundError:
@@ -566,8 +572,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="Zeises_salt (XYZ -> OIN-SMILES)",
             xyz_content=zeises_xyz,
             description="Zeise's Salt (PtCl3(C2H4)).",
-            expected_smiles="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2>}=[CH2]{2}.[Cl]{3}",
-            expected_oin_string="[Pt_SPL].[Cl]{0}.[Cl]{1}.[CH2]{2>}=[CH2]{2}.[Cl]{3}",
+            expected_smiles="[Pt_SPL].[CH2]{0>}=[CH2]{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pt_SPL].[CH2]{0>}=[CH2]{0}.[Cl]{1}.[Cl]{2}.[Cl]{3}",
         )
         examples.append(zeises_ex)
     except FileNotFoundError:
@@ -601,8 +607,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat2 (XYZ -> OIN-SMILES)",
             xyz_content=ticat2_xyz,
             description="Titanium Catalyst 2",
-            expected_smiles="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].CC(C)(C)N{0}[Si](C)(C)c{1}1[cH]{1}[cH]{1>}[cH]{1}[cH]{1}1.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].CC(C)(C)N{1}[Si](C)(C)c{0}1[cH]{0}[cH]{0>}[cH]{0}[cH]{0}1.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].CC(C)(C)N{1}[Si](C)(C)c{0}1[cH]{0}[cH]{0>}[cH]{0}[cH]{0}1.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat2_ex)
     except FileNotFoundError:
@@ -661,8 +667,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="TiCat6 (XYZ -> OIN-SMILES)",
             xyz_content=ticat6_xyz,
             description="Titanium Catalyst 6 (TiCat4 Z-inverted)",
-            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
-            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0>}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1<}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_smiles="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
+            expected_oin_string="[Ti_TET].C[Si](C)(c{0}1[cH]{0<}[cH]{0}c{0}2ccccc{0}12)c{1}1[cH]{1>}[cH]{1}c{1}2ccccc{1}12.[CH3]{2}.[CH3]{3}",
         )
         examples.append(ticat6_ex)
     except FileNotFoundError:
@@ -678,8 +684,8 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
             name="PdCl2-R-BINAP (XYZ -> OIN-SMILES)",
             xyz_content=pdcl2_binap_xyz,
             description="Palladium complex with axial-chiral R-BINAP diphosphine ligand.",
-            expected_smiles="[Pd_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
-            expected_oin_string="[Pd_SPL].c1ccc(P{0}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{1}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1.[Cl]{2}.[Cl]{3}",
+            expected_smiles="[Pd_SPL].[Cl]{0}.[Cl]{1}.c1ccc(P{2}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{3}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1",
+            expected_oin_string="[Pd_SPL].[Cl]{0}.[Cl]{1}.c1ccc(P{2}(c2ccccc2)c2ccc3ccccc3c2-c2c(P{3}(c3ccccc3)c3ccccc3)ccc3ccccc23)cc1",
             expected_ligands=["P", "Cl"],
         )
         examples.append(pdcl2_binap_ex)
@@ -693,11 +699,13 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
         )
 
         pdcl2_bdnn_ex = Example(
+            # (R,R): RDKit's CIP labels from the fixture's 3D geometry and from this string agree.
+            # The expectation before 2026-10 was the (S,S) mirror string.
             name="PdCl2-RR-BDNN (XYZ -> OIN-SMILES)",
             xyz_content=pdcl2_bdnn_xyz,
             description="Palladium complex with RR-BDNN N-chiral diphosphine ligand (R,R-bis(diethylamino)naphthalene).",
-            expected_smiles="[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
-            expected_oin_string="[Pd_SPL].C[C@@H](C[C@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_smiles="[Pd_SPL].C[C@H](C[C@@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd_SPL].C[C@H](C[C@@H](C)N{0}(c1ccccc1)c1ccccc1)N{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
             expected_ligands=["N", "Cl"],
         )
         examples.append(pdcl2_bdnn_ex)
@@ -711,11 +719,13 @@ def get_examples(include_tmqm: bool = False) -> List[Example]:
         )
 
         pdcl2_bdpp_ex = Example(
+            # (R,R): RDKit's CIP labels from the fixture's 3D geometry and from this string agree.
+            # The expectation before 2026-10 was the (S,S) mirror string.
             name="PdCl2-RR-BDPP (XYZ -> OIN-SMILES)",
             xyz_content=pdcl2_bdpp_xyz,
             description="Palladium complex with RR-BDPP P-chiral diphosphine ligand (R,R-bis(diphenylphosphinoyl)benzene).",
-            expected_smiles="[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
-            expected_oin_string="[Pd_SPL].C[C@@H](C[C@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_smiles="[Pd_SPL].C[C@H](C[C@@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
+            expected_oin_string="[Pd_SPL].C[C@H](C[C@@H](C)P{0}(c1ccccc1)c1ccccc1)P{1}(c1ccccc1)c1ccccc1.[Cl]{2}.[Cl]{3}",
             expected_ligands=["P", "Cl"],
         )
         examples.append(pdcl2_bdpp_ex)
@@ -756,7 +766,7 @@ def run_examples(
     output_dir: Optional[str] = None,
     include_tmqm: bool = False,
     only: Optional[str] = None,
-) -> None:
+) -> List[str]:
     runner = ExampleRunner()
     examples = get_examples(include_tmqm=include_tmqm)
 
@@ -771,7 +781,7 @@ def run_examples(
 
     for ex in examples:
         runner.add_example(ex)
-    runner.run(output_dir=output_dir)
+    return runner.run(output_dir=output_dir)
 
 
 if __name__ == "__main__":
@@ -790,6 +800,11 @@ if __name__ == "__main__":
     parser.add_argument("--include-tmqm", action="store_true", help="Include tmQM examples (slow)")
     args = parser.parse_args()
 
-    run_examples(
+    failed = run_examples(
         limit=args.limit, output_dir=args.output_dir, include_tmqm=args.include_tmqm, only=args.only
     )
+    # Exit non-zero on any critical failure, so the CI step gates. Before this the script never
+    # exited non-zero, and its step stayed green while 14 of 27 cases failed (2026-07 to 2026-10).
+    if failed:
+        print(f"\n{len(failed)} critical example(s) FAILED: {', '.join(failed)}")
+        sys.exit(1)
