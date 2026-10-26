@@ -77,13 +77,13 @@ Review `.agents/rules/git-workflow.md` for strict rules regarding protected path
 ## Testing Discipline
 - **Unit Tests**: `uv run python -m unittest discover tests/unit`
 - **Integration Tests**: `uv run python -m unittest discover tests/integration`
-- **Full Suite**: `uv run python -m unittest discover tests`
+- **Full Suite**: both commands above. Never `discover tests`: `tests/unit/` and `tests/integration/` have no `__init__.py`, so it runs 0 tests and reports OK.
 - **Linting**: `uv run ruff check .` (or `uv run pylint`, verify preference)
 
 ## Commands
 - **Install/Sync**: `uv sync`
 - **Add Dependency**: `uv add <package>`
-- **Test (All)**: `uv run python -m unittest discover tests`
+- **Test (All)**: `uv run python -m unittest discover tests/unit`, then `discover tests/integration` (not `discover tests`, which runs 0 tests)
 - **Build/Package**: `uv build`
 
 ## Self-Learning

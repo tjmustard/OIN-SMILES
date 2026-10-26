@@ -276,8 +276,10 @@ The following complexes pass the full round-trip test (OIN string identity + RMS
 ### Running Tests
 
 ```bash
-uv run python -m unittest discover tests
+uv run python -m unittest discover tests/unit
 ```
+
+Point discovery at `tests/unit` (or `tests/integration`). `discover tests` finds no tests and still reports OK, because the test folders are not packages.
 
 ### Verification Scripts
 
