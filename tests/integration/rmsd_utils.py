@@ -111,8 +111,10 @@ def _calculate(mol1, mol2, mol2_bonded=None):
         conf1 = mol1.GetConformer()
         conf2 = mol2.GetConformer()
 
+        # list() first: converting rdkit Point3D objects straight to an array segfaults
+        # with numpy 2.5 on Python 3.12 (exit 139, the whole test run dies).
         coords1 = np.array(
-            [conf1.GetAtomPosition(i) for i in range(mol1.GetNumAtoms())], dtype=float
+            [list(conf1.GetAtomPosition(i)) for i in range(mol1.GetNumAtoms())], dtype=float
         )
 
         # The bonded mol, when supplied, is the authority for both connectivity and
@@ -121,7 +123,10 @@ def _calculate(mol1, mol2, mol2_bonded=None):
         mol2_for_sphere = mol2_bonded if mol2_bonded is not None else mol2
         conf2_for_coords = mol2_for_sphere.GetConformer() if mol2_bonded is not None else conf2
         coords2 = np.array(
-            [conf2_for_coords.GetAtomPosition(i) for i in range(mol2_for_sphere.GetNumAtoms())],
+            [
+                list(conf2_for_coords.GetAtomPosition(i))
+                for i in range(mol2_for_sphere.GetNumAtoms())
+            ],
             dtype=float,
         )
 
