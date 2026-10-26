@@ -33,10 +33,10 @@ except ImportError:
 class Example:
     name: str
     description: str
-    # For OIN -> XYZ
+    # A starting OIN for verify_roundtrip.py (which falls back to expected_oin_string). This
+    # script only checks XYZ -> OIN; OIN -> XYZ is covered by tests/unit/test_translator.py
+    # (SMILESToXYZ) and the round-trip smoke (tests/integration/test_roundtrip_smoke.py).
     oin_string: Optional[str] = None
-    expected_atom_count: Optional[int] = None
-    expected_dative_bonds: Optional[int] = None
     # For XYZ -> SMILES
     xyz_content: Optional[str] = None
     expected_oin_string: Optional[str] = None
@@ -113,9 +113,7 @@ class ExampleRunner:
             print(f"\n--- Example {i}: {example.name} ---")
             print(f"Description: {example.description}")
 
-            if example.oin_string:
-                ok = self._run_oin_to_xyz(example, i, reporter)
-            elif example.xyz_content:
+            if example.xyz_content:
                 ok = self._run_xyz_to_smiles(example, i, reporter)
             else:
                 print(f"Example {i} skipped: No input data provided.")
@@ -130,46 +128,6 @@ class ExampleRunner:
             reporter.write_summary_json(json_path)
             print(f"JSON summary written to: {json_path}")
         return failed_critical
-
-    def _run_oin_to_xyz(self, example: Example, index: int, reporter: VerificationReporter) -> bool:
-        print("Type: OIN -> XYZ")
-        print(f"Input OIN: {example.oin_string}")
-        test_name = f"{example.name} (OIN->XYZ)"
-        try:
-            # SMILESToXYZ.convert now returns an XYZ block string (it delegates to
-            # the real OIN3DGenerator); count atoms from the XYZ header.
-            xyz = self.smiles_to_xyz.convert(example.oin_string)
-            lines = xyz.strip().splitlines()
-            atom_count = int(lines[0]) if lines else 0
-            print(
-                f"XYZ generated with {atom_count} atoms. (Expected: {example.expected_atom_count})"
-            )
-
-            details = []
-            failed = False
-
-            if example.expected_atom_count and atom_count != example.expected_atom_count:
-                msg = (
-                    f"Atom count mismatch! Expected {example.expected_atom_count}, got {atom_count}"
-                )
-                print(f"WARNING: {msg}")
-                details.append(msg)
-                failed = True
-
-            print(f"Example {index} Completed Successfully.")
-
-            if failed:
-                reporter.log_failure(test_name, "Validation Failed", got="\n".join(details))
-                return False
-            else:
-                reporter.log_success(test_name, f"Atoms: {atom_count}")
-                return True
-
-        except Exception as e:
-            print(f"Example {index} FAILED with error: {e}")
-            traceback.print_exc()
-            reporter.log_failure(test_name, f"Exception: {str(e)}")
-            return False
 
     def _run_xyz_to_smiles(
         self, example: Example, index: int, reporter: VerificationReporter
