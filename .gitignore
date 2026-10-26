@@ -80,6 +80,8 @@ dmypy.json
 .agent
 .python*
 uv*
+# ...but the lock is committed: CI installs exactly it (uv sync --locked).
+!uv.lock
 # Local scratch / backup fixtures (not for VCS)
 tests/backup/
 /tmCAT-tmPHOTO_xyz_dataset

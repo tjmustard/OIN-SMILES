@@ -20,8 +20,10 @@ jobs:
         with:
           enable-cache: true
           python-version: "3.12"
+      # --locked: install exactly uv.lock, and fail if pyproject.toml changed without `uv lock`.
+      # The weekly deps-fresh workflow resolves fresh instead, to catch upstream breakage.
       - name: Sync (includes dev tooling)
-        run: uv sync
+        run: uv sync --locked
       - name: ruff check
         run: uv run ruff check .
       - name: ruff format --check
@@ -40,7 +42,7 @@ jobs:
           # use PEP 695 `type` statements that mypy rejects when targeting 3.10.
           python-version: "3.10"
       - name: Sync (includes dev tooling)
-        run: uv sync
+        run: uv sync --locked
       # Scope + vendored-code carve-outs are configured in [tool.mypy] (pyproject).
       - name: mypy
         run: uv run mypy
@@ -62,7 +64,7 @@ jobs:
       # Light install — the default (no torch / mace-torch). The MACE and g-xTB
       # tests skip automatically when their optional deps / binaries are absent.
       - name: Sync (light install)
-        run: uv sync
+        run: uv sync --locked
       - name: Unit tests
         run: uv run python -m unittest discover tests/unit
       - name: Encoder round-trip (XYZ -> OIN, 27 cases)
