@@ -17,7 +17,7 @@ These are one-time installations required to test your changes locally as part o
 > Please adhere to the project's primary objectives. If your pull request modifies core conversion or generation logic, it must pass all integration tests, including round-trip verification.
 
 1. Fork and clone the repository.
-2. Install the dependencies: `uv sync`.
+2. Install the dependencies: `uv sync`. Versions are pinned in the committed `uv.lock`: after editing `pyproject.toml`'s dependencies, run `uv lock` and commit the lock with the change (CI's `uv sync --locked` fails on a stale lock); `uv lock --upgrade` takes newer versions.
 3. Make your change.
 4. Run the test suite: `uv run python -m unittest discover tests`.
 5. Push to your fork and submit a pull request.

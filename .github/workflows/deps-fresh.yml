@@ -1,0 +1,38 @@
+name: Fresh dependencies (weekly)
+
+# CI installs from the committed uv.lock, so an upstream release cannot turn main red between
+# commits. This workflow resolves fresh instead, as CI did before the lock was committed, and runs
+# the same tests, so a breaking upstream release (pulp 4.0, numpy's stubs) shows up here first.
+# A red run means: refresh the lock with `uv lock --upgrade`, and fix or cap what broke, in a PR.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  test-fresh:
+    name: Fresh resolve (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Sync, resolving every dependency fresh (the lock's pins ignored)
+        run: uv sync --upgrade
+      - name: Unit tests
+        run: uv run python -m unittest discover tests/unit
+      - name: Encoder round-trip (XYZ -> OIN, 27 cases)
+        run: uv run python tests/integration/verify_xyz_to_oin.py
+      - name: Round-trip smoke (goldens, OIN -> XYZ -> OIN, FF + seed)
+        run: uv run python tests/integration/test_roundtrip_smoke.py
+      # mypy targets 3.10 ([tool.mypy] python_version), as the CI typecheck job does.
+      - name: mypy
+        if: matrix.python-version == '3.10'
+        run: uv run mypy
