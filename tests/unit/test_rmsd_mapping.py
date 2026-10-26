@@ -123,8 +123,10 @@ class TestCompositionMatching(unittest.TestCase):
         mol = _complex(
             "Mn", [("C", (1.8, 0, 0)), ("C", (0, 2.2, 0)), ("C", (0, 0, 2.0))], bonded=False
         )
+        # list() first: numpy 2.5 on Python 3.12 segfaults on a sequence of Point3D.
         coords = np.array(
-            [mol.GetConformer().GetAtomPosition(i) for i in range(mol.GetNumAtoms())], dtype=float
+            [list(mol.GetConformer().GetAtomPosition(i)) for i in range(mol.GetNumAtoms())],
+            dtype=float,
         )
         sphere, reason, _code = _select_matched_sphere(mol, coords, 0, {"Mn": 1, "C": 2})
         self.assertIsNone(reason)
@@ -143,7 +145,7 @@ class TestCompositionMatching(unittest.TestCase):
         # A far-away carbon that no cutoff would ever have admitted.
         mol_in = _complex("Pd", donors + [("C", (0, 0, -7.0))], bonded=False)
         coords = np.array(
-            [mol_in.GetConformer().GetAtomPosition(i) for i in range(mol_in.GetNumAtoms())],
+            [list(mol_in.GetConformer().GetAtomPosition(i)) for i in range(mol_in.GetNumAtoms())],
             dtype=float,
         )
         legacy = _extract_coordination_sphere(mol_in, coords, 0, use_bonds=False)
